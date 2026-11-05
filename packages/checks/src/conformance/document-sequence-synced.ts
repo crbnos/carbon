@@ -30,6 +30,8 @@ const COUNTER_TABLES: Record<string, string> = {
  */
 export const EXEMPT_COUNTERS: Record<string, string> = {
   charge: "no form or API write takes chargeId",
+  currencyRevaluationRun:
+    "no form or API write takes currencyRevaluationRunId (createCurrencyRevaluationRun numbers it)",
   fixedAssetTransfer:
     "no form or API write takes its transferId (the transferId tools are warehouse transfers)",
   inspection: "no form or API write takes inspectionId",

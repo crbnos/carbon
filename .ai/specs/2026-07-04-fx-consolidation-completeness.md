@@ -5,6 +5,7 @@
 > Date: 2026-07-04
 > Tracking issue: crbnos/carbon#1050
 > Readiness findings: SD-4 (FX completeness), SD-5 (consolidation correctness) — `.ai/specs/2026-07-03-public-company-readiness.md`
+> Scope note (2026-10-26): `.ai/specs/2026-10-26-fx-revaluation-and-cta-posting.md` supersedes §1 (unrealized revaluation), §2 (rate-history feed) and §3 (posted CTA). The global `exchangeRate` store replaced `exchangeRateHistory`, so §2 no longer applies. §4 (translation fixes) and §5 (historical-rate layers) stay live in this spec.
 
 ## TLDR
 

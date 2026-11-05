@@ -565,6 +565,10 @@ msgstr "{0} из {whole} готово"
 msgid "{0} on your timecards"
 msgstr "{0} на ваших табелях"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} открытых позиций в иностранной валюте · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} операций · {totalQuantity} деталей"
@@ -1362,6 +1366,9 @@ msgstr "1 задание создано"
 
 msgid "1 line"
 msgstr "1 строка"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 открытая позиция в иностранной валюте · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 деталь пропущена — у неё уже есть открытое задание"
@@ -2426,8 +2433,14 @@ msgstr "Счет {accountNumber} не является активным счет
 msgid "Account & Details"
 msgstr "Счет и детали"
 
+msgid "Account Balance"
+msgstr "Остаток счета"
+
 msgid "Account balances with debits and credits"
 msgstr "Остатки счетов с дебетами и кредитами"
+
+msgid "Account Currency"
+msgstr "Валюта счета"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Учет авансовых платежей, произведенных до получения товаров или услуг."
@@ -2526,7 +2539,7 @@ msgid "Accounts Payable"
 msgstr "Кредиторская задолженность"
 
 msgid "Accounts payable billing address disabled"
-msgstr "Адрес платежа Кредиторской задолженности отключен"
+msgstr "Адрес платежа кредиторской задолженности отключен"
 
 msgid "Accounts payable billing address enabled"
 msgstr "Адрес выставления счетов к уплате включен"
@@ -2541,7 +2554,7 @@ msgid "Accounts Receivable"
 msgstr "Дебиторская задолженность"
 
 msgid "Accounts receivable billing address disabled"
-msgstr "Адрес платежа Дебиторской задолженности отключен"
+msgstr "Адрес платежа дебиторской задолженности отключен"
 
 msgid "Accounts receivable billing address enabled"
 msgstr "Адрес выставления счетов дебиторской задолженности включен"
@@ -3511,6 +3524,9 @@ msgstr "Уже не учитывается в MRP из-за родительск
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "Уже не учитывается в MRP из-за типа хранилища {sourceName}"
 
+msgid "Already posted"
+msgstr "Уже проведено"
+
 msgid "also at {otherStationNames}"
 msgstr "также на {otherStationNames}"
 
@@ -3914,6 +3930,9 @@ msgstr "Неоплаченная кредиторская задолженнос
 msgid "AP Overdue"
 msgstr "Просроченные кредиторские задолженности"
 
+msgid "AP Revaluation Adjustment"
+msgstr "Корректировка переоценки кредиторской задолженности"
+
 msgid "API Docs"
 msgstr "Документация API"
 
@@ -4134,6 +4153,9 @@ msgstr "Дебиторская задолженность"
 
 msgid "AR Overdue"
 msgstr "Просроченная дебиторская задолженность"
+
+msgid "AR Revaluation Adjustment"
+msgstr "Корректировка переоценки дебиторской задолженности"
 
 msgid "AR/AP"
 msgstr "Дебиторская и кредиторская задолженность"
@@ -4729,6 +4751,9 @@ msgstr "Запрашивает амортизацию, что новый рас�
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Спросите признание выручки, что новое выполнение за этот период было бы признано теперь — отложенная выручка по счету и выручка по контракту — и проверьте черновики выполнения, содержащие выручку, подлежащую оплате к концу периода. Создайте выполнение и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Запрашивает у запуска переоценки валюты, что остается открытым в иностранной валюте на конец этого периода — каждый открытый счет-фактура и мемо, неразнесенные поступления от покупателей и платежи поставщикам, а также остатки счетов, которые ведутся в иностранной валюте, например банковских и кредитных счетов, — и проверяет наличие черновика запуска, заканчивающегося в этом периоде. Создайте запуск и проведите его, чтобы бухгалтерский баланс отражал эти позиции по курсу закрытия, а разница относилась на нереализованную курсовую прибыль или убыток. Пропустите с указанием причины, если в иностранной валюте ничего не открыто."
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Проверяет, что новая операция аренды для этого периода проводила бы сейчас — процент по аренде и амортизацию актива права пользования, плату по аренде для отсрочки или начисления, и процент по аренде типа продажи — и проверяет черновики операций аренды с записями, которые должны быть обработаны к концу периода. Создайте операцию и проведите ее, чтобы записи попали в главную книгу. Пропустите с указанием причины, если ничего не нужно проводить."
 
@@ -4761,6 +4786,9 @@ msgstr "Счет активов"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Счет активов для авансовых платежей поставщикам до получения товаров или услуг"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "Счет активов, отражающий переоценку открытой дебиторской задолженности в иностранной валюте на конец периода, чтобы каждый открытый счет-фактура по-прежнему сходился со счетом дебиторской задолженности"
 
 msgid "Asset Acquisition Cost"
 msgstr "Стоимость приобретения основного средства"
@@ -5605,6 +5633,9 @@ msgstr "Забронировать звонок с Carbon"
 
 msgid "Book Depreciation"
 msgstr "Амортизация по книге"
+
+msgid "Booked"
+msgstr "Зарезервировано"
 
 msgid "Books lock date (manual)"
 msgstr "Дата блокировки книг (вручную)"
@@ -6482,6 +6513,9 @@ msgstr "Отметьте операции слева, чтобы создать 
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Проверьте реестр номенклатуры на наличие номенклатур с отрицательным количеством на складе на конец периода — обычно это недостающее поступление или неправильно проведённая операция, которая искажает стоимость запасов и себестоимость продаж. Отметьте как выполненное после проверки или пропустите с указанием причины."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Проверьте курс консолидации этих счетов"
 
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
@@ -7373,6 +7407,12 @@ msgstr "Оператор консоли"
 
 msgid "Console Operator Created"
 msgstr "Оператор консоли создан"
+
+msgid "Consolidated CTA"
+msgstr "Консолидированный CTA"
+
+msgid "Consolidation Rate"
+msgstr "Курс консолидации"
 
 msgid "Construction in Progress"
 msgstr "Активы в процессе строительства"
@@ -8656,11 +8696,23 @@ msgstr "Код валюты"
 msgid "Currency display updated"
 msgstr "Отображение валюты обновлено"
 
+msgid "Currency Revaluation"
+msgstr "Переоценка валюты"
+
+msgid "Currency Revaluation Run"
+msgstr "Запуск переоценки валюты"
+
 msgid "Currency Translation"
 msgstr "Пересчет валют"
 
 msgid "Currency Translation (default)"
 msgstr "Пересчет валют (по умолчанию)"
+
+msgid "Currency Translation Adjustment"
+msgstr "Корректировка пересчета валют"
+
+msgid "Currency Translation Offset"
+msgstr "Счет смещения при пересчете валют"
 
 msgid "current"
 msgstr "текущий"
@@ -11569,8 +11621,14 @@ msgstr "Введите серийный номер или номер серии,
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Введите себестоимость производства. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
 
+msgid "Entered"
+msgstr "Внесено"
+
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Entered On"
 msgstr "Введено"
@@ -11640,6 +11698,9 @@ msgstr "Счет собственного капитала для накопле
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Счет собственного капитала для корректировок пересчета валют (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "Счет собственного капитала, уравновешивающий проведенный пересчет валют в исключаемой организации; консолидированные отчеты скрывают его"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Счет собственного капитала, компенсирующий начальные остатки при установке бухгалтерии. Сумма должна быть равна нулю."
@@ -11818,6 +11879,9 @@ msgstr "Все изменения активной аренды с суммам�
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Каждая проверка должна пройти перед включением бухгалтерии."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "Все организации в группе используют валюту этой организации, поэтому корректировка пересчета валют не требуется."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Все записи компании. Учётные данные, токены интеграций и вебхуки никогда не включаются."
@@ -12082,6 +12146,9 @@ msgstr "Счет расходов для техобслуживания обор
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Счет расходов для убытков по валютным операциям, когда платеж погашает счет-фактуру в иностранной валюте по менее благоприятному курсу"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "Счет расходов на убытки от переоценки открытых остатков в иностранной валюте на конец периода"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Счет расходов для покупок нескладских товаров (услуги, расходные материалы)"
 
@@ -12193,6 +12260,9 @@ msgstr "Экспортируйте план счетов из текущей с�
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "Экспортированы первые {exportedCount} строк."
+
+msgid "Exposure"
+msgstr "Открытая позиция"
 
 msgid "Expressly Unallowable"
 msgstr "Явно недопустимый"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "Основы (для всех)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "Контроль четырех глаз отключен"
+msgstr "Двойная проверка отключена"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "Контроль четырех глаз включен"
@@ -13312,6 +13382,9 @@ msgstr "Прибыль от прекращения аренды"
 
 msgid "Gain/Loss"
 msgstr "Прибыль/Убыток"
+
+msgid "Gains"
+msgstr "Прибыль"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
@@ -13577,6 +13650,9 @@ msgstr "Запустите систему с первой попытки — с 
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Перейти к {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "Перейти к сеансам переоценки валюты"
 
 msgid "Go to depreciation runs"
 msgstr "Перейти к запускам амортизации"
@@ -15346,6 +15422,12 @@ msgstr "Проводка"
 msgid "Journal Entry · {asset}"
 msgstr "Проводка · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "Проводка · Сторнирование"
+
+msgid "Journal Entry · Valuation"
+msgstr "Проводка · Переоценка"
+
 msgid "Journal lines"
 msgstr "Строки операции"
 
@@ -15683,7 +15765,7 @@ msgid "Lead time updates are enabled"
 msgstr "Обновления сроков поставки включены"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "Обновления срока поставки при поступлении отключены"
+msgstr "Обновления сроков поставки при поступлении отключены"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "Обновления срока поставки при поступлении включены"
@@ -15886,6 +15968,9 @@ msgstr "Счет обязательств по налогу на продажи,
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Счет обязательств по налогам, уплаченным при покупках"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "Счет обязательств, который отражает переоценку открытой кредиторской задолженности в иностранной валюте на конец периода, так что счет кредиторской задолженности остается связанным с открытыми счет-фактурами"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "Обязательство кредитуется, когда прогнозируется, что контракт проекта будет стоить больше, чем его цена; корректируется признаками запусков"
@@ -16287,6 +16372,9 @@ msgstr "Резерв на убыток"
 msgid "Loss Provisions"
 msgstr "Резервы на убытки"
 
+msgid "Losses"
+msgstr "Убытки"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Убытки, признаваемые при выбытии основных средств"
 
@@ -16651,6 +16739,9 @@ msgstr "Отметить как недостача"
 
 msgid "Mark to delete"
 msgstr "Отметить к удалению"
+
+msgid "Market"
+msgstr "Рынок"
 
 msgid "Market rate"
 msgstr "Рыночный курс"
@@ -17097,7 +17188,7 @@ msgid "Mode"
 msgstr "Режим"
 
 msgid "Model cache invalidated; re-converting from the source file"
-msgstr "Кэш модели инвалидирован; повторное преобразование из исходного файла"
+msgstr "Кэш модели инвалидирован; переконвертирование из исходного файла"
 
 msgid "Model conversion started"
 msgstr "Преобразование модели началось"
@@ -19240,6 +19331,9 @@ msgstr "Не требуется"
 msgid "Not restorable"
 msgstr "Восстановление невозможно"
 
+msgid "Not revalued"
+msgstr "Не переоценено"
+
 msgid "Not Run"
 msgstr "Не запущено"
 
@@ -19360,6 +19454,9 @@ msgstr "Нечего проводить за этот период."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
+
+msgid "Nothing to revalue for this period."
+msgstr "Нечего переоценивать за этот период."
 
 msgid "Nothing to review"
 msgstr "Нечего рассматривать"
@@ -19562,6 +19659,9 @@ msgstr "На заказе покупателя"
 
 msgid "On Storage Unit"
 msgstr "На единице хранения"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "На корневой организации группы сравнивает консолидированную корректировку пересчета валют (CTA) за этот период с корректировкой, уже проведенной в организации исключения. Просмотрите и проведите разницу, чтобы собственный капитал содержал CTA в учете. Сначала переоцените дочерние организации. Остальные организации проходят автоматически."
 
 msgid "On the Missing Time report"
 msgstr "В отчете пропущенного времени"
@@ -19793,6 +19893,9 @@ msgstr "Открыть распределение счетов"
 
 msgid "Open Actions"
 msgstr "Открытые действия"
+
+msgid "Open Amount"
+msgstr "Непокрытая сумма"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения о браке"
@@ -20232,6 +20335,9 @@ msgstr "Прочие доходы"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Счет прочих доходов для обменной прибыли, когда платеж погашает счет-фактуру в иностранной валюте по более выгодному курсу"
 
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "Счет прочих доходов для валютных прибылей при переоценке непокрытого иностранного баланса на конец периода"
+
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Счет прочих доходов для остатков поставщика, погашенных без полной оплаты при расчетах по кредиторской задолженности"
 
@@ -20657,6 +20763,9 @@ msgstr "Возвратить платеж"
 
 msgid "Pay expense"
 msgstr "Оплатить расход"
+
+msgid "Payable"
+msgstr "К оплате"
 
 msgid "Payables"
 msgstr "Кредиторская задолженность (по умолчанию)"
@@ -21332,6 +21441,9 @@ msgstr "Провести применяемую нагрузку для конт
 msgid "Post Comment"
 msgstr "Опубликовать комментарий"
 
+msgid "Post CTA"
+msgstr "Провести CTA"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "Провести черновой расчет {0}"
@@ -21395,6 +21507,9 @@ msgstr "Дата проведения"
 
 msgid "Posting Date"
 msgstr "Дата проведения"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "Проводит изменение консолидированной корректировки пересчета валют в собственный капитал организации исключения."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Проводит счет-фактуру и отправляет ее через подключенный аккаунт Stripe со ссылкой платежа. Счет-фактура для покупателя без привязки к Stripe проводится и помечается как неотправленная."
@@ -21476,6 +21591,9 @@ msgstr "Графики предупреждающего техобслужива
 
 msgid "Preview"
 msgstr "Предпросмотр"
+
+msgid "Preview CTA"
+msgstr "Предварительный просмотр CTA"
 
 msgid "Preview failed: {error}"
 msgstr "Ошибка предпросмотра: {error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "Переплан с нуля — шаги перестраиваются автоматически по завершении"
+msgstr "Переплани́рование с нуля — шаги будут перестроены автоматически по завершении"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "Переплан движений в текущем порядке шагов — шаги обновляются после завершения"
@@ -22756,6 +22874,9 @@ msgstr "Квитанции"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Поступления, отгрузки, счета-фактуры выданные, счета-фактуры полученные, платежи и кредит-ноты/дебет-ноты, которые по-прежнему находятся в статусе «Черновик» или «В ожидании», должны быть проведены или аннулированы — как документы, датированные в этом периоде, так и документы без даты, которые получат дату при проведении. До их проведения их суммы не находятся в главной книге, поэтому период будет отражен с недостатком."
+
+msgid "Receivable"
+msgstr "Дебиторская задолженность"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Дебиторская задолженность, признанная при начале лизинга продажного типа, уменьшаемая каждым платежом по аренде"
@@ -24048,6 +24169,15 @@ msgstr "Ред. {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Ревизия {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "Строки переоценки"
+
+msgid "Revalue these companies first"
+msgstr "Сначала переоцените эти компании"
+
+msgid "Revalued"
+msgstr "Переоценено"
 
 msgid "Reveal"
 msgstr "Показать"
@@ -26591,7 +26721,7 @@ msgid "Staffing required"
 msgstr "Требуется персонал"
 
 msgid "Staffing requirement disabled"
-msgstr "Требование укомплектования персоналом отключено"
+msgstr "Требование к персоналу отключено"
 
 msgid "Staffing requirement enabled"
 msgstr "Требование укомплектованности персоналом включено"
@@ -26701,6 +26831,12 @@ msgstr "Штат/провинция"
 
 msgid "Statement"
 msgstr "Ведомость"
+
+msgid "Statement Balance"
+msgstr "Остаток выписки"
+
+msgid "Statement Balances"
+msgstr "Остатки выписок"
 
 msgid "Statement of Indirect Expenses"
 msgstr "Ведомость косвенных расходов"
@@ -29394,6 +29530,9 @@ msgstr "После этого"
 msgid "These accounts need a replacement"
 msgstr "Эти счета требуют замены"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Эти счета активов и обязательств пересчитываются по курсу «Среднее», что изменяет курсовую разницу от пересчёта (CTA). Счета бухгалтерского баланса обычно пересчитываются по курсу «Текущее»:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для объектов с одинаковыми тегами"
 
@@ -29444,6 +29583,9 @@ msgstr "Эти единицы учитываются как продажи. Ак
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "Их нет в вашем плане счетов, но документы и операции их используют. Выберите счет в вашем плане счетов, который заменит каждый из них."
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "У них нет проведенной переоценки валюты за этот период, поэтому их остатки не соответствуют курсу закрытия:"
 
 msgid "this ability"
 msgstr "этот навык"
@@ -29721,7 +29863,7 @@ msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "В этом поступлении нет строк. Выберите документ-основание, чтобы добавить их."
 
 msgid "This removes the PDF. Employees will see the new content instead."
-msgstr "Это удаляет PDF. Сотрудники увидят новый контент вместо этого."
+msgstr "Это удаляет PDF. Вместо этого сотрудники будут видеть новое содержимое."
 
 msgid "This removes the video. Employees will see the new content instead."
 msgstr "Это удалит видео. Сотрудники увидят новый контент вместо этого."
@@ -29749,6 +29891,9 @@ msgstr "Эта ревизия запущена (Производство). Из�
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Эта ревизия запущена (Производство). Откройте извещение об изменении для его изменения."
+
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "Данная переоценка не переоценивает эти записи: расчет по ним не фиксирует сумму в валюте записи."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Этот прогон имеет больше шагов, чем мы показываем здесь. Показаны только первые {MAX_RUN_STEPS}."
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "На этой неделе"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "Это создаст черновик переоценки валюты за период, заканчивающийся {0}. Каждая открытая номенклатура в иностранной валюте будет переоценена по валютному курсу на эту дату."
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "Это создаст черновик расчета амортизации на период, заканчивающийся {0}. Все активные активы будут рассчитаны автоматически."
 
@@ -29867,6 +30016,11 @@ msgstr "Это пересчитает {0} в соответствии с его 
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Это пересчитает {0} на основе основных средств в их текущем состоянии: каждое активное средство, не охватываемое другим расчетом, за период, заканчивающийся {1}."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "Это перестроит {0} из номенклатур в иностранной валюте, открытых на {1}. Курсы переоценки сохраняются."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Это пересчитает себестоимость единицы продукции на основе активного метода производства, спецификации материалов и процессов с использованием размера партии. Текущая себестоимость будет перезаписана. Вы хотите продолжить?"
 
@@ -29889,6 +30043,7 @@ msgstr "Это заменит все материалы метода други�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Это заменит все материалы методов других размеров на этот размер."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Это обратит операции {0} и вернет его в Черновик. Затем вы сможете пересчитать, провести или удалить его."
@@ -30091,6 +30246,9 @@ msgstr "На следующую неделю"
 msgid "To pick"
 msgstr "К отбору"
 
+msgid "To post"
+msgstr "Провести"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Чтобы переактивировать, используйте меню строки и выберите Отправить приглашение. Сотрудник становится активным после принятия приглашения."
 
@@ -30260,6 +30418,9 @@ msgstr "Итоговая ожидаемая себестоимость"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."
 
+msgid "Total gains"
+msgstr "Всего прибыль"
+
 msgid "Total hours"
 msgstr "Итого часов"
 
@@ -30271,6 +30432,9 @@ msgstr "Общие косвенные затраты"
 
 msgid "Total lease cost"
 msgstr "Итого себестоимость лизинга"
+
+msgid "Total losses"
+msgstr "Всего убытки"
 
 msgid "Total Material Cost"
 msgstr "Итоговая себестоимость материалов"
@@ -30663,6 +30827,12 @@ msgstr "Неприменённые"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Неприменные денежные средства удерживаются в качестве предоплаты покупателя за этот документ вместо кредита в счет на счета."
 
+msgid "Unapplied Disbursement"
+msgstr "Неприменённая выплата"
+
+msgid "Unapplied Receipt"
+msgstr "Неприменённое поступление"
+
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
 
@@ -30728,6 +30898,13 @@ msgstr "Недисконтированные платежи, которые ещ
 
 msgid "Undo"
 msgstr "Отменить"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "Отменить {0}"
+
+msgid "Undo Run"
+msgstr "Отменить запуск"
 
 msgid "Unfurl Links"
 msgstr "Развернуть ссылки"
@@ -30916,6 +31093,12 @@ msgstr "Отменить публикацию"
 msgid "Unpublish {name}?"
 msgstr "Отменить публикацию {name}?"
 
+msgid "Unrealized Exchange Gain"
+msgstr "Нереализованная прибыль от обмена"
+
+msgid "Unrealized Exchange Loss"
+msgstr "Нереализованный убыток от обмена"
+
 msgid "Unreceived POs"
 msgstr "Неполученные ПО"
 
@@ -31088,7 +31271,7 @@ msgid "Updated By"
 msgstr "Обновлено"
 
 msgid "Updated dimension sync settings"
-msgstr "Обновлены параметры синхронизации измерения"
+msgstr "Обновлены параметры синхронизации измерений"
 
 msgid "Updated dispatch status"
 msgstr "Обновлен статус заявки на техобслуживание"
@@ -32715,7 +32898,7 @@ msgid "Written with a warning"
 msgstr "Написано с предупреждением"
 
 msgid "Wrote the missing journal of 1 document"
-msgstr "Составлена отсутствующая операция для 1 документа"
+msgstr "Записана отсутствующая операция 1 документа"
 
 #. placeholder {0}: data.documents
 msgid "Wrote the missing journals of {0} documents"

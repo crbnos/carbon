@@ -12,7 +12,8 @@ import {
   compatibilityStatus,
   type Manifest,
   reportBackupCompatibility,
-  type TableInfo
+  type TableInfo,
+  topologicalSort
 } from "./schema";
 
 // Rename cases use real entries from renames.ts: exchangeRateHistory was
@@ -402,5 +403,42 @@ describe("compatibilityStatus", () => {
         blocked: true
       })
     ).toBe("not-restorable");
+  });
+});
+
+describe("topologicalSort", () => {
+  const withFks = (name: string, ...refTables: string[]): TableInfo => ({
+    ...table(name, []),
+    foreignKeys: refTables.map((refTable) => ({
+      column: `${refTable}Id`,
+      refTable,
+      refColumn: "id"
+    }))
+  });
+  const order = (tables: TableInfo[]) =>
+    topologicalSort(tables).map((t) => t.name);
+
+  // job and jobMakeMethod reference each other; aFavorite has fewer unmet
+  // dependencies than either and sorts first, but it is only a child of the cycle.
+  it("keeps a table downstream of a cycle after its parent", () => {
+    expect(
+      order([
+        withFks("aFavorite", "job"),
+        withFks("job", "jobMakeMethod", "item"),
+        withFks("jobMakeMethod", "job"),
+        withFks("item")
+      ])
+    ).toEqual(["item", "job", "aFavorite", "jobMakeMethod"]);
+  });
+
+  it("keeps a chain below a cycle in order", () => {
+    expect(
+      order([
+        withFks("aStep", "bMaterial"),
+        withFks("bMaterial", "job"),
+        withFks("job", "jobMakeMethod"),
+        withFks("jobMakeMethod", "job")
+      ])
+    ).toEqual(["job", "bMaterial", "aStep", "jobMakeMethod"]);
   });
 });

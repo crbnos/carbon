@@ -565,6 +565,10 @@ msgstr "{0} de {whole} Hecho"
 msgid "{0} on your timecards"
 msgstr "{0} en tu Registro de tiempos"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} artículos abiertos en moneda extranjera · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operaciones · {totalQuantity} piezas"
@@ -1362,6 +1366,9 @@ msgstr "1 trabajo creado"
 
 msgid "1 line"
 msgstr "1 línea"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 artículo abierto en moneda extranjera · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 pieza omitida — ya tiene un trabajo abierto"
@@ -2426,8 +2433,14 @@ msgstr "La cuenta {accountNumber} no es una cuenta de Contabilización Activa."
 msgid "Account & Details"
 msgstr "Cuenta y detalles"
 
+msgid "Account Balance"
+msgstr "Saldo de la cuenta"
+
 msgid "Account balances with debits and credits"
 msgstr "Saldos de cuenta con debe y haber"
+
+msgid "Account Currency"
+msgstr "Moneda de la cuenta"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Contabilice los pagos por adelantado realizados antes de recibir bienes o servicios."
@@ -3511,6 +3524,9 @@ msgstr "Ya es no neteable por su unidad superior {sourceName}"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "Ya es no neteable por su tipo de almacenamiento {sourceName}"
 
+msgid "Already posted"
+msgstr "Ya contabilizado"
+
 msgid "also at {otherStationNames}"
 msgstr "también en {otherStationNames}"
 
@@ -3914,6 +3930,9 @@ msgstr "Cuentas por pagar pendientes"
 msgid "AP Overdue"
 msgstr "Cuentas por pagar Atrasadas"
 
+msgid "AP Revaluation Adjustment"
+msgstr "Ajuste de Revaluación de Cuentas por pagar"
+
 msgid "API Docs"
 msgstr "Documentación de API"
 
@@ -4134,6 +4153,9 @@ msgstr "Cuentas por Cobrar Pendientes"
 
 msgid "AR Overdue"
 msgstr "Cuentas por cobrar Atrasadas"
+
+msgid "AR Revaluation Adjustment"
+msgstr "Ajuste de Revaluación de Cuentas por cobrar"
 
 msgid "AR/AP"
 msgstr "Cuentas por cobrar/Cuentas por pagar"
@@ -4729,6 +4751,9 @@ msgstr "Pregunta a depreciación qué nueva ejecución para este período deprec
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Pregunta al reconocimiento de ingresos qué reconocería ahora una nueva ejecución para este período — ingresos de facturas diferidas e ingresos por contrato — y verifica las ejecuciones en Borrador que contienen ingresos vencidos al final del período. Cree la ejecución y contabilícela para que los ingresos lleguen al libro mayor. Omita con una razón si nada debe ser reconocido."
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Pregunta a la ejecución de revaluación de moneda qué sigue abierto en una moneda extranjera al final de este período — facturas y notas abiertas, cobros de clientes y pagos a proveedores no aplicados, y los saldos de cuentas llevadas en una moneda extranjera, como cuentas bancarias y de préstamos — y verifica que haya una ejecución en Borrador que finalice en el período. Cree la ejecución y contabilícela para que el balance general lleve esos artículos a la tasa de cierre, con la diferencia de ganancia o pérdida de cambio no realizada. Omítalo con una razón si nada está abierto en una moneda extranjera."
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Le pregunta a la ejecución de arrendamiento qué una nueva ejecución para este período contabilizaría ahora — intereses de arrendamiento y amortización del derecho de uso, renta de alquiler a diferir o acumular, e intereses de arrendamiento de tipo de venta — y verifica si hay ejecuciones de arrendamiento en borrador que cumplen con los asientos vencidos al final del período. Cree la ejecución y contabilícela para que los asientos lleguen al libro mayor. Omita con una razón si no hay nada que contabilizar."
 
@@ -4761,6 +4786,9 @@ msgstr "Cuenta de activos"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Cuenta de activo para pagos anticipados realizados a proveedores antes de recibir bienes o servicios"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "Cuenta de activos que refleja la revaluación de fin de período de las cuentas por cobrar abiertas en moneda extranjera, para que la cuenta de cuentas por cobrar se mantenga vinculada a sus facturas abiertas"
 
 msgid "Asset Acquisition Cost"
 msgstr "Costo de adquisición de activos"
@@ -5605,6 +5633,9 @@ msgstr "Reserva una llamada con Carbon"
 
 msgid "Book Depreciation"
 msgstr "Depreciación de Libro"
+
+msgid "Booked"
+msgstr "Reservado"
 
 msgid "Books lock date (manual)"
 msgstr "Fecha de bloqueo de libros (manual)"
@@ -6482,6 +6513,9 @@ msgstr "Marque las operaciones a la izquierda para construir el lote."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Verifique el libro mayor de artículos para cualquier artículo con cantidad negativa en existencias a fin de período — generalmente una recepción faltante o una contabilización fuera de orden que distorsiona el valor del inventario y el costo de ventas. Márquelo como completado una vez revisado, o omítalo con un motivo."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Revise la tasa de consolidación de estas cuentas"
 
 msgid "Check your email"
 msgstr "Revisa tu correo electrónico"
@@ -7373,6 +7407,12 @@ msgstr "Operador de Consola"
 
 msgid "Console Operator Created"
 msgstr "Operador de consola creado"
+
+msgid "Consolidated CTA"
+msgstr "CTA consolidado"
+
+msgid "Consolidation Rate"
+msgstr "Tasa de consolidación"
 
 msgid "Construction in Progress"
 msgstr "Construcción en curso"
@@ -8654,6 +8694,12 @@ msgid "Currency code"
 msgstr "Código de moneda"
 
 msgid "Currency display updated"
+msgstr "Pantalla de moneda actualizada"
+
+msgid "Currency Revaluation"
+msgstr "Revaluación de moneda"
+
+msgid "Currency Revaluation Run"
 msgstr "Visualización de moneda actualizada"
 
 msgid "Currency Translation"
@@ -8661,6 +8707,12 @@ msgstr "Conversión de Moneda"
 
 msgid "Currency Translation (default)"
 msgstr "Conversión de Moneda (predeterminada)"
+
+msgid "Currency Translation Adjustment"
+msgstr "Ajuste de conversión de moneda"
+
+msgid "Currency Translation Offset"
+msgstr "Desfase de conversión de moneda"
 
 msgid "current"
 msgstr "actual"
@@ -11569,8 +11621,14 @@ msgstr "Ingrese el número de serie o lote de producción, no el artículo"
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Ingrese el costo de fabricación. El valor se registra en el activo desde la cuenta desde la que se gastó: Resultados acumulados para un año anterior, o gasto de mano de obra o material de este año."
 
+msgid "Entered"
+msgstr "Ingresado"
+
 msgid "Entered At Receipt"
 msgstr "Ingresado en la Recepción"
+
+msgid "Entered By"
+msgstr "Ingresado por"
 
 msgid "Entered On"
 msgstr "Ingresado el"
@@ -11640,6 +11698,9 @@ msgstr "Cuenta de patrimonio para ganancias o pérdidas acumuladas"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Cuenta de patrimonio para ajustes de conversión de moneda (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "Cuenta de patrimonio que equilibra el CTA contabilizado en la empresa de eliminación; los informes consolidados la ocultan"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Cuenta de Patrimonio que compensa los saldos de apertura cuando se configura la Contabilidad. Debe totalizar cero."
@@ -11818,6 +11879,9 @@ msgstr "Todo cambio a un arrendamiento activo, con los montos antes y después."
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Cada verificación debe cumplirse antes de que se pueda habilitar Contabilidad."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "Todas las empresas del grupo utilizan la moneda de esta empresa, por lo que no hay ajuste por conversión."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Todos los registros de la empresa. Las credenciales, los tokens de integración y los webhooks nunca se incluyen."
@@ -12082,6 +12146,9 @@ msgstr "Cuenta de gastos para mantenimiento de equipos e instalaciones"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Cuenta de gastos para pérdidas de divisas cuando un pago liquida una factura en moneda extranjera a una tasa menos favorable"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "Cuenta de gasto para pérdidas de FX cuando la revaluación de fin de período reexpresa un saldo abierto en moneda extranjera"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Cuenta de gastos para compras que no son de inventario (servicios, suministros)"
 
@@ -12193,6 +12260,9 @@ msgstr "Exporte su plan de cuentas desde su sistema actual como CSV, una fila po
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "Se exportaron las primeras {exportedCount} filas."
+
+msgid "Exposure"
+msgstr "Exposición"
 
 msgid "Expressly Unallowable"
 msgstr "Expresamente No Permitido"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "Fundamentos (todos)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "Cumplimiento de cuatro ojos deshabilitado"
+msgstr "Requisito de aprobación dual deshabilitado"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "Verificación de cuatro ojos habilitada"
@@ -13312,6 +13382,9 @@ msgstr "Ganancia en la terminación del arrendamiento"
 
 msgid "Gain/Loss"
 msgstr "Ganancia/Pérdida"
+
+msgid "Gains"
+msgstr "Ganancias"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Ganancias reconocidas en la baja de activos fijos"
@@ -13542,7 +13615,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Cuenta de activo de contrapartida del Libro mayor que acumula depreciación contabilizada contra Activos fijos."
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "Cuenta de Patrimonio del Libro mayor (reserva CTA) que mantiene diferencias de cambio no realizadas por la retradución de saldos en moneda extranjera al final del período; separada de las ganancias/pérdidas de cambio realizadas en P&L."
+msgstr "Cuenta de patrimonio del libro mayor (reserva CTA) que recoge las diferencias de cambio no realizadas por la reconversión de saldos en moneda extranjera al cierre del período; separada de las ganancias/pérdidas de cambio realizadas en la cuenta de resultados."
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "Cuenta de Patrimonio del Libro mayor donde se cierran los ingresos netos al fin del año fiscal."
@@ -13577,6 +13650,9 @@ msgstr "Activa en el primer intento — con nuestro equipo a tu lado"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Ir a {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "Ir a las ejecuciones de revaluación de moneda"
 
 msgid "Go to depreciation runs"
 msgstr "Ir a las ejecuciones de depreciación"
@@ -15346,6 +15422,12 @@ msgstr "Apunte"
 msgid "Journal Entry · {asset}"
 msgstr "Apunte · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "Apunte · Reversa"
+
+msgid "Journal Entry · Valuation"
+msgstr "Apunte · Valuación"
+
 msgid "Journal lines"
 msgstr "Líneas de asiento"
 
@@ -15887,6 +15969,9 @@ msgstr "Cuenta de pasivo para impuestos sobre ventas cobrados de clientes"
 msgid "Liability account for tax paid on purchases"
 msgstr "Cuenta de pasivo para impuestos pagados en compras"
 
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "Cuenta de pasivo que lleva la revaluación de fin de período de cuentas por pagar en moneda extranjera abierta, para que la cuenta de cuentas por pagar siga vinculada a sus facturas abiertas"
+
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "Pasivo acreditado cuando se prevé que un contrato de proyecto costará más que su precio; ajustado por ejecuciones de reconocimiento"
 
@@ -16287,6 +16372,9 @@ msgstr "Provisión de pérdida"
 msgid "Loss Provisions"
 msgstr "Provisiones de pérdida"
 
+msgid "Losses"
+msgstr "Pérdidas"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Pérdidas reconocidas en la baja de activos fijos"
 
@@ -16651,6 +16739,9 @@ msgstr "Marcar como faltante"
 
 msgid "Mark to delete"
 msgstr "Marcar para eliminar"
+
+msgid "Market"
+msgstr "Mercado"
 
 msgid "Market rate"
 msgstr "Tipo de cambio de mercado"
@@ -19240,6 +19331,9 @@ msgstr "No requerido"
 msgid "Not restorable"
 msgstr "No restaurable"
 
+msgid "Not revalued"
+msgstr "Sin revaluar"
+
 msgid "Not Run"
 msgstr "No ejecutado"
 
@@ -19360,6 +19454,9 @@ msgstr "Nada que contabilizar para este período."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nada que reconocer aún. Los ingresos por ventas siguen lo que facturan las facturas."
+
+msgid "Nothing to revalue for this period."
+msgstr "Nada que revaluar para este período."
 
 msgid "Nothing to review"
 msgstr "Nada que revisar"
@@ -19562,6 +19659,9 @@ msgstr "En pedido de venta"
 
 msgid "On Storage Unit"
 msgstr "En Unidad de Almacenamiento"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "En la empresa raíz del grupo, compara el ajuste consolidado por conversión de moneda (CTA) para este período con el CTA ya contabilizado en la empresa de eliminación. Previsualiza y contabiliza la diferencia para que el patrimonio lleve el CTA en el libro mayor. Revalúa primero las subsidiarias. Otras empresas se procesan automáticamente."
 
 msgid "On the Missing Time report"
 msgstr "En el informe de Tiempo faltante"
@@ -19793,6 +19893,9 @@ msgstr "Abrir Mapeo de Cuentas"
 
 msgid "Open Actions"
 msgstr "Acciones Abiertas"
+
+msgid "Open Amount"
+msgstr "Importe pendiente"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir un NCR para disposición de MRB"
@@ -20033,7 +20136,7 @@ msgid "Operation supplier process"
 msgstr "Proceso del proveedor de la operación"
 
 msgid "Operation timer auto-start disabled"
-msgstr "Inicio automático de temporizador de operación deshabilitado"
+msgstr "Auto-inicio del temporizador de operación deshabilitado"
 
 msgid "Operation timer auto-start enabled"
 msgstr "Inicio automático del temporizador de operación habilitado"
@@ -20114,7 +20217,7 @@ msgid "Optional context for this rule"
 msgstr "Contexto opcional para esta regla"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "Tasa fija opcional utilizada al traducir saldos de patrimonio según IAS 21 (en lugar de la tasa del período)."
+msgstr "Tasa fija opcional utilizada al convertir saldos de patrimonio según la NIC 21 (en lugar de la tasa del período)."
 
 msgid "Optional pages & sections"
 msgstr "Páginas y secciones opcionales"
@@ -20231,6 +20334,9 @@ msgstr "Otro Ingreso"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Cuenta de Otros Ingresos para ganancias de divisas cuando un pago liquida una factura en moneda extranjera a una tasa más favorable"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "Cuenta de Otros ingresos para ganancias por FX cuando la revaluación de fin de período reexpresa un saldo abierto en moneda extranjera"
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Cuenta de Otros Ingresos para saldos de proveedor cancelados sin pago completo en la liquidación de cuentas por pagar"
@@ -20657,6 +20763,9 @@ msgstr "Reembolsar"
 
 msgid "Pay expense"
 msgstr "Pagar gasto"
+
+msgid "Payable"
+msgstr "Por pagar"
 
 msgid "Payables"
 msgstr "Cuentas por Pagar (predeterminada)"
@@ -21332,6 +21441,9 @@ msgstr "Contabilizar carga aplicada para proyectos de contrato"
 msgid "Post Comment"
 msgstr "Publicar Comentario"
 
+msgid "Post CTA"
+msgstr "Contabilizar CTA"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "Contabilizar ejecución en Borrador {0}"
@@ -21395,6 +21507,9 @@ msgstr "fecha de contabilización"
 
 msgid "Posting Date"
 msgstr "Fecha de contabilización"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "Contabiliza el cambio en el CTA consolidado en el patrimonio de la empresa de eliminación."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Contabiliza la factura y la envía a través de tu cuenta Stripe conectada con un enlace de pago. Una factura para un cliente sin cliente Stripe vinculado se contabiliza y se marca como no enviada."
@@ -21476,6 +21591,9 @@ msgstr "Calendarios de mantenimiento preventivo para su equipo"
 
 msgid "Preview"
 msgstr "Vista previa"
+
+msgid "Preview CTA"
+msgstr "Previsualizar CTA"
 
 msgid "Preview failed: {error}"
 msgstr "Vista previa fallida: {error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-ingreso de datos entre cotización, piso de producción y finanzas"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "Replanificación desde cero — los pasos se reconstruyen automáticamente cuando termina"
+msgstr "Replaneación desde cero — los pasos se reconstruyen automáticamente cuando finaliza"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "Replanificación de movimientos en el orden de paso actual — los pasos se actualizan cuando finaliza"
@@ -22756,6 +22874,9 @@ msgstr "Recibos"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Los recibos, envíos, facturas de venta, facturas de compra, pagos y notas de crédito/débito que aún están en Borrador o Pendiente deben contabilizarse o anularse — tanto documentos fechados en este período como documentos sin fechar que recibirían una fecha en él cuando se contabilicen. Hasta que se contabilicen, sus montos no están en el libro mayor, por lo que el período estaría subestimado."
+
+msgid "Receivable"
+msgstr "Cuenta por cobrar"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Cuenta por cobrar reconocida al inicio de un arrendamiento de tipo venta, reducida por cada pago de alquiler"
@@ -24049,6 +24170,15 @@ msgstr "Rev {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev. {revisionId}"
 
+msgid "Revaluation Lines"
+msgstr "Líneas de revaluación"
+
+msgid "Revalue these companies first"
+msgstr "Revalúe primero estas empresas"
+
+msgid "Revalued"
+msgstr "Revaluado"
+
 msgid "Reveal"
 msgstr "Revelar"
 
@@ -24758,7 +24888,7 @@ msgstr "Guardado"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
-msgstr "Se guardaron {0} asignaciones de valores de dimensión"
+msgstr "Guardadas {0} asignaciones de valor de dimensión"
 
 msgid "Saved {count} account mappings"
 msgstr "Se guardaron {count} asignaciones de cuentas"
@@ -26591,7 +26721,7 @@ msgid "Staffing required"
 msgstr "Personal requerido"
 
 msgid "Staffing requirement disabled"
-msgstr "Requisito de personal deshabilitado"
+msgstr "Requisito de personal desactivado"
 
 msgid "Staffing requirement enabled"
 msgstr "Requisito de personal habilitado"
@@ -26701,6 +26831,12 @@ msgstr "Estado/Provincia"
 
 msgid "Statement"
 msgstr "Declaración"
+
+msgid "Statement Balance"
+msgstr "Saldo del estado de cuenta"
+
+msgid "Statement Balances"
+msgstr "Saldos del estado de cuenta"
 
 msgid "Statement of Indirect Expenses"
 msgstr "Declaración de gastos indirectos"
@@ -27151,7 +27287,7 @@ msgid "Successfully created a new revision"
 msgstr "Se creó exitosamente una nueva revisión"
 
 msgid "Successfully resent invite"
-msgstr "Invitación reenviada exitosamente"
+msgstr "Se reenvió la invitación con éxito"
 
 msgid "Successfully revoked invites"
 msgstr "Se revocaron exitosamente las invitaciones"
@@ -27272,7 +27408,7 @@ msgid "Supplier contact email required"
 msgstr "Correo electrónico de contacto de proveedor obligatorio"
 
 msgid "Supplier contact requirement disabled"
-msgstr "Requisito de contacto del proveedor deshabilitado"
+msgstr "Requisito de contacto del proveedor desactivado"
 
 msgid "Supplier contact requirement enabled"
 msgstr "Requisito de contacto de proveedor habilitado"
@@ -27299,7 +27435,7 @@ msgid "Supplier IDs are shown"
 msgstr "Los ID de proveedor se muestran"
 
 msgid "Supplier IDs hidden"
-msgstr "IDs del proveedor ocultados"
+msgstr "IDs de proveedores ocultos"
 
 msgid "Supplier IDs shown"
 msgstr "IDs de proveedor mostrados"
@@ -29394,6 +29530,9 @@ msgstr "En lo sucesivo"
 msgid "These accounts need a replacement"
 msgstr "Estas cuentas necesitan un reemplazo"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Estas cuentas de activo y pasivo se convierten a la tasa Promedio, lo que modifica el ajuste por conversión (CTA). Las cuentas del balance general suelen convertirse a la tasa Actual:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Estos campos personalizados solo estarán disponibles para entidades con las mismas etiquetas"
 
@@ -29444,6 +29583,9 @@ msgstr "Estas unidades se tratan como ventas. Activarlas da de baja cada una y c
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "No están en tu plan de cuentas, pero los documentos o asientos los utilizan. Selecciona la cuenta en tu plan de cuentas que reemplaza cada uno."
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "No tienen una ejecución de revaluación de moneda contabilizada para este período, por lo que sus saldos no están a la tasa de cierre:"
 
 msgid "this ability"
 msgstr "esta habilidad"
@@ -29750,6 +29892,9 @@ msgstr "Esta revisión se ha liberado (Producción). Los cambios normalmente deb
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Esta revisión se ha liberado (Producción). Abra un aviso de cambio para modificarla."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "Esta ejecución no revalúa estos memorandos: una liquidación contra ellos no registra el monto en la moneda del memorando."
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Esta ejecución tiene más pasos de los que mostramos aquí. Solo se enumeran los primeros {MAX_RUN_STEPS}."
 
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "Esta semana"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "Esto creará una ejecución borrador de revaluación de moneda para el período que termina en {0}. Cada artículo de moneda extranjera abierto será revaluado al tipo de cambio en esa fecha."
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "Esto creará una ejecución de depreciación en borrador para el período que finaliza {0}. Todos los activos se calcularán automáticamente."
 
@@ -29867,6 +30016,11 @@ msgstr "Esto reconstruirá {0} a partir de su programa tal como es ahora: cada f
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Esto reconstruirá {0} a partir de los activos fijos tal como están ahora: cada activo fijo activo no cubierto por otra ejecución para el período que finaliza {1}."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "Esto reconstruirá {0} a partir de los artículos de moneda extranjera abiertos en {1}. Se conservan las tasas de la ejecución."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Esto recalculará el costo unitario del método de fabricación activo basándose en la lista de materiales y procesos utilizando el tamaño de lote. El costo actual será sobrescrito. ¿Deseas continuar?"
 
@@ -29889,6 +30043,7 @@ msgstr "Esto reemplazará todos los materiales de método de otras revisiones co
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Esto reemplazará todos los materiales de método de otros tamaños con este tamaño."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Esto revertirá los asientos de {0} y lo devolverá a Borrador. Luego puede recalcular, contabilizar o eliminarlo."
@@ -30091,6 +30246,9 @@ msgstr "Para la próxima semana"
 msgid "To pick"
 msgstr "Hacer picking"
 
+msgid "To post"
+msgstr "Por contabilizar"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Para reactivar, utilice el menú de la fila y seleccione Enviar invitación. El empleado se activa una vez que acepta."
 
@@ -30260,6 +30418,9 @@ msgstr "Costo estimado total"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unidades totales de producción esperadas para depreciación de unidades de producción; el costo se distribuye por unidad producida."
 
+msgid "Total gains"
+msgstr "Ganancias totales"
+
 msgid "Total hours"
 msgstr "Total de horas"
 
@@ -30271,6 +30432,9 @@ msgstr "Costo Total Indirecto"
 
 msgid "Total lease cost"
 msgstr "Costo total de arrendamiento"
+
+msgid "Total losses"
+msgstr "Pérdidas totales"
 
 msgid "Total Material Cost"
 msgstr "Costo de material total"
@@ -30558,7 +30722,7 @@ msgid "Turn on the built-in pieces"
 msgstr "Activa las piezas integradas"
 
 msgid "Turned off sync"
-msgstr "Sincronización apagada"
+msgstr "Sincronización desactivada"
 
 msgid "Turned on sync"
 msgstr "Sincronización activada"
@@ -30663,6 +30827,12 @@ msgstr "No aplicado"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "El efectivo no aplicado se mantiene como un anticipo del cliente para este documento en lugar de crédito en cuenta."
 
+msgid "Unapplied Disbursement"
+msgstr "Desembolso no aplicado"
+
+msgid "Unapplied Receipt"
+msgstr "Recepción no aplicada"
+
 msgid "Unapproved Supplier"
 msgstr "Proveedor No Aprobado"
 
@@ -30728,6 +30898,13 @@ msgstr "Pagos sin descuento aún por venir, por ejercicio fiscal, menos el inter
 
 msgid "Undo"
 msgstr "Deshacer"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "Deshacer {0}"
+
+msgid "Undo Run"
+msgstr "Deshacer ejecución"
 
 msgid "Unfurl Links"
 msgstr "Desplegar enlaces"
@@ -30811,7 +30988,7 @@ msgid "Units"
 msgstr "Unidades"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Unidades de moneda base por una unidad de esta moneda; se utiliza para traducir importes al contabilizar."
+msgstr "Unidades de moneda base por una unidad de esta moneda; se utiliza para convertir importes al contabilizar."
 
 msgid "units of measure"
 msgstr "unidades de medida"
@@ -30915,6 +31092,12 @@ msgstr "Anular la publicación"
 
 msgid "Unpublish {name}?"
 msgstr "¿Despublicar {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "Ganancia de cambio no realizada"
+
+msgid "Unrealized Exchange Loss"
+msgstr "Pérdida de cambio no realizada"
 
 msgid "Unreceived POs"
 msgstr "POs no recibidas"

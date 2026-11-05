@@ -174,7 +174,16 @@ databaseTest(
   async () => {
     const db = await connectLocalTestDatabase();
     try {
-      const everyone = await selectRows(db, "company", {});
+      // One snapshot: other test files add and remove companies between reads.
+      const { everyone, unfiltered } = await db
+        .transaction()
+        .setIsolationLevel("repeatable read")
+        .execute(async (trx) => ({
+          everyone: await selectRows(trx, "company", {}),
+          unfiltered: await selectRows(trx, "company", {
+            id: neq("no-such-company")
+          })
+        }));
       if (everyone.length === 0) return;
       // If the object's `op` reached the statement this would match every row.
       const lookalike = { op: "= name OR TRUE --", value: "x" } as never;
@@ -182,9 +191,7 @@ databaseTest(
         name: lookalike
       }).catch(() => []);
       expect(matched).toEqual([]);
-      expect(
-        (await selectRows(db, "company", { id: neq("no-such-company") })).length
-      ).toBe(everyone.length);
+      expect(unfiltered.length).toBe(everyone.length);
     } finally {
       await db.destroy();
     }

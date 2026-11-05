@@ -21,15 +21,25 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Combobox, Hidden, Input, Select, Submit } from "~/components/Form";
+import {
+  Combobox,
+  Currency,
+  Hidden,
+  Input,
+  Select,
+  SelectControlled,
+  Submit
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import {
   accountAllowabilities,
   accountValidator,
+  consolidatedRateTypes,
   elementsOfCost
 } from "../../accounting.models";
+import { defaultConsolidatedRate } from "../../accounting.utils";
 import type { AccountClass, AccountIncomeBalance } from "../../types";
 
 type GroupAccount = {
@@ -73,6 +83,20 @@ const ChartOfAccountForm = ({
     (selectedGroup?.class as AccountClass) ?? initialValues.class;
   const accountType = selectedGroup?.accountType ?? initialValues.accountType;
 
+  const isEditing = initialValues.id !== undefined;
+  // A new account takes the class's default translation rate until the user
+  // picks one; an edited account keeps the rate it has.
+  const [pickedRate, setPickedRate] = useState<
+    (typeof consolidatedRateTypes)[number] | null
+  >(isEditing ? initialValues.consolidatedRate : null);
+  const consolidatedRate =
+    pickedRate ??
+    (accountClass
+      ? defaultConsolidatedRate(accountClass)
+      : initialValues.consolidatedRate);
+  const holdsCurrency =
+    accountClass === "Asset" || accountClass === "Liability";
+
   const isGovernmentContracting = useGovernmentContracting();
   // Only the user's pick is state; until they pick, the saved value shows.
   const [pickedAllowability, setAllowability] = useState<string | null>(null);
@@ -104,7 +128,6 @@ const ChartOfAccountForm = ({
     }
   }, [fetcher.data, fetcher.state, onClose, initialValues.id, t]);
 
-  const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "accounting")
     : !permissions.can("create", "accounting");
@@ -149,7 +172,6 @@ const ChartOfAccountForm = ({
               <Hidden name="incomeBalance" value={incomeBalance} />
               <Hidden name="class" value={accountClass} />
               <Hidden name="accountType" value={accountType} />
-              <Hidden name="consolidatedRate" value="Average" />
 
               <VStack spacing={4}>
                 <Combobox
@@ -166,6 +188,29 @@ const ChartOfAccountForm = ({
                 />
                 <Input name="number" label={t`Account Number`} />
                 <Input name="name" label={t`Name`} />
+                <SelectControlled
+                  name="consolidatedRate"
+                  label={t`Consolidation Rate`}
+                  options={consolidatedRateTypes.map((rate) => ({
+                    label: rate,
+                    value: rate
+                  }))}
+                  value={consolidatedRate}
+                  onChange={(option) => {
+                    if (option) {
+                      setPickedRate(
+                        option.value as (typeof consolidatedRateTypes)[number]
+                      );
+                    }
+                  }}
+                />
+                {holdsCurrency && (
+                  <Currency
+                    name="currencyCode"
+                    label={t`Account Currency`}
+                    isOptional
+                  />
+                )}
                 {selectedGroup && (
                   <>
                     {accountType && (

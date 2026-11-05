@@ -4385,6 +4385,26 @@ the error set against an untouched checkout of `main`.
 
 **Applies to:** `packages/jobs/src/inngest/functions/**` — any function that writes outside `step.run` and then calls a `step.*` method.
 
+## A bulk translation fill needs a glossary check against a baseline
+
+**Context:** `/translate` filled the new FX revaluation and CTA strings on branch `consolidation-exchange-rates` (PR #2062, 2026-10-28).
+
+**Problem:** The fill rendered "currency translation" (restating amounts in another currency) as language translation, and the catalogs shipped that way. `pnpm exec linguito check` passed, because it only checks that no `msgstr` is empty. The glossary has an approved rendering for "Currency Translation", so `check-glossary.mjs` reports such a string. But the checker already reports more than 17,000 older hits, so a new violation is invisible in its full output.
+
+**Rule:** Before a bulk fill, save `node .claude/skills/translate/scripts/check-glossary.mjs --json` as a baseline. After the fill, run it again and diff the two outputs. A new violation on a filled `msgstr` blocks the commit. Fix it, or clear it with `reset-violations.mjs` and fill it again. If an accounting term is also an everyday word ("translation", "close", "run", "posting"), make sure the glossary has it before the fill.
+
+**Applies to:** `.claude/skills/translate/`, `packages/locale/locales/*/*.po`, and every commit that fills catalogs.
+
+## A journal that posts to the balance it values must be left out of that balance
+
+**Context:** A currency revaluation run revalues an account with an Account Currency, such as a EUR bank account. Its valuation journal posts the difference straight to that account, dated the period end (2026-10-27).
+
+**Problem:** The run read the account's booked balance from the GL at the period end. After Post, that balance included the run's own valuation journal. The drift check (`isCurrencyRevaluationRunCurrent`) then found a booked amount that differed from the stored line. So every posted run read as out of date, and the `fx-revaluation` close task failed on a correct run.
+
+**Rule:** Sometimes a journal posts straight to the balance it values, with no subledger or adjustment account between them. Then read the booked balance without that journal's source type. `readRevaluationExposures` subtracts every `Currency Revaluation` journal dated on or before `periodEnd`. It also does not count those journals as activity that makes the account an exposure. To test it, post the run, then ask the drift check whether the run is still current.
+
+**Applies to:** `readRevaluationExposures` and `isCurrencyRevaluationRunCurrent` in `apps/erp/app/modules/accounting/accounting.service.ts`, and any later run that posts to an account it also reads.
+
 ## `error(cause, …)` shows the cause to the user
 
 **Context:** Error toasts gained a second line with the real reason. `error(cause, title)` in `@carbon/auth` now reads the cause with `describeCause` and the flash shows it (2026-10-29).
@@ -4534,6 +4554,26 @@ answer that the class did not reach the animation.
 
 **Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
 compiled Tailwind output.
+
+## A cycle breaker must pick a table that is on the cycle
+
+**Context:** `topologicalSort` orders the backup catalog. `purge-company.integration.test.ts` found dangling `jobFavorite` rows on a seeded company (2026-11-05).
+
+**Problem:** When every remaining table was blocked, the sort took the table with the fewest unmet dependencies. A leaf with one parent on a cycle always won, so `jobFavorite`, `purchaseOrderFavorite`, `jobMaterialStep` and `jobOperationToolStep` sorted before their parents. A wipe runs in reverse, so it deleted the parent first. The child's `via` scope filter reads the parent, matched nothing, and left the rows.
+
+**Rule:** When you break a cycle in a dependency sort, choose only from tables on a cycle. Peel off every table that nothing remaining depends on first. To test it, use a leaf whose name sorts before its parents.
+
+**Applies to:** `packages/jobs/src/backups/schema.ts` and any wipe or load that reads the catalog order.
+
+## A database test must not fail a write with a trigger
+
+**Context:** Three database tests made a write fail with `CREATE TRIGGER` on a shared table, then dropped it in `finally` (2026-11-05).
+
+**Problem:** The DDL takes a strong table lock, so it deadlocks with the other test files that run at the same time. Either side can be the victim, so unrelated tests failed at random. A deadlock on the `DROP TRIGGER` also left the trigger and its function in the developer's database.
+
+**Rule:** Refuse the write at the query boundary with `db.withPlugin` and a `transformQuery` that throws (`purchasing-guards.test.ts`). This affects only that connection. When the write goes through PostgREST, a plugin cannot see it, so make the source row invalid instead: with `session_replication_role = replica`, point it at a row that does not exist.
+
+**Applies to:** `apps/erp/test/database/**` and `packages/jobs/**/*.integration.test.ts`.
 
 ## react-pdf: `wrap={false}` loses text when the node is taller than the page
 

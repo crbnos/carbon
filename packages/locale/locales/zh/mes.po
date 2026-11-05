@@ -2791,7 +2791,7 @@ msgid "Yes"
 msgstr "是"
 
 msgid "You can still start this operation."
-msgstr "您仍然可以开始此工序。"
+msgstr "您仍可以启动这个工序。"
 
 msgid "You can't work on this operation"
 msgstr "您无法处理此工序"

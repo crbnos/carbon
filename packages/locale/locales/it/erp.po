@@ -565,6 +565,10 @@ msgstr "{0} di {whole} fatto"
 msgid "{0} on your timecards"
 msgstr "{0} sulla tua rilevazione tempi"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} articoli in valuta estera aperti · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operazioni · {totalQuantity} componenti"
@@ -933,7 +937,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
-msgstr "{errors, plural, one {# riga richiede correzione} other {# righe richiedono correzione}}"
+msgstr "{errors, plural, one {# riga che richiede correzione} other {# righe che richiedono correzione}}"
 
 msgid "{errors} failed"
 msgstr "{errors} non riuscito"
@@ -1362,6 +1366,9 @@ msgstr "1 processo creato"
 
 msgid "1 line"
 msgstr "1 riga"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 articolo in valuta estera aperto · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 parte saltata — ha già un processo aperto"
@@ -2426,8 +2433,14 @@ msgstr "L'account {accountNumber} non è un account di registrazione attivo."
 msgid "Account & Details"
 msgstr "Conto e dettagli"
 
+msgid "Account Balance"
+msgstr "Saldo del conto"
+
 msgid "Account balances with debits and credits"
 msgstr "Saldi dei conti con dare e avere"
+
+msgid "Account Currency"
+msgstr "Valuta del conto"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Contabilizzate i pagamenti anticipati effettuati prima della ricezione di beni o servizi."
@@ -2526,7 +2539,7 @@ msgid "Accounts Payable"
 msgstr "Debiti verso fornitori"
 
 msgid "Accounts payable billing address disabled"
-msgstr "Indirizzo di fatturazione Debiti verso fornitori disabilitato"
+msgstr "Indirizzo di fatturazione debiti verso fornitori disabilitato"
 
 msgid "Accounts payable billing address enabled"
 msgstr "Indirizzo di fatturazione Debiti verso fornitori abilitato"
@@ -2541,7 +2554,7 @@ msgid "Accounts Receivable"
 msgstr "Crediti verso clienti"
 
 msgid "Accounts receivable billing address disabled"
-msgstr "Indirizzo di fatturazione Crediti verso clienti disabilitato"
+msgstr "Indirizzo di fatturazione crediti verso clienti disabilitato"
 
 msgid "Accounts receivable billing address enabled"
 msgstr "Indirizzo di fatturazione Crediti verso clienti abilitato"
@@ -3511,6 +3524,9 @@ msgstr "Già non nettabile tramite l'unità superiore {sourceName}"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "Già non nettabile tramite il tipo di archiviazione {sourceName}"
 
+msgid "Already posted"
+msgstr "Già registrato"
+
 msgid "also at {otherStationNames}"
 msgstr "anche presso {otherStationNames}"
 
@@ -3914,6 +3930,9 @@ msgstr "Debiti verso fornitori in sospeso"
 msgid "AP Overdue"
 msgstr "Debiti verso fornitori in ritardo"
 
+msgid "AP Revaluation Adjustment"
+msgstr "Rettifica rivalutazione debiti verso fornitori"
+
 msgid "API Docs"
 msgstr "Documentazione API"
 
@@ -4134,6 +4153,9 @@ msgstr "Crediti verso clienti in sospeso"
 
 msgid "AR Overdue"
 msgstr "Crediti verso clienti in ritardo"
+
+msgid "AR Revaluation Adjustment"
+msgstr "Rettifica rivalutazione crediti verso clienti"
 
 msgid "AR/AP"
 msgstr "Crediti verso clienti/Debiti verso fornitori"
@@ -4729,6 +4751,9 @@ msgstr "Chiede all'ammortamento cosa verrebbe ammortizzato ora per una nuova ese
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Chiede al riconoscimento dei ricavi cosa riconoscerebbe ora una nuova esecuzione per questo periodo — ricavi di fattura differiti e ricavi di contratto — e verifica le esecuzioni in Bozza che contengono ricavi dovuti entro la fine del periodo. Crea l'esecuzione e registrala affinché i ricavi raggiungano la contabilità generale. Salti con un motivo se non deve essere riconosciuto nulla."
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Chiede all'esecuzione di rivalutazione valuta quale sia ancora aperto in valuta estera alla fine del periodo — fatture aperte e memo, ricevute da clienti e pagamenti a fornitori non liquidati, e i saldi dei conti tenuti in valuta estera, come conti bancari e di finanziamento — e controlla l'esistenza di un'esecuzione bozza che termina nel periodo. Crea l'esecuzione e registrala in modo che lo stato patrimoniale riporti questi articoli al tasso di chiusura, con la differenza in utili o perdite da cambio non realizzati. Salta con un motivo se nulla rimane aperto in valuta estera."
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Chiede all'esecuzione della locazione cosa una nuova esecuzione per questo periodo verrebbe registrato ora — interessi di locazione e ammortamento del bene per il diritto d'uso, canone di locazione da differire o accantonare e interessi della locazione di tipo vendita — e controlla le esecuzioni della locazione in bozza che contengono voci scadenti entro la fine del periodo. Crea l'esecuzione e registrala in modo che le voci raggiungano il libro mastro. Salta con una motivazione se non deve essere registrato nulla."
 
@@ -4761,6 +4786,9 @@ msgstr "Conto patrimoniale"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Conto patrimoniale per i pagamenti anticipati versati ai fornitori prima della ricezione di beni o servizi"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "Conto attivo che riporta la rivalutazione fine periodo dei crediti in valuta estera aperti, in modo che il conto crediti rimanga collegato alle sue fatture aperte."
 
 msgid "Asset Acquisition Cost"
 msgstr "Costo di acquisizione dell'asset"
@@ -5605,6 +5633,9 @@ msgstr "Prenota una chiamata con Carbon"
 
 msgid "Book Depreciation"
 msgstr "Ammortamento Contabile"
+
+msgid "Booked"
+msgstr "Prenotato"
 
 msgid "Books lock date (manual)"
 msgstr "Data di blocco dei registri (manuale)"
@@ -6482,6 +6513,9 @@ msgstr "Seleziona le operazioni a sinistra per creare il batch."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Verifica il registro articoli per eventuali articoli con quantità disponibile negativa al termine del periodo — solitamente un'entrata merci mancante o una registrazione fuori ordine che distorce il valore del magazzino e il costo del venduto. Segna come fatto una volta revisionato, o salta con un motivo."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Controlla il tasso di consolidamento di questi conti"
 
 msgid "Check your email"
 msgstr "Controlla la tua email"
@@ -7373,6 +7407,12 @@ msgstr "Operatore Console"
 
 msgid "Console Operator Created"
 msgstr "Operatore console creato"
+
+msgid "Consolidated CTA"
+msgstr "CTA consolidata"
+
+msgid "Consolidation Rate"
+msgstr "Tasso di consolidamento"
 
 msgid "Construction in Progress"
 msgstr "Costruzione in corso"
@@ -8656,11 +8696,23 @@ msgstr "Codice valuta"
 msgid "Currency display updated"
 msgstr "Visualizzazione valuta aggiornata"
 
+msgid "Currency Revaluation"
+msgstr "Rivalutazione della valuta"
+
+msgid "Currency Revaluation Run"
+msgstr "Esecuzione di rivalutazione della valuta"
+
 msgid "Currency Translation"
 msgstr "Conversione valuta"
 
 msgid "Currency Translation (default)"
 msgstr "Conversione valuta (predefinita)"
+
+msgid "Currency Translation Adjustment"
+msgstr "Rettifica di conversione valuta"
+
+msgid "Currency Translation Offset"
+msgstr "Offset di conversione valuta"
 
 msgid "current"
 msgstr "attuale"
@@ -8765,7 +8817,7 @@ msgid "Customer contact email required"
 msgstr "Email del contatto del cliente obbligatoria"
 
 msgid "Customer contact requirement disabled"
-msgstr "Requisito di contatto con il cliente disabilitato"
+msgstr "Requisito di contatto cliente disabilitato"
 
 msgid "Customer contact requirement enabled"
 msgstr "Requisito contatto cliente abilitato"
@@ -10174,7 +10226,7 @@ msgid "Dismissed"
 msgstr "Scartato"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "Azioni di pianificazione {changed} scartate"
+msgstr "Ignorate {changed} azioni di pianificazione"
 
 msgid "Dismissed 1 planning action"
 msgstr "Dismessa 1 azione di pianificazione"
@@ -11569,8 +11621,14 @@ msgstr "Inserisci il numero di serie o di lotto di produzione, non l'articolo"
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Inserisci il costo di produzione. Il valore è registrato nell'asset dal conto da cui è stato speso: Utili non distribuiti per un anno precedente, o la spesa di manodopera o materiale di quest'anno."
 
+msgid "Entered"
+msgstr "Inserito"
+
 msgid "Entered At Receipt"
 msgstr "Inserito al Ricevimento"
+
+msgid "Entered By"
+msgstr "Inserito da"
 
 msgid "Entered On"
 msgstr "Inserito il"
@@ -11640,6 +11698,9 @@ msgstr "Conto di Patrimonio netto per utili o perdite accumulati"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Conto di Patrimonio netto per rettifiche di Conversione valuta (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "Conto di patrimonio netto che bilancia la CTA registrata nell'azienda di eliminazione; i report consolidati lo nascondono"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Account di patrimonio netto che compensa i saldi di apertura quando la contabilità è configurata. Deve totalizzare zero."
@@ -11818,6 +11879,9 @@ msgstr "Ogni modifica a un leasing attivo, con gli importi prima e dopo."
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Ogni controllo deve passare prima che la contabilità possa essere abilitata."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "Ogni azienda del gruppo utilizza la valuta di questa azienda, quindi non c'è alcuna rettifica di conversione."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Tutti i record dell'azienda. Credenziali, token di integrazione e webhook non sono mai inclusi."
@@ -12082,6 +12146,9 @@ msgstr "Conto spese per la manutenzione di attrezzature e impianti"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Conto spese per le perdite in valuta estera quando un pagamento regola una fattura in valuta estera a un tasso meno favorevole"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "Conto spese per le perdite di cambio quando la rivalutazione di fine periodo rettifica un saldo in valuta estera aperto"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Conto spese per acquisti non di magazzino (servizi, forniture)"
 
@@ -12193,6 +12260,9 @@ msgstr "Esporta il piano dei conti dal sistema attuale come CSV, una riga per co
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "Esportate le prime {exportedCount} righe."
+
+msgid "Exposure"
+msgstr "Esposizione"
 
 msgid "Expressly Unallowable"
 msgstr "Esplicitamente Non Consentito"
@@ -13313,6 +13383,9 @@ msgstr "Utile su risoluzione del leasing"
 msgid "Gain/Loss"
 msgstr "Guadagno/Perdita"
 
+msgid "Gains"
+msgstr "Guadagni"
+
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Guadagni riconosciuti sulla dismissione dei cespiti"
 
@@ -13577,6 +13650,9 @@ msgstr "Vai in produzione al primo tentativo — con il nostro team al tuo fianc
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Vai a {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "Vai alle esecuzioni di rivalutazione della valuta"
 
 msgid "Go to depreciation runs"
 msgstr "Vai alle esecuzioni di ammortamento"
@@ -15346,6 +15422,12 @@ msgstr "Riga di registrazione"
 msgid "Journal Entry · {asset}"
 msgstr "Riga di registrazione · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "Riga di registrazione · Storno"
+
+msgid "Journal Entry · Valuation"
+msgstr "Riga di registrazione · Valutazione"
+
 msgid "Journal lines"
 msgstr "Righe di prima nota"
 
@@ -15683,7 +15765,7 @@ msgid "Lead time updates are enabled"
 msgstr "Gli aggiornamenti dei lead time sono abilitati"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "Aggiornamenti lead time all'entrata merci disabilitati"
+msgstr "Aggiornamenti del lead time all'entrata merci disabilitati"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "Aggiornamenti lead time all'entrata merci abilitati"
@@ -15886,6 +15968,9 @@ msgstr "Conto passività per imposta di vendita riscossa dai clienti"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Conto passività per l'imposta pagata su acquisti"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "Conto passività che porta la rivalutazione di fine periodo dei debiti in valuta estera aperti, in modo che il conto debiti rimanga collegato alle sue fatture aperte"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "Responsabilità accreditata quando un contratto di progetto è previsto di costare più del suo prezzo; rettificato da esecuzioni di riconoscimento"
@@ -16287,6 +16372,9 @@ msgstr "Accantonamento per perdita"
 msgid "Loss Provisions"
 msgstr "Accantonamenti per perdite"
 
+msgid "Losses"
+msgstr "Perdite"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Perdite riconosciute sulla dismissione dei cespiti"
 
@@ -16652,6 +16740,9 @@ msgstr "Segna come incompleto"
 msgid "Mark to delete"
 msgstr "Segna per eliminare"
 
+msgid "Market"
+msgstr "Mercato"
+
 msgid "Market rate"
 msgstr "Tasso di mercato"
 
@@ -16782,7 +16873,7 @@ msgid "Material planning shows only the actions and suggested orders due within 
 msgstr "La pianificazione del materiale mostra solo le azioni e gli ordini suggeriti dovuti entro questo numero di giorni da oggi, così i fabbisogni lontani rimangono fuori dal percorso finché non importano. L'orizzonte di pianificazione dell'articolo sostituisce questo valore predefinito."
 
 msgid "Material pre-selection disabled"
-msgstr "Preselezione materiale disabilitata"
+msgstr "Pre-selezione del materiale disabilitata"
 
 msgid "Material pre-selection enabled"
 msgstr "Pre-selezione materiale abilitata"
@@ -17097,7 +17188,7 @@ msgid "Mode"
 msgstr "Modalità"
 
 msgid "Model cache invalidated; re-converting from the source file"
-msgstr "Cache modello invalidata; riconversione dal file sorgente"
+msgstr "Cache del modello invalidata; riconversione dal file di origine"
 
 msgid "Model conversion started"
 msgstr "Conversione modello avviata"
@@ -19240,6 +19331,9 @@ msgstr "Non richiesto"
 msgid "Not restorable"
 msgstr "Non ripristinabile"
 
+msgid "Not revalued"
+msgstr "Non rivalutato"
+
 msgid "Not Run"
 msgstr "Non eseguito"
 
@@ -19360,6 +19454,9 @@ msgstr "Niente da registrare per questo periodo."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nulla da riconoscere ancora. I ricavi seguono ciò che le fatture fatturano."
+
+msgid "Nothing to revalue for this period."
+msgstr "Nulla da rivalutare per questo periodo."
 
 msgid "Nothing to review"
 msgstr "Nulla da rivedere"
@@ -19562,6 +19659,9 @@ msgstr "Su Ordine di Vendita"
 
 msgid "On Storage Unit"
 msgstr "Su Unità di Stoccaggio"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "Nell'azienda capogruppo, confronta la rettifica di conversione valuta (CTA) consolidata di questo periodo con la CTA già registrata nell'azienda di eliminazione. Visualizza l'anteprima e registra la differenza affinché il patrimonio netto riporti la CTA in contabilità generale. Rivaluta prima le controllate. Le altre aziende superano il controllo automaticamente."
 
 msgid "On the Missing Time report"
 msgstr "Nel rapporto Ore mancanti"
@@ -19793,6 +19893,9 @@ msgstr "Apri mappatura account"
 
 msgid "Open Actions"
 msgstr "Azioni Aperte"
+
+msgid "Open Amount"
+msgstr "Importo aperto"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Apri un NCR per la disposizione MRB"
@@ -20114,7 +20217,7 @@ msgid "Optional context for this rule"
 msgstr "Contesto facoltativo per questa regola"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "Tasso fisso opzionale utilizzato quando si traducono i saldi del patrimonio netto secondo IAS 21 (al posto del tasso del periodo)."
+msgstr "Tasso fisso opzionale utilizzato per convertire i saldi del patrimonio netto secondo lo IAS 21 (al posto del tasso del periodo)."
 
 msgid "Optional pages & sections"
 msgstr "Pagine e sezioni opzionali"
@@ -20231,6 +20334,9 @@ msgstr "Altri proventi"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Conto altri proventi per guadagni FX quando un pagamento salda una fattura in valuta estera a un tasso più favorevole"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "Conto altri proventi per guadagni FX quando la rivalutazione di fine periodo ripristina un saldo in valuta estera aperto"
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Conto degli altri proventi per saldi fornitori liquidati senza pagamento completo nella liquidazione dei debiti verso fornitori"
@@ -20657,6 +20763,9 @@ msgstr "Rimborso"
 
 msgid "Pay expense"
 msgstr "Paga spesa"
+
+msgid "Payable"
+msgstr "Pagabile"
 
 msgid "Payables"
 msgstr "Debiti verso Fornitori (predefinito)"
@@ -21332,6 +21441,9 @@ msgstr "Registra il carico applicato per i progetti di contratto"
 msgid "Post Comment"
 msgstr "Pubblica Commento"
 
+msgid "Post CTA"
+msgstr "Registra CTA"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "Registra l'esecuzione in bozza {0}"
@@ -21395,6 +21507,9 @@ msgstr "Data di registrazione"
 
 msgid "Posting Date"
 msgstr "Data di registrazione"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "Registra la variazione della CTA consolidata nel patrimonio netto dell'azienda di eliminazione."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Registra la fattura e la invia tramite il tuo account Stripe collegato con un link di pagamento. Una fattura per un cliente senza un cliente Stripe collegato viene registrata e contrassegnata come non inviata."
@@ -21476,6 +21591,9 @@ msgstr "Programmi di manutenzione preventiva per il tuo impianto"
 
 msgid "Preview"
 msgstr "Anteprima"
+
+msgid "Preview CTA"
+msgstr "Anteprima CTA"
 
 msgid "Preview failed: {error}"
 msgstr "Anteprima non riuscita: {error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Reinserimento dati tra preventivazione, produzione e finanza"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "Ri-pianificazione da zero — i passi si ricostruiscono automaticamente al termine"
+msgstr "Ripianificazione da zero - i passaggi si ricostruiscono automaticamente al termine"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "Rip pianificazione dei movimenti nell'ordine dei passi corrente — i passi si aggiornano al termine"
@@ -22756,6 +22874,9 @@ msgstr "Ricevute"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Le entrate merci, le spedizioni, le fatture di vendita, le fatture di acquisto, i pagamenti e le note di credito/debito che sono ancora in Bozza o In attesa devono essere registrate o stornate — sia i documenti datati in questo periodo che i documenti senza data che riceverebbero una data al momento della registrazione. Fino a quando non vengono registrati, i loro importi non sono nella contabilità generale, quindi il periodo risulterebbe sottostimato."
+
+msgid "Receivable"
+msgstr "Credito"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Credito riconosciuto all'inizio di una locazione di tipo vendita, ridotto da ogni pagamento di noleggio"
@@ -23481,7 +23602,7 @@ msgid "Reopen Training"
 msgstr "Riapri Formazione"
 
 msgid "Reopened {changed} planning actions"
-msgstr "Riaperte {changed} azioni di pianificazione"
+msgstr "Riaperture {changed} azioni di pianificazione"
 
 msgid "Reopened 1 planning action"
 msgstr "Riapertive 1 azione di pianificazione"
@@ -24048,6 +24169,15 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Riv {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "Righe di rivalutazione"
+
+msgid "Revalue these companies first"
+msgstr "Rivaluta prima queste aziende"
+
+msgid "Revalued"
+msgstr "Rivalutato"
 
 msgid "Reveal"
 msgstr "Rivela"
@@ -24761,7 +24891,7 @@ msgid "Saved {0} dimension value mappings"
 msgstr "Salvati {0} mapping dei valori di dimensione"
 
 msgid "Saved {count} account mappings"
-msgstr "Salvati {count} mapping di account"
+msgstr "Salvati {count} mapping dei conti"
 
 msgid "Saved account mapping"
 msgstr "Salvato mapping di account"
@@ -26702,6 +26832,12 @@ msgstr "Stato/Provincia"
 msgid "Statement"
 msgstr "Prospetto"
 
+msgid "Statement Balance"
+msgstr "Saldo dell'estratto"
+
+msgid "Statement Balances"
+msgstr "Saldi degli estratti"
+
 msgid "Statement of Indirect Expenses"
 msgstr "Prospetto delle spese indirette"
 
@@ -27272,7 +27408,7 @@ msgid "Supplier contact email required"
 msgstr "Email del contatto del fornitore obbligatoria"
 
 msgid "Supplier contact requirement disabled"
-msgstr "Requisito contatto Fornitore disabilitato"
+msgstr "Requisito di contatto fornitore disabilitato"
 
 msgid "Supplier contact requirement enabled"
 msgstr "Requisito di contatto del fornitore abilitato"
@@ -29394,6 +29530,9 @@ msgstr "Successivamente"
 msgid "These accounts need a replacement"
 msgstr "Questi conti necessitano una sostituzione"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Questi conti di attività e passività vengono convertiti al tasso Media, che modifica la differenza di conversione (CTA). I conti dello stato patrimoniale vengono di solito convertiti al tasso Attuale:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Questi campi personalizzati saranno disponibili solo per le entità con gli stessi tag"
 
@@ -29444,6 +29583,9 @@ msgstr "Questi articoli sono trattati come vendite. L'attivazione cancella il ri
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "Non sono nel tuo Piano dei conti, ma Documenti o Prima nota li utilizzano. Seleziona il conto nel tuo Piano dei conti che sostituisce ciascuno."
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "Non hanno eseguito una rivalutazione valutaria registrata per questo periodo, quindi i loro saldi non sono al tasso di chiusura:"
 
 msgid "this ability"
 msgstr "questa competenza"
@@ -29721,7 +29863,7 @@ msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Questa ricezione non ha righe. Scegliere un documento di origine per aggiungerle."
 
 msgid "This removes the PDF. Employees will see the new content instead."
-msgstr "Questo rimuove il PDF. I Dipendenti vedranno invece il nuovo contenuto."
+msgstr "Questo rimuove il PDF. I dipendenti vedranno il nuovo contenuto."
 
 msgid "This removes the video. Employees will see the new content instead."
 msgstr "Questo rimuove il video. I dipendenti vedranno invece il nuovo contenuto."
@@ -29749,6 +29891,9 @@ msgstr "Questa revisione è rilasciata (Produzione). I cambiamenti dovrebbero no
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Questa revisione è rilasciata (Produzione). Apri un avviso di modifica per modificarla."
+
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "Questa esecuzione non rivaluta questi appunti: un regolamento contro di essi non registra l'importo nella valuta dell'appunto."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Questa esecuzione ha più passaggi di quelli che mostriamo qui. Solo i primi {MAX_RUN_STEPS} sono elencati."
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "Questa settimana"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "Questo creerà un'esecuzione di rivalutazione valutaria in bozza per il periodo che termina {0}. Ogni articolo in valuta estera aperto sarà rivalutato al tasso di cambio di quella data."
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "Questa operazione creerà un'esecuzione dell'ammortamento in bozza per il periodo che termina {0}. Tutti i cespiti attivi verranno calcolati automaticamente."
 
@@ -29867,6 +30016,11 @@ msgstr "Questo ricostruirà {0} dal suo programma così com'è adesso: ogni riga
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Questo ricostruirà {0} dai cespiti così come sono ora: ogni cespite attivo non coperto da un'altra esecuzione per il periodo che termina {1}."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "Questo ricostruirà {0} dagli articoli in valuta estera aperti a {1}. I tassi dell'esecuzione vengono mantenuti."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Questo ricalcolerà il costo unitario dal distinta base e dai processi del metodo di produzione attivo utilizzando la dimensione del lotto. Il costo attuale verrà sovrascritto. Vuoi continuare?"
 
@@ -29889,6 +30043,7 @@ msgstr "Questo sostituirà tutti i materiali del metodo di altre revisioni con q
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Questo sostituirà tutti i materiali del metodo di altre dimensioni con questa dimensione."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Questo invertirà la prima nota di {0} e lo riporterà a Bozza. Potrai quindi ricalcolare, registrare o eliminarlo."
@@ -30091,6 +30246,9 @@ msgstr "Alla prossima settimana"
 msgid "To pick"
 msgstr "Prelevare"
 
+msgid "To post"
+msgstr "Da registrare"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Per riattivare, usa il menu della riga e scegli Invia Invito. Il dipendente diventa attivo una volta che accetta."
 
@@ -30260,6 +30418,9 @@ msgstr "Costo totale stimato"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unità di produzione totali previste per ammortamento delle unità di produzione; il costo è distribuito per unità prodotta."
 
+msgid "Total gains"
+msgstr "Totale guadagni"
+
 msgid "Total hours"
 msgstr "Ore totali"
 
@@ -30271,6 +30432,9 @@ msgstr "Costo indiretto totale"
 
 msgid "Total lease cost"
 msgstr "Costo totale di leasing"
+
+msgid "Total losses"
+msgstr "Totale perdite"
 
 msgid "Total Material Cost"
 msgstr "Costo totale materiale"
@@ -30498,7 +30662,7 @@ msgid "Travel"
 msgstr "Viaggio"
 
 msgid "Traveler materials disabled"
-msgstr "Materiali Cartellino di produzione disabilitati"
+msgstr "Materiali del cartellino di produzione disabilitati"
 
 msgid "Traveler materials enabled"
 msgstr "Materiali cartellino di produzione abilitati"
@@ -30663,6 +30827,12 @@ msgstr "Non applicato"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "La cassa non applicata è trattenuta come acconto del cliente per questo documento anziché come credito sul conto."
 
+msgid "Unapplied Disbursement"
+msgstr "Esborso non applicato"
+
+msgid "Unapplied Receipt"
+msgstr "Entrata merci non applicata"
+
 msgid "Unapproved Supplier"
 msgstr "Fornitore non approvato"
 
@@ -30728,6 +30898,13 @@ msgstr "Pagamenti non scontati ancora da venire, per esercizio fiscale, meno gli
 
 msgid "Undo"
 msgstr "Annulla"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "Annulla {0}"
+
+msgid "Undo Run"
+msgstr "Annulla esecuzione"
 
 msgid "Unfurl Links"
 msgstr "Espandi i link"
@@ -30811,7 +30988,7 @@ msgid "Units"
 msgstr "Unità"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "Unità di valuta base per una unità di questa valuta; utilizzato per tradurre gli importi al momento della registrazione."
+msgstr "Unità di valuta base per una unità di questa valuta; utilizzato per convertire gli importi al momento della registrazione."
 
 msgid "units of measure"
 msgstr "unità di misura"
@@ -30915,6 +31092,12 @@ msgstr "Annulla pubblicazione"
 
 msgid "Unpublish {name}?"
 msgstr "Annullare la pubblicazione di {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "Utile su cambio non realizzato"
+
+msgid "Unrealized Exchange Loss"
+msgstr "Perdita su cambio non realizzato"
 
 msgid "Unreceived POs"
 msgstr "PO non ricevuti"
@@ -31088,7 +31271,7 @@ msgid "Updated By"
 msgstr "Aggiornato da"
 
 msgid "Updated dimension sync settings"
-msgstr "Impostazioni di sincronizzazione della dimensione aggiornate"
+msgstr "Impostazioni sincronizzazione dimensione aggiornate"
 
 msgid "Updated dispatch status"
 msgstr "Stato dell'intervento di manutenzione aggiornato"
@@ -32712,7 +32895,7 @@ msgid "Written Off"
 msgstr "Cancellato"
 
 msgid "Written with a warning"
-msgstr "Scritto con un avvertimento"
+msgstr "Scritto con un avviso"
 
 msgid "Wrote the missing journal of 1 document"
 msgstr "Scritto il prima nota mancante di 1 documento"

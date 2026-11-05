@@ -536,6 +536,8 @@ export const Constants = {
         "Burden",
         "Project Close",
         "Service Job",
+        "Currency Revaluation",
+        "Currency Translation",
       ],
       journalEntryStatus: [
         "Draft",

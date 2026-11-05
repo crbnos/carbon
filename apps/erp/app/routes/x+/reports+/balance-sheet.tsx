@@ -144,6 +144,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       {
         accounts: consolidated.data,
         bucketKeys: buckets.map((bucket) => bucket.key),
+        bucketEnds: Object.fromEntries(
+          buckets.map((bucket) => [bucket.key, bucket.end])
+        ),
         ctaByBucket: consolidated.ctaByBucket
       }
     );
@@ -214,6 +217,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       {
         accounts,
         bucketKeys: buckets.map((bucket) => bucket.key),
+        bucketEnds: Object.fromEntries(
+          buckets.map((bucket) => [bucket.key, bucket.end])
+        ),
         ctaByBucket: series.ctaByBucket
       }
     );

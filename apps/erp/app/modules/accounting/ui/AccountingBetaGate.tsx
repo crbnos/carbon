@@ -26,7 +26,8 @@ const gatedRoutes = [
   path.to.intercompany,
   path.to.accountingJournals,
   path.to.accountingPeriods,
-  path.to.depreciationRuns
+  path.to.depreciationRuns,
+  path.to.currencyRevaluationRuns
 ];
 
 export default function AccountingBetaGate() {

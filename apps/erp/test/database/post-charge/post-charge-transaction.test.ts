@@ -195,38 +195,26 @@ databaseTest(
   "a failure after journal creation rolls the entire post back",
   async () => {
     const f = await chargeFixture();
-    let unrelated: Awaited<ReturnType<typeof chargeFixture>> | undefined;
-    const triggerName = `test_fail_post_${f.lineId.replaceAll("-", "_")}`;
-    const functionName = triggerName;
+    // The header's Posted write fails: this connection only, at the query
+    // boundary, so nothing else running sees it.
+    const failing = f.db.withPlugin({
+      transformQuery({ node }) {
+        if (
+          node.kind === "UpdateQueryNode" &&
+          JSON.stringify(node.table).includes('"charge"')
+        ) {
+          throw new Error("forced mid-transaction failure");
+        }
+        return node;
+      },
+      async transformResult({ result }) {
+        return result;
+      }
+    });
     try {
-      unrelated = await chargeFixture();
-      await sql`
-      CREATE FUNCTION ${sql.id("public", functionName)}()
-      RETURNS trigger
-      LANGUAGE plpgsql
-      AS $function$
-      BEGIN
-        IF NEW.status = 'Posted'
-           AND NEW."companyId" = TG_ARGV[0]
-           AND NEW.id = TG_ARGV[1] THEN
-          RAISE EXCEPTION 'forced mid-transaction failure';
-        END IF;
-        RETURN NEW;
-      END;
-      $function$;
-      CREATE TRIGGER ${sql.id(triggerName)}
-        BEFORE UPDATE ON public."charge"
-        FOR EACH ROW
-        EXECUTE FUNCTION ${sql.id("public", functionName)}(${sql.lit(
-          f.companyId
-        )}, ${sql.lit(f.chargeId)});
-    `.execute(f.db);
-
-      // Failure injection must never affect other companies sharing this DB.
-      await postChargeTransaction(unrelated.db, unrelated.args);
-      await expect(
-        (() => postChargeTransaction(f.db, f.args))()
-      ).rejects.toThrow("forced mid-transaction failure");
+      await expect(postChargeTransaction(failing, f.args)).rejects.toThrow(
+        "forced mid-transaction failure"
+      );
       const header = await f.db
         .selectFrom("charge")
         .select(["status", "journalId"])
@@ -251,18 +239,7 @@ databaseTest(
           .execute()
       ).toEqual([]);
     } finally {
-      try {
-        await sql`
-          DROP TRIGGER IF EXISTS ${sql.id(triggerName)} ON public."charge";
-          DROP FUNCTION IF EXISTS ${sql.id("public", functionName)}();
-        `.execute(f.db);
-      } finally {
-        try {
-          await unrelated?.cleanup();
-        } finally {
-          await f.cleanup();
-        }
-      }
+      await f.cleanup();
     }
   }
 );

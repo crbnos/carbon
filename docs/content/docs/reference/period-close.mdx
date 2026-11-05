@@ -37,7 +37,7 @@ A database trigger (`check_accounting_period_open`) is the hard backstop underne
 
 ## The close checklist
 
-Closing runs through a persisted checklist — a company-level template of task definitions (`periodCloseTaskDefinition`) plus per-period instances (`periodCloseTask`) materialized the first time you open a period's close screen. Nine system tasks seed with every company (they can be deactivated but never deleted). Each task has a **type** (`Auto`, `Action`, or `Manual`) and Auto tasks carry a **severity**.
+Closing runs through a persisted checklist — a company-level template of task definitions (`periodCloseTaskDefinition`) plus per-period instances (`periodCloseTask`) materialized the first time you open a period's close screen. Thirteen system tasks seed with every company (they can be deactivated but never deleted). Each task has a **type** (`Auto`, `Action`, or `Manual`) and Auto tasks carry a **severity**.
 
 <FieldTable>
   <Field name="Auto" type="Task type">A readiness evaluator the system runs live — the task shows Done when the check passes, Open when it fails. You don't tick these; they reflect real state.</Field>
@@ -64,9 +64,13 @@ The seeded checks, from `computePeriodReadiness`:
 | Post or re-date draft journal entries | Blocker | Draft journal entries are dated in this period. |
 | Trial balance in balance for the period | Blocker | Any posted journal has unequal debits and credits. |
 | Post depreciation runs covering the period | Warning | A draft depreciation run ends in this period. |
+| Revalue foreign currency balances | Warning | Foreign-currency items are open at the period end and no up-to-date posted [currency revaluation run](/docs/reference/accounting#currency-revaluation-runs) covers them, or a draft revaluation run ends in this period. |
 | Match & eliminate intercompany transactions | Warning | Unmatched intercompany transactions involve this company. |
+| Post currency translation adjustment | Warning | On the group's root company, the consolidated CTA for the period differs from the CTA already [posted on the elimination company](/docs/reference/accounting#the-posted-currency-translation-adjustment). |
 
-A seventh seeded Auto task, **Review negative on-hand inventory** (Warning), has no live evaluator yet, so it fails closed and stays a standing Warning you resolve by skipping with a reason. The remaining three seeded tasks are the two Action steps (**Lock the period**, **Close the period**) and one Manual step (**Review financial statements**).
+The two currency checks show only where they apply. **Revalue foreign currency balances** is hidden when nothing is open in a foreign currency at the period end and the period has no revaluation run. **Post currency translation adjustment** is hidden unless the company is the root of a group with a company in another base currency. A hidden check never gates the close. Carbon stores it as Done, unless you skipped it.
+
+Three more seeded Auto tasks: **Recognize revenue for the period** and **Post lease journals** (Warning, the [run checks](/docs/reference/accounting#revenue-recognition-and-lease-runs)), and **External GL sync complete** (Blocker), which fails while posted journals are not yet delivered to your external accounting system. The remaining seeded tasks, **Lock the period**, **Review negative on-hand inventory** and **Review financial statements**, are Action tasks.
 
 ### Completing and skipping tasks
 

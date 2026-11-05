@@ -552,6 +552,11 @@ describe("single-company period series and configured CTA", () => {
               return builder;
             },
             order: () => builder,
+            // The root's elimination entity: none, so no CTA is posted.
+            maybeSingle: async () => {
+              expect(table).toBe("company");
+              return { data: null, error: null };
+            },
             single: async () => {
               expect(table).toBe("accountDefault");
               expect(filters.companyId).toBe("parent");
@@ -621,6 +626,7 @@ describe("single-company period series and configured CTA", () => {
       const args = {
         accounts: source.data,
         bucketKeys: ["2026-08"],
+        bucketEnds: { "2026-08": "2026-08-31" },
         ctaByBucket: source.ctaByBucket
       };
       const adjusted = await applyCtaToReportPeriodSeries(

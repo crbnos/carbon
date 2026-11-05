@@ -565,6 +565,10 @@ msgstr "{0} का {whole} हो गया"
 msgid "{0} on your timecards"
 msgstr "{0} आपके टाइमकार्ड पर"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} खुली विदेशी-मुद्रा आइटम · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} ऑपरेशन · {totalQuantity} पार्ट्स"
@@ -1362,6 +1366,9 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 खुली विदेशी-मुद्रा आइटम · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -2426,8 +2433,14 @@ msgstr "खाता {accountNumber} एक सक्रिय पोस्ट�
 msgid "Account & Details"
 msgstr "खाता और विवरण"
 
+msgid "Account Balance"
+msgstr "खाता शेष राशि"
+
 msgid "Account balances with debits and credits"
 msgstr "नामे और जमा के साथ खाता शेष राशि"
+
+msgid "Account Currency"
+msgstr "खाता मुद्रा"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "माल या सेवाएं प्राप्त होने से पहले किए गए अग्रिम भुगतान के लिए खाता।"
@@ -3511,6 +3524,9 @@ msgstr "अपनी मूल इकाई {sourceName} के कारण प
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "अपने भंडारण प्रकार {sourceName} के कारण पहले से MRP से बाहर"
 
+msgid "Already posted"
+msgstr "पहले से ही पोस्ट किया गया"
+
 msgid "also at {otherStationNames}"
 msgstr "यह भी {otherStationNames} पर"
 
@@ -3914,6 +3930,9 @@ msgstr "देय खाते शेष राशि"
 msgid "AP Overdue"
 msgstr "देय खाते अतिदेय"
 
+msgid "AP Revaluation Adjustment"
+msgstr "देय खाते पुनर्मूल्यांकन समायोजन"
+
 msgid "API Docs"
 msgstr "API डॉक्स"
 
@@ -3945,7 +3964,7 @@ msgid "Applied"
 msgstr "लागू"
 
 msgid "Applied {applied} planning actions"
-msgstr "{applied} योजना कार्रवाइयों को लागू किया गया"
+msgstr "लागू किए गए {applied} योजना कार्य"
 
 msgid "Applied 1 planning action"
 msgstr "1 योजना कार्रवाई को लागू किया गया"
@@ -4134,6 +4153,9 @@ msgstr "प्राप्य खाते बकाया"
 
 msgid "AR Overdue"
 msgstr "प्राप्य खाते अतिदेय"
+
+msgid "AR Revaluation Adjustment"
+msgstr "प्राप्य खाते पुनर्मूल्यांकन समायोजन"
 
 msgid "AR/AP"
 msgstr "प्राप्य खाते / देय खाते"
@@ -4729,6 +4751,9 @@ msgstr "मूल्यह्रास से पूछता है कि इ�
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "राजस्व स्वीकृति से पूछता है कि इस अवधि के लिए एक नया रन अब क्या स्वीकार करेगा - स्थगित चालान राजस्व और अनुबंध राजस्व - और अवधि के अंत तक राजस्व के लिए ड्राफ्ट रन को धारण करने के लिए जांचता है। रन बनाएँ और पोस्ट करें ताकि राजस्व सामान्य खाता बही तक पहुंचे। यदि कुछ भी स्वीकार नहीं किया जाना चाहिए तो कारण के साथ छोड़ दें।"
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "मुद्रा पुनर्मूल्यांकन रन से पूछता है कि इस अवधि के अंत में विदेशी मुद्रा में क्या अभी भी खुला है — खुले चालान और मेमो, लागू न की गई ग्राहक प्राप्तियाँ और आपूर्तिकर्ता भुगतान, और विदेशी मुद्रा में रखे गए खातों की शेष राशि, जैसे बैंक और ऋण खाते — और जाँचता है कि अवधि में समाप्त होने वाला कोई ड्राफ्ट रन है या नहीं। रन बनाएँ और पोस्ट करें ताकि तुलन पत्र इन मदों को समापन दर पर दर्शाए, और अंतर साकार न हुए विनिमय लाभ या हानि में जाए। यदि विदेशी मुद्रा में कुछ भी खुला नहीं है, तो कारण बताकर छोड़ें।"
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "पट्टा रन से पूछता है कि इस अवधि के लिए एक नया रन अब क्या पोस्ट करेगा — पट्टा ब्याज और उपयोग अधिकार परिशोधन, किराये का किराया स्थगित या अर्जित करने के लिए, और बिक्रय-प्रकार पट्टा ब्याज — और अवधि के अंत तक भुगतान के लिए प्रविष्टियों को पकड़े हुए ड्राफ्ट पट्टा रन के लिए जाँच करता है। रन बनाएँ और इसे पोस्ट करें ताकि प्रविष्टियाँ खाता तक पहुँचें। यदि कुछ भी पोस्ट न किया जाना चाहिए तो एक कारण के साथ छोड़ दें।"
 
@@ -4761,6 +4786,9 @@ msgstr "संपत्ति खाता"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "आपूर्तिकर्ताओं को माल या सेवाएं प्राप्त करने से पहले किए गए अग्रिम भुगतान के लिए संपत्ति खाता"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "परिसंपत्ति खाता जो खुली विदेशी-मुद्रा प्राप्य राशि का अवधि-अंत पुनर्मूल्यांकन दर्शाता है, ताकि प्राप्य राशि खाता अपने खुले चालानों से मेल खाता रहे"
 
 msgid "Asset Acquisition Cost"
 msgstr "परिसंपत्ति अधिग्रहण लागत"
@@ -4844,7 +4872,7 @@ msgid "Assigned"
 msgstr "नियुक्त"
 
 msgid "Assigned {changed} planning actions"
-msgstr "{changed} योजना कार्रवाइयों को असाइन किया गया"
+msgstr "असाइन किए गए {changed} योजना कार्य"
 
 msgid "Assigned 1 planning action"
 msgstr "1 योजना कार्रवाई को असाइन किया गया"
@@ -5605,6 +5633,9 @@ msgstr "Carbon के साथ कॉल बुक करें"
 
 msgid "Book Depreciation"
 msgstr "पुस्तक मूल्यह्रास"
+
+msgid "Booked"
+msgstr "बुक किया गया"
 
 msgid "Books lock date (manual)"
 msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
@@ -6482,6 +6513,9 @@ msgstr "बैच बनाने के लिए बाईं ओर ऑपर
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक किसी भी आइटम के लिए आइटम लेजर की जांच करें जिसमें नकारात्मक ऑन-हैंड मात्रा है — आमतौर पर एक लापता प्राप्ति या एक गलत क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए माल की लागत को विकृत करती है। एक बार समीक्षा के बाद इसे हो गया के रूप में चिह्नित करें, या कारण के साथ छोड़ दें।"
+
+msgid "Check these accounts' consolidation rate"
+msgstr "इन खातों की समेकन दर जांचें"
 
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
@@ -7373,6 +7407,12 @@ msgstr "कंसोल ऑपरेटर"
 
 msgid "Console Operator Created"
 msgstr "कंसोल ऑपरेटर बनाया गया"
+
+msgid "Consolidated CTA"
+msgstr "समेकित CTA"
+
+msgid "Consolidation Rate"
+msgstr "समेकन दर"
 
 msgid "Construction in Progress"
 msgstr "निर्माण प्रगति में"
@@ -8656,11 +8696,23 @@ msgstr "मुद्रा कोड"
 msgid "Currency display updated"
 msgstr "मुद्रा प्रदर्शन अपडेट किया गया"
 
+msgid "Currency Revaluation"
+msgstr "मुद्रा पुनर्मूल्यांकन"
+
+msgid "Currency Revaluation Run"
+msgstr "मुद्रा पुनर्मूल्यांकन चलान"
+
 msgid "Currency Translation"
 msgstr "मुद्रा रूपांतरण"
 
 msgid "Currency Translation (default)"
 msgstr "मुद्रा रूपांतरण (डिफ़ॉल्ट)"
+
+msgid "Currency Translation Adjustment"
+msgstr "मुद्रा रूपांतरण समायोजन"
+
+msgid "Currency Translation Offset"
+msgstr "मुद्रा रूपांतरण ऑफ़सेट"
 
 msgid "current"
 msgstr "वर्तमान"
@@ -8807,7 +8859,7 @@ msgid "Customer IDs are shown"
 msgstr "ग्राहक ID दिखाए गए हैं"
 
 msgid "Customer IDs hidden"
-msgstr "ग्राहक ID छिपाई गई"
+msgstr "ग्राहक ID छुपा दिए गए"
 
 msgid "Customer IDs shown"
 msgstr "ग्राहक आईडी दिखाई दे रही है"
@@ -10174,7 +10226,7 @@ msgid "Dismissed"
 msgstr "खारिज किया गया"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "{changed} योजना कार्रवाई खारिज की गई"
+msgstr "{changed} योजना कार्रवाई खारिज की गईं"
 
 msgid "Dismissed 1 planning action"
 msgstr "1 योजना कार्रवाई को खारिज किया गया"
@@ -11569,8 +11621,14 @@ msgstr "सीरियल या बैच नंबर दर्ज करे�
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "इसे बनाने में जो लागत आई उसे दर्ज करें। यह मान परिसंपत्ति को उस खाते से बुक किया जाता है जहाँ से खर्च किया गया था: एक पिछले वर्ष के लिए प्रतिधारित आय, या इस वर्ष का श्रम या सामग्री व्यय।"
 
+msgid "Entered"
+msgstr "दर्ज किया गया"
+
 msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
+
+msgid "Entered By"
+msgstr "द्वारा दर्ज"
 
 msgid "Entered On"
 msgstr "पर दर्ज किया गया"
@@ -11640,6 +11698,9 @@ msgstr "संचित लाभ या हानि के लिए इक्
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "मुद्रा रूपांतरण समायोजन के लिए इक्विटी खाता (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "इक्विटी खाता जो समाप्ति कंपनी पर पोस्ट किए गए CTA को संतुलित करता है; समेकित रिपोर्ट इसे छुपाती हैं"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "इक्विटी खाता जो लेखांकन सेट अप होने पर खुली शेष राशि को ऑफसेट करता है। यह कुल शून्य होना चाहिए।"
@@ -11781,7 +11842,7 @@ msgid "Event code"
 msgstr "ईवेंट कोड"
 
 msgid "Event saved"
-msgstr "इवेंट सहेजा गया"
+msgstr "ईवेंट सहेजा गया"
 
 msgid "Event started"
 msgstr "ईवेंट शुरू हुआ"
@@ -11818,6 +11879,9 @@ msgstr "सक्रिय लीज में हर परिवर्तन, 
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "लेखांकन सक्षम होने से पहले हर जांच पास होनी चाहिए।"
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "समूह की प्रत्येक कंपनी इस कंपनी की मुद्रा का उपयोग करती है, इसलिए कोई मुद्रा रूपांतरण समायोजन नहीं है।"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। साख, एकीकरण टोकन और वेबहुक कभी शामिल नहीं होते हैं।"
@@ -12082,6 +12146,9 @@ msgstr "उपकरण और सुविधा रखरखाव के ल�
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "विदेशी मुद्रा हानि के लिए व्यय खाता जब कोई भुगतान विदेशी मुद्रा चालान को कम अनुकूल दर पर निपटाता है"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "अवधि के अंत में पुनर्मूल्यांकन द्वारा खुली विदेशी मुद्रा शेष राशि को पुनः बताए जाने पर विदेशी मुद्रा हानि के लिए व्यय खाता"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "गैर-इन्वेंटरी खरीद (सेवाएं, आपूर्ति) के लिए व्यय खाता"
 
@@ -12193,6 +12260,9 @@ msgstr "अपने मौजूदा सिस्टम से अपना �
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "पहली {exportedCount} पंक्तियाँ निर्यात की गईं।"
+
+msgid "Exposure"
+msgstr "एक्सपोजर"
 
 msgid "Expressly Unallowable"
 msgstr "स्पष्ट रूप से अनुमत नहीं"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "Foundation (सभी के लिए)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "चार आँखें प्रवर्तन अक्षम किया गया"
+msgstr "चार आँखों का प्रवर्तन अक्षम किया गया"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "चार-आंखें प्रवर्तन सक्षम किया गया"
@@ -13312,6 +13382,9 @@ msgstr "लीज समाप्ति पर लाभ"
 
 msgid "Gain/Loss"
 msgstr "लाभ/हानि"
+
+msgid "Gains"
+msgstr "लाभ"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "अचल संपत्तियों के निपटान पर स्वीकृत लाभ"
@@ -13542,7 +13615,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "लेजर विरोधी-संपत्ति खाता जो अचल संपत्तियों के विरुद्ध बुक किए गए मूल्यह्रास को जमा करता है।"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "सामान्य खाता बही इक्विटी खाता (CTA रिजर्व) जो विदेशी मुद्रा शेषों को अवधि-अंत में पुनः-अनुवाद करने से अप्राप्त FX अंतर रखता है; P&L में साकार FX लाभ/हानि से अलग।"
+msgstr "सामान्य खाता बही इक्विटी खाता (CTA रिज़र्व) जो अवधि-अंत में विदेशी मुद्रा शेषों के पुनः-रूपांतरण से उत्पन्न साकार न हुए FX अंतर रखता है; P&L में साकार FX लाभ/हानि से अलग।"
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "सामान्य खाता बही इक्विटी खाता जहां शुद्ध आय वित्तीय वर्ष-अंत में बंद होती है।"
@@ -13577,6 +13650,9 @@ msgstr "पहली बार ही सही तरीके से लाइ
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "{0} पर जाएं"
+
+msgid "Go to currency revaluation runs"
+msgstr "मुद्रा पुनर्मूल्यांकन रन पर जाएं"
 
 msgid "Go to depreciation runs"
 msgstr "मूल्यह्रास चलाता है पर जाएं"
@@ -15346,6 +15422,12 @@ msgstr "जर्नल प्रविष्टि"
 msgid "Journal Entry · {asset}"
 msgstr "जर्नल प्रविष्टि · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "जर्नल प्रविष्टि · उलटाव"
+
+msgid "Journal Entry · Valuation"
+msgstr "जर्नल प्रविष्टि · मूल्यांकन"
+
 msgid "Journal lines"
 msgstr "जर्नल पंक्तियाँ"
 
@@ -15887,6 +15969,9 @@ msgstr "ग्राहकों से एकत्र किए गए बि�
 msgid "Liability account for tax paid on purchases"
 msgstr "खरीद पर भुगतान किए गए कर के लिए दायित्व खाता"
 
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "देयता खाता जो अवधि के अंत में खुली विदेशी मुद्रा देय राशि के पुनर्मूल्यांकन को दर्शाता है, ताकि देय राशि खाता अपने खुले चालानों से जुड़ा रहे"
+
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "दायित्व का श्रेय तब दिया जाता है जब एक परियोजना अनुबंध की लागत उसकी कीमत से अधिक होने का पूर्वानुमान लगाया जाता है; स्वीकृति रन द्वारा समायोजित"
 
@@ -16287,6 +16372,9 @@ msgstr "हानि प्रावधान"
 msgid "Loss Provisions"
 msgstr "हानि प्रावधान"
 
+msgid "Losses"
+msgstr "हानि"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "अचल संपत्ति के निपटान पर मान्यता प्राप्त हानियाँ"
 
@@ -16651,6 +16739,9 @@ msgstr "कम चिह्नित करें"
 
 msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
+
+msgid "Market"
+msgstr "बाजार"
 
 msgid "Market rate"
 msgstr "बाज़ार दर"
@@ -19240,6 +19331,9 @@ msgstr "आवश्यक नहीं"
 msgid "Not restorable"
 msgstr "पुनर्स्थापना योग्य नहीं"
 
+msgid "Not revalued"
+msgstr "पुनः मूल्यांकन नहीं किया गया"
+
 msgid "Not Run"
 msgstr "चलाया नहीं गया"
 
@@ -19360,6 +19454,9 @@ msgstr "इस अवधि के लिए कोई पोस्ट नही
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
+
+msgid "Nothing to revalue for this period."
+msgstr "इस अवधि के लिए पुनः मूल्यांकन करने के लिए कुछ नहीं।"
 
 msgid "Nothing to review"
 msgstr "समीक्षा करने के लिए कुछ भी नहीं"
@@ -19562,6 +19659,9 @@ msgstr "विक्रय आदेश पर"
 
 msgid "On Storage Unit"
 msgstr "भंडारण इकाई पर"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "समूह की रूट कंपनी पर, इस अवधि के लिए समेकित मुद्रा रूपांतरण समायोजन (CTA) की तुलना उन्मूलन कंपनी पर पहले से पोस्ट किए गए CTA से करता है। अंतर का पूर्वावलोकन करें और पोस्ट करें ताकि इक्विटी खाता बही में CTA को ले जाए। पहले सहायक कंपनियों का पुनः मूल्यांकन करें। अन्य कंपनियां स्वचालित रूप से पास हो जाती हैं।"
 
 msgid "On the Missing Time report"
 msgstr "लापता समय रिपोर्ट पर"
@@ -19793,6 +19893,9 @@ msgstr "खाता मैपिंग खोलें"
 
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
+
+msgid "Open Amount"
+msgstr "खुली राशि"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
@@ -20033,7 +20136,7 @@ msgid "Operation supplier process"
 msgstr "ऑपरेशन आपूर्तिकर्ता प्रक्रिया"
 
 msgid "Operation timer auto-start disabled"
-msgstr "ऑपरेशन टाइमर ऑटो-स्टार्ट अक्षम"
+msgstr "ऑपरेशन टाइमर स्वतः-प्रारंभ अक्षम"
 
 msgid "Operation timer auto-start enabled"
 msgstr "ऑपरेशन टाइमर ऑटो-स्टार्ट सक्षम किया गया"
@@ -20231,6 +20334,9 @@ msgstr "अन्य आय"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "विदेशी मुद्रा लाभ के लिए अन्य आय खाता जब कोई भुगतान विदेशी-मुद्रा चालान को अधिक अनुकूल दर पर निपटाता है"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "अन्य आय खाता FX लाभ के लिए जब अवधि-अंत पुनः मूल्यांकन एक खुले विदेशी-मुद्रा शेष को पुनः प्रस्तुत करता है"
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "देय खाते निपटान पर पूर्ण भुगतान के बिना समाशोधित आपूर्तिकर्ता शेष राशि के लिए अन्य आय खाता"
@@ -20657,6 +20763,9 @@ msgstr "वापस भुगतान करें"
 
 msgid "Pay expense"
 msgstr "व्यय का भुगतान करें"
+
+msgid "Payable"
+msgstr "देय"
 
 msgid "Payables"
 msgstr "देय राशि"
@@ -21332,6 +21441,9 @@ msgstr "अनुबंध प्रोजेक्ट के लिए पो�
 msgid "Post Comment"
 msgstr "टिप्पणी पोस्ट करें"
 
+msgid "Post CTA"
+msgstr "CTA पोस्ट करें"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "ड्राफ्ट रन {0} पोस्ट करें"
@@ -21395,6 +21507,9 @@ msgstr "पोस्टिंग तारीख"
 
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "समेकित CTA में परिवर्तन को उन्मूलन कंपनी पर इक्विटी में पोस्ट करता है।"
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "चालान पोस्ट करता है और इसे आपके जुड़े हुए Stripe खाते के माध्यम से भुगतान लिंक के साथ भेजता है। एक ग्राहक के लिए बिना लिंक किए गए Stripe ग्राहक के साथ एक चालान पोस्ट किया जाता है और अनभेजा के रूप में चिह्नित किया जाता है।"
@@ -21476,6 +21591,9 @@ msgstr "आपकी उपकरण के लिए निवारक रख�
 
 msgid "Preview"
 msgstr "पूर्वावलोकन"
+
+msgid "Preview CTA"
+msgstr "CTA का पूर्वावलोकन करें"
 
 msgid "Preview failed: {error}"
 msgstr "पूर्वावलोकन विफल: {error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "उद्धरण, फर्श और वित्त के बीच पुनः-कुंजीकरण"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "स्क्रैच से पुनः योजना — चरण स्वचालित रूप से पुनः निर्माण होते हैं जब यह समाप्त होता है"
+msgstr "शुरुआत से पुनः योजना — चरण स्वचालित रूप से पुनः निर्मित होंगे जब यह समाप्त हो जाए"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "वर्तमान चरण क्रम में गति की योजना फिर से बनाएं — जब यह समाप्त हो तो चरण अपडेट होते हैं"
@@ -22756,6 +22874,9 @@ msgstr "रसीदें"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "प्राप्ति, शिपमेंट, विक्रय चालान, क्रय चालान, भुगतान, और जमा/नामे ज्ञापन जो अभी भी ड्राफ्ट या लंबित हैं, उन्हें पोस्ट किया जाना चाहिए या अमान्य किया जाना चाहिए — दोनों दस्तावेज़ इस अवधि में दिनांकित और बिना दिनांक के दस्तावेज़ जो पोस्ट होने पर इसमें एक तिथि प्राप्त करेंगे। जब तक वे पोस्ट नहीं होते, उनकी राशियाँ सामान्य खाता बही में नहीं हैं, इसलिए अवधि को कम दिखाया जाएगा।"
+
+msgid "Receivable"
+msgstr "प्राप्य राशि"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में मान्य प्राप्य, प्रत्येक किराये की भुगतान द्वारा कम"
@@ -23481,7 +23602,7 @@ msgid "Reopen Training"
 msgstr "प्रशिक्षण फिर से खोलें"
 
 msgid "Reopened {changed} planning actions"
-msgstr "{changed} योजना कार्य पुनः खोले गए"
+msgstr "{changed} योजना कार्यों को फिर से खोला गया"
 
 msgid "Reopened 1 planning action"
 msgstr "1 योजना क्रिया फिर से खोली गई"
@@ -24048,6 +24169,15 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "संस्करण {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "पुनर्मूल्यांकन पंक्तियां"
+
+msgid "Revalue these companies first"
+msgstr "पहले इन कंपनियों को पुनर्मूल्यांकित करें"
+
+msgid "Revalued"
+msgstr "पुनर्मूल्यांकित"
 
 msgid "Reveal"
 msgstr "प्रकट करें"
@@ -26702,6 +26832,12 @@ msgstr "राज्य प्रांत"
 msgid "Statement"
 msgstr "विवरण"
 
+msgid "Statement Balance"
+msgstr "स्टेटमेंट शेष राशि"
+
+msgid "Statement Balances"
+msgstr "स्टेटमेंट शेष राशि"
+
 msgid "Statement of Indirect Expenses"
 msgstr "अप्रत्यक्ष व्यय का विवरण"
 
@@ -27151,7 +27287,7 @@ msgid "Successfully created a new revision"
 msgstr "नया रिवीजन सफलतापूर्वक बनाया गया"
 
 msgid "Successfully resent invite"
-msgstr "आमंत्रण सफलतापूर्वक दोबारा भेजा गया"
+msgstr "आमंत्रण सफलतापूर्वक फिर से भेजा गया"
 
 msgid "Successfully revoked invites"
 msgstr "सफलतापूर्वक आमंत्रण रद्द किए गए"
@@ -27299,7 +27435,7 @@ msgid "Supplier IDs are shown"
 msgstr "आपूर्तिकर्ता ID दिखाए गए हैं"
 
 msgid "Supplier IDs hidden"
-msgstr "आपूर्तिकर्ता आईडी छिपे हुए"
+msgstr "आपूर्तिकर्ता आईडी छिपाई गईं"
 
 msgid "Supplier IDs shown"
 msgstr "आपूर्तिकर्ता ID दिखाए गए"
@@ -29394,6 +29530,9 @@ msgstr "उसके बाद"
 msgid "These accounts need a replacement"
 msgstr "इन खातों को एक प्रतिस्थापन की आवश्यकता है"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "ये परिसंपत्ति और देयता खाते औसत दर पर रूपांतरित होते हैं, जिससे मुद्रा रूपांतरण समायोजन (CTA) बदलता है। तुलन पत्र खाते आमतौर पर वर्तमान दर पर रूपांतरित होते हैं:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "ये कस्टम फ़ील्ड केवल समान टैग वाली संस्थाओं के लिए उपलब्ध होंगी"
 
@@ -29444,6 +29583,9 @@ msgstr "इन इकाइयों को बिक्री के रूप 
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "ये आपके चार्ट में नहीं हैं, लेकिन दस्तावेज़ या जर्नल उनका उपयोग करते हैं। अपने चार्ट में उस खाते को चुनें जो प्रत्येक को बदलता है।"
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "इस अवधि के लिए उनके पास कोई पोस्ट किया गया मुद्रा पुनर्मूल्यांकन रन नहीं है, इसलिए उनकी शेष राशि समापन दर पर नहीं है:"
 
 msgid "this ability"
 msgstr "यह कौशल"
@@ -29750,6 +29892,9 @@ msgstr "यह रिवीजन जारी है (उत्पादन)।
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "यह रिवीजन जारी है (उत्पादन)। इसे संशोधित करने के लिए एक परिवर्तन सूचना खोलें।"
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "यह रन इन मेमो को पुनर्मूल्यांकित नहीं करता है: उनके विरुद्ध एक निपटान मेमो की मुद्रा में राशि दर्ज नहीं करता है।"
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "यह रन हमारे यहां दिखाए गए की तुलना में अधिक चरण हैं। केवल पहले {MAX_RUN_STEPS} सूचीबद्ध हैं।"
 
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "इस सप्ताह"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "यह अवधि समाप्त {0} के लिए ड्राफ्ट मुद्रा पुनर्मूल्यांकन रन बनाएगा। प्रत्येक खुला विदेशी-मुद्रा आइटम उस तारीख पर विनिमय दर पर पुनर्मूल्यांकित किया जाएगा।"
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "यह {0} को समाप्त होने वाली अवधि के लिए एक ड्राफ्ट मूल्यह्रास रन बनाएगा। सभी सक्रिय संपत्तियों की स्वचालित रूप से गणना की जाएगी।"
 
@@ -29867,6 +30016,11 @@ msgstr "यह {0} को अपने शेड्यूल से अभी �
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "यह {0} को अचल संपत्तियों से फिर से बनाएगा जैसा कि वे अब हैं: अवधि {1} पर समाप्त होने वाले किसी अन्य चलन द्वारा कवर न की गई हर सक्रिय संपत्ति।"
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "यह {0} को {1} पर खुले विदेशी-मुद्रा आइटम से पुनर्निर्माण करेगा। रन पर दरें रखी जाती हैं।"
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "यह बैच आकार का उपयोग करके सक्रिय निर्माण विधि की सामग्री सूची और प्रक्रियाओं से इकाई लागत की पुनः गणना करेगा। वर्तमान लागत अधिलेखित की जाएगी। क्या आप जारी रखना चाहते हैं?"
 
@@ -29889,6 +30043,7 @@ msgstr "यह अन्य रिवीजन की सभी विधि स
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "यह अन्य आकारों की सभी विधि सामग्रियों को इस आकार से बदल देगा।"
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "यह {0} के जर्नल को उलटेगा और इसे ड्राफ्ट में वापस करेगा। आप फिर इसे पुनर्गणना कर सकते हैं, पोस्ट कर सकते हैं या हटा सकते हैं।"
@@ -30091,6 +30246,9 @@ msgstr "अगले सप्ताह को"
 msgid "To pick"
 msgstr "पिकिंग"
 
+msgid "To post"
+msgstr "पोस्ट करने के लिए"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "पुनः सक्रिय करने के लिए, पंक्ति मेनू का उपयोग करें और निमंत्रण भेजें चुनें। कर्मचारी स्वीकार करने के बाद सक्रिय हो जाता है।"
 
@@ -30260,6 +30418,9 @@ msgstr "कुल अनुमानित लागत"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "उत्पादन-इकाई मूल्यह्रास के लिए कुल अपेक्षित उत्पादन इकाइयां; लागत उत्पादित प्रति यूनिट फैली हुई है।"
 
+msgid "Total gains"
+msgstr "कुल लाभ"
+
 msgid "Total hours"
 msgstr "कुल घंटे"
 
@@ -30271,6 +30432,9 @@ msgstr "कुल अप्रत्यक्ष लागत"
 
 msgid "Total lease cost"
 msgstr "पट्टा की कुल लागत"
+
+msgid "Total losses"
+msgstr "कुल हानि"
 
 msgid "Total Material Cost"
 msgstr "कुल सामग्री लागत"
@@ -30504,7 +30668,7 @@ msgid "Traveler materials enabled"
 msgstr "ट्रैवलर सामग्री सक्षम की गई"
 
 msgid "Traveler operations disabled"
-msgstr "ट्रैवलर ऑपरेशन अक्षम किए गए"
+msgstr "ट्रैवलर ऑपरेशन अक्षम किया गया"
 
 msgid "Traveler operations enabled"
 msgstr "ट्रैवलर ऑपरेशन सक्षम किए गए"
@@ -30663,6 +30827,12 @@ msgstr "अप्रयुक्त"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "अप्रयुक्त नकद इस दस्तावेज़ के लिए ग्राहक अग्रिम भुगतान के रूप में रखा जाता है न कि खाते पर जमा क्रेडिट के रूप में।"
 
+msgid "Unapplied Disbursement"
+msgstr "लागू न किया गया संवितरण"
+
+msgid "Unapplied Receipt"
+msgstr "लागू न की गई प्राप्ति"
+
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
 
@@ -30728,6 +30898,13 @@ msgstr "अभी भी आने वाले बिना छूट के �
 
 msgid "Undo"
 msgstr "पूर्ववत करें"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "{0} को पूर्ववत करें"
+
+msgid "Undo Run"
+msgstr "रन को पूर्ववत करें"
 
 msgid "Unfurl Links"
 msgstr "लिंक्स को विस्तृत करें"
@@ -30811,7 +30988,7 @@ msgid "Units"
 msgstr "इकाइयाँ"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "मूल मुद्रा की इकाइयाँ प्रति इस मुद्रा की एक इकाई; पोस्टिंग पर राशि का अनुवाद करने के लिए उपयोग किया जाता है।"
+msgstr "इस मुद्रा की एक इकाई के बदले मूल मुद्रा की इकाइयाँ; पोस्टिंग पर राशियों के रूपांतरण के लिए उपयोग की जाती हैं।"
 
 msgid "units of measure"
 msgstr "माप की इकाइयाँ"
@@ -30915,6 +31092,12 @@ msgstr "प्रकाशन रद्द करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "साकार न किया गया विनिमय लाभ"
+
+msgid "Unrealized Exchange Loss"
+msgstr "साकार न किया गया विनिमय हानि"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
@@ -32712,7 +32895,7 @@ msgid "Written Off"
 msgstr "राइट ऑफ किया गया"
 
 msgid "Written with a warning"
-msgstr "एक चेतावनी के साथ लिखा"
+msgstr "चेतावनी के साथ लिखा गया"
 
 msgid "Wrote the missing journal of 1 document"
 msgstr "1 दस्तावेज़ की लापता जर्नल लिखी"

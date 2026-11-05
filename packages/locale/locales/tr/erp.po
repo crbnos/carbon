@@ -212,7 +212,7 @@ msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı 
 
 #. placeholder {0}: added.steps
 msgid "{0, plural, one {# step} other {# steps}}"
-msgstr "{0, plural, one {# adım} other {# adımlar}}"
+msgstr "{0, plural, one {# Adım} other {# Adımlar}}"
 
 #. placeholder {0}: linkCount.count
 msgid "{0, plural, one {# test} other {# tests}}"
@@ -564,6 +564,10 @@ msgstr "{0} / {whole} bitti"
 #. placeholder {0}: formatClocked(timecardTotal)
 msgid "{0} on your timecards"
 msgstr "{0} puantajda"
+
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} açık dış para cinsinden öğe · {amount}"
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -1362,6 +1366,9 @@ msgstr "1 iş oluşturuldu"
 
 msgid "1 line"
 msgstr "1 satır"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 açık dış para cinsinden öğe · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 parça atlandı — zaten açık bir işi var"
@@ -2426,8 +2433,14 @@ msgstr "{accountNumber} hesabı aktif bir muhasebeleştirme hesabı değildir."
 msgid "Account & Details"
 msgstr "Hesap ve ayrıntılar"
 
+msgid "Account Balance"
+msgstr "Hesap Bakiyesi"
+
 msgid "Account balances with debits and credits"
 msgstr "Borç ve alacak bakiyeleri"
+
+msgid "Account Currency"
+msgstr "Hesap Para Birimi"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Mal veya hizmet alınmadan önce yapılan peşin ödemeleri hesaplayın."
@@ -2526,7 +2539,7 @@ msgid "Accounts Payable"
 msgstr "Borç hesapları"
 
 msgid "Accounts payable billing address disabled"
-msgstr "Borç hesapları fatura adresi devre dışı bırakıldı"
+msgstr "Borç hesapları faturalandırma adresi devre dışı bırakıldı"
 
 msgid "Accounts payable billing address enabled"
 msgstr "Borç hesapları fatura adresi etkinleştirildi"
@@ -2541,7 +2554,7 @@ msgid "Accounts Receivable"
 msgstr "Alacak hesapları"
 
 msgid "Accounts receivable billing address disabled"
-msgstr "Alacak hesapları fatura adresi devre dışı bırakıldı"
+msgstr "Alacak hesapları faturalandırma adresi devre dışı bırakıldı"
 
 msgid "Accounts receivable billing address enabled"
 msgstr "Alacak hesapları fatura adresi etkinleştirildi"
@@ -3511,6 +3524,9 @@ msgstr "Üst birim {sourceName} nedeniyle zaten MRP dışı"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "Depolama türü {sourceName} nedeniyle zaten MRP dışı"
 
+msgid "Already posted"
+msgstr "Zaten Muhasebeleştirildi"
+
 msgid "also at {otherStationNames}"
 msgstr "ayrıca {otherStationNames} adresinde"
 
@@ -3914,6 +3930,9 @@ msgstr "Ödenmemiş Borç Hesapları"
 msgid "AP Overdue"
 msgstr "Gecikmiş Borç Hesapları"
 
+msgid "AP Revaluation Adjustment"
+msgstr "Borç Hesapları Yeniden Değerleme Düzeltmesi"
+
 msgid "API Docs"
 msgstr "API Belgeleri"
 
@@ -3945,7 +3964,7 @@ msgid "Applied"
 msgstr "Uygulandı"
 
 msgid "Applied {applied} planning actions"
-msgstr "{applied} planlama eylemi uygulandı"
+msgstr "Uygulanmış {applied} Planlama işlemi"
 
 msgid "Applied 1 planning action"
 msgstr "1 planlama eylemi uygulandı"
@@ -4134,6 +4153,9 @@ msgstr "Ödenmemiş Alacak Hesapları"
 
 msgid "AR Overdue"
 msgstr "Gecikmiş Alacak Hesapları"
+
+msgid "AR Revaluation Adjustment"
+msgstr "Alacak Hesapları Yeniden Değerleme Düzeltmesi"
 
 msgid "AR/AP"
 msgstr "Alacak hesapları/Borç hesapları"
@@ -4729,6 +4751,9 @@ msgstr "Amortisman, bu dönem için yeni bir çalışmanın şimdi ne amorti ede
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Hasılat muhasebeleştirmesine bu dönem için yeni bir çalıştırmanın şimdi ne tanıyacağını sorar — ertelenen fatura hasılatı ve sözleşme hasılatı — ve dönem sonunda vadesi gelen hasılatı tutan Taslak çalıştırmalarını kontrol eder. Çalıştırmayı oluşturun ve muhasebeleştirin, böylece hasılat Büyük defter'e ulaşır. Hiçbir şey tanınmaması gerekiyorsa bir neden ile atlayın."
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Para birimi yeniden değerleme çalışması, bu dönem sonunda dış para biriminde hala açık olanları sorar — açık faturalar ve notlar, uygulanmamış müşteri makbuzları ve tedarikçi ödemeleri ile banka ve kredi hesapları gibi dış para biriminde tutulan hesapların bakiyeleri — ve dönemde sona eren bir Taslak çalışmasını kontrol eder. Çalışmayı Oluştur ve bunu Muhasebeleştir, böylece Bilanço bu öğeleri kapanış oranında taşır, gerçekleşmemiş kur kazancı veya zararı farkı ile. Dış para biriminde hiçbir şey açık değilse bir sebep belirterek Atla."
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Kiralama çalışmasına bu dönem için yeni bir çalışmanın şu anda muhasebeleştirilecek ne olduğunu sorar — kiralama faizi ve kullanım hakkı amortisman, kiralama kirası ertelenecek veya tahakkuk ettirilecek ve satış türü kiralama faizi — ve dönem sonuna kadar muhasebeleştirilecek girişleri içeren Taslak kiralama çalışmaları kontrol eder. Çalışmayı oluştur ve muhasebeleştir böylece giriş deftere ulaşsın. Hiçbir şey muhasebeleştirilmemesi gerekiyorsa bir nedenle atla."
 
@@ -4761,6 +4786,9 @@ msgstr "Varlık hesabı"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "Mallar veya hizmetler alınmadan önce tedarikçilere yapılan ön ödemeler için varlık hesabı"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "Açık dış para cinsinden alacakların dönem sonu yeniden değermesini taşıyan varlık hesabı, böylece Alacak hesapları hala açık faturalarına bağlantılı kalır"
 
 msgid "Asset Acquisition Cost"
 msgstr "Varlık Edinme Maliyeti"
@@ -4844,7 +4872,7 @@ msgid "Assigned"
 msgstr "Atanmış"
 
 msgid "Assigned {changed} planning actions"
-msgstr "{changed} planlama eylemi atandı"
+msgstr "Atanan {changed} Planlama işlemi"
 
 msgid "Assigned 1 planning action"
 msgstr "1 planlama eylemine atandı"
@@ -5605,6 +5633,9 @@ msgstr "Carbon ile bir çağrı ayarlayın"
 
 msgid "Book Depreciation"
 msgstr "Defter Amortismanı"
+
+msgid "Booked"
+msgstr "Kaydedildi"
 
 msgid "Books lock date (manual)"
 msgstr "Defterlerin kilitlenme tarihi (manuel)"
@@ -6482,6 +6513,9 @@ msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok kartı için stok kartı defterini kontrol edin — genellikle eksik bir mal kabul veya envanter değerini ve satılan malın maliyetini bozan sıra dışı bir muhasebeleştirme. İncelendikten sonra bitti olarak işaretleyin veya bir gerekçeyle atlayın."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "Bu hesapların konsolidasyon oranını kontrol edin"
 
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
@@ -7373,6 +7407,12 @@ msgstr "Konsol Operatörü"
 
 msgid "Console Operator Created"
 msgstr "Konsol operatörü oluşturuldu"
+
+msgid "Consolidated CTA"
+msgstr "Konsolide Kur Çevrimi Düzeltmesi"
+
+msgid "Consolidation Rate"
+msgstr "Konsolidasyon Oranı"
 
 msgid "Construction in Progress"
 msgstr "İnşaat Halinde"
@@ -8654,6 +8694,12 @@ msgid "Currency code"
 msgstr "Para birimi kodu"
 
 msgid "Currency display updated"
+msgstr "Para birimi görüntüleme güncellendi"
+
+msgid "Currency Revaluation"
+msgstr "Para Birimi Yeniden Değerlemesi"
+
+msgid "Currency Revaluation Run"
 msgstr "Para birimi görünümü güncellendi"
 
 msgid "Currency Translation"
@@ -8661,6 +8707,12 @@ msgstr "Kur çevrimi"
 
 msgid "Currency Translation (default)"
 msgstr "Kur çevrimi (varsayılan)"
+
+msgid "Currency Translation Adjustment"
+msgstr "Kur Çevrimi Düzeltmesi"
+
+msgid "Currency Translation Offset"
+msgstr "Kur Çevrimi Dengesi"
 
 msgid "current"
 msgstr "geçerli"
@@ -8765,7 +8817,7 @@ msgid "Customer contact email required"
 msgstr "Müşteri ilgili kişi e-postası zorunlu"
 
 msgid "Customer contact requirement disabled"
-msgstr "Müşteri ilgili kişi gereksinimi devre dışı bırakıldı"
+msgstr "Müşteri ilgili kişi gereklilik devre dışı bırakıldı"
 
 msgid "Customer contact requirement enabled"
 msgstr "Müşteri ilgili kişi gereksinimi etkinleştirildi"
@@ -8807,7 +8859,7 @@ msgid "Customer IDs are shown"
 msgstr "Müşteri ID'leri gösteriliyor"
 
 msgid "Customer IDs hidden"
-msgstr "Müşteri kimlikleri gizlendi"
+msgstr "Müşteri Kimlikleri gizlendi"
 
 msgid "Customer IDs shown"
 msgstr "Müşteri kimlikleri gösterildi"
@@ -10174,7 +10226,7 @@ msgid "Dismissed"
 msgstr "Reddedildi"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "{changed} planlama işlemi kapatıldı"
+msgstr "{changed} planlama eylemi kapatıldı"
 
 msgid "Dismissed 1 planning action"
 msgstr "Reddedilen 1 planlama işlemi"
@@ -11569,8 +11621,14 @@ msgstr "Seri veya parti numarasını girin, stok kartını değil"
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Üretim maliyetini girin. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
 
+msgid "Entered"
+msgstr "Girildi"
+
 msgid "Entered At Receipt"
 msgstr "Alındığında Girildi"
+
+msgid "Entered By"
+msgstr "Giren"
 
 msgid "Entered On"
 msgstr "Girildi"
@@ -11640,6 +11698,9 @@ msgstr "Birikmiş kar veya zarar için özkaynak hesabı"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Kur çevrimi düzeltmeleri (CTA) için özkaynak hesabı"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "Eliminasyon şirketinde muhasebeleştirilmiş kur çevrimi düzeltmesini (CTA) dengeleyen özkaynak hesabı; konsolide raporlar bunu gizler"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "Muhasebe kurulduğunda açılış bakiyelerini dengelemek için özkaynak hesabı. Toplam sıfır olması gerekir."
@@ -11784,7 +11845,7 @@ msgid "Event saved"
 msgstr "Etkinlik kaydedildi"
 
 msgid "Event started"
-msgstr "Olay başlatıldı"
+msgstr "Etkinlik başladı"
 
 msgid "Event stopped"
 msgstr "Olay durduruldu"
@@ -11818,6 +11879,9 @@ msgstr "Aktif kiralamada yapılan her değişiklik, önceki ve sonraki tutarlarl
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Muhasebeleştirme etkinleştirilmeden önce her kontrolün başarılı olması gerekir."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "Gruptaki her şirket bu şirketin para birimini kullanır, bu nedenle kur çevrimi düzeltmesi yoktur."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
@@ -12082,6 +12146,9 @@ msgstr "Ekipman ve tesis bakımı için gider hesabı"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "Ödeme, yabancı para biriminde bir faturayı daha az uygun bir oranda kapatırken FX kayıpları için gider hesabı"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "Dönemiçi revalüasyon açık yabancı para birimi bakiyesini yeniden belirtirken FX kayıpları için gider hesabı"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "Stok dışı satın almalar (hizmetler, malzemeler) için gider hesabı"
 
@@ -12193,6 +12260,9 @@ msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her 
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "İlk {exportedCount} satır dışa aktarıldı."
+
+msgid "Exposure"
+msgstr "Açığa çıkma"
 
 msgid "Expressly Unallowable"
 msgstr "Açıkça İzin Verilmeyen"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "Temel (herkes)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "Dört göz ilkesi uygulaması devre dışı bırakıldı"
+msgstr "Dört göz ilkesi devre dışı bırakıldı"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "İki imzalı onay etkinleştirildi"
@@ -13312,6 +13382,9 @@ msgstr "Kiralama Sonlandırılmasında Kazanç"
 
 msgid "Gain/Loss"
 msgstr "Kar/Zarar"
+
+msgid "Gains"
+msgstr "Kazançlar"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Sabit kıymetlerin elden çıkarılmasında muhasebeleştirilen kazançlar"
@@ -13542,7 +13615,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "Sabit kıymetlere karşı muhasebeleştirilen amortismanı tahakkuk ettiren muhasebe kontra-varlık hesabı."
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "Dönem sonunda yabancı para bakiyelerinin yeniden çevirisi sonucu oluşan gerçekleşmemiş döviz farklarını tutan muhasebe özkaynaklar hesabı (CTA yedek); kar/zarar tablosundaki gerçekleşmiş döviz kazanç/zararından ayrıdır."
+msgstr "Dönem sonunda yabancı para bakiyelerinin yeniden çevrimi sonucu oluşan gerçekleşmemiş kur farklarını tutan özkaynak hesabı (CTA yedeği); kâr/zarar tablosundaki gerçekleşmiş kur kazanç/zararından ayrıdır."
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "Mali yılın sonunda net gelirin kapatıldığı muhasebe özkaynaklar hesabı."
@@ -13577,6 +13650,9 @@ msgstr "İlk seferde canlı yayına geç — ekibimiz yanınızda"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Şuraya git: {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "Para birimi revalüasyon çalıştırmalarına git"
 
 msgid "Go to depreciation runs"
 msgstr "Amortisman çalışmalarına git"
@@ -15346,6 +15422,12 @@ msgstr "Yevmiye kaydı"
 msgid "Journal Entry · {asset}"
 msgstr "Yevmiye kaydı · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "Yevmiye kaydı · Tersine çevirme"
+
+msgid "Journal Entry · Valuation"
+msgstr "Yevmiye kaydı · Değerleme"
+
 msgid "Journal lines"
 msgstr "Muhasebe Fişi Satırları"
 
@@ -15683,7 +15765,7 @@ msgid "Lead time updates are enabled"
 msgstr "Tedarik süresi güncellemeleri etkinleştirildi"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "Mal kabul üzerinde tedarik süresi güncellemeleri devre dışı bırakıldı"
+msgstr "Mal kabul sırasında tedarik süresi güncellemeleri devre dışı bırakıldı"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "Mal kabulü sırasında tedarik süresi güncellemeleri etkinleştirildi"
@@ -15886,6 +15968,9 @@ msgstr "Müşterilerden toplanan satış vergisi için borç hesabı"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "Satın almalar üzerinde ödenen vergi için borç hesabı"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "Açık yabancı para birimi borçlarının dönemiçi revalüasyonunu taşıyan borç hesabı, böylece borçlar hesabı açık faturaları ile bağlantılı kalır"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "Bir proje sözleşmesinin fiyatından daha fazla maliyeti öngörüldüğünde kredi verilen sorumluluk; tanıma çalışmaları tarafından ayarlanır"
@@ -16287,6 +16372,9 @@ msgstr "Zarar Karşılığı"
 msgid "Loss Provisions"
 msgstr "Zarar Karşılıkları"
 
+msgid "Losses"
+msgstr "Kayıplar"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Sabit kıymetlerin elden çıkarılmasında tanınan zararlar"
 
@@ -16651,6 +16739,9 @@ msgstr "Az eksik olarak işaretle"
 
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
+
+msgid "Market"
+msgstr "Pazar"
 
 msgid "Market rate"
 msgstr "Piyasa kuru"
@@ -19240,6 +19331,9 @@ msgstr "Gerekli Değil"
 msgid "Not restorable"
 msgstr "Geri yüklenemez"
 
+msgid "Not revalued"
+msgstr "Yeniden değerlendirilmedi"
+
 msgid "Not Run"
 msgstr "Çalıştırılmadı"
 
@@ -19360,6 +19454,9 @@ msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
+
+msgid "Nothing to revalue for this period."
+msgstr "Bu dönem için yeniden değerlendirilecek bir şey yok."
 
 msgid "Nothing to review"
 msgstr "İncelenecek bir şey yok"
@@ -19562,6 +19659,9 @@ msgstr "Satış Siparişi'nde"
 
 msgid "On Storage Unit"
 msgstr "Depolama biriminde"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "Grubun ana şirketinde, bu dönemin konsolide kur çevrimi düzeltmesini (CTA), eliminasyon şirketinde zaten muhasebeleştirilmiş CTA ile karşılaştırır. Farkı önizleyin ve muhasebeleştirin; böylece özkaynak, CTA'yı defterde taşır. Önce bağlı ortaklıkları yeniden değerleyin. Diğer şirketler otomatik olarak geçer."
 
 msgid "On the Missing Time report"
 msgstr "Eksik Zaman raporunda"
@@ -19793,6 +19893,9 @@ msgstr "Hesap Eşleştirmesini Aç"
 
 msgid "Open Actions"
 msgstr "Açık Aksiyonlar"
+
+msgid "Open Amount"
+msgstr "Açık Tutar"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için bir NCR aç"
@@ -20232,6 +20335,9 @@ msgstr "Diğer Gelir"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Bir ödeme yabancı para birimindeki bir faturayı daha uygun bir oranda kapatırken FX kazançları için Diğer Gelir hesabı"
 
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "Dönem sonu yeniden değerlemesi açık döviz bakiyesini yeniden hesapladığında FX kazançları için Diğer Gelirler hesabı"
+
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "Borç hesapları uzlaştırmasında tam ödeme yapılmadan temizlenen tedarikçi bakiyeleri için Diğer gelirler hesabı"
 
@@ -20657,6 +20763,9 @@ msgstr "Geri Öde"
 
 msgid "Pay expense"
 msgstr "Gider Öde"
+
+msgid "Payable"
+msgstr "Ödenecek"
 
 msgid "Payables"
 msgstr "Borçlar"
@@ -21332,6 +21441,9 @@ msgstr "Sözleşme Projeleri için Uygulanan Yükü Muhasebeleştir"
 msgid "Post Comment"
 msgstr "Yorum Yap"
 
+msgid "Post CTA"
+msgstr "CTA'yı Muhasebeleştir"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "{0} taslak çalışmasını muhasebeleştir"
@@ -21395,6 +21507,9 @@ msgstr "Muhasebeleştirme tarihi"
 
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "Konsolide CTA'daki değişikliği eliminasyon şirketinde özkaynağa muhasebeleştirir."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Faturayı muhasebeleştirir ve bağlı Stripe hesabınız üzerinden bir ödeme linki ile gönderir. Bağlı Stripe müşterisi olmayan bir müşteri için fatura muhasebeleştirilir ve gönderilmedi olarak işaretlenir."
@@ -21476,6 +21591,9 @@ msgstr "Ekipmanınız için önleyici bakım programları"
 
 msgid "Preview"
 msgstr "Önizle"
+
+msgid "Preview CTA"
+msgstr "CTA'yı Önizle"
 
 msgid "Preview failed: {error}"
 msgstr "Önizleme başarısız oldu: {error}"
@@ -22756,6 +22874,9 @@ msgstr "Makbuzlar"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Hala Taslak veya Beklemede olan mal kabuller, sevkiyatlar, satış faturaları, alış faturaları, ödemeler ve alacak/borç muhasebe fişleri muhasebeleştirilmeli veya hükümsüz kılınmalıdır — hem bu dönemde tarihli belgeler hem de muhasebeleştirildiğinde bu dönemde tarih alacak tarihi olmayan belgeler. Muhasebeleştirilene kadar, tutarları büyük defterde yoktur, bu nedenle dönem eksik gösterilecektir."
+
+msgid "Receivable"
+msgstr "Alacak"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Satış türü kiralamanın başlangıcında muhasebeleştirilen alacak, her kira ödemesi ile azaltılan"
@@ -24049,6 +24170,15 @@ msgstr "Sürüm {revision}"
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
+msgid "Revaluation Lines"
+msgstr "Yeniden Değerleme Satırları"
+
+msgid "Revalue these companies first"
+msgstr "Önce bu şirketleri yeniden değerlendir"
+
+msgid "Revalued"
+msgstr "Yeniden değerlendirildi"
+
 msgid "Reveal"
 msgstr "Göster"
 
@@ -24761,7 +24891,7 @@ msgid "Saved {0} dimension value mappings"
 msgstr "{0} boyut değeri eşlemesi kaydedildi"
 
 msgid "Saved {count} account mappings"
-msgstr "Kaydedilen {count} muhasebe hesabı eşlemesi"
+msgstr "{count} hesap eşlemesi kaydedildi"
 
 msgid "Saved account mapping"
 msgstr "Kaydedilen muhasebe hesabı eşlemesi"
@@ -26591,7 +26721,7 @@ msgid "Staffing required"
 msgstr "Personel gerekli"
 
 msgid "Staffing requirement disabled"
-msgstr "Personel gereklilik devre dışı bırakıldı"
+msgstr "İş gücü gereklilik devre dışı bırakıldı"
 
 msgid "Staffing requirement enabled"
 msgstr "Personel gereksinimi etkinleştirildi"
@@ -26701,6 +26831,12 @@ msgstr "İl/Bölge"
 
 msgid "Statement"
 msgstr "Hesap Özeti"
+
+msgid "Statement Balance"
+msgstr "İfade Bakiyesi"
+
+msgid "Statement Balances"
+msgstr "İfade Bakiyeleri"
 
 msgid "Statement of Indirect Expenses"
 msgstr "Dolaylı Giderlerin Tablosu"
@@ -27272,7 +27408,7 @@ msgid "Supplier contact email required"
 msgstr "Tedarikçi ilgili kişi e-postası zorunlu"
 
 msgid "Supplier contact requirement disabled"
-msgstr "Tedarikçi ilgili kişi gereksinimi devre dışı bırakıldı"
+msgstr "Tedarikçi İlgili kişi gereklilik devre dışı bırakıldı"
 
 msgid "Supplier contact requirement enabled"
 msgstr "Tedarikçi ilgili kişi gereksinimi etkinleştirildi"
@@ -27299,7 +27435,7 @@ msgid "Supplier IDs are shown"
 msgstr "Tedarikçi ID'leri gösteriliyor"
 
 msgid "Supplier IDs hidden"
-msgstr "Tedarikçi kimlikleri gizlendi"
+msgstr "Tedarikçi kimlikler gizlendi"
 
 msgid "Supplier IDs shown"
 msgstr "Tedarikçi ID'leri gösterildi"
@@ -29394,6 +29530,9 @@ msgstr "Bundan sonra"
 msgid "These accounts need a replacement"
 msgstr "Bu hesapların yerine geçmesi gerekli"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "Bu varlık ve yükümlülük hesapları Ortalama oranla çevrilir; bu da yabancı para çevrim farkını (CTA) değiştirir. Bilanço hesapları genellikle Mevcut oranla çevrilir:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Bu özel alanlar yalnızca aynı etiketlere sahip varlıklar için kullanılabilir"
 
@@ -29444,6 +29583,9 @@ msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayı
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "Bunlar sizin hesap planınızda değil, ancak belgeler veya muhasebe fişleri tarafından kullanılıyorlar. Her birini değiştirecek hesap planınızdaki hesabı seçin."
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "Bu dönem için muhasebeleştirilmiş para birimi yeniden değerleme çalışması yok, bu nedenle bakiyeleri kapanış oranında değil:"
 
 msgid "this ability"
 msgstr "bu yetkinlik"
@@ -29721,7 +29863,7 @@ msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Bu girişte satır yok. Bunları eklemek için bir kaynak belge seçin."
 
 msgid "This removes the PDF. Employees will see the new content instead."
-msgstr "Bu, PDF'yi kaldırır. Çalışanlar bunun yerine yeni içeriği görecekler."
+msgstr "Bu, PDF'yi kaldırır. Çalışanlar bunun yerine yeni içeriği görecektir."
 
 msgid "This removes the video. Employees will see the new content instead."
 msgstr "Bu videoyu kaldırır. Çalışanlar bunun yerine yeni içeriği görecekler."
@@ -29749,6 +29891,9 @@ msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir d
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Bunu değiştirmek için bir değişiklik bildirisi açın."
+
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "Bu çalışma bu notları yeniden değerlendirmez: bunlara karşı bir ödeme, tutarı notun para biriminde kaydetmez."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Bu çalıştırmada burada gösterdiklerimizden daha fazla adım var. Yalnızca ilk {MAX_RUN_STEPS} listelenir."
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "Bu hafta"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "Bu, {0} ile sona eren dönem için taslak para birimi yeniden değerleme çalışması oluşturacak. Her açık yabancı para stok kartı o tarihteki döviz kurunda yeniden değerlendirilecektir."
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "Bu, {0} tarihinde sona eren dönem için taslak amortisman çalıştırması oluşturacaktır. Tüm aktif sabit kıymetler otomatik olarak hesaplanacaktır."
 
@@ -29867,6 +30016,11 @@ msgstr "Bu, {0}'ı çizelgesinden yeniden oluşturacaktır: {1} tarihinde veya d
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Bu, {0}'ı sabit kıymetlerden olduğu gibi yeniden oluşturacak: {1} ile biten dönem için başka bir çalıştırma tarafından karşılanmayan her aktif kıymet."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "Bu, {1} de açık olan yabancı para stok kartlarından {0} yeniden oluşturacak. Çalışma üzerindeki oranlar korunur."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Bu, geçerli üretim yönteminin ürün ağacından ve işlemlerinden parti boyutunu kullanarak birim maliyeti yeniden hesaplayacaktır. Mevcut maliyet üzerine yazılacaktır. Devam etmek istiyor musunuz?"
 
@@ -29889,6 +30043,7 @@ msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değiştirecektir."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Bu işlem {0}'un muhasebe fişlerini tersine çevirecek ve Taslak durumuna döndürecektir. Daha sonra yeniden hesaplayabilir, muhasebeleştirebilir veya silebilirsiniz."
@@ -30091,6 +30246,9 @@ msgstr "Gelecek haftaya"
 msgid "To pick"
 msgstr "Toplama"
 
+msgid "To post"
+msgstr "Muhasebeleştir"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Yeniden etkinleştirmek için, satır menüsünü kullanın ve Davet Gönder'i seçin. Çalışan bunu kabul ettiğinde etkin hale gelir."
 
@@ -30260,6 +30418,9 @@ msgstr "Toplam Tahmini Maliyet"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
 
+msgid "Total gains"
+msgstr "Toplam kazançlar"
+
 msgid "Total hours"
 msgstr "Toplam saatler"
 
@@ -30271,6 +30432,9 @@ msgstr "Toplam Dolaylı Maliyet"
 
 msgid "Total lease cost"
 msgstr "Toplam kiralama maliyeti"
+
+msgid "Total losses"
+msgstr "Toplam zararlar"
 
 msgid "Total Material Cost"
 msgstr "Toplam Malzeme Maliyeti"
@@ -30558,7 +30722,7 @@ msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
 
 msgid "Turned off sync"
-msgstr "Senkronizasyonu kapatıldı"
+msgstr "Senkronizasyon kapatıldı"
 
 msgid "Turned on sync"
 msgstr "Senkronizasyon açıldı"
@@ -30663,6 +30827,12 @@ msgstr "Uygulanmamış"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Uygulanmamış nakit, bu belge için müşteri avansı olarak tutuluyor, hesapta alacak yerine."
 
+msgid "Unapplied Disbursement"
+msgstr "Uygulanmamış Tediye"
+
+msgid "Unapplied Receipt"
+msgstr "Uygulanmamış Mal Kabul"
+
 msgid "Unapproved Supplier"
 msgstr "Onaylanmamış Tedarikçi"
 
@@ -30728,6 +30898,13 @@ msgstr "Mali yılına göre henüz gelecek iskonto uygulanmamış ödemeler, kal
 
 msgid "Undo"
 msgstr "Geri Al"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "Geri Al {0}"
+
+msgid "Undo Run"
+msgstr "Çalıştırmayı Geri Al"
 
 msgid "Unfurl Links"
 msgstr "Bağlantıları Aç"
@@ -30915,6 +31092,12 @@ msgstr "Yayınlamayı kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "{name} yayınlaması kaldırılsın mı?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "Gerçekleşmemiş Kur Kazancı"
+
+msgid "Unrealized Exchange Loss"
+msgstr "Gerçekleşmemiş Kur Kaybı"
 
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
@@ -32712,7 +32895,7 @@ msgid "Written Off"
 msgstr "Silinmiş"
 
 msgid "Written with a warning"
-msgstr "Uyarı ile yazılmış"
+msgstr "Bir uyarı ile yazıldı"
 
 msgid "Wrote the missing journal of 1 document"
 msgstr "1 belgenin eksik muhasebe fişini yazdı"

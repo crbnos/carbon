@@ -214,7 +214,10 @@ export function exportableColumns(table: TableInfo): ColumnInfo[] {
 
 /**
  * Kahn's algorithm over in-set FK edges (referenced tables first). Cycles are
- * broken deterministically (fewest unmet dependencies, then alphabetically).
+ * broken deterministically (fewest unmet dependencies, then alphabetically),
+ * and only by a table on a cycle: one merely downstream of a cycle waits for its
+ * parents, or a wipe (children first, read in reverse) deletes the parent before
+ * a `via` child whose scope filter reads it, and leaves the child's rows behind.
  * Order is best-effort: imports run with FK enforcement relaxed when possible.
  */
 export function topologicalSort(tables: TableInfo[]): TableInfo[] {
@@ -232,21 +235,41 @@ export function topologicalSort(tables: TableInfo[]): TableInfo[] {
     deps.set(t.name, set);
   }
 
+  const unmetCount = (name: string) =>
+    [...(deps.get(name) ?? [])].filter((d) => remaining.has(d)).length;
+
+  // With every remaining table blocked, peel off the ones nothing remaining
+  // depends on: they are downstream of a cycle, not on one.
+  const blockedByCycle = () => {
+    const core = new Set(remaining);
+    let peeled = true;
+    while (peeled) {
+      peeled = false;
+      const dependedOn = new Set(
+        [...core].flatMap((name) => [...(deps.get(name) ?? [])])
+      );
+      for (const name of [...core]) {
+        if (!dependedOn.has(name)) {
+          core.delete(name);
+          peeled = true;
+        }
+      }
+    }
+    return core;
+  };
+
   const sorted: TableInfo[] = [];
   while (remaining.size > 0) {
-    let next: string | null = null;
-    let fewest = Infinity;
-    for (const name of [...remaining].sort()) {
-      const unmet = [...(deps.get(name) ?? [])].filter((d) =>
-        remaining.has(d)
-      ).length;
-      if (unmet === 0) {
-        next = name;
-        break;
-      }
-      if (unmet < fewest) {
-        fewest = unmet;
-        next = name;
+    const names = [...remaining].sort();
+    let next = names.find((name) => unmetCount(name) === 0) ?? null;
+    if (!next) {
+      let fewest = Infinity;
+      for (const name of [...blockedByCycle()].sort()) {
+        const unmet = unmetCount(name);
+        if (unmet < fewest) {
+          fewest = unmet;
+          next = name;
+        }
       }
     }
     if (!next) break;

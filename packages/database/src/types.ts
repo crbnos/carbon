@@ -199,6 +199,7 @@ export type Database = {
           consolidatedRate: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customFields: Json | null
           elementOfCost: Database["public"]["Enums"]["elementOfCost"] | null
           id: string
@@ -222,6 +223,7 @@ export type Database = {
           consolidatedRate?: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customFields?: Json | null
           elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string
@@ -245,6 +247,7 @@ export type Database = {
           consolidatedRate?: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customFields?: Json | null
           elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string
@@ -303,6 +306,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "account_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "account_parentId_fkey"
             columns: ["parentId"]
             isOneToOne: false
@@ -358,6 +368,8 @@ export type Database = {
           accumulatedDepreciationAccount: string
           accumulatedDepreciationOnDisposalAccount: string
           accumulatedRightOfUseAmortizationAccount: string | null
+          apRevaluationAccount: string | null
+          arRevaluationAccount: string | null
           assetAquisitionCostAccount: string
           assetAquisitionCostOnDisposalAccount: string
           assetDepreciationExpenseAccount: string
@@ -372,6 +384,7 @@ export type Database = {
           costOfGoodsSoldAccount: string
           costOfServiceAccount: string | null
           currencyTranslationAccount: string
+          currencyTranslationOffsetAccount: string | null
           customerPaymentDiscountAccount: string
           customerWriteOffAccount: string
           deferredRevenueAccount: string | null
@@ -427,6 +440,8 @@ export type Database = {
           supplierPaymentDiscountAccount: string
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
+          unrealizedExchangeGainAccount: string | null
+          unrealizedExchangeLossAccount: string | null
           updatedBy: string | null
           variableLeaseExpenseAccount: string | null
           warrantyExpenseAccount: string | null
@@ -436,6 +451,8 @@ export type Database = {
           accumulatedDepreciationAccount: string
           accumulatedDepreciationOnDisposalAccount: string
           accumulatedRightOfUseAmortizationAccount?: string | null
+          apRevaluationAccount?: string | null
+          arRevaluationAccount?: string | null
           assetAquisitionCostAccount: string
           assetAquisitionCostOnDisposalAccount: string
           assetDepreciationExpenseAccount: string
@@ -450,6 +467,7 @@ export type Database = {
           costOfGoodsSoldAccount: string
           costOfServiceAccount?: string | null
           currencyTranslationAccount: string
+          currencyTranslationOffsetAccount?: string | null
           customerPaymentDiscountAccount: string
           customerWriteOffAccount: string
           deferredRevenueAccount?: string | null
@@ -505,6 +523,8 @@ export type Database = {
           supplierPaymentDiscountAccount: string
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
+          unrealizedExchangeGainAccount?: string | null
+          unrealizedExchangeLossAccount?: string | null
           updatedBy?: string | null
           variableLeaseExpenseAccount?: string | null
           warrantyExpenseAccount?: string | null
@@ -514,6 +534,8 @@ export type Database = {
           accumulatedDepreciationAccount?: string
           accumulatedDepreciationOnDisposalAccount?: string
           accumulatedRightOfUseAmortizationAccount?: string | null
+          apRevaluationAccount?: string | null
+          arRevaluationAccount?: string | null
           assetAquisitionCostAccount?: string
           assetAquisitionCostOnDisposalAccount?: string
           assetDepreciationExpenseAccount?: string
@@ -528,6 +550,7 @@ export type Database = {
           costOfGoodsSoldAccount?: string
           costOfServiceAccount?: string | null
           currencyTranslationAccount?: string
+          currencyTranslationOffsetAccount?: string | null
           customerPaymentDiscountAccount?: string
           customerWriteOffAccount?: string
           deferredRevenueAccount?: string | null
@@ -583,6 +606,8 @@ export type Database = {
           supplierPaymentDiscountAccount?: string
           supplierPrepaymentAccount?: string
           supplierWriteOffAccount?: string
+          unrealizedExchangeGainAccount?: string | null
+          unrealizedExchangeLossAccount?: string | null
           updatedBy?: string | null
           variableLeaseExpenseAccount?: string | null
           warrantyExpenseAccount?: string | null
@@ -632,6 +657,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "accountDefault_apRevaluationAccount_fkey"
+            columns: ["apRevaluationAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_apRevaluationAccount_fkey"
+            columns: ["apRevaluationAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "accountDefault_aquisitionCostAccount_fkey"
             columns: ["assetAquisitionCostAccount"]
             isOneToOne: false
@@ -655,6 +694,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_aquisitionCostOnDisposalAccount_fkey"
             columns: ["assetAquisitionCostOnDisposalAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_arRevaluationAccount_fkey"
+            columns: ["arRevaluationAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_arRevaluationAccount_fkey"
+            columns: ["arRevaluationAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -809,6 +862,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_currencyTranslationAccount_fkey"
             columns: ["currencyTranslationAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_currencyTranslationOffsetAccount_fkey"
+            columns: ["currencyTranslationOffsetAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_currencyTranslationOffsetAccount_fkey"
+            columns: ["currencyTranslationOffsetAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -1593,6 +1660,34 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_supplierWriteOffAccount_fkey"
             columns: ["supplierWriteOffAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_unrealizedExchangeGainAccount_fkey"
+            columns: ["unrealizedExchangeGainAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_unrealizedExchangeGainAccount_fkey"
+            columns: ["unrealizedExchangeGainAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_unrealizedExchangeLossAccount_fkey"
+            columns: ["unrealizedExchangeLossAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_unrealizedExchangeLossAccount_fkey"
+            columns: ["unrealizedExchangeLossAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -10744,6 +10839,596 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      currencyRevaluationLine: {
+        Row: {
+          accountId: string
+          bookedBaseAmount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          differenceAmount: number | null
+          documentId: string | null
+          documentNumber: string | null
+          documentType: string | null
+          exposureType: string
+          id: string
+          openAmount: number | null
+          openAmountEnteredAt: string | null
+          openAmountEnteredBy: string | null
+          revaluedBaseAmount: number | null
+          runId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountId: string
+          bookedBaseAmount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          differenceAmount?: number | null
+          documentId?: string | null
+          documentNumber?: string | null
+          documentType?: string | null
+          exposureType: string
+          id?: string
+          openAmount?: number | null
+          openAmountEnteredAt?: string | null
+          openAmountEnteredBy?: string | null
+          revaluedBaseAmount?: number | null
+          runId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountId?: string
+          bookedBaseAmount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          differenceAmount?: number | null
+          documentId?: string | null
+          documentNumber?: string | null
+          documentType?: string | null
+          exposureType?: string
+          id?: string
+          openAmount?: number | null
+          openAmountEnteredAt?: string | null
+          openAmountEnteredBy?: string | null
+          revaluedBaseAmount?: number | null
+          runId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "currencyRevaluationLine_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_openAmountEnteredBy_fkey"
+            columns: ["openAmountEnteredBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_openAmountEnteredBy_fkey"
+            columns: ["openAmountEnteredBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_openAmountEnteredBy_fkey"
+            columns: ["openAmountEnteredBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_openAmountEnteredBy_fkey"
+            columns: ["openAmountEnteredBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_openAmountEnteredBy_fkey"
+            columns: ["openAmountEnteredBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_run_fkey"
+            columns: ["runId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencyRevaluationRun"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      currencyRevaluationRate: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          id: string
+          rate: number
+          rateSource: string
+          runId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          id?: string
+          rate: number
+          rateSource: string
+          runId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          id?: string
+          rate?: number
+          rateSource?: string
+          runId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "currencyRevaluationRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_run_fkey"
+            columns: ["runId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "currencyRevaluationRun"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      currencyRevaluationRun: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          currencyRevaluationRunId: string
+          id: string
+          journalId: string | null
+          periodEnd: string
+          postedAt: string | null
+          postedBy: string | null
+          reversalJournalId: string | null
+          status: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          currencyRevaluationRunId: string
+          id?: string
+          journalId?: string | null
+          periodEnd: string
+          postedAt?: string | null
+          postedBy?: string | null
+          reversalJournalId?: string | null
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyRevaluationRunId?: string
+          id?: string
+          journalId?: string | null
+          periodEnd?: string
+          postedAt?: string | null
+          postedBy?: string | null
+          reversalJournalId?: string | null
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "currencyRevaluationRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_reversalJournalId_fkey"
+            columns: ["reversalJournalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_reversalJournalId_fkey"
+            columns: ["reversalJournalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "currencyRevaluationRun_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
       }
       customer: {
         Row: {
@@ -85050,6 +85735,9 @@ export type Database = {
         Row: {
           accountType: Database["public"]["Enums"]["accountType"] | null
           active: boolean | null
+          allowability:
+            | Database["public"]["Enums"]["accountAllowability"]
+            | null
           class: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId: string | null
           consolidatedRate:
@@ -85057,7 +85745,9 @@ export type Database = {
             | null
           createdAt: string | null
           createdBy: string | null
+          currencyCode: string | null
           customFields: Json | null
+          elementOfCost: Database["public"]["Enums"]["elementOfCost"] | null
           id: string | null
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"] | null
           isGroup: boolean | null
@@ -85066,12 +85756,16 @@ export type Database = {
           number: string | null
           parentId: string | null
           tags: string[] | null
+          unallowableReason: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           accountType?: Database["public"]["Enums"]["accountType"] | null
           active?: boolean | null
+          allowability?:
+            | Database["public"]["Enums"]["accountAllowability"]
+            | null
           class?: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId?: string | null
           consolidatedRate?:
@@ -85079,7 +85773,9 @@ export type Database = {
             | null
           createdAt?: string | null
           createdBy?: string | null
+          currencyCode?: string | null
           customFields?: Json | null
+          elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string | null
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"] | null
           isGroup?: boolean | null
@@ -85088,12 +85784,16 @@ export type Database = {
           number?: string | null
           parentId?: string | null
           tags?: string[] | null
+          unallowableReason?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           accountType?: Database["public"]["Enums"]["accountType"] | null
           active?: boolean | null
+          allowability?:
+            | Database["public"]["Enums"]["accountAllowability"]
+            | null
           class?: Database["public"]["Enums"]["glAccountClass"] | null
           companyGroupId?: string | null
           consolidatedRate?:
@@ -85101,7 +85801,9 @@ export type Database = {
             | null
           createdAt?: string | null
           createdBy?: string | null
+          currencyCode?: string | null
           customFields?: Json | null
+          elementOfCost?: Database["public"]["Enums"]["elementOfCost"] | null
           id?: string | null
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"] | null
           isGroup?: boolean | null
@@ -85110,6 +85812,7 @@ export type Database = {
           number?: string | null
           parentId?: string | null
           tags?: string[] | null
+          unallowableReason?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -85155,6 +85858,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "account_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "account_parentId_fkey"
@@ -108306,6 +109016,8 @@ export type Database = {
         | "Burden"
         | "Project Close"
         | "Service Job"
+        | "Currency Revaluation"
+        | "Currency Translation"
       journalEntryStatus:
         | "Draft"
         | "Posted"

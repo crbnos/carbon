@@ -565,6 +565,10 @@ msgstr "{0} / {whole} 已完成"
 msgid "{0} on your timecards"
 msgstr "工时记录中的 {0}"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} 项未结外币物料 · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工序 · {totalQuantity} 零件"
@@ -1362,6 +1366,9 @@ msgstr "1 个作业已创建"
 
 msgid "1 line"
 msgstr "1 行"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 项未结外币物料 · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1个零件已跳过——它已有未结的工单"
@@ -2426,8 +2433,14 @@ msgstr "账户 {accountNumber} 不是启用的过账账户。"
 msgid "Account & Details"
 msgstr "账户和详细信息"
 
+msgid "Account Balance"
+msgstr "账户余额"
+
 msgid "Account balances with debits and credits"
 msgstr "账户余额包含借方和贷方"
+
+msgid "Account Currency"
+msgstr "账户货币"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "收到商品或服务前支付的预付款的计账。"
@@ -3511,6 +3524,9 @@ msgstr "已因上级单元 {sourceName} 而不计入MRP"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "已因存储类型 {sourceName} 而不计入MRP"
 
+msgid "Already posted"
+msgstr "已过账"
+
 msgid "also at {otherStationNames}"
 msgstr "也在 {otherStationNames}"
 
@@ -3914,6 +3930,9 @@ msgstr "应付账款未结"
 msgid "AP Overdue"
 msgstr "应付账款已逾期"
 
+msgid "AP Revaluation Adjustment"
+msgstr "应付账款重估调整"
+
 msgid "API Docs"
 msgstr "API 文档"
 
@@ -4134,6 +4153,9 @@ msgstr "应收账款未结"
 
 msgid "AR Overdue"
 msgstr "应收账款已逾期"
+
+msgid "AR Revaluation Adjustment"
+msgstr "应收账款重估调整"
 
 msgid "AR/AP"
 msgstr "应收账款/应付账款"
@@ -4729,6 +4751,9 @@ msgstr "向折旧查询本期的新运行现在会折旧什么，并检查本期
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "询问收入确认本期的新运行现在应确认什么——递延发票收入和合同收入——并检查是否有在期末前应确认收入的草稿运行。创建运行并过账，以便收入到达总账。如果不应确认任何内容，请跳过并说明原因。"
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "询问货币重估运行在该期末仍未结的外币项目 — 未结的发票和备忘录、未应用的客户收据和供应商付款，以及以外币记账的科目余额（如银行和贷款科目）— 并检查在该期末的草稿运行。创建该运行并过账，以便资产负债表以收盘汇率列示这些项目，差异为未实现汇兑损益。如果没有未结的外币项目，请跳过并说明理由。"
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "询问租赁运行本期间的新运行现在将过账的内容——租赁利息和使用权资产摊销、待摊或应计的租赁费用和售后租回式租赁利息——并检查截至期间结束需提交条目的草稿租赁运行。创建运行并过账以使条目到达凭证。如果无需过账任何内容，请以原因跳过。"
 
@@ -4761,6 +4786,9 @@ msgstr "资产账户"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "供应商在收到商品或服务前预先支付的预付款的资产科目"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "资产账户，用于列示未结外币应收款项的期末重估，以便应收款项账户仍与其未结发票相符"
 
 msgid "Asset Acquisition Cost"
 msgstr "资产购置成本"
@@ -5605,6 +5633,9 @@ msgstr "与 Carbon 预约通话"
 
 msgid "Book Depreciation"
 msgstr "账面折旧"
+
+msgid "Booked"
+msgstr "已预订"
 
 msgid "Books lock date (manual)"
 msgstr "账册锁定日期（手动）"
@@ -6482,6 +6513,9 @@ msgstr "勾选左侧的操作以构建批次。"
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账以查找期末现有数量为负的任何物料 — 通常是缺少收货或过账顺序错误，导致库存价值和销售成本失真。审查后标记为完成，或因某个理由跳过。"
+
+msgid "Check these accounts' consolidation rate"
+msgstr "检查这些科目的合并汇率"
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
@@ -7373,6 +7407,12 @@ msgstr "控制台操作员"
 
 msgid "Console Operator Created"
 msgstr "控制台操作员已创建"
+
+msgid "Consolidated CTA"
+msgstr "合并后的货币折算调整"
+
+msgid "Consolidation Rate"
+msgstr "合并汇率"
 
 msgid "Construction in Progress"
 msgstr "在建工程"
@@ -8656,11 +8696,23 @@ msgstr "货币代码"
 msgid "Currency display updated"
 msgstr "货币显示已更新"
 
+msgid "Currency Revaluation"
+msgstr "货币重估"
+
+msgid "Currency Revaluation Run"
+msgstr "货币重估运行"
+
 msgid "Currency Translation"
 msgstr "货币折算"
 
 msgid "Currency Translation (default)"
 msgstr "货币折算（默认）"
+
+msgid "Currency Translation Adjustment"
+msgstr "货币折算调整"
+
+msgid "Currency Translation Offset"
+msgstr "货币折算抵消"
 
 msgid "current"
 msgstr "当前"
@@ -10174,7 +10226,7 @@ msgid "Dismissed"
 msgstr "已忽略"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "已关闭 {changed} 个计划操作"
+msgstr "已关闭 {changed} 项计划行动"
 
 msgid "Dismissed 1 planning action"
 msgstr "已驳回1个计划操作"
@@ -11569,8 +11621,14 @@ msgstr "输入序列号或生产批次号，而不是物料"
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "输入该资产的制造成本。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
 
+msgid "Entered"
+msgstr "已进入"
+
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
+
+msgid "Entered By"
+msgstr "进入者"
 
 msgid "Entered On"
 msgstr "输入时间"
@@ -11640,6 +11698,9 @@ msgstr "所有者权益科目，用于累计利润或损失"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "所有者权益科目，用于货币折算调整(CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "平衡消除公司已过账货币折算调整的所有者权益账户；合并报表隐藏它"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "权益账户，在设置会计时抵消开盘余额。其总额必须为零。"
@@ -11818,6 +11879,9 @@ msgstr "对启用租赁的每项更改，显示更改前后的金额。"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "启用会计之前，每个检查都必须通过。"
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "集团内每家公司都使用本公司的货币，因此不存在外币折算调整。"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
@@ -12082,6 +12146,9 @@ msgstr "设备和设施维护的费用账户"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "付款以不利汇率结算外币发票时的外汇损失费用科目"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "期末重估时用于记录调整未结外币余额的汇兑损失费用账户"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "非库存采购（服务、物资）的费用账户"
 
@@ -12193,6 +12260,9 @@ msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包�
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "已导出前 {exportedCount} 行。"
+
+msgid "Exposure"
+msgstr "风险敞口"
 
 msgid "Expressly Unallowable"
 msgstr "明确不允许的"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "基础（所有人）"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "双人复核已禁用"
+msgstr "四眼原则已禁用"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼原则强制执行已启用"
@@ -13312,6 +13382,9 @@ msgstr "租赁终止利得"
 
 msgid "Gain/Loss"
 msgstr "收益/损失"
+
+msgid "Gains"
+msgstr "利得"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
@@ -13542,7 +13615,7 @@ msgid "GL contra-asset account that accumulates depreciation booked against fixe
 msgstr "累积针对固定资产折旧的资产对冲类总账科目。"
 
 msgid "GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L."
-msgstr "权益类总账科目（汇兑储备），存放期末重新转换外币余额产生的未实现汇兑差异；与损益表中已实现汇兑差益分开。"
+msgstr "所有者权益总账科目（折算储备，CTA），存放期末重新折算外币余额产生的未实现汇兑差异；与损益表中已实现的汇兑损益分开。"
 
 msgid "GL equity account where net income closes at fiscal year-end."
 msgstr "财政年末净收益结转的权益类总账科目。"
@@ -13577,6 +13650,9 @@ msgstr "第一次就上线成功 — 我们的团队陪伴您"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "前往 {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "转到货币重估运行"
 
 msgid "Go to depreciation runs"
 msgstr "转到折旧运行"
@@ -15346,6 +15422,12 @@ msgstr "分录"
 msgid "Journal Entry · {asset}"
 msgstr "分录 · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "分录 · 冲销"
+
+msgid "Journal Entry · Valuation"
+msgstr "分录 · 估值"
+
 msgid "Journal lines"
 msgstr "日记账行"
 
@@ -15887,6 +15969,9 @@ msgstr "从客户征收的销售税的负债账户"
 msgid "Liability account for tax paid on purchases"
 msgstr "采购支付的税款的负债账户"
 
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "负债账户，用于承载期末重估未结外币应付款项，确保应付款项账户仍与其未结发票相关联"
+
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "当项目合同预期成本超过其价格时贷记债务；由确认运行调整"
 
@@ -16287,6 +16372,9 @@ msgstr "损失准备"
 msgid "Loss Provisions"
 msgstr "损失准备"
 
+msgid "Losses"
+msgstr "损失"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的亏损"
 
@@ -16651,6 +16739,9 @@ msgstr "标记短缺"
 
 msgid "Mark to delete"
 msgstr "标记删除"
+
+msgid "Market"
+msgstr "市场"
 
 msgid "Market rate"
 msgstr "市场汇率"
@@ -19240,6 +19331,9 @@ msgstr "不需要"
 msgid "Not restorable"
 msgstr "无法恢复"
 
+msgid "Not revalued"
+msgstr "未重新估值"
+
 msgid "Not Run"
 msgstr "未运行"
 
@@ -19360,6 +19454,9 @@ msgstr "此期间无内容待过账。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
+
+msgid "Nothing to revalue for this period."
+msgstr "本期无需重新估值。"
 
 msgid "Nothing to review"
 msgstr "无需评审"
@@ -19562,6 +19659,9 @@ msgstr "在销售订单上"
 
 msgid "On Storage Unit"
 msgstr "在存储单元上"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "在集团根公司，将本期的合并货币折算调整(CTA)与已在消除公司过账的CTA进行比较。预览并过账差异，以便所有者权益在分类账中反映CTA。请先对子公司重新估值。其他公司将自动通过审核。"
 
 msgid "On the Missing Time report"
 msgstr "在\"缺失时间\"报告中"
@@ -19793,6 +19893,9 @@ msgstr "打开账户映射"
 
 msgid "Open Actions"
 msgstr "未结操作"
+
+msgid "Open Amount"
+msgstr "未结金额"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "打开 NCR 进行 MRB 处置"
@@ -20114,7 +20217,7 @@ msgid "Optional context for this rule"
 msgstr "此规则的可选上下文"
 
 msgid "Optional fixed rate used when translating equity balances per IAS 21 (instead of the period rate)."
-msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率（而不是期间汇率）。"
+msgstr "根据 IAS 21 折算所有者权益余额时使用的可选固定汇率（而不是期间汇率）。"
 
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
@@ -20231,6 +20334,9 @@ msgstr "营业外收入"
 
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "当付款以更优惠的汇率结算外币发票时用于外汇收益的营业外收入账户"
+
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "期末重新估值调整未结外币余额时，汇兑收益的营业外收入账户"
 
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "营业外收入账户，用于应付账款结算中未全额付款而清除的供应商余额"
@@ -20657,6 +20763,9 @@ msgstr "偿还"
 
 msgid "Pay expense"
 msgstr "支付费用"
+
+msgid "Payable"
+msgstr "应付"
 
 msgid "Payables"
 msgstr "应付款项"
@@ -21332,6 +21441,9 @@ msgstr "为合同项目过账应用的负担"
 msgid "Post Comment"
 msgstr "发布评论"
 
+msgid "Post CTA"
+msgstr "过账CTA"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "过账草稿运行 {0}"
@@ -21395,6 +21507,9 @@ msgstr "过账日期"
 
 msgid "Posting Date"
 msgstr "过账日期"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "将合并CTA的变化过账至消除公司的所有者权益。"
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "过账发票并通过您已连接的Stripe账户发送支付链接。没有关联Stripe客户的客户的发票将被过账并标记为未发送。"
@@ -21476,6 +21591,9 @@ msgstr "您的设备预防性维护排程"
 
 msgid "Preview"
 msgstr "预览"
+
+msgid "Preview CTA"
+msgstr "预览CTA"
 
 msgid "Preview failed: {error}"
 msgstr "预览失败：{error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "从头重新计划 — 步骤将在计划完成后自动重建"
+msgstr "从头开始重新规划 — 完成后步骤会自动重建"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "重新计划当前步骤顺序中的动作 — 步骤将在完成时更新"
@@ -22756,6 +22874,9 @@ msgstr "收据"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "还处于草稿或待处理状态的收货、发货、销售发票、采购发票、付款以及借方/贷方备忘录必须过账或作废——包括本期日期的文件和未日期但过账时会获得本期日期的文件。在它们过账之前，它们的金额不在总账中，因此本期将被低估。"
+
+msgid "Receivable"
+msgstr "应收款"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "在销售型租赁开始时确认的应收款，每次租赁支付时扣减"
@@ -23481,7 +23602,7 @@ msgid "Reopen Training"
 msgstr "重新打开培训"
 
 msgid "Reopened {changed} planning actions"
-msgstr "重新打开了 {changed} 个计划操作"
+msgstr "已重新打开{changed}个计划操作"
 
 msgid "Reopened 1 planning action"
 msgstr "重新开启 1 个计划操作"
@@ -24048,6 +24169,15 @@ msgstr "修订版 {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "修订 {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "重新估值行"
+
+msgid "Revalue these companies first"
+msgstr "首先重新估值这些公司"
+
+msgid "Revalued"
+msgstr "已重新估值"
 
 msgid "Reveal"
 msgstr "显示"
@@ -24758,7 +24888,7 @@ msgstr "已保存"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
-msgstr "已保存 {0} 个维度值映射"
+msgstr "已保存{0}个维度值映射"
 
 msgid "Saved {count} account mappings"
 msgstr "已保存 {count} 个账户映射"
@@ -26591,7 +26721,7 @@ msgid "Staffing required"
 msgstr "人工配置必需"
 
 msgid "Staffing requirement disabled"
-msgstr "员工要求已禁用"
+msgstr "人员要求已禁用"
 
 msgid "Staffing requirement enabled"
 msgstr "员工要求已启用"
@@ -26701,6 +26831,12 @@ msgstr "州/省"
 
 msgid "Statement"
 msgstr "声明"
+
+msgid "Statement Balance"
+msgstr "报表余额"
+
+msgid "Statement Balances"
+msgstr "报表余额"
 
 msgid "Statement of Indirect Expenses"
 msgstr "间接费用声明"
@@ -27154,7 +27290,7 @@ msgid "Successfully resent invite"
 msgstr "成功重新发送邀请"
 
 msgid "Successfully revoked invites"
-msgstr "已成功撤销邀请"
+msgstr "成功撤销邀请"
 
 msgid "Successfully seeded documents"
 msgstr "已成功生成文档"
@@ -29394,6 +29530,9 @@ msgstr "其后"
 msgid "These accounts need a replacement"
 msgstr "这些账户需要替换"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "这些资产和负债科目按平均汇率折算，这会改变外币折算差额（CTA）。资产负债表科目通常按当前汇率折算："
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
 
@@ -29444,6 +29583,9 @@ msgstr "这些单位被视为销售。激活时注销每一个单位并过账其
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "这些账户不在你的会计科目表中，但文档或凭证使用了它们。从你的会计科目表中选择替代每一个的账户。"
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "他们在此期间没有已过账的货币重估运行,因此其余额不是按结算汇率:"
 
 msgid "this ability"
 msgstr "此能力"
@@ -29721,7 +29863,7 @@ msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "此收货单没有行。请选择源单据以添加行。"
 
 msgid "This removes the PDF. Employees will see the new content instead."
-msgstr "这将删除PDF。员工将看到新内容。"
+msgstr "这将移除PDF。员工将看到新内容。"
 
 msgid "This removes the video. Employees will see the new content instead."
 msgstr "这会删除视频。员工将改为看到新内容。"
@@ -29749,6 +29891,9 @@ msgstr "这个修订版已下达（生产）。更改应该通常通过变更通
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "此修订版已下达（生产）。打开变更通知以修改它。"
+
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "此运行不重新评估这些备忘录:对其结算不会按备忘录的货币记录金额。"
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "此运行的步骤比我们此处显示的要多。仅列出前 {MAX_RUN_STEPS} 个。"
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "本周"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "这将为截至 {0} 的期间创建草稿货币重估运行。每个未结的外币物料将以该日期的汇率重新评估。"
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "这将为期末为 {0} 的期间创建草稿折旧运行。所有启用的固定资产将自动计算。"
 
@@ -29867,6 +30016,11 @@ msgstr "这将从其当前排程重建{0}：在{1}当日或之前到期、没有
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "这将从固定资产现有状态重建 {0}：每个未被另一运行覆盖、截至 {1} 期间的活跃资产。"
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "这将从截至 {1} 未结的外币物料重建 {0}。运行中的汇率将保留。"
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "这将根据启用的制造方法的物料清单和工艺使用生产批次重新计算单位成本。当前成本将被覆盖。您想继续吗？"
 
@@ -29889,6 +30043,7 @@ msgstr "这将用此修订版替换其他修订版的所有方法原材料。"
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法原材料。"
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "这将冲销{0}的凭证，并将其返回至草稿状态。之后您可以重新计算、过账或删除。"
@@ -30091,6 +30246,9 @@ msgstr "至下周"
 msgid "To pick"
 msgstr "拣货"
 
+msgid "To post"
+msgstr "待过账"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "要重新激活，请使用行菜单并选择发送邀请。员工接受后将变为启用。"
 
@@ -30260,6 +30418,9 @@ msgstr "总预计成本"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个单位分摊。"
 
+msgid "Total gains"
+msgstr "总计收益"
+
 msgid "Total hours"
 msgstr "总小时数"
 
@@ -30271,6 +30432,9 @@ msgstr "总间接成本"
 
 msgid "Total lease cost"
 msgstr "租赁总成本"
+
+msgid "Total losses"
+msgstr "总计损失"
 
 msgid "Total Material Cost"
 msgstr "总原材料成本"
@@ -30558,7 +30722,7 @@ msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
 
 msgid "Turned off sync"
-msgstr "已关闭同步"
+msgstr "关闭同步"
 
 msgid "Turned on sync"
 msgstr "已打开同步"
@@ -30663,6 +30827,12 @@ msgstr "未应用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "未应用的现金作为本文件的客户预付款而不是账户信用存储。"
 
+msgid "Unapplied Disbursement"
+msgstr "未应用支付"
+
+msgid "Unapplied Receipt"
+msgstr "未应用收货"
+
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
 
@@ -30728,6 +30898,13 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 
 msgid "Undo"
 msgstr "撤销"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "撤销 {0}"
+
+msgid "Undo Run"
+msgstr "撤销运行"
 
 msgid "Unfurl Links"
 msgstr "展开链接"
@@ -30811,7 +30988,7 @@ msgid "Units"
 msgstr "单位"
 
 msgid "Units of base currency per one unit of this currency; used to translate amounts on posting."
-msgstr "基础货币单位对该货币一个单位的比率;用于过账时金额的转换。"
+msgstr "该货币一个单位折合的基础货币单位数；用于过账时折算金额。"
 
 msgid "units of measure"
 msgstr "计量单位"
@@ -30915,6 +31092,12 @@ msgstr "取消发布"
 
 msgid "Unpublish {name}?"
 msgstr "取消发布 {name}？"
+
+msgid "Unrealized Exchange Gain"
+msgstr "未实现汇兑收益"
+
+msgid "Unrealized Exchange Loss"
+msgstr "未实现汇兑损失"
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
@@ -31091,7 +31274,7 @@ msgid "Updated dimension sync settings"
 msgstr "已更新维度同步设置"
 
 msgid "Updated dispatch status"
-msgstr "维护工单状态已更新"
+msgstr "已更新派遣状态"
 
 msgid "Updated job status"
 msgstr "工单状态已更新"
@@ -32712,7 +32895,7 @@ msgid "Written Off"
 msgstr "已冲销"
 
 msgid "Written with a warning"
-msgstr "带有警告的书面内容"
+msgstr "带有警告的编写"
 
 msgid "Wrote the missing journal of 1 document"
 msgstr "为 1 份文件写入了缺失的凭证"

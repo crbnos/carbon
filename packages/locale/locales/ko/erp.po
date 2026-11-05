@@ -565,6 +565,10 @@ msgstr "{0}/{whole} 완료"
 msgid "{0} on your timecards"
 msgstr "타임카드의 {0}"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0}개 미결 외화 품목 · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}개 공정 · {totalQuantity}개 부품"
@@ -933,7 +937,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
-msgstr "{errors, plural, one {# 행이 수정 필요} other {# 행이 수정 필요}}"
+msgstr "{errors, plural, one {# 행 수정 필요} other {# 행 수정 필요}}"
 
 msgid "{errors} failed"
 msgstr "{errors} 실패"
@@ -1175,7 +1179,7 @@ msgid "{serialLabel} has no components recorded in Carbon. Build from the item's
 msgstr "{serialLabel}에 기록된 구성 요소가 없습니다. 대신 품목의 자재 명세서로 빌드하세요."
 
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
-msgstr "{skipped, plural, one {# 행이 건너뜀} other {# 행이 건너뜀}}"
+msgstr "{skipped, plural, one {# 행 건너뜀} other {# 행 건너뜀}}"
 
 msgid "{stale} changed since the page loaded"
 msgstr "{stale}은(는) 페이지를 로드한 이후 변경되었습니다"
@@ -1362,6 +1366,9 @@ msgstr "1개 작업이 생성됨"
 
 msgid "1 line"
 msgstr "1 라인"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1개 미결 외화 품목 · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"
@@ -2426,8 +2433,14 @@ msgstr "계정 {accountNumber}은(는) 활성 전기 계정이 아닙니다."
 msgid "Account & Details"
 msgstr "계정 및 세부정보"
 
+msgid "Account Balance"
+msgstr "계정 잔액"
+
 msgid "Account balances with debits and credits"
 msgstr "차변과 대변이 포함된 계정 잔액"
+
+msgid "Account Currency"
+msgstr "계정 통화"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "재화 또는 서비스가 수령되기 전에 지불된 선급금을 계정화함"
@@ -3511,6 +3524,9 @@ msgstr "상위 단위 {sourceName}(으)로 인해 이미 MRP 제외"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "저장 유형 {sourceName}(으)로 인해 이미 MRP 제외"
 
+msgid "Already posted"
+msgstr "이미 전기됨"
+
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}에서도"
 
@@ -3914,6 +3930,9 @@ msgstr "매입채무 미결제액"
 msgid "AP Overdue"
 msgstr "매입채무 기한 초과"
 
+msgid "AP Revaluation Adjustment"
+msgstr "매입채무 재평가 조정"
+
 msgid "API Docs"
 msgstr "API 문서"
 
@@ -3945,7 +3964,7 @@ msgid "Applied"
 msgstr "적용됨"
 
 msgid "Applied {applied} planning actions"
-msgstr "{applied}개 계획 작업 적용됨"
+msgstr "{applied}개 계획 작업이 적용되었습니다"
 
 msgid "Applied 1 planning action"
 msgstr "1개 계획 조치가 적용됨"
@@ -4134,6 +4153,9 @@ msgstr "매출채권 미결제액"
 
 msgid "AR Overdue"
 msgstr "매출채권 기한 초과"
+
+msgid "AR Revaluation Adjustment"
+msgstr "매출채권 재평가 조정"
 
 msgid "AR/AP"
 msgstr "매출채권/매입채무"
@@ -4729,6 +4751,9 @@ msgstr "이 기간에 새로운 실행이 지금 감가상각할 항목을 요�
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "수익 인식에 이 기간의 새 실행에서 지금 인식할 내용을 묻습니다 — 이연 송장 수익 및 계약 수익 — 기말까지 인식해야 할 수익을 보유한 초안 실행을 확인합니다. 실행을 생성하고 전기하여 수익이 총계정원장에 도달하도록 합니다. 인식해야 할 내용이 없으면 이유와 함께 건너뜁니다."
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "통화 재평가 실행을 통해 기간 말 외화로 남아 있는 미결 항목을 확인합니다 — 미결 송장 및 메모, 미적용 고객 영수증 및 공급업체 지불, 그리고 은행 및 대출 계정처럼 외화로 관리되는 계정의 잔액. 기간 종료 시 초안 실행을 확인하고, 이를 생성 및 전기하여 재무상태표에 종가 기준의 항목을 반영하며 미실현 환전 이득 또는 손실의 차이를 포함합니다. 외화에서 미결 항목이 없으면 사유와 함께 건너뜁니다."
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "리스 실행에 이 기간의 새로운 실행이 지금 전기할 내용을 물어봅니다 — 리스 이자와 사용권자산 상각, 연기되거나 발생할 임차료, 판매자형 리스 이자 — 그리고 기간 말까지 만기가 되는 항목을 보유하고 있는 초안 리스 실행을 확인합니다. 실행을 생성하고 전기하여 항목이 원장에 도달하도록 합니다. 전기할 항목이 없으면 사유와 함께 건너뜁니다."
 
@@ -4761,6 +4786,9 @@ msgstr "자산 계정"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "공급업체에 상품 또는 서비스를 받기 전에 선금으로 지불한 금액을 기록하는 자산 계정"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "기간 말 미결 외화 매출채권의 재평가를 반영하는 자산 계정으로, 매출채권 계정이 미결 송장과 계속 연결됩니다"
 
 msgid "Asset Acquisition Cost"
 msgstr "자산 취득원가"
@@ -4844,7 +4872,7 @@ msgid "Assigned"
 msgstr "배정됨"
 
 msgid "Assigned {changed} planning actions"
-msgstr "{changed}개 계획 작업이 할당됨"
+msgstr "{changed}개 계획 작업이 할당되었습니다"
 
 msgid "Assigned 1 planning action"
 msgstr "1개 계획 조치가 할당됨"
@@ -5605,6 +5633,9 @@ msgstr "Carbon과 상담 예약"
 
 msgid "Book Depreciation"
 msgstr "장부 감가상각"
+
+msgid "Booked"
+msgstr "예약됨"
 
 msgid "Books lock date (manual)"
 msgstr "장부 잠금 날짜(수동)"
@@ -6482,6 +6513,9 @@ msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 기준 음수 현재고 수량이 있는 품목에 대해 품목 장부를 확인하십시오 — 일반적으로 입고 누락 또는 순서 없는 전기로 인해 재고 관리 가치 및 매출원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유를 포함하여 건너뜁니다."
+
+msgid "Check these accounts' consolidation rate"
+msgstr "이 계정들의 통합 환율을 확인하세요"
 
 msgid "Check your email"
 msgstr "이메일을 확인하세요"
@@ -7373,6 +7407,12 @@ msgstr "콘솔 작업자"
 
 msgid "Console Operator Created"
 msgstr "콘솔 작업자가 생성되었습니다"
+
+msgid "Consolidated CTA"
+msgstr "통합 CTA"
+
+msgid "Consolidation Rate"
+msgstr "통합 환율"
 
 msgid "Construction in Progress"
 msgstr "진행 중인 건설"
@@ -8654,6 +8694,12 @@ msgid "Currency code"
 msgstr "통화 코드"
 
 msgid "Currency display updated"
+msgstr "통화 표시 업데이트됨"
+
+msgid "Currency Revaluation"
+msgstr "통화 재평가"
+
+msgid "Currency Revaluation Run"
 msgstr "통화 표시 업데이트"
 
 msgid "Currency Translation"
@@ -8661,6 +8707,12 @@ msgstr "통화 환산"
 
 msgid "Currency Translation (default)"
 msgstr "통화 환산(기본값)"
+
+msgid "Currency Translation Adjustment"
+msgstr "통화 환산 조정"
+
+msgid "Currency Translation Offset"
+msgstr "통화 환산 오프셋"
 
 msgid "current"
 msgstr "현재"
@@ -8765,7 +8817,7 @@ msgid "Customer contact email required"
 msgstr "고객 담당자 이메일 필수로 설정됨"
 
 msgid "Customer contact requirement disabled"
-msgstr "고객 담당자 요구사항이 비활성화되었습니다"
+msgstr "고객 담당자 요구사항 비활성화됨"
 
 msgid "Customer contact requirement enabled"
 msgstr "고객 담당자 요구사항 활성화"
@@ -10174,7 +10226,7 @@ msgid "Dismissed"
 msgstr "무시됨"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "{changed}개의 계획 항목을 해제했습니다"
+msgstr "{changed}개 계획 작업 무시됨"
 
 msgid "Dismissed 1 planning action"
 msgstr "1개 계획 조치 무시"
@@ -11569,8 +11621,14 @@ msgstr "품목이 아닌 시리얼 번호 또는 배치 번호를 입력하세�
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "사내 생산 원가를 입력하십시오. 이 금액은 지출된 계정에서 자산으로 기입됩니다: 이전 연도의 이익잉여금 또는 올해의 노무 또는 자재 비용입니다."
 
+msgid "Entered"
+msgstr "입력됨"
+
 msgid "Entered At Receipt"
 msgstr "입고 시 입력됨"
+
+msgid "Entered By"
+msgstr "입력자"
 
 msgid "Entered On"
 msgstr "입력된 날짜"
@@ -11609,7 +11667,7 @@ msgid "Entry"
 msgstr "항목"
 
 msgid "Entry added"
-msgstr "항목이 추가되었습니다"
+msgstr "항목 추가됨"
 
 msgid "Entry Date"
 msgstr "입력 날짜"
@@ -11640,6 +11698,9 @@ msgstr "누적 손익에 대한 자본 계정"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "통화 환산 조정용 자본 계정 (CTA)"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "제거 회사의 전기된 CTA를 균형 맞추는 자본 계정; 통합 보고서는 이를 숨깁니다"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "회계가 설정될 때 개시 잔액을 상쇄하는 자본 계정. 총계는 0이어야 합니다."
@@ -11818,6 +11879,9 @@ msgstr "활성 리스의 모든 변경 사항, 변경 전후의 금액 포함"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "회계를 활성화하기 전에 모든 확인이 통과해야 합니다."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "그룹의 모든 회사는 이 회사의 통화를 사용하므로 환산 조정이 필요하지 않습니다."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "모든 회사 범위의 레코드. 자격증명, 연동 토큰 및 웹훅은 포함되지 않습니다."
@@ -12082,6 +12146,9 @@ msgstr "설비 및 시설 유지보수 비용 계정"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "지불이 외화 송장을 더 불리한 환율로 결제할 때 FX 손실에 대한 비용 계정"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "기말 환율 재평가에서 미결 외화 잔액을 조정할 때 환손실을 인식하는 비용 계정"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "비재고 구매(서비스, 소모품)에 대한 비용 계정"
 
@@ -12193,6 +12260,9 @@ msgstr "현재 시스템에서 계정과목표를 CSV로 내보내세요. 계정
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "처음 {exportedCount}행을 내보냈습니다."
+
+msgid "Exposure"
+msgstr "노출"
 
 msgid "Expressly Unallowable"
 msgstr "명시적으로 허용 불가"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "파운데이션(전체)"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "이중 승인 기능이 비활성화되었습니다"
+msgstr "이중 승인이 비활성화됨"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "이중 승인 강제 활성화"
@@ -13312,6 +13382,9 @@ msgstr "리스 종료로 인한 이익"
 
 msgid "Gain/Loss"
 msgstr "이득/손실"
+
+msgid "Gains"
+msgstr "이득"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
@@ -13577,6 +13650,9 @@ msgstr "저희 팀과 함께 첫 시도에 성공적으로 도입하세요"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "{0}(으)로 이동"
+
+msgid "Go to currency revaluation runs"
+msgstr "통화 환율 재평가 실행으로 이동"
 
 msgid "Go to depreciation runs"
 msgstr "감가상각 실행으로 이동"
@@ -15247,7 +15323,7 @@ msgid "Job · {itemReadableId}"
 msgstr "작업 지시 · {itemReadableId}"
 
 msgid "Job cancelled"
-msgstr "작업 지시가 취소되었습니다"
+msgstr "작업 지시가 취소됨"
 
 msgid "Job completed"
 msgstr "작업 지시 완료됨"
@@ -15345,6 +15421,12 @@ msgstr "분개"
 
 msgid "Journal Entry · {asset}"
 msgstr "분개 · {asset}"
+
+msgid "Journal Entry · Reversal"
+msgstr "분개 · 역분개"
+
+msgid "Journal Entry · Valuation"
+msgstr "분개 · 평가"
 
 msgid "Journal lines"
 msgstr "전표 라인"
@@ -15683,7 +15765,7 @@ msgid "Lead time updates are enabled"
 msgstr "리드타임 업데이트가 활성화되었습니다"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "입고 시 리드타임 업데이트가 비활성화되었습니다"
+msgstr "입고시 리드타임 업데이트가 비활성화됨"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "입고 시 리드타임 업데이트 활성화"
@@ -15886,6 +15968,9 @@ msgstr "고객으로부터 수집한 판매세 부채 계정"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "구매 시 납부한 세금 부채 계정"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "기말 미결 외화 매입채무의 환율 재평가를 반영하는 부채 계정으로, 매입채무 계정이 미결 송장과 연계되도록 유지합니다"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "프로젝트 계약의 예상 비용이 가격을 초과할 때 계상된 부채; 인식 실행으로 조정됨"
@@ -16287,6 +16372,9 @@ msgstr "손실 충당금"
 msgid "Loss Provisions"
 msgstr "손실 충당금"
 
+msgid "Losses"
+msgstr "손실"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 손실"
 
@@ -16652,6 +16740,9 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
+msgid "Market"
+msgstr "시장"
+
 msgid "Market rate"
 msgstr "시장 환율"
 
@@ -16782,7 +16873,7 @@ msgid "Material planning shows only the actions and suggested orders due within 
 msgstr "자재 계획은 오늘부터 이 많은 날짜 내에 필요한 조치 및 제안된 주문만 표시하므로, 먼 미래의 필요는 중요해질 때까지 방해가 되지 않습니다. 품목의 자체 계획 호라이즌이 이 기본값보다 우선합니다."
 
 msgid "Material pre-selection disabled"
-msgstr "자재 사전 선택 비활성화됨"
+msgstr "자재 사전선택이 비활성화됨"
 
 msgid "Material pre-selection enabled"
 msgstr "자재 사전 선택 활성화"
@@ -17097,7 +17188,7 @@ msgid "Mode"
 msgstr "모드"
 
 msgid "Model cache invalidated; re-converting from the source file"
-msgstr "모델 캐시 무효화됨; 소스 파일에서 다시 변환 중"
+msgstr "모델 캐시가 무효화됨; 소스 파일에서 다시 변환 중"
 
 msgid "Model conversion started"
 msgstr "모델 변환 시작"
@@ -19240,6 +19331,9 @@ msgstr "필수 아님"
 msgid "Not restorable"
 msgstr "복원 불가"
 
+msgid "Not revalued"
+msgstr "재평가되지 않음"
+
 msgid "Not Run"
 msgstr "미실행"
 
@@ -19360,6 +19454,9 @@ msgstr "이 기간에 전기할 것이 없습니다."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
+
+msgid "Nothing to revalue for this period."
+msgstr "이 기간에 재평가할 항목이 없습니다."
 
 msgid "Nothing to review"
 msgstr "검토할 것이 없습니다"
@@ -19562,6 +19659,9 @@ msgstr "수주에"
 
 msgid "On Storage Unit"
 msgstr "보관 단위에"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "그룹의 루트 회사에서 이 기간의 통합 통화 환산 조정(CTA)을 제거 회사에 이미 전기된 CTA와 비교합니다. 차이를 미리 보고 전기하여 자본이 원장에 CTA를 반영하도록 합니다. 먼저 자회사를 재평가하세요. 다른 회사는 자동으로 통과합니다."
 
 msgid "On the Missing Time report"
 msgstr "누락된 시간 보고서에"
@@ -19793,6 +19893,9 @@ msgstr "계정 매핑 열기"
 
 msgid "Open Actions"
 msgstr "미결 조치"
+
+msgid "Open Amount"
+msgstr "미결 금액"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR 열기"
@@ -20232,6 +20335,9 @@ msgstr "영업외수익"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "지불이 외화 송장을 더 유리한 환율로 결제할 때 FX 이익에 대한 영업외수익 계정"
 
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "기말 재평가가 미결 외환 잔액을 다시 표시할 때 FX 이익에 대한 영업외수익 계정"
+
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "매입채무 결제 시 전액 지불 없이 처리된 공급업체 잔액에 대한 영업외수익 계정"
 
@@ -20657,6 +20763,9 @@ msgstr "상환"
 
 msgid "Pay expense"
 msgstr "비용 지불"
+
+msgid "Payable"
+msgstr "미지급"
 
 msgid "Payables"
 msgstr "매입채무"
@@ -21332,6 +21441,9 @@ msgstr "계약 프로젝트에 대해 적용된 간접비 전기"
 msgid "Post Comment"
 msgstr "댓글 게시"
 
+msgid "Post CTA"
+msgstr "CTA 전기"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "초안 실행 {0} 전기"
@@ -21395,6 +21507,9 @@ msgstr "전기 날짜"
 
 msgid "Posting Date"
 msgstr "전기일"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "통합된 CTA의 변경사항을 제거 회사의 자본에 전기합니다."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "송장을 전기하고 연결된 Stripe 계정을 통해 지불 링크와 함께 전송합니다. 연결된 Stripe 고객이 없는 고객의 송장은 전기되고 미발송으로 표시됩니다."
@@ -21476,6 +21591,9 @@ msgstr "설비 예방 유지보수 일정"
 
 msgid "Preview"
 msgstr "미리보기"
+
+msgid "Preview CTA"
+msgstr "CTA 미리보기"
 
 msgid "Preview failed: {error}"
 msgstr "미리보기 실패: {error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "처음부터 재계획 — 완료되면 단계가 자동으로 재구성됩니다"
+msgstr "처음부터 다시 계획 중 — 완료되면 단계가 자동으로 재구축됨"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "현재 단계 순서에서 모션을 다시 계획 — 완료되면 단계가 업데이트됨"
@@ -22756,6 +22874,9 @@ msgstr "입고"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "초안 또는 대기 중 상태인 입고, 출하, 매출 송장, 매입 송장, 지불, 신용증/회신증을 전기하거나 무효 처리해야 합니다 — 이 기간에 날짜가 지정된 문서와 전기될 때 이 기간의 날짜를 받을 미정 문서 모두 포함됩니다. 전기될 때까지 그 금액은 총계정원장에 포함되지 않으므로 해당 기간은 과소계산됩니다."
+
+msgid "Receivable"
+msgstr "매출채권"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "판매형 리스 개시 시 인식된 채권으로, 각 렌탈료 지급 시마다 감소됨"
@@ -23481,7 +23602,7 @@ msgid "Reopen Training"
 msgstr "교육 다시 열기"
 
 msgid "Reopened {changed} planning actions"
-msgstr "{changed}개의 계획 작업이 다시 열렸습니다"
+msgstr "{changed}개의 계획 작업을 다시 열음"
 
 msgid "Reopened 1 planning action"
 msgstr "계획 작업 1개 다시 열음"
@@ -24048,6 +24169,15 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "개정 {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "재평가 라인"
+
+msgid "Revalue these companies first"
+msgstr "먼저 이 회사들을 재평가하세요"
+
+msgid "Revalued"
+msgstr "재평가됨"
 
 msgid "Reveal"
 msgstr "표시"
@@ -24758,7 +24888,7 @@ msgstr "저장됨"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
-msgstr "{0}개의 차원 값 매핑이 저장되었습니다"
+msgstr "{0}개의 차원 값 매핑이 저장됨"
 
 msgid "Saved {count} account mappings"
 msgstr "{count}개 계정 매핑 저장됨"
@@ -25110,7 +25240,7 @@ msgid "Section"
 msgstr "섹션"
 
 msgid "Section deleted"
-msgstr "섹션이 삭제되었습니다"
+msgstr "섹션이 삭제됨"
 
 #. placeholder {0}: format.money(officerWages)
 msgid "Section E line 38, officers' wage QREs: {0}"
@@ -26332,7 +26462,7 @@ msgid "Skipped"
 msgstr "건너뜀"
 
 msgid "Skipped {count} sync operations"
-msgstr "{count}개의 동기화 작업이 건너뛰어졌습니다"
+msgstr "{count}개의 동기화 작업 건너뜀"
 
 msgid "Skipped sync operation"
 msgstr "동기화 공정 건너뜀"
@@ -26591,7 +26721,7 @@ msgid "Staffing required"
 msgstr "인력 필수"
 
 msgid "Staffing requirement disabled"
-msgstr "인원 요구사항이 비활성화되었습니다"
+msgstr "인력 요구사항 비활성화됨"
 
 msgid "Staffing requirement enabled"
 msgstr "인원 요구사항 활성화됨"
@@ -26701,6 +26831,12 @@ msgstr "주/도"
 
 msgid "Statement"
 msgstr "명세서"
+
+msgid "Statement Balance"
+msgstr "거래명세서 잔액"
+
+msgid "Statement Balances"
+msgstr "거래명세서 잔액"
 
 msgid "Statement of Indirect Expenses"
 msgstr "간접비 명세서"
@@ -27151,7 +27287,7 @@ msgid "Successfully created a new revision"
 msgstr "새 리비전이 생성되었습니다"
 
 msgid "Successfully resent invite"
-msgstr "초대를 다시 전송했습니다"
+msgstr "초대를 성공적으로 다시 보냈습니다"
 
 msgid "Successfully revoked invites"
 msgstr "초대를 성공적으로 취소함"
@@ -29394,6 +29530,9 @@ msgstr "그 이후로"
 msgid "These accounts need a replacement"
 msgstr "이 계정에는 대체 계정이 필요합니다."
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "이 자산 및 부채 계정은 평균 환율로 환산되어 외화환산조정(CTA)이 달라집니다. 재무상태표 계정은 보통 현재 환율로 환산됩니다:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "이러한 사용자 정의 필드는 동일한 태그를 가진 엔터티에만 사용 가능합니다."
 
@@ -29444,6 +29583,9 @@ msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자�
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "이들은 귀사의 계정과목표에 없지만 문서 또는 전표에서 사용 중입니다. 각 항목을 대체할 귀사 계정과목표의 계정을 선택하세요."
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "이 기간에 전기된 통화 재평가 실행이 없으므로 잔액이 종가 환율이 아닙니다:"
 
 msgid "this ability"
 msgstr "이 역량"
@@ -29721,7 +29863,7 @@ msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "이 입고에는 항목이 없습니다. 추가하려면 원본 문서를 선택하십시오."
 
 msgid "This removes the PDF. Employees will see the new content instead."
-msgstr "이렇게 하면 PDF가 제거됩니다. 직원이 대신 새 콘텐츠를 볼 수 있습니다."
+msgstr "이것은 PDF를 제거합니다. 직원들이 대신 새 콘텐츠를 볼 것입니다."
 
 msgid "This removes the video. Employees will see the new content instead."
 msgstr "비디오를 제거합니다. 직원은 대신 새 콘텐츠를 볼 수 있습니다."
@@ -29749,6 +29891,9 @@ msgstr "이 리비전은 릴리스되었습니다 (생산). 변경 사항은 정
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "이 리비전은 릴리스되었습니다 (생산). 수정하려면 변경 통지를 열으세요."
+
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "이 실행은 이 메모를 재평가하지 않습니다: 이에 대한 결제는 메모의 통화로 금액을 기록하지 않습니다."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "이 실행은 여기에 표시된 것보다 더 많은 단계가 있습니다. 처음 {MAX_RUN_STEPS}개만 나열됩니다."
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "이번 주"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "{0}에 종료되는 기간에 대한 초안 통화 재평가 실행이 생성됩니다. 모든 미결 외화 품목이 그 날짜의 환율로 재평가됩니다."
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "이것은 {0}로 끝나는 기간에 대한 초안 감가상각 실행을 생성합니다. 모든 활성 고정자산이 자동으로 계산됩니다."
 
@@ -29867,6 +30016,11 @@ msgstr "이것은 {0}을 현재 상태의 일정에서 다시 빌드합니다: {
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "이것은 {0}을(를) 현재 상태의 고정자산에서 재구축합니다: {1}에 끝나는 기간에 대해 다른 실행으로 적용되지 않은 모든 활성 자산입니다."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "{0}을(를) {1}의 미결 외화 품목에서 다시 구축합니다. 실행의 환율은 유지됩니다."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "이것은 배치 크기를 사용하여 활성 생산 방법의 자재 명세서 및 공법에서 단위 원가를 재계산합니다. 현재 원가가 덮어써집니다. 계속하시겠습니까?"
 
@@ -29889,6 +30043,7 @@ msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "이것은 {0}의 전표를 역전하고 초안으로 돌려놓습니다. 그 후 재계산하거나 전기하거나 삭제할 수 있습니다."
@@ -30091,6 +30246,9 @@ msgstr "다음 주까지"
 msgid "To pick"
 msgstr "피킹"
 
+msgid "To post"
+msgstr "전기하려면"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "다시 활성화하려면 행 메뉴를 사용하여 초대 보내기를 선택하세요. 직원이 수락하면 활성화됩니다."
 
@@ -30260,6 +30418,9 @@ msgstr "총 예상 원가"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."
 
+msgid "Total gains"
+msgstr "총 이익"
+
 msgid "Total hours"
 msgstr "총 시간"
 
@@ -30271,6 +30432,9 @@ msgstr "간접 원가 합계"
 
 msgid "Total lease cost"
 msgstr "총 임차 원가"
+
+msgid "Total losses"
+msgstr "총 손실"
 
 msgid "Total Material Cost"
 msgstr "총 자재 원가"
@@ -30558,7 +30722,7 @@ msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
 
 msgid "Turned off sync"
-msgstr "동기화가 꺼졌습니다"
+msgstr "동기화 비활성화됨"
 
 msgid "Turned on sync"
 msgstr "동기화 켜짐"
@@ -30663,6 +30827,12 @@ msgstr "미적용"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "미적용 현금은 계정 대변 대신 이 문서에 대한 고객 선급금으로 유지됩니다."
 
+msgid "Unapplied Disbursement"
+msgstr "미적용 지급"
+
+msgid "Unapplied Receipt"
+msgstr "미적용 입고"
+
 msgid "Unapproved Supplier"
 msgstr "미승인 공급업체"
 
@@ -30727,6 +30897,13 @@ msgid "Undiscounted payments still to come, by fiscal year, less the interest th
 msgstr "남은 개월이 부과할 이자를 제외한, 아직 올 할인되지 않은 지불액 (회계연도별)."
 
 msgid "Undo"
+msgstr "실행 취소"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "실행 취소 {0}"
+
+msgid "Undo Run"
 msgstr "실행 취소"
 
 msgid "Unfurl Links"
@@ -30915,6 +31092,12 @@ msgstr "게시 취소"
 
 msgid "Unpublish {name}?"
 msgstr "게시 취소 {name}?"
+
+msgid "Unrealized Exchange Gain"
+msgstr "미실현 환차익"
+
+msgid "Unrealized Exchange Loss"
+msgstr "미실현 환차손"
 
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"

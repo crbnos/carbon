@@ -565,6 +565,10 @@ msgstr "{0} / {whole} 完了"
 msgid "{0} on your timecards"
 msgstr "あなたのタイムカードの {0}"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0}個のオープン外貨建て品目 · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工程 · {totalQuantity} 部品"
@@ -933,7 +937,7 @@ msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
 msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
-msgstr "{errors, plural, one {修正が必要な行 # 件} other {修正が必要な行 # 件}}"
+msgstr "{errors, plural, one {# 行の修正が必要です} other {# 行の修正が必要です}}"
 
 msgid "{errors} failed"
 msgstr "{errors} が失敗"
@@ -1175,7 +1179,7 @@ msgid "{serialLabel} has no components recorded in Carbon. Build from the item's
 msgstr "{serialLabel} にはCarbonに記録されたコンポーネントがありません。品目の部品表から構築してください。"
 
 msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
-msgstr "{skipped, plural, one {スキップ済みの行 # 件} other {スキップ済みの行 # 件}}"
+msgstr "{skipped, plural, one {# 行がスキップされました} other {# 行がスキップされました}}"
 
 msgid "{stale} changed since the page loaded"
 msgstr "{stale} はページが読み込まれてから変更されました"
@@ -1362,6 +1366,9 @@ msgstr "1件のジョブが作成されました"
 
 msgid "1 line"
 msgstr "1明細"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1個のオープン外貨建て品目 · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -2426,8 +2433,14 @@ msgstr "勘定科目 {accountNumber} は有効な転記勘定科目ではあり�
 msgid "Account & Details"
 msgstr "アカウントと詳細"
 
+msgid "Account Balance"
+msgstr "勘定科目残高"
+
 msgid "Account balances with debits and credits"
 msgstr "借方貸方を含む勘定残高"
+
+msgid "Account Currency"
+msgstr "勘定科目通貨"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "商品またはサービスの受領前に行われた前払金を記録します。"
@@ -2529,7 +2542,7 @@ msgid "Accounts payable billing address disabled"
 msgstr "買掛金請求先住所が無効になりました"
 
 msgid "Accounts payable billing address enabled"
-msgstr "買掛金請求先住所を有効化"
+msgstr "買掛金請求先住所が有効になりました"
 
 msgid "Accounts payable billing address updated"
 msgstr "買掛金請求先住所を更新"
@@ -2544,7 +2557,7 @@ msgid "Accounts receivable billing address disabled"
 msgstr "売掛金請求先住所が無効になりました"
 
 msgid "Accounts receivable billing address enabled"
-msgstr "売掛金請求先住所を有効化"
+msgstr "売掛金請求先住所が有効になりました"
 
 msgid "Accounts receivable billing address updated"
 msgstr "売掛金請求先住所を更新"
@@ -3511,6 +3524,9 @@ msgstr "親ユニット {sourceName} により、すでにMRP対象外です"
 msgid "Already non-nettable through its storage type {sourceName}"
 msgstr "ストレージタイプ {sourceName} により、すでにMRP対象外です"
 
+msgid "Already posted"
+msgstr "すでに転記済です"
+
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}でも実施中"
 
@@ -3914,6 +3930,9 @@ msgstr "未払買掛金"
 msgid "AP Overdue"
 msgstr "期限超過買掛金"
 
+msgid "AP Revaluation Adjustment"
+msgstr "買掛金再評価調整"
+
 msgid "API Docs"
 msgstr "API ドキュメント"
 
@@ -3945,7 +3964,7 @@ msgid "Applied"
 msgstr "適用"
 
 msgid "Applied {applied} planning actions"
-msgstr "{applied} 計画アクションを適用しました"
+msgstr "{applied}個の計画アクションを適用しました"
 
 msgid "Applied 1 planning action"
 msgstr "1 計画処理を適用"
@@ -4134,6 +4153,9 @@ msgstr "売掛金未払い"
 
 msgid "AR Overdue"
 msgstr "売掛金期限超過"
+
+msgid "AR Revaluation Adjustment"
+msgstr "売掛金再評価調整"
 
 msgid "AR/AP"
 msgstr "売掛金/買掛金"
@@ -4729,6 +4751,9 @@ msgstr "この期間の新しい実行が現在減価償却する内容を確認
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "収益認識に対して、この期間の新規実行が現在何を認識するか（繰延請求書収益と契約収益）を要求し、期末までに支払期限のある収益を保持する下書き実行をチェックします。実行を作成し、転記して、収益が総勘定元帳に到達するようにします。認識すべきものがない場合は、理由を付けてスキップしてください。"
 
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, unapplied customer receipts and supplier payments, and the balances of accounts kept in a foreign currency, such as bank and loan accounts — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "通貨再評価の実行において、この決算期末時点で外貨で未清算となっているもの（未決済請求書とメモ、適用されていない得意先の入金と仕入先への支払、および銀行口座や借入金勘定など外貨建てで管理されている勘定の残高）を確認し、この決算期に終了する下書きの実行をチェックします。実行を作成して転記することで、貸借対照表でこれらの項目が決算レートで計上され、未実現為替差益または為替損失として記録されます。外貨で未清算のものがない場合は、理由を記入してスキップしてください。"
+
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "このリース実行に対し、この期間の新規実行が今どのような転記を行うかを確認します—リース利息と使用権資産の償却、レンタル賃料の繰延または発生計上、売上型リース利息です。また、期間終了時点で期限が到来する仕訳を保有する下書きリース実行がないかを確認します。実行を作成して転記し、仕訳が台帳に転記されるようにしてください。何も転記する必要がない場合は理由を付けてスキップしてください。"
 
@@ -4761,6 +4786,9 @@ msgstr "資産勘定"
 
 msgid "Asset account for advance payments made to suppliers before goods or services are received"
 msgstr "仕入先に対する前払い金の資産勘定（商品またはサービスが受け取られる前に行われた支払い）"
+
+msgid "Asset account that carries the period-end revaluation of open foreign-currency receivables, so the receivables account still ties to its open invoices"
+msgstr "売掛金勘定科目がオープン請求書に連動し続けるように、オープン外貨建て売掛金の決算期末再評価を計上する資産勘定科目"
 
 msgid "Asset Acquisition Cost"
 msgstr "資産取得原価"
@@ -4844,7 +4872,7 @@ msgid "Assigned"
 msgstr "割り当て済み"
 
 msgid "Assigned {changed} planning actions"
-msgstr "{changed} 計画アクションを割り当てました"
+msgstr "{changed}個の計画アクションを割り当てました"
 
 msgid "Assigned 1 planning action"
 msgstr "1 計画処理を割当済"
@@ -5605,6 +5633,9 @@ msgstr "Carbonとの通話を予約する"
 
 msgid "Book Depreciation"
 msgstr "減価償却の計上"
+
+msgid "Booked"
+msgstr "予約済"
 
 msgid "Books lock date (manual)"
 msgstr "帳簿ロック日 (手動)"
@@ -6482,6 +6513,9 @@ msgstr "左側の工程をチェックしてバッチを構築してください
 
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "期末時点で保有数量がマイナスの品目がないか品目台帳を確認してください — 通常、納品漏れまたは順序外の転記により、在庫価値および売上原価が歪む可能性があります。確認済みの場合はマーク完了し、スキップする場合は理由を記入してください。"
+
+msgid "Check these accounts' consolidation rate"
+msgstr "これらの勘定科目の連結レートを確認してください"
 
 msgid "Check your email"
 msgstr "メールを確認してください"
@@ -7373,6 +7407,12 @@ msgstr "コンソールオペレーター"
 
 msgid "Console Operator Created"
 msgstr "コンソールオペレーターが作成されました"
+
+msgid "Consolidated CTA"
+msgstr "連結CTA"
+
+msgid "Consolidation Rate"
+msgstr "連結レート"
 
 msgid "Construction in Progress"
 msgstr "建設中資産"
@@ -8654,6 +8694,12 @@ msgid "Currency code"
 msgstr "通貨コード"
 
 msgid "Currency display updated"
+msgstr "通貨表示が更新されました"
+
+msgid "Currency Revaluation"
+msgstr "通貨評価替え"
+
+msgid "Currency Revaluation Run"
 msgstr "通貨表示を更新"
 
 msgid "Currency Translation"
@@ -8661,6 +8707,12 @@ msgstr "通貨換算"
 
 msgid "Currency Translation (default)"
 msgstr "通貨換算（デフォルト）"
+
+msgid "Currency Translation Adjustment"
+msgstr "通貨換算調整"
+
+msgid "Currency Translation Offset"
+msgstr "通貨換算差額"
 
 msgid "current"
 msgstr "現在"
@@ -8765,7 +8817,7 @@ msgid "Customer contact email required"
 msgstr "得意先担当者のメールアドレスを必須にしました"
 
 msgid "Customer contact requirement disabled"
-msgstr "得意先担当者要求事項が無効化されました"
+msgstr "得意先担当者要求事項を無効にしました"
 
 msgid "Customer contact requirement enabled"
 msgstr "得意先担当者要件を有効化"
@@ -10174,7 +10226,7 @@ msgid "Dismissed"
 msgstr "却下済"
 
 msgid "Dismissed {changed} planning actions"
-msgstr "{changed}個の計画アクションを却下しました"
+msgstr "{changed}件の計画アクションが却下されました"
 
 msgid "Dismissed 1 planning action"
 msgstr "1 計画処理を破棄"
@@ -11569,8 +11621,14 @@ msgstr "品目ではなく、シリアルまたはバッチ番号を入力"
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "製造にかかった原価を入力してください。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
 
+msgid "Entered"
+msgstr "入力済"
+
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
+
+msgid "Entered By"
+msgstr "入力者"
 
 msgid "Entered On"
 msgstr "入力日"
@@ -11609,7 +11667,7 @@ msgid "Entry"
 msgstr "仕訳"
 
 msgid "Entry added"
-msgstr "エントリーを追加しました"
+msgstr "エントリーが追加されました"
 
 msgid "Entry Date"
 msgstr "エントリー日"
@@ -11640,6 +11698,9 @@ msgstr "利益損失の累積のための純資産勘定科目"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "通貨換算調整（CTA）のための純資産勘定科目"
+
+msgid "Equity account that balances the posted CTA on the elimination company; consolidated reports hide it"
+msgstr "消去会社に転記済のCTAを相殺する純資産勘定。連結報告書では非表示にされます"
 
 msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
 msgstr "会計がセットアップされるときに開始残高を相殺する純資産アカウント。合計がゼロである必要があります。"
@@ -11781,7 +11842,7 @@ msgid "Event code"
 msgstr "イベントコード"
 
 msgid "Event saved"
-msgstr "イベントを保存しました"
+msgstr "イベントが保存されました"
 
 msgid "Event started"
 msgstr "イベント開始"
@@ -11818,6 +11879,9 @@ msgstr "有効リースのすべての変更。変更前後の金額付き。"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "会計を有効にする前に、すべてのチェックに合格する必要があります。"
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "グループ内のすべての会社がこの会社の通貨を使用しているため、換算調整は発生しません。"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "会社に属するすべてのレコード。認証情報、連携トークン、Webhookは含まれません。"
@@ -12082,6 +12146,9 @@ msgstr "設備および施設保全の費用勘定"
 msgid "Expense account for FX losses when a payment settles a foreign-currency invoice at a less favorable rate"
 msgstr "支払いが外貨建て請求書をより不利なレートで決済する場合のFX損失に対する費用勘定"
 
+msgid "Expense account for FX losses when period-end revaluation restates an open foreign-currency balance"
+msgstr "期末再評価が未決済の外貨残高を再計上する際のFX損失用費用勘定"
+
 msgid "Expense account for non-inventory purchases (services, supplies)"
 msgstr "非在庫購買（外注サービス、消耗品）の費用勘定"
 
@@ -12193,6 +12260,9 @@ msgstr "現在のシステムから勘定科目表を CSV でエクスポート�
 
 msgid "Exported the first {exportedCount} rows."
 msgstr "先頭の{exportedCount}行をエクスポートしました。"
+
+msgid "Exposure"
+msgstr "エクスポージャー"
 
 msgid "Expressly Unallowable"
 msgstr "明示的に不許可"
@@ -13122,7 +13192,7 @@ msgid "Foundation (everyone)"
 msgstr "基礎（全員）"
 
 msgid "Four-eyes enforcement disabled"
-msgstr "フォーアイズチェックが無効化されました"
+msgstr "二重確認の強制が無効になりました"
 
 msgid "Four-eyes enforcement enabled"
 msgstr "四眼チェック制御を有効化"
@@ -13312,6 +13382,9 @@ msgstr "リース終了利得"
 
 msgid "Gain/Loss"
 msgstr "利益/損失"
+
+msgid "Gains"
+msgstr "利益"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定資産の除却により認識された利益"
@@ -13577,6 +13650,9 @@ msgstr "初回から正しく本番運用を開始 — 当社チームがサポ�
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "{0}に移動"
+
+msgid "Go to currency revaluation runs"
+msgstr "通貨再評価実行に移動"
 
 msgid "Go to depreciation runs"
 msgstr "減価償却実行に移動"
@@ -15247,7 +15323,7 @@ msgid "Job · {itemReadableId}"
 msgstr "製造指図 · {itemReadableId}"
 
 msgid "Job cancelled"
-msgstr "製造指図がキャンセル済になりました"
+msgstr "製造指図がキャンセルされました"
 
 msgid "Job completed"
 msgstr "製造指図が完了"
@@ -15345,6 +15421,12 @@ msgstr "仕訳行"
 
 msgid "Journal Entry · {asset}"
 msgstr "仕訳行 · {asset}"
+
+msgid "Journal Entry · Reversal"
+msgstr "仕訳行 · 取消"
+
+msgid "Journal Entry · Valuation"
+msgstr "仕訳行 · 評価"
 
 msgid "Journal lines"
 msgstr "仕訳明細"
@@ -15683,7 +15765,7 @@ msgid "Lead time updates are enabled"
 msgstr "リードタイム更新は有効です"
 
 msgid "Lead time updates on receipt disabled"
-msgstr "入荷時のリードタイム更新が無効化されました"
+msgstr "入荷時のリードタイム更新が無効になりました"
 
 msgid "Lead time updates on receipt enabled"
 msgstr "リードタイム（受領時）更新が有効化されました"
@@ -15886,6 +15968,9 @@ msgstr "得意先から徴収した売上税の負債勘定"
 
 msgid "Liability account for tax paid on purchases"
 msgstr "購入に支払う税金の負債勘定"
+
+msgid "Liability account that carries the period-end revaluation of open foreign-currency payables, so the payables account still ties to its open invoices"
+msgstr "期末の未決済外貨買掛金の再評価を計上する負債勘定。買掛金勘定が未決済請求書に紐付いたままになります"
 
 msgid "Liability credited when a project contract is forecast to cost more than its price; adjusted by recognition runs"
 msgstr "プロジェクト契約がその価格以上のコストが予測されるときに負債が貸記される。認識実行によって調整される"
@@ -16287,6 +16372,9 @@ msgstr "損失引当金"
 msgid "Loss Provisions"
 msgstr "損失引当金"
 
+msgid "Losses"
+msgstr "損失"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定資産の除却時に認識される損失"
 
@@ -16651,6 +16739,9 @@ msgstr "短い数量をマーク"
 
 msgid "Mark to delete"
 msgstr "削除対象にマーク"
+
+msgid "Market"
+msgstr "市場"
 
 msgid "Market rate"
 msgstr "市場レート"
@@ -17097,7 +17188,7 @@ msgid "Mode"
 msgstr "モード"
 
 msgid "Model cache invalidated; re-converting from the source file"
-msgstr "モデルキャッシュが無効化されました。ソースファイルから再変換中です"
+msgstr "モデルキャッシュが無効化されました。ソースファイルから再変換しています"
 
 msgid "Model conversion started"
 msgstr "モデル変換が開始されました"
@@ -19240,6 +19331,9 @@ msgstr "不要"
 msgid "Not restorable"
 msgstr "復元不可"
 
+msgid "Not revalued"
+msgstr "再評価されていません"
+
 msgid "Not Run"
 msgstr "未実行"
 
@@ -19360,6 +19454,9 @@ msgstr "この期間の転記対象がありません。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "まだ認識するものがありません。売上高は請求書が請求する金額に従います。"
+
+msgid "Nothing to revalue for this period."
+msgstr "この期間で再評価するものはありません。"
 
 msgid "Nothing to review"
 msgstr "レビューするものがありません"
@@ -19562,6 +19659,9 @@ msgstr "受注に対して"
 
 msgid "On Storage Unit"
 msgstr "保管ユニット上"
+
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "グループのルート会社で、この期間の統合通貨換算調整(CTA)を排除会社に既に転記済のCTAと比較します。差分をプレビューして転記し、純資産が台帳のCTAを保有するようにします。まず子会社を再評価します。その他の会社は自動的に合格します。"
 
 msgid "On the Missing Time report"
 msgstr "「欠落時間」レポートに表示"
@@ -19793,6 +19893,9 @@ msgstr "アカウントマッピングを開く"
 
 msgid "Open Actions"
 msgstr "オープンアクション"
+
+msgid "Open Amount"
+msgstr "未決済金額"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを作成する"
@@ -20232,6 +20335,9 @@ msgstr "営業外収益"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "支払が外貨請求書をより有利なレートで決済する場合の為替差益のための営業外収益勘定"
 
+msgid "Other Income account for FX gains when period-end revaluation restates an open foreign-currency balance"
+msgstr "期末再評価がオープン外貨建残高を再計算した時のFX利益に対する営業外収益勘定"
+
 msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
 msgstr "買掛金決済時に全額支払なしで消去された仕入先の残高に対する営業外収益勘定科目"
 
@@ -20657,6 +20763,9 @@ msgstr "返済する"
 
 msgid "Pay expense"
 msgstr "費用を支払う"
+
+msgid "Payable"
+msgstr "買掛金"
 
 msgid "Payables"
 msgstr "買掛金（デフォルト）"
@@ -21332,6 +21441,9 @@ msgstr "契約プロジェクトの適用負担を転記する"
 msgid "Post Comment"
 msgstr "コメントを投稿"
 
+msgid "Post CTA"
+msgstr "CTAを転記"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "下書き実行{0}を転記"
@@ -21395,6 +21507,9 @@ msgstr "転記日付"
 
 msgid "Posting Date"
 msgstr "転記日付"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "統合CTAの変動をエリミネーション会社の純資産に転記します。"
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "請求書を転記して、接続されたStripeアカウント経由で支払いリンク付きで送信します。Stripe得意先がリンクされていない得意先の請求書は転記され、未送信としてマークされます。"
@@ -21476,6 +21591,9 @@ msgstr "設備の予防保全スケジュール"
 
 msgid "Preview"
 msgstr "プレビュー"
+
+msgid "Preview CTA"
+msgstr "CTAをプレビュー"
 
 msgid "Preview failed: {error}"
 msgstr "プレビューに失敗しました: {error}"
@@ -22614,7 +22732,7 @@ msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
 msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
-msgstr "最初から計画し直します。完了時にステップが自動的に再構築されます。"
+msgstr "計画を最初からやり直す—終了時にステップが自動的に再構築されます"
 
 msgid "Re-planning motions in the current step order — steps update when it finishes"
 msgstr "現在のステップ順序でモーション再計画—完了時にステップが更新されます"
@@ -22756,6 +22874,9 @@ msgstr "領収書"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "入荷、出荷、売上請求書、仕入先請求書、支払、およびクレジット/デビットメモで、まだ下書きまたは待機中のものは、転記するか取消す必要があります。この期間に日付があるドキュメントと、転記時にこの期間に日付を受け取るドキュメント（未日付）の両方が対象です。転記されるまで、金額は総勘定元帳に入らないため、期間が過小評価されます。"
+
+msgid "Receivable"
+msgstr "売掛金"
 
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "セールスタイプリースの開始時に認識される売掛金。各レンタル支払により減少"
@@ -23481,7 +23602,7 @@ msgid "Reopen Training"
 msgstr "教育訓練を再オープン"
 
 msgid "Reopened {changed} planning actions"
-msgstr "{changed}個の計画操作を再度開きました"
+msgstr "{changed} 件の計画アクションを再度開きました"
 
 msgid "Reopened 1 planning action"
 msgstr "1個の計画操作を再度開きました"
@@ -24048,6 +24169,15 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "改版 {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "再評価明細"
+
+msgid "Revalue these companies first"
+msgstr "これらの企業を最初に再評価してください"
+
+msgid "Revalued"
+msgstr "再評価済"
 
 msgid "Reveal"
 msgstr "表示"
@@ -24758,7 +24888,7 @@ msgstr "保存済み"
 
 #. placeholder {0}: data.count
 msgid "Saved {0} dimension value mappings"
-msgstr "{0}個のディメンション値マッピングを保存しました"
+msgstr "{0} 件のディメンション値マッピングを保存しました"
 
 msgid "Saved {count} account mappings"
 msgstr "{count}個の勘定科目マッピングを保存しました"
@@ -26332,7 +26462,7 @@ msgid "Skipped"
 msgstr "スキップ済"
 
 msgid "Skipped {count} sync operations"
-msgstr "{count}件の同期操作をスキップ済にしました"
+msgstr "{count}個の同期操作をスキップしました"
 
 msgid "Skipped sync operation"
 msgstr "同期操作をスキップ済みにしました"
@@ -26591,7 +26721,7 @@ msgid "Staffing required"
 msgstr "スタッフが必要"
 
 msgid "Staffing requirement disabled"
-msgstr "人員配置要求事項が無効になりました"
+msgstr "スタッフ要員要求事項を無効にしました"
 
 msgid "Staffing requirement enabled"
 msgstr "スタッフ要求事項が有効化されました"
@@ -26701,6 +26831,12 @@ msgstr "都道府県"
 
 msgid "Statement"
 msgstr "明細書"
+
+msgid "Statement Balance"
+msgstr "決算残高"
+
+msgid "Statement Balances"
+msgstr "決算残高"
 
 msgid "Statement of Indirect Expenses"
 msgstr "間接費明細書"
@@ -27151,7 +27287,7 @@ msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
 
 msgid "Successfully resent invite"
-msgstr "招待を再送信しました"
+msgstr "招待状を正常に再送信しました"
 
 msgid "Successfully revoked invites"
 msgstr "招待を正常に取り消しました"
@@ -27272,7 +27408,7 @@ msgid "Supplier contact email required"
 msgstr "仕入先担当者のメールアドレスを必須にしました"
 
 msgid "Supplier contact requirement disabled"
-msgstr "仕入先担当者要件が無効になりました"
+msgstr "仕入先担当者要求事項を無効にしました"
 
 msgid "Supplier contact requirement enabled"
 msgstr "仕入先担当者要求事項が有効化されました"
@@ -27679,7 +27815,7 @@ msgid "Task"
 msgstr "タスク"
 
 msgid "Task marked done"
-msgstr "タスクを完了とマークしました"
+msgstr "タスクを完了としてマークしました"
 
 msgid "Task skipped"
 msgstr "タスクがスキップ済みに設定されました"
@@ -29394,6 +29530,9 @@ msgstr "その後"
 msgid "These accounts need a replacement"
 msgstr "これらの勘定には代替が必要です。"
 
+msgid "These asset and liability accounts translate at the Average rate, which moves the CTA. Balance sheet accounts usually translate at the Current rate:"
+msgstr "これらの資産・負債勘定は平均レートで換算されるため、為替換算調整勘定（CTA）が変動します。貸借対照表の勘定は通常、現在レートで換算されます:"
+
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"
 
@@ -29444,6 +29583,9 @@ msgstr "これらの単位は販売として扱われます。起動により各
 
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "これらは勘定科目表にありませんが、ドキュメントまたは仕訳で使用されています。各々を置き換える勘定科目表内のアカウントを選択してください。"
+
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "この期間に転記済の通貨再評価実行がないため、残高が終値ではありません:"
 
 msgid "this ability"
 msgstr "このスキル"
@@ -29721,7 +29863,7 @@ msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "この入荷には明細がありません。参照伝票を選択して追加してください。"
 
 msgid "This removes the PDF. Employees will see the new content instead."
-msgstr "PDFが削除されます。従業員は代わりに新しいコンテンツが表示されます。"
+msgstr "これはPDFを削除します。従業員は代わりに新しいコンテンツが表示されます。"
 
 msgid "This removes the video. Employees will see the new content instead."
 msgstr "このビデオを削除します。従業員は代わりに新しいコンテンツを見ます。"
@@ -29749,6 +29891,9 @@ msgstr "このリビジョンはリリース済（生産）です。変更は通
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "このリビジョンはリリース済（生産）です。それを修正するために変更通知を開いてください。"
+
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "このランはこれらのメモを再評価しません:これらに対するセットルメントがメモの通貨に金額を記録しません。"
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "この実行には、ここに表示するよりも多くのステップがあります。最初の {MAX_RUN_STEPS} のみが表示されます。"
@@ -29822,6 +29967,10 @@ msgid "This week"
 msgstr "今週"
 
 #. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr "これにより、{0}で終了する期間の下書き通貨再評価実行が作成されます。すべてのオープン外貨品目が、その日の為替レートで再評価されます。"
+
+#. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 msgstr "これにより、{0}で終了する期間の下書き減価償却処理が作成されます。すべての有効資産は自動的に計算されます。"
 
@@ -29867,6 +30016,11 @@ msgstr "これは{0}をその現在のスケジュールから再構築します
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "これは現在の固定資産から{0}を再構築します：{1}までの期間について、他の実行でカバーされていないすべての有効な固定資産。"
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "これにより、{1}でオープンしている外貨品目から{0}が再構築されます。ランのレートが保持されます。"
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "このバッチサイズを使用して、有効な製造方法の部品表とプロセスから単位原価を再計算します。現在の原価は上書きされます。続行しますか？"
 
@@ -29889,6 +30043,7 @@ msgstr "これにより、他のリビジョンのすべてのメソッドマテ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "これにより、他のサイズのすべてのメソッドマテリアルがこのサイズに置き換わります。"
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "これは{0}の仕訳を逆仕訳し、下書き状態に戻します。その後、再計算、転記、または削除できます。"
@@ -30091,6 +30246,9 @@ msgstr "来週へ"
 msgid "To pick"
 msgstr "ピッキング"
 
+msgid "To post"
+msgstr "転記する"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "再度有効にするには、行メニューを使用して「招待を送信」を選択してください。従業員が承諾したら有効になります。"
 
@@ -30260,6 +30418,9 @@ msgstr "推定総原価"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"
 
+msgid "Total gains"
+msgstr "合計利益"
+
 msgid "Total hours"
 msgstr "合計時間"
 
@@ -30271,6 +30432,9 @@ msgstr "間接原価合計"
 
 msgid "Total lease cost"
 msgstr "総リースコスト"
+
+msgid "Total losses"
+msgstr "合計損失"
 
 msgid "Total Material Cost"
 msgstr "材料原価合計"
@@ -30498,7 +30662,7 @@ msgid "Travel"
 msgstr "旅行"
 
 msgid "Traveler materials disabled"
-msgstr "現品票の材料が無効になりました"
+msgstr "現品票の材料を無効化しました"
 
 msgid "Traveler materials enabled"
 msgstr "現品票材料が有効化されました"
@@ -30663,6 +30827,12 @@ msgstr "未適用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "適用されていない現金はこの文書の得意先前払金として保有され、掛上与信として保有されません。"
 
+msgid "Unapplied Disbursement"
+msgstr "未適用出金"
+
+msgid "Unapplied Receipt"
+msgstr "未適用入荷"
+
 msgid "Unapproved Supplier"
 msgstr "未承認の仕入先"
 
@@ -30728,6 +30898,13 @@ msgstr "今後の割引前支払額（会計年度ごと）から、残りの月
 
 msgid "Undo"
 msgstr "元に戻す"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "{0}を元に戻す"
+
+msgid "Undo Run"
+msgstr "実行を元に戻す"
 
 msgid "Unfurl Links"
 msgstr "リンクを展開"
@@ -30916,6 +31093,12 @@ msgstr "公開を取り消す"
 msgid "Unpublish {name}?"
 msgstr "{name}の公開を取り消しますか?"
 
+msgid "Unrealized Exchange Gain"
+msgstr "未実現為替利益"
+
+msgid "Unrealized Exchange Loss"
+msgstr "未実現為替損失"
+
 msgid "Unreceived POs"
 msgstr "未受領PO"
 
@@ -31091,7 +31274,7 @@ msgid "Updated dimension sync settings"
 msgstr "ディメンション同期設定を更新しました"
 
 msgid "Updated dispatch status"
-msgstr "保全指示ステータスが更新されました"
+msgstr "保全指示ステータスを更新しました"
 
 msgid "Updated job status"
 msgstr "製造指図ステータスが更新されました"
@@ -32712,7 +32895,7 @@ msgid "Written Off"
 msgstr "償却済み"
 
 msgid "Written with a warning"
-msgstr "警告付きで書かれている"
+msgstr "警告付きで書き込まれました"
 
 msgid "Wrote the missing journal of 1 document"
 msgstr "1件のドキュメントの不足している仕訳を記述"
