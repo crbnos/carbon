@@ -7,17 +7,10 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import type { AccountSettingsUser } from "../types";
 
-/**
- * The host app's root action. Every app's `root.tsx` stores the Appearance
- * pane's choices there as cookies, so each one is per browser.
- */
+/** The host app's root action, which stores appearance choices as cookies. */
 const ROOT_ACTION = "/";
 
-/**
- * How the Appearance pane posts a choice. Only the root loader reads these
- * cookies, so a save re-runs no other loader: each root's `shouldRevalidate`
- * opts back in (`isRootActionPost`, `@carbon/utils`).
- */
+/** Only the root loader reads these cookies; it opts back in (`isRootActionPost`). */
 export const SAVE_OPTIONS = {
   method: "post",
   action: ROOT_ACTION,
@@ -43,11 +36,7 @@ export type AccountSettingsConfig = {
    * stylesheet carries the transition); elsewhere the mode switches at once.
    */
   transitionMode?: (nextMode: Mode, persist: () => void) => void;
-  /**
-   * Lists the gradient, solid and custom themes beside the color themes. Only
-   * apps whose shell paints the frame (`useThemeStyle` on `SidebarProvider`
-   * and `NavRail`) pass it: the ERP and the MES.
-   */
+  /** Lists the preset and custom themes; only shells that paint a frame. */
   themePresets?: boolean;
   /**
    * The two-factor plan gate. Only the ERP knows the plan; elsewhere the

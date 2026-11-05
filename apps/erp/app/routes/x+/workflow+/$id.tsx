@@ -60,8 +60,7 @@ export const handle: Handle = {
 
 // No builder write may revalidate the loader: a save would re-seed the canvas
 // mid-edit and lose the selection, a canvas or positions write would snap the
-// viewport back. An
-// appearance save (the root action) leaves it to the default.
+// viewport back.
 export function shouldRevalidate({
   formAction,
   formMethod,

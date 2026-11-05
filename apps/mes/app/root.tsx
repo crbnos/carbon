@@ -124,8 +124,7 @@ export const meta: MetaFunction = () => {
 // filter, sort, page, useRevalidator from realtime hooks) can change none of
 // it; actions still revalidate so the flash toast is surfaced.
 export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
-  // A post here writes an appearance cookie, which only this loader reads, so
-  // a theme save asks no other route to re-run (`defaultShouldRevalidate`).
+  // Appearance saves skip every other loader (`defaultShouldRevalidate`).
   if (isRootActionPost(args)) return true;
   return isSearchParamOnlyNavigation(args)
     ? false
@@ -290,7 +289,6 @@ function Document({
   mode?: "light" | "dark";
   theme?: string;
   uiScale?: UiScale;
-  /** The theme's content variables (`useThemeContent`). */
   themeContent?: Record<string, string>;
   env?: Record<string, unknown>;
 }) {
@@ -311,7 +309,6 @@ function Document({
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "dark" ? darkVars : lightVars),
-    // After the theme's own variables, so the tint wins.
     ...themeContent,
     "--radius": "0.4375rem",
     ...(uiScale ? uiScaleStyle(uiScale) : {})

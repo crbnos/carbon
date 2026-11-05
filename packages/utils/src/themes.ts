@@ -566,12 +566,7 @@ export type SeasonalTheme = {
 
 export const seasonalThemes = [] as const satisfies readonly SeasonalTheme[];
 
-/**
- * Any theme: a color theme (`themes`), a seasonal one, a preset theme or a
- * custom one. A preset or custom theme carries `colors`: it colors the frame, the rail, the module
- * sidebar and, lightly, the page (`themeStyle`), and keeps the default
- * theme's accent.
- */
+/** A color, seasonal, preset or custom theme; the last two carry `colors`. */
 export type Theme = {
   name: string;
   label: string;
@@ -581,10 +576,7 @@ export type Theme = {
   colors?: ThemeColors;
 };
 
-/**
- * A theme's name, as the `theme` cookie stores it: a theme name, or a custom
- * theme (`custom:<base>:<highlight>:<g|s>`).
- */
+/** A theme name, or a custom theme's `custom:<base>:<highlight>:<g|s>`. */
 export type ThemeName = string;
 
 const allThemes: readonly Theme[] = [...themes, ...seasonalThemes];
@@ -593,7 +585,7 @@ const allThemes: readonly Theme[] = [...themes, ...seasonalThemes];
 const defaultTheme: Theme = themes[0];
 export const DEFAULT_THEME_NAME = themes[0].name;
 
-/** A theme from `colors`: the default theme's accent, its own frame. */
+/** Keeps the default theme's accent. */
 function themeFromColors(
   name: string,
   label: string,
@@ -610,11 +602,6 @@ function themeFromColors(
   };
 }
 
-/**
- * The preset themes, solid and gradient, from `THEME_PRESETS`. Pickers that
- * can paint a frame (Account → Appearance in the ERP and the MES) list them
- * after `themes`.
- */
 export const presetThemes: readonly (Theme & {
   colors: ThemeColors;
 })[] = THEME_PRESETS.map((preset) => ({
@@ -626,14 +613,12 @@ export const presetThemes: readonly (Theme & {
   }
 }));
 
-/** The theme a custom value names, or `undefined`. */
 function customTheme(name: string | null | undefined): Theme | undefined {
   if (!name?.startsWith("custom:")) return undefined;
   const colors = parseThemeColors(name);
   return colors ? themeFromColors(name, "Custom", colors) : undefined;
 }
 
-/** An everyday theme by name: a color theme, a preset theme or a custom one. */
 function everydayTheme(name: string | null | undefined): Theme | undefined {
   return (
     themes.find((candidate) => candidate.name === name) ??
@@ -642,11 +627,7 @@ function everydayTheme(name: string | null | undefined): Theme | undefined {
   );
 }
 
-/**
- * Whether a name is a theme a browser may store or pick: a color theme, a
- * preset theme, a custom theme, or a seasonal theme (picking one turns
- * it back on). The name reaches a `style` attribute, so nothing else passes.
- */
+/** What a browser may store. The name reaches a `style` attribute. */
 export function isThemeName(name: string | null | undefined): boolean {
   return Boolean(everydayTheme(name)) || isSeasonalTheme(name);
 }
@@ -718,10 +699,8 @@ export function resolveTheme(
 }
 
 /**
- * The theme to render, by name: a preview wins, then a pending pick (the
- * `theme` field of a submission in flight), then the root loader's theme. A
- * `theme` field that is not a theme name (a document template's JSON) is
- * skipped, and an unknown loader value reads as the default.
+ * A preview, then a pending `theme` pick, then the loader's theme. Skips a
+ * `theme` field that is no theme name (a document template's JSON).
  */
 export function resolveThemeValue(
   preview: string | undefined,

@@ -212,8 +212,6 @@ const CollapsibleSidebar = ({
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
   const { isPhone } = useViewport();
-  // A theme with `colors` makes the sidebar a tinted panel between the frame and the
-  // page, as Slack's channel list sits between its frame and messages.
   const mode = useMode();
   const panel = useThemeStyle()?.panel[mode];
 

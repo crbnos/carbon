@@ -104,9 +104,7 @@ export function NavRail({
 }) {
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
-  // A theme with `colors` repaints the desktop rail only: it is transparent over the
-  // shell's painted frame and re-sets the theme variables its classes read.
-  // The mobile drawer is a sheet over the page and keeps the normal colors.
+  // Desktop rail only: the mobile drawer keeps the normal colors.
   const themeStyle = useThemeStyle();
   const railMode = useMode();
   const [hovered, setHovered] = useState(false);
@@ -523,9 +521,8 @@ export const NavRailSwitcher = forwardRef<
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
-    // On a theme with `colors` the rail sits on the frame, so the frame's tone
-    // picks the logo, not the mode: a dark frame in light mode needs the dark
-    // logo. Phones paint no frame: the switcher sits in a sheet in the mode.
+    // The rail sits on the frame, so the frame's tone picks the logo. Phones
+    // have no frame.
     const mode = useMode();
     const { isPhone } = useViewport();
     const frameTone = useThemeStyle()?.tone;

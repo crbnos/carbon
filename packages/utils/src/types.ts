@@ -22,9 +22,7 @@ export const modeValidator = z.object({
 });
 
 /**
- * A theme by name (`isThemeName`): a color theme, a preset theme, a custom
- * theme, or a seasonal theme (picking one turns it back on). Stored per
- * browser, like the mode.
+ * A theme name a browser may store (`isThemeName`).
  */
 export const themeColorValidator = z.object({
   theme: z.string().refine(isThemeName, { message: "Invalid theme" })

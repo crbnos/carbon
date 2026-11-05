@@ -39,17 +39,13 @@ import { useFetcher } from "react-router";
 import { AccountSettingsSection } from "./AccountSettingsLayout";
 import { SAVE_OPTIONS } from "./context";
 
-// The Custom theme tab, and the grid's value while a custom theme is in use:
-// its own name is its colors (`custom:<base>:<highlight>:<g|s>`), so it needs
-// a fixed one, which no card has.
+// A custom theme's name is its colors, so the grid and the tab need a fixed value.
 const CUSTOM = "custom";
 
-// What the custom fields start from while the theme has no `colors`.
 const CUSTOM_START = presetThemes.find(
   (theme) => theme.name === "graphite"
 )!.colors;
 
-// A color picker reports every pointer move; save once the pointer rests.
 const SAVE_DELAY_MS = 400;
 
 const gradientThemes = presetThemes.filter((theme) => theme.colors.gradient);
@@ -63,13 +59,8 @@ const CARD = cn(
 );
 
 /**
- * Account → Appearance → Theme: one choice, one `theme` cookie. A color
- * theme sets the accent. A gradient, solid or custom theme also colors the
- * frame, the navigation rail, the module sidebar and the page
- * (`useThemeStyle`). Every pick shows at once: the frame reads a preview or
- * the pending pick, and the accent is painted on `<body>` until the save
- * lands. `withThemePresets` is off where the shell has no frame to paint (the
- * starter), which lists the color themes only.
+ * Account → Appearance → Theme. `withThemePresets` is off where the shell has
+ * no frame to paint (the starter), which lists only the color themes.
  */
 export function ThemeSettings({
   withThemePresets
@@ -84,12 +75,9 @@ export function ThemeSettings({
   const isCustom = value.startsWith("custom:");
   const selected = isCustom ? CUSTOM : value;
   const colorThemes = pickableThemes();
-  // Dropped once the save settles, so <html> shows the saved theme, or the
-  // old one if it failed.
   const previewAccent = useThemePreview(fetcher.state === "idle");
 
-  // A color drag paints through the preview at once and saves once, after the
-  // pointer rests: each save is a request and re-runs the root loader.
+  // A drag previews every move but saves once the pointer rests.
   const unsaved = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const fetcherRef = useRef(fetcher);
@@ -102,9 +90,8 @@ export function ThemeSettings({
     clearTimeout(timer.current);
     timer.current = undefined;
     unsaved.current = null;
-    // The accent is on <html>, which the loader updates only after the save;
-    // paint it on <body> now. A theme's page tint comes from the
-    // pending pick on <html>, so the preview leaves those variables alone.
+    // Preview the accent on <body> until the save lands, minus the variables
+    // the page tint sets from the pending pick.
     const next = themeByName(name);
     const variables: Record<string, string> =
       mode === "dark" ? next.cssVars.dark : next.cssVars.light;
@@ -117,7 +104,6 @@ export function ThemeSettings({
     submit(name);
   };
 
-  // The pending save shows the value from here on, so the preview can end.
   const submitted = fetcher.formData;
   useEffect(() => {
     if (submitted && !unsaved.current) setThemePreview(undefined);
@@ -153,7 +139,7 @@ export function ThemeSettings({
   };
 
   const onPick = (next: string) => {
-    // A click on the selected card deselects it in a ToggleGroup: keep it.
+    // ToggleGroup deselects on a second click; keep the selection.
     if (!next || next === selected) return;
     save(next);
   };
@@ -217,9 +203,6 @@ export function ThemeSettings({
     );
   }
 
-  // The ready-made themes and the custom editor share one place, in 2 tabs
-  // (as Slack does), so the pane does not run long. The tab opens on the kind
-  // of theme in use.
   return (
     <Tabs defaultValue={isCustom ? CUSTOM : "themes"}>
       <AccountSettingsSection
@@ -243,8 +226,6 @@ export function ThemeSettings({
       >
         <TabsContent value="themes">{themeGrid}</TabsContent>
         <TabsContent value={CUSTOM} className="flex flex-col gap-4">
-          {/* Editing a color, the gradient or "Surprise me" makes the custom
-              theme the one in use, so the tab needs no card of its own. */}
           <div className="flex justify-end">
             <Button
               variant="secondary"
@@ -330,8 +311,6 @@ function PresetThemeCard({
   colors: ThemeColors;
   active: boolean;
 }) {
-  // The swatch shows the frame this mode paints: vivid in light mode, deep in
-  // dark mode.
   const mode = useMode();
   return (
     <ThemeCard
@@ -353,9 +332,7 @@ function ThemeCard({
 }: {
   value: string;
   label: string;
-  /** The swatch's CSS `background`. */
   swatch: string;
-  /** The check mark's color, readable on the swatch. */
   check: string;
   active: boolean;
 }) {

@@ -422,8 +422,6 @@ export default function AuthenticatedRoute() {
   }, [consoleIsIdle]);
 
   useNProgress();
-  // A theme with `colors` paints the frame around the content card (Account →
-  // Appearance); the card keeps the mode's colors.
   const themeStyle = useThemeStyle();
   const mode = useMode();
 

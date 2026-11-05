@@ -96,8 +96,7 @@ export const clientMiddleware = [
   })
 ];
 
-// A post here writes an appearance cookie, which only this loader reads, so a
-// theme save asks no other route to re-run (`defaultShouldRevalidate`).
+// Appearance saves skip every other loader (`defaultShouldRevalidate`).
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
   isRootActionPost(args) || args.defaultShouldRevalidate;
 

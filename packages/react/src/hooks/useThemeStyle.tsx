@@ -13,16 +13,11 @@ import { useMemo, useSyncExternalStore } from "react";
 import { useFetchers, useLocation } from "react-router";
 import { useRouteData } from "./useRouteData";
 
-// A value shown before it is saved: a color drag paints every pointer move
-// here and saves once at the end, since each save re-runs the root loader.
-// `undefined` is no preview.
+// A color drag's unsaved value; `undefined` is no preview.
 let preview: string | undefined;
 const previewListeners = new Set<() => void>();
 
-/**
- * Shows a theme value at once without saving it; `undefined` ends the
- * preview. The caller saves it (a `theme` post to `/`) and then ends it.
- */
+/** Shows a theme without saving it; `undefined` ends the preview. */
 export function setThemePreview(value: string | undefined) {
   if (value === preview) return;
   preview = value;
@@ -36,11 +31,7 @@ function subscribePreview(listener: () => void) {
   };
 }
 
-/**
- * The theme to render, by name (`resolveThemeValue`): a preview, then a
- * pending pick (the Appearance pane posts `theme` to `/`), then the root
- * loader's theme. So a pick shows before the loader revalidates.
- */
+/** The theme to render, by name (`resolveThemeValue`). */
 export function useThemeValue(): string {
   const previewed = useSyncExternalStore(
     subscribePreview,
@@ -56,12 +47,7 @@ export function useThemeValue(): string {
   );
 }
 
-/**
- * The styles of the theme to render: `frame` for the shell's
- * `SidebarProvider`, `rail` for the desktop `NavRail`, `content` for `<html>`,
- * `panel` for the module sidebar. `null` for a theme with no `colors` (a
- * color theme), which renders the frame plain.
- */
+/** The theme's `themeStyle`, or `null` for a theme without `colors`. */
 export function useThemeStyle(): ThemeStyle | null {
   const value = useThemeValue();
   return useMemo(() => {
@@ -70,12 +56,7 @@ export function useThemeStyle(): ThemeStyle | null {
   }, [value]);
 }
 
-/**
- * The content variables of the theme for a mode, for `<html>`: the
- * page, cards, popovers and dialogs take the frame's hue. Only inside the
- * signed-in app (`isAppPath`): sign-in, shared links and onboarding keep the
- * plain theme. `undefined` for the default.
- */
+/** The page tint for `<html>`, inside the signed-in app only. */
 export function useThemeContent(
   mode: "light" | "dark"
 ): Record<string, string> | undefined {

@@ -17,7 +17,6 @@ import {
 import { themeByName, themeForRequest, themes } from "./themes";
 import { themeColorValidator } from "./types";
 
-// WCAG AA for normal text.
 const AA = 4.5;
 // The rail draws an unselected item's label at this opacity (`NavRail`).
 const LABEL_ALPHA = 0.7;
@@ -54,8 +53,7 @@ describe("parseThemeColors", () => {
     expect(parseThemeColors("custom:dc540c:f89b6c:s")?.gradient).toBe(false);
   });
 
-  // The value reaches a style attribute, so anything that is not exactly a
-  // preset name or a custom value must read as the default.
+  // The value reaches a style attribute.
   it.each([
     null,
     undefined,
@@ -92,8 +90,6 @@ describe("normalizeHex", () => {
   });
 });
 
-// Preset and custom themes are themes: one `theme` cookie, one validator,
-// one resolver.
 describe("preset and custom themes", () => {
   it("accepts a preset and a custom value as a theme", () => {
     for (const theme of ["forge", "custom:dc540c:f89b6c:g", "zinc"]) {
@@ -194,8 +190,7 @@ describe("THEME_PRESETS", () => {
   });
 
   it("has a distinct hue for every vivid preset", () => {
-    // Light mode shows the picked colors, so 2 presets with one base would
-    // look the same in the picker.
+    // Light mode shows the picked colors, so a shared base would look alike.
     const bases = THEME_PRESETS.map((theme) => theme.base);
     const gradients = THEME_PRESETS.filter((theme) => theme.gradient);
     expect(new Set(gradients.map((theme) => theme.base)).size).toBe(
@@ -288,8 +283,7 @@ describe("matches Slack's own colors", () => {
     const light = frame.light.background!;
     // Slack: #448627 on the diagonal, the highlight #83252C in the corners.
     near(rgbOf(light, "0%"), [0x83, 0x25, 0x2c]);
-    // Slack's green (#448627) gives white text 4.4:1, so the rail's dimmer
-    // labels need the diagonal darker: the same green, just deep enough.
+    // Slack's green fails AA for the rail's labels, so ours is a touch deeper.
     near(rgbOf(light, "50%"), [0x13, 0x63, 0x00]);
   });
 
@@ -342,9 +336,7 @@ describe("themeStyle", () => {
     const { frame } = themeStyle({ ...theme, gradient: true });
     const flat = themeStyle({ ...theme, gradient: false }).frame.dark
       .background!;
-    // `to top right`: 0% is the bottom-left corner, 100% the top-right one,
-    // and 50% the diagonal through the top-left and bottom-right corners,
-    // where the frame is the same color as with the gradient off.
+    // `to top right` puts 50% on the top-left to bottom-right diagonal.
     const stops = frame.dark.background!.split(/\) (\d+)%/);
     expect(frame.dark.background).toMatch(/^linear-gradient\(to top right, /);
     expect(frame.dark.background).toContain(`${flat} 50%`);

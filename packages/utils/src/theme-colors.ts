@@ -2,14 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-/**
- * The `colors` of a theme: a theme that carries them (a preset here, or
- * a `custom:` value) colors the app's frame, the navigation rail, the module
- * sidebar and, lightly, the page, as Slack does. `themes.ts` turns each one
- * into a theme, so it is stored like any theme, in the `theme` cookie. This
- * file is the color math; it knows nothing of cookies.
- * Spec: `.ai/specs/2026-11-03-theme-colors.md`.
- */
+// The Slack-style colors a theme can carry: the frame, the rail, the module
+// sidebar and a light page tint. Pure color math; `themes.ts` turns presets and
+// `custom:` values into themes. Spec: `.ai/specs/2026-11-03-theme-colors.md`.
 
 export type ThemeColors = {
   /** The frame color ("Background"). Six-digit lowercase hex, no `#`. */
@@ -25,13 +20,8 @@ export type ThemePreset = ThemeColors & {
   label: string;
 };
 
-/**
- * The presets. Their names are theme names, stored in the `theme` cookie, so
- * never rename one; a removed name reads as the default theme.
- */
+// Names are stored in the `theme` cookie: never rename one.
 export const THEME_PRESETS = [
-  // Gradient: a vivid base and a contrasting second color. Light mode shows
-  // them as they are; dark mode deepens them, as Slack does.
   {
     name: "forge",
     label: "Forge",
@@ -81,7 +71,6 @@ export const THEME_PRESETS = [
     highlight: "9bc339",
     gradient: true
   },
-  // Solid: the highlight is the selected item's color.
   {
     name: "graphite",
     label: "Graphite",
@@ -159,9 +148,8 @@ export function normalizeHex(value: string | null | undefined) {
 }
 
 /**
- * The theme colors a stored value names: a preset, a `custom:` value, or
- * `null` (the default). The value reaches a `style` attribute, so only these
- * exact shapes are accepted; anything else is the default.
+ * A preset name or an exact `custom:` value, else `null`. The value reaches a
+ * `style` attribute, so nothing looser is accepted.
  */
 export function parseThemeColors(
   value: string | null | undefined
@@ -184,7 +172,6 @@ export function parseThemeColors(
   };
 }
 
-/** The cookie value of a custom theme. */
 export function serializeThemeColors({
   base,
   highlight,
@@ -238,17 +225,14 @@ export function contrastRatio(a: string, b: string) {
   return rgbContrast(hexToRgb(a), hexToRgb(b));
 }
 
-/**
- * Light or dark text, whichever reads better on every background given: the
- * one whose lowest contrast is highest. A gradient passes both ends.
- */
+/** Light or dark text, whichever has the higher worst-case contrast. */
 function textFor(backgrounds: Rgb[]): Rgb {
   const worst = (text: Rgb) =>
     Math.min(...backgrounds.map((bg) => rgbContrast(text, bg)));
   return worst(LIGHT_TEXT) >= worst(DARK_TEXT) ? LIGHT_TEXT : DARK_TEXT;
 }
 
-/** Trims float noise for CSS; not value-bearing. */
+/** Trims float noise for CSS. */
 function css(n: number) {
   return Number(n.toPrecision(4)).toString();
 }
@@ -257,10 +241,7 @@ function rgbCss([r, g, b]: Rgb) {
   return `rgb(${css(r)} ${css(g)} ${css(b)})`;
 }
 
-// --- OKLab: blends that stay clean -----------------------------------------
-// A blend in sRGB passes through grey between distant hues (blue to lime goes
-// muddy olive). OKLab (Björn Ottosson, 2020) is perceptual: the midpoint of
-// blue and lime is a clean teal, and lightness is what the eye sees.
+// OKLab (Björn Ottosson): perceptual, so blends stay clean where sRGB goes grey.
 
 type Lab = readonly [l: number, a: number, b: number];
 
@@ -307,11 +288,8 @@ function oklabToRgb([L, A, B]: Lab): Rgb {
 }
 
 /**
- * `a` moved `t` of the way towards `b`, in OKLCH: lightness and chroma
- * straight, the hue the shorter way round the wheel. A straight line through
- * OKLab still crosses grey between opposite hues (red to cyan); round the
- * wheel, red goes through magenta and violet to blue, as Slack's bloom does.
- * A near-grey color has no hue worth keeping, so it takes the other's.
+ * `a` moved `t` of the way towards `b` in OKLCH, the hue taking the shorter
+ * way round, so opposite hues pass through vivid colors rather than grey.
  */
 function blend(a: Rgb, b: Rgb, t: number): Rgb {
   const [la, aa, ba] = rgbToOklab(a);
@@ -323,7 +301,6 @@ function blend(a: Rgb, b: Rgb, t: number): Rgb {
   const GREY = 0.02;
   const from = ca < GREY ? hb : ha;
   const to = cb < GREY ? ha : hb;
-  // The shorter way round: the difference folded into (-π, π].
   const turn = Math.atan2(Math.sin(to - from), Math.cos(to - from));
   const hue = from + turn * t;
   const chroma = ca + (cb - ca) * t;
@@ -344,7 +321,6 @@ function lightnessOf(color: Rgb) {
   return rgbToOklab(color)[0];
 }
 
-/** The `H S% L%` triplet the theme variables hold (`hsl(var(--x))`). */
 /** Hue in degrees, saturation and lightness in 0 to 1. */
 function rgbToHsl([r, g, b]: Rgb): [number, number, number] {
   const rn = r / 255;
@@ -367,7 +343,6 @@ function rgbToHsl([r, g, b]: Rgb): [number, number, number] {
   return [h, s, l];
 }
 
-/** An `H S% L%` triplet from hue (degrees), saturation and lightness (0 to 1). */
 function triplet(h: number, s: number, l: number) {
   return `${css(h)} ${css(s * 100)}% ${css(l * 100)}%`;
 }
@@ -377,70 +352,43 @@ function hslTriplet(rgb: Rgb) {
   return triplet(...rgbToHsl(rgb));
 }
 
-// How strong a hover (`bg-active/60`) is, and how strong the rail's selected
-// tile is: a translucent wash of the rail's own text color, as Slack's rail
-// does, so it sits on any frame and any gradient.
-const HOVER_ALPHA = 0.6;
+const HOVER_ALPHA = 0.6; // `bg-active/60`
+// The rail's selected tile washes the frame with its text color, or shades it
+// when the wash would cost the text AA.
 const RAIL_TILE_ALPHA = 0.14;
-// When a wash of the text color would cost the text its contrast (a light
-// text on a mid-tone gradient end), the tile shades the frame instead.
 const RAIL_SHADE_ALPHA = 0.22;
 const SHADE: Rgb = [0, 0, 0];
-// WCAG AA for normal text.
 const AA = 4.5;
-// The rail draws an unselected item's label at this opacity
-// (`text-foreground/70` in `NavRail`), so the frame must carry the label, not
-// just the full text color, at AA.
+// Unselected rail labels are `text-foreground/70`; the frame must carry them.
 const LABEL_ALPHA = 0.7;
-// How far the light sidebar's selected fill moves from the panel towards the
-// highlight: a clear wash of the highlight that text reads on, and that the
-// 60% hover keeps subtle. A dark sidebar takes the deepened highlight.
+// Light sidebar: the selected fill is this much highlight over the panel.
 const PANEL_SELECTED = 0.45;
-// A dark sidebar's selected item, fitted to Slack's samples: the highlight
-// moved this far towards the frame (in OKLCH), then deepened until white text
-// reads at this contrast.
+// Dark sidebar, fitted to Slack: the highlight leans this far towards the
+// frame, then deepens until white text reaches this contrast.
 const SELECTED_TOWARDS_FRAME = 0.2;
 const SELECTED_CONTRAST = 6;
 
 type Mode = "light" | "dark";
 
 export type ThemeStyle = {
-  /**
-   * The shell's frame, per mode: `SidebarProvider` in the ERP and MES. As in
-   * Slack, light mode shows the picked colors and dark mode deepens them.
-   */
+  /** `SidebarProvider`'s background. */
   frame: Record<Mode, Record<string, string>>;
-  /**
-   * The desktop rail `<nav>`, per mode: transparent, with the theme variables
-   * set for the frame under it.
-   */
+  /** The desktop rail: transparent, with the theme variables for its frame. */
   rail: Record<Mode, Record<string, string>>;
-  /**
-   * The surface and text variables of the page, per mode: the content card,
-   * popovers, dialogs and tables take a light tint of the frame's hue, so the
-   * page matches the frame and stays calm, like Slack's message pane. Set on `<html>` inside the app, so
-   * portals get it too. Status colors and the theme color stay as they are.
-   */
+  /** The page's tinted variables, set on `<html>` so portals match. */
   content: { light: Record<string, string>; dark: Record<string, string> };
-  /**
-   * The module sidebar's variables, per mode: a tinted panel between the
-   * frame and the page, like Slack's channel list. Set on the panel only.
-   */
+  /** The module sidebar's variables. */
   panel: { light: Record<string, string>; dark: Record<string, string> };
-  /**
-   * Whether the frame reads as dark or light, from the text chosen for it. The
-   * rail picks its mode-specific art (the company logo) by this, not the mode.
-   */
+  /** The frame's tone, which picks the rail's logo instead of the mode. */
   tone: "light" | "dark";
 };
 
-// How strongly a surface takes the frame's hue: a fraction of the frame's own
-// saturation, so a grey frame (Graphite) leaves everything almost neutral.
-// Lightness stays close to the default theme, so contrast does not change.
+// [share of the frame's saturation, lightness]: a grey frame stays neutral,
+// and lightness stays near the default theme's, so contrast holds.
 type Surface = readonly [saturation: number, lightness: number];
 type Surfaces = Record<"light" | "dark", Record<string, Surface>>;
 
-// The page, like Slack's message pane: almost neutral, a whisper of the hue.
+// The page: almost neutral, like Slack's message pane.
 const PAGE_SURFACES: Surfaces = {
   light: {
     background: [0.28, 0.955],
@@ -480,8 +428,7 @@ const PAGE_SURFACES: Surfaces = {
   }
 };
 
-// The module sidebar, like Slack's channel list: a clearly tinted panel
-// between the frame and the page. Pale in light mode, deep in dark mode.
+// The module sidebar: clearly tinted, like Slack's channel list.
 const PANEL_SURFACES: Surfaces = {
   light: {
     background: [0.5, 0.93],
@@ -523,24 +470,18 @@ function tintedVariables(base: Rgb, surfaces: Surfaces) {
   return { light: forMode("light"), dark: forMode("dark") };
 }
 
-// Slack never paints a picked frame color as it is: it deepens it to one
-// depth. Measured from its screenshots (2026-11-05): #921D21 shows as
-// #631A18 and #228B07 as #223F18, both at OKLab lightness 0.336, the more
-// muted the further they move. A color already that deep stays as it is, and
-// a light frame (Linen, Mist; Slack has none) keeps its own lightness.
+// Fitted to Slack: dark mode deepens a frame to this lightness, muting it
+// along this curve (#921D21 → #631A18, #228B07 → #223F18); light mode keeps
+// it at this chroma (#228B07 → #448627). A light frame stays light.
 const FRAME_DEPTH = 0.336;
-const LIGHT_FRAME = 0.8;
 const FRAME_CHROMA_CURVE = 1.7;
-
-// In light mode Slack keeps the picked frame color, muted (measured: #228B07
-// shows as #448627, the same lightness at 80% chroma).
 const LIGHT_MODE_CHROMA = 0.8;
+const LIGHT_FRAME = 0.8;
 
 function isLightFrame(color: Rgb) {
   return lightnessOf(color) >= LIGHT_FRAME;
 }
 
-/** The dark-mode frame color Slack would paint for a picked color. */
 function deepFrame(color: Rgb): Rgb {
   const lightness = lightnessOf(color);
   if (lightness <= FRAME_DEPTH || lightness >= LIGHT_FRAME) return color;
@@ -551,11 +492,7 @@ function deepFrame(color: Rgb): Rgb {
   );
 }
 
-/**
- * Whether the rail's label (the text at `LABEL_ALPHA`) reads on a color at
- * AA, in whole bytes as the browser paints both, so rounding cannot drop it
- * below.
- */
+/** Whether a rail label reads on `color` at AA, in whole bytes as painted. */
 function labelReadsOn(text: Rgb, color: Rgb) {
   const background = hexToRgb(rgbToHex(color));
   const label = hexToRgb(rgbToHex(mix(background, text, LABEL_ALPHA)));
@@ -563,10 +500,8 @@ function labelReadsOn(text: Rgb, color: Rgb) {
 }
 
 /**
- * A color moved away from the text, a step at a time, until the rail's label
- * reads on it at AA. Light text darkens it; dark text lightens it. A vivid
- * color can run out of steps at the edge of the gamut; it then moves straight
- * towards black or white, where the label always reads.
+ * `color` moved away from the text until a rail label reads on it, falling
+ * back to black or white when a vivid color runs out of gamut.
  */
 function readableUnder(text: Rgb, color: Rgb): Rgb {
   const darken = text === LIGHT_TEXT;
@@ -583,21 +518,12 @@ function readableUnder(text: Rgb, color: Rgb): Rgb {
   return stop;
 }
 
-/**
- * The text a frame carries: dark on a light frame (Linen, Mist), else white,
- * as Slack's rail always is. Fixed by the picked color, not by the stops, so
- * the frame moves to suit the text and never the other way round.
- */
+/** White, or dark on a light frame. The frame adapts to the text, not back. */
 function frameText(picked: Rgb): Rgb {
   return isLightFrame(picked) ? DARK_TEXT : LIGHT_TEXT;
 }
 
-/**
- * The frame color for a mode. Dark mode deepens it as Slack does. Light mode
- * keeps it, muted. A light frame is the same in both. Then it moves only as
- * far as the rail's label needs for AA: Slack's #448627 gives white text
- * 4.4:1, which the dimmer label would miss.
- */
+/** The frame color for a mode, moved only as far as its labels need for AA. */
 function frameBase(picked: Rgb, mode: Mode, text: Rgb): Rgb {
   if (isLightFrame(picked)) return readableUnder(text, picked);
   if (mode === "dark") return readableUnder(text, deepFrame(picked));
@@ -607,35 +533,21 @@ function frameBase(picked: Rgb, mode: Mode, text: Rgb): Rgb {
   );
 }
 
-// Slack's gradient, measured from its screenshots (2026-11-05): the base on
-// the top-left to bottom-right diagonal, the highlight's hue, deep and
-// muted, in the other 2 corners. With #921D21 / #36C5F0 the rail runs red
-// #4E181B, plum #261722, navy #121828, and the right edge navy to red.
-// So the end takes the highlight's hue (this far from the base, in OKLCH), at
-// this share of the base's lightness and of the highlight's chroma, and the
-// midpoint is as calm.
+// Gradient ends, fitted to Slack. Dark mode: the highlight's hue, deep and
+// muted (#921D21 / #36C5F0 → red, plum, navy). Light mode: near the highlight
+// (#228B07 / #9E0B2E → corners #83252C).
 const FLOW_END = 0.8;
 const FLOW_END_DEPTH = 0.6;
 const FLOW_END_CHROMA = 0.35;
 const FLOW_MID_CHROMA = 0.6;
-// Light mode, measured with #228B07 / #9E0B2E: the corners are the highlight
-// itself, at 93% of its lightness and 74% of its chroma (#83252C), and the
-// middle is no lighter than either end and well muted (#604223).
 const LIGHT_FLOW_END = 0.95;
 const LIGHT_FLOW_END_LIGHTNESS = 0.93;
 const LIGHT_FLOW_END_CHROMA = 0.74;
 const LIGHT_FLOW_MID_CHROMA = 0.45;
-// How far a stop may move per step, and how many steps, to give the text AA.
 const CONTRAST_STEP = 0.015;
 const CONTRAST_STEPS = 30;
 
-/**
- * The colors of a gradient frame for a mode, around a base already set for
- * that mode (`frameBase`): the OKLCH midpoint, and the end in the highlight's
- * hue (the corners). Dark mode makes the end deep and muted; light mode keeps
- * it near the highlight. Every stop but the base moves until the rail's label reads
- * on it at AA.
- */
+/** The gradient's midpoint and end around a mode's base, readable at AA. */
 function gradientFlow(base: Rgb, highlight: Rgb, text: Rgb, mode: Mode) {
   const deep = mode === "dark" && text === LIGHT_TEXT;
   let end: Rgb;
@@ -667,14 +579,8 @@ function gradientFlow(base: Rgb, highlight: Rgb, text: Rgb, mode: Mode) {
 }
 
 /**
- * The frame's CSS `background`, as Slack's is: the base runs along the
- * diagonal from the top-left to the bottom-right corner, and the end color
- * fills the other 2 corners, top right and bottom left. `to top right` puts
- * 50% exactly on that diagonal, so the stops mirror round it. On the frame:
- * the rail runs base to end from top to bottom, the top edge base to end from
- * left to right, the right edge end to base from top to bottom, and the
- * bottom edge end to base from left to right. The OKLCH midpoint is a stop on
- * each side, so the flow never passes through grey.
+ * Slack's pattern: the base on the top-left to bottom-right diagonal (where
+ * `to top right` puts 50%), the end in the other 2 corners.
  */
 export function themeBackground(theme: ThemeColors, mode: Mode) {
   const { base, flow } = themeColors(theme, mode);
@@ -683,11 +589,7 @@ export function themeBackground(theme: ThemeColors, mode: Mode) {
   return `linear-gradient(to top right, ${rgbCss(end)} 0%, ${rgbCss(mid)} 28%, ${rgbCss(base)} 50%, ${rgbCss(mid)} 72%, ${rgbCss(end)} 100%)`;
 }
 
-/**
- * The 2 style objects a theme with `colors` renders. Pure, so the server and the
- * browser paint the same thing. The rail re-sets the theme variables its
- * classes already read, so the rail's markup does not change.
- */
+/** One mode's frame, gradient, text and rail tile. */
 function themeColors(theme: ThemeColors, mode: Mode) {
   const picked = hexToRgb(theme.base);
   const text = frameText(picked);
@@ -696,7 +598,6 @@ function themeColors(theme: ThemeColors, mode: Mode) {
   const flow = theme.gradient
     ? gradientFlow(base, highlight, text, mode)
     : undefined;
-  // Every color the rail's text can sit on.
   const frameColors = flow ? [base, flow.mid, flow.end] : [base];
   const worst = (tiles: Rgb[]) =>
     Math.min(...tiles.map((tile) => rgbContrast(text, tile)));
@@ -711,21 +612,15 @@ function themeColors(theme: ThemeColors, mode: Mode) {
     flow,
     frameColors,
     text,
-    // The rail's selected tile, and its color over each end of the frame.
     railTile: railShades
       ? `0 0% 0% / ${RAIL_SHADE_ALPHA}`
       : `${hslTriplet(text)} / ${RAIL_TILE_ALPHA}`,
     railTiles: railShades ? shaded : washed,
-    // Text on the highlight: the module sidebar's selected item.
     activeText: textFor([highlight])
   };
 }
 
-/**
- * The module sidebar's selected item takes the highlight's hue, as Slack's
- * channel list does: a wash of the highlight over the panel. Its text reads on
- * the fill and on the hover blend (`bg-active/60` over the panel).
- */
+/** The sidebar's selected item, readable on its fill and its hover blend. */
 function withPanelHighlight(
   panel: ThemeStyle["panel"],
   highlight: Rgb,
@@ -754,13 +649,8 @@ function withPanelHighlight(
 }
 
 /**
- * The selected item in a dark sidebar, as Slack paints it: the highlight,
- * leaning a fifth of the way towards the frame's hue, deepened until white
- * text reads on it at 6:1. Measured on a green frame #FF81AA shows as #A52943
- * (redder), and on a red frame #36C5F0 as #2F6EA8 (bluer); this gives #A83F35
- * and #2C62A8. A light sidebar
- * keeps the wash (`PANEL_SELECTED`): its hover (`bg-active/60` over a pale
- * panel) must carry the same text, and a deep fill would leave it mid-tone.
+ * Dark sidebar only (#FF81AA on green → #A52943 in Slack). A light sidebar
+ * keeps the wash: its hover blend carries the same text color.
  */
 function selectedOnDark(highlight: Rgb, frame: Rgb): Rgb {
   let color = blend(highlight, frame, SELECTED_TOWARDS_FRAME);
@@ -771,12 +661,7 @@ function selectedOnDark(highlight: Rgb, frame: Rgb): Rgb {
   return color;
 }
 
-/**
- * On a gradient theme the module sidebar flows too, as Slack's channel list
- * does over its gradient: its tint moves from the base's hue at the
- * top to the gradient end's hue at the bottom, at the same lightness, so the
- * text reads the same all the way down. `--card-end` holds the bottom color.
- */
+/** A gradient theme's sidebar shifts to the end's hue at the bottom. */
 function withPanelFlow(
   variables: Record<string, string>,
   flowEnd: Rgb | undefined,
@@ -792,10 +677,7 @@ function withPanelFlow(
   };
 }
 
-/**
- * The text colors a theme renders, as hex: on the frame (both ends of a
- * gradient), on the highlight, and the rail's selected tile on each end.
- */
+/** The text and the colors it sits on, as hex. */
 export function themeTextColors(theme: ThemeColors, mode: Mode) {
   const { text, activeText, frameColors, railTiles } = themeColors(theme, mode);
   return {
@@ -809,8 +691,7 @@ export function themeTextColors(theme: ThemeColors, mode: Mode) {
 export function themeStyle(theme: ThemeColors): ThemeStyle {
   const light = themeColors(theme, "light");
   const dark = themeColors(theme, "dark");
-  // The tints take the deep frame's hue and saturation in both modes, so a
-  // vivid pick tints the page no harder than a deep one.
+  // Tints use the deep frame in both modes, so a vivid pick tints no harder.
   const tintBase = dark.base;
   const panel = withPanelHighlight(
     tintedVariables(tintBase, PANEL_SURFACES),
@@ -842,13 +723,11 @@ function railVariables({
   const toward = (t: number) => hslTriplet(mix(base, text, t));
   return {
     background: "transparent",
-    // Text with no color class inherits from <body>, which resolved
-    // `--foreground` before the rail re-set it.
+    // Unclassed text inherits <body>'s already-resolved `--foreground`.
     color: "hsl(var(--foreground))",
     "--background": hslTriplet(base),
     "--foreground": hslTriplet(text),
     "--muted-foreground": hslTriplet(mix(text, base, 0.35)),
-    // A translucent tile: `bg-active` and `bg-active/60` both read it.
     "--active": railTile,
     "--active-foreground": hslTriplet(text),
     "--accent": toward(0.12),
@@ -864,20 +743,14 @@ function railVariables({
   };
 }
 
-/**
- * The round swatch a picker shows for a theme, as a CSS `background`: what
- * its frame is. A gradient theme shows its gradient; a solid theme one flat
- * color (a split circle read as a two-tone frame).
- */
+/** A picker swatch's CSS `background`: the frame as this mode paints it. */
 export function themeSwatch(theme: ThemeColors, mode: Mode) {
   const { base, flow } = themeColors(theme, mode);
   const b = rgbCss(base);
   if (!flow) return b;
-  // The frame's pattern: the base on the diagonal, the end in the 2 corners.
   return `linear-gradient(to top right, ${rgbCss(flow.end)} 8%, ${b} 50%, ${rgbCss(flow.end)} 92%)`;
 }
 
-/** `#rrggbb`, for the mesh backdrop. */
 function hashHex(rgb: Rgb) {
   return `#${rgbToHex(rgb)}`;
 }
@@ -885,11 +758,7 @@ function hashHex(rgb: Rgb) {
 const BLACK: Rgb = [0, 0, 0];
 const WHITE: Rgb = [255, 255, 255];
 
-/**
- * The 4 mesh-gradient stops per mode a theme carries (the onboarding
- * backdrop, the Implementation Hub): the frame's colors, deep in dark mode and
- * a pale wash in light mode.
- */
+/** The onboarding backdrop's 4 mesh stops per mode. */
 export function themeMesh({ base, highlight }: ThemeColors) {
   const b = hexToRgb(base);
   const h = hexToRgb(highlight);
@@ -909,10 +778,7 @@ export function themeMesh({ base, highlight }: ThemeColors) {
   } as const;
 }
 
-/**
- * The text color, as hex, that reads best on an `"H S% L%"` color (WCAG
- * contrast): dark or white. A yellow at 53% lightness still needs dark ink.
- */
+/** Dark or white text, as hex, for an `"H S% L%"` color. */
 export function textColorOn(hsl: string) {
   const [h = 0, s = 0, l = 0] = hsl
     .split(" ")
@@ -920,12 +786,10 @@ export function textColorOn(hsl: string) {
   return rgbToHex(textFor([hslToRgb(h, s / 100, l / 100)]));
 }
 
-/** The `H S% L%` triplet of a hex color: a theme's picker swatch. */
+/** The `H S% L%` triplet of a hex color. */
 export function hexTriplet(hex: string) {
   return hslTriplet(hexToRgb(hex));
 }
-
-// --- Surprise me ------------------------------------------------------------
 
 function hslToRgb(h: number, s: number, l: number): Rgb {
   const c = (1 - Math.abs(2 * l - 1)) * s;
@@ -946,7 +810,7 @@ function hslToRgb(h: number, s: number, l: number): Rgb {
   return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
 }
 
-/** A color channel as a hex byte. Genuinely integer: 0 to 255. */
+/** A channel as a hex byte. */
 function toByte(channel: number) {
   return Math.round(Math.min(255, Math.max(0, channel)))
     .toString(16)
@@ -957,10 +821,7 @@ function rgbToHex([r, g, b]: Rgb) {
   return `${toByte(r)}${toByte(g)}${toByte(b)}`;
 }
 
-/**
- * A random dark frame and a brighter highlight of a nearby hue. `random`
- * returns a number in [0, 1), as `Math.random` does.
- */
+/** A random dark frame and a brighter highlight of a nearby hue. */
 export function randomThemeColors(
   gradient: boolean,
   random: () => number = Math.random
