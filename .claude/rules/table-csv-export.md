@@ -130,6 +130,7 @@ An infinite list holds only the rows loaded so far. `useCsvDownload`
 
 | Case (checked in this order) | Path |
 |---|---|
+| The registry entry sets `exportOnServer` (passed by `listInfinite` as `infinite.exportOnServer`) | The browser POSTs to the export route at once, at any row count. It loads no rows and builds no file. Sales Invoices sets it. |
 | No `infinite`, or `hasMore` is false | The browser exports the table's own `data`. Inline edits stay in the file. |
 | `listKey` is set and `count` is above 1,000 | The browser POSTs to the export route at once. |
 | Else | `loadAll(1000)` loads pages in the browser. If rows remain and `listKey` is set, the browser POSTs to the export route. If rows remain and no `listKey` is set, it downloads the first 1,000 rows and shows "Exported the first 1,000 rows." |
@@ -251,7 +252,7 @@ Just render `<Table>` — the button comes for free. No `enableExport`-style pro
   (`exportListRows`, `utils/list-registry/index.server.ts`). A column whose
   `meta.exportValue` computes from the row needs the same function in the
   entry's `exportValues`. Jobs (Batches, Tracking), Batches (Jobs, Quantity,
-  Process, Work Center), Suppliers (contacts, addresses), Sales Invoices (Customer, Invoice Customer names), Workflows (Last
+  Process, Work Center), Suppliers (contacts, addresses), Workflows (Last
   Run) and Workflow Runs (Workflow, Record) have them. Any other
   `meta.exportValue` is not run: the background file holds the raw value.
 - The `name` substitution is keyed on the literal accessor strings `itemId` /

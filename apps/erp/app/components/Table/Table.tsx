@@ -1587,6 +1587,7 @@ const Table = <T extends object>({
               count,
               hasMore,
               listKey,
+              exportOnServer: !!infiniteOptions?.exportOnServer,
               loadAll: infiniteRows.loadAll,
               resetKey: infiniteRows.resetKey
             }
