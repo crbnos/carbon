@@ -5,6 +5,7 @@
 import { convertKbToString } from "@carbon/files";
 import { useLoaderQuery } from "@carbon/query";
 import { Button, Checkbox, Spinner } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { useCompanySettings } from "~/hooks/useCompanySettings";
@@ -94,7 +95,7 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
               </span>
               <span className="w-16 shrink-0 text-right font-mono text-xs text-muted-foreground">
                 {Number.isFinite(file.size)
-                  ? convertKbToString(Math.floor(file.size / 1024))
+                  ? convertKbToString(round(file.size / 1024, 0))
                   : null}
               </span>
             </label>

@@ -6812,13 +6812,20 @@ export async function signItemFile(
   client: SupabaseClient<Database>,
   companyId: string,
   file: { bucket: string; path: string },
-  seconds: number
+  seconds: number,
+  // A file name: the link downloads under it instead of opening inline (a
+  // cross-origin <a download> is ignored).
+  download?: string
 ): Promise<string | null> {
   const bucket =
     file.bucket === TEMP_STAGING_BUCKET
       ? storage(client).from(TEMP_STAGING_BUCKET)
       : storage(client).company(companyId);
-  const { data, error } = await bucket.createSignedUrl(file.path, seconds);
+  const { data, error } = await bucket.createSignedUrl(
+    file.path,
+    seconds,
+    download ? { download } : undefined
+  );
   if (!data) {
     logger.error("Failed to sign an item file", {
       companyId,

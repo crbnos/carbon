@@ -164,7 +164,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
               ctx.asSystem.supabase,
               quote.data.companyId,
               file,
-              3600
+              3600,
+              file.filename
             )
           }))
         )

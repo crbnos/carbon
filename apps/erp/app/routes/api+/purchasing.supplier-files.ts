@@ -9,5 +9,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const itemIds = new URL(request.url).searchParams.getAll("itemId");
   const api = await carbon(request);
   const result = await api.purchasing.listItemSupplierFiles({ itemIds });
-  return { files: result.data ?? [] };
+  // A failed lookup is an error, so the send dialog shows it with Retry rather
+  // than an empty list.
+  if (result.error) {
+    throw new Response("Failed to list the part files", { status: 500 });
+  }
+  return { files: result.data };
 }
