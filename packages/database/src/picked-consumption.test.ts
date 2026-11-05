@@ -5,18 +5,31 @@
 import { expect, it } from "vitest";
 import {
   allocateAcrossBudgets,
+  type BinStock,
   chooseSourceBin,
   linesideCredit,
   orderOldFirst,
   type PickedBudget,
   pickFactor,
   planStripedUntrackedDraw,
-  planUntrackedDraw,
   recordSharedTakes,
   type SharedTakes,
   sharedTakeKey,
   splitTakeByBin
 } from "./picked-consumption.ts";
+
+// A draw of common stock only: every bin's stock counts, whatever its stripe.
+const planUntrackedDraw = (args: {
+  bins: readonly BinStock[];
+  preferredStorageUnitId: string | null;
+  quantity: number;
+}) =>
+  planStripedUntrackedDraw({
+    bins: args.bins.map((bin) => ({ ...bin, projectId: null })),
+    stripes: [null],
+    preferredStorageUnitId: args.preferredStorageUnitId,
+    quantity: args.quantity
+  }).map(({ storageUnitId, quantity }) => ({ storageUnitId, quantity }));
 
 const budget = (overrides: Partial<PickedBudget>): PickedBudget => {
   const own = overrides.own ?? overrides.available ?? 0;

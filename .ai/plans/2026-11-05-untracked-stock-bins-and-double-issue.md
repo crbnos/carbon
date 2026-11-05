@@ -6,7 +6,7 @@ one PR for all three.
 
 ## 1. Untracked job consumption takes stock from the bin that holds it
 
-Rule (`planUntrackedDraw`, `@carbon/database/picked-consumption`, pure):
+Rule (`planStripedUntrackedDraw`, `@carbon/database/picked-consumption`, pure):
 take from the preferred bin up to its on-hand, then from the other bins with
 stock (nettable named bins and "no storage unit"), fullest first. A shortfall
 stays on the preferred bin, else the first bin drawn, else no storage unit.

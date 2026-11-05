@@ -119,11 +119,12 @@ export type StripedBinDraw = {
   quantity: number;
 };
 
-// The preferred bin, then the nettable bins with stock, fullest first.
-function drawOrder(
+// Each candidate bin's on-hand: nettable bins and no storage unit, and the
+// preferred bin even when it is non-nettable, since someone named it.
+function candidateOnHand(
   bins: readonly BinStock[],
   preferred: string | null
-): [string | null, number][] {
+): Map<string | null, number> {
   const onHand = new Map<string | null, number>();
   for (const bin of bins) {
     if (bin.storageUnitId !== null && !bin.nettable) {
@@ -134,15 +135,29 @@ function drawOrder(
       (onHand.get(bin.storageUnitId) ?? 0) + bin.quantity
     );
   }
-  const others = [...onHand.entries()]
-    // With no bin chosen, no storage unit is a candidate like any other.
-    .filter(
-      ([id, qty]) => (preferred === null || id !== preferred) && round(qty) > 0
-    )
+  return onHand;
+}
+
+// The bins holding stock, fullest first (no storage unit sorts as "").
+function fullestFirst(
+  onHand: Map<string | null, number>
+): [string | null, number][] {
+  return [...onHand.entries()]
+    .filter(([, qty]) => round(qty) > 0)
     .sort(([a, qa], [b, qb]) => qb - qa || (a ?? "").localeCompare(b ?? ""));
-  return preferred !== null
-    ? [[preferred, onHand.get(preferred) ?? 0], ...others]
-    : others;
+}
+
+// The preferred bin, then the other bins with stock, fullest first. With no
+// bin chosen, no storage unit is a candidate like any other.
+function drawOrder(
+  bins: readonly BinStock[],
+  preferred: string | null
+): [string | null, number][] {
+  const onHand = candidateOnHand(bins, preferred);
+  if (preferred === null) return fullestFirst(onHand);
+  const preferredOnHand = onHand.get(preferred) ?? 0;
+  onHand.delete(preferred);
+  return [[preferred, preferredOnHand], ...fullestFirst(onHand)];
 }
 
 /**
@@ -207,28 +222,11 @@ export function untrackedDrawLockKey(
 }
 
 /**
- * `planStripedUntrackedDraw` for common stock only: every bin's stock counts,
- * whatever its stripe.
- */
-export function planUntrackedDraw(args: {
-  bins: readonly BinStock[];
-  preferredStorageUnitId: string | null;
-  quantity: number;
-}): { storageUnitId: string | null; quantity: number }[] {
-  return planStripedUntrackedDraw({
-    bins: args.bins.map((bin) => ({ ...bin, projectId: null })),
-    stripes: [null],
-    preferredStorageUnitId: args.preferredStorageUnitId,
-    quantity: args.quantity
-  }).map(({ storageUnitId, quantity }) => ({ storageUnitId, quantity }));
-}
-
-/**
  * The one bin a document line that ships untracked stock should name, such as
  * a shipment line. The preferred bin when it holds `quantity`, else the
  * fullest bin that holds it, else the fullest bin with any stock, else the
- * preferred bin. The candidates are the ones `planUntrackedDraw` guesses
- * from. Returns null for no storage unit.
+ * preferred bin. The candidates are the ones `planStripedUntrackedDraw`
+ * guesses from. Returns null for no storage unit.
  */
 export function chooseSourceBin(args: {
   bins: readonly BinStock[];
@@ -236,21 +234,10 @@ export function chooseSourceBin(args: {
   quantity: number;
 }): string | null {
   const { preferredStorageUnitId: preferred } = args;
-  const onHand = new Map<string | null, number>();
-  for (const bin of args.bins) {
-    if (bin.storageUnitId !== null && !bin.nettable) {
-      if (bin.storageUnitId !== preferred) continue;
-    }
-    onHand.set(
-      bin.storageUnitId,
-      (onHand.get(bin.storageUnitId) ?? 0) + bin.quantity
-    );
-  }
+  const onHand = candidateOnHand(args.bins, preferred);
   const need = round(args.quantity);
   if (round(onHand.get(preferred) ?? 0) >= need) return preferred;
-  const stocked = [...onHand.entries()]
-    .filter(([, qty]) => round(qty) > 0)
-    .sort(([a, qa], [b, qb]) => qb - qa || (a ?? "").localeCompare(b ?? ""));
+  const stocked = fullestFirst(onHand);
   const covering = stocked.find(([, qty]) => round(qty) >= need);
   return (covering ?? stocked[0])?.[0] ?? preferred;
 }

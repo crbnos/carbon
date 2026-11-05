@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Untracked job consumption takes its stock from the bins that hold it
-// (planUntrackedDraw), and an operation completion issues only what the units
+// (planStripedUntrackedDraw), and an operation completion issues only what the units
 // made so far still need, so a unit's material is never issued twice.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { afterAll, beforeAll, describe, expect } from "vitest";
@@ -77,7 +77,8 @@ describe.skipIf(!hasLocalDatabase)("consumption bins", () => {
   const receive = (
     itemId: string,
     storageUnitId: string | null,
-    quantity: number
+    quantity: number,
+    projectId: string | null = null
   ) =>
     seed(f, (trx) =>
       trx
@@ -89,6 +90,7 @@ describe.skipIf(!hasLocalDatabase)("consumption bins", () => {
           locationId: f.locationId,
           storageUnitId,
           quantity,
+          projectId,
           companyId: f.companyId,
           createdBy: USER
         })
@@ -206,6 +208,58 @@ describe.skipIf(!hasLocalDatabase)("consumption bins", () => {
       expect(await consumed(item)).toEqual([
         { storageUnitId: binA, quantity: -1 },
         { storageUnitId: binB, quantity: -1 }
+      ]);
+    }
+  );
+
+  databaseTest(
+    "a project job draws its project's stock in every bin before common stock",
+    async () => {
+      const item = await newItem("project-first");
+      const projectId = `${f.prefix}-project`;
+      await seed(f, (trx) =>
+        trx
+          .insertInto("project")
+          .values({
+            id: projectId,
+            name: "Stocked project",
+            identifier: `${f.prefix}-P`.slice(0, 20),
+            status: "Released",
+            costTreatment: "Expense",
+            projectStock: true,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      // 10 common in the named bin A, 2 of the project's own in bin B.
+      await receive(item, binA, 10);
+      await receive(item, binB, 2, projectId);
+      const job = await jobFixture(f, "project-first");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("job")
+          .set({ projectId })
+          .where("id", "=", job.jobId)
+          .execute()
+      );
+      await setMaterial(job.materialId, { itemId: item, storageUnitId: binA });
+
+      await manualIssue(job, item, 4);
+
+      const rows = await f.db
+        .selectFrom("itemLedger")
+        .select(["storageUnitId", "projectId", "quantity"])
+        .where("itemId", "=", item)
+        .where("documentType", "=", "Job Consumption")
+        .where("companyId", "=", f.companyId)
+        .orderBy("projectId")
+        .execute();
+      expect(
+        rows.map((row) => ({ ...row, quantity: Number(row.quantity) }))
+      ).toEqual([
+        { storageUnitId: binB, projectId, quantity: -2 },
+        { storageUnitId: binA, projectId: null, quantity: -2 }
       ]);
     }
   );

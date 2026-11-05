@@ -322,9 +322,10 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   also refuses a pick (untracked, serial or batch) whose source unit is non-nettable at post
   time (`assertPickSourceNettable`), since a bin can become one after the list was
   generated; it still does not re-check lineside. Shipments are not restricted: a shipment line can
-  name a non-nettable bin. A new sales order shipment line for an untracked item names a bin
-  that holds its stock (`shipmentSourceBinChooser` → `chooseSourceBin`, `shared.service.ts`),
-  and so does a quote line converted with no default bin. `postShipment` warns
+  name a non-nettable bin. A new sales order shipment line for an untracked item keeps the bin
+  the order line names, even when short; a line with no bin takes a bin that holds its stock
+  (`shipmentSourceBinChooser` → `chooseSourceBin`, `shared.service.ts`), and so does a quote
+  line converted with no default bin. `postShipment` warns
   (`shipmentStockWarnings`, rule id `SHIPMENT_BIN_STOCK_RULE_ID`) when an untracked line's bin
   holds less than it ships, naming the bins that hold the item; the user acknowledges it.
   A purchase order (outside processing), rental or contract shipment writes no item ledger row

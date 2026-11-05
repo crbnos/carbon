@@ -25824,6 +25824,13 @@ async function drawUntrackedAtBin(
   return drawFromStripes(args.quantity, await stripeOnHandAtBin(trx, args));
 }
 
+/**
+ * Issues an operation's untracked materials for `quantity` units: what every
+ * unit the operation has made or scrapped needs, less what is already issued.
+ * The caller records the production (or scrap) quantity BEFORE it calls this,
+ * in its own transaction or this one; a dry run is the only exception. A
+ * caller that records after would see too few units and issue too little.
+ */
 async function issueJobOperationMaterials(
   trx: Transaction<KyselyDatabase>,
   {
@@ -28466,11 +28473,11 @@ export async function issueMaterial(
         // Provisional before the company's accounting cutover, Posted after it.
         const postingStatus = await journalPostingStatus(trx, companyId);
         // A resent completion of this unit waits here for the first.
-        await trx
+        const operation = await trx
           .selectFrom("jobOperation")
           .where("id", "=", row.jobOperationId)
           .where("companyId", "=", companyId)
-          .select("id")
+          .select("quantityComplete")
           .forUpdate()
           .executeTakeFirst();
 
@@ -28486,13 +28493,27 @@ export async function issueMaterial(
         }
         // A unit completes once per operation. A second production row would
         // raise quantityComplete and issue the material of a unit never made.
+        // A marked unit may complete again only when a production row was
+        // deleted since (fewer completed than marked): the operation reopened.
+        const operationMarker = `Operation ${row.jobOperationId}`;
         if (
-          `Operation ${row.jobOperationId}` in
+          operationMarker in
           ((trackedEntity.attributes ?? {}) as TrackedEntityAttributes)
         ) {
-          throw new InvalidInputError(
-            "This unit is already complete on this operation"
-          );
+          const marked = await trx
+            .selectFrom("trackedEntity")
+            .where("companyId", "=", companyId)
+            .where(sql<boolean>`jsonb_exists("attributes", ${operationMarker})`)
+            .select((eb) => eb.fn.countAll<number>().as("count"))
+            .executeTakeFirst();
+          if (
+            Number(marked?.count ?? 0) <=
+            Number(operation?.quantityComplete ?? 0)
+          ) {
+            throw new InvalidInputError(
+              "This unit is already complete on this operation"
+            );
+          }
         }
 
         await trx
@@ -29363,11 +29384,14 @@ export async function issueMaterial(
           }));
         };
 
+        if (!job?.locationId) {
+          throw new InvalidInputError("The job has no location");
+        }
         // Before the material row: the completion's lock order is operation,
         // draw, material.
         await lockUntrackedDraws(trx, {
           companyId,
-          locationId: job?.locationId!,
+          locationId: job.locationId,
           itemIds: pluckUnique(
             [itemId, materialOwner?.itemId].filter(
               (drawnItemId): drawnItemId is string => !!drawnItemId

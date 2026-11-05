@@ -12,7 +12,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
-import { nonScrapQuantityValidator } from "~/services/models";
+import { completeQuantityValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
   finishJobOperation,
@@ -30,7 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
-  const validation = await validator(nonScrapQuantityValidator).validate(
+  const validation = await validator(completeQuantityValidator).validate(
     formData
   );
 
@@ -275,8 +275,30 @@ export async function action({ request }: ActionFunctionArgs) {
     const operationPath = path.to.operation(validation.data.jobOperationId);
     return redirect(withOrigin(operationPath, origin));
   } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { trackedEntityId, trackingType, ...d } = validation.data;
+    const {
+      // biome-ignore lint/correctness/noUnusedVariables: not a productionQuantity column
+      trackedEntityId,
+      // biome-ignore lint/correctness/noUnusedVariables: not a productionQuantity column
+      trackingType,
+      expectedQuantityComplete,
+      ...d
+    } = validation.data;
+
+    // The page completed a unit the operation has already recorded since it
+    // loaded: a second tab, or a resent request. Record nothing.
+    if (
+      expectedQuantityComplete !== undefined &&
+      Number(jobOperation.data.quantityComplete ?? 0) !==
+        expectedQuantityComplete
+    ) {
+      log.info("Completion skipped: the unit is already recorded", {
+        companyId,
+        jobOperationId: jobOperation.data.id,
+        expectedQuantityComplete,
+        quantityComplete: jobOperation.data.quantityComplete
+      });
+      return data({ alreadyRecorded: true });
+    }
 
     const check = await checkStrictBackflush({
       jobOperationId: validation.data.jobOperationId,

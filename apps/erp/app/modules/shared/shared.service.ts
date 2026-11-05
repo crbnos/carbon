@@ -14264,7 +14264,7 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
-        // An untracked line ships from a bin that holds its stock.
+        // An untracked line with no bin ships from a bin that holds its stock.
         const untrackedItemIds = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Inventory")
@@ -14733,6 +14733,27 @@ export async function createDocument(
               (salesOrderLine.data.unitPrice ?? 0)) *
             (1 + salesOrderLine.data.taxPercent);
 
+          // An untracked line with no bin ships from a bin that holds its stock.
+          const storageUnitId =
+            item.data.itemTrackingType === "Inventory"
+              ? (
+                  await shipmentSourceBinChooser(trx, {
+                    companyId,
+                    lines: [
+                      {
+                        itemId: salesOrderLine.data.itemId!,
+                        locationId: salesOrderLine.data.locationId
+                      }
+                    ]
+                  })
+                )({
+                  itemId: salesOrderLine.data.itemId!,
+                  locationId: salesOrderLine.data.locationId,
+                  storageUnitId: salesOrderLine.data.storageUnitId,
+                  quantity: outstandingQuantity
+                })
+              : salesOrderLine.data.storageUnitId;
+
           await trx
             .insertInto("shipmentLine")
             .values({
@@ -14748,26 +14769,7 @@ export async function createDocument(
               unitPrice: shippingAndTaxUnitCost,
               unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
               locationId: salesOrderLine.data.locationId!,
-              // An untracked line ships from a bin that holds its stock.
-              storageUnitId:
-                item.data.itemTrackingType === "Inventory"
-                  ? (
-                      await shipmentSourceBinChooser(trx, {
-                        companyId,
-                        lines: [
-                          {
-                            itemId: salesOrderLine.data.itemId!,
-                            locationId: salesOrderLine.data.locationId
-                          }
-                        ]
-                      })
-                    )({
-                      itemId: salesOrderLine.data.itemId!,
-                      locationId: salesOrderLine.data.locationId,
-                      storageUnitId: salesOrderLine.data.storageUnitId,
-                      quantity: outstandingQuantity
-                    })
-                  : salesOrderLine.data.storageUnitId!,
+              storageUnitId,
               createdBy: userId ?? ""
             })
             .execute();
@@ -18111,10 +18113,11 @@ export async function getUntrackedBinStock(
 }
 
 /**
- * The bin each untracked shipment line ships from, chosen from the bins that
- * hold the stock (`chooseSourceBin`): the order line's bin when it holds the
- * quantity, else one that does. Lines are planned in order, so two lines of one
- * item do not count the same stock. Shipments draw common stock only.
+ * The bin each untracked shipment line ships from. A bin the order line names
+ * is kept, even when short: posting warns about it (`shipmentStockWarnings`),
+ * so a user's choice never changes silently. A line with no bin takes one that
+ * holds the stock (`chooseSourceBin`). Lines are planned in order, so two lines
+ * of one item do not count the same stock. Shipments draw common stock only.
  */
 export async function shipmentSourceBinChooser(
   db: Kysely<DB>,
@@ -18162,19 +18165,21 @@ export async function shipmentSourceBinChooser(
   return (line) => {
     if (!line.locationId) return line.storageUnitId;
     const locationId = line.locationId;
-    const bins = (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
-      (bin) => ({
-        ...bin,
-        quantity:
-          bin.quantity -
-          (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ?? 0)
-      })
-    );
-    const chosen = chooseSourceBin({
-      bins,
-      preferredStorageUnitId: line.storageUnitId,
-      quantity: line.quantity
-    });
+    const chosen =
+      line.storageUnitId ??
+      chooseSourceBin({
+        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
+          (bin) => ({
+            ...bin,
+            quantity:
+              bin.quantity -
+              (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ??
+                0)
+          })
+        ),
+        preferredStorageUnitId: null,
+        quantity: line.quantity
+      });
     const k = key(line.itemId, locationId, chosen);
     assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
     return chosen;
