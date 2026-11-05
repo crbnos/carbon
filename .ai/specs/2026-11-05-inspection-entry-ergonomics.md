@@ -1,7 +1,7 @@
 # Inspection entry ergonomics
 
 Date: 2026-11-05. Status: implemented on branch `naveen/keen-hamilton-ge0w4k`.
-A browser test against a live database is still to do (see Verification).
+Verified on a running stack (`crbn up`, see Verification).
 Research: `.ai/research/2026-11-05-inspection-entry-ergonomics.md`.
 
 ## Problem
@@ -45,6 +45,7 @@ server verdict (`valuateMeasurement`) stays the record of truth.
 | D12 | Non-serial lots: the column count follows the samples the grid knows, from the loader and from save responses. So a paste can add samples up to the lot size. | Before, the count followed the loader only, and a long paste stopped at the spare column. |
 | D13 | The grid title shows a red "N failed" badge when a reading has failed. | A failed reading far off screen is still visible. |
 | D14 | A **Hide drawing** button gives the whole body to the grid. The choice stays in the browser. | More rows on screen for a large batch. |
+| D15 | A grid position (column or row) is bound to a sample id, not to the sample's place in the loader's list. On first load samples take positions in the order they were made. After that a sample keeps its position for the page (`placeSamples`), and a sample new to the page takes the lowest free one. Cell state (values, statuses, the Table's pending edits) is keyed by sample id. `getInspection` (ERP and MES) orders the embedded samples by `createdAt`, then `id`. | The embed had no order, and an UPDATE moves a row. After a reload, position N named another sample, so a save went to the wrong sample (found on the live stack). |
 
 ## Shared code
 
@@ -131,5 +132,31 @@ cleared cell sends an empty value for the same sample; Hide drawing persists
 over a reload; the closed lot shows the stored fail in red and refuses entry;
 the MES matrix fits a 390 px phone with no sideways page scroll.
 
-Not yet done: the same flow on a running stack with a real lot (`/test` skill).
-This container has no Docker, so `crbn up` cannot run here.
+### Third round: the running stack
+
+`crbn up` ran the full stack (Postgres, GoTrue, Storage, Realtime, ERP, MES) in
+this container. agent-browser logged in as the seeded test user and drove the
+real inspection screens against the real routes and database. The round found
+2 bugs that the harness could not show:
+
+| # | Bug | Cause | Fix |
+|---|---|---|---|
+| 1 | A reading went to another sample, and an empty row opened with another sample's value | Each save broadcasts `inspectionSample`, so the page reloads. The loader's sample list has no order, and an UPDATE moves a row, so position N named another sample after the reload. The position map predates this work, but By part and realtime make it happen at once | D15 |
+| 2 | MES: typing into a filled cell appended to the old value, and the result was dropped as not a number | Focus did not select the input's text | The input selects its text on focus, as a spreadsheet does |
+
+Checked on the stack after the fixes:
+
+1. INS000003 (2 characteristics): 4 readings by keyboard (Enter across each part) land on 2 samples, 2 readings each, with the right verdicts. A reload shows the same cells, and an empty row opens blank.
+2. A 200-part lot with 20 samples per characteristic: a pasted 20 × 2 block saves 39 readings in about 5 s. Each sample holds the pair from its own pasted row, 4 fail, 1 bad token is skipped, and the toast says so.
+3. An edit of part 1 followed by a reload leaves part 1 in row 1.
+4. MES job-operation lot INS000004: 3.40 V turns red live (the limit is 3.350 V). Enter moves across the row, a filled cell takes a new value, and By part shows the real data.
+
+Not covered on the stack: go / no-go characteristics (the seed data has none;
+the harness rounds covered them) and the Hide drawing toggle on a lot with a PDF.
+
+To run the stack in a cloud container like this one: start `dockerd`, use Node
+24, run `pnpm rebuild supabase` after an install with `--ignore-scripts`,
+generate `packages/documents/src/pdf/fonts.data.ts` and the MCP metadata, start
+the dev servers with `NODE_USE_ENV_PROXY=1` (the Turnstile siteverify call goes
+through the proxy), allow `challenges.cloudflare.com`, and pass `--no-portless
+--no-regen` to `crbn up` (type generation pulls an image from a blocked host).

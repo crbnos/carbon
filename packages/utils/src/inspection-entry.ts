@@ -217,3 +217,47 @@ export function passAllTargets({
   }
   return targets;
 }
+
+// The order samples take in the grid on first load: the order they were made.
+// The loader's embed has no order of its own (an UPDATE moves a row), so a
+// position read from it can name another sample after any reload.
+export function compareSamplesByCreation(
+  a: { createdAt: string; id: string },
+  b: { createdAt: string; id: string }
+): number {
+  return a.createdAt < b.createdAt
+    ? -1
+    : a.createdAt > b.createdAt
+      ? 1
+      : a.id < b.id
+        ? -1
+        : a.id > b.id
+          ? 1
+          : 0;
+}
+
+// Which sample each grid position (column or row index) shows. A sample keeps
+// the position it already has, so a reload never moves a reading under the
+// inspector's cursor or sends the next save to another sample. A sample made
+// by a save the loader has not returned yet keeps its position too. Samples
+// with no position yet take the lowest free ones, in `sampleIds` order.
+export function placeSamples(
+  previous: Readonly<Record<number, string>>,
+  sampleIds: readonly string[]
+): Record<number, string> {
+  const next: Record<number, string> = {};
+  const placed = new Set<string>();
+  for (const [position, id] of Object.entries(previous)) {
+    if (placed.has(id)) continue;
+    next[Number(position)] = id;
+    placed.add(id);
+  }
+  let slot = 0;
+  for (const id of sampleIds) {
+    if (placed.has(id)) continue;
+    while (slot in next) slot += 1;
+    next[slot] = id;
+    placed.add(id);
+  }
+  return next;
+}

@@ -408,6 +408,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   block (`planPaste`, `parseMeasurementToken`, `parseAttributeToken` in `@carbon/utils`
   `inspection-entry`) send the same per-cell POSTs one at a time — no batch endpoint. A
   **Hide drawing** toggle (`INSPECTION_DRAWING_HIDDEN_STORAGE_KEY`) gives the grid the body.
+  **Positions are bound to sample ids.** `getInspection` (ERP and MES) orders the embedded
+  samples by `createdAt`, then `id` (an embed has no order, and an UPDATE moves a row). The grids
+  map each column/row to a sample with `placeSamples` (`@carbon/utils`): a sample keeps its
+  position for the page, a new one takes the lowest free position, and cell state is keyed by
+  sample id. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
+  `inspectionSample`, the page reloads, and the index then names another sample.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity

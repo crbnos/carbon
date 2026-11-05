@@ -19,6 +19,7 @@ import {
 } from "@carbon/react";
 import type { InspectionGridLayout } from "@carbon/utils";
 import {
+  compareSamplesByCreation,
   defaultInspectionGridLayout,
   formatSpecLabel,
   formatToleranceLimits,
@@ -29,6 +30,7 @@ import {
   parseClipboardGrid,
   parseMeasurementToken,
   passAllTargets,
+  placeSamples,
   planPaste
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -126,8 +128,8 @@ type InspectionMeasurementGridProps = {
 const sampleKey = (sampleIndex: number) => `sample-${sampleIndex}`;
 const featureKey = (characteristicIndex: number) =>
   `feature-${characteristicIndex}`;
-const cellKey = (sampleIndex: number, featureId: string) =>
-  `${sampleIndex}:${featureId}`;
+// The position of a sample the grid shows but no save has made yet.
+const newSampleKey = (sampleIndex: number) => `new-${sampleIndex}`;
 
 // Mirrors RECENT_INSPECTION_GAUGE_LIMIT in packages/database/src/quality.ts
 // (the server's "recently used" cap) — that module is server-only (Kysely), so
@@ -160,7 +162,7 @@ const InspectionMeasurementGrid = ({
   isReadOnly,
   isSerial,
   features,
-  samples,
+  samples: unorderedSamples,
   measurements,
   gauges,
   recentGaugeIds,
@@ -254,23 +256,52 @@ const InspectionMeasurementGrid = ({
     t
   ]);
 
-  // Sample index -> sample id. Anonymous samples resolve lazily from save
-  // responses; keyed by index because unsaved samples have no id yet. The ref
-  // is the same map, read by queued saves that run after a render.
+  // Samples in the order they were made: the loader's embed has none.
+  const samples = useMemo(
+    () => [...unorderedSamples].sort(compareSamplesByCreation),
+    [unorderedSamples]
+  );
+  const sampleById = useMemo(
+    () => new Map(samples.map((sample) => [sample.id, sample])),
+    [samples]
+  );
+
+  // Grid position (column by characteristic, row by part) -> sample id. A
+  // sample keeps its position across reloads (`placeSamples`); a position no
+  // save has used yet has no sample. The ref is the same map, read by queued
+  // saves that run after a render.
   const [sampleIdByColumn, setSampleIdByColumn] = useState<
     Record<number, string>
-  >({});
-  const sampleIdRef = useRef<Record<number, string>>({});
+  >(() =>
+    placeSamples(
+      {},
+      samples.map((sample) => sample.id)
+    )
+  );
+  const sampleIdRef = useRef<Record<number, string>>(sampleIdByColumn);
   useEffect(() => {
     setSampleIdByColumn((prev) => {
-      const next = { ...prev };
-      samples.forEach((sample, index) => {
-        next[index] = sample.id;
-      });
-      sampleIdRef.current = { ...sampleIdRef.current, ...next };
+      const next = placeSamples(
+        prev,
+        samples.map((sample) => sample.id)
+      );
+      sampleIdRef.current = next;
       return next;
     });
   }, [samples]);
+  const sampleAt = useCallback(
+    (sampleIndex: number) => {
+      const id = sampleIdByColumn[sampleIndex];
+      return id ? sampleById.get(id) : undefined;
+    },
+    [sampleIdByColumn, sampleById]
+  );
+  // Cell state is keyed by sample, so it follows the sample, not the position.
+  const positionKey = useCallback(
+    (sampleIndex: number) =>
+      sampleIdByColumn[sampleIndex] ?? newSampleKey(sampleIndex),
+    [sampleIdByColumn]
+  );
 
   // The samples the grid knows: the loader's plus those made by saves since.
   const knownSampleCount = Math.max(
@@ -344,8 +375,8 @@ const InspectionMeasurementGrid = ({
   const [optimisticByCell, setOptimisticByCell] = useState<
     Record<string, Verdict>
   >({});
-  const [sampleStatusByColumn, setSampleStatusByColumn] = useState<
-    Record<number, string>
+  const [sampleStatusById, setSampleStatusById] = useState<
+    Record<string, string>
   >({});
 
   const measurementFor = useCallback(
@@ -362,7 +393,7 @@ const InspectionMeasurementGrid = ({
 
   const cellStatus = useCallback(
     (sampleIndex: number, featureId: string): string | undefined => {
-      const key = cellKey(sampleIndex, featureId);
+      const key = `${positionKey(sampleIndex)}:${featureId}`;
       const optimistic = optimisticByCell[key];
       if (optimistic) return optimistic;
       const saved = statusByCell[key];
@@ -370,16 +401,23 @@ const InspectionMeasurementGrid = ({
       // The "Overall result" row has no measurement — its verdict is the
       // sample's own status (Pending shows as an untoggled cell).
       if (featureId === OVERALL_ROW_ID) {
-        return samples[sampleIndex]?.status;
+        return sampleAt(sampleIndex)?.status;
       }
       return measurementFor(sampleIdByColumn[sampleIndex], featureId)?.status;
     },
-    [optimisticByCell, statusByCell, sampleIdByColumn, measurementFor, samples]
+    [
+      optimisticByCell,
+      statusByCell,
+      sampleIdByColumn,
+      measurementFor,
+      positionKey,
+      sampleAt
+    ]
   );
 
   const cellValue = useCallback(
     (sampleIndex: number, featureId: string): number | null => {
-      const key = cellKey(sampleIndex, featureId);
+      const key = `${positionKey(sampleIndex)}:${featureId}`;
       if (key in valueByCell) return valueByCell[key] ?? null;
       const measurement = measurementFor(
         sampleIdByColumn[sampleIndex],
@@ -387,13 +425,17 @@ const InspectionMeasurementGrid = ({
       );
       return measurement?.value == null ? null : Number(measurement.value);
     },
-    [valueByCell, sampleIdByColumn, measurementFor]
+    [valueByCell, sampleIdByColumn, measurementFor, positionKey]
   );
 
   const sampleStatus = useCallback(
-    (sampleIndex: number) =>
-      sampleStatusByColumn[sampleIndex] ?? samples[sampleIndex]?.status,
-    [sampleStatusByColumn, samples]
+    (sampleIndex: number) => {
+      const id = sampleIdByColumn[sampleIndex];
+      return id
+        ? (sampleStatusById[id] ?? sampleById.get(id)?.status)
+        : undefined;
+    },
+    [sampleIdByColumn, sampleStatusById, sampleById]
   );
 
   // ── Saving ────────────────────────────────────────────────────────────────
@@ -463,7 +505,9 @@ const InspectionMeasurementGrid = ({
       formData.set("quiet", "true");
       const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
-      const trackedEntityId = samples[sampleIndex]?.trackedEntityId;
+      const trackedEntityId = sampleId
+        ? sampleById.get(sampleId)?.trackedEntityId
+        : undefined;
       if (trackedEntityId) formData.set("trackedEntityId", trackedEntityId);
 
       const response = await fetch(
@@ -491,7 +535,7 @@ const InspectionMeasurementGrid = ({
         passed: status === "Passed"
       };
     },
-    [inspectionId, samples, t]
+    [inspectionId, sampleById, t]
   );
 
   // Saves of one sample run one at a time: the first save of an anonymous
@@ -504,7 +548,8 @@ const InspectionMeasurementGrid = ({
       sampleIndex: number,
       payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
-      const key = cellKey(sampleIndex, characteristic.featureId);
+      const featureId = characteristic.featureId;
+      const key = `${sampleIdRef.current[sampleIndex] ?? newSampleKey(sampleIndex)}:${featureId}`;
       const numericValue =
         payload.value !== undefined && payload.value !== ""
           ? Number(payload.value)
@@ -543,6 +588,17 @@ const InspectionMeasurementGrid = ({
           return null;
         }
 
+        // From here the cell is keyed by the sample the server saved it on.
+        const savedKey = `${result.sampleId}:${featureId}`;
+        if (savedKey !== key || payload.value !== undefined) {
+          setValueByCell((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            if (payload.value !== undefined) next[savedKey] = numericValue;
+            return next;
+          });
+        }
+
         sampleIdRef.current = {
           ...sampleIdRef.current,
           [sampleIndex]: result.sampleId
@@ -554,11 +610,11 @@ const InspectionMeasurementGrid = ({
         );
         setStatusByCell((prev) => ({
           ...prev,
-          [key]: result.measurementStatus
+          [savedKey]: result.measurementStatus
         }));
-        setSampleStatusByColumn((prev) => ({
+        setSampleStatusById((prev) => ({
           ...prev,
-          [sampleIndex]: result.sampleStatus
+          [result.sampleId]: result.sampleStatus
         }));
         onMeasurementSaved(result);
         return result;
@@ -893,9 +949,10 @@ const InspectionMeasurementGrid = ({
   const rows = useMemo<GridRow[]>(() => {
     if (layout === "byPart") {
       return Array.from({ length: columnCount }, (_, sampleIndex) => {
-        const sample = samples[sampleIndex];
+        const sample = sampleAt(sampleIndex);
         const row: GridRow = {
-          rowKey: `sample-${sampleIndex}`,
+          // Keyed by sample, so the Table's pending edits follow the sample.
+          rowKey: sampleIdByColumn[sampleIndex] ?? newSampleKey(sampleIndex),
           characteristicIndex: -1,
           sampleIndex,
           sampleLabel: isSerial
@@ -924,7 +981,15 @@ const InspectionMeasurementGrid = ({
       }
       return row;
     });
-  }, [layout, columnCount, samples, isSerial, characteristics, cellValue]);
+  }, [
+    layout,
+    columnCount,
+    sampleAt,
+    sampleIdByColumn,
+    isSerial,
+    characteristics,
+    cellValue
+  ]);
 
   // ── Cell renderers ────────────────────────────────────────────────────────
   // A numeric reading: filled red with ↑ / ↓ when out of tolerance (D3).
@@ -1267,7 +1332,7 @@ const InspectionMeasurementGrid = ({
     ];
 
     for (let i = 0; i < columnCount; i++) {
-      const sample = samples[i];
+      const sample = sampleAt(i);
       cols.push({
         accessorKey: sampleKey(i),
         header: isSerial
@@ -1296,7 +1361,7 @@ const InspectionMeasurementGrid = ({
   }, [
     layout,
     columnCount,
-    samples,
+    sampleAt,
     isSerial,
     characteristics,
     hasFeatures,
