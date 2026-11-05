@@ -6821,11 +6821,7 @@ export async function signItemFile(
     file.bucket === TEMP_STAGING_BUCKET
       ? storage(client).from(TEMP_STAGING_BUCKET)
       : storage(client).company(companyId);
-  const { data, error } = await bucket.createSignedUrl(
-    file.path,
-    seconds,
-    download ? { download } : undefined
-  );
+  const { data, error } = await bucket.createSignedUrl(file.path, seconds);
   if (!data) {
     logger.error("Failed to sign an item file", {
       companyId,
@@ -6834,7 +6830,12 @@ export async function signItemFile(
     });
     return null;
   }
-  return data.signedUrl;
+  if (!download) return data.signedUrl;
+  // Set here, not through createSignedUrl's `download` option: that encodes
+  // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
+  const url = new URL(data.signedUrl);
+  url.searchParams.set("download", download);
+  return url.toString();
 }
 
 /** The statuses of records an edit is about to touch, for a lock check. */
