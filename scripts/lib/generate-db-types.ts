@@ -271,7 +271,9 @@ export function renderCompanyTables(tables: string[]): string {
     "",
     "/** Every `public` table with a `companyId` column, sorted. */",
     "export const COMPANY_TABLES: readonly string[] = [",
-    ...tables.map((table) => `  ${JSON.stringify(table)},`),
+    // No trailing comma: the file is committed as Biome formats it
+    // (`trailingCommas: "none"`), and CI diffs it against a fresh render.
+    tables.map((table) => `  ${JSON.stringify(table)}`).join(",\n"),
     "] as const;",
     ""
   ].join("\n");
