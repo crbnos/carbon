@@ -36,7 +36,7 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { Form, Link, useLoaderData } from "react-router";
+import { Form, Link, useLoaderData, useNavigation } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
@@ -296,6 +296,7 @@ export default function Invite() {
   const controlledEnvironment =
     "controlledEnvironment" in data ? data.controlledEnvironment : false;
   const { t } = useLingui();
+  const navigation = useNavigation();
 
   if (expired) {
     return (
@@ -398,7 +399,12 @@ export default function Invite() {
         </Heading>
 
         <Form method="post">
-          <Button size="lg" type="submit" autoFocus>
+          <Button
+            size="lg"
+            type="submit"
+            autoFocus
+            isLoading={navigation.state !== "idle"}
+          >
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>
         </Form>
