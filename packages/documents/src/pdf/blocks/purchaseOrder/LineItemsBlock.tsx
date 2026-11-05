@@ -10,8 +10,8 @@ import {
   type LineItemsBlock as LineItemsBlockType
 } from "../../../template";
 import {
-  getLineDescription,
   getLineDescriptionDetails,
+  getLineSupplierPartId,
   getLineTotal
 } from "../../../utils/purchase-order";
 import { formatTaxPercent } from "../../../utils/shared";
@@ -29,6 +29,11 @@ const INDIRECT_TYPES = new Set([
 const isIndirect = (t: string | null | undefined) =>
   !!t && INDIRECT_TYPES.has(t);
 
+/**
+ * The purchase order's line table. Each row prints the item ID (an indirect
+ * line prints its description), then the supplier's part number on its own
+ * line when the template's `showSupplierPartId` option is on.
+ */
 export function LineItemsBlock({
   block,
   data
@@ -79,6 +84,16 @@ export function LineItemsBlock({
         const netValue =
           (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
         const taxPercentLabel = formatTaxPercent(line.taxPercent, locale);
+        // An indirect line prints its description, not its item ID, so the
+        // number only repeats the line when it equals that description.
+        const supplierPartId = opts.showSupplierPartId
+          ? getLineSupplierPartId(
+              line,
+              isIndirect(line.purchaseOrderLineType)
+                ? line.description
+                : line.itemReadableId
+            )
+          : null;
 
         return (
           <View key={line.id}>
@@ -107,9 +122,11 @@ export function LineItemsBlock({
                     </Text>
                   ) : (
                     <>
-                      <Text style={{ ...tw("text-gray-900"), ...overflow }}>
-                        {getLineDescription(line)}
-                      </Text>
+                      {line.itemReadableId ? (
+                        <Text style={{ ...tw("text-gray-900"), ...overflow }}>
+                          {line.itemReadableId}
+                        </Text>
+                      ) : null}
                       <Text
                         style={{
                           ...tw("text-[7px] text-gray-600 mt-0.5"),
@@ -120,6 +137,13 @@ export function LineItemsBlock({
                       </Text>
                     </>
                   )}
+                  {supplierPartId &&
+                  (!isIndirect(line.purchaseOrderLineType) ||
+                    line.purchaseOrderLineType === "Service") ? (
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                      Supplier Part ID: {supplierPartId}
+                    </Text>
+                  ) : null}
                   {purchaseOrder.purchaseOrderType === "Outside Processing" &&
                   line.jobOperationDescription ? (
                     <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
