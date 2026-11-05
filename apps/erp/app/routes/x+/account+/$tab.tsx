@@ -10,7 +10,9 @@ import { path } from "~/utils/path";
 // Account settings is a modal now. The old pages stay as links into it —
 // emails, the MES and the notification bell still point here.
 export async function loader({ params }: LoaderFunctionArgs) {
-  const tab = isAccountSettingsTab(params.tab) ? params.tab : "profile";
+  // The old theme page is the Appearance pane now.
+  const requested = params.tab === "theme" ? "appearance" : params.tab;
+  const tab = isAccountSettingsTab(requested) ? requested : "profile";
   throw redirect(path.to.accountSettings(tab));
 }
 

@@ -136,6 +136,9 @@ msgstr "+{overflow} ещё"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 Внимание: {0} ваша учётная запись будет перенесена на erp.try.carbon.ms"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
 
@@ -373,6 +376,9 @@ msgstr "Больший или меньший размер текста. Маке
 msgid "Billable"
 msgstr "Подлежит оплате"
 
+msgid "Blend the background into the selected items color."
+msgstr "Плавно переводить фон в цвет выбранных элементов."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
@@ -508,6 +514,9 @@ msgstr "Свернуть навигацию"
 msgid "Collapse panel"
 msgstr "Свернуть панель"
 
+msgid "Color"
+msgstr "Цвет"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -621,6 +630,9 @@ msgstr "Текущая работа"
 
 msgid "Custom color"
 msgstr "Пользовательский цвет"
+
+msgid "Custom theme"
+msgstr "Пользовательская тема"
 
 msgid "Customer"
 msgstr "Покупатель"
@@ -967,6 +979,9 @@ msgstr "Вернуться к операции"
 
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
+
+msgid "Gradient"
+msgstr "Градиент"
 
 msgid "Heading {level}"
 msgstr "Заголовок {level}"
@@ -2148,6 +2163,9 @@ msgstr "Выберите операцию, к которой нужно верн
 msgid "Selected"
 msgstr "Выбрано"
 
+msgid "Selected items"
+msgstr "Выбранные элементы"
+
 msgid "Send"
 msgstr "Отправить"
 
@@ -2290,6 +2308,9 @@ msgstr "Маленький"
 msgid "Smaller"
 msgstr "Меньше"
 
+msgid "Solid"
+msgstr "Сплошной"
+
 msgid "Source"
 msgstr "Источник"
 
@@ -2388,6 +2409,9 @@ msgstr "Предложения"
 msgid "Support Required"
 msgstr "Требуется поддержка"
 
+msgid "Surprise me"
+msgstr "Удиви меня"
+
 msgid "Switch Operator"
 msgstr "Сменить оператора"
 
@@ -2453,8 +2477,11 @@ msgstr "Значения нарушают правило для этой зап�
 msgid "The values break the rule \"{constraint}\"."
 msgstr "Значения нарушают правило «{constraint}»."
 
-msgid "Theme color"
-msgstr "Цвет темы"
+msgid "Theme"
+msgstr "Тема"
+
+msgid "Themes"
+msgstr "Темы"
 
 msgid "then"
 msgstr "затем"

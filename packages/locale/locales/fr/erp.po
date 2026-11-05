@@ -1558,6 +1558,9 @@ msgstr "Une horloge est toujours en cours sur cet ordre de fabrication."
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Un projet clôturé ne prend plus de charges et ne peut pas être rouvert. Clôturez-le uniquement lorsque chaque ligne de bon de commande et chaque ordre de fabrication est terminé."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Une couleur définit l'accent. Les thèmes dégradés et unis colorent aussi la navigation, la barre latérale et la page."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Une société ne peut se connecter qu'à un Onshape à la fois. Désinstallez Onshape Government, puis connectez Onshape."
 
@@ -5502,6 +5505,9 @@ msgstr "Vide = calculé à partir de la période de recertification de la Compé
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Vide utilise l'estimation à l'achèvement des projets du contrat"
 
+msgid "Blend the background into the selected items color."
+msgstr "Fondre l'arrière-plan dans la couleur des éléments sélectionnés."
+
 msgid "Blind"
 msgstr "Aveugle"
 
@@ -8700,6 +8706,9 @@ msgstr "Chemin personnalisé"
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personnalisé · nous gérons"
+
+msgid "Custom theme"
+msgstr "Thème personnalisé"
 
 msgid "Custom…"
 msgstr "Personnalisé…"
@@ -13640,6 +13649,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Gradient"
+msgstr "Dégradé"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Accorder à chaque utilisateur des autorisations granulaires par module au lieu de donner un accès complet à tous."
@@ -25336,6 +25348,9 @@ msgstr "Sélectionner…"
 msgid "Selected"
 msgstr "Sélectionné"
 
+msgid "Selected items"
+msgstr "Éléments sélectionnés"
+
 msgid "Selected Operation"
 msgstr "Opération sélectionnée"
 
@@ -26340,6 +26355,9 @@ msgstr "Type de logiciel"
 
 msgid "Sold"
 msgstr "Vendu"
+
+msgid "Solid"
+msgstr "Uni"
 
 msgid "Solutions Engineer"
 msgstr "Ingénieur Solutions"
@@ -27409,6 +27427,9 @@ msgstr "Surfaces"
 
 msgid "Surplus"
 msgstr "Surplus"
+
+msgid "Surprise me"
+msgstr "Surprenez-moi"
 
 msgid "Suspected Failure Mode"
 msgstr "Mode de défaillance suspecté"
@@ -29283,11 +29304,8 @@ msgstr "Leur prochaine post-consommation sera refusée jusqu'à ce que chaque ma
 msgid "Theme"
 msgstr "Thème"
 
-msgid "Theme color"
-msgstr "Couleur du thème"
-
-msgid "Theme Color"
-msgstr "Couleur du thème"
+msgid "Themes"
+msgstr "Thèmes"
 
 msgid "then"
 msgstr "puis"
@@ -29726,9 +29744,6 @@ msgstr "Cet outil est activé lorsque l'avis de modification {activationLockId} 
 
 msgid "This unit has no cost in inventory"
 msgstr "Cette unité n'a pas de coût en stock"
-
-msgid "This updates the theme for all users of the application"
-msgstr "Ceci met à jour le thème pour tous les utilisateurs de l'application."
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Cet utilisateur n'a pas l'authentification à deux facteurs activée."
