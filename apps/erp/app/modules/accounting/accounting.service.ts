@@ -3163,6 +3163,9 @@ export async function getCurrencies(
     query = query.ilike("name", `%${args.search}%`);
   }
 
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
   return query;
 }
 

@@ -7,7 +7,12 @@ import { intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
 import { join } from "pathe";
-import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
+import {
+  dotenvSets,
+  renderEnv,
+  syncAppPortlessConfigs,
+  writeEnv
+} from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, requireNumberEnv, tryConnect } from "../helpers.js";
 import {
@@ -152,7 +157,16 @@ async function migrateStandalone(
     const slot = await resolveSlot(slug, root);
     const branch = await currentBranch(root);
     const branchPrefix = branchToPrefix(branch, slug);
-    writeEnv(root, renderEnv({ slug, portless: true, branchPrefix, ...slot }));
+    writeEnv(
+      root,
+      renderEnv({
+        slug,
+        portless: true,
+        branchPrefix,
+        ownSessionSecret: dotenvSets(root, "SESSION_SECRET"),
+        ...slot
+      })
+    );
     syncAppPortlessConfigs(root);
     loadDotenv({ path: envLocal, override: true });
   }

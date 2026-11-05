@@ -159,6 +159,79 @@ describe("call_tool keeps list output small", () => {
     expect(lines).not.toContain("199");
     expect(text).not.toContain("next page");
   });
+
+  it("pages a list the catalog could not identify, keeping limit and offset off the call", async () => {
+    // No response schema: the catalog cannot mark `shared_getCountries` a list
+    // before the call, and its strict input declares no paging.
+    callOperation.mockResolvedValueOnce({
+      success: true,
+      data: Array.from({ length: 250 }, (_, i) => ({ id: i }))
+    });
+    const client = await connect(
+      {
+        name: "shared_getCountries",
+        module: "shared",
+        paginates: false,
+        schema: { type: "object", properties: { region: { type: "string" } } }
+      },
+      false
+    );
+
+    const result = await client.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "shared_getCountries",
+        arguments: { region: "EU", limit: 2, offset: 200 }
+      }
+    });
+
+    expect(callOperation).toHaveBeenCalledWith(
+      "shared_getCountries",
+      expect.anything(),
+      { region: "EU" }
+    );
+    const text = (result.content as { text: string }[])[0]!.text;
+    expect(text.split(/\r?\n/).slice(0, 4)).toEqual([
+      "# shared_getCountries.csv",
+      "id",
+      "200",
+      "201"
+    ]);
+    expect(text).toContain("(rows 201-202 of 250; next page: offset 202)");
+  });
+
+  it("ignores stray paging on a single-record read", async () => {
+    callOperation.mockResolvedValueOnce({
+      success: true,
+      data: { id: "cust_1", name: "Acme" }
+    });
+    const client = await connect(
+      {
+        name: "sales_getCustomer",
+        module: "sales",
+        paginates: false,
+        schema: { type: "object", properties: { id: { type: "string" } } }
+      },
+      false
+    );
+
+    const result = await client.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "sales_getCustomer",
+        arguments: { id: "cust_1", limit: 5 }
+      }
+    });
+
+    expect(callOperation).toHaveBeenCalledWith(
+      "sales_getCustomer",
+      expect.anything(),
+      { id: "cust_1" }
+    );
+    expect((result.content as { text: string }[])[0]!.text).toBe(
+      '{"id":"cust_1","name":"Acme"}'
+    );
+  });
 });
 
 describe("serveMcpRequest", () => {

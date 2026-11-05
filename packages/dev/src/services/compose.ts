@@ -63,6 +63,14 @@ async function dockerResponds(): Promise<boolean> {
 async function startDockerDaemon(): Promise<boolean> {
   if (!isCloudDev()) return false;
   if (process.platform !== "linux" || process.getuid?.() !== 0) return false;
+  // The CLI talks to whatever DOCKER_HOST names; a local daemon answers only
+  // on the local socket, so starting one for a remote endpoint waits 30 s for
+  // nothing.
+  const host = process.env.DOCKER_HOST;
+  if (host && !host.startsWith("unix://")) {
+    log.warn(`DOCKER_HOST is ${host}; not starting a local dockerd`);
+    return false;
+  }
   const dockerd = await execa("dockerd", ["--version"], {
     reject: false,
     stdio: "ignore"
@@ -125,7 +133,10 @@ function clearStalePidFile(file: string, owners: string[]) {
     } catch {
       // not a live process
     }
-    if (owners.some((owner) => cmdline.includes(owner))) return;
+    // The process's own name only: a reused pid running `tail -f dockerd.log`
+    // names the daemon in an argument and is not the daemon.
+    const [argv0 = ""] = cmdline.split("\0");
+    if (owners.includes(argv0.split("/").pop() ?? "")) return;
   }
   rmSync(file, { force: true });
 }

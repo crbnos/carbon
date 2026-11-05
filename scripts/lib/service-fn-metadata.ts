@@ -13,7 +13,12 @@
 
 import * as path from "path";
 import type { ManifestEntry, PermissionAction, ToolPermission } from "@carbon/api";
-import { classify, operationDescription } from "@carbon/api/catalog.server";
+import {
+  classify,
+  GENERIC_FILTERS_SCHEMA,
+  GENERIC_SORTS_SCHEMA,
+  operationDescription
+} from "@carbon/api/catalog.server";
 import type { Publish } from "@carbon/api/service-fn.server";
 import {
   type CallExpression,
@@ -36,50 +41,6 @@ const ROUTER_FILE = path.resolve(
 );
 
 const ACTIONS: PermissionAction[] = ["view", "create", "update", "delete"];
-
-/** `GenericQueryFilters.filters` (`apps/erp/app/utils/query.ts`). */
-const GENERIC_FILTERS_SCHEMA: JsonSchema = {
-  type: "array",
-  description:
-    "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
-  items: {
-    type: "object",
-    properties: {
-      column: { type: "string" },
-      operator: {
-        type: "string",
-        enum: [
-          "between",
-          "contains",
-          "eq",
-          "gt",
-          "gte",
-          "in",
-          "lt",
-          "lte",
-          "neq",
-          "startsWith"
-        ]
-      },
-      value: { type: "string" }
-    },
-    required: ["column", "operator", "value"]
-  }
-};
-
-/** `GenericQueryFilters.sorts`. */
-const GENERIC_SORTS_SCHEMA: JsonSchema = {
-  type: "array",
-  description: "Orders the list by returned fields, first to last.",
-  items: {
-    type: "object",
-    properties: {
-      sortBy: { type: "string" },
-      sortAsc: { type: "boolean" }
-    },
-    required: ["sortBy", "sortAsc"]
-  }
-};
 
 export interface ServiceFnLeaf {
   path: string[];
@@ -209,6 +170,27 @@ function literalText(node: Node | undefined): string | undefined {
 export function leafPublication(leaf: ServiceFnLeaf): LeafPublication {
   const where = `router.${leaf.path.join(".")}`;
   const definition = leaf.call.getArguments()[0];
+  // The runtime catalog reads the evaluated definition; this reads the source.
+  // A value it cannot read (a spread, a shorthand property) would silently
+  // leave the manifest, the docs and the digest short of an operation the API
+  // and the MCP publish, so it fails here instead.
+  if (definition && Node.isObjectLiteralExpression(definition)) {
+    for (const entry of definition.getProperties()) {
+      if (Node.isSpreadAssignment(entry)) {
+        throw new Error(
+          `${where}: the definition spreads ${entry.getExpression().getText()}; write publish, title and description as literal properties`
+        );
+      }
+      if (
+        Node.isShorthandPropertyAssignment(entry) &&
+        ["publish", "title", "description"].includes(entry.getName())
+      ) {
+        throw new Error(
+          `${where}: \`${entry.getName()}\` must be a literal property, not a shorthand`
+        );
+      }
+    }
+  }
   const property = (name: string) => {
     const entry =
       definition && Node.isObjectLiteralExpression(definition)
@@ -473,8 +455,8 @@ export function buildServiceFnTools(
         undefined &&
       appliesGenericFilters(leaf.call)
     ) {
-      properties.filters ??= GENERIC_FILTERS_SCHEMA;
-      properties.sorts ??= GENERIC_SORTS_SCHEMA;
+      properties.filters ??= GENERIC_FILTERS_SCHEMA as JsonSchema;
+      properties.sorts ??= GENERIC_SORTS_SCHEMA as JsonSchema;
     }
     return [
       {

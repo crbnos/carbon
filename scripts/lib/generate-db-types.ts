@@ -13,7 +13,7 @@ import {
   writeFileSync
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { getDbTablesWithColumn } from "./db-types";
+import { __setDbTypesContentForTest, getDbTablesWithColumn } from "./db-types";
 
 export function validateDatabaseUrl(value: string | undefined): string {
   if (!value?.trim()) {
@@ -230,19 +230,27 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
       );
     }
     const { types, constants } = splitConstants(normalized);
+    // The company-table list is read from the staged types, so a short list
+    // fails before anything is published and all three files land together.
+    __setDbTypesContentForTest(`${types}\n${constants}`);
+    const companyTables = renderCompanyTables(
+      getDbTablesWithColumn("companyId")
+    );
     const staged = join(directory, "staged.ts");
     const stagedConstants = join(directory, "staged-constants.ts");
+    const stagedCompanyTables = join(directory, "staged-company-tables.ts");
     writeFileSync(staged, types);
     writeFileSync(stagedConstants, constants);
+    writeFileSync(stagedCompanyTables, companyTables);
     renameSync(stagedConstants, constantsTarget);
     renameSync(staged, target);
+    renameSync(
+      stagedCompanyTables,
+      resolve("packages/database/src/company-tables.ts")
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-  writeFileSync(
-    resolve("packages/database/src/company-tables.ts"),
-    renderCompanyTables(getDbTablesWithColumn("companyId"))
-  );
 }
 
 /**

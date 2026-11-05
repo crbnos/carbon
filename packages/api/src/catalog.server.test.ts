@@ -130,6 +130,16 @@ describe("buildOperationCatalog", () => {
     });
     expect(loose).toHaveProperty("additionalProperties");
     expect(loose).not.toHaveProperty("$schema");
+    // A paged loose read also takes the list filters and sorts.
+    expect(loose?.properties).toHaveProperty("filters.items.required", [
+      "column",
+      "operator",
+      "value"
+    ]);
+    expect(loose?.properties).toHaveProperty("sorts.items.required", [
+      "sortBy",
+      "sortAsc"
+    ]);
     const strict = byName.get("sales_convertQuote")?.schema;
     expect(strict).not.toHaveProperty("additionalProperties");
     // A defaulted field is not required of the caller.

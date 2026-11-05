@@ -2711,7 +2711,7 @@ export const getCurrencies = defineServiceFn({
   }),
   permission: { view: "accounting" },
   async run(ctx, input) {
-    return unwrap(
+    return paged(
       ctx,
       await service.getCurrencies(
         ctx.asCaller.supabase,

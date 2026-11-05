@@ -35,6 +35,15 @@ export function sessionSecretFor(jwtSecret: string): string {
   return createHmac("sha256", jwtSecret).update("session-secret").digest("hex");
 }
 
+/** Whether the root `.env` sets `key` to a non-empty value. */
+export function dotenvSets(root: string, key: string): boolean {
+  const file = join(root, ".env");
+  if (!existsSync(file)) return false;
+  const pattern = new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=\\s*(.+)$`, "m");
+  const value = readFileSync(file, "utf8").match(pattern)?.[1]?.trim() ?? "";
+  return value.replace(/^["']|["']$/g, "").replace(/\s+#.*$/, "") !== "";
+}
+
 export function renderEnv(opts: {
   slug: string;
   ports: PortMap;
@@ -53,6 +62,13 @@ export function renderEnv(opts: {
    * pinned in `.env` via `#force` wins regardless.
    */
   includeAssembler?: boolean;
+  /**
+   * Whether the user's own `.env` sets `SESSION_SECRET` (`dotenvSets(root,
+   * "SESSION_SECRET")`). Decided from that file, not from `process.env`: the
+   * previous `.env.local` is loaded into `process.env` before this runs, so
+   * its own generated secret would suppress the line every second boot.
+   */
+  ownSessionSecret?: boolean;
 }): string {
   const {
     slug,
@@ -61,7 +77,8 @@ export function renderEnv(opts: {
     jwt,
     portless,
     branchPrefix,
-    includeAssembler = true
+    includeAssembler = true,
+    ownSessionSecret = false
   } = opts;
 
   const host = (sub: string) => `${sub}.${branchPrefix}.dev`;
@@ -164,9 +181,11 @@ export function renderEnv(opts: {
   lines.push("# Dev auth bypass");
   lines.push("DEV_BYPASS_EMAIL=test@carbon.ms");
   lines.push("");
-  // Cloud containers only, and only when `.env` (loaded into process.env before
-  // this runs) sets none: `.env.local` overrides `.env`.
-  if (isCloudDev() && !process.env.SESSION_SECRET) {
+  // Cloud containers only, and only when `.env` sets none: `.env.local`
+  // overrides `.env`. Read from the file, not process.env: the previous
+  // `.env.local` is loaded into process.env before this runs, so its own
+  // SESSION_SECRET would suppress the line every second boot.
+  if (isCloudDev() && !ownSessionSecret) {
     lines.push(
       "# Session cookie secret (cloud container; derived from this slot's"
     );

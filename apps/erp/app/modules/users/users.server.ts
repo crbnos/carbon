@@ -1066,7 +1066,7 @@ export const getEmployees = defineServiceFn({
  */
 export const getConsoleOperators = defineServiceFn({
   publish: "read",
-  title: "Gets console operators — users with",
+  title: "Gets console operators (users with @console.internal emails)",
   input: z.looseObject({
     limit: z
       .number()

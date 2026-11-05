@@ -123,6 +123,73 @@ export function inputJsonSchema(input: z.ZodType): Record<string, unknown> {
   return schema;
 }
 
+/**
+ * `GenericQueryFilters.filters` (`apps/erp/app/utils/query.ts`): what a paged
+ * list read takes beside `limit` and `offset`. Published here and by the
+ * generator from the one definition.
+ */
+export const GENERIC_FILTERS_SCHEMA: Record<string, unknown> = {
+  type: "array",
+  description:
+    "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
+  items: {
+    type: "object",
+    properties: {
+      column: { type: "string" },
+      operator: {
+        type: "string",
+        enum: [
+          "between",
+          "contains",
+          "eq",
+          "gt",
+          "gte",
+          "in",
+          "lt",
+          "lte",
+          "neq",
+          "startsWith"
+        ]
+      },
+      value: { type: "string" }
+    },
+    required: ["column", "operator", "value"]
+  }
+};
+
+/** `GenericQueryFilters.sorts`. */
+export const GENERIC_SORTS_SCHEMA: Record<string, unknown> = {
+  type: "array",
+  description: "Orders the list by returned fields, first to last.",
+  items: {
+    type: "object",
+    properties: {
+      sortBy: { type: "string" },
+      sortAsc: { type: "boolean" }
+    },
+    required: ["sortBy", "sortAsc"]
+  }
+};
+
+/**
+ * A paged list read's input also takes `filters` and `sorts`: the building
+ * block applies them through `setGenericQueryFilters`, which the loose input
+ * lets through unnamed. Published so `describe_tool` and the API document
+ * list them (every paged read of the generated manifest had them).
+ */
+function withListFilters(
+  schema: Record<string, unknown>,
+  paginates: boolean
+): Record<string, unknown> {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  if (!paginates || !properties || schema.additionalProperties === undefined) {
+    return schema;
+  }
+  properties.filters ??= GENERIC_FILTERS_SCHEMA;
+  properties.sorts ??= GENERIC_SORTS_SCHEMA;
+  return schema;
+}
+
 /** Whether the input declares both `limit` and `offset`: the MCP then pages the call. */
 function declaresPaging(input: z.ZodType): boolean {
   if (input instanceof z.ZodObject) {
@@ -170,6 +237,7 @@ export function buildOperationCatalog(registry: ServiceRegistry): Operation[] {
       );
       const classification = classify(name, value.publish, actions);
       const input = value.input;
+      const paginates = declaresPaging(input);
       let schema: Record<string, unknown> | undefined;
       const operation = {
         name,
@@ -178,7 +246,7 @@ export function buildOperationCatalog(registry: ServiceRegistry): Operation[] {
         title,
         description: operationDescription(title, value.description?.trim()),
         permission: published,
-        paginates: declaresPaging(input),
+        paginates,
         serviceFn: { path: [module, constName] },
         fn: value,
         publish: value.publish
@@ -188,7 +256,7 @@ export function buildOperationCatalog(registry: ServiceRegistry): Operation[] {
       Object.defineProperty(operation, "schema", {
         enumerable: true,
         get: () => {
-          schema ??= inputJsonSchema(input);
+          schema ??= withListFilters(inputJsonSchema(input), paginates);
           return schema;
         }
       });

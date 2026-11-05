@@ -94,7 +94,8 @@ node_ok() {
 }
 if ! node_ok; then
   for candidate in /opt/node24/bin "$HOME/.nvm/versions/node"/v24*/bin; do
-    if [ -x "$candidate/node" ]; then
+    if [ -x "$candidate/node" ] &&
+       printf '%s\n' "24.22.1" "$("$candidate/node" -v | sed 's/^v//')" | sort -V -C; then
       persist PATH "$candidate:$PATH"
       break
     fi
@@ -226,7 +227,15 @@ fi
 # --- 3. The stack, detached ----------------------------------------------------
 mkdir -p "$HOME/.carbon/logs"
 log="$HOME/.carbon/logs/crbn-up.log"
-if pgrep -f "packages/dev/src/main.ts up" >/dev/null 2>&1; then
+crbn_up_running() {
+  # This checkout's crbn up, not another worktree's: compare working directories.
+  local pid
+  for pid in $(pgrep -f "packages/dev/src/main.ts up" 2>/dev/null); do
+    [ "$(readlink "/proc/$pid/cwd" 2>/dev/null)" = "$(pwd -P)" ] && return 0
+  done
+  return 1
+}
+if crbn_up_running; then
   echo "cloud-dev: crbn up is already running (log: $log)"
 else
   echo "cloud-dev: starting the dev stack in the background (log: $log)"

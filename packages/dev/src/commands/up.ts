@@ -10,7 +10,12 @@ import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
 import pc from "picocolors";
 import { APP_CHOICES, type AppId, isCloudDev } from "../constants.js";
-import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
+import {
+  dotenvSets,
+  renderEnv,
+  syncAppPortlessConfigs,
+  writeEnv
+} from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
@@ -168,10 +173,14 @@ export async function up(opts: UpOpts = {}) {
   let stripeChild: ExecaChildProcess | undefined;
   let earlyApps: Prespawned | undefined;
   let interrupted = false;
+  let bootMarker: string | undefined;
   const detachEarly = onShutdown(() => {
     if (interrupted) return;
     interrupted = true;
     process.stderr.write("\ninterrupted — stopping partial stack…\n");
+    // The marker holds every request to this stack's dev servers; without
+    // this, an interrupted boot left them waiting up to ten minutes.
+    if (bootMarker) rmSync(bootMarker, { force: true });
     earlyApps?.stop.abort();
     killStripe(stripeChild);
     void down({ silent: true }).finally(() => process.exit(130));
@@ -255,14 +264,18 @@ export async function up(opts: UpOpts = {}) {
   // then the SSR transform of the root and login module graph), and none of it
   // needs the database. The `booting` marker holds every request until the
   // database phase below is done.
-  const bootMarker = bootingFile(stackStateDir(borrowSlug ?? slug));
+  // Not when borrowing: the marker would sit in the owner's state directory
+  // and hold the owner's dev servers too, for a database that is already up.
   const earlyAppIds =
-    isCloudDev() && appsRequested ? reactRouterApps(selectedApps) : [];
+    isCloudDev() && appsRequested && !borrowSlug
+      ? reactRouterApps(selectedApps)
+      : [];
   if (earlyAppIds.length > 0) {
-    const stateDir = stackStateDir(borrowSlug ?? slug);
+    const stateDir = stackStateDir(slug);
     process.env.CRBN_STACK_STATE = stateDir;
     mkdirSync(stateDir, { recursive: true });
-    if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
+    rmSync(asleepFile(stateDir), { force: true });
+    bootMarker = bootingFile(stateDir);
     writeFileSync(bootMarker, "");
     const stop = new AbortController();
     earlyApps = {
@@ -300,13 +313,13 @@ export async function up(opts: UpOpts = {}) {
     // The boot failed: early dev servers must not outlive the crbn that holds
     // their requests, and a boot error must read as that error.
     if (earlyApps) {
-      rmSync(bootMarker, { force: true });
+      if (bootMarker) rmSync(bootMarker, { force: true });
       earlyApps.stop.abort();
       await earlyApps.exited.catch(() => undefined);
     }
     throw err;
   }
-  if (earlyApps) rmSync(bootMarker, { force: true });
+  if (bootMarker) rmSync(bootMarker, { force: true });
 
   if (process.env.CARBON_EDITION === "cloud") {
     stripeChild = spawnStripeListener(root);
@@ -577,6 +590,7 @@ async function provisionSlot(
             portless,
             branchPrefix,
             includeAssembler,
+            ownSessionSecret: dotenvSets(root, "SESSION_SECRET"),
             ...slot
           })
         );
@@ -778,6 +792,7 @@ async function runDatabaseMigrations(
               // still holds another branch's schema would write that schema
               // into this branch's types.
               if (!migrationsApplied) return "skipped (no new migrations)";
+              let typesFailed = false;
               try {
                 await execa("pnpm", ["db:types"], { cwd: ctx.root });
               } catch (err) {
@@ -789,10 +804,14 @@ async function runDatabaseMigrations(
                 log.warn(
                   `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
                 );
-                return "types regen failed (kept committed types)";
+                typesFailed = true;
               }
+              // The swagger document reads the database, not the types, and
+              // nothing regenerates it until the next applied migration.
               await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
-              return "types + swagger refreshed";
+              return typesFailed
+                ? "types regen failed (kept committed types); swagger refreshed"
+                : "types + swagger refreshed";
             }
           }
         ]
