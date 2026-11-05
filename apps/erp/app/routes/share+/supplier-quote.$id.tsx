@@ -144,29 +144,31 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
   ]);
 
-  // Each line item's model and Files-tab files, the ones the RFQ email
-  // attaches, as links signed for an hour (a reload signs them again).
-  const filesPromise = ctx
-    ? getItemSupplierFiles(
-        ctx.asSystem.supabase,
-        ctx.asSystem.pg,
-        quote.data.companyId,
-        (quoteLines.data ?? []).flatMap((line) =>
-          line.itemId ? [line.itemId] : []
+  // The part files the quote was shared with (`sharedFilePaths`, picked when
+  // it was sent), as links signed for an hour (a reload signs them again).
+  const filesPromise =
+    ctx && quote.data.sharedFilePaths.length > 0
+      ? getItemSupplierFiles(
+          ctx.asSystem.supabase,
+          ctx.asSystem.pg,
+          quote.data.companyId,
+          (quoteLines.data ?? []).flatMap((line) =>
+            line.itemId ? [line.itemId] : []
+          ),
+          quote.data.sharedFilePaths
+        ).then((files) =>
+          async.map(files, async (file) => ({
+            itemId: file.itemId,
+            filename: file.filename,
+            url: await signItemFile(
+              ctx.asSystem.supabase,
+              quote.data.companyId,
+              file,
+              3600
+            )
+          }))
         )
-      ).then((files) =>
-        async.map(files, async (file) => ({
-          itemId: file.itemId,
-          filename: file.filename,
-          url: await signItemFile(
-            ctx.asSystem.supabase,
-            quote.data.companyId,
-            file,
-            3600
-          )
-        }))
-      )
-    : Promise.resolve([]);
+      : Promise.resolve([]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
     (acc, line) => {

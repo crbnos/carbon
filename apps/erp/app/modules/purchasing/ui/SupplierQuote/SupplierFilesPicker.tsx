@@ -7,6 +7,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { Button, Checkbox, Spinner } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import type { loader } from "~/routes/api+/purchasing.supplier-files";
 import { path } from "~/utils/path";
 
@@ -15,8 +16,9 @@ type SupplierFilesPickerProps = {
 };
 
 /**
- * The part files sent with an RFQ or supplier quote, all ticked. Each
- * unticked file goes in the form as `excludedFiles`.
+ * The part files an RFQ or supplier quote can be sent with. They start ticked
+ * when the company's `includeSupplierPartFiles` is on, unticked when off; each
+ * ticked file goes in the form as `partFiles`, and only those are shared.
  */
 const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
   const itemIds = [
@@ -28,13 +30,19 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
   const query = useLoaderQuery<typeof loader>(
     itemIds.length > 0 ? path.to.api.supplierFiles(itemIds) : null
   );
-  const [excluded, setExcluded] = useState<string[]>([]);
+  const tickedByDefault =
+    useCompanySettings()?.includeSupplierPartFiles ?? true;
+  // The files the user flipped away from the default, so the default still
+  // applies to a list that loads after the dialog opens.
+  const [flipped, setFlipped] = useState<string[]>([]);
+  const isTicked = (filePath: string) =>
+    tickedByDefault !== flipped.includes(filePath);
 
   if (itemIds.length === 0) return null;
   if (query.isError) {
     return (
       <div className="flex w-full items-center justify-between gap-2 text-sm text-muted-foreground">
-        <Trans>Couldn't load the part files. All of them will be sent.</Trans>
+        <Trans>Couldn't load the part files, so none will be sent.</Trans>
         <Button variant="secondary" size="sm" onClick={() => query.refetch()}>
           <Trans>Retry</Trans>
         </Button>
@@ -52,7 +60,7 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
 
   const files = query.data.files;
   if (files.length === 0) return null;
-  const included = files.filter((file) => !excluded.includes(file.path)).length;
+  const ticked = files.filter((file) => isTicked(file.path));
 
   return (
     <div className="w-full">
@@ -62,7 +70,7 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
         </span>
         <span className="text-xs tabular-nums text-muted-foreground">
           <Trans>
-            {included} of {files.length} included
+            {ticked.length} of {files.length} included
           </Trans>
         </span>
       </div>
@@ -71,10 +79,10 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
           <li key={file.path}>
             <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm">
               <Checkbox
-                checked={!excluded.includes(file.path)}
-                onCheckedChange={(checked) =>
-                  setExcluded((current) =>
-                    checked
+                checked={isTicked(file.path)}
+                onCheckedChange={() =>
+                  setFlipped((current) =>
+                    current.includes(file.path)
                       ? current.filter((path) => path !== file.path)
                       : [...current, file.path]
                   )
@@ -93,12 +101,12 @@ const SupplierFilesPicker = ({ lines }: SupplierFilesPickerProps) => {
           </li>
         ))}
       </ul>
-      {excluded.map((filePath, index) => (
+      {ticked.map((file, index) => (
         <input
-          key={filePath}
+          key={file.path}
           type="hidden"
-          name={`excludedFiles[${index}]`}
-          value={filePath}
+          name={`partFiles[${index}]`}
+          value={file.path}
         />
       ))}
     </div>

@@ -1659,13 +1659,15 @@ export async function finalizePurchaseOrder(
 export async function sendSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string,
-  userId: string
+  userId: string,
+  sharedFilePaths?: string[]
 ) {
   // Send keeps status as Draft, just updates timestamp
   const quoteUpdate = await requireAffected(
     client
       .from("supplierQuote")
       .update({
+        ...(sharedFilePaths ? { sharedFilePaths } : {}),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -6691,14 +6693,15 @@ export async function getItemModelFiles(
 /**
  * Every file a supplier gets with each item, in item order: the model's
  * original CAD file (`getItemModelFiles`), then each file on the item's Files
- * tab (`${companyId}/parts/${itemId}`: drawings, other models, specs).
+ * tab (`${companyId}/parts/${itemId}`: drawings, other models, specs). With
+ * `onlyPaths`, just those of them (`orderItemSupplierFiles`).
  */
 export async function getItemSupplierFiles(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   companyId: string,
   itemIds: string[],
-  excludedPaths: string[] = []
+  onlyPaths?: string[]
 ): Promise<ItemSupplierFile[]> {
   const ids = [...new Set(itemIds)];
   if (ids.length === 0) return [];
@@ -6729,7 +6732,7 @@ export async function getItemSupplierFiles(
           : [];
       })
     ],
-    excludedPaths
+    onlyPaths
   );
 }
 
@@ -7647,7 +7650,9 @@ export async function finalizeSupplierQuote(
   return { success: true };
 }
 export const finalizePurchasingRfqInput = z.object({
-  rfqId: z.string()
+  rfqId: z.string(),
+  // The part files each new supplier quote is shared with.
+  sharedFilePaths: z.array(z.string()).default([])
 });
 
 const ITEM_TYPES = [
@@ -7679,7 +7684,7 @@ export async function finalizePurchasingRfq(
   ctx: ServiceContext,
   raw: z.input<typeof finalizePurchasingRfqInput>
 ) {
-  const { rfqId } = finalizePurchasingRfqInput.parse(raw);
+  const { rfqId, sharedFilePaths } = finalizePurchasingRfqInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -7749,6 +7754,7 @@ export async function finalizePurchasingRfq(
           exchangeRateUpdatedAt: now,
           quotedDate: now,
           supplierQuoteType: "Purchase",
+          sharedFilePaths,
           companyId,
           createdBy: userId,
           updatedBy: userId

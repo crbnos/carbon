@@ -531,6 +531,11 @@ msgstr "{0} de {1} concluído"
 msgid "{0} of {1} h"
 msgstr "{0} de {1} h"
 
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -956,10 +961,6 @@ msgstr "{hours} h"
 
 msgid "{hours} h × {rate}"
 msgstr "{hours} h × {rate}"
-
-#. placeholder {0}: files.length
-msgid "{included} of {0} included"
-msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# peça criada} other {# peças criadas}}"
@@ -8135,7 +8136,7 @@ msgstr "Não foi possível carregar os documentos relacionados. Atualize antes d
 msgid "Couldn't load the choices for this field."
 msgstr "Não foi possível carregar as opções para este campo."
 
-msgid "Couldn't load the part files. All of them will be sent."
+msgid "Couldn't load the part files, so none will be sent."
 msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
@@ -20518,6 +20519,15 @@ msgstr "Campo Peça"
 msgid "Part files"
 msgstr ""
 
+msgid "Part Files for Suppliers"
+msgstr ""
+
+msgid "Part files ticked by default"
+msgstr ""
+
+msgid "Part files unticked by default"
+msgstr ""
+
 msgid "Part ID"
 msgstr "ID da Peça"
 
@@ -25443,6 +25453,9 @@ msgstr "Email do Remetente"
 msgid "Sender Name"
 msgstr "Nome do Remetente"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab. Only the files you tick are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Envio de unidades com defeito de volta para uma operação anterior para correção em vez de sucata."
 
@@ -29904,6 +29917,9 @@ msgstr "Miniatura enviada"
 
 msgid "Thursday"
 msgstr "Quinta-feira"
+
+msgid "Tick every part file by default"
+msgstr ""
 
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "Vincular remessas a uma fatura sem re-digitação"

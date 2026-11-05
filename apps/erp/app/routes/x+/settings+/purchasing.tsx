@@ -107,6 +107,7 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     "requireSupplierContactEmailToggle",
     "requireSupplierContactEmail"
   ),
+  settingsToggle("includeSupplierPartFilesToggle", "includeSupplierPartFiles"),
   settingsToggle(
     "requirePurchaseOrderApprovalSignatureToggle",
     "requirePurchaseOrderApprovalSignature"
@@ -171,6 +172,12 @@ export default function PurchasingSettingsRoute() {
           data.requireSupplierContactAndLocation
             ? t`Supplier contact requirement enabled`
             : t`Supplier contact requirement disabled`
+        );
+      } else if (data.includeSupplierPartFiles !== undefined) {
+        toast.success(
+          data.includeSupplierPartFiles
+            ? t`Part files ticked by default`
+            : t`Part files unticked by default`
         );
       } else if (data.requireSupplierContactEmail !== undefined) {
         toast.success(
@@ -274,6 +281,25 @@ export default function PurchasingSettingsRoute() {
     [toggleFetcher]
   );
 
+  const includeSupplierPartFiles = useSavedToggle(
+    toggleFetcher,
+    "includeSupplierPartFilesToggle",
+    companySettings.includeSupplierPartFiles ?? true
+  );
+
+  const handleIncludeSupplierPartFilesToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "includeSupplierPartFilesToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   const handleRequireSupplierContactToggle = useCallback(
     (checked: boolean) => {
       toggleFetcher.submit(
@@ -365,6 +391,33 @@ export default function PurchasingSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Part Files for Suppliers</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Sending an RFQ or a supplier quote lists each line item's model
+                and the files on its Files tab. Only the files you tick are
+                attached to the email and shown on the supplier's quote page.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <span className="font-medium">
+                <Trans>Tick every part file by default</Trans>
+              </span>
+              <Switch
+                checked={includeSupplierPartFiles}
+                onCheckedChange={handleIncludeSupplierPartFilesToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
         </Card>
 
         <Card>

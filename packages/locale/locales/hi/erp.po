@@ -531,6 +531,11 @@ msgstr "{1} में से {0} पूर्ण"
 msgid "{0} of {1} h"
 msgstr "{0} में से {1} h"
 
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -956,10 +961,6 @@ msgstr "{hours} घं"
 
 msgid "{hours} h × {rate}"
 msgstr "{hours} घंटे × {rate}"
-
-#. placeholder {0}: files.length
-msgid "{included} of {0} included"
-msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# पार्ट बनाया गया} other {# पार्ट्स बनाए गए}}"
@@ -8135,7 +8136,7 @@ msgstr "संबंधित दस्तावेज़ लोड नहीं
 msgid "Couldn't load the choices for this field."
 msgstr "इस फ़ील्ड के लिए विकल्प लोड नहीं किए जा सके।"
 
-msgid "Couldn't load the part files. All of them will be sent."
+msgid "Couldn't load the part files, so none will be sent."
 msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
@@ -20518,6 +20519,15 @@ msgstr "पार्ट फील्ड"
 msgid "Part files"
 msgstr ""
 
+msgid "Part Files for Suppliers"
+msgstr ""
+
+msgid "Part files ticked by default"
+msgstr ""
+
+msgid "Part files unticked by default"
+msgstr ""
+
 msgid "Part ID"
 msgstr "पार्ट आईडी"
 
@@ -25443,6 +25453,9 @@ msgstr "भेजने वाले का ईमेल"
 msgid "Sender Name"
 msgstr "भेजने वाले का नाम"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab. Only the files you tick are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"
 
@@ -29904,6 +29917,9 @@ msgstr "थंबनेल अपलोड किया गया"
 
 msgid "Thursday"
 msgstr "गुरुवार"
+
+msgid "Tick every part file by default"
+msgstr ""
 
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "शिपमेंट को बिना पुनः-कुंजीयन के चालान से जोड़ें"

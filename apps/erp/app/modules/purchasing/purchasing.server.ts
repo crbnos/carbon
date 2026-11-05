@@ -317,9 +317,10 @@ export const cancelPurchasingRfq = defineServiceFn({
  *
  * @remarks
  * Each item's model, then the files on its Files tab, as
- * `getItemSupplierFiles` finds them. A file's `path` is what
- * `excludedFiles` takes on `finalizePurchasingRfqAndNotify` and
- * `sendSupplierQuoteToSupplier`.
+ * `getItemSupplierFiles` finds them. A file's `path` is what `partFiles`
+ * takes on `finalizePurchasingRfqAndNotify` and `sendSupplierQuoteToSupplier`.
+ * `includeSupplierPartFiles` (company settings) is whether the send dialogs
+ * start with every file ticked.
  *
  * @mcp read
  */
@@ -351,9 +352,13 @@ export const listItemSupplierFiles = defineServiceFn({
  * share link, and marks the RFQ Requested, in one transaction
  * (`finalize-purchasing-rfq`, which refuses an RFQ that is not Draft). Then,
  * for each supplier with a `contactId`, emails the contact the quote's link
- * with the RFQ's documents and each line item's files attached, less the
- * storage paths in `excludedFiles`; a failed email is logged and the rest
+ * with the RFQ's documents attached; a failed email is logged and the rest
  * still go. Refused when the RFQ has no lines.
+ *
+ * `partFiles` are the storage paths of the line items' files to share
+ * (`listItemSupplierFiles`); a path that is not one of them is ignored, and
+ * none are shared when it is left out. They go in each email and are saved
+ * on each quote (`sharedFilePaths`), whose share page lists only them.
  *
  * @mcp
  */
@@ -361,7 +366,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
   input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
   permission: { create: "purchasing" },
 
-  async run(ctx, { rfqId, suppliers, excludedFiles }) {
+  async run(ctx, { rfqId, suppliers, partFiles }) {
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -382,15 +387,24 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
       return ctx.error("rule", "No line items found for this RFQ");
     }
 
-    const [company, user] = await Promise.all([
+    const [company, user, sharedFiles] = await Promise.all([
       getCompany(client, companyId),
-      getUser(client, userId)
+      getUser(client, userId),
+      service.getItemSupplierFiles(
+        client,
+        ctx.asSystem.pg,
+        companyId,
+        (lines.data ?? []).flatMap((line) =>
+          line.itemId ? [line.itemId] : []
+        ),
+        partFiles ?? []
+      )
     ]);
 
     const finalize = await invokePosting(
       ctx,
       "finalize-purchasing-rfq",
-      { rfqId },
+      { rfqId, sharedFilePaths: sharedFiles.map((file) => file.path) },
       service.finalizePurchasingRfq
     );
     if (finalize.error) {
@@ -441,21 +455,12 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
           (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
         ))
       ];
-      // Each part's model and Files-tab files, less the ones the sender
-      // unticked: attached while the email stays under the limit, download
-      // links past it.
+      // The picked part files: attached while the email stays under the
+      // limit, download links past it.
       const itemFiles = await service.supplierFileEmailParts(
         client,
         companyId,
-        await service.getItemSupplierFiles(
-          client,
-          ctx.asSystem.pg,
-          companyId,
-          (lines.data ?? []).flatMap((line) =>
-            line.itemId ? [line.itemId] : []
-          ),
-          excludedFiles
-        ),
+        sharedFiles,
         attachments.reduce((sum, file) => sum + (file.size ?? 0), 0)
       );
       const notesHtml = tiptapToHTML(
@@ -673,9 +678,14 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
  * Makes sure the quote has a share link and stamps it sent; the status stays
  * as it is. With `notification` Email, emails `supplierContact` (required
  * then) the link, copying `cc`, with the interaction's and the lines'
- * documents and each line item's files attached (`supplierFileEmailParts`),
- * less the storage paths in `excludedFiles`. Share sends nothing: the link is
- * shared by hand.
+ * documents and the picked part files attached (`supplierFileEmailParts`).
+ * Share sends nothing: the link is shared by hand.
+ *
+ * `partFiles` are the storage paths of the line items' files to share
+ * (`listItemSupplierFiles`); a path that is not one of them is ignored. When
+ * sent, they replace the quote's `sharedFilePaths` (what its share page
+ * lists); left out, the email carries no part files and the quote keeps
+ * the ones it had.
  *
  * @mcp
  */
@@ -687,7 +697,7 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
 
   async run(
     ctx,
-    { supplierQuoteId, notification, supplierContact, cc, excludedFiles }
+    { supplierQuoteId, notification, supplierContact, cc, partFiles }
   ) {
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
@@ -728,10 +738,24 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     });
     if (link instanceof CarbonError) return link;
 
+    const lines = await service.getSupplierQuoteLines(client, supplierQuoteId);
+    const sharedFiles = partFiles
+      ? await service.getItemSupplierFiles(
+          client,
+          ctx.asSystem.pg,
+          companyId,
+          (lines.data ?? []).flatMap((line) =>
+            line.itemId ? [line.itemId] : []
+          ),
+          partFiles
+        )
+      : [];
+
     const send = await service.sendSupplierQuote(
       client,
       supplierQuoteId,
-      userId
+      userId,
+      partFiles ? sharedFiles.map((file) => file.path) : undefined
     );
     if (send.error) {
       return ctx.error("internal", "Failed to send supplier quote", send.error);
@@ -742,11 +766,10 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
       return ctx.error("validation", "Supplier contact is required for email");
     }
 
-    const [company, contact, user, lines] = await Promise.all([
+    const [company, contact, user] = await Promise.all([
       getCompany(client, companyId),
       service.getSupplierContact(client, supplierContact, companyId),
-      getUser(client, userId),
-      service.getSupplierQuoteLines(client, supplierQuoteId)
+      getUser(client, userId)
     ]);
     if (!company.data || !contact.data?.contact || !user.data) {
       return ctx.error(
@@ -775,15 +798,7 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const itemFiles = await service.supplierFileEmailParts(
       client,
       companyId,
-      await service.getItemSupplierFiles(
-        client,
-        ctx.asSystem.pg,
-        companyId,
-        (lines.data ?? []).flatMap((line) =>
-          line.itemId ? [line.itemId] : []
-        ),
-        excludedFiles
-      ),
+      sharedFiles,
       attachments.reduce((sum, file) => sum + (file.size ?? 0), 0)
     );
 

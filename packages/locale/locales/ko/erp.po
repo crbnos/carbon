@@ -531,6 +531,11 @@ msgstr "{0}/{1} 완료됨"
 msgid "{0} of {1} h"
 msgstr "{0}/{1} h"
 
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -956,10 +961,6 @@ msgstr "{hours}시간"
 
 msgid "{hours} h × {rate}"
 msgstr "{hours}시간 × {rate}"
-
-#. placeholder {0}: files.length
-msgid "{included} of {0} included"
-msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# 부품 생성} other {# 부품 생성}}"
@@ -8135,7 +8136,7 @@ msgstr "관련 문서를 로드할 수 없습니다. 새 문서를 생성하기 
 msgid "Couldn't load the choices for this field."
 msgstr "이 필드의 선택 항목을 로드할 수 없습니다."
 
-msgid "Couldn't load the part files. All of them will be sent."
+msgid "Couldn't load the part files, so none will be sent."
 msgstr ""
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
@@ -20518,6 +20519,15 @@ msgstr "부품 필드"
 msgid "Part files"
 msgstr ""
 
+msgid "Part Files for Suppliers"
+msgstr ""
+
+msgid "Part files ticked by default"
+msgstr ""
+
+msgid "Part files unticked by default"
+msgstr ""
+
 msgid "Part ID"
 msgstr "품목 ID"
 
@@ -25443,6 +25453,9 @@ msgstr "보낸이 이메일"
 msgid "Sender Name"
 msgstr "보낸이 이름"
 
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab. Only the files you tick are attached to the email and shown on the supplier's quote page."
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."
 
@@ -29904,6 +29917,9 @@ msgstr "썸네일 업로드됨"
 
 msgid "Thursday"
 msgstr "목요일"
+
+msgid "Tick every part file by default"
+msgstr ""
 
 msgid "Tie shipments through to an invoice with no re-keying"
 msgstr "재입력 없이 출하를 송장과 연결하세요."

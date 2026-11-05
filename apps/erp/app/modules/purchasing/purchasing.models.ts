@@ -188,7 +188,7 @@ export const supplierQuoteFinalizeValidator = z
     notification: z.enum(["Email", "Share"]).optional(),
     supplierContact: zfd.text(z.string().optional()),
     cc: z.array(z.string()).optional(),
-    excludedFiles: z.array(z.string()).optional()
+    partFiles: z.array(z.string()).optional()
   })
   .refine(
     (data) => (data.notification === "Email" ? data.supplierContact : true),
@@ -730,7 +730,7 @@ export const purchasingRfqFinalizeValidator = z.object({
       contactId: zfd.text(z.string().optional())
     })
   ),
-  excludedFiles: z.array(z.string()).optional()
+  partFiles: z.array(z.string()).optional()
 });
 
 // RFQ Status Helpers
@@ -1769,15 +1769,16 @@ export const leasePurchaseValidator = z.object({
 
 /**
  * The files a supplier gets, in item order (first appearance in `itemIds`),
- * each item's files in the order given, less those whose `path` is in
- * `excludedPaths` (the files the sender unticked).
+ * each item's files in the order given. With `onlyPaths`, just the files whose
+ * `path` is in it (the files the sender ticked); a path that is not one of
+ * these items' files is ignored.
  */
 export function orderItemSupplierFiles<
   T extends { itemId: string; path: string }
->(itemIds: string[], files: T[], excludedPaths: string[] = []): T[] {
-  const excluded = new Set(excludedPaths);
+>(itemIds: string[], files: T[], onlyPaths?: string[]): T[] {
+  const only = onlyPaths ? new Set(onlyPaths) : null;
   const byItem = groupBy(
-    files.filter((file) => !excluded.has(file.path)),
+    only ? files.filter((file) => only.has(file.path)) : files,
     (file) => file.itemId
   );
   return [...new Set(itemIds)].flatMap((itemId) => byItem[itemId] ?? []);

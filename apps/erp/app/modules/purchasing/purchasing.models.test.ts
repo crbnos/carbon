@@ -654,15 +654,26 @@ describe("orderItemSupplierFiles", () => {
     ]);
   });
 
-  it("leaves out the unticked paths and items not asked for", () => {
+  it("keeps only the ticked paths of the items asked for", () => {
     const files = [
       file("a", "a/model.step"),
       file("a", "a/drawing.pdf"),
       file("c", "c/drawing.pdf")
     ];
     expect(
-      orderItemSupplierFiles(["a"], files, ["a/drawing.pdf"]).map((f) => f.path)
-    ).toEqual(["a/model.step"]);
+      orderItemSupplierFiles(["a"], files, [
+        "a/drawing.pdf",
+        // Another item's file, or any other path, is never shared.
+        "c/drawing.pdf",
+        "other-company/secret.pdf"
+      ]).map((f) => f.path)
+    ).toEqual(["a/drawing.pdf"]);
+  });
+
+  it("shares nothing when nothing is ticked", () => {
+    expect(
+      orderItemSupplierFiles(["a"], [file("a", "a/model.step")], [])
+    ).toEqual([]);
   });
 });
 

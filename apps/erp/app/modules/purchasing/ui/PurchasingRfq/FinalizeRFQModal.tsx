@@ -147,7 +147,7 @@ const FinalizeRFQModal = ({
                 ))}
               </VStack>
 
-              {canEmail && <SupplierFilesPicker lines={lines} />}
+              <SupplierFilesPicker lines={lines} />
 
               <div className="text-sm text-muted-foreground">
                 {lines.length} line item{lines.length !== 1 ? "s" : ""} will be
