@@ -4395,6 +4395,16 @@ the error set against an untouched checkout of `main`.
 
 **Applies to:** every `error(` call in `apps/*/app/routes/_public+`, `_auth+`, `share+` and `api+/login*`, and any new app that registers `flashClientMiddleware`.
 
+## A PostgREST 416 has no error code in supabase-js: check the status
+
+**Context:** SCIM `listUsers` / `listGroups` page with `.range()` and `count: "exact"`. A `startIndex` past the last row makes PostgREST answer 416 (`PGRST103`); the fix first matched `error.code === "PGRST103"` (2026-11-05).
+
+**Problem:** Through Kong the 416 body arrived cut short (`{"`). supabase-js could not parse it, so `error` was `{ message: '{"' }` with no `code`, and the request still answered 500. Unit tests never saw it; only a live request did. The builder is also mutable, so re-reading the count from the same `query` after `.range()` reuses the range.
+
+**Rule:** Recognize an out-of-range page by `result.status === 416` (keep the code as a fallback), and build the count read from a query factory, not the builder you already ranged.
+
+**Applies to:** any supabase-js read that pages by offset with `.range()` (`packages/ee/src/sso/scim.server.ts` `isOffsetPastEnd`).
+
 ## PostgREST `ilike` reads `*` as a wildcard
 
 **Context:** The SCIM endpoint matched `userName` with `.ilike("userName", escaped)` to compare without case (2026-10-30).
