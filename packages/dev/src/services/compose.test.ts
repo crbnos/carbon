@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { buildDownArgs, buildUpArgs, teardownExitCode } from "./compose.js";
+import { REDIS_DB_MAX } from "../worktree.js";
+import {
+  buildDownArgs,
+  buildUpArgs,
+  redisDatabasesOf,
+  teardownExitCode
+} from "./compose.js";
 
 // The teardown itself talks to Docker and isn't unit-testable. The argv is.
 // A `down` missing a profile exits 0 having left those containers running;
@@ -115,5 +121,26 @@ describe("buildUpArgs", () => {
     const args = buildUpArgs(ROOT, SLUG, { services: ["postgres"] });
     expect(profilesIn(args)).toEqual([]);
     expect(args).toContain("postgres");
+  });
+});
+
+describe("redisDatabasesOf", () => {
+  it("reads --databases from the container command", () => {
+    expect(
+      redisDatabasesOf([
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--databases",
+        "256"
+      ])
+    ).toBe(256);
+  });
+
+  it("is redis's default 16 when the command does not set it", () => {
+    // The container every host had before the pool grew: it gets recreated.
+    const old = redisDatabasesOf(["redis-server", "--appendonly", "yes"]);
+    expect(old).toBe(16);
+    expect(old).toBeLessThan(REDIS_DB_MAX);
   });
 });
