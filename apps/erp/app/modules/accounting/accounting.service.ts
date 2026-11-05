@@ -4218,6 +4218,102 @@ export function burdenComputedCheck({
 }
 
 /**
+ * The "Invoice shipped sales orders" decision: a sales shipment posts cost of
+ * goods sold and the sales invoice posts the revenue, so a shipment posted in
+ * the period whose lines have no posted invoice by the period end leaves the
+ * cost in this period and the revenue in a later one. `shipments` are the
+ * offending shipments, already distinct; `count` is their exact number and
+ * `documents` the first `UNPOSTED_DOCUMENT_LIMIT` for the checklist's links.
+ */
+export function shippedNotInvoicedCheck({
+  shipments,
+  count
+}: {
+  shipments: { id: string; shipmentId: string | null; status: string }[];
+  count: number;
+}): {
+  failing: boolean;
+  count: number;
+  documents: PeriodCloseUnpostedDocument[];
+} {
+  return {
+    failing: count > 0,
+    count,
+    documents: shipments.slice(0, UNPOSTED_DOCUMENT_LIMIT).map((shipment) => ({
+      documentType: "Shipment",
+      id: shipment.id,
+      readableId: shipment.shipmentId ?? shipment.id,
+      status: shipment.status
+    }))
+  };
+}
+
+/**
+ * The "Invoice shipped sales orders" close check. Posted Sales Order
+ * shipments with a posting date in the period, joined to their lines
+ * (`shipmentLine.lineId` = the sales order line), where no `salesInvoiceLine`
+ * of that order line sits on a sales invoice posted (not Draft, Pending or
+ * Voided) on or before the period end. `shipment.invoiced` is order-level, so
+ * it is not read. Reads with the privileged Kysely client; a failed read
+ * counts as one, so the warning shows rather than a false pass.
+ */
+async function getShippedNotInvoiced(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<ReturnType<typeof shippedNotInvoicedCheck>> {
+  try {
+    const rows = await db
+      .selectFrom("shipment as s")
+      .select(["s.id", "s.shipmentId", "s.status"])
+      .where("s.companyId", "=", companyId)
+      .where("s.status", "=", "Posted")
+      .where("s.sourceDocument", "=", "Sales Order")
+      .where("s.postingDate", ">=", startDate)
+      .where("s.postingDate", "<=", endDate)
+      .where(({ exists, selectFrom }) =>
+        exists(
+          selectFrom("shipmentLine as l")
+            .select("l.id")
+            .whereRef("l.shipmentId", "=", "s.id")
+            .whereRef("l.companyId", "=", "s.companyId")
+            .where("l.shippedQuantity", ">", 0)
+            .where("l.lineId", "is not", null)
+            .where(({ not, exists: existsInvoice, selectFrom: from }) =>
+              not(
+                existsInvoice(
+                  from("salesInvoiceLine as il")
+                    .innerJoin("salesInvoice as i", (join) =>
+                      join
+                        .onRef("i.id", "=", "il.invoiceId")
+                        .onRef("i.companyId", "=", "il.companyId")
+                    )
+                    .select("il.id")
+                    .whereRef("il.salesOrderLineId", "=", "l.lineId")
+                    .whereRef("il.companyId", "=", "l.companyId")
+                    .where("i.status", "not in", ["Draft", "Pending", "Voided"])
+                    .where("i.postingDate", "<=", endDate)
+                )
+              )
+            )
+        )
+      )
+      .orderBy("s.shipmentId")
+      .execute();
+    return shippedNotInvoicedCheck({ shipments: rows, count: rows.length });
+  } catch (error) {
+    logger.error("Failed to read shipped-not-invoiced close check", {
+      companyId,
+      startDate,
+      endDate,
+      error
+    });
+    return { failing: true, count: 1, documents: [] };
+  }
+}
+
+/**
  * The "Compute burden for the period" close check. It reads with the
  * privileged Kysely client, as the Timesheets complete check does, and only
  * when the company has GOVERNMENT_CONTRACTING. A failed read counts as one,
@@ -4637,7 +4733,7 @@ export async function computePeriodReadiness(
     endDate
   );
   // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
-  const [burden, earnedValue] = await Promise.all([
+  const [burden, earnedValue, shippedNotInvoiced] = await Promise.all([
     getPeriodBurdenReadiness(
       db,
       companyId,
@@ -4651,7 +4747,8 @@ export async function computePeriodReadiness(
       startDate,
       endDate,
       entitlements.governmentContracting === true
-    )
+    ),
+    getShippedNotInvoiced(db, companyId, startDate, endDate)
   ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
@@ -4798,6 +4895,17 @@ export async function computePeriodReadiness(
         "Projects with work packages that have no earned value snapshot for this period",
       failing: earnedValue.failing,
       count: earnedValue.count
+    },
+    // This evaluator MUST exist for the seeded "Invoice shipped sales orders"
+    // task: an Auto task with no evaluator fails closed.
+    {
+      autoCheckKey: "shipped-not-invoiced",
+      severity: "Warning",
+      label:
+        "Sales order shipments posted in this period with lines not invoiced by the period end (the cost of sale is in this period, the revenue is not)",
+      failing: shippedNotInvoiced.failing,
+      count: shippedNotInvoiced.count,
+      documents: shippedNotInvoiced.documents
     }
   ];
 
