@@ -910,14 +910,14 @@ export function themeMesh({ base, highlight }: ThemeColors) {
 }
 
 /**
- * True when dark text (`#18181b`) reads better than white on an `"H S% L%"`
- * color (WCAG contrast): a yellow at 53% lightness still needs dark ink.
+ * The text color, as hex, that reads best on an `"H S% L%"` color (WCAG
+ * contrast): dark or white. A yellow at 53% lightness still needs dark ink.
  */
-export function darkTextReadsOn(hsl: string) {
+export function textColorOn(hsl: string) {
   const [h = 0, s = 0, l = 0] = hsl
     .split(" ")
     .map((part) => Number.parseFloat(part));
-  return textFor([hslToRgb(h, s / 100, l / 100)]) === DARK_TEXT;
+  return rgbToHex(textFor([hslToRgb(h, s / 100, l / 100)]));
 }
 
 /** The `H S% L%` triplet of a hex color: a theme's picker swatch. */

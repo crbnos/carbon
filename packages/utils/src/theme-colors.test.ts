@@ -5,12 +5,12 @@
 import { describe, expect, it } from "vitest";
 import {
   contrastRatio,
-  darkTextReadsOn,
   normalizeHex,
   parseThemeColors,
   randomThemeColors,
   serializeThemeColors,
   THEME_PRESETS,
+  textColorOn,
   themeStyle,
   themeTextColors
 } from "./theme-colors";
@@ -496,13 +496,13 @@ describe("randomThemeColors", () => {
   });
 });
 
-describe("darkTextReadsOn", () => {
+describe("textColorOn", () => {
   it.each([
-    ["48 96% 53%", true], // yellow: light enough for dark ink
-    ["0 0% 100%", true],
-    ["221 83% 53%", false], // blue
-    ["240 10% 3.9%", false]
-  ])("is %s → %s", (hsl, dark) => {
-    expect(darkTextReadsOn(hsl)).toBe(dark);
+    ["48 96% 53%", "18181b"], // yellow: light enough for dark ink
+    ["0 0% 100%", "18181b"],
+    ["221 83% 53%", "ffffff"], // blue
+    ["240 10% 3.9%", "ffffff"]
+  ])("on %s, uses %s text", (hsl, text) => {
+    expect(textColorOn(hsl)).toBe(text);
   });
 });

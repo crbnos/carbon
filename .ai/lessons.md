@@ -4467,9 +4467,10 @@ revalidations in 3 seconds.
 
 **Rule:** Submit a cookie-only save with `defaultShouldRevalidate: false`. The route that reads
 the cookie opts back in from its `shouldRevalidate` (`isRootActionPost`, `@carbon/utils`), and
-a shell with a forced re-run defers to the default for it. Put the action's path in the
+a shell or page whose `shouldRevalidate` forces a re-run defers to the default for it. Put the action's path in the
 `createInvalidationMiddleware` `skipPaths`. The URL in the network tab is still
 `<page>.data`, but `?_routes=root` shows that only the root loader ran.
 
-**Applies to:** `packages/account/src/ui/ThemeSettings.tsx`, each app's `root.tsx` and
-`x+/_layout.tsx`, and any new action that writes only a browser preference.
+**Applies to:** `SAVE_OPTIONS` (`packages/account/src/ui/context.tsx`), each app's `root.tsx`
+and `x+/_layout.tsx`, `x+/workflow+/$id.tsx`, and any new action that writes only a browser
+preference.

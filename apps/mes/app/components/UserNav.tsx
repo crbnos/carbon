@@ -94,7 +94,12 @@ export function useUserNav({
     document.body.removeAttribute("style");
     const formData = new FormData();
     formData.append("mode", parsed.data);
-    fetcher.submit(formData, { method: "post", action: path.to.root });
+    // A cookie only the root loader reads: re-run no other loader.
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.root,
+      defaultShouldRevalidate: false
+    });
   };
 
   const updateLocation = (value: string) => {

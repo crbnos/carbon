@@ -58,8 +58,9 @@ export const handle: Handle = {
   module: "workflows"
 };
 
-// Neither write may revalidate the loader: a save would re-seed the canvas mid-edit
-// and lose the selection, a canvas write would snap the viewport back. An
+// No builder write may revalidate the loader: a save would re-seed the canvas
+// mid-edit and lose the selection, a canvas or positions write would snap the
+// viewport back. An
 // appearance save (the root action) leaves it to the default.
 export function shouldRevalidate({
   formAction,

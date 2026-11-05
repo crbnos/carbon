@@ -20,12 +20,12 @@ import {
 } from "@carbon/react";
 import type { Theme, ThemeColors } from "@carbon/utils";
 import {
-  darkTextReadsOn,
   normalizeHex,
   pickableThemes,
   presetThemes,
   randomThemeColors,
   serializeThemeColors,
+  textColorOn,
   themeByName,
   themeStyle,
   themeSwatch,
@@ -313,7 +313,7 @@ function ColorThemeCard({
       value={theme.name}
       label={theme.label}
       swatch={`hsl(${swatch})`}
-      check={darkTextReadsOn(swatch) ? "#18181b" : "#ffffff"}
+      check={`#${textColorOn(swatch)}`}
       active={active}
     />
   );
