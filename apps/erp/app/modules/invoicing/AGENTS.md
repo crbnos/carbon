@@ -217,7 +217,9 @@ guarded by `requireUnlockedBulk`, not validators.
   the download holds exactly what either page shows. The workbench's Export
   button links to the CSV route (`withCsvExport={false}` on the Table): the
   download is the whole tree, built by `agingCsvTable` (`invoicing.reports.ts`),
-  not the expanded rows on screen.
+  not the expanded rows on screen. The four aging/open reads return query
+  builders: the CSV routes page them with `fetchAllRecords` and stable unique
+  ordering, and batch party-name lookups with `fetchAllByIds`.
 - `updateReimbursement` (Draft-scoped UPDATE) / `upsertReimbursementLines` (Kysely,
   delete-then-reinsert; bind dimensions by `sequence`, never by returned row order) /
   `getPaymentCurrencyConfiguration` (base currency + `currency.decimalPlaces`; throws when the

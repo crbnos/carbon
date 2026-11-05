@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { fetchAllByIds, fetchAllRecords } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { agingCsvTable } from "~/modules/invoicing/invoicing.reports";
@@ -18,8 +19,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await resolveAgingExportRequest(request);
 
   const [aging, open] = await Promise.all([
-    getApAging(client, companyId, asOfDate, { agingMethod, bucketDays }),
-    getApOpenBySupplier(client, companyId, asOfDate)
+    fetchAllRecords(() =>
+      getApAging(client, companyId, asOfDate, { agingMethod, bucketDays })
+        .order("total", { ascending: false })
+        .order("supplierId")
+    ),
+    fetchAllRecords(() =>
+      getApOpenBySupplier(client, companyId, asOfDate)
+        .order("supplierId")
+        .order("dateDue", { nullsFirst: false })
+        .order("documentId")
+        .order("documentType")
+    )
   ]);
   if (aging.error || open.error) {
     logger.error("Failed to export AP aging", {
@@ -29,14 +40,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw new Response("AP aging could not be exported.", { status: 500 });
   }
 
-  const suppliers = await client
-    .from("supplier")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .in(
-      "id",
-      aging.data.map((a) => a.supplierId)
-    );
+  const suppliers = await fetchAllByIds(
+    aging.data.map((a) => a.supplierId),
+    (ids) =>
+      client
+        .from("supplier")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", ids)
+        .order("id")
+  );
   if (suppliers.error) {
     logger.error("Failed to read suppliers for AP aging export", {
       companyId,

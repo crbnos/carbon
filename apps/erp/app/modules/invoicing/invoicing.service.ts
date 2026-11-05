@@ -4801,7 +4801,7 @@ export async function getApTieOut(
     .single();
 }
 
-export async function getArOpenByCustomer(
+export function getArOpenByCustomer(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -4812,7 +4812,7 @@ export async function getArOpenByCustomer(
   });
 }
 
-export async function getApOpenBySupplier(
+export function getApOpenBySupplier(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string
@@ -4862,7 +4862,7 @@ export async function getAgingParams(
   return { asOfDate, agingMethod, bucketDays };
 }
 
-export async function getArAging(
+export function getArAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
@@ -4879,7 +4879,7 @@ export async function getArAging(
   });
 }
 
-export async function getApAging(
+export function getApAging(
   client: SupabaseClient<Database>,
   companyId: string,
   asOfDate: string,
