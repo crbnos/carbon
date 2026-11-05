@@ -42,7 +42,7 @@ index 453f5bb..1986554 100644
    );
  }
 diff --git a/dist/vite.js b/dist/vite.js
-index 73829de..05a6f8d 100644
+index 73829de..076ac2b 100644
 --- a/dist/vite.js
 +++ b/dist/vite.js
 @@ -173,7 +173,7 @@ async function createContext({
@@ -176,3 +176,30 @@ index 73829de..05a6f8d 100644
                  let handler = (0, import_react_router2.createRequestHandler)(build, "development");
                  let nodeHandler = async (nodeReq, nodeRes) => {
                    let req2 = await fromNodeRequest(nodeReq, nodeRes);
+@@ -4812,15 +4885,22 @@ if (import.meta.hot && !inWebWorker) {
+     });
+   });
+ }`;
++var routesByFile = /* @__PURE__ */ new WeakMap();
+ function getRoute(pluginConfig, file) {
+   let vite2 = getVite();
++  let byFile = routesByFile.get(pluginConfig.routes);
++  if (!byFile) {
++    byFile = /* @__PURE__ */ new Map();
++    for (let r of Object.values(pluginConfig.routes)) {
++      let key = vite2.normalizePath(r.file);
++      if (!byFile.has(key)) byFile.set(key, r);
++    }
++    routesByFile.set(pluginConfig.routes, byFile);
++  }
+   let routePath = vite2.normalizePath(
+     path7.relative(pluginConfig.appDirectory, file)
+   );
+-  let route = Object.values(pluginConfig.routes).find(
+-    (r) => vite2.normalizePath(r.file) === routePath
+-  );
+-  return route;
++  return byFile.get(routePath);
+ }
+ function isRoute(pluginConfig, file) {
+   return Boolean(getRoute(pluginConfig, file));

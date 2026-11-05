@@ -641,6 +641,22 @@ export async function listDatasetAssetFiles(directory) {
 }
 
 /**
+ * Keeps React Router's generated route types out of Vite's file watcher. The
+ * dev server rewrites every file under `.react-router/` at start (one per
+ * route), and each write went through Vite's update pipeline and React
+ * Router's route lookup, though nothing at runtime reads them.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function ignoreGeneratedTypes() {
+  return {
+    name: "carbon:ignore-generated-types",
+    apply: "serve",
+    config: () => ({ server: { watch: { ignored: ["**/.react-router/**"] } } }),
+  };
+}
+
+/**
  * The demo-template asset glob (`@carbon/database/dataset-assets`) as one
  * module in dev. Vite serves an eager `?url` glob as one module per file
  * (about 180 SVG, GLB and graph files), and every page loads them all through
@@ -746,6 +762,7 @@ export async function carbon({
   const { lingui } = await import("@lingui/vite-plugin");
   return [
     stackActivity(),
+    ignoreGeneratedTypes(),
     iconImports(),
     datasetAssets(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
