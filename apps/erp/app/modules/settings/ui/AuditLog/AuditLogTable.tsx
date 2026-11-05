@@ -17,6 +17,7 @@ import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, EmployeeAvatar, Table } from "~/components";
 import { ChangeRow, nonUserActorLabel } from "~/components/AuditLog";
+import { usePeople } from "~/stores/people";
 import { getEntityPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 
@@ -122,9 +123,21 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
 });
 ExpandedRowContent.displayName = "ExpandedRowContent";
 
+// "system" is the actor the event-system trigger writes: not a person.
+function isPersonActor(
+  entry: Pick<AuditLogEntry, "actorId">
+): entry is AuditLogEntry & { actorId: string } {
+  return !!entry.actorId && entry.actorId !== "system";
+}
+
 const AuditLogTable = memo((props: AuditLogTableProps) => {
   const { entries, count, nextCursor } = props;
   const { t } = useLingui();
+  const [people] = usePeople();
+  const nameById = useMemo(
+    () => new Map(people.map((person) => [person.id, person.name])),
+    [people]
+  );
   const columns = useMemo<ColumnDef<AuditLogEntry>[]>(
     () => [
       {
@@ -199,10 +212,18 @@ const AuditLogTable = memo((props: AuditLogTableProps) => {
       {
         accessorKey: "actorId",
         header: t`Changed By`,
-        meta: { mobile: "P3" },
+        meta: {
+          mobile: "P3",
+          // A SCIM or system entry has no person: export its label, not the
+          // empty or "system" actorId.
+          exportValue: (entry) =>
+            isPersonActor(entry)
+              ? (nameById.get(entry.actorId) ?? entry.actorId)
+              : (nonUserActorLabel(entry) ?? t`System`)
+        },
         cell: ({ row }) => {
           const entry = row.original;
-          return entry.actorId ? (
+          return isPersonActor(entry) ? (
             <Link
               to={path.to.employeeAccount(entry.actorId)}
               className="hover:underline"
@@ -211,7 +232,7 @@ const AuditLogTable = memo((props: AuditLogTableProps) => {
             </Link>
           ) : (
             <span className="text-muted-foreground text-sm">
-              {nonUserActorLabel(entry) ?? "System"}
+              {nonUserActorLabel(entry) ?? t`System`}
             </span>
           );
         }
@@ -242,7 +263,7 @@ const AuditLogTable = memo((props: AuditLogTableProps) => {
         )
       }
     ],
-    [t]
+    [t, nameById]
   );
 
   const renderExpandedRow = useCallback(

@@ -151,6 +151,9 @@ async function idsMatchingWithoutCase(
   return result.rows.map((row) => row.id);
 }
 
+/** PostgREST's code for a range that starts past the last row (HTTP 416). */
+const OFFSET_PAST_END = "PGRST103";
+
 function emptyList(startIndex: number): Response {
   return scimJson(scimListResponse([], { totalResults: 0, startIndex }));
 }
@@ -364,10 +367,16 @@ async function listUsers(ctx: Ctx, url: URL): Promise<Response> {
   if (!filter.ok) return scimError(400, filter.detail, filter.scimType);
   const { startIndex, count } = parsePaging(url);
 
-  let query = ctx.serviceRole
-    .from("scimUser")
-    .select(USER_COLUMNS, { count: "exact" })
-    .eq("companyId", ctx.companyId);
+  // A factory, not one builder: supabase-js builders are mutable, and an
+  // out-of-range page needs a second (count-only) read with the same filters.
+  const newQuery = (head: boolean) =>
+    ctx.serviceRole
+      .from("scimUser")
+      .select(USER_COLUMNS, { count: "exact", head })
+      .eq("companyId", ctx.companyId);
+  const filters: Array<(q: ReturnType<typeof newQuery>) => typeof q> = [];
+  const filtered = (head: boolean) =>
+    filters.reduce((q, apply) => apply(q), newQuery(head));
 
   for (const { attribute, value } of filter.value) {
     switch (attribute.toLowerCase()) {
@@ -379,18 +388,18 @@ async function listUsers(ctx: Ctx, url: URL): Promise<Response> {
           value
         );
         if (ids.length === 0) return emptyList(startIndex);
-        query = query.in("id", ids);
+        filters.push((q) => q.in("id", ids));
         break;
       }
       case "externalid":
-        query = query.eq("externalId", value);
+        filters.push((q) => q.eq("externalId", value));
         break;
       case "emails":
       case "emails.value":
-        query = query.eq("email", value.toLowerCase());
+        filters.push((q) => q.eq("email", value.toLowerCase()));
         break;
       case "id":
-        query = query.eq("id", value);
+        filters.push((q) => q.eq("id", value));
         break;
       case "active": {
         const active = parseScimBoolean(value);
@@ -401,7 +410,7 @@ async function listUsers(ctx: Ctx, url: URL): Promise<Response> {
             "invalidFilter"
           );
         }
-        query = query.eq("active", active);
+        filters.push((q) => q.eq("active", active));
         break;
       }
       default:
@@ -415,12 +424,22 @@ async function listUsers(ctx: Ctx, url: URL): Promise<Response> {
 
   const page =
     count === 0
-      ? await query.order("createdAt").order("id").limit(1)
-      : await query
+      ? await filtered(true)
+      : await filtered(false)
           .order("createdAt")
           .order("id")
           .range(startIndex - 1, startIndex - 2 + count);
-  if (page.error) throw page.error;
+  if (page.error) {
+    // RFC 7644 §3.4.2.4: a startIndex past the last row is an empty page.
+    if (page.error.code === OFFSET_PAST_END) {
+      const total = await filtered(true);
+      if (total.error) throw total.error;
+      return scimJson(
+        scimListResponse([], { totalResults: total.count ?? 0, startIndex })
+      );
+    }
+    throw page.error;
+  }
 
   const resources =
     count === 0
@@ -1291,10 +1310,14 @@ async function listGroups(ctx: Ctx, url: URL): Promise<Response> {
   if (!filter.ok) return scimError(400, filter.detail, filter.scimType);
   const { startIndex, count } = parsePaging(url);
 
-  let query = ctx.serviceRole
-    .from("scimGroup")
-    .select(GROUP_COLUMNS, { count: "exact" })
-    .eq("companyId", ctx.companyId);
+  const newQuery = (head: boolean) =>
+    ctx.serviceRole
+      .from("scimGroup")
+      .select(GROUP_COLUMNS, { count: "exact", head })
+      .eq("companyId", ctx.companyId);
+  const filters: Array<(q: ReturnType<typeof newQuery>) => typeof q> = [];
+  const filtered = (head: boolean) =>
+    filters.reduce((q, apply) => apply(q), newQuery(head));
 
   for (const { attribute, value } of filter.value) {
     switch (attribute.toLowerCase()) {
@@ -1306,14 +1329,14 @@ async function listGroups(ctx: Ctx, url: URL): Promise<Response> {
           value
         );
         if (ids.length === 0) return emptyList(startIndex);
-        query = query.in("id", ids);
+        filters.push((q) => q.in("id", ids));
         break;
       }
       case "externalid":
-        query = query.eq("externalId", value);
+        filters.push((q) => q.eq("externalId", value));
         break;
       case "id":
-        query = query.eq("id", value);
+        filters.push((q) => q.eq("id", value));
         break;
       default:
         return scimError(
@@ -1326,12 +1349,22 @@ async function listGroups(ctx: Ctx, url: URL): Promise<Response> {
 
   const page =
     count === 0
-      ? await query.order("createdAt").order("id").limit(1)
-      : await query
+      ? await filtered(true)
+      : await filtered(false)
           .order("createdAt")
           .order("id")
           .range(startIndex - 1, startIndex - 2 + count);
-  if (page.error) throw page.error;
+  if (page.error) {
+    // RFC 7644 §3.4.2.4: a startIndex past the last row is an empty page.
+    if (page.error.code === OFFSET_PAST_END) {
+      const total = await filtered(true);
+      if (total.error) throw total.error;
+      return scimJson(
+        scimListResponse([], { totalResults: total.count ?? 0, startIndex })
+      );
+    }
+    throw page.error;
+  }
 
   const rows = count === 0 ? [] : (page.data ?? []);
   const members = excludesMembers(url)
@@ -1668,7 +1701,7 @@ export async function reconcileEmployeeTypes(
     }));
   if (changes.length === 0) return { changed: 0 };
 
-  await db.transaction().execute(async (trx) => {
+  const applied = await db.transaction().execute(async (trx) => {
     const typeIds = [...new Set(changes.map((change) => change.to))];
     const grants = await readTypeGrants(trx, companyId, typeIds);
 
@@ -1698,26 +1731,29 @@ export async function reconcileEmployeeTypes(
         .execute();
     }
 
+    // A change whose target type is skipped above did not happen: keep it out
+    // of the grants, the caches, the audit log and the count.
+    const applied = changes.filter((change) => owned.has(change.to));
     await writeCompanyGrants(
       trx,
       companyId,
       new Map(
-        changes
-          .filter((change) => owned.has(change.to))
-          .map((change) => [change.userId, grants.get(change.to) ?? []])
+        applied.map((change) => [change.userId, grants.get(change.to) ?? []])
       )
     );
+    return applied;
   });
+  if (applied.length === 0) return { changed: 0 };
 
-  await clearPermissionCaches(changes.map((change) => change.userId));
+  await clearPermissionCaches(applied.map((change) => change.userId));
   await auditEmployees(
     serviceRole,
     connection,
-    changes.map((change) => ({
+    applied.map((change) => ({
       userId: change.userId,
       operation: "UPDATE" as const,
       diff: { employeeTypeId: { old: change.from, new: change.to } }
     }))
   );
-  return { changed: changes.length };
+  return { changed: applied.length };
 }
