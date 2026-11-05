@@ -81,4 +81,29 @@ describe("getLineSupplierPartId", () => {
       )
     ).toBeNull();
   });
+
+  it("trims the number before it returns or compares it", () => {
+    expect(getLineSupplierPartId(line({ supplierPartId: "  SUP-778  " }))).toBe(
+      "SUP-778"
+    );
+    expect(
+      getLineSupplierPartId(
+        line({ itemReadableId: "P000123.B", supplierPartId: " P000123.B " })
+      )
+    ).toBeNull();
+  });
+
+  // A Service line's PDF row prints its description, not its item id.
+  it("compares with the identifier the caller says the line shows", () => {
+    const service = line({
+      purchaseOrderLineType: "Service",
+      itemReadableId: "Anodizing",
+      description: "Black anodize, Type II",
+      supplierPartId: "Anodizing"
+    });
+    expect(getLineSupplierPartId(service, service.description)).toBe(
+      "Anodizing"
+    );
+    expect(getLineSupplierPartId(service, " Anodizing ")).toBeNull();
+  });
 });

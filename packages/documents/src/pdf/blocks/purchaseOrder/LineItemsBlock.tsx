@@ -29,6 +29,11 @@ const INDIRECT_TYPES = new Set([
 const isIndirect = (t: string | null | undefined) =>
   !!t && INDIRECT_TYPES.has(t);
 
+/**
+ * The purchase order's line table. Each row prints the item ID (an indirect
+ * line prints its description), then the supplier's part number on its own
+ * line when the template's `showSupplierPartId` option is on.
+ */
 export function LineItemsBlock({
   block,
   data
@@ -79,8 +84,15 @@ export function LineItemsBlock({
         const netValue =
           (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
         const taxPercentLabel = formatTaxPercent(line.taxPercent, locale);
+        // An indirect line prints its description, not its item ID, so the
+        // number only repeats the line when it equals that description.
         const supplierPartId = opts.showSupplierPartId
-          ? getLineSupplierPartId(line)
+          ? getLineSupplierPartId(
+              line,
+              isIndirect(line.purchaseOrderLineType)
+                ? line.description
+                : line.itemReadableId
+            )
           : null;
 
         return (

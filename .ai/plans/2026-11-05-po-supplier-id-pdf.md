@@ -19,6 +19,8 @@ Scope: the PO template and PDF, the supplier part number rule they share with th
 - [x] Add one schema test: a saved `false` survives the parse, and a template saved before the option parses to `true`.
 - [x] Test `getLineSupplierPartId` in `purchase-order.test.ts`: the line's number wins, a blank number falls back to the record's, and a blank or repeated number gives `null`. Move the repeated-number test there from `getLineDescription`.
 - [x] Verify: typecheck, tests, Biome, 63 PDF scenarios and a browser run against a local stack.
+- [x] Fix the 3 CodeRabbit findings on PR #2141. A PDF Service line compares the number with its description. The `ToggleRow` switch gets an `aria-label`. 2 tests cover padded numbers.
+- [x] Add docstrings to the 3 functions that the docstring warning lists.
 
 Default on: the user did not choose a default. Default on keeps the earlier intent, which printed supplier part numbers.
 

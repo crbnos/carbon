@@ -6,7 +6,7 @@ Base: `origin/main` at `b249e8bf20`, in a fresh clone of `crbnos/carbon`.
 
 - The PO PDF prints the supplier part number on its own wrapping line, `Supplier Part ID: <number>`. The item ID with its revision and the description stay.
 - `getLineSupplierPartId` picks the number. The line's own `supplierPartId` wins. If it is blank, the helper uses `supplierPartIdFromSupplier` from the supplier part record.
-- The helper trims spaces. It returns `null` when the number repeats the item ID, because the line already prints that ID.
+- The helper trims spaces. It returns `null` when the number repeats the identifier the line already prints. That is the item ID, or the description on a PDF Service line.
 - Every line type except Comment, G/L Account and Fixed Asset prints the number. Service lines print it too.
 - The PDF prints the label only when a number exists.
 - Templates → Purchase Order → Line Items has a "Show Supplier Part ID" switch. It writes `showSupplierPartId` into the block options. The default is on.
@@ -68,5 +68,31 @@ The browser run used a local stack on the earlier base `448dbcdf3a`, with the fi
 10. Opened the Sales Order Line Items: no "Show Supplier Part ID" switch.
 
 The PDFs, screenshots and proof scripts stayed out of the repo.
+
+## Review follow-up
+
+CodeRabbit left 3 findings on PR #2141. This commit fixes all 3.
+
+| Finding | Fix |
+|---------|-----|
+| A Service line lost a number equal to its item ID. The PDF prints the description there, not the item ID. | `getLineSupplierPartId` takes an optional `shownId`: the identifier the line prints. `LineItemsBlock` passes the description for an indirect line. The email keeps the item ID default. |
+| The `ToggleRow` switch had no accessible name. | `ToggleRow` passes its label to the `Switch` as `aria-label`. Every toggle in the template editor gets the name. |
+| No test covered a padded number. | 2 tests: a padded number comes back trimmed, and a padded copy of the item ID gives `null`. |
+
+The docstring warning listed `getLineDescription`, `LineItemsBlock` and `LineItemsConfig`. Each has a docstring now.
+
+| Check | Result |
+|-------|--------|
+| `pnpm exec turbo run test --filter=@carbon/documents --force` | 17 files, 120 tests pass |
+| `pnpm exec turbo run typecheck --filter=@carbon/documents --filter=erp` | pass, no cache |
+| `pnpm exec biome check` on the 5 changed files | pass |
+| The new `shownId` test against a helper that ignores `shownId` | fails as expected, then restored |
+| PDF proof: 6 cases with real `renderToStream` PDFs | 6 pass |
+| The same proof against the PR head's `LineItemsBlock` | 2 fail as expected, then restored |
+
+The 2 cases that failed on the PR head:
+
+1. A Service line with the number equal to its item ID printed no label.
+2. A Service line with the number equal to its description printed the description twice.
 
 No deployment, customer data or production setting changed.

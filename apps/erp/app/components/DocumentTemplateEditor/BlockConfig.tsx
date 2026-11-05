@@ -450,6 +450,10 @@ function OperationsConfig({ block }: { block: OperationsBlock }) {
   );
 }
 
+/**
+ * The Line Items block's options: thumbnails, striped rows, item text
+ * overflow, and the Show Supplier Part ID switch on purchase orders only.
+ */
 function LineItemsConfig({ block }: { block: LineItemsBlock }) {
   const { t } = useLingui();
   const { updateBlock, documentType } = useDocumentTemplate();
