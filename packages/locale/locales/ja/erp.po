@@ -1558,6 +1558,9 @@ msgstr "この製造指図でタイマーが実行されています。"
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "クローズ済のプロジェクトはそれ以上の請求を受け取らず、再度開くことはできません。すべての発注書明細とそれ上の製造指図が完了したときのみクローズしてください。"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
 
@@ -5502,6 +5505,9 @@ msgstr "空白 = スキルの再認定期間から計算"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "空白の場合は契約のプロジェクト完了時の推定値を使用します"
 
+msgid "Blend the background into the selected items color."
+msgstr "背景を選択項目の色になじませます。"
+
 msgid "Blind"
 msgstr "ブラインド"
 
@@ -8700,6 +8706,9 @@ msgstr "カスタムパス"
 
 msgid "Custom SOW · we manage"
 msgstr "カスタムSOW · 当社が管理"
+
+msgid "Custom theme"
+msgstr "カスタムテーマ"
 
 msgid "Custom…"
 msgstr "カスタム…"
@@ -12116,6 +12125,9 @@ msgstr "有効期限（オプション）"
 msgid "Expires in {0}d"
 msgstr "{0}d 後に有効期限切れ"
 
+msgid "Expires On"
+msgstr "有効期限日"
+
 msgid "Expiring first"
 msgstr "最初に期限切れ"
 
@@ -13640,6 +13652,9 @@ msgstr "グレード"
 
 msgid "Grades"
 msgstr "等級"
+
+msgid "Gradient"
+msgstr "グラデーション"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "全員にフルアクセスを付与するのではなく、各ユーザーに細粒度で、モジュール単位の権限を付与します。"
@@ -25336,6 +25351,9 @@ msgstr "選択…"
 msgid "Selected"
 msgstr "選択済み"
 
+msgid "Selected items"
+msgstr "選択項目"
+
 msgid "Selected Operation"
 msgstr "選択された操作"
 
@@ -26340,6 +26358,9 @@ msgstr "ソフトウェアタイプ"
 
 msgid "Sold"
 msgstr "売却"
+
+msgid "Solid"
+msgstr "単色"
 
 msgid "Solutions Engineer"
 msgstr "ソリューションズエンジニア"
@@ -27410,6 +27431,9 @@ msgstr "サーフェス"
 msgid "Surplus"
 msgstr "余剰"
 
+msgid "Surprise me"
+msgstr "おまかせ"
+
 msgid "Suspected Failure Mode"
 msgstr "疑わしい故障モード"
 
@@ -28138,8 +28162,8 @@ msgstr "このポータル アカウントがリンクしている得意先レ�
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "商品が配送される得意先（請求先の得意先と異なる場合）（例：本社に請求、支店に出荷）。"
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "このポータル リンクがプロビジョニングされている得意先。この得意先の担当者のみがリンク経由でサインインできます。"
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "このポータルリンクが注文を表示する顧客です。リンクにはサインインがないため、リンクを持つ人は誰でも閲覧できます。"
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "この文書に対する得意先独自の参照 — 通常は彼らのシステム上の見積依頼または発注書番号。印刷可能な出力に表示され、これが変換される任意の文書に引き継がれます。"
@@ -28547,6 +28571,9 @@ msgstr "明細を読み込めませんでした。"
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "計画グループのオーダーの一部から 1 つのメンバーの需要へのリンク：オーダーが開いている間はソフト（MRP は移動する可能性があります）。受け取られたまたは完了したときはハード（移動しない）。またはプランナーが理由を付けて設定するときはマニュアル。"
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "この日にリンクは使えなくなります。空欄の場合は期限なしになります。"
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "エクスポートの読み込み中に一覧が変更されました。もう一度お試しください。"
@@ -29283,11 +29310,8 @@ msgstr "各材料が保管ユニットを持つまで、次のバックフラッ
 msgid "Theme"
 msgstr "テーマ"
 
-msgid "Theme color"
-msgstr "テーマカラー"
-
-msgid "Theme Color"
-msgstr "テーマカラー"
+msgid "Themes"
+msgstr "テーマ"
 
 msgid "then"
 msgstr "その後"
@@ -29726,9 +29750,6 @@ msgstr "この工具は、変更通知 {activationLockId} がリリースされ�
 
 msgid "This unit has no cost in inventory"
 msgstr "この品目は在庫に原価がありません。"
-
-msgid "This updates the theme for all users of the application"
-msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "このユーザーは二要素認証が有効になっていません。"

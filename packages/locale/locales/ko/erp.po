@@ -1558,6 +1558,9 @@ msgstr "이 작업 지시에 시계가 계속 실행 중입니다."
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "마감된 프로젝트는 더 이상 비용이 추가되지 않으며 다시 열 수 없습니다. 모든 발주서 라인과 작업 지시가 완료된 경우에만 마감하세요."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "색상은 강조 색을 정합니다. 그라데이션과 단색 테마는 탐색 영역, 사이드바, 페이지에도 색을 입힙니다."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "한 회사는 한 번에 하나의 Onshape에만 연동할 수 있습니다. Onshape Government를 제거하고 Onshape를 연동하세요."
 
@@ -5502,6 +5505,9 @@ msgstr "공백 = 역량의 재인증 기간에서 계산"
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "공백은 계약 프로젝트 완료 시 예상치를 사용합니다."
 
+msgid "Blend the background into the selected items color."
+msgstr "배경을 선택한 항목의 색상으로 자연스럽게 섞습니다."
+
 msgid "Blind"
 msgstr "맹검"
 
@@ -8700,6 +8706,9 @@ msgstr "사용자 정의 경로"
 
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
+
+msgid "Custom theme"
+msgstr "사용자 정의 테마"
 
 msgid "Custom…"
 msgstr "사용자 정의…"
@@ -12116,6 +12125,9 @@ msgstr "만료일(선택)"
 msgid "Expires in {0}d"
 msgstr "{0}일 후 만료"
 
+msgid "Expires On"
+msgstr "만료일"
+
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
@@ -13640,6 +13652,9 @@ msgstr "등급"
 
 msgid "Grades"
 msgstr "등급"
+
+msgid "Gradient"
+msgstr "그라데이션"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 사용자에게 모듈별 세밀한 권한을 부여합니다."
@@ -25336,6 +25351,9 @@ msgstr "선택…"
 msgid "Selected"
 msgstr "선택됨"
 
+msgid "Selected items"
+msgstr "선택한 항목"
+
 msgid "Selected Operation"
 msgstr "선택된 공정작업"
 
@@ -26340,6 +26358,9 @@ msgstr "소프트웨어 유형"
 
 msgid "Sold"
 msgstr "판매됨"
+
+msgid "Solid"
+msgstr "단색"
 
 msgid "Solutions Engineer"
 msgstr "솔루션 엔지니어"
@@ -27410,6 +27431,9 @@ msgstr "표면"
 msgid "Surplus"
 msgstr "잉여"
 
+msgid "Surprise me"
+msgstr "무작위로 고르기"
+
 msgid "Suspected Failure Mode"
 msgstr "의심되는 고장 모드"
 
@@ -28138,8 +28162,8 @@ msgstr "이 포털 계정이 연결된 고객 레코드로, 아래에서 계정 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "송장 발행되는 고객과 다를 때 상품이 배송되는 고객(예: 본사로 송장 발행, 지점으로 출하)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "이 포털 링크가 발급된 대상 고객으로, 해당 고객의 담당자만 이 링크로 로그인할 수 있습니다."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "이 포털 링크가 주문을 보여 주는 고객입니다. 링크에는 로그인이 없으므로 링크를 가진 누구나 볼 수 있습니다."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "이 문서에 대한 고객 자체 참조 번호로, 일반적으로 고객 시스템상의 RFQ 또는 구매주문 번호입니다. 인쇄 출력물에 표시되며, 이 문서가 전환되는 모든 후속 문서에도 이어집니다."
@@ -28547,6 +28571,9 @@ msgstr "라인을 불러올 수 없습니다."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "계획 그룹의 주문의 일부에서 한 구성원의 소요량으로의 링크: 주문이 미결일 동안 소프트(MRP가 이동할 수 있음), 수신되거나 완료됨 일단 하드(이동 안 함), 또는 계획자가 이유와 함께 설정할 때 수동."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "이 날부터 링크가 작동하지 않습니다. 계속 열어 두려면 비워 두세요."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "내보내기를 준비하는 동안 목록이 변경되었습니다. 다시 시도하세요."
@@ -29283,11 +29310,8 @@ msgstr "각 자재가 보관 단위를 가질 때까지 다음 백플러시는 �
 msgid "Theme"
 msgstr "테마"
 
-msgid "Theme color"
-msgstr "테마 색상"
-
-msgid "Theme Color"
-msgstr "테마 색상"
+msgid "Themes"
+msgstr "테마"
 
 msgid "then"
 msgstr "그 다음"
@@ -29726,9 +29750,6 @@ msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활�
 
 msgid "This unit has no cost in inventory"
 msgstr "이 개는 재고에 원가가 없습니다."
-
-msgid "This updates the theme for all users of the application"
-msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "이 사용자는 2단계 인증이 활성화되지 않았습니다."

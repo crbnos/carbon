@@ -22245,11 +22245,11 @@ export type Database = {
           lastCalibrationDate: string | null
           lastCalibrationStatus: Database["public"]["Enums"]["gaugeCalibrationStatus"]
           locationId: string | null
+          manufacturer: string | null
           modelNumber: string | null
           nextCalibrationDate: string | null
           serialNumber: string | null
           storageUnitId: string | null
-          supplierId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -22270,11 +22270,11 @@ export type Database = {
           lastCalibrationDate?: string | null
           lastCalibrationStatus?: Database["public"]["Enums"]["gaugeCalibrationStatus"]
           locationId?: string | null
+          manufacturer?: string | null
           modelNumber?: string | null
           nextCalibrationDate?: string | null
           serialNumber?: string | null
           storageUnitId?: string | null
-          supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22295,11 +22295,11 @@ export type Database = {
           lastCalibrationDate?: string | null
           lastCalibrationStatus?: Database["public"]["Enums"]["gaugeCalibrationStatus"]
           locationId?: string | null
+          manufacturer?: string | null
           modelNumber?: string | null
           nextCalibrationDate?: string | null
           serialNumber?: string | null
           storageUnitId?: string | null
-          supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22387,27 +22387,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gauge_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "gauge_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "gauge_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "gauge_updatedBy_fkey"
@@ -88069,11 +88048,11 @@ export type Database = {
             | Database["public"]["Enums"]["gaugeCalibrationStatus"]
             | null
           locationId: string | null
+          manufacturer: string | null
           modelNumber: string | null
           nextCalibrationDate: string | null
           serialNumber: string | null
           storageUnitId: string | null
-          supplierId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -88099,11 +88078,11 @@ export type Database = {
             | Database["public"]["Enums"]["gaugeCalibrationStatus"]
             | null
           locationId?: string | null
+          manufacturer?: string | null
           modelNumber?: string | null
           nextCalibrationDate?: string | null
           serialNumber?: string | null
           storageUnitId?: string | null
-          supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -88129,11 +88108,11 @@ export type Database = {
             | Database["public"]["Enums"]["gaugeCalibrationStatus"]
             | null
           locationId?: string | null
+          manufacturer?: string | null
           modelNumber?: string | null
           nextCalibrationDate?: string | null
           serialNumber?: string | null
           storageUnitId?: string | null
-          supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -88221,27 +88200,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "storageUnit"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gauge_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "gauge_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id", "companyId"]
-          },
-          {
-            foreignKeyName: "gauge_supplierId_fkey"
-            columns: ["supplierId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "gauge_updatedBy_fkey"

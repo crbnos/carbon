@@ -4,17 +4,21 @@ description: A standing, read-only link where a customer watches their open orde
 plan: Business
 ---
 
-The customer portal provides read-only access to one customer's work. It shows sales-order line status, buyer and engineer contacts, order and due dates, part number and revision, completed and shipped quantities, and per-operation job progress. Customers cannot modify data in the portal.
+The customer portal provides read-only access to one customer's work. It shows sales-order line status, buyer and engineer contacts, order and promised dates, part number and revision, completed and shipped quantities, and per-operation job progress. Draft, Needs Approval and Cancelled orders are not shown. Customers cannot modify data in the portal.
 
 ## Creating a portal
 
 <Screenshot label="Sales → Portals: the portal list with per-row URL copy control and the new-portal drawer with the customer picker" caption="One portal per customer, each with its own private URL." />
 
-Open **Sales → Portals** and create a portal for the customer. Copy the private URL from its row and send it to the customer contact. The link does not require authentication. Treat it as a credential and share it only with authorized recipients.
+Open **Sales → Portals** and create a portal for the customer. Copy the private URL from its row and send it to the customer contact. The link does not require authentication. Treat it as a credential and share it only with authorized recipients. Set **Expires On** to make the link stop working on that day (in the company's timezone); leave it blank to keep the link open. The date must be after today, and the portal list marks a portal whose date has passed as **Expired**.
 
 <Callout type="note" title="One portal, one customer">
-A portal is scoped to a single customer record: it lists that customer's orders and nothing else. Files attached to their job operations can be downloaded from the portal, limited to the customer's own jobs and rate-limited per visitor.
+A portal is scoped to a single customer record: it lists that customer's orders and nothing else. Photos and PDFs recorded on a File step of the customer's job operations can be downloaded from the portal, rate-limited per visitor. CAD models, drawings (DXF, DWG), videos and any other file are never served.
 </Callout>
+
+## Turning a portal off
+
+A portal stops working on its **Expires On** date: the link returns "Not found" until the date is moved or cleared. The customer's status does not turn a portal off. Delete the portal to end access for good.
 
 ## Related
 
@@ -28,7 +32,13 @@ A portal is scoped to a single customer record: it lists that customer's orders 
 ## Troubleshooting
 
 ### Why does the customer portal link show "Not found" / a 404?
-The customer portal is gated behind the `CUSTOMER_PORTALS` plan feature (Business plan). A company without it gets a 404 on the portal URL (and a 403 on file downloads). Upgrade the plan to enable the portal.
+The customer portal is gated behind the `CUSTOMER_PORTALS` plan feature (Business plan). A company without it gets a 404 on the portal URL and on file downloads. Upgrade the plan to enable the portal.
+
+### Why does a portal show "Not found" for a customer on the Business plan?
+The portal's Expires On date has passed. Edit the portal to move or clear the date, or delete the portal if access should end.
+
+### Why is a file attached to a job step missing from the portal?
+The portal serves only photos (JPG, PNG, GIF, WebP, AVIF, HEIC) and PDFs recorded on a File step. CAD models, drawings, SVGs and videos are left out, because a portal link has no sign-in and those files can be export-controlled.
 
 ### Why did downloads from the portal start failing (HTTP 429)?
 File downloads on the portal are rate-limited to ten per minute per IP. Wait a minute and retry; the limit is per requesting IP address, not per file.

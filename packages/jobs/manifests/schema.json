@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105000901",
+  "schemaVersion": "20261105154101",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-04T22:08:56.501Z",
+  "exportedAt": "2026-11-05T14:28:45.351Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -506,12 +506,12 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
-        "serviceLaborCostRate",
-        "serviceLaborBillRate",
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
         "kanbanLabelSize",
+        "serviceLaborCostRate",
+        "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail"
       ]
@@ -3981,6 +3981,35 @@
       ]
     },
     {
+      "name": "gauge",
+      "rows": 0,
+      "columns": [
+        "id",
+        "gaugeId",
+        "modelNumber",
+        "serialNumber",
+        "description",
+        "dateAcquired",
+        "gaugeTypeId",
+        "gaugeCalibrationStatus",
+        "gaugeStatus",
+        "gaugeRole",
+        "calibrationIntervalInMonths",
+        "lastCalibrationDate",
+        "nextCalibrationDate",
+        "locationId",
+        "storageUnitId",
+        "companyId",
+        "customFields",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "lastCalibrationStatus",
+        "manufacturer"
+      ]
+    },
+    {
       "name": "pickMethod",
       "rows": 0,
       "columns": [
@@ -5228,35 +5257,6 @@
         "updatedBy",
         "updatedAt",
         "customFields"
-      ]
-    },
-    {
-      "name": "gauge",
-      "rows": 0,
-      "columns": [
-        "id",
-        "gaugeId",
-        "supplierId",
-        "modelNumber",
-        "serialNumber",
-        "description",
-        "dateAcquired",
-        "gaugeTypeId",
-        "gaugeCalibrationStatus",
-        "gaugeStatus",
-        "gaugeRole",
-        "calibrationIntervalInMonths",
-        "lastCalibrationDate",
-        "nextCalibrationDate",
-        "locationId",
-        "storageUnitId",
-        "companyId",
-        "customFields",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "lastCalibrationStatus"
       ]
     },
     {

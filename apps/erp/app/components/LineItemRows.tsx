@@ -137,7 +137,7 @@ function LineList({
 
   return (
     <div className={LINE_BLOCK}>
-      <div className={cn(LINE_GRID, "animate-in fade-in duration-150")}>
+      <div className={LINE_GRID}>
         {lines.map((line) => {
           const name = line.itemName ?? line.description;
           const numbers = [

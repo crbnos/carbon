@@ -5,10 +5,11 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { forwardRef } from "react";
 import { Link } from "react-router";
+import { pulseNavIcon } from "./NavRail";
 import { cn } from "./utils/cn";
 
 const tabBarItemClassName =
-  "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[0.65625rem] font-medium leading-none outline-none transition-transform active:scale-[0.98] focus-visible:ring-[3px] focus-visible:ring-ring/50";
+  "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[0.65625rem] font-medium leading-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 /** The phone bottom tab bar. Hidden at md and up. */
 export function TabBar({
@@ -84,6 +85,7 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
           to={props.to}
           className={tabBarItemClassName}
           aria-current={isActive ? "page" : undefined}
+          onClick={(event) => pulseNavIcon(event)}
         >
           {content}
         </Link>
@@ -104,6 +106,10 @@ export const TabBarItem = forwardRef<HTMLButtonElement, TabBarItemProps>(
         ref={ref}
         type="button"
         {...buttonProps}
+        onClick={(event) => {
+          pulseNavIcon(event);
+          buttonProps.onClick?.(event);
+        }}
         className={tabBarItemClassName}
       >
         {content}
