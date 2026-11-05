@@ -49,42 +49,59 @@ waits on it.
 ## Decisions
 
 1. **`publish` is the option.** `defineServiceFn({ publish: true | "read" |
-   "destructive", input, permission, run })`. `true` classifies from the
-   permission; `"read"` and `"destructive"` override as the tag did. A `"system"`
-   or keyed permission with `publish` is refused when the catalog is built.
-   The `@mcp` tag is removed by a codemod; the generator reads `publish` from the
-   literal instead.
-2. **Lists are decided from the result.** `paged()` marks its result with a
-   symbol; `callServiceFn` unpacks `{ rows, count }` on that mark. The HTTP body is
-   `{ results, count }` when the dispatch result is an array, bare otherwise.
-   A `T[] | null` function that returns `null` now sends `null`, not
-   `{ results: null }`. `callOperation` calls the service function directly, so
-   nothing has to reverse the HTTP shape.
-3. **`paginates` for MCP paging comes from the input**: both `limit` and `offset`
-   declared. The 8 non-paged operations that declare them get a default `limit`
-   of 25 from `call_tool` like the paged ones. Recorded as a known change.
-4. **The release catalog enriches the runtime when present.** `OPERATIONS` is built
-   from the registry; if `tool-metadata.json` exists it adds title, description,
-   `@param` descriptions, `filters`/`sorts`, response schema and lookups by name.
-   In production the build makes it (turbo `build` already depends on it); in dev
-   it exists only after `pnpm generate:mcp`. MCP `describe_tool` and `search_tools`
-   show less in dev without it.
-5. **`COMPANY_TABLES` becomes a committed generated file**:
-   `packages/database/src/company-tables.ts`, written by `pnpm generate:types`
-   from the same CLI output as `types.ts`.
-6. **Decided and done: the digest check runs in CI only.** The lint job already
-   runs `//#generate:mcp` for the workflow-catalog check, so a "Manifest digest"
-   step fails the pull request when the committed digest differs from the
-   generated one. Pre-commit runs neither the generator nor the check. Lingui
-   extract runs only when a staged change touches a message or a catalog.
-7. **Open: `postinstall`.** Remove `//#generate:mcp` from it. The ERP `build`
-   script gets a `prebuild` that runs the turbo task, which covers Vercel.
+   "destructive", title, description?, input, output?, permission, run })`.
+   `true` classifies from the permission; `"read"` and `"destructive"` override
+   as the tag did. A `"system"` or keyed permission with `publish` is refused when
+   the catalog is built. The `@mcp` tag goes away.
+2. **Descriptions are registry fields, not comments.** `title` (required with
+   `publish`) and `description` (optional prose for the agent) sit on the
+   definition; field descriptions are `.describe()` on the zod fields. The MCP
+   reads them from the object it dispatches from, so dev and production serve the
+   same catalog and nothing can be stale. The `@param` and `@remarks` channels go
+   away; a TSDoc block may stay for anything else, and the codemod removes the
+   migrated parts. No IDE hover text: one copy, no drift.
+3. **Lists are decided from the result until `output` is declared.** `paged()`
+   marks its result; an array result goes out as `{ results, count }`, anything
+   else bare. `callOperation` calls the service function directly. A `T[] | null`
+   function that returns `null` now sends `null`. Phase 2 replaces this with a
+   declared `output`.
+4. **`paginates` for MCP paging comes from the input** (both `limit` and
+   `offset` declared) until `output: paged(...)` declares it. The 8 non-paged
+   operations that declare them get `call_tool`'s default `limit` of 25.
+5. **The runtime never reads the generated catalog.** `OPERATIONS` is built from
+   the registry only. Response schemas and id lookups are absent from the runtime
+   until Phase 2 declares outputs; MCP `describe_tool` shows the input contract
+   and the description. `tool-metadata.json` remains the docs and SDK artifact.
+6. **Done: the digest check runs in CI only.** The lint job already runs
+   `//#generate:mcp` for the workflow-catalog check and fails the pull request
+   when the committed digest differs. Pre-commit runs neither.
+7. **`postinstall` no longer runs the generator.** The ERP `build` script gets a
+   `prebuild` that runs the turbo task, which covers Vercel; turbo's `build`,
+   `test` and `typecheck` dependencies already cover CI.
+8. **`COMPANY_TABLES` becomes a committed generated file**:
+   `packages/database/src/company-tables.ts`, written by `pnpm generate:types`.
+9. **Phase 2, after this lands: declared `output`.** `pnpm generate:types` emits
+   zod row schemas per table and view (`.meta({ id })` set to the name, so the
+   spec gets `$defs`); 131 paged functions get `output: paged(viewRow)`; the rest
+   are seeded from the response schemas the current generator reflected; the
+   compiler reports every `run` that disagrees. Then the generator is
+   "import the registry, `z.toJSONSchema` per operation, write the spec" with no
+   ts-morph, the digest becomes a diff of the committed spec, and id lookups move
+   to `.meta({ lookup })` on the field or stay inferred by a cheap parser pass.
+
+Speed, before and after Phase 1: `pnpm install` loses the generator (about 2 min
+30 s on a cache miss); the ERP boots with no generated file; a service-function
+change is live on the API and the MCP as soon as the dev server reloads; the
+generator runs once per pull request in CI. After Phase 2 the generator itself
+takes seconds.
 
 ## Tasks
 
 ### 1. `@carbon/api`: the option, the mark, the runtime catalog builder
-- [ ] `service-fn.server.ts`: add `publish?: true | "read" | "destructive"` to the
-      definition; expose it on the returned function beside `input` and `permission`.
+- [ ] `service-fn.server.ts`: add `publish?: true | "read" | "destructive"`,
+      `title?: string`, `description?: string` to the definition; expose them on the
+      returned function beside `input` and `permission`. A published function
+      without a `title` is a type error.
 - [ ] `service-tools.server.ts`: `paged()` / `read(…, true)` return
       `{ rows, count, [PAGED]: true }`; export `isPaged(value)`.
 - [ ] New `packages/api/src/catalog.server.ts`: `buildOperationCatalog(router,
@@ -100,10 +117,8 @@ waits on it.
 
 ### 2. The ERP API and MCP read the registry
 - [ ] `operations.server.ts`: build `OPERATIONS` from `~/modules/router.server`
-      and `COMPANY_TABLES` from `@carbon/database/company-tables`; load
-      `tool-metadata.json` with a dynamic `import()` in a try/catch for enrichment.
-      Drop the static JSON import. `isListOperation` reads the response schema when
-      present; `shapeHttpBody` reads the result.
+      and `COMPANY_TABLES` from `@carbon/database/company-tables`. Drop the JSON
+      import. `shapeHttpBody` reads the result.
 - [ ] `router.server.ts`: `.input(fn.input)` (zod 4 is a Standard Schema), keep
       `jsonSchema()` on output with the lazy JSON schema for the spec.
 - [ ] `service-fn.server.ts`: unpack on `isPaged`, not on `meta.paginates`.
@@ -115,11 +130,18 @@ waits on it.
 
 ### 3. The codemod and the generator
 - [ ] `scripts/codemod-publish.ts` (one-off, ts-morph): for each exported
-      `defineServiceFn` const whose last TSDoc has `@mcp`, insert `publish: true |
-      "read" | "destructive"` as the first property and delete the tag line. Verify:
-      1786 edits, 0 tags left, typecheck green. Delete the script afterwards.
-- [ ] `scripts/lib/service-fn-metadata.ts`: publication and the override from the
-      `publish` literal; a leftover `@mcp` tag fails generation with a message.
+      `defineServiceFn` const whose last TSDoc has `@mcp`, insert `publish`,
+      `title` (the summary) and `description` (`@remarks` and `@returns` text) as
+      the first properties; turn each `@param name - text` into `.describe(text)`
+      on that field when the input is an inline object literal, else report it for
+      a hand edit; delete the migrated parts of the doc block, keep any remainder.
+      Verify: 1786 edits, 0 tags left, the runtime catalog's titles and
+      descriptions equal the generator's for every operation, typecheck green.
+      Delete the script afterwards.
+- [ ] `scripts/lib/service-fn-metadata.ts`: publication, the override, `title` and
+      `description` from the literals; `@param` from `.describe()` only; a leftover
+      `@mcp` tag fails generation with a message. Response schemas and lookups
+      stay reflected until Phase 2.
 - [ ] `generate-db-types.ts`: write `company-tables.ts`.
 - [ ] `package.json`: `postinstall` without `//#generate:mcp`; ERP `prebuild`.
 - [ ] Pre-commit: per decision 6.
@@ -129,12 +151,12 @@ waits on it.
 - [ ] `mcp-tool-permissions.test.ts`, `mcp-create-inputs.test.ts`,
       `company-scope.test.ts`, `manifest.test.ts`: read the runtime catalog, not the
       JSON (no artifact needed).
-- [ ] `catalog-search.test.ts`, `describe-format.test.ts`: keep the JSON (ranking
-      needs descriptions); they run where the artifact exists.
+- [ ] `catalog-search.test.ts`, `describe-format.test.ts`: read the runtime
+      catalog; descriptions are on it now.
 - [ ] `service-fn.server.test.ts`, `orpc-mechanics.test.ts`: list shaping from the
       result and the mark.
-- [ ] A new CI test: for every published operation, the generator's input schema and
-      the runtime schema agree on `properties` and `required`.
+- [ ] A new CI test: for every published operation, the generator's input schema,
+      title and description equal the runtime catalog's.
 - [ ] Rules and AGENTS: `module-files.md`, `conventions-services.md`,
       `mcp-tools-reference.md`, `packages/api/AGENTS.md`, every module AGENTS.md
       that says "tagged `@mcp`"; `.ai/lessons.md`.
