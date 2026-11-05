@@ -130,7 +130,7 @@ export function stackActivity() {
           // crbn up is gone; nothing is watching
         }
       };
-      server.middlewares.use(async (req, _res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         if (req.url?.startsWith("/api/inngest")) return next();
         touch(false);
         if (fs.existsSync(asleep)) {
@@ -144,6 +144,14 @@ export function stackActivity() {
           const deadline = Date.now() + 600_000;
           while (fs.existsSync(booting) && Date.now() < deadline) {
             await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          // Still booting: the schema may be half-built, so the request is
+          // refused in a way the caller retries, never handed to the app.
+          if (fs.existsSync(booting)) {
+            res.statusCode = 503;
+            res.setHeader("Retry-After", "5");
+            res.end("The database is still starting. Retry shortly.");
+            return;
           }
         }
         next();
