@@ -159,29 +159,6 @@ async function setPortal(values: { expiresAt: string | null }) {
     .execute();
 }
 
-async function setCustomerStatus(name: string | null) {
-  await seed(f, async (trx) => {
-    let customerStatusId: string | null = null;
-    if (name) {
-      const row = await trx
-        .insertInto("customerStatus")
-        .values({ name, companyId: f.companyId, createdBy: USER })
-        .onConflict((oc) =>
-          oc.columns(["name", "companyId"]).doUpdateSet({ name })
-        )
-        .returning("id")
-        .executeTakeFirstOrThrow();
-      customerStatusId = row.id;
-    }
-    await trx
-      .updateTable("customer")
-      .set({ customerStatusId })
-      .where("id", "=", f.customerId)
-      .where("companyId", "=", f.companyId)
-      .execute();
-  });
-}
-
 describe("getJobOperationFileRecord", () => {
   postgrestTest(
     "finds a file recorded on a File step of the operation",
@@ -266,10 +243,9 @@ describe("getExternalSalesOrderLines", () => {
 
 describe("getActiveCustomerPortal", () => {
   postgrestTest(
-    "serves an open portal of a customer with no status",
+    "serves an open portal",
     async (client) => {
       await setPortal({ expiresAt: null });
-      await setCustomerStatus(null);
       const result = await getActiveCustomerPortal(client, portalId);
       expect(result.refusal).toBeUndefined();
       expect(result.data?.customerId).toBe(f.customerId);
@@ -277,7 +253,6 @@ describe("getActiveCustomerPortal", () => {
   );
 
   postgrestTest("refuses a portal whose expiry has passed", async (client) => {
-    await setCustomerStatus(null);
     await setPortal({ expiresAt: "2020-01-01T00:00:00Z" });
     try {
       expect((await getActiveCustomerPortal(client, portalId)).refusal).toBe(
@@ -285,18 +260,6 @@ describe("getActiveCustomerPortal", () => {
       );
     } finally {
       await setPortal({ expiresAt: null });
-    }
-  });
-
-  postgrestTest("refuses a portal whose customer is on hold", async (client) => {
-    await setPortal({ expiresAt: null });
-    await setCustomerStatus("On Hold");
-    try {
-      expect((await getActiveCustomerPortal(client, portalId)).refusal).toBe(
-        "customerStatus"
-      );
-    } finally {
-      await setCustomerStatus(null);
     }
   });
 

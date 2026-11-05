@@ -141,12 +141,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     ])
   );
 
-  // The customer's status is the company's own note; the portal does not show it.
-  const { customerStatus: _status, ...portalCustomer } =
-    customer.data.customer ?? {};
-
   return {
-    customer: { ...customer.data, customer: portalCustomer },
+    customer: customer.data,
     company: company.data,
     salesOrderLines: salesOrderLines.data ?? [],
     isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,

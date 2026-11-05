@@ -29,9 +29,9 @@ appears only for recorded photos and PDFs, never a `.step` or other CAD file.
 GET `/share/customer/<portalId>/<recorded png path>` → 200 `image/png`.
 Recorded `.step` → 404. A file in the operation folder with no step record → 404.
 ### 4. Gates
-Customer status On Hold → page 404 and file 404; Active → 200.
-`externalLink.expiresAt` in the past → 404; tomorrow or null → 200.
-The ERP log shows `Customer portal refused: customerStatus` / `expired`, and
+`externalLink.expiresAt` in the past → page and file 404; tomorrow or null → 200.
+The customer's status does not gate the portal.
+The ERP log shows `Customer portal refused: expired`, and
 `refused a file type it does not serve` / `refused a file no step recorded`.
 
 ### 5. Portal form (signed in, Sales → Portals)

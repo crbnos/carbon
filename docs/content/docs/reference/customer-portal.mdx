@@ -18,7 +18,7 @@ A portal is scoped to a single customer record: it lists that customer's orders 
 
 ## Turning a portal off
 
-A portal stops working on its **Expires On** date, or when its customer's status is **Inactive**, **On Hold**, **Restricted** or **Cancelled**. The link returns "Not found" until the status changes or the date is moved. A customer with no status, or any other status, keeps the portal. Delete the portal to end access for good.
+A portal stops working on its **Expires On** date: the link returns "Not found" until the date is moved or cleared. The customer's status does not turn a portal off. Delete the portal to end access for good.
 
 ## Related
 
@@ -35,7 +35,7 @@ A portal stops working on its **Expires On** date, or when its customer's status
 The customer portal is gated behind the `CUSTOMER_PORTALS` plan feature (Business plan). A company without it gets a 404 on the portal URL and on file downloads. Upgrade the plan to enable the portal.
 
 ### Why does a portal show "Not found" for a customer on the Business plan?
-Either the portal's Expires On date has passed, or the customer's status is Inactive, On Hold, Restricted or Cancelled (matched by name, ignoring case). Edit the portal to move or clear the date, change the status, or delete the portal if access should end.
+The portal's Expires On date has passed. Edit the portal to move or clear the date, or delete the portal if access should end.
 
 ### Why is a file attached to a job step missing from the portal?
 The portal serves only photos (JPG, PNG, GIF, WebP, AVIF, HEIC) and PDFs recorded on a File step. CAD models, drawings, SVGs and videos are left out, because a portal link has no sign-in and those files can be export-controlled.

@@ -12,7 +12,6 @@ import {
   customerPortalExpiryDate,
   customerPortalExpiryRefused,
   customerPortalRefusal,
-  customerPortalRefusesStatus,
   customerPortalServesFile,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
@@ -866,22 +865,6 @@ describe("customerPortalServesFile", () => {
   });
 });
 
-describe("customerPortalRefusesStatus", () => {
-  it.each([
-    [null, false],
-    ["Active", false],
-    ["Lead", false],
-    ["Preferred", false],
-    ["Inactive", true],
-    ["On Hold", true],
-    ["on hold", true],
-    [" Restricted ", true],
-    ["Cancelled", true]
-  ])("%s → %s", (status, expected) => {
-    expect(customerPortalRefusesStatus(status)).toBe(expected);
-  });
-});
-
 describe("customer portal expiry", () => {
   it("expires at the start of the chosen day in the company's timezone", () => {
     expect(customerPortalExpiresAt("2026-12-01", "America/New_York")).toBe(
@@ -922,9 +905,9 @@ describe("customerPortalRefusal", () => {
   const now = "2026-11-30T12:00:00.000Z";
   const base = (
     overrides: Partial<Parameters<typeof customerPortalRefusal>[0]> = {}
-  ) => ({ expiresAt: null, customerStatusName: "Active", ...overrides });
+  ) => ({ expiresAt: null, ...overrides });
 
-  it("lets an open portal of an active customer through", () => {
+  it("lets an open portal through", () => {
     expect(customerPortalRefusal(base(), now)).toBeNull();
   });
 
@@ -935,12 +918,6 @@ describe("customerPortalRefusal", () => {
         now
       )
     ).toBe("expired");
-  });
-
-  it("refuses a portal whose customer is on hold", () => {
-    expect(
-      customerPortalRefusal(base({ customerStatusName: "On Hold" }), now)
-    ).toBe("customerStatus");
   });
 });
 

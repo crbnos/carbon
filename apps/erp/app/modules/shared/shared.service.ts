@@ -554,15 +554,13 @@ export async function getCustomerPortal(
 ): Promise<
   PostgrestSingleResponse<
     Tables<"externalLink"> & {
-      customer: Pick<Tables<"customer">, "id" | "name"> & {
-        customerStatus: Pick<Tables<"customerStatus">, "name"> | null;
-      };
+      customer: Pick<Tables<"customer">, "id" | "name">;
     }
   >
 > {
   let query = client
     .from("externalLink")
-    .select("*, customer(id, name, customerStatus(name))")
+    .select("*, customer(id, name)")
     .eq("id", id)
     .eq("documentType", "Customer");
   if (companyId) query = query.eq("companyId", companyId);
@@ -587,8 +585,8 @@ export type ActiveCustomerPortal =
 
 /**
  * The customer portal a signed-out share route may serve, or why not. Every
- * share route loads its portal through this, so the plan, expiry and customer
- * status checks cannot be skipped by a new route.
+ * share route loads its portal through this, so the plan and expiry checks
+ * cannot be skipped by a new route.
  */
 export async function getActiveCustomerPortal(
   client: SupabaseClient<Database>,
@@ -617,10 +615,7 @@ export async function getActiveCustomerPortal(
   }
 
   const refusal = customerPortalRefusal(
-    {
-      expiresAt: portal.data.expiresAt,
-      customerStatusName: portal.data.customer?.customerStatus?.name ?? null
-    },
+    { expiresAt: portal.data.expiresAt },
     datetime.timestamp()
   );
   if (refusal) {

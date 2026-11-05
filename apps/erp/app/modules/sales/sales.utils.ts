@@ -1029,20 +1029,6 @@ export function customerPortalServesFile(path: string) {
   return CUSTOMER_PORTAL_FILE_TYPES.has(getFileExtension(fileName));
 }
 
-// Customer statuses are names each company sets. A customer in one of these
-// loses its portal; no status, or any other name, keeps it.
-const CUSTOMER_PORTAL_REFUSED_STATUSES = new Set([
-  "inactive",
-  "on hold",
-  "restricted",
-  "cancelled"
-]);
-
-export function customerPortalRefusesStatus(statusName: string | null) {
-  if (!statusName) return false;
-  return CUSTOMER_PORTAL_REFUSED_STATUSES.has(statusName.trim().toLowerCase());
-}
-
 // Sales orders the portal never lists: not yet confirmed, or called off.
 export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
   "Draft",
@@ -1080,18 +1066,15 @@ export function customerPortalExpired(
   );
 }
 
-export type CustomerPortalRefusal = "expired" | "customerStatus";
+export type CustomerPortalRefusal = "expired";
 
 // Why an open portal link must not be served, or null when it may be. Every
 // share route answers through this, so a new route cannot skip a check.
 export function customerPortalRefusal(
-  portal: { expiresAt: string | null; customerStatusName: string | null },
+  portal: { expiresAt: string | null },
   nowInstant: string
 ): CustomerPortalRefusal | null {
   if (customerPortalExpired(portal.expiresAt, nowInstant)) return "expired";
-  if (customerPortalRefusesStatus(portal.customerStatusName)) {
-    return "customerStatus";
-  }
   return null;
 }
 
