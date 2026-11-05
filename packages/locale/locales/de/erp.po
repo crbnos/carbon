@@ -2947,6 +2947,9 @@ msgstr "Aus Lieferung hinzufügen"
 msgid "Add Funding"
 msgstr "Finanzierung hinzufügen"
 
+msgid "Add gauge"
+msgstr "Prüfmittel hinzufügen"
+
 msgid "Add Group"
 msgstr "Gruppe hinzufügen"
 
@@ -25287,9 +25290,6 @@ msgstr "Ereignistypen auswählen"
 
 msgid "Select field"
 msgstr "Feld auswählen"
-
-msgid "Select gauge"
-msgstr "Prüfmittel auswählen"
 
 msgid "Select Gauge"
 msgstr "Prüfmittel wählen"

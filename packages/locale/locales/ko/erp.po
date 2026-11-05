@@ -2947,6 +2947,9 @@ msgstr "출하에서 추가"
 msgid "Add Funding"
 msgstr "자금 추가"
 
+msgid "Add gauge"
+msgstr "게이지 추가"
+
 msgid "Add Group"
 msgstr "그룹 추가"
 
@@ -25287,9 +25290,6 @@ msgstr "이벤트 유형 선택"
 
 msgid "Select field"
 msgstr "필드 선택"
-
-msgid "Select gauge"
-msgstr "계측기 선택"
 
 msgid "Select Gauge"
 msgstr "계측기 선택"

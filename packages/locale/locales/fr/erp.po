@@ -2947,6 +2947,9 @@ msgstr "Ajouter depuis l'expédition"
 msgid "Add Funding"
 msgstr "Ajouter un financement"
 
+msgid "Add gauge"
+msgstr "Ajouter un instrument"
+
 msgid "Add Group"
 msgstr "Ajouter un groupe"
 
@@ -25287,9 +25290,6 @@ msgstr "Sélectionner les types d'événement"
 
 msgid "Select field"
 msgstr "Sélectionner un champ"
-
-msgid "Select gauge"
-msgstr "Sélectionner un instrument de mesure"
 
 msgid "Select Gauge"
 msgstr "Sélectionner un instrument de mesure"

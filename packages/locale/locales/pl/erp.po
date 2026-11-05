@@ -2947,6 +2947,9 @@ msgstr "Dodaj z wysyłki"
 msgid "Add Funding"
 msgstr "Dodaj Finansowanie"
 
+msgid "Add gauge"
+msgstr "Dodaj przyrząd"
+
 msgid "Add Group"
 msgstr "Dodaj grupę"
 
@@ -25287,9 +25290,6 @@ msgstr "Wybierz typy zdarzeń"
 
 msgid "Select field"
 msgstr "Wybierz pole"
-
-msgid "Select gauge"
-msgstr "Wybierz przyrząd pomiarowy"
 
 msgid "Select Gauge"
 msgstr "Wybierz przyrząd pomiarowy"

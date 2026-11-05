@@ -2947,6 +2947,9 @@ msgstr "Sevkiyattan ekle"
 msgid "Add Funding"
 msgstr "Finansman Ekle"
 
+msgid "Add gauge"
+msgstr "Ölçü aleti ekle"
+
 msgid "Add Group"
 msgstr "Grup Ekle"
 
@@ -25287,9 +25290,6 @@ msgstr "Olay türlerini seçin"
 
 msgid "Select field"
 msgstr "Alan seçin"
-
-msgid "Select gauge"
-msgstr "Ölçüm aleti seçin"
 
 msgid "Select Gauge"
 msgstr "Ölçüm Aleti Seç"

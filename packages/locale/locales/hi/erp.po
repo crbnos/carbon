@@ -2947,6 +2947,9 @@ msgstr "शिपमेंट से जोड़ें"
 msgid "Add Funding"
 msgstr "वित्त पोषण जोड़ें"
 
+msgid "Add gauge"
+msgstr "गेज जोड़ें"
+
 msgid "Add Group"
 msgstr "समूह जोड़ें"
 
@@ -25287,9 +25290,6 @@ msgstr "ईवेंट प्रकार चुनें"
 
 msgid "Select field"
 msgstr "फ़ील्ड चुनें"
-
-msgid "Select gauge"
-msgstr "गेज चुनें"
 
 msgid "Select Gauge"
 msgstr "गेज चुनें"

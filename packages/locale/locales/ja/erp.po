@@ -2947,6 +2947,9 @@ msgstr "出荷から追加"
 msgid "Add Funding"
 msgstr "資金を追加"
 
+msgid "Add gauge"
+msgstr "ゲージを追加"
+
 msgid "Add Group"
 msgstr "グループを追加"
 
@@ -25287,9 +25290,6 @@ msgstr "イベントタイプを選択"
 
 msgid "Select field"
 msgstr "フィールドを選択"
-
-msgid "Select gauge"
-msgstr "測定器を選択"
 
 msgid "Select Gauge"
 msgstr "測定器を選択"

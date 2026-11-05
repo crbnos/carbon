@@ -2947,6 +2947,9 @@ msgstr "Добавить из отгрузки"
 msgid "Add Funding"
 msgstr "Добавить финансирование"
 
+msgid "Add gauge"
+msgstr "Добавить средство измерения"
+
 msgid "Add Group"
 msgstr "Добавить группу"
 
@@ -25287,9 +25290,6 @@ msgstr "Выберите типы событий"
 
 msgid "Select field"
 msgstr "Выберите поле"
-
-msgid "Select gauge"
-msgstr "Выберите средство измерения"
 
 msgid "Select Gauge"
 msgstr "Выбрать средство измерения"

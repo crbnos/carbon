@@ -2947,6 +2947,9 @@ msgstr "从发货中添加"
 msgid "Add Funding"
 msgstr "添加资金"
 
+msgid "Add gauge"
+msgstr "添加量具"
+
 msgid "Add Group"
 msgstr "添加组"
 
@@ -25287,9 +25290,6 @@ msgstr "选择事件类型"
 
 msgid "Select field"
 msgstr "选择字段"
-
-msgid "Select gauge"
-msgstr "选择量具"
 
 msgid "Select Gauge"
 msgstr "选择量具"

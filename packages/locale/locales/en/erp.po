@@ -2947,6 +2947,9 @@ msgstr "Add from shipment"
 msgid "Add Funding"
 msgstr "Add Funding"
 
+msgid "Add gauge"
+msgstr "Add gauge"
+
 msgid "Add Group"
 msgstr "Add Group"
 
@@ -25287,9 +25290,6 @@ msgstr "Select event types"
 
 msgid "Select field"
 msgstr "Select field"
-
-msgid "Select gauge"
-msgstr "Select gauge"
 
 msgid "Select Gauge"
 msgstr "Select Gauge"

@@ -1228,8 +1228,9 @@ const InspectionMeasurementGrid = ({
   );
 
   const renderGauge = useCallback(
-    (characteristic: Characteristic) => (
+    (characteristic: Characteristic, variant: "cell" | "chip" = "cell") => (
       <InspectionGaugePicker
+        variant={variant}
         gauges={gauges}
         characteristicLabel={characteristic.label}
         recentGaugeIds={recentGauges}
@@ -1297,21 +1298,16 @@ const InspectionMeasurementGrid = ({
               className="flex w-full min-w-[180px] flex-col gap-1.5 whitespace-normal py-1 font-normal"
             >
               {renderCharacteristic(characteristic, characteristicIndex)}
-              <div className="flex items-center gap-2">
+              {/* Progress and gauge share one row: the gauge is a compact
+                  chip, not a full-width field on a row of its own. */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                 {renderProgress(characteristic)}
+                {hasFeatures && (
+                  <div data-gauge-picker className="min-w-0 max-w-full">
+                    {renderGauge(characteristic, "chip")}
+                  </div>
+                )}
               </div>
-              {hasFeatures &&
-              (!isReadOnly || gaugeFor(characteristic.featureId)) ? (
-                <div
-                  data-gauge-picker
-                  className={cn(
-                    "h-8 w-full max-w-72 overflow-hidden rounded-md",
-                    !isReadOnly && "border border-border"
-                  )}
-                >
-                  {renderGauge(characteristic)}
-                </div>
-              ) : null}
             </div>
           ),
           meta: { headerClassName: "w-full" },
@@ -1395,9 +1391,7 @@ const InspectionMeasurementGrid = ({
     renderProgress,
     renderGauge,
     renderCharacteristic,
-    t,
-    isReadOnly,
-    gaugeFor
+    t
   ]);
 
   // Numeric cells edit through the shared Editable machinery, coloured live
@@ -1598,7 +1592,9 @@ const InspectionMeasurementGrid = ({
         const featureId = rows[rowIndex]?.rowKey;
         if (featureId && hasFeatures) onActiveFeatureChange(featureId);
       }}
-      className="flex h-full min-h-0 w-full flex-col"
+      // Header cells align to the top, so characteristic headers of
+      // different heights (a wrapped gauge chip) still line up.
+      className="flex h-full min-h-0 w-full flex-col [&_thead_th]:align-top"
     >
       <Table<GridRow>
         // Pinning and the editor are per layout: remount on a switch.
