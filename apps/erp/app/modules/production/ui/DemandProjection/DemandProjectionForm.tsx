@@ -17,11 +17,12 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useUiScale,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
-import { formatDate } from "@carbon/utils";
+import { formatDate, TEXT_SIZES } from "@carbon/utils";
 import {
   getLocalTimeZone,
   parseDate,
@@ -83,27 +84,35 @@ const COMPACT_TICK_OPTIONS: Intl.NumberFormatOptions = {
 
 // Recharts 2 has no width="auto", and a compact label's width depends on the
 // locale ("6K", "6000", "100.000", "10 लाख"), so each Y axis is sized from its
-// widest likely tick. The top tick can round up past the data's max, and a
-// middle one can carry a decimal ("4.5K"), so a few values around the max are
-// measured. Canvas measures the real font; the estimate covers SSR.
-const AXIS_TICK_FONT_PX = 12;
+// widest likely tick. Recharts' ticks are round values between 0 and about
+// 1.5x the max, and a compact label's width depends on its tier and digit
+// count, so every eighth of the max up to 1.5x is measured: that reaches each
+// tier a tick can land in ("400 mil" next to "1,6 M"). Ticks are text-xs
+// (0.75rem), so the font follows the text size setting. Canvas measures the
+// real font; the estimate covers SSR.
+const AXIS_TICK_SAMPLES = Array.from({ length: 12 }, (_, i) => (i + 1) / 8);
+const AXIS_TICK_REM = 0.75;
 const AXIS_TICK_GAP_PX = 12;
 const AXIS_MIN_WIDTH_PX = 32;
 let tickMeasureContext: CanvasRenderingContext2D | null | undefined;
 
-function measureTickLabel(label: string) {
-  if (typeof document === "undefined") return label.length * 7;
+function measureTickLabel(label: string, fontPx: number) {
+  if (typeof document === "undefined") return label.length * fontPx * 0.6;
   if (tickMeasureContext === undefined) {
     tickMeasureContext = document.createElement("canvas").getContext("2d");
   }
-  if (!tickMeasureContext) return label.length * 7;
-  tickMeasureContext.font = `${AXIS_TICK_FONT_PX}px ${getComputedStyle(document.body).fontFamily}`;
+  if (!tickMeasureContext) return label.length * fontPx * 0.6;
+  tickMeasureContext.font = `${fontPx}px ${getComputedStyle(document.body).fontFamily}`;
   return tickMeasureContext.measureText(label).width;
 }
 
-function yAxisWidth(max: number, format: (value: number) => string) {
-  const widest = [max, max * 0.75, max * 1.25, max * 1.5].reduce(
-    (width, value) => Math.max(width, measureTickLabel(format(value))),
+function yAxisWidth(
+  max: number,
+  format: (value: number) => string,
+  fontPx: number
+) {
+  const widest = AXIS_TICK_SAMPLES.reduce(
+    (width, k) => Math.max(width, measureTickLabel(format(max * k), fontPx)),
     0
   );
   return Math.max(AXIS_MIN_WIDTH_PX, widest + AXIS_TICK_GAP_PX);
@@ -386,15 +395,17 @@ const DemandChart = memo(function DemandChart({
 }: DemandChartProps) {
   const tickFormatter = useNumberFormatter(COMPACT_TICK_OPTIONS);
   const formatTick = (value: number) => tickFormatter.format(value);
+  const { textSize } = useUiScale();
   const { demandAxisWidth, cumulativeAxisWidth } = useMemo(() => {
     const format = (value: number) => tickFormatter.format(value);
+    const fontPx = TEXT_SIZES[textSize] * AXIS_TICK_REM;
     const maxDemand = chartData.reduce((m, d) => Math.max(m, d.demand), 0);
     const maxCumulative = chartData.at(-1)?.cumulative ?? 0;
     return {
-      demandAxisWidth: yAxisWidth(maxDemand, format),
-      cumulativeAxisWidth: yAxisWidth(maxCumulative, format)
+      demandAxisWidth: yAxisWidth(maxDemand, format, fontPx),
+      cumulativeAxisWidth: yAxisWidth(maxCumulative, format, fontPx)
     };
-  }, [chartData, tickFormatter]);
+  }, [chartData, tickFormatter, textSize]);
   return (
     <ChartContainer config={chartConfig} className="w-full h-[180px]">
       <ComposedChart
