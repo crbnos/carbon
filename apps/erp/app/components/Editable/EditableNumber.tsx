@@ -10,17 +10,33 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 
+// The numbering systems the NumberField reads besides Latin digits (React
+// Aria's NumberParser): Arabic-Indic, with its own decimal and group marks,
+// and Chinese decimal digits.
+const ARAB_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+const HANIDEC_DIGITS = "〇一二三四五六七八九";
+const ARAB_DECIMAL = "٫";
+const ARAB_GROUP = "٬";
+
 // The number in text being typed, read with the locale's own group and decimal
 // marks (as the NumberField reads it on commit). Null until it is a number.
 function parseLocaleNumber(text: string, locale: string): number | null {
   const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
   const group = parts.find((part) => part.type === "group")?.value ?? ",";
   const decimal = parts.find((part) => part.type === "decimal")?.value ?? ".";
-  const normalized = text
+  const latin = text
     .replace(/[\s\u00a0\u202f]/g, "")
-    .split(group.trim() || group)
-    .join("")
-    .replace(decimal, ".");
+    .replace(/[٠-٩]/g, (digit) => String(ARAB_DIGITS.indexOf(digit)))
+    .replace(/[〇一二三四五六七八九]/g, (digit) =>
+      String(HANIDEC_DIGITS.indexOf(digit))
+    );
+  const normalized =
+    latin.includes(ARAB_DECIMAL) || latin.includes(ARAB_GROUP)
+      ? latin.split(ARAB_GROUP).join("").replace(ARAB_DECIMAL, ".")
+      : latin
+          .split(group.trim() || group)
+          .join("")
+          .replace(decimal, ".");
   if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(normalized)) return null;
   const value = Number(normalized);
   return Number.isFinite(value) ? value : null;

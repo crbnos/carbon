@@ -767,6 +767,7 @@ export function InspectionView({
               operationId={operationId}
               count={completablePassed}
               eventIds={eventIds}
+              gridBusy={gridBusy}
             />
           ) : null}
           <button
@@ -1055,6 +1056,7 @@ export function InspectionView({
                 operationId={operationId}
                 count={completablePassed}
                 eventIds={eventIds}
+                gridBusy={gridBusy}
                 variant="bar"
               />
             </div>
@@ -1333,16 +1335,19 @@ function CompletePassedButton({
   operationId,
   count,
   eventIds,
+  gridBusy,
   variant = "header"
 }: {
   inspectionId: string;
   operationId: string;
   count: number;
   eventIds: ProductionEventIdFields;
+  // A reading still saving could turn a passed unit into a failed one.
+  gridBusy: boolean;
   variant?: "header" | "bar";
 }) {
   const fetcher = useFetcher();
-  const busy = fetcher.state !== "idle";
+  const busy = fetcher.state !== "idle" || gridBusy;
 
   if (variant === "bar") {
     return (

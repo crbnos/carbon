@@ -831,12 +831,13 @@ const InspectionMeasurementGrid = ({
       const statuses = Array.from({ length: columnCount }, (_, sampleIndex) =>
         cellStatus(sampleIndex, characteristic.featureId)
       );
+      // A freed serial position takes no result.
       const targets = passAllTargets({
         statuses,
         sampleSize: characteristic.sampleSize,
         existingSamples: knownSampleCount,
         columnCount
-      });
+      }).filter((sampleIndex) => !isSerial || sampleIdRef.current[sampleIndex]);
       runBulk(
         targets.map((sampleIndex) => ({
           characteristic,
@@ -847,7 +848,15 @@ const InspectionMeasurementGrid = ({
         { onlyIfPending: true }
       );
     },
-    [characteristics, columnCount, cellStatus, knownSampleCount, runBulk]
+    [
+      characteristics,
+      columnCount,
+      cellStatus,
+      knownSampleCount,
+      runBulk,
+      isSerial,
+      sampleIdRef
+    ]
   );
 
   const onPasteCapture = useCallback(
@@ -874,7 +883,9 @@ const InspectionMeasurementGrid = ({
         layout,
         origin: { characteristicIndex, sampleIndex },
         characteristicCount: characteristics.length,
-        sampleLimit: isSerial ? samples.length : lotSize
+        // Serial positions keep their place when a sample is deleted, so the
+        // shown range can be wider than the sample count.
+        sampleLimit: isSerial ? columnCount : lotSize
       });
       let skipped = plan.outOfRange;
       const cells: {
@@ -883,6 +894,10 @@ const InspectionMeasurementGrid = ({
         payload: CellPayload;
       }[] = [];
       for (const planned of plan.cells) {
+        if (isSerial && !sampleIdRef.current[planned.sampleIndex]) {
+          skipped += 1;
+          continue;
+        }
         const characteristic = characteristics[planned.characteristicIndex]!;
         if (characteristic.isNumeric) {
           const value = parseMeasurementToken(planned.token);
@@ -913,9 +928,10 @@ const InspectionMeasurementGrid = ({
       characteristics,
       layout,
       isSerial,
-      samples.length,
+      columnCount,
       lotSize,
-      runBulk
+      runBulk,
+      sampleIdRef
     ]
   );
 

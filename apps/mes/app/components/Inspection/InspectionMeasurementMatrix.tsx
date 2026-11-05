@@ -786,12 +786,13 @@ const InspectionMeasurementMatrix = ({
       const statuses = Array.from({ length: columnCount }, (_, sampleIndex) =>
         cellStatus(sampleIndex, characteristic.featureId)
       );
+      // A freed serial position takes no result.
       const targets = passAllTargets({
         statuses,
         sampleSize: characteristic.sampleSize,
         existingSamples: knownSampleCount,
         columnCount
-      });
+      }).filter((sampleIndex) => !isSerial || sampleIdRef.current[sampleIndex]);
       runBulk(
         targets.map((sampleIndex) => ({
           characteristic,
@@ -802,7 +803,7 @@ const InspectionMeasurementMatrix = ({
         { onlyIfPending: true }
       );
     },
-    [columnCount, cellStatus, knownSampleCount, runBulk]
+    [columnCount, cellStatus, knownSampleCount, runBulk, isSerial, sampleIdRef]
   );
 
   const onPasteCapture = useCallback(
@@ -827,7 +828,9 @@ const InspectionMeasurementMatrix = ({
         layout,
         origin: { characteristicIndex, sampleIndex },
         characteristicCount: characteristics.length,
-        sampleLimit: isSerial ? samples.length : lotSize
+        // Serial positions keep their place when a sample is deleted, so the
+        // shown range can be wider than the sample count.
+        sampleLimit: isSerial ? columnCount : lotSize
       });
       let skipped = plan.outOfRange;
       const cells: {
@@ -836,6 +839,10 @@ const InspectionMeasurementMatrix = ({
         payload: CellPayload;
       }[] = [];
       for (const planned of plan.cells) {
+        if (isSerial && !sampleIdRef.current[planned.sampleIndex]) {
+          skipped += 1;
+          continue;
+        }
         const characteristic = characteristics[planned.characteristicIndex]!;
         if (characteristic.isNumeric) {
           const value = parseMeasurementToken(planned.token);
@@ -867,9 +874,10 @@ const InspectionMeasurementMatrix = ({
       characteristics,
       layout,
       isSerial,
-      samples.length,
+      columnCount,
       lotSize,
-      runBulk
+      runBulk,
+      sampleIdRef
     ]
   );
 
