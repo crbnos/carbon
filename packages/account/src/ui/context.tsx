@@ -7,16 +7,6 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import type { AccountSettingsUser } from "../types";
 
-/** The host app's root action, which stores appearance choices as cookies. */
-const ROOT_ACTION = "/";
-
-/** Only the root loader reads these cookies; it opts back in (`isRootActionPost`). */
-export const SAVE_OPTIONS = {
-  method: "post",
-  action: ROOT_ACTION,
-  defaultShouldRevalidate: false
-} as const;
-
 export type AccountSettingsConfig = {
   /**
    * Where the ERP's API routes are reached from this app: `/api` in the ERP,

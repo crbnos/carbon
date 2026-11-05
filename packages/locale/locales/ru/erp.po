@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Если оставить пусто, используется смета по окончании контрактных проектов"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "Плавно переводить фон в цвет выбранных элементов."
 
 msgid "Blind"
 msgstr "Слепой"

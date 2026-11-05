@@ -15,6 +15,7 @@ import type { Density, TextSize } from "@carbon/utils";
 import {
   densityValidator,
   modeValidator,
+  ROOT_ACTION_SAVE,
   textSizeValidator
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -32,7 +33,7 @@ import {
   AccountSettingsPane,
   AccountSettingsSection
 } from "./AccountSettingsLayout";
-import { SAVE_OPTIONS, useAccountSettingsConfig } from "./context";
+import { useAccountSettingsConfig } from "./context";
 import { ThemeSettings } from "./ThemeSettings";
 
 const SEGMENTED_GROUP =
@@ -59,7 +60,7 @@ export default function AppearanceSettings() {
     if (!parsed.success || parsed.data === modePreference) return;
     const nextMode = parsed.data === "system" ? getSystemMode() : parsed.data;
     const persist = () =>
-      modeFetcher.submit({ mode: parsed.data }, SAVE_OPTIONS);
+      modeFetcher.submit({ mode: parsed.data }, ROOT_ACTION_SAVE);
 
     if (nextMode === mode) {
       persist();
@@ -75,7 +76,7 @@ export default function AppearanceSettings() {
   const onTextSizeChange = (value: string) => {
     const parsed = textSizeValidator.shape.textSize.safeParse(value);
     if (!parsed.success || parsed.data === textSize) return;
-    textSizeFetcher.submit({ textSize: parsed.data }, SAVE_OPTIONS);
+    textSizeFetcher.submit({ textSize: parsed.data }, ROOT_ACTION_SAVE);
   };
 
   const textSizeOptions: { value: TextSize; label: string; sample: number }[] =
@@ -90,7 +91,7 @@ export default function AppearanceSettings() {
   const onDensityChange = (value: string) => {
     const parsed = densityValidator.shape.density.safeParse(value);
     if (!parsed.success || parsed.data === density) return;
-    densityFetcher.submit({ density: parsed.data }, SAVE_OPTIONS);
+    densityFetcher.submit({ density: parsed.data }, ROOT_ACTION_SAVE);
   };
 
   const densityOptions: { value: Density; label: string; icon: ReactNode }[] = [

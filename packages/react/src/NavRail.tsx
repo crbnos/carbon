@@ -27,7 +27,7 @@ import { Link, useLocation } from "react-router";
 import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
-import { useThemeStyle } from "./hooks/useThemeStyle";
+import { useShellThemeStyle } from "./hooks/useThemeStyle";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
@@ -105,7 +105,7 @@ export function NavRail({
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
   // Desktop rail only: the mobile drawer keeps the normal colors.
-  const themeStyle = useThemeStyle();
+  const themeStyle = useShellThemeStyle();
   const railMode = useMode();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -525,7 +525,7 @@ export const NavRailSwitcher = forwardRef<
     // have no frame.
     const mode = useMode();
     const { isPhone } = useViewport();
-    const frameTone = useThemeStyle()?.tone;
+    const frameTone = useShellThemeStyle()?.tone;
     const tone = isPhone ? mode : (frameTone ?? mode);
     const logo = tone === "dark" ? logoDark : logoLight;
     // Its menu is a portal: without the hold, the rail collapses under it.
@@ -623,7 +623,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Vide utilise l'estimation à l'achèvement des projets du contrat"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "Fondre l'arrière-plan dans la couleur des éléments sélectionnés."
 
 msgid "Blind"
 msgstr "Aveugle"

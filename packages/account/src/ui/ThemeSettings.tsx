@@ -20,9 +20,11 @@ import {
 } from "@carbon/react";
 import type { Theme, ThemeColors } from "@carbon/utils";
 import {
+  createTrailingCall,
   normalizeHex,
   pickableThemes,
   presetThemes,
+  ROOT_ACTION_SAVE,
   randomThemeColors,
   serializeThemeColors,
   textColorOn,
@@ -33,11 +35,10 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { LuCheck, LuShuffle } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { AccountSettingsSection } from "./AccountSettingsLayout";
-import { SAVE_OPTIONS } from "./context";
 
 // A custom theme's name is its colors, so the grid and the tab need a fixed value.
 const CUSTOM = "custom";
@@ -48,8 +49,10 @@ const CUSTOM_START = presetThemes.find(
 
 const SAVE_DELAY_MS = 400;
 
-const gradientThemes = presetThemes.filter((theme) => theme.colors.gradient);
-const solidThemes = presetThemes.filter((theme) => !theme.colors.gradient);
+const PRESET_GROUPS = [
+  { gradient: true, themes: presetThemes.filter((t) => t.colors.gradient) },
+  { gradient: false, themes: presetThemes.filter((t) => !t.colors.gradient) }
+];
 
 const CARD = cn(
   "h-10 justify-start gap-2.5 rounded-lg border border-border bg-transparent px-3 text-foreground",
@@ -77,49 +80,45 @@ export function ThemeSettings({
   const colorThemes = pickableThemes();
   const previewAccent = useThemePreview(fetcher.state === "idle");
 
-  // A drag previews every move but saves once the pointer rests.
-  const unsaved = useRef<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
-
-  const submit = (name: string) =>
-    fetcherRef.current.submit({ theme: name }, SAVE_OPTIONS);
+  const { submit } = fetcher;
 
   const save = (name: string) => {
-    clearTimeout(timer.current);
-    timer.current = undefined;
-    unsaved.current = null;
+    drag.take();
     // Preview the accent on <body> until the save lands, minus the variables
     // the page tint sets from the pending pick.
     const next = themeByName(name);
-    const variables: Record<string, string> =
-      mode === "dark" ? next.cssVars.dark : next.cssVars.light;
+    const variables: Record<string, string> = next.cssVars[mode];
     const tinted = next.colors ? themeStyle(next.colors).content[mode] : {};
     previewAccent(
       Object.fromEntries(
         Object.entries(variables).filter(([key]) => !tinted[`--${key}`])
       )
     );
-    submit(name);
+    submit({ theme: name }, ROOT_ACTION_SAVE);
   };
+
+  // A drag previews every move but saves once the pointer rests.
+  const saveLatest = useRef(save);
+  saveLatest.current = save;
+  const [drag] = useState(() =>
+    createTrailingCall<string>(SAVE_DELAY_MS, (name) =>
+      saveLatest.current(name)
+    )
+  );
 
   const submitted = fetcher.formData;
   useEffect(() => {
-    if (submitted && !unsaved.current) setThemePreview(undefined);
-  }, [submitted]);
+    if (submitted && !drag.isPending()) setThemePreview(undefined);
+  }, [submitted, drag]);
 
   // Closing the pane mid-drag still saves the last color.
   useEffect(
     () => () => {
-      clearTimeout(timer.current);
-      if (unsaved.current) {
-        fetcherRef.current.submit({ theme: unsaved.current }, SAVE_OPTIONS);
-        unsaved.current = null;
-      }
+      const unsaved = drag.take();
+      if (unsaved) submit({ theme: unsaved }, ROOT_ACTION_SAVE);
       setThemePreview(undefined);
     },
-    []
+    [drag, submit]
   );
 
   const editing = current.colors ?? CUSTOM_START;
@@ -130,12 +129,8 @@ export function ThemeSettings({
     const hex = normalizeHex(input);
     if (!hex) return;
     const next = serializeThemeColors({ ...editing, [field]: hex });
-    unsaved.current = next;
     setThemePreview(next);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      if (unsaved.current) save(unsaved.current);
-    }, SAVE_DELAY_MS);
+    drag.schedule(next);
   };
 
   const onPick = (next: string) => {
@@ -163,32 +158,26 @@ export function ThemeSettings({
           />
         ))}
       </ThemeGroup>
-      {withThemePresets && (
-        <>
-          <ThemeGroup title={<Trans>Gradient</Trans>}>
-            {gradientThemes.map((theme) => (
+      {withThemePresets &&
+        PRESET_GROUPS.map((group) => (
+          <ThemeGroup
+            key={String(group.gradient)}
+            title={
+              group.gradient ? <Trans>Gradient</Trans> : <Trans>Solid</Trans>
+            }
+          >
+            {group.themes.map((theme) => (
               <PresetThemeCard
                 key={theme.name}
                 value={theme.name}
                 label={theme.label}
                 colors={theme.colors}
+                mode={mode}
                 active={selected === theme.name}
               />
             ))}
           </ThemeGroup>
-          <ThemeGroup title={<Trans>Solid</Trans>}>
-            {solidThemes.map((theme) => (
-              <PresetThemeCard
-                key={theme.name}
-                value={theme.name}
-                label={theme.label}
-                colors={theme.colors}
-                active={selected === theme.name}
-              />
-            ))}
-          </ThemeGroup>
-        </>
-      )}
+        ))}
     </ToggleGroup>
   );
 
@@ -304,14 +293,15 @@ function PresetThemeCard({
   value,
   label,
   colors,
+  mode,
   active
 }: {
   value: string;
   label: string;
   colors: ThemeColors;
+  mode: "light" | "dark";
   active: boolean;
 }) {
-  const mode = useMode();
   return (
     <ThemeCard
       value={value}

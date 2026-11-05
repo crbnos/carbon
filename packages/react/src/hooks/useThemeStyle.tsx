@@ -9,7 +9,12 @@ import {
   themeByName,
   themeStyle
 } from "@carbon/utils";
-import { useMemo, useSyncExternalStore } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useSyncExternalStore
+} from "react";
 import { useFetchers, useLocation } from "react-router";
 import { useRouteData } from "./useRouteData";
 
@@ -63,4 +68,17 @@ export function useThemeContent(
   const style = useThemeStyle();
   const { pathname } = useLocation();
   return style && isAppPath(pathname) ? style.content[mode] : undefined;
+}
+
+const ShellThemeStyle = createContext<ThemeStyle | null>(null);
+
+/**
+ * The shell passes its `useThemeStyle()` down, so the rail and the module
+ * sidebar paint without each subscribing to every fetcher.
+ */
+export const ThemeStyleProvider = ShellThemeStyle.Provider;
+
+/** The shell's theme style, or `null` outside a `ThemeStyleProvider`. */
+export function useShellThemeStyle() {
+  return useContext(ShellThemeStyle);
 }

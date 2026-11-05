@@ -40,6 +40,7 @@ import {
   ItarEntityPendingBlock,
   ItarUserCertification,
   SidebarProvider,
+  ThemeStyleProvider,
   TooltipProvider,
   useKeyboardWedge,
   useMode,
@@ -49,9 +50,9 @@ import {
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
+  deferRootActionPost,
   Edition,
   formatDate,
-  isRootActionPost,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
@@ -64,7 +65,8 @@ import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
-  ShouldRevalidateFunction
+  ShouldRevalidateFunction,
+  ShouldRevalidateFunctionArgs
 } from "react-router";
 import { Await, data, Outlet, useLoaderData } from "react-router";
 import { RealtimeDataProvider } from "~/components";
@@ -112,38 +114,36 @@ const log = getLogger("erp", "auth");
 // link prefetching calls that too.
 let shellLoadedAt = Date.now();
 
-export const shouldRevalidate: ShouldRevalidateFunction = ({
-  currentUrl,
-  formMethod,
-  formAction,
-  defaultShouldRevalidate
-}) => {
-  // The refreshed session reaches the client through this loader.
-  if (formAction === path.to.refreshSession) return true;
-  // The root action only writes appearance cookies (a theme save).
-  if (isRootActionPost({ formAction, formMethod })) {
+export const shouldRevalidate: ShouldRevalidateFunction = deferRootActionPost(
+  ({
+    currentUrl,
+    formMethod,
+    formAction,
+    defaultShouldRevalidate
+  }: ShouldRevalidateFunctionArgs) => {
+    // The refreshed session reaches the client through this loader.
+    if (formAction === path.to.refreshSession) return true;
+
+    if (
+      currentUrl.pathname.startsWith("/x/settings") ||
+      currentUrl.pathname.startsWith("/x/users") ||
+      currentUrl.pathname.startsWith("/refresh-session") ||
+      currentUrl.pathname.startsWith("/x/acknowledge") ||
+      currentUrl.pathname.startsWith("/x/get-started") ||
+      currentUrl.pathname.startsWith("/x/shared/views")
+    ) {
+      return true;
+    }
+
+    // Only a mutation can change what the shell returns, so a GET re-runs it
+    // only once the data has aged out — that covers out-of-band changes.
+    if (!formMethod || formMethod === "GET") {
+      return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
+    }
+
     return defaultShouldRevalidate;
   }
-
-  if (
-    currentUrl.pathname.startsWith("/x/settings") ||
-    currentUrl.pathname.startsWith("/x/users") ||
-    currentUrl.pathname.startsWith("/refresh-session") ||
-    currentUrl.pathname.startsWith("/x/acknowledge") ||
-    currentUrl.pathname.startsWith("/x/get-started") ||
-    currentUrl.pathname.startsWith("/x/shared/views")
-  ) {
-    return true;
-  }
-
-  // Only a mutation can change what the shell returns, so a GET re-runs it
-  // only once the data has aged out — that covers out-of-band changes.
-  if (!formMethod || formMethod === "GET") {
-    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
-  }
-
-  return defaultShouldRevalidate;
-};
+);
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
@@ -578,49 +578,51 @@ export default function AuthenticatedRoute() {
             <RealtimeDataProvider>
               {company?.id && <RouteRealtime companyId={company.id} />}
               <TooltipProvider>
-                <SidebarProvider
-                  defaultOpen={false}
-                  className="h-screen min-h-0"
-                  style={themeStyle?.frame[mode]}
-                >
-                  <PrimaryNavigation />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
-                    {/* Phones: app bar on top; below <main>, a page's
-                        bottom bar in flow or the dock floating over it.
-                        Mounted only on phones so their hooks
-                        (notifications, sheets) never run on desktop. */}
-                    {isPhone && <MobileAppBar />}
-                    <Topbar />
-                    <AnnouncementBar
-                      announcement={announcement}
-                      userId={user?.id ?? ""}
-                      dismissLabel={t`Dismiss`}
-                      defaultLinkLabel={t`Learn more`}
-                    />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide relative">
-                      <ModuleSidebarLayout>
-                        {/* A company switch stays on the same page. Without the key the page
-                            keeps its state, so a form still held the previous company's
-                            values and saving wrote them to the new one. */}
-                        <Outlet key={companyId} />
-                      </ModuleSidebarLayout>
-                      {/* Room to scroll a page's end out from under the
-                          floating dock. A spacer, not padding: padding would
-                          shrink h-full pages and end them above the dock. */}
+                <ThemeStyleProvider value={themeStyle}>
+                  <SidebarProvider
+                    defaultOpen={false}
+                    className="h-screen min-h-0"
+                    style={themeStyle?.frame[mode]}
+                  >
+                    <PrimaryNavigation />
+                    <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
+                      {/* Phones: app bar on top; below <main>, a page's
+                          bottom bar in flow or the dock floating over it.
+                          Mounted only on phones so their hooks
+                          (notifications, sheets) never run on desktop. */}
+                      {isPhone && <MobileAppBar />}
+                      <Topbar />
+                      <AnnouncementBar
+                        announcement={announcement}
+                        userId={user?.id ?? ""}
+                        dismissLabel={t`Dismiss`}
+                        defaultLinkLabel={t`Learn more`}
+                      />
+                      <main className="flex-1 overflow-y-auto scrollbar-hide relative">
+                        <ModuleSidebarLayout>
+                          {/* A company switch stays on the same page. Without the key the page
+                              keeps its state, so a form still held the previous company's
+                              values and saving wrote them to the new one. */}
+                          <Outlet key={companyId} />
+                        </ModuleSidebarLayout>
+                        {/* Room to scroll a page's end out from under the
+                            floating dock. A spacer, not padding: padding would
+                            shrink h-full pages and end them above the dock. */}
+                        {isPhone && (
+                          <div
+                            aria-hidden
+                            className="h-[var(--dock-height,0px)] md:hidden"
+                          />
+                        )}
+                      </main>
                       {isPhone && (
-                        <div
-                          aria-hidden
-                          className="h-[var(--dock-height,0px)] md:hidden"
-                        />
+                        <MobileBottomChrome>
+                          <MobileDock />
+                        </MobileBottomChrome>
                       )}
-                    </main>
-                    {isPhone && (
-                      <MobileBottomChrome>
-                        <MobileDock />
-                      </MobileBottomChrome>
-                    )}
-                  </div>
-                </SidebarProvider>
+                    </div>
+                  </SidebarProvider>
+                </ThemeStyleProvider>
                 <TrainingPanel
                   training={training}
                   isOpen={isOpen}

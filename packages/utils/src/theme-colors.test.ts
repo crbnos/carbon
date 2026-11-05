@@ -136,6 +136,21 @@ describe("preset and custom themes", () => {
   });
 });
 
+/** The same 400 custom themes on every run, half of them gradients. */
+function seededCustomThemes() {
+  let seed = 7;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const hex = () => ((random() * 0x1000000) | 0).toString(16).padStart(6, "0");
+  return Array.from({ length: 400 }, (_, i) => ({
+    base: hex(),
+    highlight: hex(),
+    gradient: i % 2 === 0
+  }));
+}
+
 describe("THEME_PRESETS", () => {
   it("has unique, cookie-safe names", () => {
     const names = THEME_PRESETS.map((theme) => theme.name);
@@ -151,7 +166,7 @@ describe("THEME_PRESETS", () => {
   it.each(
     THEME_PRESETS.flatMap((theme) =>
       (["light", "dark"] as const).map(
-        (mode) => [theme.name, mode, theme] as const
+        (mode) => [theme.name, mode, theme.colors] as const
       )
     )
   )("%s reads at WCAG AA in the rail in %s mode", (_, mode, theme) => {
@@ -165,19 +180,19 @@ describe("THEME_PRESETS", () => {
     for (const tile of railTiles) {
       expect(contrastRatio(text, tile)).toBeGreaterThanOrEqual(AA);
     }
+    // Group titles and trailing icons use the rail's muted text.
+    const muted = themeStyle(theme).rail[mode]["--muted-foreground"]!;
+    const [triplet, alpha] = muted.split(" / ");
+    expect(tripletToHex(triplet!)).toBe(text);
+    for (const background of frame) {
+      expect(
+        contrastRatio(over(text, background, Number(alpha)), background)
+      ).toBeGreaterThanOrEqual(AA);
+    }
   });
 
   it("carries the rail's labels at WCAG AA for any custom colors", () => {
-    // A seeded generator: the same 400 themes on every run.
-    let seed = 7;
-    const random = () => {
-      seed = (seed * 16807) % 2147483647;
-      return seed / 2147483647;
-    };
-    const hex = () =>
-      ((random() * 0x1000000) | 0).toString(16).padStart(6, "0");
-    for (let i = 0; i < 400; i++) {
-      const theme = { base: hex(), highlight: hex(), gradient: i % 2 === 0 };
+    for (const theme of seededCustomThemes()) {
       for (const mode of ["light", "dark"] as const) {
         const { text, frame } = themeTextColors(theme, mode);
         for (const background of frame) {
@@ -189,10 +204,35 @@ describe("THEME_PRESETS", () => {
     }
   });
 
+  it("carries the labels at AA between a gradient's stops, too", () => {
+    // The browser blends stops in sRGB, which can dip below both of them.
+    // A blended pixel rounds to a byte either way, worth about 0.01.
+    const presets = THEME_PRESETS.map((preset) => preset.colors);
+    for (const theme of [...presets, ...seededCustomThemes()]) {
+      if (!theme.gradient) continue;
+      for (const mode of ["light", "dark"] as const) {
+        const { text, frame } = themeTextColors(theme, mode);
+        const [base, mid, end] = frame as [string, string, string];
+        for (const [from, to] of [
+          [base, mid],
+          [mid, end]
+        ]) {
+          for (let i = 1; i < 32; i++) {
+            const background = over(to!, from!, i / 32);
+            expect(
+              contrastRatio(over(text, background, LABEL_ALPHA), background)
+            ).toBeGreaterThanOrEqual(AA - 0.01);
+          }
+        }
+      }
+    }
+  });
+
   it("has a distinct hue for every vivid preset", () => {
     // Light mode shows the picked colors, so a shared base would look alike.
-    const bases = THEME_PRESETS.map((theme) => theme.base);
-    const gradients = THEME_PRESETS.filter((theme) => theme.gradient);
+    const colors = THEME_PRESETS.map((preset) => preset.colors);
+    const bases = colors.map((theme) => theme.base);
+    const gradients = colors.filter((theme) => theme.gradient);
     expect(new Set(gradients.map((theme) => theme.base)).size).toBe(
       gradients.length
     );
@@ -383,7 +423,7 @@ describe("themeStyle", () => {
       ...Object.entries(rail.dark)
     ]) {
       if (!key.startsWith("--")) continue;
-      // `--active` is a translucent tile: a triplet with an alpha.
+      // `--active` (a translucent tile) and `--muted-foreground` carry an alpha.
       expect(value).toMatch(/^[\d.]+ [\d.]+% [\d.]+%( \/ [\d.]+)?$/);
     }
   });
@@ -424,7 +464,7 @@ describe("themeStyle content and panel", () => {
     THEME_PRESETS.flatMap((theme) =>
       (["light", "dark"] as const).flatMap((mode) =>
         (["content", "panel"] as const).map(
-          (part) => [theme.name, part, mode, theme] as const
+          (part) => [theme.name, part, mode, theme.colors] as const
         )
       )
     )

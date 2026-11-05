@@ -35,10 +35,9 @@ import {
   densityValidator,
   getPreferenceHeaders,
   getViewportHint,
-  isRootActionPost,
-  isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
+  rootShouldRevalidate,
   TEXT_SIZE_COOKIE,
   textSizeValidator,
   themeByName,
@@ -123,13 +122,7 @@ export const meta: MetaFunction = () => {
 // Root data is cookies + env + the flash result. A same-pathname GET (table
 // filter, sort, page, useRevalidator from realtime hooks) can change none of
 // it; actions still revalidate so the flash toast is surfaced.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
-  // Appearance saves skip every other loader (`defaultShouldRevalidate`).
-  if (isRootActionPost(args)) return true;
-  return isSearchParamOnlyNavigation(args)
-    ? false
-    : args.defaultShouldRevalidate;
-};
+export const shouldRevalidate: ShouldRevalidateFunction = rootShouldRevalidate;
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {

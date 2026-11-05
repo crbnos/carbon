@@ -377,7 +377,7 @@ msgid "Billable"
 msgstr "可计费"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "将背景渐变融入所选项目的颜色。"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"

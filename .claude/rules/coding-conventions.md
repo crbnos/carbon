@@ -222,8 +222,9 @@ gutter around the content card), the ERP module sidebar, and lightly the page,
 solid or gradient (`packages/utils/src/theme-colors.ts`). It is stored in the
 same `theme` cookie as every theme. `useThemeStyle` (`@carbon/react`) reads the
 theme to render (`useThemeValue`: a preview, a pending pick, the root loader)
-and paints the ERP and MES `SidebarProvider`, the desktop `NavRail` and
-`CollapsibleSidebar`; the root `Document` sets `useThemeContent(mode)` on
+and paints the ERP and MES `SidebarProvider`; the shell passes the same style
+down with `ThemeStyleProvider`, which the desktop `NavRail` and
+`CollapsibleSidebar` read with `useShellThemeStyle`; the root `Document` sets `useThemeContent(mode)` on
 `<html>`, inside `/x` only, and never touches `--primary` or the status colors.
 Spec: `.ai/specs/2026-11-03-theme-colors.md`.
 

@@ -34,6 +34,8 @@ import { useShortcutSequence } from "./useShortcutSequence";
 import { useThemePreview } from "./useThemePreview";
 import {
   setThemePreview,
+  ThemeStyleProvider,
+  useShellThemeStyle,
   useThemeContent,
   useThemeStyle,
   useThemeValue
@@ -46,6 +48,7 @@ export type { Shortcut, ShortcutDefinition };
 export {
   getSystemMode,
   setThemePreview,
+  ThemeStyleProvider,
   useCloseRoute,
   useDebounce,
   useDensityScale,
@@ -71,6 +74,7 @@ export {
   useRevalidator,
   useRouteData,
   useScanPending,
+  useShellThemeStyle,
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,

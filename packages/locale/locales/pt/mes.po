@@ -377,7 +377,7 @@ msgid "Billable"
 msgstr "Faturável"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "Misturar o fundo com a cor dos itens selecionados."
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"

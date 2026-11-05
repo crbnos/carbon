@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "공백은 계약 프로젝트 완료 시 예상치를 사용합니다."
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "배경을 선택한 항목의 색상으로 자연스럽게 섞습니다."
 
 msgid "Blind"
 msgstr "맹검"

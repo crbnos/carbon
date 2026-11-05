@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "खाली अनुबंध की परियोजनाओं के पूर्ण होने पर अनुमान का उपयोग करता है"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
 
 msgid "Blind"
 msgstr "ब्लाइंड"

@@ -29,10 +29,27 @@ export function isSearchParamOnlyNavigation({
   return currentUrl.pathname === nextUrl.pathname;
 }
 
+/** Every app's root action: it only writes appearance cookies. */
+export const ROOT_ACTION = "/";
+
 /**
- * A post to the root action (`/`), which only writes appearance cookies that
- * only the root loader reads, so only the root opts back in.
+ * How an appearance choice is saved. Only the root loader reads the cookies,
+ * so the save asks no other route to re-run; the root opts back in
+ * (`rootShouldRevalidate`) and a route with its own `shouldRevalidate` wraps
+ * it in `deferRootActionPost`.
  */
+export const ROOT_ACTION_SAVE = {
+  method: "post",
+  action: ROOT_ACTION,
+  defaultShouldRevalidate: false
+} as const;
+
+type RevalidateArgs = {
+  formAction?: string;
+  formMethod?: string;
+  defaultShouldRevalidate: boolean;
+};
+
 export function isRootActionPost({
   formAction,
   formMethod
@@ -40,7 +57,33 @@ export function isRootActionPost({
   formAction?: string;
   formMethod?: string;
 }) {
-  return formAction === "/" && !!formMethod && formMethod !== "GET";
+  return formAction === ROOT_ACTION && !!formMethod && formMethod !== "GET";
+}
+
+/**
+ * The ERP and MES root: re-run for an appearance save, skip a same-page
+ * search-param change, else follow the default.
+ */
+export function rootShouldRevalidate(
+  args: RevalidateArgs & { currentUrl: URL; nextUrl: URL }
+) {
+  if (isRootActionPost(args)) return true;
+  return isSearchParamOnlyNavigation(args)
+    ? false
+    : args.defaultShouldRevalidate;
+}
+
+/**
+ * A route `shouldRevalidate` that would otherwise re-run after any post,
+ * left to the default for an appearance save.
+ */
+export function deferRootActionPost<Args extends RevalidateArgs>(
+  shouldRevalidate: (args: Args) => boolean
+) {
+  return (args: Args) =>
+    isRootActionPost(args)
+      ? args.defaultShouldRevalidate
+      : shouldRevalidate(args);
 }
 
 export const SHELL_MAX_AGE_MS = 5 * 60 * 1000;

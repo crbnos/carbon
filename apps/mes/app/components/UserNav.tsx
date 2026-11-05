@@ -27,7 +27,7 @@ import {
   useRouteData,
   useSidebar
 } from "@carbon/react";
-import { modeValidator } from "@carbon/utils";
+import { modeValidator, ROOT_ACTION_SAVE } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import {
   LuChevronDown,
@@ -94,12 +94,7 @@ export function useUserNav({
     document.body.removeAttribute("style");
     const formData = new FormData();
     formData.append("mode", parsed.data);
-    // A cookie only the root loader reads: re-run no other loader.
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.root,
-      defaultShouldRevalidate: false
-    });
+    fetcher.submit(formData, ROOT_ACTION_SAVE);
   };
 
   const updateLocation = (value: string) => {

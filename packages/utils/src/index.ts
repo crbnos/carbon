@@ -85,6 +85,7 @@ export * from "./theme-colors";
 export * from "./themes";
 export * from "./timekeeping";
 export * from "./tiptap";
+export * from "./trailing-call";
 export * from "./types";
 export * from "./ui-scale";
 export * from "./url";

@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "空白の場合は契約のプロジェクト完了時の推定値を使用します"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "背景を選択項目の色になじませます。"
 
 msgid "Blind"
 msgstr "ブラインド"

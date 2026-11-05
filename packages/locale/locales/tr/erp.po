@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Boş, sözleşmenin projelerinin tamamlanma tahminini kullanır"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "Arka planı seçili öğelerin rengine karıştırır."
 
 msgid "Blind"
 msgstr "Kör"

@@ -5506,7 +5506,7 @@ msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Puste pole będzie używać szacunek do ukończenia projektów umowy"
 
 msgid "Blend the background into the selected items color."
-msgstr ""
+msgstr "Przenikaj tło w kolor zaznaczonych elementów."
 
 msgid "Blind"
 msgstr "Bez wglądu"

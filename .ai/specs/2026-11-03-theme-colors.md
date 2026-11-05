@@ -247,16 +247,20 @@ The flow is the theme's own flow. Nothing new reaches the server:
    Then it writes the `theme` cookie (`themeCookieWrites`).
 3. The root loader returns `theme` (`getTheme`), which resolves a preset
    theme or a custom one like any theme. The save re-runs only the root loader
-   (`defaultShouldRevalidate: false`; each root's `shouldRevalidate` opts in).
+   (`ROOT_ACTION_SAVE`: `defaultShouldRevalidate: false`; each root's
+   `rootShouldRevalidate` opts in, and a shell's own `shouldRevalidate` defers
+   with `deferRootActionPost`).
 4. `useThemeValue()` (`@carbon/react`) reads a preview first, then any pending
    `theme` pick, then the loader data. `useThemeStyle()` returns the styles of
    that theme's `colors`, or `null` for a color theme.
-5. `NavRail` applies `rail`. The ERP and MES shells apply `frame`. The root
-   `Document` applies `content`.
+5. The ERP and MES shells apply `frame` and pass the style down with
+   `ThemeStyleProvider`. `NavRail` reads it (`useShellThemeStyle`) and applies
+   `rail`. The root `Document` applies `content`.
 
 Because step 4 reads the pending pick, the app changes as soon as the user
 clicks. A color drag uses the preview: `setThemePreview` paints each
-pointer move without a save. The pane saves once, 400 ms after the last move.
+pointer move without a save. The pane saves once, 400 ms after the last move
+(`createTrailingCall`, `@carbon/utils`).
 If the user closes the pane first, the pane saves the last color as it closes.
 
 ### Design Decisions
@@ -304,10 +308,12 @@ cookie.
 | `packages/utils/src/themes.ts` | `Theme` gets `colors?`. New `presetThemes` and `isThemeName`. `storedTheme` and `themeByName` resolve preset themes and `custom:` names. |
 | `packages/utils/src/types.ts` | `themeColorValidator` accepts every `isThemeName`. |
 | `packages/utils/src/theme-colors.test.ts` (new) | Parsing, round trips, contrast choices, style output, preset themes read from the `theme` cookie |
-| `packages/react/src/hooks/useThemeStyle.tsx` (new) | `useThemeValue`, `useThemeStyle`, `useThemeContent`, `setThemePreview` |
+| `packages/react/src/hooks/useThemeStyle.tsx` (new) | `useThemeValue`, `useThemeStyle`, `useThemeContent`, `setThemePreview`, `ThemeStyleProvider`, `useShellThemeStyle` |
+| `packages/utils/src/revalidate.ts` | `ROOT_ACTION_SAVE`, `rootShouldRevalidate`, `deferRootActionPost` |
+| `packages/utils/src/trailing-call.ts` (new) | `createTrailingCall`: the color drag's one save after the pointer rests |
 | `packages/react/src/NavRail.tsx` | Applies `rail` to the desktop `<nav>` |
 | ERP and MES `root.tsx` | `Document` sets `content` on `<html>`. The loader and the action are the theme's own. |
-| ERP and MES `routes/x+/_layout.tsx` | Applies `frame` to `SidebarProvider` |
+| ERP and MES `routes/x+/_layout.tsx` | Applies `frame` to `SidebarProvider` and provides the style (`ThemeStyleProvider`) |
 
 ## Closest Sibling
 

@@ -6,7 +6,7 @@ import {
   cn,
   IconButton,
   useMode,
-  useThemeStyle,
+  useShellThemeStyle,
   useViewport
 } from "@carbon/react";
 import { motion, useReducedMotion } from "motion/react";
@@ -213,7 +213,7 @@ const CollapsibleSidebar = ({
   const shouldReduceMotion = useReducedMotion();
   const { isPhone } = useViewport();
   const mode = useMode();
-  const panel = useThemeStyle()?.panel[mode];
+  const panel = useShellThemeStyle()?.panel[mode];
 
   const variants = useMemo(() => {
     return {

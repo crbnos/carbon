@@ -12,7 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { isRootActionPost, redirect } from "@carbon/utils";
+import { deferRootActionPost, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -61,20 +61,12 @@ export const handle: Handle = {
 // No builder write may revalidate the loader: a save would re-seed the canvas
 // mid-edit and lose the selection, a canvas or positions write would snap the
 // viewport back.
-export function shouldRevalidate({
-  formAction,
-  formMethod,
-  defaultShouldRevalidate
-}: ShouldRevalidateFunctionArgs) {
-  if (isRootActionPost({ formAction, formMethod })) {
-    return defaultShouldRevalidate;
-  }
-  return (
+export const shouldRevalidate = deferRootActionPost(
+  ({ formAction }: ShouldRevalidateFunctionArgs) =>
     !formAction?.includes("/save") &&
     !formAction?.includes("/canvas") &&
     !formAction?.includes("/positions")
-  );
-}
+);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

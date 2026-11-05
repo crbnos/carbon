@@ -579,18 +579,18 @@ export type Theme = {
 /** A theme name, or a custom theme's `custom:<base>:<highlight>:<g|s>`. */
 export type ThemeName = string;
 
-const allThemes: readonly Theme[] = [...themes, ...seasonalThemes];
-
 /** The first everyday theme is the default. */
 const defaultTheme: Theme = themes[0];
 export const DEFAULT_THEME_NAME = themes[0].name;
+
+type ColorsTheme = Theme & { colors: ThemeColors };
 
 /** Keeps the default theme's accent. */
 function themeFromColors(
   name: string,
   label: string,
   colors: ThemeColors
-): Theme {
+): ColorsTheme {
   const swatch = hexTriplet(colors.highlight);
   return {
     name,
@@ -602,16 +602,14 @@ function themeFromColors(
   };
 }
 
-export const presetThemes: readonly (Theme & {
-  colors: ThemeColors;
-})[] = THEME_PRESETS.map((preset) => ({
-  ...themeFromColors(preset.name, preset.label, preset),
-  colors: {
-    base: preset.base,
-    highlight: preset.highlight,
-    gradient: preset.gradient
-  }
-}));
+export const presetThemes: readonly ColorsTheme[] = THEME_PRESETS.map(
+  ({ name, label, colors }) => themeFromColors(name, label, colors)
+);
+
+// No preset shadows a color theme (`theme-colors.test.ts`).
+const namedThemes = new Map<string, Theme>(
+  [...themes, ...presetThemes].map((theme) => [theme.name, theme])
+);
 
 function customTheme(name: string | null | undefined): Theme | undefined {
   if (!name?.startsWith("custom:")) return undefined;
@@ -620,11 +618,7 @@ function customTheme(name: string | null | undefined): Theme | undefined {
 }
 
 function everydayTheme(name: string | null | undefined): Theme | undefined {
-  return (
-    themes.find((candidate) => candidate.name === name) ??
-    presetThemes.find((candidate) => candidate.name === name) ??
-    customTheme(name)
-  );
+  return (name ? namedThemes.get(name) : undefined) ?? customTheme(name);
 }
 
 /** What a browser may store. The name reaches a `style` attribute. */
@@ -787,8 +781,8 @@ export function pickableThemes(date?: CalendarDate): readonly Theme[] {
  */
 export function themeByName(name: string | null | undefined): Theme {
   return (
-    allThemes.find((theme) => theme.name === name) ??
     everydayTheme(name) ??
+    seasonalThemes.find((theme: SeasonalTheme) => theme.name === name) ??
     defaultTheme
   );
 }

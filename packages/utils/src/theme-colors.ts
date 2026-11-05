@@ -15,128 +15,95 @@ export type ThemeColors = {
   gradient: boolean;
 };
 
-export type ThemePreset = ThemeColors & {
+export type ThemePreset = {
   name: string;
   label: string;
+  colors: ThemeColors;
 };
 
 // Names are stored in the `theme` cookie: never rename one.
-export const THEME_PRESETS = [
+export const THEME_PRESETS: readonly ThemePreset[] = [
   {
     name: "forge",
     label: "Forge",
-    base: "c2410c",
-    highlight: "eab308",
-    gradient: true
+    colors: { base: "c2410c", highlight: "eab308", gradient: true }
   },
   {
     name: "anodized",
     label: "Anodized",
-    base: "4338ca",
-    highlight: "c026d3",
-    gradient: true
+    colors: { base: "4338ca", highlight: "c026d3", gradient: true }
   },
   {
     name: "patina",
     label: "Patina",
-    base: "0f766e",
-    highlight: "84cc16",
-    gradient: true
+    colors: { base: "0f766e", highlight: "84cc16", gradient: true }
   },
   {
     name: "brass",
     label: "Brass",
-    base: "a16207",
-    highlight: "0891b2",
-    gradient: true
+    colors: { base: "a16207", highlight: "0891b2", gradient: true }
   },
   {
     name: "oxide",
     label: "Oxide",
-    base: "9f1239",
-    highlight: "7c3aed",
-    gradient: true
+    colors: { base: "9f1239", highlight: "7c3aed", gradient: true }
   },
   {
     name: "aurora",
     label: "Aurora",
-    base: "6d28d9",
-    highlight: "10b981",
-    gradient: true
+    colors: { base: "6d28d9", highlight: "10b981", gradient: true }
   },
   {
     name: "tidewater",
     label: "Tidewater",
-    base: "0071a4",
-    highlight: "9bc339",
-    gradient: true
+    colors: { base: "0071a4", highlight: "9bc339", gradient: true }
   },
   {
     name: "graphite",
     label: "Graphite",
-    base: "3f3f46",
-    highlight: "3b82f6",
-    gradient: false
+    colors: { base: "3f3f46", highlight: "3b82f6", gradient: false }
   },
   {
     name: "plum",
     label: "Plum",
-    base: "6b21a8",
-    highlight: "e879f9",
-    gradient: false
+    colors: { base: "6b21a8", highlight: "e879f9", gradient: false }
   },
   {
     name: "ember",
     label: "Ember",
-    base: "c2410c",
-    highlight: "fb923c",
-    gradient: false
+    colors: { base: "c2410c", highlight: "fb923c", gradient: false }
   },
   {
     name: "jade",
     label: "Jade",
-    base: "047857",
-    highlight: "34d399",
-    gradient: false
+    colors: { base: "047857", highlight: "34d399", gradient: false }
   },
   {
     name: "lagoon",
     label: "Lagoon",
-    base: "0e7490",
-    highlight: "22d3ee",
-    gradient: false
+    colors: { base: "0e7490", highlight: "22d3ee", gradient: false }
   },
   {
     name: "cobalt",
     label: "Cobalt",
-    base: "1d4ed8",
-    highlight: "60a5fa",
-    gradient: false
+    colors: { base: "1d4ed8", highlight: "60a5fa", gradient: false }
   },
   {
     name: "garnet",
     label: "Garnet",
-    base: "be123c",
-    highlight: "fb7185",
-    gradient: false
+    colors: { base: "be123c", highlight: "fb7185", gradient: false }
   },
   {
     name: "linen",
     label: "Linen",
-    base: "ece5d8",
-    highlight: "cbb994",
-    gradient: false
+    colors: { base: "ece5d8", highlight: "cbb994", gradient: false }
   },
   {
     name: "mist",
     label: "Mist",
-    base: "e1e9f1",
-    highlight: "a9c2dc",
-    gradient: false
+    colors: { base: "e1e9f1", highlight: "a9c2dc", gradient: false }
   }
-] as const satisfies readonly ThemePreset[];
-
-export type ThemePresetName = (typeof THEME_PRESETS)[number]["name"];
+];
 
 const HEX = /^[0-9a-f]{6}$/;
 const CUSTOM = /^custom:([0-9a-f]{6}):([0-9a-f]{6}):([gs])$/;
@@ -156,13 +123,7 @@ export function parseThemeColors(
 ): ThemeColors | null {
   if (!value) return null;
   const preset = THEME_PRESETS.find((theme) => theme.name === value);
-  if (preset) {
-    return {
-      base: preset.base,
-      highlight: preset.highlight,
-      gradient: preset.gradient
-    };
-  }
+  if (preset) return preset.colors;
   const custom = CUSTOM.exec(value);
   if (!custom) return null;
   return {
@@ -201,17 +162,8 @@ function mix(a: Rgb, b: Rgb, t: number): Rgb {
   ];
 }
 
-function channelLuminance(channel: number) {
-  const c = channel / 255;
-  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-}
-
 function luminance([r, g, b]: Rgb) {
-  return (
-    0.2126 * channelLuminance(r) +
-    0.7152 * channelLuminance(g) +
-    0.0722 * channelLuminance(b)
-  );
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
 function rgbContrast(a: Rgb, b: Rgb) {
@@ -458,13 +410,18 @@ const PANEL_SURFACES: Surfaces = {
   }
 };
 
-function tintedVariables(base: Rgb, surfaces: Surfaces) {
+/** A surface's hue, saturation and lightness, tinted by `base`. */
+function tinted(base: Rgb, [s, l]: Surface): [number, number, number] {
   const [hue, saturation] = rgbToHsl(base);
+  return [hue, s * saturation, l];
+}
+
+function tintedVariables(base: Rgb, surfaces: Surfaces) {
   const forMode = (mode: "light" | "dark") =>
     Object.fromEntries(
-      Object.entries(surfaces[mode]).map(([name, [s, l]]) => [
+      Object.entries(surfaces[mode]).map(([name, surface]) => [
         `--${name}`,
-        triplet(hue, s * saturation, l)
+        triplet(...tinted(base, surface))
       ])
     );
   return { light: forMode("light"), dark: forMode("dark") };
@@ -493,27 +450,45 @@ function deepFrame(color: Rgb): Rgb {
 }
 
 /** Whether a rail label reads on `color` at AA, in whole bytes as painted. */
-function labelReadsOn(text: Rgb, color: Rgb) {
+function labelReadsOn(text: Rgb, color: Rgb, ratio = AA) {
   const background = hexToRgb(rgbToHex(color));
   const label = hexToRgb(rgbToHex(mix(background, text, LABEL_ALPHA)));
-  return rgbContrast(label, background) >= AA;
+  return rgbContrast(label, background) >= ratio;
+}
+
+// A browser blends gradient stops in sRGB, which can dip below both ends.
+// The blend is checked a little above AA: a painted pixel rounds differently.
+const BLEND_SAMPLES = 16;
+const BLEND_AA = AA + 0.05;
+
+/** Whether a label reads on `color` and on the sRGB blend from `from`. */
+function labelReadsFrom(text: Rgb, color: Rgb, from: Rgb | undefined) {
+  if (!labelReadsOn(text, color)) return false;
+  if (!from) return true;
+  for (let i = 1; i < BLEND_SAMPLES; i++) {
+    if (!labelReadsOn(text, mix(from, color, i / BLEND_SAMPLES), BLEND_AA))
+      return false;
+  }
+  return true;
 }
 
 /**
- * `color` moved away from the text until a rail label reads on it, falling
- * back to black or white when a vivid color runs out of gamut.
+ * `color` moved away from the text until a rail label reads on it (and on its
+ * blend from the stop before it, `from`), falling back to black or white when
+ * a vivid color runs out of gamut.
  */
-function readableUnder(text: Rgb, color: Rgb): Rgb {
+function readableUnder(text: Rgb, color: Rgb, from?: Rgb): Rgb {
   const darken = text === LIGHT_TEXT;
+  const reads = (stop: Rgb) => labelReadsFrom(text, stop, from);
   let stop = color;
   for (let i = 0; i < CONTRAST_STEPS; i++) {
-    if (labelReadsOn(text, stop)) return stop;
+    if (reads(stop)) return stop;
     stop = reshade(stop, lightnessOf(stop) + (darken ? -1 : 1) * CONTRAST_STEP);
   }
   const away: Rgb = darken ? [0, 0, 0] : [255, 255, 255];
-  const from = stop;
-  for (let i = 1; i <= CONTRAST_STEPS && !labelReadsOn(text, stop); i++) {
-    stop = mix(from, away, i / CONTRAST_STEPS);
+  const start = stop;
+  for (let i = 1; i <= CONTRAST_STEPS && !reads(stop); i++) {
+    stop = mix(start, away, i / CONTRAST_STEPS);
   }
   return stop;
 }
@@ -571,10 +546,11 @@ function gradientFlow(base: Rgb, highlight: Rgb, text: Rgb, mode: Mode) {
       LIGHT_FLOW_MID_CHROMA
     );
   }
+  const readableMid = readableUnder(text, mid, base);
   return {
     base,
-    mid: readableUnder(text, mid),
-    end: readableUnder(text, end)
+    mid: readableMid,
+    end: readableUnder(text, end, readableMid)
   };
 }
 
@@ -622,15 +598,15 @@ function themeColors(theme: ThemeColors, mode: Mode) {
 
 /** The sidebar's selected item, readable on its fill and its hover blend. */
 function withPanelHighlight(
-  panel: ThemeStyle["panel"],
+  tintBase: Rgb,
   highlight: Rgb,
   frame: Rgb
 ): ThemeStyle["panel"] {
+  const panel = tintedVariables(tintBase, PANEL_SURFACES);
   const forMode = (variables: Record<string, string>, dark: boolean) => {
-    const [h, s, l] = variables["--card"]!.split(" ").map((part) =>
-      Number.parseFloat(part)
-    ) as [number, number, number];
-    const surface = hslToRgb(h, s / 100, l / 100);
+    const surface = hslToRgb(
+      ...tinted(tintBase, PANEL_SURFACES[dark ? "dark" : "light"].card!)
+    );
     const selected = dark
       ? selectedOnDark(highlight, frame)
       : mix(surface, highlight, PANEL_SELECTED);
@@ -693,11 +669,7 @@ export function themeStyle(theme: ThemeColors): ThemeStyle {
   const dark = themeColors(theme, "dark");
   // Tints use the deep frame in both modes, so a vivid pick tints no harder.
   const tintBase = dark.base;
-  const panel = withPanelHighlight(
-    tintedVariables(tintBase, PANEL_SURFACES),
-    dark.highlight,
-    dark.base
-  );
+  const panel = withPanelHighlight(tintBase, dark.highlight, dark.base);
 
   return {
     frame: {
@@ -727,7 +699,8 @@ function railVariables({
     color: "hsl(var(--foreground))",
     "--background": hslTriplet(base),
     "--foreground": hslTriplet(text),
-    "--muted-foreground": hslTriplet(mix(text, base, 0.35)),
+    // Group titles and trailing icons: the label's opacity, so they read at AA.
+    "--muted-foreground": `${hslTriplet(text)} / ${LABEL_ALPHA}`,
     "--active": railTile,
     "--active-foreground": hslTriplet(text),
     "--accent": toward(0.12),
