@@ -152,8 +152,18 @@ pull_images() {
     return 0
   fi
   echo "cloud-dev: pulling ${#missing[@]} stack images in parallel"
-  printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} docker pull -q {} >/dev/null
-  echo "cloud-dev: images pulled"
+  # Each image is retried: Docker Hub rate-limits anonymous pulls per IP, and a
+  # cold container shares its egress IP, so a pull can fail with a 429 that
+  # clears in seconds.
+  printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} sh -c '
+    for wait in 0 5 15 45; do
+      sleep "$wait"
+      docker pull -q "$1" >/dev/null 2>&1 && exit 0
+    done
+    echo "cloud-dev: could not pull $1" >&2
+    exit 1
+  ' _ {} || echo "cloud-dev: some images did not pull; crbn up will retry them" >&2
+  echo "cloud-dev: image pull finished"
 }
 
 # Boot the stack once, end to end: the services migrate and seed the database,
@@ -230,8 +240,16 @@ else
       stamp() { while IFS= read -r line; do printf "[%4ds] %s\n" $((SECONDS - start)) "$line"; done; }
       {
         echo "cloud-dev: boot started $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        packages/dev/bin/crbn up --no-portless --no-regen &
+        crbn=$!
         (
           until curl -sf -o /dev/null --max-time 600 http://localhost:3000/login; do
+            # A failed boot must not leave this loop polling: it would write into
+            # the log of the next boot.
+            if ! kill -0 "$crbn" 2>/dev/null; then
+              echo "cloud-dev: crbn up exited before the login page was served"
+              exit 0
+            fi
             [ $((SECONDS - start)) -gt 1800 ] && { echo "cloud-dev: no login page after 30 min"; exit 0; }
             sleep 2
           done
@@ -248,7 +266,8 @@ else
           fi
           rm -f "$jar"
         ) &
-        packages/dev/bin/crbn up --no-portless --no-regen
+        wait "$crbn"
+        echo "cloud-dev: crbn up exited with status $?"
       } 2>&1 | stamp
     ' >"$log" 2>&1 < /dev/null &
 fi

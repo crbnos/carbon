@@ -82,10 +82,19 @@ async function startDockerDaemon(): Promise<boolean> {
   const logFile = join(logDir, "dockerd.log");
   const fd = openSync(logFile, "a");
   try {
-    const child = spawn("dockerd", [], {
-      detached: true,
-      stdio: ["ignore", fd, fd]
-    });
+    // Docker Hub rate-limits anonymous pulls per IP and a container's egress IP
+    // is shared: a cold boot once failed on a 429 for its first image. The
+    // daemon tries a mirror before Docker Hub and falls back to Hub when the
+    // mirror cannot answer. mirror.gcr.io serves Docker Hub's public images and
+    // is reachable through the container proxy, blobs included.
+    // CARBON_DEV_REGISTRY_MIRROR overrides it; set empty for none.
+    const mirror =
+      process.env.CARBON_DEV_REGISTRY_MIRROR ?? "https://mirror.gcr.io";
+    const child = spawn(
+      "dockerd",
+      mirror ? [`--registry-mirror=${mirror}`] : [],
+      { detached: true, stdio: ["ignore", fd, fd] }
+    );
     child.unref();
   } finally {
     closeSync(fd);

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { setTimeout as sleep } from "node:timers/promises";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
@@ -630,20 +631,37 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
       : "Pulling docker images"
   );
   const cloud = isCloudDev();
+  // A cloud container shares its egress IP and Docker Hub rate-limits
+  // anonymous pulls per IP, so a pull can fail with a 429 that clears in
+  // seconds. The pull resumes where it stopped: retry it a few times, with a
+  // growing wait, before the boot gives up.
+  const attempts = cloud ? 4 : 1;
   try {
-    await pullStack(
-      ctx.root,
-      ctx.slug,
-      (line) => {
-        const pulled = / Pulled$/.test(line);
-        // A cloud container writes to a log file, where every layer line
-        // would be a frame of its own; one line per image is enough there.
-        if (!cloud) bar.message(line.slice(0, 80));
-        else if (pulled) log.info(line.slice(0, 80));
-        if (pulled) bar.advance(1);
-      },
-      opts.size
-    );
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await pullStack(
+          ctx.root,
+          ctx.slug,
+          (line) => {
+            const pulled = / Pulled$/.test(line);
+            // A cloud container writes to a log file, where every layer line
+            // would be a frame of its own; one line per image is enough there.
+            if (!cloud) bar.message(line.slice(0, 80));
+            else if (pulled) log.info(line.slice(0, 80));
+            if (pulled) bar.advance(1);
+          },
+          opts.size
+        );
+        break;
+      } catch (err) {
+        if (attempt >= attempts) throw err;
+        const seconds = 5 * 3 ** (attempt - 1);
+        log.warn(
+          `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${seconds} s`
+        );
+        await sleep(seconds * 1000);
+      }
+    }
     bar.stop("images up to date");
   } catch (err) {
     bar.stop("pull failed");

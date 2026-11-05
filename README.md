@@ -317,7 +317,7 @@ Seconds from boot start to the login page being served on a 4-core container, wi
 
 The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so `pnpm dev` on a developer machine is unchanged:
 
-- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux).
+- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux), with `mirror.gcr.io` as a registry mirror (`CARBON_DEV_REGISTRY_MIRROR` changes it, empty turns it off) and retried pulls, because Docker Hub rate-limits the shared address of cloud containers.
 - No `.env` is needed: `crbn up` writes a `SESSION_SECRET` into `.env.local`.
 - The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
 - The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite files that already match, which the Database types workflow checks. Where a regeneration does run in a container, it pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failure is a warning, not a failed boot.
