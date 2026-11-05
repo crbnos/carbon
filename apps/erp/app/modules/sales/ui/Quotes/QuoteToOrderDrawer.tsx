@@ -366,7 +366,7 @@ const QuoteToOrderDrawer = ({
             action={path.to.convertQuoteToOrder(quote.id!)}
             validator={salesConfirmValidator}
             fetcher={ruleViolations.fetcher}
-            className="flex flex-col h-full"
+            className="flex flex-col flex-1 min-h-0"
             defaultValues={{
               notification: "None",
               customerContact: quote.customerContactId ?? undefined,
