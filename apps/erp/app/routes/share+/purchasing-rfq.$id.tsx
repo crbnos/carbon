@@ -24,7 +24,7 @@ import {
   VStack
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -228,18 +228,20 @@ const LineItems = ({
               </VStack>
             </HStack>
 
-            <motion.div
-              initial={false}
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.2 }}
-              className="w-full overflow-hidden"
-            >
-              <LinePricing line={line} />
-            </motion.div>
+            <AnimatePresence initial={false}>
+              {openItems.includes(line.id) ? (
+                <motion.div
+                  key="panel"
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full overflow-hidden"
+                >
+                  <LinePricing line={line} />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
             <NotesDisplay notes={(line.externalNotes as JSONContent) || null} />
           </div>
         );

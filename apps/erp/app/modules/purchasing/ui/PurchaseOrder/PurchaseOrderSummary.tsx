@@ -23,7 +23,7 @@ import {
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -260,175 +260,184 @@ const LineItems = ({
           </VStack>
         </HStack>
 
-        <motion.div
-          initial={false}
-          animate={openItems.includes(line.id) ? "open" : "collapsed"}
-          variants={{
-            open: { opacity: 1, height: "auto", marginTop: 16 },
-            collapsed: { opacity: 0, height: 0, marginTop: 0 }
-          }}
-          transition={{ duration: 0.2 }}
-          className="w-full overflow-hidden"
-        >
-          <div className="w-full">
-            <Table>
-              <Tbody>
-                <Tr>
-                  <Td>Quantity</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0} className="items-end">
-                      <span>
-                        {line.purchaseQuantity}{" "}
-                        {
-                          unitOfMeasures.find(
-                            (uom) =>
-                              uom.value === line.purchaseUnitOfMeasureCode
-                          )?.label
-                        }
-                      </span>
-                      {line.conversionFactor !== 1 && (
-                        <span className="text-muted-foreground text-xs">
-                          {(line.purchaseQuantity ?? 0) *
-                            (line.conversionFactor ?? 1)}{" "}
-                          {
-                            unitOfMeasures.find(
-                              (uom) =>
-                                uom.value === line.inventoryUnitOfMeasureCode
-                            )?.label
-                          }
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
-                {isReceivable && (
-                  <Tr>
-                    <Td>Received</Td>
-                    <Td className="text-right">
-                      <VStack spacing={0} className="items-end">
-                        <span>
-                          {quantityReceived} of {line.purchaseQuantity}{" "}
-                          {
-                            unitOfMeasures.find(
-                              (uom) =>
-                                uom.value === line.purchaseUnitOfMeasureCode
-                            )?.label
-                          }
-                        </span>
-                        {!line.receivedComplete &&
-                          (line.quantityToReceive ?? 0) > 0 && (
+        <AnimatePresence initial={false}>
+          {openItems.includes(line.id) ? (
+            <motion.div
+              key="panel"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="w-full overflow-hidden"
+            >
+              <div className="w-full">
+                <Table>
+                  <Tbody>
+                    <Tr>
+                      <Td>Quantity</Td>
+                      <Td className="text-right">
+                        <VStack spacing={0} className="items-end">
+                          <span>
+                            {line.purchaseQuantity}{" "}
+                            {
+                              unitOfMeasures.find(
+                                (uom) =>
+                                  uom.value === line.purchaseUnitOfMeasureCode
+                              )?.label
+                            }
+                          </span>
+                          {line.conversionFactor !== 1 && (
                             <span className="text-muted-foreground text-xs">
-                              {line.quantityToReceive} remaining
+                              {(line.purchaseQuantity ?? 0) *
+                                (line.conversionFactor ?? 1)}{" "}
+                              {
+                                unitOfMeasures.find(
+                                  (uom) =>
+                                    uom.value ===
+                                    line.inventoryUnitOfMeasureCode
+                                )?.label
+                              }
                             </span>
                           )}
-                      </VStack>
-                    </Td>
-                  </Tr>
-                )}
-                {(line.purchaseQuantity ?? 0) > 0 && (
-                  <Tr>
-                    <Td>Invoiced</Td>
-                    <Td className="text-right">
-                      <VStack spacing={0} className="items-end">
-                        <span>
-                          {quantityInvoiced} of {line.purchaseQuantity}{" "}
-                          {
-                            unitOfMeasures.find(
-                              (uom) =>
-                                uom.value === line.purchaseUnitOfMeasureCode
-                            )?.label
-                          }
-                        </span>
-                        {!line.invoicedComplete &&
-                          (line.quantityToInvoice ?? 0) > 0 && (
+                        </VStack>
+                      </Td>
+                    </Tr>
+                    {isReceivable && (
+                      <Tr>
+                        <Td>Received</Td>
+                        <Td className="text-right">
+                          <VStack spacing={0} className="items-end">
+                            <span>
+                              {quantityReceived} of {line.purchaseQuantity}{" "}
+                              {
+                                unitOfMeasures.find(
+                                  (uom) =>
+                                    uom.value === line.purchaseUnitOfMeasureCode
+                                )?.label
+                              }
+                            </span>
+                            {!line.receivedComplete &&
+                              (line.quantityToReceive ?? 0) > 0 && (
+                                <span className="text-muted-foreground text-xs">
+                                  {line.quantityToReceive} remaining
+                                </span>
+                              )}
+                          </VStack>
+                        </Td>
+                      </Tr>
+                    )}
+                    {(line.purchaseQuantity ?? 0) > 0 && (
+                      <Tr>
+                        <Td>Invoiced</Td>
+                        <Td className="text-right">
+                          <VStack spacing={0} className="items-end">
+                            <span>
+                              {quantityInvoiced} of {line.purchaseQuantity}{" "}
+                              {
+                                unitOfMeasures.find(
+                                  (uom) =>
+                                    uom.value === line.purchaseUnitOfMeasureCode
+                                )?.label
+                              }
+                            </span>
+                            {!line.invoicedComplete &&
+                              (line.quantityToInvoice ?? 0) > 0 && (
+                                <span className="text-muted-foreground text-xs">
+                                  {line.quantityToInvoice} remaining
+                                </span>
+                              )}
+                          </VStack>
+                        </Td>
+                      </Tr>
+                    )}
+                    <Tr>
+                      <Td>Unit Price</Td>
+                      <Td className="text-right">
+                        <VStack spacing={0} className="items-end">
+                          <span>{formatter.format(line.unitPrice ?? 0)}</span>
+                          {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
-                              {line.quantityToInvoice} remaining
+                              {presentationCurrencyFormatter.format(
+                                line.supplierUnitPrice ?? 0
+                              )}
                             </span>
                           )}
-                      </VStack>
-                    </Td>
-                  </Tr>
-                )}
-                <Tr>
-                  <Td>Unit Price</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0} className="items-end">
-                      <span>{formatter.format(line.unitPrice ?? 0)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            line.supplierUnitPrice ?? 0
+                        </VStack>
+                      </Td>
+                    </Tr>
+                    <Tr className="border-b border-border">
+                      <Td>Extended Price</Td>
+                      <Td className="text-right">
+                        <VStack spacing={0} className="items-end">
+                          <span>{formatter.format(lineTotal)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                supplierLineTotal
+                              )}
+                            </span>
                           )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
-                <Tr className="border-b border-border">
-                  <Td>Extended Price</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0} className="items-end">
-                      <span>{formatter.format(lineTotal)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            supplierLineTotal
-                          )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
+                        </VStack>
+                      </Td>
+                    </Tr>
 
-                <Tr key="tax">
-                  <Td>Tax ({percentFormatter.format(line.taxPercent ?? 0)})</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0} className="items-end">
-                      <span>{formatter.format(line.taxAmount ?? 0)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            line.supplierTaxAmount ?? 0
+                    <Tr key="tax">
+                      <Td>
+                        Tax ({percentFormatter.format(line.taxPercent ?? 0)})
+                      </Td>
+                      <Td className="text-right">
+                        <VStack spacing={0} className="items-end">
+                          <span>{formatter.format(line.taxAmount ?? 0)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                line.supplierTaxAmount ?? 0
+                              )}
+                            </span>
                           )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
+                        </VStack>
+                      </Td>
+                    </Tr>
 
-                <Tr key="shipping" className="border-b border-border">
-                  <Td>Shipping</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0} className="items-end">
-                      <span>{formatter.format(line.shippingCost ?? 0)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(
-                            line.supplierShippingCost ?? 0
+                    <Tr key="shipping" className="border-b border-border">
+                      <Td>Shipping</Td>
+                      <Td className="text-right">
+                        <VStack spacing={0} className="items-end">
+                          <span>
+                            {formatter.format(line.shippingCost ?? 0)}
+                          </span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                line.supplierShippingCost ?? 0
+                              )}
+                            </span>
                           )}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
+                        </VStack>
+                      </Td>
+                    </Tr>
 
-                <Tr key="total" className="font-semibold">
-                  <Td>Total</Td>
-                  <Td className="text-right">
-                    <VStack spacing={0} className="items-end">
-                      <span>{formatter.format(total)}</span>
-                      {shouldConvertCurrency && (
-                        <span className="text-muted-foreground text-xs">
-                          {presentationCurrencyFormatter.format(supplierTotal)}
-                        </span>
-                      )}
-                    </VStack>
-                  </Td>
-                </Tr>
-              </Tbody>
-            </Table>
-          </div>
-        </motion.div>
+                    <Tr key="total" className="font-semibold">
+                      <Td>Total</Td>
+                      <Td className="text-right">
+                        <VStack spacing={0} className="items-end">
+                          <span>{formatter.format(total)}</span>
+                          {shouldConvertCurrency && (
+                            <span className="text-muted-foreground text-xs">
+                              {presentationCurrencyFormatter.format(
+                                supplierTotal
+                              )}
+                            </span>
+                          )}
+                        </VStack>
+                      </Td>
+                    </Tr>
+                  </Tbody>
+                </Table>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
     );
   });
