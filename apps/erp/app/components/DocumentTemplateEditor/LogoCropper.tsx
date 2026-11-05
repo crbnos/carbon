@@ -12,6 +12,7 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useRef, useState } from "react";
 
@@ -224,7 +225,7 @@ function CropDialog({
               <div
                 role="button"
                 tabIndex={0}
-                aria-label={t`Crop area: ${Math.round(c.x * 100)}% from left, ${Math.round(c.y * 100)}% from top. Arrow keys move it.`}
+                aria-label={t`Crop area: ${round(c.x * 100, 0)}% from left, ${round(c.y * 100, 0)}% from top. Arrow keys move it.`}
                 onPointerDown={startDrag("move")}
                 onKeyDown={onNudge("move")}
                 className="absolute cursor-move border-2 border-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -241,7 +242,7 @@ function CropDialog({
               <div
                 role="button"
                 tabIndex={0}
-                aria-label={t`Crop size: ${Math.round(c.width * 100)}% wide, ${Math.round(c.height * 100)}% tall. Arrow keys resize it.`}
+                aria-label={t`Crop size: ${round(c.width * 100, 0)}% wide, ${round(c.height * 100, 0)}% tall. Arrow keys resize it.`}
                 onPointerDown={startDrag("resize")}
                 onKeyDown={onNudge("resize")}
                 className="absolute h-3 w-3 cursor-se-resize rounded-sm border-2 border-white bg-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"

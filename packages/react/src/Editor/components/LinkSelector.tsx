@@ -82,10 +82,14 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
             />
           ) : (
             <span className="h-8">
+              {/* Applies the link in the editor: no request is sent, so it
+                  submits the form itself instead of being a submit button.
+                  Enter in the field still submits the one-field form. */}
               <IconButton
-                type="submit"
+                type="button"
                 icon={<LuCheck />}
                 aria-label={t`Apply link`}
+                onClick={(e) => e.currentTarget.form?.requestSubmit()}
               />
             </span>
           )}

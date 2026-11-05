@@ -8816,13 +8816,13 @@ msgstr "क्रेडिट लागू किए गए"
 msgid "Critical"
 msgstr "गंभीर"
 
-#. placeholder {0}: Math.round(c.x * 100)
-#. placeholder {1}: Math.round(c.y * 100)
+#. placeholder {0}: round(c.x * 100, 0)
+#. placeholder {1}: round(c.y * 100, 0)
 msgid "Crop area: {0}% from left, {1}% from top. Arrow keys move it."
 msgstr "क्रॉप क्षेत्र: बाएँ से {0}%, ऊपर से {1}%। तीर कुंजियों से इसे स्थानांतरित करें।"
 
-#. placeholder {0}: Math.round(c.width * 100)
-#. placeholder {1}: Math.round(c.height * 100)
+#. placeholder {0}: round(c.width * 100, 0)
+#. placeholder {1}: round(c.height * 100, 0)
 msgid "Crop size: {0}% wide, {1}% tall. Arrow keys resize it."
 msgstr "क्रॉप आकार: चौड़ाई {0}%, ऊँचाई {1}%। तीर कुंजियों से इसका आकार बदलें।"
 

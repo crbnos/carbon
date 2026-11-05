@@ -1557,6 +1557,19 @@ function TimerControl({
         ? false
         : !!openEvent;
 
+  // A disabled button drops focus to the page: when the press settles, put
+  // focus back on the button the user pressed.
+  const timerButtonRef = useRef<HTMLButtonElement>(null);
+  const refocusTimer = useRef(false);
+  const isTimerBusy = fetcher.state !== "idle";
+  useEffect(() => {
+    if (isTimerBusy || !refocusTimer.current) return;
+    refocusTimer.current = false;
+    if (!document.activeElement || document.activeElement === document.body) {
+      timerButtonRef.current?.focus();
+    }
+  }, [isTimerBusy]);
+
   const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
   const elapsed = pendingAction === "End" ? 0 : liveElapsed;
 
@@ -1577,12 +1590,13 @@ function TimerControl({
         <input type="hidden" name="id" value={openEvent.id} />
       ) : null}
       <button
-        // Not `disabled` while the press is in flight: a disabled button drops
-        // focus to the page, so a keyboard user lost their place on pause.
-        disabled={startDisabled && !openEvent}
-        aria-disabled={fetcher.state !== "idle" || undefined}
-        onClick={(e) => {
-          if (fetcher.state !== "idle") e.preventDefault();
+        ref={timerButtonRef}
+        // Disabled while the press is in flight, so a second press can't post
+        // again; the effect above gives focus back once it settles.
+        disabled={isTimerBusy || (startDisabled && !openEvent)}
+        onClick={() => {
+          refocusTimer.current =
+            document.activeElement === timerButtonRef.current;
         }}
         type="submit"
         aria-label={

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Badge, BarProgress, cn } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -45,7 +46,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
   // One readable name for the link instead of its run-together text.
   const name = d.itemId ? `${d.itemId} — ${d.description}` : d.description;
   const percent = d.targetQuantity
-    ? Math.round((d.quantityComplete / d.targetQuantity) * 100)
+    ? round((d.quantityComplete / d.targetQuantity) * 100, 0)
     : 0;
   const label = [
     t`${name}, ${d.status}, ${percent}% complete`,

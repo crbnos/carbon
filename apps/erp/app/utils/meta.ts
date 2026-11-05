@@ -34,7 +34,18 @@ const hasMessages = (catalog: Messages) => Object.keys(catalog).length > 0;
 
 export function getRuntime(locale: unknown): I18n {
   const language = resolveLanguage(typeof locale === "string" ? locale : null);
-  const catalog = getCatalog(language);
+  return runtimeFor(language, getCatalog(language), runtimes);
+}
+
+/**
+ * The runtime for `language`, given what its catalog holds right now. Pure
+ * apart from the `runtimes` cache it is handed, so it is tested by value.
+ */
+export function runtimeFor(
+  language: string,
+  catalog: Messages,
+  runtimes: Map<string, { catalog: Messages; i18n: I18n }>
+): I18n {
   const cached = runtimes.get(language);
   if (cached) {
     if (cached.catalog !== catalog && hasMessages(catalog)) {

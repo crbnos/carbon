@@ -8816,13 +8816,13 @@ msgstr "Créditos aplicados"
 msgid "Critical"
 msgstr "Crítico"
 
-#. placeholder {0}: Math.round(c.x * 100)
-#. placeholder {1}: Math.round(c.y * 100)
+#. placeholder {0}: round(c.x * 100, 0)
+#. placeholder {1}: round(c.y * 100, 0)
 msgid "Crop area: {0}% from left, {1}% from top. Arrow keys move it."
 msgstr "Área de recorte: {0}% da esquerda, {1}% do topo. As setas do teclado a movem."
 
-#. placeholder {0}: Math.round(c.width * 100)
-#. placeholder {1}: Math.round(c.height * 100)
+#. placeholder {0}: round(c.width * 100, 0)
+#. placeholder {1}: round(c.height * 100, 0)
 msgid "Crop size: {0}% wide, {1}% tall. Arrow keys resize it."
 msgstr "Tamanho do recorte: {0}% de largura, {1}% de altura. As setas do teclado redimensionam."
 

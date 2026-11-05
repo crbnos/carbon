@@ -2,16 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { I18n, Messages } from "@lingui/core";
 import type { MetaArgs } from "react-router";
-import { describe, expect, it, vi } from "vitest";
-import { getRuntime, moduleMeta, newRecordMeta } from "./meta";
-
-// What `preloadCatalog` has loaded so far, per language. A language that has
-// not loaded yet gets a fresh `{}` on every call, like the real `getCatalog`.
-const catalogs = vi.hoisted(() => new Map<string, Record<string, string>>());
-vi.mock("~/services/lingui", () => ({
-  getCatalog: (language: string) => catalogs.get(language) ?? {}
-}));
+import { describe, expect, it } from "vitest";
+import { moduleMeta, newRecordMeta, runtimeFor } from "./meta";
 
 type Match = MetaArgs["matches"][number];
 
@@ -93,19 +87,23 @@ describe("newRecordMeta", () => {
   });
 });
 
-describe("getRuntime", () => {
+describe("runtimeFor", () => {
   it("reuses one runtime per language and loads the catalog when it arrives", () => {
-    catalogs.set("en", { title: "Orders" });
-    expect(getRuntime("en")._("title")).toBe("Orders");
+    const runtimes = new Map<string, { catalog: Messages; i18n: I18n }>();
+    // A language that has not loaded yet has a fresh, empty catalog on every
+    // read, as `getCatalog` returns.
+    const english = { title: "Orders" };
+    expect(runtimeFor("en", english, runtimes)._("title")).toBe("Orders");
 
     // German is chosen but still loading: keep the English messages rather
     // than showing the hashed message id.
-    const loading = getRuntime("de");
+    const loading = runtimeFor("de", {}, runtimes);
     expect(loading._("title")).toBe("Orders");
-    expect(getRuntime("de")).toBe(loading);
+    expect(runtimeFor("de", {}, runtimes)).toBe(loading);
 
-    catalogs.set("de", { title: "Aufträge" });
-    expect(getRuntime("de")._("title")).toBe("Aufträge");
-    expect(getRuntime("en")._("title")).toBe("Orders");
+    expect(runtimeFor("de", { title: "Aufträge" }, runtimes)._("title")).toBe(
+      "Aufträge"
+    );
+    expect(runtimeFor("en", english, runtimes)._("title")).toBe("Orders");
   });
 });

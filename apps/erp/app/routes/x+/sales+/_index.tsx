@@ -39,6 +39,7 @@ import {
   ChartTooltipContent
 } from "@carbon/react/Chart";
 import { FunnelChart } from "@carbon/react/FunnelChart";
+import { round } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
@@ -339,7 +340,7 @@ export default function SalesDashboard() {
   const chartLabel = ["week", "month"].includes(interval)
     ? t`${kpiLabel} by day`
     : t`${kpiLabel} by month`;
-  const chartChange = `${percentageChange >= 0 ? "+" : ""}${percentageChange.toFixed(0)}%`;
+  const chartChange = `${percentageChange >= 0 ? "+" : ""}${round(percentageChange, 0)}%`;
   const chartSummary = t`Total ${formattedTotal}, ${chartChange} versus the previous period`;
 
   const csvData = useMemo(() => {

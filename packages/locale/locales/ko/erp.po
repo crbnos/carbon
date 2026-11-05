@@ -8816,13 +8816,13 @@ msgstr "적용된 크레딧"
 msgid "Critical"
 msgstr "심각"
 
-#. placeholder {0}: Math.round(c.x * 100)
-#. placeholder {1}: Math.round(c.y * 100)
+#. placeholder {0}: round(c.x * 100, 0)
+#. placeholder {1}: round(c.y * 100, 0)
 msgid "Crop area: {0}% from left, {1}% from top. Arrow keys move it."
 msgstr "자르기 영역: 왼쪽에서 {0}%, 위에서 {1}%. 화살표 키로 이동합니다."
 
-#. placeholder {0}: Math.round(c.width * 100)
-#. placeholder {1}: Math.round(c.height * 100)
+#. placeholder {0}: round(c.width * 100, 0)
+#. placeholder {1}: round(c.height * 100, 0)
 msgid "Crop size: {0}% wide, {1}% tall. Arrow keys resize it."
 msgstr "자르기 크기: 너비 {0}%, 높이 {1}%. 화살표 키로 크기를 조절합니다."
 

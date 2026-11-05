@@ -825,7 +825,7 @@ export const JobOperation = ({
               stackOnPhone
               // A whole percent: the bar's aria-valuenow read "0.9259".
               progress={
-                hasPlan ? Math.round((meter.elapsed / meter.planned) * 100) : 0
+                hasPlan ? round((meter.elapsed / meter.planned) * 100, 0) : 0
               }
               activeClassName={
                 meter.elapsed > meter.planned ? "bg-red-500" : "bg-emerald-500"
