@@ -29745,9 +29745,6 @@ msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活�
 msgid "This unit has no cost in inventory"
 msgstr "该件在库存中没有成本"
 
-msgid "This updates the theme for all users of the application"
-msgstr "这会更新应用程序所有用户的主题"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "此用户未启用双因素认证。"
 

@@ -29,4 +29,19 @@ export function isSearchParamOnlyNavigation({
   return currentUrl.pathname === nextUrl.pathname;
 }
 
+/**
+ * True for a post to the root action (`/`). It only writes appearance cookies,
+ * which only the root loader reads: the root opts in to re-run, and a shell
+ * skips it.
+ */
+export function isRootActionPost({
+  formAction,
+  formMethod
+}: {
+  formAction?: string;
+  formMethod?: string;
+}) {
+  return formAction === "/" && !!formMethod && formMethod !== "GET";
+}
+
 export const SHELL_MAX_AGE_MS = 5 * 60 * 1000;

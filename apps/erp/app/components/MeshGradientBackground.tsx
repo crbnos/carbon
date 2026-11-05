@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, useMode } from "@carbon/react";
+import { cn, useMode, useThemeValue } from "@carbon/react";
 import { themeByName } from "@carbon/utils";
 import { MeshGradient } from "@paper-design/shaders-react";
 import { useEffect, useState } from "react";
-import { useTheme } from "~/hooks/useTheme";
 
 // Theme-aware Paper Shaders mesh-gradient backdrop. Used behind the onboarding
 // flow and the Implementation Hub so both share the same soft, animated canvas.
@@ -38,7 +37,7 @@ export function MeshGradientBackground({
   darkOnly?: boolean;
 }) {
   const mode = useMode();
-  const serverTheme = useTheme();
+  const serverTheme = useThemeValue();
   const [theme, setTheme] = useState(serverTheme);
 
   useEffect(() => {

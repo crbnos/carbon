@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ThemeStyle } from "@carbon/utils";
-import { isAppPath, isThemeName, themeByName, themeStyle } from "@carbon/utils";
+import {
+  isAppPath,
+  resolveThemeValue,
+  themeByName,
+  themeStyle
+} from "@carbon/utils";
 import { useMemo, useSyncExternalStore } from "react";
 import { useFetchers, useLocation } from "react-router";
 import { useRouteData } from "./useRouteData";
@@ -32,11 +37,9 @@ function subscribePreview(listener: () => void) {
 }
 
 /**
- * The theme to render, by name. A preview wins, then a pending pick (any
- * fetcher posting a valid `theme`: the Appearance pane posts to `/`, the ERP's
- * avatar menu to its theme route), then the root loader's resolved theme. So
- * a pick shows before the loader revalidates with the cookie. A `theme` field
- * that is not a theme name (a document template's JSON) is ignored.
+ * The theme to render, by name (`resolveThemeValue`): a preview, then a
+ * pending pick (the Appearance pane posts `theme` to `/`), then the root
+ * loader's theme. So a pick shows before the loader revalidates.
  */
 export function useThemeValue(): string {
   const previewed = useSyncExternalStore(
@@ -46,12 +49,11 @@ export function useThemeValue(): string {
   );
   const fetchers = useFetchers();
   const routeData = useRouteData<{ theme?: string }>("/");
-  if (previewed !== undefined && isThemeName(previewed)) return previewed;
-  for (const fetcher of fetchers) {
-    const pending = fetcher.formData?.get("theme");
-    if (typeof pending === "string" && isThemeName(pending)) return pending;
-  }
-  return themeByName(routeData?.theme).name;
+  return resolveThemeValue(
+    previewed,
+    fetchers.map((fetcher) => fetcher.formData?.get("theme")),
+    routeData?.theme
+  );
 }
 
 /**

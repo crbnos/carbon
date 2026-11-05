@@ -228,18 +228,21 @@ and paints the ERP and MES `SidebarProvider`, the desktop `NavRail` and
 Spec: `.ai/specs/2026-11-03-theme-colors.md`.
 
 Themes are defined in `packages/utils/src/themes.ts` (`themes`, the color
-themes, and `presetThemes`; `isThemeName` is the one test of a stored name) and selected via the `useTheme()` hook
-(`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL values for CSS
+themes, and `presetThemes`; `isThemeName` is the one test of a stored name). The browser reads the theme
+to render with `useThemeValue()` (`@carbon/react`; the order is
+`resolveThemeValue` in `@carbon/utils`). Each theme supplies HSL values for CSS
 variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
 `--secondary`, `--muted`, `--accent`, `--destructive`) and its four `mesh`
 colors per mode (the ERP's onboarding backdrop). Theme names: `zinc`
 (the default, `DEFAULT_THEME_NAME`), `neutral`, `red`, `orange`, `yellow`,
-`green`, `blue`, `violet`, plus seasonal ones.
+`green`, `blue`, `violet`, the 16 presets in `presetThemes` (`forge`,
+`graphite`, …), any `custom:<base>:<highlight>:<g|s>` name, plus seasonal ones.
 
 The choice is a `theme` cookie per browser, never a database column. Each app's
 `getTheme` (`services/theme.server.ts`) is the theme to RENDER: it resolves
 through `themeForRequest` and `resolveTheme`, which return the default for a
-name no longer in `themes`, so removing a theme needs no migration and breaks
+name that is no theme (`storedTheme`: not in `themes` or `presetThemes`, and
+no valid `custom:` value), so removing a theme needs no migration and breaks
 no browser that still holds it. The pickers show `getTheme` as chosen. The
 root `Document` renders the loader's name with `themeByName`, so the season is
 decided once, on the server.

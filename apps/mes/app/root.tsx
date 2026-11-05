@@ -35,6 +35,7 @@ import {
   densityValidator,
   getPreferenceHeaders,
   getViewportHint,
+  isRootActionPost,
   isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
@@ -125,7 +126,7 @@ export const meta: MetaFunction = () => {
 export const shouldRevalidate: ShouldRevalidateFunction = (args) => {
   // A post here writes an appearance cookie, which only this loader reads, so
   // a theme save asks no other route to re-run (`defaultShouldRevalidate`).
-  if (args.formAction === path.to.root) return true;
+  if (isRootActionPost(args)) return true;
   return isSearchParamOnlyNavigation(args)
     ? false
     : args.defaultShouldRevalidate;

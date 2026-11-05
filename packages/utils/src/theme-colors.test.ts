@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   contrastRatio,
+  darkTextReadsOn,
   normalizeHex,
   parseThemeColors,
   randomThemeColors,
@@ -18,6 +19,22 @@ import { themeColorValidator } from "./types";
 
 // WCAG AA for normal text.
 const AA = 4.5;
+// The rail draws an unselected item's label at this opacity (`NavRail`).
+const LABEL_ALPHA = 0.7;
+
+/** Hex `text` at `alpha` over hex `background`, in whole bytes, as painted. */
+function over(text: string, background: string, alpha: number) {
+  const channels = (hex: string) =>
+    [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+  const bg = channels(background);
+  return channels(text)
+    .map((channel, i) =>
+      ((channel * alpha + bg[i]! * (1 - alpha) + 0.5) | 0)
+        .toString(16)
+        .padStart(2, "0")
+    )
+    .join("");
+}
 
 describe("parseThemeColors", () => {
   it("reads a preset by name", () => {
@@ -143,9 +160,36 @@ describe("THEME_PRESETS", () => {
     )
   )("%s reads at WCAG AA in the rail in %s mode", (_, mode, theme) => {
     const { text, frame, railTiles } = themeTextColors(theme, mode);
-    // The rail's text on the frame and on its selected tile.
-    for (const background of [...frame, ...railTiles]) {
-      expect(contrastRatio(text, background)).toBeGreaterThanOrEqual(AA);
+    // An unselected label on the frame, and the selected item on its tile.
+    for (const background of frame) {
+      expect(
+        contrastRatio(over(text, background, LABEL_ALPHA), background)
+      ).toBeGreaterThanOrEqual(AA);
+    }
+    for (const tile of railTiles) {
+      expect(contrastRatio(text, tile)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  it("carries the rail's labels at WCAG AA for any custom colors", () => {
+    // A seeded generator: the same 400 themes on every run.
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const hex = () =>
+      ((random() * 0x1000000) | 0).toString(16).padStart(6, "0");
+    for (let i = 0; i < 400; i++) {
+      const theme = { base: hex(), highlight: hex(), gradient: i % 2 === 0 };
+      for (const mode of ["light", "dark"] as const) {
+        const { text, frame } = themeTextColors(theme, mode);
+        for (const background of frame) {
+          expect(
+            contrastRatio(over(text, background, LABEL_ALPHA), background)
+          ).toBeGreaterThanOrEqual(AA);
+        }
+      }
     }
   });
 
@@ -244,9 +288,9 @@ describe("matches Slack's own colors", () => {
     const light = frame.light.background!;
     // Slack: #448627 on the diagonal, the highlight #83252C in the corners.
     near(rgbOf(light, "0%"), [0x83, 0x25, 0x2c]);
-    // White text on Slack's green is 4.4:1, so the diagonal is a touch
-    // darker, just enough for AA.
-    near(rgbOf(light, "50%"), [0x44, 0x86, 0x27], 16);
+    // Slack's green (#448627) gives white text 4.4:1, so the rail's dimmer
+    // labels need the diagonal darker: the same green, just deep enough.
+    near(rgbOf(light, "50%"), [0x13, 0x63, 0x00]);
   });
 
   it("leaves a light frame light", () => {
@@ -449,5 +493,16 @@ describe("randomThemeColors", () => {
       expect(parseThemeColors(serializeThemeColors(theme))).toEqual(theme);
       expect(theme.gradient).toBe(true);
     }
+  });
+});
+
+describe("darkTextReadsOn", () => {
+  it.each([
+    ["48 96% 53%", true], // yellow: light enough for dark ink
+    ["0 0% 100%", true],
+    ["221 83% 53%", false], // blue
+    ["240 10% 3.9%", false]
+  ])("is %s → %s", (hsl, dark) => {
+    expect(darkTextReadsOn(hsl)).toBe(dark);
   });
 });

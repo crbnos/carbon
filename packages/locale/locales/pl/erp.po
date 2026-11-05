@@ -29745,9 +29745,6 @@ msgstr "To narzędzie jest aktywowane, gdy zawiadomienie o zmianie {activationLo
 msgid "This unit has no cost in inventory"
 msgstr "Ta sztuka nie ma kosztu w zapasach"
 
-msgid "This updates the theme for all users of the application"
-msgstr "To aktualizuje motyw dla wszystkich użytkowników aplikacji"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Ten użytkownik nie ma włączonego uwierzytelniania dwuskładnikowego."
 

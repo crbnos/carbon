@@ -29745,9 +29745,6 @@ msgstr "Dieses Werkzeug wird aktiviert, wenn die Änderungsmitteilung {activatio
 msgid "This unit has no cost in inventory"
 msgstr "Diese Einheit hat keine Kosten im Bestand"
 
-msgid "This updates the theme for all users of the application"
-msgstr "Dies aktualisiert das Design für alle Benutzer der Anwendung"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Dieser Benutzer hat keine Zwei-Faktor-Authentifizierung aktiviert."
 

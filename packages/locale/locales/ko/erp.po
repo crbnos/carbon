@@ -29745,9 +29745,6 @@ msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활�
 msgid "This unit has no cost in inventory"
 msgstr "이 개는 재고에 원가가 없습니다."
 
-msgid "This updates the theme for all users of the application"
-msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "이 사용자는 2단계 인증이 활성화되지 않았습니다."
 

@@ -29745,9 +29745,6 @@ msgstr "この工具は、変更通知 {activationLockId} がリリースされ�
 msgid "This unit has no cost in inventory"
 msgstr "この品目は在庫に原価がありません。"
 
-msgid "This updates the theme for all users of the application"
-msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "このユーザーは二要素認証が有効になっていません。"
 

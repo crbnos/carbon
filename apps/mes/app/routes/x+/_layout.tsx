@@ -54,6 +54,7 @@ import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
   formatDate,
+  isRootActionPost,
   redirect,
   redirectExternal,
   requiresItarEntityCertification,
@@ -115,7 +116,9 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   // The refreshed session reaches the client through this loader.
   if (formAction === path.to.refreshSession) return true;
   // The root action only writes appearance cookies (a theme save).
-  if (formAction === path.to.root) return defaultShouldRevalidate;
+  if (isRootActionPost({ formAction, formMethod })) {
+    return defaultShouldRevalidate;
+  }
 
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||

@@ -29745,9 +29745,6 @@ msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında e
 msgid "This unit has no cost in inventory"
 msgstr "Bu adet envanterde maliyet yok"
 
-msgid "This updates the theme for all users of the application"
-msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Bu kullanıcının iki faktörlü kimlik doğrulaması etkin değildir."
 

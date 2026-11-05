@@ -717,6 +717,24 @@ export function resolveTheme(
     : storedTheme(name);
 }
 
+/**
+ * The theme to render, by name: a preview wins, then a pending pick (the
+ * `theme` field of a submission in flight), then the root loader's theme. A
+ * `theme` field that is not a theme name (a document template's JSON) is
+ * skipped, and an unknown loader value reads as the default.
+ */
+export function resolveThemeValue(
+  preview: string | undefined,
+  pending: readonly unknown[],
+  loaderTheme: string | null | undefined
+): string {
+  if (preview !== undefined && isThemeName(preview)) return preview;
+  for (const value of pending) {
+    if (typeof value === "string" && isThemeName(value)) return value;
+  }
+  return themeByName(loaderTheme).name;
+}
+
 /** The everyday theme a browser picked. */
 export const THEME_COOKIE = "theme";
 

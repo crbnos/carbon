@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { isSearchParamOnlyNavigation } from "./revalidate";
+import { isRootActionPost, isSearchParamOnlyNavigation } from "./revalidate";
 
 const url = (href: string) => new URL(href, "https://erp.test");
 
@@ -67,5 +67,21 @@ describe("isSearchParamOnlyNavigation", () => {
         nextUrl: url("/x/items/parts?a=1")
       })
     ).toBe(true);
+  });
+});
+
+describe("isRootActionPost", () => {
+  it("is true for a post to the root action", () => {
+    expect(isRootActionPost({ formAction: "/", formMethod: "POST" })).toBe(
+      true
+    );
+  });
+
+  it.each([
+    { formAction: "/x/items", formMethod: "POST" },
+    { formAction: "/", formMethod: "GET" },
+    { formAction: undefined, formMethod: undefined }
+  ])("is false for $formMethod $formAction", (args) => {
+    expect(isRootActionPost(args)).toBe(false);
   });
 });

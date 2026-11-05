@@ -29745,9 +29745,6 @@ msgstr "Cet outil est activé lorsque l'avis de modification {activationLockId} 
 msgid "This unit has no cost in inventory"
 msgstr "Cette unité n'a pas de coût en stock"
 
-msgid "This updates the theme for all users of the application"
-msgstr "Ceci met à jour le thème pour tous les utilisateurs de l'application."
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Cet utilisateur n'a pas l'authentification à deux facteurs activée."
 

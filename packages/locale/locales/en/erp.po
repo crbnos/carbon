@@ -29745,9 +29745,6 @@ msgstr "This tool is activated when change notice {activationLockId} is released
 msgid "This unit has no cost in inventory"
 msgstr "This unit has no cost in inventory"
 
-msgid "This updates the theme for all users of the application"
-msgstr "This updates the theme for all users of the application"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "This user does not have two-factor authentication enabled."
 

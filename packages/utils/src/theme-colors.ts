@@ -388,6 +388,10 @@ const RAIL_SHADE_ALPHA = 0.22;
 const SHADE: Rgb = [0, 0, 0];
 // WCAG AA for normal text.
 const AA = 4.5;
+// The rail draws an unselected item's label at this opacity
+// (`text-foreground/70` in `NavRail`), so the frame must carry the label, not
+// just the full text color, at AA.
+const LABEL_ALPHA = 0.7;
 // How far the light sidebar's selected fill moves from the panel towards the
 // highlight: a clear wash of the highlight that text reads on, and that the
 // 60% hover keeps subtle. A dark sidebar takes the deepened highlight.
@@ -548,15 +552,33 @@ function deepFrame(color: Rgb): Rgb {
 }
 
 /**
- * A color moved away from the text, a step at a time, until the text reads
- * on it at AA. Light text darkens it; dark text lightens it.
+ * Whether the rail's label (the text at `LABEL_ALPHA`) reads on a color at
+ * AA, in whole bytes as the browser paints both, so rounding cannot drop it
+ * below.
+ */
+function labelReadsOn(text: Rgb, color: Rgb) {
+  const background = hexToRgb(rgbToHex(color));
+  const label = hexToRgb(rgbToHex(mix(background, text, LABEL_ALPHA)));
+  return rgbContrast(label, background) >= AA;
+}
+
+/**
+ * A color moved away from the text, a step at a time, until the rail's label
+ * reads on it at AA. Light text darkens it; dark text lightens it. A vivid
+ * color can run out of steps at the edge of the gamut; it then moves straight
+ * towards black or white, where the label always reads.
  */
 function readableUnder(text: Rgb, color: Rgb): Rgb {
-  const direction = text === LIGHT_TEXT ? -1 : 1;
+  const darken = text === LIGHT_TEXT;
   let stop = color;
   for (let i = 0; i < CONTRAST_STEPS; i++) {
-    if (rgbContrast(text, stop) >= AA) break;
-    stop = reshade(stop, lightnessOf(stop) + direction * CONTRAST_STEP);
+    if (labelReadsOn(text, stop)) return stop;
+    stop = reshade(stop, lightnessOf(stop) + (darken ? -1 : 1) * CONTRAST_STEP);
+  }
+  const away: Rgb = darken ? [0, 0, 0] : [255, 255, 255];
+  const from = stop;
+  for (let i = 1; i <= CONTRAST_STEPS && !labelReadsOn(text, stop); i++) {
+    stop = mix(from, away, i / CONTRAST_STEPS);
   }
   return stop;
 }
@@ -572,14 +594,15 @@ function frameText(picked: Rgb): Rgb {
 
 /**
  * The frame color for a mode. Dark mode deepens it as Slack does. Light mode
- * keeps it, muted, and darkens it only as far as white text needs for AA
- * (Slack's #448627 gives white 4.4:1). A light frame is the same in both.
+ * keeps it, muted. A light frame is the same in both. Then it moves only as
+ * far as the rail's label needs for AA: Slack's #448627 gives white text
+ * 4.4:1, which the dimmer label would miss.
  */
-function frameBase(picked: Rgb, mode: Mode): Rgb {
-  if (isLightFrame(picked)) return picked;
-  if (mode === "dark") return deepFrame(picked);
+function frameBase(picked: Rgb, mode: Mode, text: Rgb): Rgb {
+  if (isLightFrame(picked)) return readableUnder(text, picked);
+  if (mode === "dark") return readableUnder(text, deepFrame(picked));
   return readableUnder(
-    LIGHT_TEXT,
+    text,
     reshade(picked, lightnessOf(picked), LIGHT_MODE_CHROMA)
   );
 }
@@ -610,7 +633,7 @@ const CONTRAST_STEPS = 30;
  * The colors of a gradient frame for a mode, around a base already set for
  * that mode (`frameBase`): the OKLCH midpoint, and the end in the highlight's
  * hue (the corners). Dark mode makes the end deep and muted; light mode keeps
- * it near the highlight. Every stop but the base moves until the text reads
+ * it near the highlight. Every stop but the base moves until the rail's label reads
  * on it at AA.
  */
 function gradientFlow(base: Rgb, highlight: Rgb, text: Rgb, mode: Mode) {
@@ -668,7 +691,7 @@ export function themeBackground(theme: ThemeColors, mode: Mode) {
 function themeColors(theme: ThemeColors, mode: Mode) {
   const picked = hexToRgb(theme.base);
   const text = frameText(picked);
-  const base = frameBase(picked, mode);
+  const base = frameBase(picked, mode, text);
   const highlight = hexToRgb(theme.highlight);
   const flow = theme.gradient
     ? gradientFlow(base, highlight, text, mode)
@@ -887,6 +910,17 @@ export function themeMesh({ base, highlight }: ThemeColors) {
 }
 
 /** The `H S% L%` triplet of a hex color: a theme's picker swatch. */
+/**
+ * True when dark text reads better than white on an `"H S% L%"` color (WCAG
+ * contrast): a yellow at 53% lightness still needs dark ink.
+ */
+export function darkTextReadsOn(hsl: string) {
+  const [h = 0, s = 0, l = 0] = hsl
+    .split(" ")
+    .map((part) => Number.parseFloat(part));
+  return textFor([hslToRgb(h, s / 100, l / 100)]) === DARK_TEXT;
+}
+
 export function hexTriplet(hex: string) {
   return hslTriplet(hexToRgb(hex));
 }

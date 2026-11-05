@@ -29745,9 +29745,6 @@ msgstr "Этот инструмент активизируется при зап
 msgid "This unit has no cost in inventory"
 msgstr "У этой единицы нет стоимости в запасах"
 
-msgid "This updates the theme for all users of the application"
-msgstr "Это обновляет тему для всех пользователей приложения"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Этот пользователь не имеет включенную двухфакторную аутентификацию."
 

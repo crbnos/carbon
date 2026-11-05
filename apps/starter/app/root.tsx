@@ -31,6 +31,7 @@ import {
   DENSITY_COOKIE,
   densityValidator,
   getPreferenceHeaders,
+  isRootActionPost,
   modeValidator,
   prefetchCacheMiddleware,
   TEXT_SIZE_COOKIE,
@@ -98,7 +99,7 @@ export const clientMiddleware = [
 // A post here writes an appearance cookie, which only this loader reads, so a
 // theme save asks no other route to re-run (`defaultShouldRevalidate`).
 export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  args.formAction === path.to.root || args.defaultShouldRevalidate;
+  isRootActionPost(args) || args.defaultShouldRevalidate;
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },

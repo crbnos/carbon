@@ -29745,9 +29745,6 @@ msgstr "यह उपकरण तब सक्रिय होता है ज
 msgid "This unit has no cost in inventory"
 msgstr "इस इकाई की इन्वेंटरी में कोई लागत नहीं है"
 
-msgid "This updates the theme for all users of the application"
-msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम अपडेट करता है"
-
 msgid "This user does not have two-factor authentication enabled."
 msgstr "इस उपयोगकर्ता के पास दो-कारक प्रमाणीकरण सक्षम नहीं है।"
 

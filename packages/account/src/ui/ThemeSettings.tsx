@@ -20,6 +20,7 @@ import {
 } from "@carbon/react";
 import type { Theme, ThemeColors } from "@carbon/utils";
 import {
+  darkTextReadsOn,
   normalizeHex,
   pickableThemes,
   presetThemes,
@@ -36,19 +37,19 @@ import { useEffect, useId, useRef } from "react";
 import { LuCheck, LuShuffle } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { AccountSettingsSection } from "./AccountSettingsLayout";
+import { ROOT_ACTION } from "./context";
 
-// Every app's root action stores the theme as a cookie, per browser. Only the
-// root loader reads it, so the save re-runs no other loader (each root's
-// `shouldRevalidate` opts back in).
-const ROOT_ACTION = "/";
+// Only the root loader reads the theme cookie, so a save re-runs no other
+// loader (each root's `shouldRevalidate` opts back in).
 const SAVE_OPTIONS = {
   method: "post",
   action: ROOT_ACTION,
   defaultShouldRevalidate: false
 } as const;
 
-// The toggle value of the custom card. A custom theme's own name is its
-// colors (`custom:<base>:<highlight>:<g|s>`), so the card needs a fixed one.
+// The Custom theme tab, and the grid's value while a custom theme is in use:
+// its own name is its colors (`custom:<base>:<highlight>:<g|s>`), so it needs
+// a fixed one, which no card has.
 const CUSTOM = "custom";
 
 // What the custom fields start from while the theme has no `colors`.
@@ -68,29 +69,6 @@ const CARD = cn(
   "data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-foreground",
   "hover:data-[state=on]:bg-accent"
 );
-
-function linearChannel(value: number) {
-  return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-}
-
-/**
- * True when black reads better than white on a color theme's swatch (WCAG
- * contrast). Swatches are `"H S% L%"` strings, so yellow at 53% lightness still
- * needs dark ink.
- */
-function isLightSwatch(hsl: string) {
-  const [h = 0, s = 0, l = 0] = hsl
-    .split(" ")
-    .map((part, index) => Number.parseFloat(part) / (index === 0 ? 1 : 100));
-  const a = s * Math.min(l, 1 - l);
-  const channel = (n: number) => {
-    const k = (n + h / 30) % 12;
-    return linearChannel(l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)));
-  };
-  const luminance =
-    0.2126 * channel(0) + 0.7152 * channel(8) + 0.0722 * channel(4);
-  return (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05);
-}
 
 /**
  * Account → Appearance → Theme: one choice, one `theme` cookie. A color
@@ -185,10 +163,6 @@ export function ThemeSettings({
   const onPick = (next: string) => {
     // A click on the selected card deselects it in a ToggleGroup: keep it.
     if (!next || next === selected) return;
-    if (next === CUSTOM) {
-      saveCustom(editing);
-      return;
-    }
     save(next);
   };
 
@@ -347,7 +321,7 @@ function ColorThemeCard({
       value={theme.name}
       label={theme.label}
       swatch={`hsl(${swatch})`}
-      check={isLightSwatch(swatch) ? "#000000" : "#ffffff"}
+      check={darkTextReadsOn(swatch) ? "#000000" : "#ffffff"}
       active={active}
     />
   );

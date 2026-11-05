@@ -135,8 +135,13 @@ The numbers come from pixels sampled in the user's Slack screenshots
 Slack's frame depends on the mode. In light mode it keeps the picked colors,
 muted: `#228B07` shows as `#448627`. The corners are the highlight at 93% of
 its lightness: `#9E0B2E` shows as `#83252C`. `frameBase` keeps the picked
-color at 80% chroma. It darkens the color only as far as white rail text needs
-for AA. Slack's `#448627` gives white text 4.4:1.
+color at 80% chroma. It darkens the color only as far as the rail's labels
+need for AA. The rail draws an unselected label at 70% opacity, so
+`labelReadsOn` measures that label, not the full text color. Slack's `#448627`
+gives white text 4.4:1, so Carbon's diagonal is a deeper green (`#136300`).
+Every frame color and gradient stop goes through `readableUnder`. If its
+lightness steps run out, it moves the color towards black or white, so any
+custom color reads at AA.
 
 In dark mode Slack never paints a picked frame color as it is. It deepens it
 to OKLab lightness 0.336: `#921D21` shows as `#631A18`, and `#228B07` as `#223F18`.
@@ -263,7 +268,7 @@ If the user closes the pane first, the pane saves the last color as it closes.
 | Where the choice is stored | The `theme` cookie, per browser. | Every theme is a per-browser cookie on the host app (`packages/account/AGENTS.md`). A new column is a schema change, which `AGENTS.md` puts in Ask First. |
 | The accent of a theme with `colors` | The default theme's (`zinc`) `cssVars`. | The frame carries the color. A neutral accent fits every frame. |
 | The avatar menu and the mobile profile sheet | They list no themes. Their Appearance item opens Account → Appearance. | 24 themes crowd a compact menu, and one picker keeps one place to learn (2026-11-05). |
-| Light mode and dark mode | The same frame colors in both modes. | Slack does this (research finding 4). It halves the preset data, and a dark frame around a white card is the look users know from Slack. |
+| Light mode and dark mode | One preset per theme, painted per mode: light mode keeps the picked color, muted; dark mode deepens it (`deepFrame`). | Slack does this (measured 2026-11-05, see the Changelog). One color per preset halves the preset data. |
 | Text color in the frame | Computed by WCAG contrast, never stored. | A custom color can be light or dark. A stored text color could go stale when the user edits the frame color. |
 | Status colors | Not customizable. | `success` and `destructive` carry meaning across Carbon (research finding 3). |
 | Animated mesh gradient | Not used. Gradients are static CSS. | A WebGL shader behind every page costs GPU and battery all day. The mesh stays on onboarding. |
@@ -272,7 +277,7 @@ If the user closes the pane first, the pane saves the last color as it closes.
 | Where the highlight shows | The module sidebar's selected item: a 45% wash of `highlight` over the panel. | Slack puts "Selected items" on the channel list. A full-strength fill failed AA on its 60% hover blend for most presets. The wash keeps the text at 4.5:1 on both. |
 | The module sidebar | A `panel` tint, stronger than the page and lighter than the frame. | The user's Slack screenshots (2026-11-03): the channel list is a tinted panel between the frame and a calm message pane. 3 layers read as one theme. |
 | The company logo in the rail | Picked by the frame's `tone`, not by the mode. | The logo sits on the frame. A dark frame in light mode would show the logo made for a light background. |
-| Preview | A click: the pending `theme` submission, from any fetcher. A color drag: `setThemePreview`, a store that `useThemeValue` reads first. | Each save revalidates every loader on the page. A drag that saved every 150 ms ran about 20 full revalidations in 3 seconds. |
+| Preview | A click: the pending `theme` submission, from any fetcher. A color drag: `setThemePreview`, a store that `useThemeValue` reads first. | Each save is a request and re-runs the root loader. Before the root-only save, a drag that saved every 150 ms ran about 20 full revalidations in 3 seconds. |
 | Custom color pickers | `ColorPicker` (`@carbon/react`). The pane saves once, 400 ms after the last change, and on close. | An existing component. One save per drag. |
 | Accent preview of a theme with `colors` | `useThemePreview` skips the variables that `content` sets. | The accent preview paints `<body>`, which outranks `<html>`. Without the skip, the tint drops while the preview shows. |
 | Apps | ERP and MES. The starter hides the section. | The ERP and the MES shells both use `NavRail` inside `SidebarProvider`. The starter's shell has no rail. |
@@ -436,6 +441,9 @@ precedent, then by the research, then by the recommended answer.
 
 ## Changelog
 
+- 2026-11-05: The frame carries the rail's 70% labels at AA, not only the
+  full text color. Light-mode frames are deeper than Slack's samples as a
+  result; dark mode does not change. A seeded test covers 400 custom themes.
 - 2026-11-05: The code and the copy say "theme", never "window theme".
   `Theme.window` is `Theme.colors`, `WINDOW_THEMES` is `THEME_PRESETS`,
   `windowThemes` is `presetThemes`, and `window-themes.ts` is

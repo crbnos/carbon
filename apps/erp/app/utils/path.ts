@@ -2816,7 +2816,6 @@ export const path = {
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
     tags: `${x}/settings/tags`,
-    theme: `${x}/account/theme`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
     timeSettings: `${x}/settings/time`,

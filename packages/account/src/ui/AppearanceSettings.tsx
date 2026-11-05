@@ -32,11 +32,8 @@ import {
   AccountSettingsPane,
   AccountSettingsSection
 } from "./AccountSettingsLayout";
-import { useAccountSettingsConfig } from "./context";
+import { ROOT_ACTION, useAccountSettingsConfig } from "./context";
 import { ThemeSettings } from "./ThemeSettings";
-
-// Every app's root action stores these as cookies, so each choice is per browser.
-const ROOT_ACTION = "/";
 
 const SEGMENTED_GROUP =
   "w-fit gap-0.5 rounded-lg border border-border bg-muted p-0.5";

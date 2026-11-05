@@ -7,6 +7,12 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import type { AccountSettingsUser } from "../types";
 
+/**
+ * The host app's root action. Every app's `root.tsx` stores the Appearance
+ * pane's choices there as cookies, so each one is per browser.
+ */
+export const ROOT_ACTION = "/";
+
 export type AccountSettingsConfig = {
   /**
    * Where the ERP's API routes are reached from this app: `/api` in the ERP,
