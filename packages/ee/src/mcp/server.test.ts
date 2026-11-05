@@ -200,6 +200,28 @@ describe("call_tool keeps list output small", () => {
     expect(text).toContain("(rows 201-202 of 250; next page: offset 202)");
   });
 
+  it("defaults an unidentified list to 25 rows without paging arguments", async () => {
+    callOperation.mockResolvedValueOnce({
+      success: true,
+      data: Array.from({ length: 30 }, (_, id) => ({ id }))
+    });
+    const client = await connect({
+      name: "shared_getCountries",
+      module: "shared",
+      paginates: false,
+      schema: { type: "object", properties: {} }
+    });
+    const result = await client.callTool({
+      name: "call_tool",
+      arguments: { name: "shared_getCountries", arguments: {} }
+    });
+    expect((result.content as { text: string }[])[0]!.text).toBe(
+      "# shared_getCountries.csv\r\nid\r\n" +
+        Array.from({ length: 25 }, (_, id) => id).join("\r\n") +
+        "\n(rows 1-25 of 30; next page: offset 25)"
+    );
+  });
+
   it("ignores stray paging on a single-record read", async () => {
     callOperation.mockResolvedValueOnce({
       success: true,

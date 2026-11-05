@@ -414,6 +414,9 @@ function buildMcpServer<Ctx extends McpContext>(
           hasData: result.data !== undefined,
           responseTime
         });
+        if (Array.isArray(result.data) && !meta?.paginates) {
+          mcpPaging ??= responsePaging({});
+        }
         let output: string;
         if (result.data === undefined) {
           output = "Operation completed successfully";
