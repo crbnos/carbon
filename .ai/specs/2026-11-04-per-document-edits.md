@@ -9,7 +9,7 @@
 ## TL;DR
 
 - A user opens "Edit document" on one record (PO-001042, an invoice, a quote) and changes how that one document prints.
-- The editor opens in a large modal: the same preview, the same "Words on the page", the same click-to-jump.
+- The editor opens in a large modal: the same preview, the same text panel, the same click on a word.
 - The user can rename words, hide fields and columns, show or hide blocks, and edit the Terms and the Notes.
 - The company template stays the same. A word the user did not change still follows the template.
 - The edits lock when the record locks (a PO once finalized, a quote once sent, an invoice once posted).
@@ -61,14 +61,14 @@ All 11 page documents. The table maps each one to its record, its lock, its edit
 | `quote` | `quote.id` | `isQuoteLocked` | update sales | `quote.externalNotes` |
 | `salesOrder` | `salesOrder.id` | `isSalesOrderLocked` | update sales | `salesOrder.externalNotes` |
 | `salesReturnOrder` | `salesReturnOrder.id` | `isSalesReturnOrderLocked` | update sales | `salesReturnOrder.externalNotes` |
-| `salesInvoice` | `salesInvoice.id` | `isSalesInvoiceLocked` | update sales | `salesInvoice.externalNotes` |
+| `salesInvoice` | `salesInvoice.id` | `isSalesInvoiceLocked` | update invoicing | `salesInvoice.externalNotes` |
 | `packingSlip` | `shipment.id` | shipment Posted or Voided | update inventory | `shipment.externalNotes` |
 | `stockTransfer` | `stockTransfer.id` | `isStockTransferLocked` | update inventory | no Notes block |
 | `jobTraveler` | `job.id` | `JOB_LOCKED_STATUSES` | update production | `job.notes` |
 | `issue` | `nonConformance.id` | `isIssueLocked` | update quality | `nonConformance.content` ("Description of Issue") |
 
 Each Notes column comes from the document's `NotesBlock` (`packages/documents/src/pdf/blocks/*/NotesBlock.tsx`).
-The Notes edit writes through the record's existing update service function. The modal adds no second copy of the notes.
+The Notes edit writes the record's own column, in the same transaction as the edit, and only when the user changed the notes. The modal adds no second copy of the notes.
 
 ### Data model
 
@@ -123,7 +123,7 @@ A service function `saveDocumentEdit` (module: settings, next to `saveDocumentTe
    and a hide on a word that cannot hide.
 5. Upsert the row on `("companyId", "documentType", "documentId")`. If the edit is empty, delete the row.
 
-The Notes edit is a separate call to the record's existing update function, from the same Save.
+The Save writes the Notes edit to the record's column in the same transaction, only when the user changed the notes.
 
 ### The modal
 
@@ -132,12 +132,12 @@ The Notes edit is a separate call to the record's existing update function, from
   with `documentType` and `documentId`.
 - It reuses the template editor parts: `PreviewPages`, `BlockConfig` words panel (`TextConfig`), click-to-jump.
 - Left: the blocks of the page with an eye each. No add, no drag, no font or color sections.
-- Right: "Words on the page" for the selected block, plus a Terms editor on the Terms block and a Notes editor on
+- Right: the texts of the selected block, one at a time, plus a Terms editor on the Terms block and a Notes editor on
   the Notes block.
 - The top bar says "Editing PO-001042 only", with "Reset to template", "Cancel" and "Save".
 - The preview renders the real record with the draft edits. The preview route takes the edit as form data, as
   the template preview takes the draft template.
-- If the record is locked, every control is read-only and a line says "Locked: this document was sent."
+- If the record is locked, every control is read-only and a line says "Locked: this record can no longer change."
 - The modal's data comes from one resource route that returns the resolved template, the edit row, the lock and
   the record's notes.
 
@@ -193,3 +193,4 @@ The Notes edit is a separate call to the record's existing update function, from
 
 - 2026-11-04 — Draft written after the interview.
 - 2026-11-04 — Built. Changes while building: the save writes the record's notes column in its own transaction under the keyed permission, instead of calling each module's update function; `RelatedDocument` takes an `onClick` so the packing slip and stock transfer rows can open the modal; only a quote revision copies edits, a duplicated quote starts clean. Run log: `.ai/runs/2026-11-04-per-document-edits-e2e.md`.
+- 2026-11-05 — Values became variables on all 11 page documents: every single-line value prints from an editable text with variable chips, including one set of row variables per table (`{line.*}`, `{operation.*}`, `{task.*}`). Tracking labels are not included.
