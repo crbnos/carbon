@@ -1552,13 +1552,14 @@ msgstr "Un elemento facturable por debajo de una cuenta de control que tiene una
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Una cuenta de compensación que mantiene el valor de bienes recibidos pero aún no facturados; la factura del proveedor la cancela."
 
-msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
-msgstr "Un color define el acento. Los temas degradados y sólidos también colorean la navegación, la barra lateral y la página."
 msgid "A clock is still running on this job."
 msgstr "Aún hay un reloj en marcha en esta orden de trabajo."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Un proyecto cerrado no acepta más cargos y no se puede reabrir. Ciérralo solo cuando cada línea de orden de compra y orden de trabajo esté hecha."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Un color define el acento. Los temas degradados y sólidos también colorean la navegación, la barra lateral y la página."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Una empresa se conecta a un Onshape a la vez. Desinstale Onshape Government y luego conecte Onshape."
@@ -5501,10 +5502,11 @@ msgstr "Factura hasta que se cancele"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "En blanco = calculado desde el período de recertificación de la Habilidad"
 
-msgid "Blend the background into the selected items color."
-msgstr ""
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "En blanco utiliza la estimación de conclusión de los proyectos del contrato"
+
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Ciego"

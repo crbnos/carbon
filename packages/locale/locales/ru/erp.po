@@ -1552,13 +1552,14 @@ msgstr "Расчетный элемент ниже счета контроля, 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Счет, содержащий стоимость полученных товаров, еще не выставленных счетом; счет-фактура поставщика его очищает."
 
-msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
-msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
 msgid "A clock is still running on this job."
 msgstr "На этом производственном заказе по-прежнему работает таймер."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Закрытый проект не принимает больше начислений и не может быть переоткрыт. Закройте его только когда каждая строка заказа поставщику и производственный заказ на нём готовы."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Организация может подключаться к одному Onshape одновременно. Удалите Onshape Government, затем подключите Onshape."
@@ -5501,10 +5502,11 @@ msgstr "Выставляет счета до отмены"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Пусто = рассчитывается из периода переаттестации навыка"
 
-msgid "Blend the background into the selected items color."
-msgstr ""
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Если оставить пусто, используется смета по окончании контрактных проектов"
+
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Слепой"

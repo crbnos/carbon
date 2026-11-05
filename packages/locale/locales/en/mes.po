@@ -373,10 +373,11 @@ msgstr "Behind target by {daysBehindTarget} day(s)"
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Bigger or smaller text. The layout stays put."
 
-msgid "Blend the background into the selected items color."
-msgstr "Blend the background into the selected items color."
 msgid "Billable"
 msgstr "Billable"
+
+msgid "Blend the background into the selected items color."
+msgstr "Blend the background into the selected items color."
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"

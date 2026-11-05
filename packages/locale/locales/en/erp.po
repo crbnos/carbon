@@ -1552,13 +1552,14 @@ msgstr "A chargeable element below a control account that has an earned value te
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 
-msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
-msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgid "A clock is still running on this job."
 msgstr "A clock is still running on this job."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
@@ -5501,10 +5502,11 @@ msgstr "Bills until it is cancelled"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
 
-msgid "Blend the background into the selected items color."
-msgstr "Blend the background into the selected items color."
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Blank uses the estimate at completion of the contract's projects"
+
+msgid "Blend the background into the selected items color."
+msgstr "Blend the background into the selected items color."
 
 msgid "Blind"
 msgstr "Blind"

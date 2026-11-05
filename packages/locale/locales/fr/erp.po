@@ -1552,13 +1552,14 @@ msgstr "Un élément facturable sous un compte de contrôle qui dispose d'une te
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Un compte de compensation tenant la valeur des marchandises reçues mais non encore facturées ; la facture du fournisseur l'apure."
 
-msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
-msgstr "Une couleur définit l'accent. Les thèmes dégradés et unis colorent aussi la navigation, la barre latérale et la page."
 msgid "A clock is still running on this job."
 msgstr "Une horloge est toujours en cours sur cet ordre de fabrication."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "Un projet clôturé ne prend plus de charges et ne peut pas être rouvert. Clôturez-le uniquement lorsque chaque ligne de bon de commande et chaque ordre de fabrication est terminé."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Une couleur définit l'accent. Les thèmes dégradés et unis colorent aussi la navigation, la barre latérale et la page."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Une société ne peut se connecter qu'à un Onshape à la fois. Désinstallez Onshape Government, puis connectez Onshape."
@@ -5501,10 +5502,11 @@ msgstr "Facture jusqu'à ce qu'elle soit annulée"
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Vide = calculé à partir de la période de recertification de la Compétence"
 
-msgid "Blend the background into the selected items color."
-msgstr ""
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Vide utilise l'estimation à l'achèvement des projets du contrat"
+
+msgid "Blend the background into the selected items color."
+msgstr ""
 
 msgid "Blind"
 msgstr "Aveugle"
