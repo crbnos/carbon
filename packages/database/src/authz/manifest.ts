@@ -80,44 +80,55 @@ const ownAttribute = through(
 );
 
 /**
- * Editing how one document prints is editing that record, so each write needs the
- * update permission of the record's module (purchasing for a PO, sales for an invoice).
+ * Whoever can read a record can read how its document prints, by the record's own
+ * read rule. Nothing writes through the API: every save validates the edit and
+ * checks the record's lock on the server, as the system.
  */
-const documentEditWriter = or(
+const documentEditReader = or(
   and(
     where<"documentEdit">((eb) =>
       eb("documentType", "in", [
-        "purchaseOrder",
         "purchaseReturnOrder",
-        "purchasingRfq"
-      ])
-    ),
-    inCompany("companyId", "purchasing_update")
-  ),
-  and(
-    where<"documentEdit">((eb) =>
-      eb("documentType", "in", [
-        "quote",
-        "salesOrder",
         "salesReturnOrder",
-        "salesInvoice"
+        "stockTransfer",
+        "jobTraveler"
       ])
     ),
-    inCompany("companyId", "sales_update")
+    inCompany("companyId", "employee")
   ),
   and(
-    where<"documentEdit">((eb) =>
-      eb("documentType", "in", ["packingSlip", "stockTransfer"])
-    ),
-    inCompany("companyId", "inventory_update")
+    where<"documentEdit">((eb) => eb("documentType", "=", "purchaseOrder")),
+    inCompany(
+      "companyId",
+      anyOf("purchasing_view", "inventory_view", "invoicing_view")
+    )
   ),
   and(
-    where<"documentEdit">((eb) => eb("documentType", "=", "jobTraveler")),
-    inCompany("companyId", "production_update")
+    where<"documentEdit">((eb) => eb("documentType", "=", "purchasingRfq")),
+    inCompany("companyId", "purchasing_view")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "quote")),
+    inCompany("companyId", "sales_view")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "salesOrder")),
+    inCompany(
+      "companyId",
+      anyOf("sales_view", "inventory_view", "invoicing_view")
+    )
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "salesInvoice")),
+    inCompany("companyId", "invoicing_view")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "packingSlip")),
+    inCompany("companyId", anyOf("inventory_view", "sales_view"))
   ),
   and(
     where<"documentEdit">((eb) => eb("documentType", "=", "issue")),
-    inCompany("companyId", "quality_update")
+    inCompany("companyId", "quality_view")
   )
 );
 
@@ -531,14 +542,14 @@ export const manifest = {
     insert: owner("userId"),
     delete: owner("userId")
   }),
-  documentEdit: policies({
-    select: inCompany("companyId", "employee"),
-    insert: documentEditWriter,
-    update: { using: documentEditWriter, check: documentEditWriter },
-    delete: documentEditWriter
-  }),
+  documentEdit: policies({ select: documentEditReader }),
   documentSection: company("settings"),
-  documentTemplate: company("settings"),
+  // Saved by the server, which validates its figures: no API writes.
+  documentTemplate: company("settings", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   documentTransaction: policies({
     select: owner("userId"),
     insert: owner("userId")
