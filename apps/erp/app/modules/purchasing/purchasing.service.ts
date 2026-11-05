@@ -230,6 +230,7 @@ import {
   purchaseOrderLineDateOfOrderDate,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
+  purchaseOrderPromisedDateRefusal,
   purchaseOrderVersionValidator,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
@@ -7558,6 +7559,46 @@ export async function statusesOf(
     return ctx.error("internal", "Failed to read the records", rows.error);
   }
   return rows.data.map((row) => row.status);
+}
+
+/**
+ * Why a delivery write may not change the order's promised date, or null.
+ * A changed promised date follows the properties panel's rule: fixed once
+ * the order is fully received. A write that leaves the date out, or re-sends
+ * the stored one, changes nothing.
+ */
+export async function purchaseOrderPromisedDateChangeRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  receiptPromisedDate: string | undefined
+): Promise<CarbonError | null> {
+  if (receiptPromisedDate === undefined) return null;
+  const [statuses, stored] = await Promise.all([
+    statusesOf(ctx, "purchaseOrder", [purchaseOrderId]),
+    ctx.asCaller.supabase
+      .from("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle()
+  ]);
+  if (statuses instanceof CarbonError) return statuses;
+  if (stored.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order delivery",
+      stored.error
+    );
+  }
+  if (
+    (stored.data?.receiptPromisedDate ?? null) === (receiptPromisedDate || null)
+  ) {
+    return null;
+  }
+  const refusal = statuses
+    .map(purchaseOrderPromisedDateRefusal)
+    .find((message) => message !== null);
+  return refusal ? ctx.error("rule", refusal) : null;
 }
 
 /**

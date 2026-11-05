@@ -2788,10 +2788,11 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     );
     if (chargeError) return ctx.error("validation", chargeError.message);
 
-    // An update that leaves the order references out keeps the stored ones,
-    // so the gate reads them: a price edit still bills the order's line.
+    // An update that leaves an order reference out keeps the stored one, so
+    // the gate reads it: a price edit still bills the order's line, and an
+    // edit that sends only the line still bills the stored order.
     let { purchaseOrderId, purchaseOrderLineId } = input;
-    if (purchaseOrderId === undefined && purchaseOrderLineId === undefined) {
+    if (purchaseOrderId === undefined || purchaseOrderLineId === undefined) {
       const stored = await ctx.asCaller.supabase
         .from("purchaseInvoiceLine")
         .select("purchaseOrderId, purchaseOrderLineId")
@@ -2808,8 +2809,8 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
       if (!stored.data) {
         return ctx.error("notFound", "Purchase invoice line not found");
       }
-      purchaseOrderId = stored.data.purchaseOrderId ?? undefined;
-      purchaseOrderLineId = stored.data.purchaseOrderLineId ?? undefined;
+      purchaseOrderId ??= stored.data.purchaseOrderId ?? undefined;
+      purchaseOrderLineId ??= stored.data.purchaseOrderLineId ?? undefined;
     }
     const refused = await purchaseOrderFundsGate(ctx, purchaseOrderId, {
       intent: "invoice",

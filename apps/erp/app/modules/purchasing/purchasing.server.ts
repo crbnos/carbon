@@ -2145,36 +2145,13 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
 
   async run(ctx, { id, customFields, ...delivery }) {
     const companyId = ctx.company.id;
-    // A changed promised date follows the properties panel's rule: fixed
-    // once the order is fully received. The card re-sends an unchanged one.
-    if (delivery.receiptPromisedDate !== undefined) {
-      const [statuses, stored] = await Promise.all([
-        service.statusesOf(ctx, "purchaseOrder", [id]),
-        ctx.asCaller.supabase
-          .from("purchaseOrderDelivery")
-          .select("receiptPromisedDate")
-          .eq("id", id)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      ]);
-      if (statuses instanceof CarbonError) return statuses;
-      if (stored.error) {
-        return ctx.error(
-          "internal",
-          "Failed to read the purchase order delivery",
-          stored.error
-        );
-      }
-      if (
-        (stored.data?.receiptPromisedDate ?? null) !==
-        (delivery.receiptPromisedDate || null)
-      ) {
-        const refusal = statuses
-          .map(purchaseOrderPromisedDateRefusal)
-          .find((message) => message !== null);
-        if (refusal) return ctx.error("rule", refusal);
-      }
-    }
+    // The card re-sends an unchanged promised date; only a change is checked.
+    const promised = await service.purchaseOrderPromisedDateChangeRefusal(
+      ctx,
+      id,
+      delivery.receiptPromisedDate
+    );
+    if (promised) return promised;
     return service.amendPurchaseOrder(ctx, id, async () => {
       const saved = await ctx
         .transaction(async (tx) => {
@@ -5904,6 +5881,13 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
+    // The same promised-date rule as updatePurchaseOrderDelivery.
+    const promised = await service.purchaseOrderPromisedDateChangeRefusal(
+      ctx,
+      input.id,
+      input.receiptPromisedDate
+    );
+    if (promised) return promised;
     return service.amendPurchaseOrder(ctx, input.id, async () =>
       unwrap(
         ctx,

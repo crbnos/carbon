@@ -17102,9 +17102,56 @@ export async function postPurchaseInvoice(
         : null;
 
     const createdReceiptIds: string[] = [];
+    const invoicePurchaseOrderIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderId)
+      .filter((id): id is string => Boolean(id));
+    const invoicePurchaseOrderLineIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // The gate above ran before this transaction. Lock the invoice's orders
+      // and check again: an edit that sent one back to approval in between
+      // either committed first (and is refused here) or waits on this lock,
+      // since a re-submit locks the order before it changes the status.
+      if (
+        invoicePurchaseOrderIds.length > 0 ||
+        invoicePurchaseOrderLineIds.length > 0
+      ) {
+        await trx
+          .selectFrom("purchaseOrder")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or([
+              eb("id", "in", [...invoicePurchaseOrderIds, ""]),
+              eb("id", "in", (sub) =>
+                sub
+                  .selectFrom("purchaseOrderLine")
+                  .select("purchaseOrderId")
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", [...invoicePurchaseOrderLineIds, ""])
+              )
+            ])
+          )
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const lockedFundsRefused = await purchaseOrderFundsGate(
+          ctx,
+          invoicePurchaseOrderIds,
+          {
+            intent: "invoice",
+            purchaseOrderLineIds: invoicePurchaseOrderLineIds
+          }
+        );
+        if (lockedFundsRefused) {
+          throw new ServerFnError(lockedFundsRefused.message, 422);
+        }
+      }
+
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
         const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<
