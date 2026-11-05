@@ -591,7 +591,7 @@ export default function AuthenticatedRoute() {
                       api={path.to.erpApi}
                       user={user}
                       companyId={company.id}
-                      windowTheme
+                      windowThemes
                     />
                   )}
                   {timeCardEnabled && (

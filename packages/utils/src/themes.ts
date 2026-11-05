@@ -6,6 +6,13 @@ import type { CalendarDate } from "@internationalized/date";
 import { today } from "@internationalized/date";
 import * as cookie from "cookie";
 import template from "lodash.template";
+import type { WindowTheme } from "./window-themes";
+import {
+  hexTriplet,
+  parseWindowTheme,
+  WINDOW_THEMES,
+  windowThemeMesh
+} from "./window-themes";
 
 /** The everyday themes: what every theme picker offers all year. */
 export const themes = [
@@ -559,14 +566,90 @@ export type SeasonalTheme = {
 
 export const seasonalThemes = [] as const satisfies readonly SeasonalTheme[];
 
-const allThemes = [...themes, ...seasonalThemes] as const;
+/**
+ * Any theme: a color theme (`themes`), a seasonal one, or a window theme. A
+ * window theme carries `window`: it colors the frame, the rail, the module
+ * sidebar and, lightly, the page (`windowThemeStyle`), and keeps the default
+ * theme's accent.
+ */
+export type Theme = {
+  name: string;
+  label: string;
+  mesh: MeshColors;
+  activeColor: { light: string; dark: string };
+  cssVars: { light: Record<string, string>; dark: Record<string, string> };
+  window?: WindowTheme;
+};
 
-export type Theme = (typeof allThemes)[number];
-export type ThemeName = Theme["name"];
+/**
+ * A theme's name, as the `theme` cookie stores it: a theme name, or a custom
+ * window theme (`custom:<base>:<highlight>:<g|s>`).
+ */
+export type ThemeName = string;
+
+const allThemes: readonly Theme[] = [...themes, ...seasonalThemes];
 
 /** The first everyday theme is the default. */
 const defaultTheme: Theme = themes[0];
 export const DEFAULT_THEME_NAME = themes[0].name;
+
+/** A theme from window colors: the default theme's accent, its own frame. */
+function windowColorTheme(
+  name: string,
+  label: string,
+  window: WindowTheme
+): Theme {
+  const swatch = hexTriplet(window.highlight);
+  return {
+    name,
+    label,
+    mesh: windowThemeMesh(window),
+    activeColor: { light: swatch, dark: swatch },
+    cssVars: defaultTheme.cssVars,
+    window
+  };
+}
+
+/**
+ * The window themes, solid and gradient, from `WINDOW_THEMES`. Pickers that
+ * can paint a frame (Account → Appearance in the ERP and the MES) list them
+ * after `themes`.
+ */
+export const windowThemes: readonly (Theme & {
+  window: WindowTheme;
+})[] = WINDOW_THEMES.map((preset) => ({
+  ...windowColorTheme(preset.name, preset.label, preset),
+  window: {
+    base: preset.base,
+    highlight: preset.highlight,
+    gradient: preset.gradient
+  }
+}));
+
+/** The theme a custom window value names, or `undefined`. */
+function customTheme(name: string | null | undefined): Theme | undefined {
+  if (!name?.startsWith("custom:")) return undefined;
+  const window = parseWindowTheme(name);
+  return window ? windowColorTheme(name, "Custom", window) : undefined;
+}
+
+/** An everyday theme by name: a color theme, a window theme or a custom one. */
+function everydayTheme(name: string | null | undefined): Theme | undefined {
+  return (
+    themes.find((candidate) => candidate.name === name) ??
+    windowThemes.find((candidate) => candidate.name === name) ??
+    customTheme(name)
+  );
+}
+
+/**
+ * Whether a name is a theme a browser may store or pick: a color theme, a
+ * window theme, a custom window value, or a seasonal theme (picking one turns
+ * it back on). The name reaches a `style` attribute, so nothing else passes.
+ */
+export function isThemeName(name: string | null | undefined): boolean {
+  return Boolean(everydayTheme(name)) || isSeasonalTheme(name);
+}
 
 function dayOfYear({ month, day }: MonthDay) {
   return month * 100 + day;
@@ -613,7 +696,7 @@ export function seasonalThemeNow(date?: CalendarDate): Theme | undefined {
  * so removing a theme never breaks a browser that still holds its cookie.
  */
 export function storedTheme(name: string | null | undefined): Theme {
-  return themes.find((candidate) => candidate.name === name) ?? defaultTheme;
+  return everydayTheme(name) ?? defaultTheme;
 }
 
 /**
@@ -706,7 +789,11 @@ export function pickableThemes(date?: CalendarDate): readonly Theme[] {
  * the season again.
  */
 export function themeByName(name: string | null | undefined): Theme {
-  return allThemes.find((theme) => theme.name === name) ?? defaultTheme;
+  return (
+    allThemes.find((theme) => theme.name === name) ??
+    everydayTheme(name) ??
+    defaultTheme
+  );
 }
 
 /**

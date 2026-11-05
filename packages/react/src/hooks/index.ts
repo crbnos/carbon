@@ -37,9 +37,9 @@ import { useDensityScale, useUiScale } from "./useUiScale";
 import { useUrlParams } from "./useUrlParams";
 import {
   setWindowThemePreview,
+  useThemeValue,
   useWindowTheme,
-  useWindowThemeContent,
-  useWindowThemeValue
+  useWindowThemeContent
 } from "./useWindowTheme";
 
 export type { Shortcut, ShortcutDefinition };
@@ -75,10 +75,10 @@ export {
   useShortcutKeys,
   useShortcutSequence,
   useThemePreview,
+  useThemeValue,
   useThrottle,
   useUiScale,
   useUrlParams,
   useWindowTheme,
-  useWindowThemeContent,
-  useWindowThemeValue
+  useWindowThemeContent
 };

@@ -9,23 +9,17 @@ import {
   ToggleGroupItem,
   useMode,
   useModePreference,
-  useRouteData,
-  useThemePreview,
-  useUiScale,
-  useWindowThemeContent
+  useUiScale
 } from "@carbon/react";
 import type { Density, TextSize } from "@carbon/utils";
 import {
   densityValidator,
   modeValidator,
-  pickableThemes,
-  textSizeValidator,
-  themeColorValidator
+  textSizeValidator
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
-  LuCheck,
   LuLaptop,
   LuMoon,
   LuRows2,
@@ -39,7 +33,7 @@ import {
   AccountSettingsSection
 } from "./AccountSettingsLayout";
 import { useAccountSettingsConfig } from "./context";
-import { WindowThemeSettings } from "./WindowThemeSettings";
+import { ThemeSettings } from "./ThemeSettings";
 
 // Every app's root action stores these as cookies, so each choice is per browser.
 const ROOT_ACTION = "/";
@@ -53,55 +47,15 @@ const SEGMENTED_ITEM = cn(
   "hover:data-[state=on]:bg-background"
 );
 
-function linearChannel(value: number) {
-  return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-}
-
-/**
- * True when black reads better than white on a theme swatch (WCAG contrast).
- * Swatches are `"H S% L%"` strings, so yellow at 53% lightness still needs
- * dark ink.
- */
-function isLightSwatch(hsl: string) {
-  const [h = 0, s = 0, l = 0] = hsl
-    .split(" ")
-    .map((part, index) => Number.parseFloat(part) / (index === 0 ? 1 : 100));
-  const a = s * Math.min(l, 1 - l);
-  const channel = (n: number) => {
-    const k = (n + h / 30) % 12;
-    return linearChannel(l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)));
-  };
-  const luminance =
-    0.2126 * channel(0) + 0.7152 * channel(8) + 0.0722 * channel(4);
-  return (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05);
-}
-
 export default function AppearanceSettings() {
   const { t } = useLingui();
-  const { transitionMode, windowTheme } = useAccountSettingsConfig();
+  const { transitionMode, windowThemes } = useAccountSettingsConfig();
   const mode = useMode();
   const modePreference = useModePreference();
   const modeFetcher = useFetcher();
-  const themeFetcher = useFetcher();
   const textSizeFetcher = useFetcher();
   const densityFetcher = useFetcher();
   const { textSize, density } = useUiScale();
-  const routeData = useRouteData<{ theme?: string }>(ROOT_ACTION);
-  const themeOptions = pickableThemes();
-  // Dropped once the save settles, so <html> shows the saved theme, or the
-  // old one if it failed.
-  const previewTheme = useThemePreview(themeFetcher.state === "idle");
-  // A window theme tints the page's surfaces on <html>; the preview paints
-  // <body>, so it leaves those variables alone or the tint would drop.
-  const windowThemeContent = useWindowThemeContent(mode);
-
-  // The in-flight choice wins until the root loader revalidates with it.
-  const pendingTheme = themeColorValidator.safeParse({
-    theme: themeFetcher.formData?.get("theme")
-  });
-  const theme = pendingTheme.success
-    ? pendingTheme.data.theme
-    : (routeData?.theme ?? "zinc");
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -122,25 +76,6 @@ export default function AppearanceSettings() {
       document.body.removeAttribute("style");
       persist();
     }
-  };
-
-  const onThemeChange = (value: string) => {
-    const next = themeOptions.find((candidate) => candidate.name === value);
-    if (!next || next.name === theme) return;
-    // Preview at once, until the root loader applies it from the cookie.
-    const variables: Record<string, string> =
-      mode === "dark" ? next.cssVars.dark : next.cssVars.light;
-    previewTheme(
-      Object.fromEntries(
-        Object.entries(variables).filter(
-          ([key]) => !windowThemeContent?.[`--${key}`]
-        )
-      )
-    );
-    themeFetcher.submit(
-      { theme: next.name },
-      { method: "post", action: ROOT_ACTION }
-    );
   };
 
   const onTextSizeChange = (value: string) => {
@@ -270,54 +205,7 @@ export default function AppearanceSettings() {
           </ToggleGroup>
         }
       />
-      <AccountSettingsSection
-        title={<Trans>Theme color</Trans>}
-        description={<Trans>The accent color used across Carbon.</Trans>}
-      >
-        <ToggleGroup
-          type="single"
-          size="sm"
-          value={theme}
-          onValueChange={onThemeChange}
-          aria-label={t`Theme color`}
-          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
-        >
-          {themeOptions.map((option) => {
-            const active = option.name === theme;
-            const swatch = option.activeColor[mode];
-            return (
-              <ToggleGroupItem
-                key={option.name}
-                value={option.name}
-                style={
-                  {
-                    "--theme-primary": `hsl(${swatch})`
-                  } as CSSProperties
-                }
-                className={cn(
-                  "h-9 justify-start gap-2 rounded-lg border border-border bg-transparent px-3 text-foreground",
-                  "hover:bg-accent hover:text-foreground",
-                  "data-[state=on]:border-primary data-[state=on]:bg-transparent data-[state=on]:text-foreground",
-                  "hover:data-[state=on]:bg-accent"
-                )}
-              >
-                <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-[var(--theme-primary)]">
-                  {active && (
-                    <LuCheck
-                      className={cn(
-                        "size-3",
-                        isLightSwatch(swatch) ? "text-black" : "text-white"
-                      )}
-                    />
-                  )}
-                </span>
-                <span className="truncate">{option.label}</span>
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
-      </AccountSettingsSection>
-      {windowTheme && <WindowThemeSettings />}
+      <ThemeSettings withWindowThemes={Boolean(windowThemes)} />
     </AccountSettingsPane>
   );
 }

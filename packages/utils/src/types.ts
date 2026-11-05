@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { z } from "zod";
-import { isSeasonalTheme, themes } from "./themes";
+import { isThemeName } from "./themes";
 
 export enum Edition {
   Cloud = "cloud",
@@ -22,16 +22,12 @@ export const modeValidator = z.object({
 });
 
 /**
- * A theme color by name — one of `themes`, or a seasonal theme (picking one
- * turns it back on). Stored per browser, like the mode.
+ * A theme by name (`isThemeName`): a color theme, a window theme, a custom
+ * window value, or a seasonal theme (picking one turns it back on). Stored per
+ * browser, like the mode.
  */
 export const themeColorValidator = z.object({
-  theme: z
-    .string()
-    .refine(
-      (name) => themes.some((t) => t.name === name) || isSeasonalTheme(name),
-      { message: "Invalid theme" }
-    )
+  theme: z.string().refine(isThemeName, { message: "Invalid theme" })
 });
 
 export enum Plan {

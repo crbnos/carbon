@@ -3,19 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
+import { themeByName, themeForRequest, themes } from "./themes";
+import { themeColorValidator } from "./types";
 import {
   contrastRatio,
-  DEFAULT_WINDOW_THEME,
-  getWindowThemeFromCookies,
   normalizeHex,
   parseWindowTheme,
   randomWindowTheme,
   serializeWindowTheme,
-  WINDOW_THEME_COOKIE,
   WINDOW_THEMES,
   windowThemeStyle,
-  windowThemeTextColors,
-  windowThemeValidator
+  windowThemeTextColors
 } from "./window-themes";
 
 // WCAG AA for normal text.
@@ -77,35 +75,50 @@ describe("normalizeHex", () => {
   });
 });
 
-describe("windowThemeValidator", () => {
-  it("accepts default, a preset and a custom value", () => {
-    for (const windowTheme of [
-      DEFAULT_WINDOW_THEME,
-      "forge",
-      "custom:dc540c:f89b6c:g"
-    ]) {
-      expect(windowThemeValidator.safeParse({ windowTheme }).success).toBe(
-        true
-      );
+// Window themes are themes: one `theme` cookie, one validator, one resolver.
+describe("window themes as themes", () => {
+  it("accepts a preset and a custom value as a theme", () => {
+    for (const theme of ["forge", "custom:dc540c:f89b6c:g", "zinc"]) {
+      expect(themeColorValidator.safeParse({ theme }).success).toBe(true);
     }
   });
 
-  it("refuses anything else", () => {
-    expect(
-      windowThemeValidator.safeParse({ windowTheme: "custom:zzz" }).success
-    ).toBe(false);
+  it.each([
+    "custom:zzz",
+    "custom:DC540C:F89B6C:g",
+    "custom:dc540c:f89b6c:g;color:red",
+    "default"
+  ])("refuses %j as a theme", (theme) => {
+    expect(themeColorValidator.safeParse({ theme }).success).toBe(false);
   });
-});
 
-describe("getWindowThemeFromCookies", () => {
-  it("reads the cookie, and treats a bad value as no theme", () => {
-    expect(getWindowThemeFromCookies(`${WINDOW_THEME_COOKIE}=jade`)).toBe(
-      "jade"
+  it("reads a window theme from the theme cookie", () => {
+    const theme = themeForRequest("theme=jade", "/x");
+    expect(theme.name).toBe("jade");
+    expect(theme.window).toEqual({
+      base: "0e3a2c",
+      highlight: "0f7a52",
+      gradient: false
+    });
+  });
+
+  it("reads a custom theme from the encoded cookie", () => {
+    const theme = themeForRequest(
+      `theme=${encodeURIComponent("custom:dc540c:f89b6c:g")}`,
+      "/x"
     );
-    expect(
-      getWindowThemeFromCookies(`${WINDOW_THEME_COOKIE}=removed-preset`)
-    ).toBeNull();
-    expect(getWindowThemeFromCookies(null)).toBeNull();
+    expect(theme.name).toBe("custom:dc540c:f89b6c:g");
+    expect(theme.window?.gradient).toBe(true);
+  });
+
+  it("falls back to the default for a removed preset", () => {
+    expect(themeForRequest("theme=removed-preset", "/x").name).toBe(
+      themes[0].name
+    );
+  });
+
+  it("gives a color theme no window colors", () => {
+    expect(themeByName("red").window).toBeUndefined();
   });
 });
 
@@ -115,7 +128,9 @@ describe("WINDOW_THEMES", () => {
     expect(new Set(names).size).toBe(names.length);
     for (const name of names) {
       expect(name).toMatch(/^[a-z]+$/);
-      expect(name).not.toBe(DEFAULT_WINDOW_THEME);
+      // A preset name must not shadow a color theme.
+      const colorThemeNames: readonly string[] = themes.map((t) => t.name);
+      expect(colorThemeNames).not.toContain(name);
     }
   });
 
@@ -153,16 +168,20 @@ describe("windowThemeTextColors", () => {
     ).toBe("ffffff");
   });
 
-  it("checks both ends of a gradient", () => {
+  it("checks every stop of a gradient: glow, base, midpoint and end", () => {
     expect(
       windowThemeTextColors({
         base: "dc540c",
         highlight: "f89b6c",
         gradient: true
       }).frame
-    ).toHaveLength(2);
+    ).toHaveLength(4);
   });
 });
+
+function theme(base: string, highlight: string) {
+  return windowThemeStyle({ base, highlight, gradient: true });
+}
 
 describe("windowThemeStyle", () => {
   it("paints a solid frame with the base color", () => {
@@ -176,15 +195,37 @@ describe("windowThemeStyle", () => {
     expect(rail["--foreground"]).toBe("0 0% 100%");
   });
 
-  it("paints a gradient frame from the base color", () => {
+  it("blooms the end color from the bottom left into the base", () => {
     const { frame } = windowThemeStyle({
-      base: "dc540c",
-      highlight: "f89b6c",
+      base: "921d21",
+      highlight: "36c5f0",
       gradient: true
     });
-    expect(frame.background).toMatch(
-      /^linear-gradient\(165deg, rgb\(220 84 12\) 15%, rgb\(/
+    const [bloom, wash] = frame.background!.split(
+      /, (?=(?:radial|linear)-gradient)/
     );
+    expect(bloom).toMatch(/^radial-gradient\(120% 95% at 0% 100%, /);
+    expect(wash).toMatch(
+      /^linear-gradient\(45deg, rgb\([\d. ]+\) 0%, rgb\(146 29 33\) 45%, /
+    );
+  });
+
+  it("goes round the hue wheel, so red to cyan passes through violet, not grey", () => {
+    const { frame } = theme("921d21", "36c5f0");
+    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 38%/.exec(frame.background!);
+    const [r, g, b] = mid!.slice(1).map(Number) as [number, number, number];
+    // Violet: blue and red both well above green. A straight blend is grey.
+    expect(b).toBeGreaterThan(g + 25);
+    expect(r).toBeGreaterThan(g + 10);
+  });
+
+  it("blends in OKLab, so blue to lime passes through teal, not grey", () => {
+    const { frame } = theme("0071a4", "9bc339");
+    const mid = /rgb\(([\d.]+) ([\d.]+) ([\d.]+)\) 38%/.exec(frame.background!);
+    const [r, g, b] = mid!.slice(1).map(Number) as [number, number, number];
+    // Teal: green and blue both well above red. An sRGB blend gives r ≈ b.
+    expect(g).toBeGreaterThan(r + 20);
+    expect(b).toBeGreaterThan(r + 20);
   });
 
   it("sets every rail variable as an HSL triplet", () => {
@@ -243,7 +284,15 @@ describe("windowThemeStyle content and panel", () => {
   )("%s keeps %s text at WCAG AA in %s mode", (_, part, mode, theme) => {
     const variables = windowThemeStyle(theme)[part][mode];
     const color = (name: string) => tripletToHex(variables[`--${name}`]!);
-    const surfaces = ["background", "card", "popover", "muted", "accent"];
+    // `card-end`: the bottom of a gradient theme's module sidebar.
+    const surfaces = [
+      "background",
+      "card",
+      "card-end",
+      "popover",
+      "muted",
+      "accent"
+    ];
     for (const surface of surfaces) {
       // The panel sets only the surfaces the sidebar shows.
       if (!variables[`--${surface}`]) continue;

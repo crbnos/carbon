@@ -1154,6 +1154,9 @@ msgstr "変更通知は、エンジニアリングまたは製造変更をレビ
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "カラーはアクセントを設定します。グラデーションと単色のテーマは、ナビゲーション、サイドバー、ページにも色を付けます。"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
 
@@ -5572,9 +5575,6 @@ msgstr "サブツリーを折りたたむ"
 
 msgid "Color"
 msgstr "色"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "ナビゲーションと各ページの周囲の枠に色を付けます。"
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "各材料が保管ユニットを持つまで、次のバックフラッ
 msgid "Theme"
 msgstr "テーマ"
 
-msgid "Theme color"
-msgstr "テーマカラー"
-
 msgid "Theme Color"
 msgstr "テーマカラー"
+
+msgid "Themes"
+msgstr "テーマ"
 
 msgid "then"
 msgstr "その後"
@@ -27918,9 +27918,6 @@ msgstr "ウィンドウの背景"
 
 msgid "Window gradient"
 msgstr "ウィンドウのグラデーション"
-
-msgid "Window theme"
-msgstr "ウィンドウテーマ"
 
 msgid "Window:"
 msgstr "ウィンドウ:"

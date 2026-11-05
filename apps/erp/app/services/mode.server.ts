@@ -5,12 +5,9 @@
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
 import type { ModePreference } from "@carbon/utils";
 import {
-  DEFAULT_WINDOW_THEME,
   getModeFromCookies,
   getUiScaleFromCookies,
-  getWindowThemeFromCookies,
-  MODE_COOKIE,
-  WINDOW_THEME_COOKIE
+  MODE_COOKIE
 } from "@carbon/utils";
 import * as cookie from "cookie";
 
@@ -50,23 +47,5 @@ export function setUiScale(name: string, value: string) {
     secure: !!cookieDomain,
     domain: cookieDomain,
     maxAge: value === "default" ? -1 : 31536000
-  });
-}
-
-/** The window theme to render (`@carbon/utils` `window-themes`), or `null`. */
-export function getWindowTheme(request: Request) {
-  return getWindowThemeFromCookies(request.headers.get("cookie"));
-}
-
-/** Stores a window theme choice; `default` clears its cookie. */
-export function setWindowTheme(value: string) {
-  const cookieDomain = getCookieDomain(DOMAIN);
-  const isDefault = value === DEFAULT_WINDOW_THEME;
-  return cookie.serialize(WINDOW_THEME_COOKIE, isDefault ? "" : value, {
-    path: "/",
-    sameSite: "lax",
-    secure: !!cookieDomain,
-    domain: cookieDomain,
-    maxAge: isDefault ? -1 : 31536000
   });
 }

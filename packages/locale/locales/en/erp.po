@@ -1154,6 +1154,9 @@ msgstr "A change notice tracks a controlled engineering or manufacturing change 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 
@@ -5572,9 +5575,6 @@ msgstr "Collapse subtree"
 
 msgid "Color"
 msgstr "Color"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "Colors the navigation and the frame around each page."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "Their next backflush will be refused until each material has a storage u
 msgid "Theme"
 msgstr "Theme"
 
-msgid "Theme color"
-msgstr "Theme color"
-
 msgid "Theme Color"
 msgstr "Theme Color"
+
+msgid "Themes"
+msgstr "Themes"
 
 msgid "then"
 msgstr "then"
@@ -27918,9 +27918,6 @@ msgstr "Window background"
 
 msgid "Window gradient"
 msgstr "Window gradient"
-
-msgid "Window theme"
-msgstr "Window theme"
 
 msgid "Window:"
 msgstr "Window:"

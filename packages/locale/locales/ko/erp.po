@@ -1154,6 +1154,9 @@ msgstr "변경 통지는 제어된 엔지니어링 또는 제조 변경사항을
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "수신한 상품이지만 아직 청구되지 않은 상품의 가치를 보유하는 정산 계정이며, 공급업체 송장이 이를 정산합니다."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "색상은 강조 색을 정합니다. 그라데이션과 단색 테마는 탐색 영역, 사이드바, 페이지에도 색을 입힙니다."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "한 회사는 한 번에 하나의 Onshape에만 연동할 수 있습니다. Onshape Government를 제거하고 Onshape를 연동하세요."
 
@@ -5572,9 +5575,6 @@ msgstr "하위 트리 접기"
 
 msgid "Color"
 msgstr "색상"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "탐색 영역과 각 페이지 주변의 프레임에 색을 입힙니다."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "각 자재가 보관 단위를 가질 때까지 다음 백플러시는 �
 msgid "Theme"
 msgstr "테마"
 
-msgid "Theme color"
-msgstr "테마 색상"
-
 msgid "Theme Color"
 msgstr "테마 색상"
+
+msgid "Themes"
+msgstr "테마"
 
 msgid "then"
 msgstr "그 다음"
@@ -27918,9 +27918,6 @@ msgstr "창 배경"
 
 msgid "Window gradient"
 msgstr "창 그라데이션"
-
-msgid "Window theme"
-msgstr "창 테마"
 
 msgid "Window:"
 msgstr "구간:"

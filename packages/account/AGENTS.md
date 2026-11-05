@@ -23,7 +23,7 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   `renderBrowserNotifications` (the push service worker is on its origin) and `twoFactor`
   (the plan gate + upgrade dialog) and `transitionMode` (the view-transition mode wipe, whose
   CSS is in the ERP's stylesheet) — see `apps/erp/app/modules/users/ui/AccountSettings.tsx`.
-- **Appearance is the one pane that does not call the ERP.** Mode, theme color, text size and density
+- **Appearance is the one pane that does not call the ERP.** Mode, theme, text size and density
   are per-browser cookies on the HOST app, so the pane posts `mode` / `theme` / `textSize` /
   `density` to the host's own root action (`/`), which every app's `root.tsx` handles
   (`modeValidator` / `themeColorValidator` / `textSizeValidator` / `densityValidator` from
@@ -34,13 +34,16 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   The theme grid lists `pickableThemes()`: the everyday `themes`, with the seasonal theme first
   while one is in season. Picking an everyday theme then switches the seasonal one off for
   this browser.
-  The **Window theme** section (`WindowThemeSettings`) posts `windowTheme` (a preset name, a
-  `custom:` value, or `default` to clear the cookie) the same way. It renders only when the app
-  passes `windowTheme` in `AccountSettingsConfig`: the ERP and the MES, whose shells paint the
-  frame with `useWindowTheme`. The starter's shell has no `NavRail`, so it does not pass it. A
-  color drag paints through `setWindowThemePreview` and saves once, 400 ms after the last move
-  (and on close): each save revalidates every loader. The theme color preview skips the
-  variables the window theme tints, or the tint would drop while it shows.
+  The **Theme** section (`ThemeSettings`) is one choice, one `theme` post. With `windowThemes`
+  in `AccountSettingsConfig` it has 2 tabs in its header: "Themes" (the color themes from
+  `pickableThemes()`, then the gradient and solid `windowThemes`) and "Custom theme" (the editor
+  for a `custom:<base>:<highlight>:<g|s>` theme); it opens on the tab of the theme in use.
+  Without it (the starter) it is the color grid alone.
+  Only the ERP and the MES pass it: their shells paint the frame with `useWindowTheme`; the
+  starter's shell has no `NavRail`. A color drag paints through `setWindowThemePreview` and saves
+  once, 400 ms after the last move (and on close): each save revalidates every loader. The accent
+  preview on `<body>` skips the variables a window theme tints, or the tint would drop while it
+  shows.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.
   Strings use Lingui macros, so it also needs a `LocaleProvider`; the package is in the erp

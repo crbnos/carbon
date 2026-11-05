@@ -1154,6 +1154,9 @@ msgstr "Un avviso di modifica traccia un cambiamento controllato di ingegneria o
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Un conto di compensazione che tiene il valore della merce ricevuta ma non ancora fatturata; la fattura del fornitore la compensa."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Un colore imposta l'accento. I temi sfumati e in tinta unita colorano anche la navigazione, la barra laterale e la pagina."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Un'azienda si connette a un solo Onshape alla volta. Disinstalla Onshape Government, quindi connetti Onshape."
 
@@ -5572,9 +5575,6 @@ msgstr "Comprimi sottostruttura"
 
 msgid "Color"
 msgstr "Colore"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "Colora la navigazione e la cornice intorno a ogni pagina."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "Il loro prossimo backflush sarà rifiutato finché ogni materiale non av
 msgid "Theme"
 msgstr "Tema"
 
-msgid "Theme color"
-msgstr "Colore del tema"
-
 msgid "Theme Color"
 msgstr "Colore Tema"
+
+msgid "Themes"
+msgstr "Temi"
 
 msgid "then"
 msgstr "poi"
@@ -27918,9 +27918,6 @@ msgstr "Sfondo della finestra"
 
 msgid "Window gradient"
 msgstr "Sfumatura della finestra"
-
-msgid "Window theme"
-msgstr "Tema della finestra"
 
 msgid "Window:"
 msgstr "Finestra:"

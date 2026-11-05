@@ -1154,6 +1154,9 @@ msgstr "एक परिवर्तन सूचना समीक्षा �
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "एक क्लीयरिंग खाता जो प्राप्त किए गए लेकिन अभी तक चालान नहीं किए गए सामान का मूल्य रखता है; आपूर्तिकर्ता चालान इसे साफ करता है।"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "एक रंग एक्सेंट तय करता है। ग्रेडिएंट और ठोस थीम नेविगेशन, साइडबार और पेज को भी रंगती हैं।"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape Government को अनइंस्टॉल करें, फिर Onshape को कनेक्ट करें।"
 
@@ -5572,9 +5575,6 @@ msgstr "सबट्री को संक्षिप्त करें"
 
 msgid "Color"
 msgstr "रंग"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "नेविगेशन और हर पेज के चारों ओर के फ़्रेम को रंगता है।"
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "प्रत्येक सामग्री के पास भं�
 msgid "Theme"
 msgstr "थीम"
 
-msgid "Theme color"
-msgstr "थीम रंग"
-
 msgid "Theme Color"
 msgstr "थीम रंग"
+
+msgid "Themes"
+msgstr "थीम"
 
 msgid "then"
 msgstr "फिर"
@@ -27918,9 +27918,6 @@ msgstr "विंडो पृष्ठभूमि"
 
 msgid "Window gradient"
 msgstr "विंडो ग्रेडिएंट"
-
-msgid "Window theme"
-msgstr "विंडो थीम"
 
 msgid "Window:"
 msgstr "विंडो:"

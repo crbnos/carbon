@@ -4,10 +4,9 @@
 
 import type { WindowThemeStyle } from "@carbon/utils";
 import {
-  asWindowTheme,
   isAppPath,
-  parseWindowTheme,
-  WINDOW_THEME_FIELD,
+  isThemeName,
+  themeByName,
   windowThemeStyle
 } from "@carbon/utils";
 import { useMemo, useSyncExternalStore } from "react";
@@ -22,7 +21,7 @@ const previewListeners = new Set<() => void>();
 
 /**
  * Shows a window theme value at once without saving it; `undefined` ends the
- * preview. The caller saves it (a `windowTheme` post to `/`) and then ends it.
+ * preview. The caller saves it (a `theme` post to `/`) and then ends it.
  */
 export function setWindowThemePreview(value: string | undefined) {
   if (value === preview) return;
@@ -38,38 +37,39 @@ function subscribePreview(listener: () => void) {
 }
 
 /**
- * The stored window theme value (a preset name or a `custom:` value), or
- * `null` for the default. A preview wins, then a pending pick, so the frame
- * changes before the root loader revalidates with the cookie.
+ * The theme to render, by name. A preview wins, then a pending pick (any
+ * fetcher posting a valid `theme`: the Appearance pane posts to `/`, the ERP's
+ * avatar menu to its theme route), then the root loader's resolved theme. So
+ * a pick shows before the loader revalidates with the cookie. A `theme` field
+ * that is not a theme name (a document template's JSON) is ignored.
  */
-export function useWindowThemeValue(): string | null {
+export function useThemeValue(): string {
   const previewed = useSyncExternalStore(
     subscribePreview,
     () => preview,
     () => undefined
   );
   const fetchers = useFetchers();
-  const routeData = useRouteData<{ windowTheme?: string | null }>("/");
-  if (previewed !== undefined) return asWindowTheme(previewed);
-  const pending = fetchers.find(
-    (f) => f.formAction === "/" && f.formData?.has(WINDOW_THEME_FIELD)
-  );
-  if (pending) {
-    return asWindowTheme(pending.formData?.get(WINDOW_THEME_FIELD));
+  const routeData = useRouteData<{ theme?: string }>("/");
+  if (previewed !== undefined && isThemeName(previewed)) return previewed;
+  for (const fetcher of fetchers) {
+    const pending = fetcher.formData?.get("theme");
+    if (typeof pending === "string" && isThemeName(pending)) return pending;
   }
-  return asWindowTheme(routeData?.windowTheme);
+  return themeByName(routeData?.theme).name;
 }
 
 /**
- * The styles of the window theme to render: `frame` for the shell's
- * `SidebarProvider`, `rail` for the desktop `NavRail`. `null` is the default
- * frame, which renders exactly as it did before window themes.
+ * The window styles of the theme to render: `frame` for the shell's
+ * `SidebarProvider`, `rail` for the desktop `NavRail`, `content` for `<html>`,
+ * `panel` for the module sidebar. `null` for a theme with no window colors (a
+ * color theme), which renders exactly as it did before window themes.
  */
 export function useWindowTheme(): WindowThemeStyle | null {
-  const value = useWindowThemeValue();
+  const value = useThemeValue();
   return useMemo(() => {
-    const theme = parseWindowTheme(value);
-    return theme ? windowThemeStyle(theme) : null;
+    const window = themeByName(value).window;
+    return window ? windowThemeStyle(window) : null;
   }, [value]);
 }
 

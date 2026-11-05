@@ -1154,6 +1154,9 @@ msgstr "Извещение об изменении отслеживает кон
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Счет, содержащий стоимость полученных товаров, еще не выставленных счетом; счет-фактура поставщика его очищает."
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Цвет задаёт акцент. Градиентные и сплошные темы также окрашивают навигацию, боковую панель и страницу."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Организация может подключаться к одному Onshape одновременно. Удалите Onshape Government, затем подключите Onshape."
 
@@ -5572,9 +5575,6 @@ msgstr "Свернуть поддерево"
 
 msgid "Color"
 msgstr "Цвет"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "Окрашивает навигацию и рамку вокруг каждой страницы."
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "Следующее ретроградное списание будет 
 msgid "Theme"
 msgstr "Тема"
 
-msgid "Theme color"
-msgstr "Цвет темы"
-
 msgid "Theme Color"
 msgstr "Цвет темы"
+
+msgid "Themes"
+msgstr "Темы"
 
 msgid "then"
 msgstr "затем"
@@ -27918,9 +27918,6 @@ msgstr "Фон окна"
 
 msgid "Window gradient"
 msgstr "Градиент окна"
-
-msgid "Window theme"
-msgstr "Тема окна"
 
 msgid "Window:"
 msgstr "Окно:"

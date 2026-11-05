@@ -31,7 +31,7 @@ export default function AccountSettings() {
       user={user}
       companyId={user.company.id}
       transitionMode={startModeTransition}
-      windowTheme
+      windowThemes
       renderBrowserNotifications={(publicKey) => (
         <BrowserNotificationsSection publicKey={publicKey} />
       )}

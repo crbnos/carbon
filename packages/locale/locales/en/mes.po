@@ -116,6 +116,9 @@ msgstr "+{overflow} more"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
@@ -449,8 +452,8 @@ msgstr "Collapse navigation"
 msgid "Collapse panel"
 msgstr "Collapse panel"
 
-msgid "Colors the navigation and the frame around each page."
-msgstr "Colors the navigation and the frame around each page."
+msgid "Color"
+msgstr "Color"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -2189,8 +2192,11 @@ msgstr "The values break a rule on this record."
 msgid "The values break the rule \"{constraint}\"."
 msgstr "The values break the rule \"{constraint}\"."
 
-msgid "Theme color"
-msgstr "Theme color"
+msgid "Theme"
+msgstr "Theme"
+
+msgid "Themes"
+msgstr "Themes"
 
 msgid "then"
 msgstr "then"
@@ -2439,9 +2445,6 @@ msgstr "Window background"
 
 msgid "Window gradient"
 msgstr "Window gradient"
-
-msgid "Window theme"
-msgstr "Window theme"
 
 msgid "WIP"
 msgstr "WIP"

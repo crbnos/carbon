@@ -1154,6 +1154,9 @@ msgstr "变更通知跟踪通过评审和实施的受控工程或制造变更。
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "持有已收但未开票商品价值的结算账户；供应商发票将其结清。"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "颜色决定强调色。渐变和纯色主题还会为导航栏、侧边栏和页面着色。"
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "一家公司一次只能连接一个 Onshape。请卸载 Onshape Government，然后连接 Onshape。"
 
@@ -5572,9 +5575,6 @@ msgstr "折叠子树"
 
 msgid "Color"
 msgstr "颜色"
-
-msgid "Colors the navigation and the frame around each page."
-msgstr "为导航栏和每个页面周围的边框着色。"
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -25056,11 +25056,11 @@ msgstr "下一次倒冲将被拒绝,直到每个物料都有存储单元。"
 msgid "Theme"
 msgstr "主题"
 
-msgid "Theme color"
-msgstr "主题色"
-
 msgid "Theme Color"
 msgstr "主题颜色"
+
+msgid "Themes"
+msgstr "主题"
 
 msgid "then"
 msgstr "然后"
@@ -27918,9 +27918,6 @@ msgstr "窗口背景"
 
 msgid "Window gradient"
 msgstr "窗口渐变"
-
-msgid "Window theme"
-msgstr "窗口主题"
 
 msgid "Window:"
 msgstr "窗口："

@@ -2,24 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import * as cookie from "cookie";
-import { z } from "zod";
-
 /**
- * A window theme colors the app's frame: the navigation rail and the gutter
- * around the content card, as Slack does. The content card keeps the mode's
- * colors. It is separate from the theme color (`themes.ts`), which sets the
- * accent, and is stored per browser like the mode. No cookie is the default:
- * the frame renders exactly as it did before window themes existed.
+ * The window colors of a theme: a theme that carries them (a preset here, or
+ * a `custom:` value) colors the app's frame, the navigation rail, the module
+ * sidebar and, lightly, the page, as Slack does. `themes.ts` turns each one
+ * into a theme, so it is stored like any theme, in the `theme` cookie. This
+ * file is the color math; it knows nothing of cookies.
  * Spec: `.ai/specs/2026-11-03-window-themes.md`.
  */
-export const WINDOW_THEME_COOKIE = "window-theme";
-
-/** The form field the Appearance pane posts to the root action. */
-export const WINDOW_THEME_FIELD = "windowTheme";
-
-/** The value that clears the cookie. */
-export const DEFAULT_WINDOW_THEME = "default";
 
 export type WindowTheme = {
   /** The frame color ("Window background"). Six-digit lowercase hex, no `#`. */
@@ -36,8 +26,8 @@ export type WindowThemePreset = WindowTheme & {
 };
 
 /**
- * The presets. Names are stored in cookies, so never rename one; a removed
- * name reads as the default.
+ * The presets. Their names are theme names, stored in the `theme` cookie, so
+ * never rename one; a removed name reads as the default theme.
  */
 export const WINDOW_THEMES = [
   // Gradient
@@ -202,33 +192,6 @@ export function serializeWindowTheme({
   return `custom:${base}:${highlight}:${gradient ? "g" : "s"}`;
 }
 
-/** The preset a stored value names, if it names one. */
-export function windowThemePreset(value: string | null | undefined) {
-  return WINDOW_THEMES.find((theme) => theme.name === value);
-}
-
-export const windowThemeValidator = z.object({
-  [WINDOW_THEME_FIELD]: z
-    .string()
-    .refine(
-      (value) =>
-        value === DEFAULT_WINDOW_THEME || parseWindowTheme(value) !== null,
-      { message: "Invalid window theme" }
-    )
-});
-
-/** The stored value, or `null` when it is missing or unreadable. */
-export function asWindowTheme(value: unknown): string | null {
-  return typeof value === "string" && parseWindowTheme(value) ? value : null;
-}
-
-export function getWindowThemeFromCookies(
-  cookieHeader: string | null
-): string | null {
-  const cookies = cookieHeader ? cookie.parse(cookieHeader) : {};
-  return asWindowTheme(cookies[WINDOW_THEME_COOKIE]);
-}
-
 // --- Color math -----------------------------------------------------------
 
 type Rgb = readonly [number, number, number];
@@ -293,6 +256,93 @@ function rgbCss([r, g, b]: Rgb) {
   return `rgb(${css(r)} ${css(g)} ${css(b)})`;
 }
 
+// --- OKLab: blends that stay clean -----------------------------------------
+// A blend in sRGB passes through grey between distant hues (blue to lime goes
+// muddy olive). OKLab (Björn Ottosson, 2020) is perceptual: the midpoint of
+// blue and lime is a clean teal, and lightness is what the eye sees.
+
+type Lab = readonly [l: number, a: number, b: number];
+
+function toLinear(channel: number) {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function fromLinear(value: number) {
+  const v = Math.min(1, Math.max(0, value));
+  const c = v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055;
+  return c * 255;
+}
+
+function rgbToOklab([r, g, b]: Rgb): Lab {
+  const lr = toLinear(r);
+  const lg = toLinear(g);
+  const lb = toLinear(b);
+  const l = Math.cbrt(
+    0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb
+  );
+  const m = Math.cbrt(
+    0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb
+  );
+  const s = Math.cbrt(
+    0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb
+  );
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  ];
+}
+
+function oklabToRgb([L, A, B]: Lab): Rgb {
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+  return [
+    fromLinear(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    fromLinear(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    fromLinear(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)
+  ];
+}
+
+/**
+ * `a` moved `t` of the way towards `b`, in OKLCH: lightness and chroma
+ * straight, the hue the shorter way round the wheel. A straight line through
+ * OKLab still crosses grey between opposite hues (red to cyan); round the
+ * wheel, red goes through magenta and violet to blue, as Slack's bloom does.
+ * A near-grey color has no hue worth keeping, so it takes the other's.
+ */
+function blend(a: Rgb, b: Rgb, t: number): Rgb {
+  const [la, aa, ba] = rgbToOklab(a);
+  const [lb, ab, bb] = rgbToOklab(b);
+  const ca = Math.hypot(aa, ba);
+  const cb = Math.hypot(ab, bb);
+  const ha = Math.atan2(ba, aa);
+  const hb = Math.atan2(bb, ab);
+  const GREY = 0.02;
+  const from = ca < GREY ? hb : ha;
+  const to = cb < GREY ? ha : hb;
+  // The shorter way round: the difference folded into (-π, π].
+  const turn = Math.atan2(Math.sin(to - from), Math.cos(to - from));
+  const hue = from + turn * t;
+  const chroma = ca + (cb - ca) * t;
+  return oklabToRgb([
+    la + (lb - la) * t,
+    chroma * Math.cos(hue),
+    chroma * Math.sin(hue)
+  ]);
+}
+
+/** A color with its OKLab lightness set and its chroma scaled. */
+function reshade(color: Rgb, lightness: number, chroma = 1): Rgb {
+  const [, a, b] = rgbToOklab(color);
+  return oklabToRgb([lightness, a * chroma, b * chroma]);
+}
+
+function lightnessOf(color: Rgb) {
+  return rgbToOklab(color)[0];
+}
+
 /** The `H S% L%` triplet the theme variables hold (`hsl(var(--x))`). */
 /** Hue in degrees, saturation and lightness in 0 to 1. */
 function rgbToHsl([r, g, b]: Rgb): [number, number, number] {
@@ -326,11 +376,9 @@ function hslTriplet(rgb: Rgb) {
   return triplet(...rgbToHsl(rgb));
 }
 
-// How far the gradient blends towards the highlight at its far end; how
-// strong a hover (`bg-active/60`) is; and how strong the rail's selected tile
-// is: a translucent wash of the rail's own text color, as Slack's rail does,
-// so it sits on any frame and any gradient.
-const GRADIENT_END = 0.5;
+// How strong a hover (`bg-active/60`) is, and how strong the rail's selected
+// tile is: a translucent wash of the rail's own text color, as Slack's rail
+// does, so it sits on any frame and any gradient.
 const HOVER_ALPHA = 0.6;
 const RAIL_TILE_ALPHA = 0.14;
 // When a wash of the text color would cost the text its contrast (a light
@@ -457,7 +505,64 @@ function tintedVariables(base: Rgb, surfaces: Surfaces) {
   return { light: forMode("light"), dark: forMode("dark") };
 }
 
-/** The frame's CSS `background`. */
+// The gradient's far end: this far from the base towards the highlight (in
+// OKLCH), a touch darker than the base at most (the bloom deepens the frame,
+// as Slack's does), and calmer than the raw highlight; the midpoint is as
+// calm. Slack never paints the picked colors as they are; it deepens and
+// mutes them, so the frame reads as one rich surface, not a color swatch.
+const FLOW_END = 0.7;
+const FLOW_END_LIFT = -0.03;
+const FLOW_END_CHROMA = 0.8;
+// The base brightens this much towards the top right, away from the bloom.
+const FLOW_GLOW_LIFT = 0.045;
+// How far a stop may move per step, and how many steps, to give the text AA.
+const CONTRAST_STEP = 0.015;
+const CONTRAST_STEPS = 30;
+
+/**
+ * The colors of a gradient frame: a lift of the base (top right), the base,
+ * the OKLab midpoint, and the deepened, muted end (the bottom-left bloom). Every stop
+ * but the base (the user's own color) moves away from the text color, a step
+ * at a time, until the text reads on it at AA.
+ */
+function gradientFlow(base: Rgb, highlight: Rgb) {
+  const baseLightness = lightnessOf(base);
+  const towards = blend(base, highlight, FLOW_END);
+  const end = reshade(
+    towards,
+    Math.min(lightnessOf(towards), baseLightness + FLOW_END_LIFT),
+    FLOW_END_CHROMA
+  );
+  const halfway = blend(base, end, 0.5);
+  const mid = reshade(halfway, lightnessOf(halfway), FLOW_END_CHROMA);
+  const glow = reshade(base, baseLightness + FLOW_GLOW_LIFT);
+  const text = textFor([base, mid, end]);
+  // Light text needs a darker stop; dark text a lighter one.
+  const direction = text === LIGHT_TEXT ? -1 : 1;
+  const readable = (stop: Rgb) => {
+    let color = stop;
+    for (let i = 0; i < CONTRAST_STEPS; i++) {
+      if (rgbContrast(text, color) >= AA) break;
+      color = reshade(color, lightnessOf(color) + direction * CONTRAST_STEP);
+    }
+    return color;
+  };
+  return {
+    glow: readable(glow),
+    base,
+    mid: readable(mid),
+    end: readable(end)
+  };
+}
+
+/**
+ * The frame's CSS `background`. As Slack's does, a gradient is the base with
+ * the end color blooming from the bottom-left corner: the bloom fills the
+ * foot of the rail and fades, through the OKLab midpoint, into the base, which
+ * brightens a little towards the top right. 2 layers, top first: the bloom,
+ * then a diagonal wash from the midpoint to the lifted base. With the
+ * gradient off the frame is the flat base, so the bloom is all it adds.
+ */
 export function windowThemeBackground({
   base,
   highlight,
@@ -465,8 +570,11 @@ export function windowThemeBackground({
 }: WindowTheme) {
   const b = hexToRgb(base);
   if (!gradient) return rgbCss(b);
-  const end = mix(b, hexToRgb(highlight), GRADIENT_END);
-  return `linear-gradient(165deg, ${rgbCss(b)} 15%, ${rgbCss(end)} 100%)`;
+  const { glow, mid, end } = gradientFlow(b, hexToRgb(highlight));
+  return [
+    `radial-gradient(120% 95% at 0% 100%, ${rgbCss(end)} 0%, ${rgbCss(mid)} 38%, transparent 78%)`,
+    `linear-gradient(45deg, ${rgbCss(mid)} 0%, ${rgbCss(b)} 45%, ${rgbCss(glow)} 100%)`
+  ].join(", ");
 }
 
 /**
@@ -477,9 +585,9 @@ export function windowThemeBackground({
 function themeColors(theme: WindowTheme) {
   const base = hexToRgb(theme.base);
   const highlight = hexToRgb(theme.highlight);
-  const frameColors = theme.gradient
-    ? [base, mix(base, highlight, GRADIENT_END)]
-    : [base];
+  const flow = theme.gradient ? gradientFlow(base, highlight) : undefined;
+  // Every color the rail's text can sit on.
+  const frameColors = flow ? [flow.glow, base, flow.mid, flow.end] : [base];
   const text = textFor(frameColors);
   const worst = (tiles: Rgb[]) =>
     Math.min(...tiles.map((tile) => rgbContrast(text, tile)));
@@ -491,6 +599,7 @@ function themeColors(theme: WindowTheme) {
   return {
     base,
     highlight,
+    flowEnd: flow?.end,
     frameColors,
     text,
     // The rail's selected tile, and its color over each end of the frame.
@@ -530,6 +639,33 @@ function withPanelHighlight(
 }
 
 /**
+ * On a gradient theme the module sidebar flows too, as Slack's channel list
+ * does over its window gradient: its tint moves from the base's hue at the
+ * top to the gradient end's hue at the bottom, at the same lightness, so the
+ * text reads the same all the way down. `--card-end` holds the bottom color.
+ */
+function withPanelFlow(
+  panel: WindowThemeStyle["panel"],
+  flowEnd: Rgb | undefined
+): WindowThemeStyle["panel"] {
+  if (!flowEnd) return panel;
+  const ends = tintedVariables(flowEnd, PANEL_SURFACES);
+  const forMode = (
+    variables: Record<string, string>,
+    end: Record<string, string>
+  ) => ({
+    ...variables,
+    "--card-end": end["--card"]!,
+    backgroundImage:
+      "linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 30%, hsl(var(--card-end)) 100%)"
+  });
+  return {
+    light: forMode(panel.light, ends.light),
+    dark: forMode(panel.dark, ends.dark)
+  };
+}
+
+/**
  * The text colors a theme renders, as hex: on the frame (both ends of a
  * gradient), on the highlight, and the rail's selected tile on each end.
  */
@@ -544,13 +680,16 @@ export function windowThemeTextColors(theme: WindowTheme) {
 }
 
 export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
-  const { base, highlight, text, railTile } = themeColors(theme);
+  const { base, highlight, text, railTile, flowEnd } = themeColors(theme);
   const toward = (t: number) => hslTriplet(mix(base, text, t));
 
   return {
     frame: { background: windowThemeBackground(theme) },
     content: tintedVariables(base, PAGE_SURFACES),
-    panel: withPanelHighlight(tintedVariables(base, PANEL_SURFACES), highlight),
+    panel: withPanelFlow(
+      withPanelHighlight(tintedVariables(base, PANEL_SURFACES), highlight),
+      flowEnd
+    ),
     tone: text === LIGHT_TEXT ? "dark" : "light",
     rail: {
       background: "transparent",
@@ -577,13 +716,54 @@ export function windowThemeStyle(theme: WindowTheme): WindowThemeStyle {
   };
 }
 
-/** The round swatch a picker shows for a theme. */
+/**
+ * The round swatch a picker shows for a theme, as a CSS `background`: what
+ * its frame is. A gradient theme shows its gradient; a solid theme one flat
+ * color (a split circle read as a two-tone frame).
+ */
 export function windowThemeSwatch({ base, highlight, gradient }: WindowTheme) {
   const b = rgbCss(hexToRgb(base));
-  const h = rgbCss(hexToRgb(highlight));
-  return gradient
-    ? `linear-gradient(135deg, ${b} 25%, ${h} 100%)`
-    : `linear-gradient(135deg, ${b} 58%, ${h} 58%)`;
+  if (!gradient) return b;
+  const flow = gradientFlow(hexToRgb(base), hexToRgb(highlight));
+  // The frame's direction: the bloom at the bottom left, the base top right.
+  return `linear-gradient(45deg, ${rgbCss(flow.end)} 0%, ${rgbCss(flow.mid)} 35%, ${b} 70%, ${rgbCss(flow.glow)} 100%)`;
+}
+
+/** `#rrggbb`, for the mesh backdrop. */
+function hashHex(rgb: Rgb) {
+  return `#${rgbToHex(rgb)}`;
+}
+
+const BLACK: Rgb = [0, 0, 0];
+const WHITE: Rgb = [255, 255, 255];
+
+/**
+ * The 4 mesh-gradient stops per mode a theme carries (the onboarding
+ * backdrop, the Implementation Hub): the frame's colors, deep in dark mode and
+ * a pale wash in light mode.
+ */
+export function windowThemeMesh({ base, highlight }: WindowTheme) {
+  const b = hexToRgb(base);
+  const h = hexToRgb(highlight);
+  return {
+    light: [
+      hashHex(mix(WHITE, b, 0.14)),
+      hashHex(mix(WHITE, h, 0.08)),
+      hashHex(mix(WHITE, b, 0.03)),
+      hashHex(mix(WHITE, h, 0.12))
+    ],
+    dark: [
+      hashHex(b),
+      hashHex(mix(b, BLACK, 0.7)),
+      hashHex(mix(b, h, 0.3)),
+      hashHex(mix(b, BLACK, 0.85))
+    ]
+  } as const;
+}
+
+/** The `H S% L%` triplet of a hex color: a theme's picker swatch. */
+export function hexTriplet(hex: string) {
+  return hslTriplet(hexToRgb(hex));
 }
 
 // --- Surprise me ------------------------------------------------------------
