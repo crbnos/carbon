@@ -9,6 +9,7 @@ import {
   extractIcons,
   findIconImports,
   inlineDatasetAssetGlob,
+  lazySourceMaps,
   listDatasetAssetFiles,
   rewriteIconImports
 } from "../vite.js";
@@ -294,5 +295,39 @@ describe("assetModuleUrl", () => {
 
   it("returns null for any other module", () => {
     expect(assetModuleUrl("export const url = 1;")).toBeNull();
+  });
+});
+
+describe("lazySourceMaps", () => {
+  // `ssr` in the shape of Vite 8's RunnableDevEnvironment before or after first use.
+  const configure = (ssr: Record<string, unknown>) => {
+    const hook = lazySourceMaps().configureServer as (server: unknown) => void;
+    hook({ environments: { ssr } });
+    return ssr;
+  };
+
+  it("has the runner map stack traces itself", () => {
+    const ssr = configure({ _runnerOptions: undefined, _runner: undefined });
+    expect(ssr._runnerOptions).toEqual({
+      sourcemapInterceptor: "prepareStackTrace"
+    });
+  });
+
+  it("keeps the other runner options", () => {
+    const ssr = configure({
+      _runnerOptions: { hmr: false },
+      _runner: undefined
+    });
+    expect(ssr._runnerOptions).toEqual({
+      hmr: false,
+      sourcemapInterceptor: "prepareStackTrace"
+    });
+  });
+
+  it("leaves a runner that already exists, and an environment of another shape", () => {
+    expect(
+      configure({ _runnerOptions: undefined, _runner: {} })._runnerOptions
+    ).toBeUndefined();
+    expect(configure({})).toEqual({});
   });
 });

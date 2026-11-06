@@ -9,6 +9,7 @@ export function clientOnlyAlias(specifier: string, file: string): Plugin;
 export function stackActivity(): Plugin;
 export function iconImports(): Plugin;
 export function datasetAssets(): Plugin;
+export function lazySourceMaps(): Plugin;
 export function assetModuleUrl(code: string): string | null;
 export function listDatasetAssetFiles(
   directory: string

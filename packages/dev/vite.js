@@ -712,13 +712,45 @@ export function datasetAssets() {
 }
 
 /**
+ * Dev-server only: maps server stack traces when one is printed, not through
+ * Node's source-map support. Vite's SSR module runner defaults to
+ * `sourcemapInterceptor: "node"`, which turns on
+ * `process.setSourceMapsEnabled(true)`: Node then parses and keeps the inline
+ * source map of every module the runner evaluates, and reads the `.map` of
+ * every package it loads. Vite's `"prepareStackTrace"` interceptor maps the
+ * same frames from the runner's own modules, on demand.
+ *
+ * The runner is created from `_runnerOptions` on first use (the first request).
+ * There is no public way in: an `environments.ssr.dev.createEnvironment` would
+ * have to build the environment with the Vite copy React Router runs, which is
+ * not the one this package or the app resolves.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function lazySourceMaps() {
+  return {
+    name: "carbon:lazy-source-maps",
+    apply: "serve",
+    configureServer(server) {
+      const ssr = /** @type {any} */ (server.environments.ssr);
+      if (!ssr || !("_runnerOptions" in ssr) || ssr._runner) return;
+      ssr._runnerOptions = {
+        ...ssr._runnerOptions,
+        sourcemapInterceptor: "prepareStackTrace",
+      };
+    },
+  };
+}
+
+/**
  * Every Carbon app's own Vite plugins, in one call. React Router and
  * Tailwind stay in the app's config, as the framework and styling plugins.
  *
  * Always on: stack activity (a no-op outside `crbn up`), per-icon react-icons
  * imports in dev (`iconImports`), the demo-asset glob as one module in dev
- * (`datasetAssets`), and Lingui's macro transform with the React
- * Router id fix. The rest is opt-in, and a package
+ * (`datasetAssets`), server stack traces mapped on demand
+ * (`lazySourceMaps`), and Lingui's macro transform with the React Router id
+ * fix. The rest is opt-in, and a package
  * is imported only when its plugin runs, so a dev server or a small app pays
  * nothing for what it does not use.
  *
@@ -738,6 +770,7 @@ export async function carbon({
     stackActivity(),
     iconImports(),
     datasetAssets(),
+    lazySourceMaps(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
     splitServer && splitServerByPackage(),
     precompress && command && mode && precompressedAssets({ command, mode }),
