@@ -47,17 +47,40 @@ describe("applyDocumentEdit", () => {
     });
   });
 
-  it("hides a block, replaces the hidden list and sets the document title", () => {
+  it("hides a block, changes the hidden list and sets the document title", () => {
     const printed = applyDocumentEdit(companyTemplate(), {
       blocks: {
         notes: { visible: false },
-        parties: { hidden: ["supplierVat"] }
+        parties: { hide: ["supplierVat"], show: ["supplierEori"] }
       },
       settings: { text: { title: "Purchase Order (copy)" } }
     });
     expect(block(printed, "notes")?.visible).toBe(false);
     expect(block(printed, "parties")?.hidden).toEqual(["supplierVat"]);
     expect(printed.settings.text).toEqual({ title: "Purchase Order (copy)" });
+  });
+
+  it("follows what the template hides later, keeping the document's own", () => {
+    const base = companyTemplate();
+    const edit = diffDocumentEdit("purchaseOrder", base, {
+      ...base,
+      blocks: base.blocks.map((b) =>
+        b.id === "parties"
+          ? { ...b, hidden: ["supplierEori", "supplierVat"] }
+          : b
+      )
+    });
+    const later = {
+      ...base,
+      blocks: base.blocks.map((b) =>
+        b.id === "parties" ? { ...b, hidden: ["supplierEori", "date"] } : b
+      )
+    };
+    expect(block(applyDocumentEdit(later, edit), "parties")?.hidden).toEqual([
+      "supplierEori",
+      "date",
+      "supplierVat"
+    ]);
   });
 
   it("ignores an edit for a block the template no longer has", () => {
@@ -104,7 +127,7 @@ describe("diffDocumentEdit", () => {
       blocks: {
         parties: {
           text: { supplierTaxId: "GST No.:" },
-          hidden: ["supplierEori", "supplierVat"]
+          hide: ["supplierVat"]
         },
         notes: { visible: false }
       },

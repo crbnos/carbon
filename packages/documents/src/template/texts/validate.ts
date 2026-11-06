@@ -112,6 +112,20 @@ function authoredTexts(block: DocumentBlock): AuthoredText[] {
   }
 }
 
+/** What a number and a figure can be apart by and still read as one: "1 5", "1.5". */
+const BETWEEN = String.raw`[\s\p{Cf}.,'’/:()\-]*`;
+const NUMBER_BEFORE_FIGURE = new RegExp(`\\p{N}${BETWEEN}$`, "u");
+const NUMBER_AFTER_FIGURE = new RegExp(`^${BETWEEN}\\p{N}`, "u");
+/**
+ * The same for a variable that prints a number, written `#` here. Two of them can
+ * mean to be apart: "{shipped} / {ordered}".
+ */
+const VARIABLE_BEFORE_FIGURE = /#[\s\p{Cf}.,'’]*$/u;
+const VARIABLE_AFTER_FIGURE = /^[\s\p{Cf}.,'’]*#/u;
+/** A sign or a scale touching a figure says another figure: -5, (5), 5k. */
+const SIGN_BEFORE_FIGURE = /[-−–—(]\p{Cf}*$/u;
+const SCALE_AFTER_FIGURE = /^\p{Cf}*[kKmMbB](?![\p{L}\p{N}])/u;
+
 /**
  * Every reason a template cannot be saved because of its texts: a text key or
  * a hidden key the catalog does not have, a `{variable}` the document type does
@@ -127,6 +141,17 @@ export function validateTemplateText(
   const amounts = new Set(
     allMergeFields(documentType)
       .filter((field) => field.amount)
+      .map((field) => field.token)
+  );
+  // A figure, or a value the document cannot change that prints a number. A unit
+  // and a currency print words.
+  const numbers = new Set(
+    allMergeFields(documentType)
+      .filter(
+        (field) =>
+          field.amount ||
+          (field.fixed && !/\.(unit|currency)$/.test(field.token))
+      )
       .map((field) => field.token)
   );
   const rowTokens = (row: string | undefined) =>
@@ -150,21 +175,33 @@ export function validateTemplateText(
         });
       }
     }
-    // Words around a figure are fine, but `1{line.quantity}` prints 15 for 5.
+    // Words around a figure are fine, but `1{line.quantity}` prints 15 for 5, and
+    // `{line.number} {line.quantity}` prints "1 5". What a variable next to it
+    // prints counts: a number if it holds one, else nothing, so that a blank
+    // variable cannot stand between a typed number and the figure.
+    const asPrinted = (text: string) =>
+      text.replace(TOKEN_RE, (_, token: string) =>
+        numbers.has(token) ? "#" : ""
+      );
     for (const match of value.matchAll(TOKEN_RE)) {
       const token = match[1] ?? "";
-      const before = value.slice(0, match.index);
-      const after = value.slice(match.index + match[0].length);
+      const before = asPrinted(value.slice(0, match.index));
+      const after = asPrinted(value.slice(match.index + match[0].length));
       if (
         amounts.has(token) &&
-        (/\d[.,]?$/.test(before) || /^[.,]?\d/.test(after))
+        (NUMBER_BEFORE_FIGURE.test(before) ||
+          NUMBER_AFTER_FIGURE.test(after) ||
+          VARIABLE_BEFORE_FIGURE.test(before) ||
+          VARIABLE_AFTER_FIGURE.test(after) ||
+          SIGN_BEFORE_FIGURE.test(before) ||
+          SCALE_AFTER_FIGURE.test(after))
       ) {
         problems.push({
           blockId,
           field: entry.key,
           code: "amountChanged",
           token,
-          message: `${label} › ${entry.default}: a number cannot touch the figure {${token}}`
+          message: `${label} › ${entry.default}: a number or sign cannot sit next to the figure {${token}}`
         });
       }
     }
@@ -190,16 +227,19 @@ export function validateTemplateText(
     }
   };
 
-  for (const block of template.blocks) {
-    const label = BLOCK_META[block.type]?.label ?? block.type;
-    const entries = getTextEntries(documentType, block.type);
+  /** A block's or the document's own changed words and hidden list. */
+  const checkStored = (
+    blockId: string,
+    label: string,
+    entries: readonly TextEntry[],
+    stored: { text?: Record<string, string>; hidden?: string[] }
+  ) => {
     const byKey = new Map(entries.map((entry) => [entry.key, entry]));
-
-    for (const [key, value] of Object.entries(block.text ?? {})) {
+    for (const [key, value] of Object.entries(stored.text ?? {})) {
       const entry = byKey.get(key);
       if (!entry) {
         problems.push({
-          blockId: block.id,
+          blockId,
           field: key,
           code: "unknownText",
           message: `${label} › ${key}: unknown text`
@@ -207,27 +247,35 @@ export function validateTemplateText(
         continue;
       }
       checkVariables(
-        block.id,
+        blockId,
         `${label} › ${entry.default}`,
         key,
         value,
         entry.row
       );
-      checkFigures(block.id, label, entry, value);
+      checkFigures(blockId, label, entry, value);
     }
-
-    for (const key of block.hidden ?? []) {
+    for (const key of stored.hidden ?? []) {
       const entry = byKey.get(key);
       if (!entry || !isHideable(entry)) {
         problems.push({
-          blockId: block.id,
+          blockId,
           field: key,
           code: "notHideable",
           message: `${label} › ${entry?.default ?? key}: cannot be hidden`
         });
       }
     }
+  };
 
+  for (const block of template.blocks) {
+    const label = BLOCK_META[block.type]?.label ?? block.type;
+    checkStored(
+      block.id,
+      label,
+      getTextEntries(documentType, block.type),
+      block
+    );
     for (const authored of authoredTexts(block)) {
       checkVariables(
         block.id,
@@ -238,41 +286,12 @@ export function validateTemplateText(
     }
   }
 
-  const documentEntries = new Map(
-    getTextEntries(documentType, "document").map((entry) => [entry.key, entry])
+  checkStored(
+    "document",
+    "Document",
+    getTextEntries(documentType, "document"),
+    template.settings ?? {}
   );
-  for (const [key, value] of Object.entries(template.settings?.text ?? {})) {
-    const entry = documentEntries.get(key);
-    if (!entry) {
-      problems.push({
-        blockId: "document",
-        field: key,
-        code: "unknownText",
-        message: `Document › ${key}: unknown text`
-      });
-      continue;
-    }
-    checkVariables(
-      "document",
-      `Document › ${entry.default}`,
-      key,
-      value,
-      entry.row
-    );
-    checkFigures("document", "Document", entry, value);
-  }
-
-  for (const key of template.settings?.hidden ?? []) {
-    const entry = documentEntries.get(key);
-    if (!entry || !isHideable(entry)) {
-      problems.push({
-        blockId: "document",
-        field: key,
-        code: "notHideable",
-        message: `Document › ${entry?.default ?? key}: cannot be hidden`
-      });
-    }
-  }
 
   const valueEdits = template.settings?.valueEdits;
   const changedTokens = [

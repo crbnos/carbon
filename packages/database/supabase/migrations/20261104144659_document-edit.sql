@@ -9,9 +9,9 @@ CREATE TABLE "documentEdit" (
     -- The record the document prints (a purchaseOrder, a shipment for a packing
     -- slip, a job for a traveler...). No FK: it points at one of 11 tables.
     "documentId" TEXT NOT NULL,
-    -- Per block id: { text?, hidden?, visible?, content? }.
+    -- Per block id: { text?, hide?, show?, visible?, content? }.
     "blocks" JSONB NOT NULL DEFAULT '{}',
-    -- The document's own texts and changed values: { text?, hidden?, valueEdits? }.
+    -- The document's own texts and changed values: { text?, hide?, show?, valueEdits? }.
     "settings" JSONB NOT NULL DEFAULT '{}',
 
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),

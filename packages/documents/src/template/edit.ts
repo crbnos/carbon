@@ -23,7 +23,9 @@ import { isEmptyValueEdits } from "./values";
  */
 export const blockEditSchema = z.object({
   text: z.record(z.string(), z.string()).optional(),
-  hidden: z.array(z.string()).optional(),
+  /** Texts this document hides, or shows, against the template's hidden list. */
+  hide: z.array(z.string()).optional(),
+  show: z.array(z.string()).optional(),
   visible: z.boolean().optional(),
   /** The Terms block's own rich text for this document. */
   content: z.any().optional()
@@ -35,7 +37,8 @@ export const documentEditSchema = z.object({
   settings: z
     .object({
       text: z.record(z.string(), z.string()).optional(),
-      hidden: z.array(z.string()).optional(),
+      hide: z.array(z.string()).optional(),
+      show: z.array(z.string()).optional(),
       valueEdits: valueEditsSchema.optional()
     })
     .default({})
@@ -111,6 +114,16 @@ export function printedNotes(
     : (recordNotes as JSONContent | null | undefined);
 }
 
+/** The template's hidden list with this document's own changes to it. */
+function hiddenWith(
+  hidden: string[] | undefined,
+  change: { hide?: string[]; show?: string[] }
+) {
+  if (!change.hide && !change.show) return hidden;
+  const kept = (hidden ?? []).filter((key) => !change.show?.includes(key));
+  return [...new Set([...kept, ...(change.hide ?? [])])];
+}
+
 /** The template as this one document prints it. */
 export function applyDocumentEdit<
   T extends Pick<DocumentTemplate, "blocks" | "settings">
@@ -125,18 +138,18 @@ export function applyDocumentEdit<
       const next = {
         ...block,
         text: { ...block.text, ...change.text },
-        hidden: change.hidden ?? block.hidden,
+        hidden: hiddenWith(block.hidden, change),
         visible: change.visible ?? block.visible
       };
       if (block.type === "terms" && change.content !== undefined) {
-        return { ...next, content: change.content };
+        return { ...next, content: change.content ?? undefined };
       }
       return next as DocumentBlock;
     }),
     settings: {
       ...template.settings,
       text: { ...template.settings.text, ...edit.settings.text },
-      hidden: edit.settings.hidden ?? template.settings.hidden,
+      hidden: hiddenWith(template.settings.hidden, edit.settings),
       valueEdits: edit.settings.valueEdits
     }
   };
@@ -152,9 +165,18 @@ function printed(
   );
 }
 
-const sameList = (a: string[] | undefined, b: string[] | undefined) =>
-  JSON.stringify([...(a ?? [])].sort()) ===
-  JSON.stringify([...(b ?? [])].sort());
+/** What the edited hidden list adds to the template's, and takes from it. */
+function hiddenChange(
+  base: string[] | undefined,
+  edited: string[] | undefined
+) {
+  const hide = (edited ?? []).filter((key) => !base?.includes(key));
+  const show = (base ?? []).filter((key) => !edited?.includes(key));
+  return {
+    ...(hide.length > 0 ? { hide } : {}),
+    ...(show.length > 0 ? { show } : {})
+  };
+}
 
 /** Only the words, toggles and terms that differ from the template. */
 function changedText(
@@ -183,15 +205,13 @@ export function diffDocumentEdit(
   for (const block of base.blocks) {
     const after = edited.blocks.find((b) => b.id === block.id);
     if (!after) continue;
-    const change: BlockEdit = {};
+    const change: BlockEdit = hiddenChange(block.hidden, after.hidden);
     const text = changedText(
       getTextEntries(documentType, block.type),
       block.text,
       after.text
     );
     if (text) change.text = text;
-    if (!sameList(block.hidden, after.hidden))
-      change.hidden = after.hidden ?? [];
     if (block.visible !== after.visible) change.visible = after.visible;
     if (
       block.type === "terms" &&
@@ -199,21 +219,22 @@ export function diffDocumentEdit(
       JSON.stringify(block.content ?? null) !==
         JSON.stringify(after.content ?? null)
     ) {
-      change.content = after.content;
+      // Null: the template's terms are cleared here, and the company's print.
+      change.content = after.content ?? null;
     }
     if (Object.keys(change).length > 0) blocks[block.id] = change;
   }
 
-  const settings: DocumentEdit["settings"] = {};
+  const settings: DocumentEdit["settings"] = hiddenChange(
+    base.settings.hidden,
+    edited.settings.hidden
+  );
   const text = changedText(
     getTextEntries(documentType, "document"),
     base.settings.text,
     edited.settings.text
   );
   if (text) settings.text = text;
-  if (!sameList(base.settings.hidden, edited.settings.hidden)) {
-    settings.hidden = edited.settings.hidden ?? [];
-  }
   if (!isEmptyValueEdits(edited.settings.valueEdits)) {
     settings.valueEdits = edited.settings.valueEdits;
   }
@@ -248,10 +269,11 @@ export function validateDocumentEdit(
       blockId === "document" ? edit.settings : edit.blocks[blockId];
     return (
       change?.text?.[field] !== undefined ||
-      change?.hidden?.includes(field) === true ||
+      change?.hide?.includes(field) === true ||
       (field === "content" &&
-        "content" in (change ?? {}) &&
-        (change as BlockEdit).content !== undefined)
+        change !== undefined &&
+        "content" in change &&
+        change.content !== undefined)
     );
   });
 }

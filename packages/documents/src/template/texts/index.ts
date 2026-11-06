@@ -66,11 +66,13 @@ export function makeText<E extends readonly TextEntry[]>(
   const owners = new Map(entries.map((entry) => [entry.key, entry.of]));
   const rawText = (key: string) =>
     stored?.text?.[key] ?? defaults.get(key) ?? "";
-  const fn = ((key: string, rowVars?: Record<string, string>) =>
-    interpolateString(
-      rawText(key),
-      rowVars ? { ...vars, ...rowVars } : vars
-    ).trim()) as TextFn<E[number]["key"]>;
+  const fn = ((key: string, rowVars?: Record<string, string>) => {
+    const filled = rowVars ? { ...vars, ...rowVars } : vars;
+    // A table cell has no `prints` check of its own: an edited "Qty: {qty}"
+    // prints nothing on a row with no quantity, such as a comment line.
+    if (rowVars && tokensAllEmpty(rawText(key), filled)) return "";
+    return interpolateString(rawText(key), filled).trim();
+  }) as TextFn<E[number]["key"]>;
   fn.shows = (key) => !(stored?.hidden ?? []).includes(key);
   fn.prints = (key, rowVars) =>
     fn.shows(key) &&
@@ -107,10 +109,14 @@ export function getTextEntries(
 export const HEADER_TEXT_KEYS = [
   "title",
   "rentalTitle",
+  "receivingReportTitle",
   "documentNumber",
   "salesOrderPrefix",
   "supplierRmaNumber"
 ];
+
+/** The document texts the footer's own line prints. */
+export const FOOTER_LINE_TEXT_KEYS = ["page", "of", "issueNumber"];
 
 export function isHideable(entry: TextEntry): boolean {
   return HIDEABLE_KINDS.includes(entry.kind);

@@ -6,7 +6,12 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_TEMPLATES } from "../defaults";
 import { isEditableValue } from "../merge";
 import { getLineMergeFields, getMergeFields } from "../mergeFields";
-import type { DocumentBlock, DocumentTemplate } from "../schema";
+import type {
+  DocumentBlock,
+  DocumentTemplate,
+  DocumentTemplateType
+} from "../schema";
+import { DEFAULT_DOCUMENT_SETTINGS } from "../schema";
 import { TEXT_CATALOG } from "./index";
 import { unknownVariables, validateTemplateText } from "./validate";
 
@@ -84,38 +89,72 @@ describe("validateTemplateText", () => {
       "1{line.quantity}",
       "{line.quantity}0",
       "1.{line.quantity}",
-      "{line.quantity},5"
+      "{line.quantity},5",
+      "{line.quantity}{line.quantity}",
+      "{line.number}{line.quantity}",
+      "{line.quantity} 000",
+      "1 {line.quantity}",
+      "1.,{line.quantity}",
+      "١{line.quantity}",
+      "½{line.quantity}",
+      "1\u200B{line.quantity}",
+      "{line.number} {line.quantity}",
+      "{line.quantity} {line.quantity}",
+      "1 {line.details} {line.quantity}",
+      "1-{line.quantity}",
+      "-{line.quantity}",
+      "({line.quantity})",
+      "{line.quantity}k"
     ]) {
       expect(
         validateTemplateText(withWords("lineItems", { qtyCell })),
         qtyCell
-      ).toMatchObject([{ code: "amountChanged", token: "line.quantity" }]);
+      ).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "amountChanged",
+            token: "line.quantity"
+          })
+        ])
+      );
     }
     expect(
       validateTemplateText(
-        withWords("lineItems", { qtyCell: "x {line.quantity} 2" })
+        withWords("lineItems", { qtyCell: "x {line.quantity} pcs" })
+      )
+    ).toEqual([]);
+    expect(
+      validateTemplateText(
+        withWords("lineItems", { qtyCell: "{line.quantity}{line.unit}" })
       )
     ).toEqual([]);
   });
 
-  it("finds no number against a figure in any default text", () => {
+  it("refuses no default text", () => {
     for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {
-      const amounts = new Set(
-        [...getMergeFields(documentType), ...getLineMergeFields(documentType)]
-          .filter((field) => field.amount)
-          .map((field) => field.token)
-      );
-      for (const entry of Object.values(catalog).flatMap((e) => [
-        ...(e ?? [])
-      ])) {
-        for (const match of entry.default.matchAll(/\{([\w.]+)\}/g)) {
-          if (!amounts.has(match[1] ?? "")) continue;
-          const before = entry.default.slice(0, match.index);
-          const after = entry.default.slice(match.index + match[0].length);
-          expect(`${before}|${after}`, entry.key).not.toMatch(
-            /\d[.,]?\||\|[.,]?\d/
-          );
-        }
+      for (const [blockType, entries] of Object.entries(catalog)) {
+        const text = Object.fromEntries(
+          (entries ?? []).map((entry) => [entry.key, entry.default])
+        );
+        const template = {
+          documentType: documentType as DocumentTemplateType,
+          blocks:
+            blockType === "document"
+              ? []
+              : [
+                  {
+                    id: blockType,
+                    type: blockType,
+                    visible: true,
+                    text
+                  } as DocumentBlock
+                ],
+          settings: {
+            ...DEFAULT_DOCUMENT_SETTINGS,
+            ...(blockType === "document" ? { text } : {})
+          }
+        };
+        expect(validateTemplateText(template), blockType).toEqual([]);
       }
     }
   });

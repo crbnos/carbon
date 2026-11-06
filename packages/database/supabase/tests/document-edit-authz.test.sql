@@ -90,6 +90,20 @@ BEGIN
         'salesReturnOrder', 'salesInvoice', 'shipment', 'stockTransfer', 'job', 'nonConformance');
   IF n <> 11 THEN RAISE EXCEPTION 'expected the cleanup trigger on 11 record tables, found %', n; END IF;
 
+  -- The trigger removes only that document's row, in that company. Fired on a
+  -- stand-in table, because a real record needs every module's fixtures.
+  INSERT INTO "documentEdit" ("companyId", "documentType", "documentId", "createdBy") VALUES
+    (company_a, 'quote', 'gone', 'system'),
+    (company_b, 'quote', 'gone', 'system'),
+    (company_a, 'salesOrder', 'gone', 'system');
+  CREATE TEMP TABLE record_stand_in (id text, "companyId" text) ON COMMIT DROP;
+  CREATE TRIGGER delete_stand_in AFTER DELETE ON record_stand_in
+    FOR EACH ROW EXECUTE FUNCTION public.delete_document_edit('quote');
+  INSERT INTO record_stand_in VALUES ('gone', company_a);
+  DELETE FROM record_stand_in;
+  SELECT count(*) INTO n FROM "documentEdit" WHERE "documentId" = 'gone';
+  IF n <> 2 THEN RAISE EXCEPTION 'deleting a record must remove its one edit, % left of 3', n; END IF;
+
   -- A template takes no API writes either.
   SELECT count(*) INTO n FROM pg_policies
     WHERE tablename IN ('documentEdit', 'documentTemplate') AND cmd <> 'SELECT';
