@@ -155,6 +155,14 @@ export async function renderIssuePdf(
     });
   }
 
+  if (nonConformance.data && nonConformance.data.companyId !== companyId) {
+    logger.error("Issue does not belong to this company", {
+      companyId,
+      issueId: id
+    });
+    throw new Error("Failed to load issue");
+  }
+
   if (nonConformanceTypes.error) {
     logger.error("Failed to load nonConformanceTypes", {
       error: nonConformanceTypes.error

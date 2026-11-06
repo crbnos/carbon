@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -19,6 +18,7 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchaseOrderApproval,
@@ -28,7 +28,6 @@ import {
   buildPurchaseOrderVars,
   purchaseOrderBlockRegistry
 } from "./blocks/purchaseOrder";
-import { Template } from "./components";
 
 interface PurchaseOrderPDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -81,8 +80,8 @@ const PurchaseOrderPDF = ({
     ? getPurchaseOrderDisplayId(purchaseOrder)
     : "";
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("purchaseOrder", template);
+  const resolved = resolveTemplate("purchaseOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -99,24 +98,13 @@ const PurchaseOrderPDF = ({
       numberFormatter
     })
   );
-  const {
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: purchaseOrderTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
   const headerTitle = displayId
     ? `${documentTitle}: ${displayId}`
     : documentTitle;
@@ -154,31 +142,18 @@ const PurchaseOrderPDF = ({
   };
 
   return (
-    <Template
-      theme={theme}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="purchase order"
       title={headerTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "purchase order",
-        subject: meta?.subject ?? documentTitle
-      }}
       footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = purchaseOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={purchaseOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 

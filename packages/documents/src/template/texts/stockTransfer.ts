@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { FOOTER_TEXTS } from "./shared";
+import { cell, FOOTER_TEXTS, valueOf } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const stockTransferTexts = {
@@ -34,61 +34,22 @@ export const stockTransferTexts = {
     { key: "email", kind: "field", default: "Email: {company.email}" },
     { key: "website", kind: "field", default: "Website: {company.website}" },
     { key: "date", kind: "field", default: "Date" },
-    { key: "dateValue", kind: "value", default: "{transfer.date}", of: "date" },
+    valueOf("dateValue", "{transfer.date}", "date"),
     { key: "stockTransfer", kind: "field", default: "Stock Transfer" },
-    {
-      key: "stockTransferValue",
-      kind: "value",
-      default: "{transfer.number}",
-      of: "stockTransfer"
-    },
+    valueOf("stockTransferValue", "{transfer.number}", "stockTransfer"),
     { key: "location", kind: "field", default: "Location" },
-    {
-      key: "locationValue",
-      kind: "value",
-      default: "{transfer.location}",
-      of: "location"
-    },
+    valueOf("locationValue", "{transfer.location}", "location"),
     { key: "assignee", kind: "field", default: "Assignee" },
-    {
-      key: "assigneeValue",
-      kind: "value",
-      default: "{transfer.assignee}",
-      of: "assignee"
-    }
+    valueOf("assigneeValue", "{transfer.assignee}", "assignee")
   ],
   lineItems: [
     { key: "description", kind: "text", default: "Description" },
-    {
-      key: "descriptionCell",
-      kind: "value",
-      default: "{line.description}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "itemIdCell",
-      kind: "value",
-      default: "{line.itemId}",
-      of: "description",
-      row: "line"
-    },
+    cell("descriptionCell", "{line.description}", "description", "line"),
+    cell("itemIdCell", "{line.itemId}", "description", "line"),
     { key: "transfer", kind: "column", default: "Transfer" },
-    {
-      key: "transferCell",
-      kind: "value",
-      default: "{line.from} → {line.to}",
-      of: "transfer",
-      row: "line"
-    },
+    cell("transferCell", "{line.from} → {line.to}", "transfer", "line"),
     { key: "qty", kind: "column", default: "Qty" },
-    {
-      key: "qtyCell",
-      kind: "value",
-      default: "{line.quantity} {line.unit}",
-      of: "qty",
-      row: "line"
-    },
+    cell("qtyCell", "{line.quantity} {line.unit}", "qty", "line"),
     { key: "pick", kind: "column", default: "Pick" },
     // Printed for a line with no storage unit on one side.
     { key: "any", kind: "text", default: "Any" }

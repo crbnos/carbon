@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -20,8 +19,8 @@ import {
 } from "../utils/shared";
 import type { SalesInvoiceData, SalesInvoiceLocations } from "./blocks";
 import { buildSalesInvoiceVars, salesInvoiceBlockRegistry } from "./blocks";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
-import { Template } from "./components";
 
 interface SalesInvoicePDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -72,8 +71,8 @@ const SalesInvoicePDF = ({
   // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("salesInvoice", template);
+  const resolved = resolveTemplate("salesInvoice", template);
+  const { theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -91,24 +90,13 @@ const SalesInvoicePDF = ({
       numberFormatter
     })
   );
-  const {
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: salesInvoiceTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -147,37 +135,18 @@ const SalesInvoicePDF = ({
     documentNumber
   };
 
-  // The header/footer selectors are the single control for the top header and
-  // the footer band. "None" (null id) removes them entirely; the built-in
-  // default id keeps them. This drives both the company Header block and the
-  // structural footer (registration line + page numbers).
-
   return (
-    <Template
-      theme={theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "sales invoice",
-        subject: meta?.subject ?? documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="sales invoice"
       footerDocumentId={salesInvoice?.invoiceId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = salesInvoiceBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={salesInvoiceBlockRegistry}
+      data={data}
+    />
   );
 };
 

@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -11,6 +10,7 @@ import {
   type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   ActionTask,
@@ -21,7 +21,6 @@ import type {
   ListItem
 } from "./blocks/issue";
 import { buildIssueVars, issueBlockRegistry } from "./blocks/issue";
-import { Template } from "./components";
 
 interface IssuePDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -68,25 +67,13 @@ const IssuePDF = ({
       locale
     })
   );
-  const {
-    dt,
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: issueTexts.document,
-    settings: resolved.settings,
+    template: resolved,
     vars,
-    blocks: resolved.blocks,
-    sections,
-    headerSectionId: resolved.headerSectionId,
-    footerSectionId: resolved.footerSectionId
+    sections
   });
+  const { dt, documentTitle, documentNumber, headerOptions } = chrome;
 
   const data: IssueData = {
     documentTitle,
@@ -111,30 +98,15 @@ const IssuePDF = ({
   };
 
   return (
-    <Template
-      theme={resolved.theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "issue report",
-        subject: meta?.subject ?? documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="issue report"
       footerLabel={dt("issueNumber")}
-      showFooter={showFooter}
-      showPageNumbers={resolved.settings.showPageNumbers}
-      pageNumberFormat={resolved.settings.pageNumberFormat}
-      showRegistrationLine={resolved.settings.showRegistrationLine}
-      fontFamily={resolved.settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = issueBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={issueBlockRegistry}
+      data={data}
+    />
   );
 };
 

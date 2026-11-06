@@ -12,7 +12,7 @@ import {
 } from "../../../template";
 import { getLineTaxesAndFees } from "../../../utils/sales-order";
 import { Note } from "../../components";
-import { Cell, TextCell } from "../Cell";
+import { Cell, ChargeRow, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
@@ -125,52 +125,32 @@ export function LineItemsBlock({
                       {t("taxAndFees")}
                     </Text>
                     {t.prints("shippingValue", row) ? (
-                      <View style={tw("flex flex-row justify-between")}>
-                        <Text
-                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                        >
-                          {t("shipping")}
-                        </Text>
-                        <Text style={tw("text-[9px] text-gray-600")}>
-                          {t("shippingValue", row)}
-                        </Text>
-                      </View>
+                      <ChargeRow
+                        label={t("shipping")}
+                        value={t("shippingValue", row)}
+                        textStyle="text-[9px] text-gray-600"
+                      />
                     ) : null}
                     {t.prints("addOnValue", row) ? (
-                      <View style={tw("flex flex-row justify-between")}>
-                        <Text
-                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                        >
-                          {t("addOn")}
-                        </Text>
-                        <Text style={tw("text-[9px] text-gray-600")}>
-                          {t("addOnValue", row)}
-                        </Text>
-                      </View>
+                      <ChargeRow
+                        label={t("addOn")}
+                        value={t("addOnValue", row)}
+                        textStyle="text-[9px] text-gray-600"
+                      />
                     ) : null}
                     {t.prints("nonTaxableAddOnValue", row) ? (
-                      <View style={tw("flex flex-row justify-between")}>
-                        <Text
-                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                        >
-                          {t("nonTaxableAddOn")}
-                        </Text>
-                        <Text style={tw("text-[9px] text-gray-600")}>
-                          {t("nonTaxableAddOnValue", row)}
-                        </Text>
-                      </View>
+                      <ChargeRow
+                        label={t("nonTaxableAddOn")}
+                        value={t("nonTaxableAddOnValue", row)}
+                        textStyle="text-[9px] text-gray-600"
+                      />
                     ) : null}
                     {t.prints("taxValue", row) ? (
-                      <View style={tw("flex flex-row justify-between")}>
-                        <Text
-                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                        >
-                          {t("tax", row)}
-                        </Text>
-                        <Text style={tw("text-[9px] text-gray-600")}>
-                          {t("taxValue", row)}
-                        </Text>
-                      </View>
+                      <ChargeRow
+                        label={t("tax", row)}
+                        value={t("taxValue", row)}
+                        textStyle="text-[9px] text-gray-600"
+                      />
                     ) : null}
                   </View>
                 ) : null}

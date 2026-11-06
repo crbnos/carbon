@@ -14,6 +14,7 @@ import {
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchasingRfqAddress,
@@ -26,7 +27,6 @@ import {
   purchasingRfqBlockRegistry
 } from "./blocks/purchasingRfq";
 import { hasContent, resolveTerms } from "./blocks/resolveTerms";
-import { Template } from "./components";
 
 interface PurchasingRfqPDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -68,8 +68,8 @@ const PurchasingRfqPDF = ({
   template,
   sections = {}
 }: PurchasingRfqPDFProps) => {
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("purchasingRfq", template);
+  const resolved = resolveTemplate("purchasingRfq", template);
+  const { blocks, theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -81,23 +81,13 @@ const PurchasingRfqPDF = ({
       locale
     })
   );
-  const {
-    documentTitle,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: purchasingRfqTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { documentTitle, headerOptions, visibleBlocks } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -132,24 +122,14 @@ const PurchasingRfqPDF = ({
     hasContent(resolveTerms(termsBlock, terms, vars));
 
   return (
-    <Template
-      theme={theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "request for quote, rfq",
-        subject: meta?.subject ?? documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="request for quote, rfq"
       footerDocumentId={purchasingRfq?.rfqId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
     >
       {/* Letter margins: the page shell's are sized for dense documents.
           The fixed spacer holds the top margin on every page; each block gets
@@ -168,7 +148,7 @@ const PurchasingRfqPDF = ({
           </View>
         );
       })}
-    </Template>
+    </DocumentPage>
   );
 };
 

@@ -48,6 +48,7 @@ import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
 
+export { documentChrome } from "./blocks/documentChrome";
 export type {
   BatchListMember,
   ContractFinancingEventRow,

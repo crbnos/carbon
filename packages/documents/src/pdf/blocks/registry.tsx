@@ -5,11 +5,11 @@
 import type { DocumentBlockType } from "../../template";
 import { salesInvoiceTexts } from "../../template";
 import { CustomFieldBlock } from "./CustomFieldBlock";
+import { DocumentSummary } from "./DocumentSummary";
 import { extensionBlocks } from "./extensionRegistry";
 import { HeaderBlock } from "./HeaderBlock";
 import { LineItemsBlock } from "./LineItemsBlock";
 import { PartiesBlock } from "./PartiesBlock";
-import { SummaryBlock } from "./SummaryBlock";
 import { DocumentNotes, DocumentTerms } from "./standardBlocks";
 import type { BlockRenderer, SalesInvoiceData } from "./types";
 
@@ -39,7 +39,18 @@ export const salesInvoiceBlockRegistry: Partial<
     ) : null,
   summary: ({ block, data }) =>
     block.type === "summary" ? (
-      <SummaryBlock block={block} data={data} />
+      <DocumentSummary
+        block={block}
+        texts={salesInvoiceTexts.summary}
+        vars={data.vars}
+        currencyCode={data.currencyCode}
+        rows={[
+          { label: "subtotal", value: "subtotalValue", always: true },
+          { label: "discount", value: "discountValue" },
+          { label: "addOns", value: "addOnsValue" },
+          { label: "shipping", value: "shippingValue" }
+        ]}
+      />
     ) : null,
   terms: ({ block, data }) =>
     block.type === "terms" ? (

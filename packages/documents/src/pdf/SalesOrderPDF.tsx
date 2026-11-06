@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -18,13 +17,13 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
 import {
   buildSalesOrderVars,
   salesOrderBlockRegistry
 } from "./blocks/salesOrder";
-import { Template } from "./components";
 
 interface SalesOrderPDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -71,8 +70,8 @@ const SalesOrderPDF = ({
   // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("salesOrder", template);
+  const resolved = resolveTemplate("salesOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -88,24 +87,13 @@ const SalesOrderPDF = ({
       numberFormatter
     })
   );
-  const {
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: salesOrderTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -140,31 +128,17 @@ const SalesOrderPDF = ({
   };
 
   return (
-    <Template
-      theme={theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "sales order",
-        subject: meta?.subject ?? documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="sales order"
       footerDocumentId={salesOrder?.salesOrderId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = salesOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={salesOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 

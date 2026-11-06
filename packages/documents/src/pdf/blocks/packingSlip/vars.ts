@@ -4,7 +4,7 @@
 
 import { formatDate } from "@carbon/utils";
 import type { MergeToken, RowVars } from "../../../template";
-import { addressVars, str } from "../textVars";
+import { addressVars, companyVars, str } from "../textVars";
 import type { PackingSlipData, PackingSlipRentalUnit } from "./types";
 
 /** Merge-field variable map for a Packing Slip. */
@@ -47,13 +47,7 @@ export function buildPackingSlipVars(
       country: a?.countryCode
     }),
 
-    "company.name": str(data.company?.name),
-    "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode),
-    "company.taxId": str(data.company?.taxId),
-    "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber),
-    "company.registrationNumber": str(data.company?.registrationNumber)
+    ...companyVars(data.company)
   };
 }
 

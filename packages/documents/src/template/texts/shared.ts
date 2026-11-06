@@ -40,3 +40,21 @@ export function addressTexts<K extends string>(
     line("Country", "country")
   ];
 }
+
+/**
+ * A table cell: a value printed once per row, under the column or label `of`.
+ * `row` names the row's variables by their prefix.
+ */
+export const cell = <K extends string>(
+  key: K,
+  text: string,
+  of: string,
+  row: string
+) => ({ key, kind: "value" as const, default: text, of, row });
+
+/** A value in a place of its own, printed with the label or column `of`. */
+export const valueOf = <K extends string>(
+  key: K,
+  text: string,
+  of: string
+) => ({ key, kind: "value" as const, default: text, of });

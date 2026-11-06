@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { addressTexts, FOOTER_TEXTS } from "./shared";
+import { addressTexts, cell, FOOTER_TEXTS, valueOf } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const quoteTexts = {
@@ -55,36 +55,12 @@ export const quoteTexts = {
   // of a line, `charge` once per additional charge of a quantity.
   lineItems: [
     { key: "description", kind: "text", default: "Description" },
-    {
-      key: "descriptionCell",
-      kind: "value",
-      default: "{line.description}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "detailsCell",
-      kind: "value",
-      default: "{line.details}",
-      of: "description",
-      row: "line"
-    },
+    cell("descriptionCell", "{line.description}", "description", "line"),
+    cell("detailsCell", "{line.details}", "description", "line"),
     { key: "qty", kind: "column", default: "Qty" },
-    {
-      key: "qtyCell",
-      kind: "value",
-      default: "{price.quantity} EA",
-      of: "qty",
-      row: "price"
-    },
+    cell("qtyCell", "{price.quantity} EA", "qty", "price"),
     { key: "unitPrice", kind: "column", default: "Unit Price" },
-    {
-      key: "unitPriceCell",
-      kind: "value",
-      default: "{price.unitPrice}",
-      of: "unitPrice",
-      row: "price"
-    },
+    cell("unitPriceCell", "{price.unitPrice}", "unitPrice", "price"),
     // "Tax & Fees" is both a column header and the heading of a line's
     // tax and fee rows, so each key carries its section.
     {
@@ -93,29 +69,16 @@ export const quoteTexts = {
       default: "Tax & Fees",
       section: "column"
     },
-    {
-      key: "columnTaxAndFeesCell",
-      kind: "value",
-      default: "{price.taxAndFees}",
-      of: "columnTaxAndFees",
-      row: "price"
-    },
+    cell(
+      "columnTaxAndFeesCell",
+      "{price.taxAndFees}",
+      "columnTaxAndFees",
+      "price"
+    ),
     { key: "leadTime", kind: "column", default: "Lead Time" },
-    {
-      key: "leadTimeCell",
-      kind: "value",
-      default: "{price.leadTime}",
-      of: "leadTime",
-      row: "price"
-    },
+    cell("leadTimeCell", "{price.leadTime}", "leadTime", "price"),
     { key: "total", kind: "column", default: "Total" },
-    {
-      key: "totalCell",
-      kind: "value",
-      default: "{price.total}",
-      of: "total",
-      row: "price"
-    },
+    cell("totalCell", "{price.total}", "total", "price"),
     {
       key: "lineTaxAndFees",
       kind: "text",
@@ -123,65 +86,32 @@ export const quoteTexts = {
       section: "lineDetail"
     },
     { key: "shipping", kind: "text", default: "- Shipping" },
-    {
-      key: "shippingValue",
-      kind: "value",
-      default: "{price.shipping}",
-      of: "shipping",
-      row: "price"
-    },
+    cell("shippingValue", "{price.shipping}", "shipping", "price"),
     {
       key: "charge",
       kind: "text",
       default: "- {charge.description}",
       row: "charge"
     },
-    {
-      key: "chargeValue",
-      kind: "value",
-      default: "{charge.amount}",
-      of: "charge",
-      row: "charge"
-    },
+    cell("chargeValue", "{charge.amount}", "charge", "charge"),
     {
       key: "tax",
       kind: "text",
       default: "- Tax ({price.taxPercent})",
       row: "price"
     },
-    {
-      key: "taxValue",
-      kind: "value",
-      default: "{price.tax}",
-      of: "tax",
-      row: "price"
-    }
+    cell("taxValue", "{price.tax}", "tax", "price")
   ],
   summary: [
     { key: "subtotal", kind: "text", default: "Subtotal ({quote.currency})" },
-    {
-      key: "subtotalValue",
-      kind: "value",
-      default: "{quote.subtotal}",
-      of: "subtotal"
-    },
+    valueOf("subtotalValue", "{quote.subtotal}", "subtotal"),
     { key: "shipping", kind: "text", default: "Shipping ({quote.currency})" },
-    {
-      key: "shippingValue",
-      kind: "value",
-      default: "{quote.shipping}",
-      of: "shipping"
-    },
+    valueOf("shippingValue", "{quote.shipping}", "shipping"),
     { key: "fees", kind: "text", default: "Fees ({quote.currency})" },
-    { key: "feesValue", kind: "value", default: "{quote.fees}", of: "fees" },
+    valueOf("feesValue", "{quote.fees}", "fees"),
     { key: "taxValue", kind: "value", default: "{quote.tax}" },
     { key: "total", kind: "text", default: "Total ({quote.currency})" },
-    {
-      key: "totalValue",
-      kind: "value",
-      default: "{quote.total}",
-      of: "total"
-    }
+    valueOf("totalValue", "{quote.total}", "total")
   ],
   terms: [
     {

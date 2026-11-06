@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { addressTexts, FOOTER_TEXTS } from "./shared";
+import { addressTexts, cell, FOOTER_TEXTS, valueOf } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const purchaseOrderTexts = {
@@ -66,12 +66,7 @@ export const purchaseOrderTexts = {
       kind: "field",
       default: "Billing documents and enquiries:"
     },
-    {
-      key: "billingEmail",
-      kind: "value",
-      default: "{order.billingEmail}",
-      of: "billingEnquiries"
-    },
+    valueOf("billingEmail", "{order.billingEmail}", "billingEnquiries"),
     { key: "deliverTo", kind: "heading", default: "Deliver To" },
     ...addressTexts("deliverTo")
   ],
@@ -81,136 +76,42 @@ export const purchaseOrderTexts = {
   ],
   lineItems: [
     { key: "number", kind: "column", default: "#" },
-    {
-      key: "numberCell",
-      kind: "value",
-      default: "{line.number}",
-      of: "number",
-      row: "line"
-    },
+    cell("numberCell", "{line.number}", "number", "line"),
     { key: "description", kind: "text", default: "Description" },
-    {
-      key: "descriptionCell",
-      kind: "value",
-      default: "{line.description}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "detailsCell",
-      kind: "value",
-      default: "{line.details}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "supplierPartCell",
-      kind: "value",
-      default: "Supplier Part ID: {line.supplierPartId}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "operationCell",
-      kind: "value",
-      default: "{line.operation}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "shipping",
-      kind: "value",
-      default: "Shipping: {line.shipping}",
-      of: "description",
-      row: "line"
-    },
+    cell("descriptionCell", "{line.description}", "description", "line"),
+    cell("detailsCell", "{line.details}", "description", "line"),
+    cell(
+      "supplierPartCell",
+      "Supplier Part ID: {line.supplierPartId}",
+      "description",
+      "line"
+    ),
+    cell("operationCell", "{line.operation}", "description", "line"),
+    cell("shipping", "Shipping: {line.shipping}", "description", "line"),
     { key: "qty", kind: "column", default: "Qty" },
-    {
-      key: "qtyCell",
-      kind: "value",
-      default: "{line.quantity}",
-      of: "qty",
-      row: "line"
-    },
+    cell("qtyCell", "{line.quantity}", "qty", "line"),
     { key: "uom", kind: "column", default: "UOM" },
-    {
-      key: "uomCell",
-      kind: "value",
-      default: "{line.unit}",
-      of: "uom",
-      row: "line"
-    },
+    cell("uomCell", "{line.unit}", "uom", "line"),
     { key: "required", kind: "column", default: "Required" },
-    {
-      key: "requiredCell",
-      kind: "value",
-      default: "{line.requiredDate}",
-      of: "required",
-      row: "line"
-    },
+    cell("requiredCell", "{line.requiredDate}", "required", "line"),
     { key: "unitPrice", kind: "column", default: "Unit Price" },
-    {
-      key: "unitPriceCell",
-      kind: "value",
-      default: "{line.unitPrice}",
-      of: "unitPrice",
-      row: "line"
-    },
+    cell("unitPriceCell", "{line.unitPrice}", "unitPrice", "line"),
     { key: "netValue", kind: "column", default: "Net Value" },
-    {
-      key: "netValueCell",
-      kind: "value",
-      default: "{line.netValue}",
-      of: "netValue",
-      row: "line"
-    },
+    cell("netValueCell", "{line.netValue}", "netValue", "line"),
     { key: "taxValue", kind: "column", default: "Tax Value" },
-    {
-      key: "taxValueCell",
-      kind: "value",
-      default: "{line.taxAmount}",
-      of: "taxValue",
-      row: "line"
-    },
-    {
-      key: "taxPercentCell",
-      kind: "value",
-      default: "{line.taxPercent}",
-      of: "taxValue",
-      row: "line"
-    },
+    cell("taxValueCell", "{line.taxAmount}", "taxValue", "line"),
+    cell("taxPercentCell", "{line.taxPercent}", "taxValue", "line"),
     { key: "total", kind: "column", default: "Total" },
-    {
-      key: "totalCell",
-      kind: "value",
-      default: "{line.total}",
-      of: "total",
-      row: "line"
-    }
+    cell("totalCell", "{line.total}", "total", "line")
   ],
   summary: [
     { key: "subtotal", kind: "text", default: "Subtotal ({order.currency})" },
-    {
-      key: "subtotalValue",
-      kind: "value",
-      default: "{order.subtotal}",
-      of: "subtotal"
-    },
+    valueOf("subtotalValue", "{order.subtotal}", "subtotal"),
     { key: "shipping", kind: "text", default: "Shipping ({order.currency})" },
-    {
-      key: "shippingValue",
-      kind: "value",
-      default: "{order.shipping}",
-      of: "shipping"
-    },
+    valueOf("shippingValue", "{order.shipping}", "shipping"),
     { key: "taxValue", kind: "value", default: "{order.tax}" },
     { key: "total", kind: "text", default: "Total ({order.currency})" },
-    {
-      key: "totalValue",
-      kind: "value",
-      default: "{order.total}",
-      of: "total"
-    }
+    valueOf("totalValue", "{order.total}", "total")
   ],
   terms: [
     {

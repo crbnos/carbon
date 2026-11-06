@@ -4,6 +4,7 @@
 
 import { Text, View } from "@react-pdf/renderer";
 import type { ComponentProps, ReactNode } from "react";
+import { useTw } from "./tw";
 
 type Style = NonNullable<ComponentProps<typeof View>["style"]>;
 
@@ -37,4 +38,23 @@ export function TextCell({
 }) {
   if (!width) return null;
   return <Text style={withWidth(style, width)}>{children}</Text>;
+}
+
+/** One charge under a line's description: its name, and its amount at the right. */
+export function ChargeRow({
+  label,
+  value,
+  textStyle
+}: {
+  label: string;
+  value: string;
+  textStyle: string;
+}) {
+  const tw = useTw();
+  return (
+    <View style={tw("flex flex-row justify-between")}>
+      <Text style={tw(`${textStyle} flex-1 pr-2`)}>{label}</Text>
+      <Text style={tw(textStyle)}>{value}</Text>
+    </View>
+  );
 }

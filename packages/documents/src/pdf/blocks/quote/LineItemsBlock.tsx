@@ -11,7 +11,7 @@ import {
   quoteTexts
 } from "../../../template";
 import { Note } from "../../components";
-import { Cell, TextCell } from "../Cell";
+import { Cell, ChargeRow, TextCell } from "../Cell";
 import { columnWidths } from "../columns";
 import { itemTextOverflowStyle } from "../itemText";
 import { useTw } from "../tw";
@@ -184,22 +184,11 @@ export function LineItemsBlock({
                                   {t("lineTaxAndFees")}
                                 </Text>
                                 {t.prints("shippingValue", row) ? (
-                                  <View
-                                    style={tw("flex flex-row justify-between")}
-                                  >
-                                    <Text
-                                      style={tw(
-                                        "text-[8px] text-gray-400 flex-1 pr-2"
-                                      )}
-                                    >
-                                      {t("shipping")}
-                                    </Text>
-                                    <Text
-                                      style={tw("text-[8px] text-gray-400")}
-                                    >
-                                      {t("shippingValue", row)}
-                                    </Text>
-                                  </View>
+                                  <ChargeRow
+                                    label={t("shipping")}
+                                    value={t("shippingValue", row)}
+                                    textStyle="text-[8px] text-gray-400"
+                                  />
                                 ) : null}
                                 {Object.entries(additionalCharges)
                                   .filter(
@@ -221,44 +210,20 @@ export function LineItemsBlock({
                                       )
                                     );
                                     return (
-                                      <View
+                                      <ChargeRow
                                         key={chargeId}
-                                        style={tw(
-                                          "flex flex-row justify-between"
-                                        )}
-                                      >
-                                        <Text
-                                          style={tw(
-                                            "text-[8px] text-gray-400 flex-1 pr-2"
-                                          )}
-                                        >
-                                          {t("charge", chargeRow)}
-                                        </Text>
-                                        <Text
-                                          style={tw("text-[8px] text-gray-400")}
-                                        >
-                                          {t("chargeValue", chargeRow)}
-                                        </Text>
-                                      </View>
+                                        label={t("charge", chargeRow)}
+                                        value={t("chargeValue", chargeRow)}
+                                        textStyle="text-[8px] text-gray-400"
+                                      />
                                     );
                                   })}
                                 {t.prints("taxValue", row) ? (
-                                  <View
-                                    style={tw("flex flex-row justify-between")}
-                                  >
-                                    <Text
-                                      style={tw(
-                                        "text-[8px] text-gray-400 flex-1 pr-2"
-                                      )}
-                                    >
-                                      {t("tax", row)}
-                                    </Text>
-                                    <Text
-                                      style={tw("text-[8px] text-gray-400")}
-                                    >
-                                      {t("taxValue", row)}
-                                    </Text>
-                                  </View>
+                                  <ChargeRow
+                                    label={t("tax", row)}
+                                    value={t("taxValue", row)}
+                                    textStyle="text-[8px] text-gray-400"
+                                  />
                                 ) : null}
                               </View>
                             ) : null}

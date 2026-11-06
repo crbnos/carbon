@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { FOOTER_TEXTS } from "./shared";
+import { cell, FOOTER_TEXTS } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const issueTexts = {
@@ -32,20 +32,8 @@ export const issueTexts = {
     { key: "associations", kind: "heading", default: "Associations" },
     // The label of each row, by what the row links to.
     { key: "item", kind: "text", default: "Item:" },
-    {
-      key: "itemValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "item",
-      row: "association"
-    },
-    {
-      key: "disposition",
-      kind: "value",
-      default: "{association.disposition}",
-      of: "item",
-      row: "association"
-    },
+    cell("itemValue", "{association.id}", "item", "association"),
+    cell("disposition", "{association.disposition}", "item", "association"),
     {
       key: "qty",
       kind: "field",
@@ -53,69 +41,36 @@ export const issueTexts = {
       row: "association"
     },
     { key: "customer", kind: "text", default: "Customer:" },
-    {
-      key: "customerValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "customer",
-      row: "association"
-    },
+    cell("customerValue", "{association.id}", "customer", "association"),
     { key: "supplier", kind: "text", default: "Supplier:" },
-    {
-      key: "supplierValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "supplier",
-      row: "association"
-    },
+    cell("supplierValue", "{association.id}", "supplier", "association"),
     { key: "jobOperation", kind: "text", default: "Job Operation:" },
-    {
-      key: "jobOperationValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "jobOperation",
-      row: "association"
-    },
+    cell(
+      "jobOperationValue",
+      "{association.id}",
+      "jobOperation",
+      "association"
+    ),
     { key: "purchaseOrder", kind: "text", default: "Purchase Order:" },
-    {
-      key: "purchaseOrderValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "purchaseOrder",
-      row: "association"
-    },
+    cell(
+      "purchaseOrderValue",
+      "{association.id}",
+      "purchaseOrder",
+      "association"
+    ),
     { key: "salesOrder", kind: "text", default: "Sales Order:" },
-    {
-      key: "salesOrderValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "salesOrder",
-      row: "association"
-    },
+    cell("salesOrderValue", "{association.id}", "salesOrder", "association"),
     { key: "shipment", kind: "text", default: "Shipment:" },
-    {
-      key: "shipmentValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "shipment",
-      row: "association"
-    },
+    cell("shipmentValue", "{association.id}", "shipment", "association"),
     { key: "receipt", kind: "text", default: "Receipt:" },
-    {
-      key: "receiptValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "receipt",
-      row: "association"
-    },
+    cell("receiptValue", "{association.id}", "receipt", "association"),
     { key: "trackedEntity", kind: "text", default: "Tracked Entity:" },
-    {
-      key: "trackedEntityValue",
-      kind: "value",
-      default: "{association.id}",
-      of: "trackedEntity",
-      row: "association"
-    }
+    cell(
+      "trackedEntityValue",
+      "{association.id}",
+      "trackedEntity",
+      "association"
+    )
   ],
   notes: [
     {
@@ -129,37 +84,13 @@ export const issueTexts = {
     { key: "supplierPrefix", kind: "text", default: "Supplier" },
     { key: "actionName", kind: "value", default: "{task.action}", row: "task" },
     { key: "supplier", kind: "field", default: "Supplier:" },
-    {
-      key: "supplierValue",
-      kind: "value",
-      default: "{task.supplier}",
-      of: "supplier",
-      row: "task"
-    },
+    cell("supplierValue", "{task.supplier}", "supplier", "task"),
     { key: "verifiedBy", kind: "field", default: "Verified by:" },
-    {
-      key: "verifiedByValue",
-      kind: "value",
-      default: "{task.assignee}",
-      of: "verifiedBy",
-      row: "task"
-    },
+    cell("verifiedByValue", "{task.assignee}", "verifiedBy", "task"),
     { key: "completedBy", kind: "field", default: "Completed by:" },
-    {
-      key: "completedByValue",
-      kind: "value",
-      default: "{task.assignee}",
-      of: "completedBy",
-      row: "task"
-    },
+    cell("completedByValue", "{task.assignee}", "completedBy", "task"),
     { key: "completedOn", kind: "field", default: "Completed on:" },
-    {
-      key: "completedOnValue",
-      kind: "value",
-      default: "{task.completedDate}",
-      of: "completedOn",
-      row: "task"
-    },
+    cell("completedOnValue", "{task.completedDate}", "completedOn", "task"),
     { key: "inspections", kind: "heading", default: "Inspections" },
     {
       key: "stepCell",

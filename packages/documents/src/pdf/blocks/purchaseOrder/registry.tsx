@@ -5,13 +5,13 @@
 import type { DocumentBlockType } from "../../../template";
 import { purchaseOrderTexts } from "../../../template";
 import { CustomFieldBlock } from "../CustomFieldBlock";
+import { DocumentSummary } from "../DocumentSummary";
 import { extensionBlocks } from "../extensionRegistry";
 import { DocumentNotes, DocumentTerms } from "../standardBlocks";
 import { ApprovalBlock } from "./ApprovalBlock";
 import { HeaderBlock } from "./HeaderBlock";
 import { LineItemsBlock } from "./LineItemsBlock";
 import { PartiesBlock } from "./PartiesBlock";
-import { SummaryBlock } from "./SummaryBlock";
 import type { BlockRenderer } from "./types";
 
 /** Block-type → renderer for Purchase Order. Extension blocks are shared. */
@@ -35,7 +35,18 @@ export const purchaseOrderBlockRegistry: Partial<
     ) : null,
   summary: ({ block, data }) =>
     block.type === "summary" ? (
-      <SummaryBlock block={block} data={data} />
+      <DocumentSummary
+        block={block}
+        texts={purchaseOrderTexts.summary}
+        vars={data.vars}
+        currencyCode={data.currencyCode}
+        rows={[
+          { label: "subtotal", value: "subtotalValue", always: true },
+          { label: "shipping", value: "shippingValue" }
+        ]}
+        labelWidth="w-[87%]"
+        valueWidth="w-[13%]"
+      />
     ) : null,
   terms: ({ block, data }) =>
     block.type === "terms" ? (

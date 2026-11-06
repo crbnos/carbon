@@ -1,5 +1,113 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`DOCUMENT_PDFS > prints every text of the issue catalog it reaches 1`] = `
+[
+  "issueDetails:unknown",
+  "associations:supplier",
+  "associations:supplierValue",
+  "associations:purchaseOrder",
+  "associations:purchaseOrderValue",
+  "associations:shipment",
+  "associations:shipmentValue",
+  "associations:receipt",
+  "associations:receiptValue",
+  "associations:trackedEntity",
+  "associations:trackedEntityValue",
+  "actionTasks:unknown",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the jobTraveler catalog it reaches 1`] = `
+[
+  "jobDetails:service",
+  "jobDetails:serviceValue",
+  "jobDetails:makeToOrder",
+  "jobDetails:inventory",
+  "operations:batch",
+  "operations:batchValue",
+  "operations:openInMes",
+  "operations:batchInstructions",
+  "operations:batchNotes",
+  "operations:procedureStep",
+  "operations:workInstructions",
+  "notes:jobNotes",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the packingSlip catalog it reaches 1`] = `
+[
+  "parties:contractNumber",
+  "lineItems:serialBatch",
+  "lineItems:serialBatchCell",
+  "document:receivingReportTitle",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the purchaseOrder catalog it reaches 1`] = `
+[
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the purchaseReturnOrder catalog it reaches 1`] = `
+[
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the purchasingRfq catalog it reaches 1`] = `
+[
+  "terms:termsAndConditions",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the quote catalog it reaches 1`] = `
+[
+  "notes:none",
+  "lineItems:columnTaxAndFees",
+  "lineItems:columnTaxAndFeesCell",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the salesInvoice catalog it reaches 1`] = `
+[
+  "parties:salesOrders",
+  "parties:shipTo",
+  "parties:shipToName",
+  "parties:shipToAddressLine1",
+  "parties:shipToAddressLine2",
+  "parties:shipToCity",
+  "parties:shipToStatePostal",
+  "parties:shipToCountry",
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the salesOrder catalog it reaches 1`] = `
+[
+  "parties:billTo",
+  "parties:billToName",
+  "parties:billToAddressLine1",
+  "parties:billToAddressLine2",
+  "parties:billToCity",
+  "parties:billToStatePostal",
+  "parties:billToCountry",
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the salesReturnOrder catalog it reaches 1`] = `
+[
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the stockTransfer catalog it reaches 1`] = `
+[
+  "lineItems:any",
+]
+`;
+
 exports[`DOCUMENT_PDFS > prints the issue sample 1`] = `
 [
   "Acme Manufacturing Co.
@@ -478,10 +586,10 @@ ST-001042 Page 1 of 1",
 
 exports[`DOCUMENT_PDFS > prints the trackingLabel sample 1`] = `
 [
-  "SD08810002
+  "DEMO-LABEL-01
 Rev: 0
 Qty: 1
 S/N: 04/06/2026
-dtClCvNm9blDY0H3FXmDC",
+trk_demo_0042",
 ]
 `;

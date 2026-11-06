@@ -10,7 +10,7 @@ import {
 } from "@carbon/utils";
 import type { LineMergeToken, MergeToken } from "../../../template";
 import { getCountryName } from "../../../utils/shared";
-import { str } from "../textVars";
+import { companyVars, str } from "../textVars";
 import type { PurchasingRfqData, PurchasingRfqPdfLine } from "./types";
 
 /**
@@ -49,13 +49,7 @@ export function buildPurchasingRfqVars(
       : "",
     "contact.name": str(data.contact?.name),
     "contact.email": str(data.contact?.email),
-    "company.name": str(data.company?.name),
-    "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode),
-    "company.taxId": str(data.company?.taxId),
-    "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber),
-    "company.registrationNumber": str(data.company?.registrationNumber)
+    ...companyVars(data.company)
   };
 }
 

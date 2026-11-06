@@ -13,7 +13,7 @@ import {
   getLineTotal,
   getTotal
 } from "../../utils/sales-invoice";
-import { addressVars, incotermText, str } from "./textVars";
+import { addressVars, companyVars, incotermText, str } from "./textVars";
 import type { SalesInvoiceData } from "./types";
 
 /**
@@ -125,13 +125,7 @@ export function buildSalesInvoiceVars(
       country: loc?.shipmentCountryName
     }),
 
-    "company.name": str(data.company?.name),
-    "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode),
-    "company.taxId": str(data.company?.taxId),
-    "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber),
-    "company.registrationNumber": str(data.company?.registrationNumber)
+    ...companyVars(data.company)
   };
 }
 

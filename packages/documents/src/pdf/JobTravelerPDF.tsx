@@ -14,6 +14,7 @@ import {
   type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   JobTravelerData,
@@ -25,7 +26,6 @@ import {
   MaterialsBlock
 } from "./blocks/jobTraveler";
 import { tw } from "./blocks/jobTraveler/tw";
-import { Template } from "./components";
 
 type JobOperationStep = Database["public"]["Tables"]["jobOperationStep"]["Row"];
 
@@ -49,37 +49,34 @@ interface JobTravelerProps extends PDF {
   materials?: JobTravelerMaterial[];
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
+  valueCollector?: ValueCollector;
 }
 
-type PageContentProps = Omit<
-  JobTravelerProps,
-  "meta" | "title" | "jobMakeMethod"
-> & {
+type PageContentProps = Omit<JobTravelerProps, "meta" | "jobMakeMethod"> & {
   methodRevision?: string | null;
-  valueCollector?: ValueCollector;
 };
 
 /** Build the data bag every Job Traveler block renderer reads from. */
-function buildData(
-  props: PageContentProps,
-  template: DocumentTemplate
-): JobTravelerData {
+function buildData(props: PageContentProps, template: DocumentTemplate) {
   const { sections = {} } = props;
   const values = documentValues(
     template.settings.valueEdits,
     props.valueCollector
   );
   const vars = values.document(buildJobTravelerVars(props));
-  const { dt, documentTitle, documentNumber, headerOptions } = documentChrome({
+  const {
+    dt,
+    documentTitle,
+    documentNumber,
+    headerOptions,
+    visibleBlocks: printed
+  } = documentChrome({
     texts: jobTravelerTexts.document,
-    settings: template.settings,
+    template,
     vars,
-    blocks: template.blocks,
-    sections,
-    headerSectionId: template.headerSectionId,
-    footerSectionId: template.footerSectionId
+    sections
   });
-  return {
+  const data: JobTravelerData = {
     documentTitle,
     documentNumber,
     documentSubId: dt.prints("salesOrderPrefix")
@@ -105,6 +102,7 @@ function buildData(
     values,
     headerOptions
   };
+  return { data, dt, printed };
 }
 
 /**
@@ -114,16 +112,7 @@ function buildData(
  */
 export const JobTravelerPageContent = (props: PageContentProps) => {
   const resolved = resolveTemplate("jobTraveler", props.template ?? null);
-  const data = buildData(props, resolved);
-  const { dt, visibleBlocks: printed } = documentChrome({
-    texts: jobTravelerTexts.document,
-    settings: resolved.settings,
-    vars: data.vars,
-    blocks: resolved.blocks,
-    sections: data.sections,
-    headerSectionId: resolved.headerSectionId,
-    footerSectionId: resolved.footerSectionId
-  });
+  const { data, dt, printed } = buildData(props, resolved);
   // `includeOperations` is an opt-out company setting (undefined = shown).
   const visibleBlocks = printed.filter(
     (block) => block.type !== "operations" || data.includeOperations !== false
@@ -158,7 +147,8 @@ const JobTravelerPDF = ({
   includeOperations,
   materials,
   template,
-  sections = {}
+  sections = {},
+  valueCollector
 }: JobTravelerProps) => {
   const resolved = resolveTemplate("jobTraveler", template ?? null);
   const vars = documentValues(resolved.settings.valueEdits).document(
@@ -173,35 +163,20 @@ const JobTravelerPDF = ({
       locale
     })
   );
-  const { documentTitle, footerText, headerContent, footerContent } =
-    documentChrome({
-      texts: jobTravelerTexts.document,
-      settings: resolved.settings,
-      vars,
-      blocks: resolved.blocks,
-      sections,
-      headerSectionId: resolved.headerSectionId,
-      footerSectionId: resolved.footerSectionId
-    });
+  const chrome = documentChrome({
+    texts: jobTravelerTexts.document,
+    template: resolved,
+    vars,
+    sections
+  });
 
   return (
-    <Template
-      theme={resolved.theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "job traveler, manufacturing",
-        subject: meta?.subject ?? documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="job traveler, manufacturing"
       footerDocumentId={job?.jobId}
-      showFooter={resolved.footerSectionId !== null}
-      showPageNumbers={resolved.settings.showPageNumbers}
-      pageNumberFormat={resolved.settings.pageNumberFormat}
-      showRegistrationLine={resolved.settings.showRegistrationLine}
-      fontFamily={resolved.settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
     >
       <JobTravelerPageContent
         company={company}
@@ -220,8 +195,9 @@ const JobTravelerPDF = ({
         methodRevision={jobMakeMethod?.version?.toString()}
         template={template}
         sections={sections}
+        valueCollector={valueCollector}
       />
-    </Template>
+    </DocumentPage>
   );
 };
 

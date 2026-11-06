@@ -75,7 +75,10 @@ const Summary = ({ companyName, companyLines, items }: SummaryProps) => {
       <View style={styles.documentSummary}>
         {items.map((item) => (
           <View key={item.label} style={styles.documentSummaryItem}>
-            <Text style={styles.documentSummaryLabel}>{item.label}:</Text>
+            <Text style={styles.documentSummaryLabel}>
+              {item.label}
+              {item.label === "" || item.label.endsWith(":") ? "" : ":"}
+            </Text>
             <Text style={styles.documentSummaryValue}>{item.value}</Text>
           </View>
         ))}

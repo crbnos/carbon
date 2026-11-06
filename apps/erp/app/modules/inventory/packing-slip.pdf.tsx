@@ -49,6 +49,19 @@ const logger = getLogger("erp", "shipment", "pdf");
  * `client` reads as the caller; the source document's customer, terms and
  * tracking are read with `serviceRole`, pinned to `companyId`.
  */
+function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const buffers: Uint8Array[] = [];
+    stream.on("data", (data) => {
+      buffers.push(data);
+    });
+    stream.on("end", () => {
+      resolve(Buffer.concat(buffers));
+    });
+    stream.on("error", reject);
+  });
+}
+
 export async function renderPackingSlip({
   client,
   serviceRole,
@@ -228,16 +241,7 @@ export async function renderPackingSlip({
         />
       );
 
-      const body: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        stream.on("data", (data) => {
-          buffers.push(data);
-        });
-        stream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        stream.on("error", reject);
-      });
+      const body = await readAll(stream);
 
       const headers = new Headers({
         "Content-Type": "application/pdf",
@@ -351,16 +355,7 @@ export async function renderPackingSlip({
         />
       );
 
-      const body: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        stream.on("data", (data) => {
-          buffers.push(data);
-        });
-        stream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        stream.on("error", reject);
-      });
+      const body = await readAll(stream);
 
       const headers = new Headers({
         "Content-Type": "application/pdf",
@@ -467,16 +462,7 @@ export async function renderPackingSlip({
         />
       );
 
-      const poBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        poStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        poStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        poStream.on("error", reject);
-      });
+      const poBody = await readAll(poStream);
 
       const poHeaders = new Headers({
         "Content-Type": "application/pdf",
@@ -580,16 +566,7 @@ export async function renderPackingSlip({
         />
       );
 
-      const transferBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        transferStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        transferStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        transferStream.on("error", reject);
-      });
+      const transferBody = await readAll(transferStream);
 
       const transferHeaders = new Headers({
         "Content-Type": "application/pdf",
@@ -693,16 +670,7 @@ export async function renderPackingSlip({
         />
       );
 
-      const rentalBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        rentalStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        rentalStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        rentalStream.on("error", reject);
-      });
+      const rentalBody = await readAll(rentalStream);
 
       const rentalHeaders = new Headers({
         "Content-Type": "application/pdf",
@@ -829,16 +797,7 @@ export async function renderPackingSlip({
         />
       );
 
-      const contractBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        contractStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        contractStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        contractStream.on("error", reject);
-      });
+      const contractBody = await readAll(contractStream);
 
       return new Response(new Uint8Array(contractBody), {
         status: 200,

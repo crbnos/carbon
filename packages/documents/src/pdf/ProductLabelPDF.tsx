@@ -6,7 +6,11 @@ import type { LabelSize, ProductLabelItem } from "@carbon/utils";
 import { Document, Page, View } from "@react-pdf/renderer";
 import { Fragment } from "react";
 import { createTw } from "react-pdf-tailwind";
-import type { DocumentTemplate, ResolvedSection } from "../template";
+import type {
+  DocumentTemplate,
+  ResolvedSection,
+  ValueCollector
+} from "../template";
 import { resolveTemplate } from "../template";
 import type { Company } from "../types";
 import type { LabelData, LabelLogo } from "./blocks/trackingLabel";
@@ -23,6 +27,7 @@ interface ProductLabelProps {
   sections?: Record<string, ResolvedSection>;
   company?: Company | null;
   logo?: LabelLogo | null;
+  valueCollector?: ValueCollector;
 }
 
 // Initialize tailwind-styled-components
@@ -47,7 +52,8 @@ const ProductLabelPDF = ({
   template,
   sections = {},
   company,
-  logo
+  logo,
+  valueCollector
 }: ProductLabelProps) => {
   // Default to 1 row and 1 column if not specified
   const rows = labelSize.rows || 1;
@@ -126,12 +132,14 @@ const ProductLabelPDF = ({
                     />
                   );
 
+                const vars = buildLabelVars(item, company);
+                valueCollector?.document(vars);
                 const data: LabelData = {
                   item,
                   company,
                   logo,
                   theme: resolved.theme,
-                  vars: buildLabelVars(item, company),
+                  vars,
                   titleFontSize,
                   descriptionFontSize,
                   qrCodeSize,

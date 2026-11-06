@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { addressTexts, FOOTER_TEXTS } from "./shared";
+import { addressTexts, cell, FOOTER_TEXTS } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const packingSlipTexts = {
   document: [
     { key: "title", kind: "heading", default: "Packing Slip" },
+    { key: "documentNumber", kind: "field", default: "{shipment.number}" },
     // The title of a rental shipment's slip.
     { key: "rentalTitle", kind: "heading", default: "Delivery Ticket" },
     // The title of a contract delivery's slip.
@@ -16,7 +17,6 @@ export const packingSlipTexts = {
       kind: "heading",
       default: "Receiving Report"
     },
-    { key: "documentNumber", kind: "field", default: "{shipment.number}" },
     ...FOOTER_TEXTS
   ],
   parties: [
@@ -54,36 +54,17 @@ export const packingSlipTexts = {
   ],
   lineItems: [
     { key: "description", kind: "text", default: "Description" },
-    {
-      key: "itemCell",
-      kind: "value",
-      default: "{line.item}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "descriptionCell",
-      kind: "value",
-      default: "{line.description}",
-      of: "description",
-      row: "line"
-    },
+    cell("itemCell", "{line.item}", "description", "line"),
+    cell("descriptionCell", "{line.description}", "description", "line"),
     { key: "qty", kind: "column", default: "Qty" },
-    {
-      key: "qtyCell",
-      kind: "value",
-      default: "{line.shippedQuantity} / {line.orderQuantity} {line.unit}",
-      of: "qty",
-      row: "line"
-    },
+    cell(
+      "qtyCell",
+      "{line.shippedQuantity} / {line.orderQuantity} {line.unit}",
+      "qty",
+      "line"
+    ),
     { key: "serialBatch", kind: "column", default: "Serial/Batch" },
-    {
-      key: "serialBatchCell",
-      kind: "value",
-      default: "{line.serialBatch}",
-      of: "serialBatch",
-      row: "line"
-    },
+    cell("serialBatchCell", "{line.serialBatch}", "serialBatch", "line"),
     // A rental shipment lists its units in a table of its own.
     {
       key: "rentalDescription",
@@ -91,36 +72,12 @@ export const packingSlipTexts = {
       default: "Description",
       section: "rental"
     },
-    {
-      key: "rentalNameCell",
-      kind: "value",
-      default: "{unit.name}",
-      of: "rentalDescription",
-      row: "unit"
-    },
-    {
-      key: "rentalAssetCell",
-      kind: "value",
-      default: "{unit.assetId}",
-      of: "rentalDescription",
-      row: "unit"
-    },
+    cell("rentalNameCell", "{unit.name}", "rentalDescription", "unit"),
+    cell("rentalAssetCell", "{unit.assetId}", "rentalDescription", "unit"),
     { key: "rentalQty", kind: "column", default: "Qty", section: "rental" },
-    {
-      key: "rentalQtyCell",
-      kind: "value",
-      default: "{unit.quantity}",
-      of: "rentalQty",
-      row: "unit"
-    },
+    cell("rentalQtyCell", "{unit.quantity}", "rentalQty", "unit"),
     { key: "serial", kind: "column", default: "Serial" },
-    {
-      key: "serialCell",
-      kind: "value",
-      default: "{unit.serial}",
-      of: "serial",
-      row: "unit"
-    }
+    cell("serialCell", "{unit.serial}", "serial", "unit")
   ],
   notes: [{ key: "notes", kind: "heading", default: "Notes" }],
   terms: [

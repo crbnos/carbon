@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { addressTexts, FOOTER_TEXTS } from "./shared";
+import { addressTexts, cell, FOOTER_TEXTS, valueOf } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const salesReturnOrderTexts = {
@@ -40,59 +40,23 @@ export const salesReturnOrderTexts = {
   ],
   lineItems: [
     { key: "number", kind: "column", default: "#" },
-    {
-      key: "numberCell",
-      kind: "value",
-      default: "{line.number}",
-      of: "number",
-      row: "line"
-    },
+    cell("numberCell", "{line.number}", "number", "line"),
     { key: "item", kind: "text", default: "Item" },
-    {
-      key: "itemCell",
-      kind: "value",
-      default: "{line.itemId}",
-      of: "item",
-      row: "line"
-    },
-    {
-      key: "itemNameCell",
-      kind: "value",
-      default: "{line.itemName}",
-      of: "item",
-      row: "line"
-    },
+    cell("itemCell", "{line.itemId}", "item", "line"),
+    cell("itemNameCell", "{line.itemName}", "item", "line"),
     { key: "qtyAuthorized", kind: "column", default: "Qty Authorized" },
-    {
-      key: "qtyAuthorizedCell",
-      kind: "value",
-      default: "{line.quantity} {line.unit}",
-      of: "qtyAuthorized",
-      row: "line"
-    },
+    cell(
+      "qtyAuthorizedCell",
+      "{line.quantity} {line.unit}",
+      "qtyAuthorized",
+      "line"
+    ),
     { key: "unitPrice", kind: "column", default: "Unit Price" },
-    {
-      key: "unitPriceCell",
-      kind: "value",
-      default: "{line.unitPrice}",
-      of: "unitPrice",
-      row: "line"
-    },
+    cell("unitPriceCell", "{line.unitPrice}", "unitPrice", "line"),
     { key: "reason", kind: "column", default: "Reason" },
-    {
-      key: "reasonCell",
-      kind: "value",
-      default: "{line.reason}",
-      of: "reason",
-      row: "line"
-    },
+    cell("reasonCell", "{line.reason}", "reason", "line"),
     { key: "total", kind: "text", default: "Total ({order.currency})" },
-    {
-      key: "totalValue",
-      kind: "value",
-      default: "{order.total}",
-      of: "total"
-    }
+    valueOf("totalValue", "{order.total}", "total")
   ],
   terms: [
     {

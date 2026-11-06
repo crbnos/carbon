@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -18,6 +17,7 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   PurchaseReturnOrderData,
@@ -28,7 +28,6 @@ import {
   buildPurchaseReturnOrderVars,
   purchaseReturnOrderBlockRegistry
 } from "./blocks/purchaseReturnOrder";
-import { Template } from "./components";
 
 interface PurchaseReturnOrderPDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -72,8 +71,8 @@ const PurchaseReturnOrderPDF = ({
   // getRateFormatter. The total row stays on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("purchaseReturnOrder", template);
+  const resolved = resolveTemplate("purchaseReturnOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -88,25 +87,13 @@ const PurchaseReturnOrderPDF = ({
       numberFormatter
     })
   );
-  const {
-    dt,
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: purchaseReturnOrderTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { dt, documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -141,31 +128,17 @@ const PurchaseReturnOrderPDF = ({
   };
 
   return (
-    <Template
-      theme={theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "supplier return, purchase return order",
-        subject: meta?.subject ?? documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="supplier return, purchase return order"
       footerDocumentId={purchaseReturnOrder?.purchaseReturnOrderId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = purchaseReturnOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={purchaseReturnOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 

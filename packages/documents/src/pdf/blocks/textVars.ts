@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { AddressField, AddressToken } from "../../template";
+import type { Company } from "../../types";
 
 /** A value as a variable prints it: nothing, never "null" or "undefined". */
 export const str = (v: unknown): string => (v == null ? "" : String(v));
@@ -43,4 +44,17 @@ export function addressVars<P extends string>(
       value
     ])
   ) as Record<AddressToken<P>, string>;
+}
+
+/** The variables every document prints of the company. */
+export function companyVars(company: Company | null | undefined) {
+  return {
+    "company.name": str(company?.name),
+    "company.city": str(company?.city),
+    "company.country": str(company?.countryCode),
+    "company.taxId": str(company?.taxId),
+    "company.eori": str(company?.eori),
+    "company.vatNumber": str(company?.vatNumber),
+    "company.registrationNumber": str(company?.registrationNumber)
+  };
 }

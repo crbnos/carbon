@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -15,10 +14,10 @@ import {
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
 import { getMoneyFormatter, resolveRegistrationLine } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type { QuoteCustomerDetails, QuoteData } from "./blocks/quote";
 import { buildQuoteVars, quoteBlockRegistry } from "./blocks/quote";
-import { Template } from "./components";
 
 type QuoteLinePrice = Database["public"]["Tables"]["quoteLinePrice"]["Row"];
 
@@ -166,8 +165,8 @@ const QuotePDF = ({
     total: subtotal + shipping + fees + taxes
   };
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("quote", template);
+  const resolved = resolveTemplate("quote", template);
+  const { theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -186,24 +185,13 @@ const QuotePDF = ({
       numberFormatter
     })
   );
-  const {
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: quoteTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -248,31 +236,18 @@ const QuotePDF = ({
   const displayId = getQuoteDisplayId(quote);
 
   return (
-    <Template
-      theme={theme}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="quote"
       title={displayId ? `${documentTitle}: ${displayId}` : documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "quote",
-        subject: meta?.subject ?? documentTitle
-      }}
       footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = quoteBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={quoteBlockRegistry}
+      data={data}
+    />
   );
 };
 

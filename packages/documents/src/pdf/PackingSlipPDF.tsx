@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -14,6 +13,7 @@ import {
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type {
   PackingSlipData,
@@ -24,7 +24,6 @@ import {
   buildPackingSlipVars,
   packingSlipBlockRegistry
 } from "./blocks/packingSlip";
-import { Template } from "./components";
 
 interface PackingSlipProps extends PDF {
   valueCollector?: ValueCollector;
@@ -71,8 +70,8 @@ const PackingSlipPDF = ({
   template,
   sections = {}
 }: PackingSlipProps) => {
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("packingSlip", template);
+  const resolved = resolveTemplate("packingSlip", template);
+  const { theme, settings, footerSectionId } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -89,24 +88,13 @@ const PackingSlipPDF = ({
       locale
     })
   );
-  const {
-    dt,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: packingSlipTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { dt, documentNumber, headerOptions } = chrome;
   const documentTitle = dt(
     documentType === "deliveryTicket"
       ? "rentalTitle"
@@ -150,31 +138,17 @@ const PackingSlipPDF = ({
   };
 
   return (
-    <Template
-      theme={theme}
-      title={documentTitle}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "packing slip",
-        subject: meta?.subject ?? documentTitle
-      }}
-      footerLabel={registration.label}
+    <DocumentPage
+      chrome={{ ...chrome, documentTitle }}
+      template={resolved}
+      meta={meta}
+      keywords="packing slip"
       footerDocumentId={shipment?.shipmentId}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
+      footerLabel={registration.label}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = packingSlipBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={packingSlipBlockRegistry}
+      data={data}
+    />
   );
 };
 

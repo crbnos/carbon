@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { FOOTER_TEXTS } from "./shared";
+import { cell, FOOTER_TEXTS, valueOf } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const purchasingRfqTexts = {
@@ -12,21 +12,11 @@ export const purchasingRfqTexts = {
   ],
   parties: [
     { key: "date", kind: "field", default: "Date" },
-    { key: "dateValue", kind: "value", default: "{rfq.date}", of: "date" },
+    valueOf("dateValue", "{rfq.date}", "date"),
     { key: "reference", kind: "field", default: "Reference" },
-    {
-      key: "referenceValue",
-      kind: "value",
-      default: "{rfq.number}",
-      of: "reference"
-    },
+    valueOf("referenceValue", "{rfq.number}", "reference"),
     { key: "quotationDue", kind: "field", default: "Quotation due" },
-    {
-      key: "quotationDueValue",
-      kind: "value",
-      default: "{rfq.dueDate}",
-      of: "quotationDue"
-    },
+    valueOf("quotationDueValue", "{rfq.dueDate}", "quotationDue"),
     { key: "dearSupplier", kind: "text", default: "Dear Supplier," },
     // The invitation sentence is printed as: invitation, a space and `by`, then
     // `quotingReference`, then the full stop. `by` and `quotingReference` print
@@ -97,44 +87,14 @@ export const purchasingRfqTexts = {
   ],
   lineItems: [
     { key: "number", kind: "column", default: "#" },
-    {
-      key: "numberCell",
-      kind: "value",
-      default: "{line.number}",
-      of: "number",
-      row: "line"
-    },
+    cell("numberCell", "{line.number}", "number", "line"),
     { key: "item", kind: "text", default: "Item" },
-    {
-      key: "itemCell",
-      kind: "value",
-      default: "{line.item}",
-      of: "item",
-      row: "line"
-    },
-    {
-      key: "descriptionCell",
-      kind: "value",
-      default: "{line.description}",
-      of: "item",
-      row: "line"
-    },
+    cell("itemCell", "{line.item}", "item", "line"),
+    cell("descriptionCell", "{line.description}", "item", "line"),
     { key: "quantity", kind: "column", default: "Quantity" },
-    {
-      key: "quantityCell",
-      kind: "value",
-      default: "{line.quantity}",
-      of: "quantity",
-      row: "line"
-    },
+    cell("quantityCell", "{line.quantity}", "quantity", "line"),
     { key: "unit", kind: "column", default: "Unit" },
-    {
-      key: "unitCell",
-      kind: "value",
-      default: "{line.unit}",
-      of: "unit",
-      row: "line"
-    }
+    cell("unitCell", "{line.unit}", "unit", "line")
   ],
   notes: [
     { key: "notes", kind: "heading", default: "Notes" },

@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
   documentValues,
@@ -12,13 +11,13 @@ import {
   type ValueCollector
 } from "../template";
 import type { PDF } from "../types";
+import { DocumentPage } from "./blocks/DocumentPage";
 import { documentChrome } from "./blocks/documentChrome";
 import type { StockTransferData } from "./blocks/stockTransfer";
 import {
   buildStockTransferVars,
   stockTransferBlockRegistry
 } from "./blocks/stockTransfer";
-import { Template } from "./components";
 
 interface StockTransferPDFProps extends PDF {
   valueCollector?: ValueCollector;
@@ -41,8 +40,8 @@ const StockTransferPDF = ({
   template,
   sections = {}
 }: StockTransferPDFProps) => {
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("stockTransfer", template);
+  const resolved = resolveTemplate("stockTransfer", template);
+  const { theme, settings } = resolved;
 
   const values = documentValues(settings.valueEdits, valueCollector);
   const vars = values.document(
@@ -53,24 +52,13 @@ const StockTransferPDF = ({
       locale
     })
   );
-  const {
-    documentTitle,
-    documentNumber,
-    footerText,
-    headerOptions,
-    headerContent,
-    footerContent,
-    showFooter,
-    visibleBlocks
-  } = documentChrome({
+  const chrome = documentChrome({
     texts: stockTransferTexts.document,
-    settings,
+    template: resolved,
     vars,
-    blocks,
-    sections,
-    headerSectionId,
-    footerSectionId
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const data: StockTransferData = {
     documentTitle,
@@ -89,30 +77,14 @@ const StockTransferPDF = ({
   };
 
   return (
-    <Template
-      theme={theme}
-      title={documentTitle}
-      meta={{
-        author: "Carbon",
-        keywords: "stock transfer",
-        subject: documentTitle
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      keywords="stock transfer"
       footerDocumentId={stockTransfer?.stockTransferId}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
-      showRegistrationLine={settings.showRegistrationLine}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-      footerText={footerText}
-    >
-      {visibleBlocks.map((block) => {
-        const render = stockTransferBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={stockTransferBlockRegistry}
+      data={data}
+    />
   );
 };
 

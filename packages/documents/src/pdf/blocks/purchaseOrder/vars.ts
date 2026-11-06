@@ -12,7 +12,7 @@ import {
   getTotal
 } from "../../../utils/purchase-order";
 import { formatTaxPercent } from "../../../utils/shared";
-import { addressVars, incotermText, str } from "../textVars";
+import { addressVars, companyVars, incotermText, str } from "../textVars";
 import type { PurchaseOrderData } from "./types";
 
 /** Merge-field variable map for a Purchase Order. */
@@ -128,13 +128,7 @@ export function buildPurchaseOrderVars(
       country: deliverTo.country
     }),
 
-    "company.name": str(data.company?.name),
-    "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode),
-    "company.taxId": str(data.company?.taxId),
-    "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber),
-    "company.registrationNumber": str(data.company?.registrationNumber)
+    ...companyVars(data.company)
   };
 }
 

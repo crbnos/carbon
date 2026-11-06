@@ -5,12 +5,12 @@
 import type { DocumentBlockType } from "../../../template";
 import { quoteTexts } from "../../../template";
 import { CustomFieldBlock } from "../CustomFieldBlock";
+import { DocumentSummary } from "../DocumentSummary";
 import { extensionBlocks } from "../extensionRegistry";
 import { DocumentNotes, DocumentTerms } from "../standardBlocks";
 import { HeaderBlock } from "./HeaderBlock";
 import { LineItemsBlock } from "./LineItemsBlock";
 import { PartiesBlock } from "./PartiesBlock";
-import { QuoteSummaryBlock } from "./SummaryBlock";
 import type { BlockRenderer } from "./types";
 
 /** Block-type → renderer for Quote. Extension blocks are shared. */
@@ -33,8 +33,19 @@ export const quoteBlockRegistry: Partial<
       <LineItemsBlock block={block} data={data} />
     ) : null,
   summary: ({ block, data }) =>
-    block.type === "summary" ? (
-      <QuoteSummaryBlock block={block} data={data} />
+    block.type === "summary" && data.hasSinglePricePerLine ? (
+      <DocumentSummary
+        block={block}
+        texts={quoteTexts.summary}
+        vars={data.vars}
+        currencyCode={data.currencyCode}
+        rows={[
+          { label: "subtotal", value: "subtotalValue", always: true },
+          { label: "shipping", value: "shippingValue", always: true },
+          { label: "fees", value: "feesValue" }
+        ]}
+        taxAlways
+      />
     ) : null,
   terms: ({ block, data }) =>
     block.type === "terms" ? (

@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type { JobTravelerMaterial } from "@carbon/documents/pdf";
 import {
   buildJobTravelerVars,
+  documentChrome,
   ensureFont,
   Footer,
   getSafeFontFamily,
@@ -14,10 +15,9 @@ import {
 import {
   collectSectionIds,
   type DocumentEdit,
+  type DocumentTemplate,
   documentValues,
-  interpolateContent,
   jobTravelerTexts,
-  makeText,
   type ValueCollector
 } from "@carbon/documents/template";
 import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
@@ -272,9 +272,6 @@ export async function renderJobTravelerPdf(
   );
   await ensureFont(templateConfig.settings.fontFamily);
 
-  const footerSectionContent = templateConfig.footerSectionId
-    ? sections[templateConfig.footerSectionId]?.content
-    : undefined;
   // The page body reads the template's texts itself (JobTravelerPageContent);
   // these are the ones outside it. They read the same values as the page's body.
   const values = documentValues(templateConfig.settings.valueEdits);
@@ -291,11 +288,15 @@ export async function renderJobTravelerPdf(
         locale
       })
     );
-  const textsOf = (data: (typeof makeMethodsWithData)[number]) =>
-    makeText(jobTravelerTexts.document, templateConfig.settings, varsOf(data));
+  const chromeOf = (data: (typeof makeMethodsWithData)[number]) =>
+    documentChrome({
+      texts: jobTravelerTexts.document,
+      template: templateConfig,
+      vars: varsOf(data),
+      sections
+    });
   const [firstPage] = makeMethodsWithData;
-  const documentTitle = firstPage ? textsOf(firstPage)("title") : "";
-  const showFooter = templateConfig.footerSectionId !== null;
+  const documentTitle = firstPage ? chromeOf(firstPage).documentTitle : "";
 
   const styles = StyleSheet.create({
     body: {
@@ -334,23 +335,11 @@ export async function renderJobTravelerPdf(
             template={templateConfig}
             sections={sections}
           />
-          {showFooter && (
-            <Footer
-              documentId={job.data.jobId}
-              content={
-                footerSectionContent
-                  ? interpolateContent(footerSectionContent, varsOf(data))
-                  : undefined
-              }
-              showPageNumbers={templateConfig.settings.showPageNumbers}
-              pageNumberFormat={templateConfig.settings.pageNumberFormat}
-              showRegistrationLine={
-                templateConfig.settings.showRegistrationLine
-              }
-              pageLabel={textsOf(data)("page")}
-              ofLabel={textsOf(data)("of")}
-            />
-          )}
+          <TravelerFooter
+            chrome={chromeOf(data)}
+            documentId={job.data.jobId}
+            settings={templateConfig.settings}
+          />
         </Page>
       ))}
     </Document>
@@ -368,4 +357,31 @@ export async function renderJobTravelerPdf(
   });
 
   return { body, fileName: `${company.data.name} - ${job.data.jobId}.pdf` };
+}
+
+/** The footer of one make method's page, when the template has one. */
+function TravelerFooter({
+  chrome,
+  documentId,
+  settings
+}: {
+  chrome: Pick<
+    ReturnType<typeof documentChrome>,
+    "showFooter" | "footerContent" | "footerText"
+  >;
+  documentId: string | null | undefined;
+  settings: DocumentTemplate["settings"];
+}) {
+  if (!chrome.showFooter) return null;
+  return (
+    <Footer
+      documentId={documentId}
+      content={chrome.footerContent}
+      showPageNumbers={settings.showPageNumbers}
+      pageNumberFormat={settings.pageNumberFormat}
+      showRegistrationLine={settings.showRegistrationLine}
+      pageLabel={chrome.footerText.pageLabel}
+      ofLabel={chrome.footerText.ofLabel}
+    />
+  );
 }

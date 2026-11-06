@@ -12,6 +12,7 @@ import type {
   ResolvedSection
 } from "../../../template";
 import type { Company, CompanySettings } from "../../../types";
+import type { ReturnOrderAddress } from "../returnOrder/vars";
 
 /**
  * A line row as the RMA PDF route reads it: the table row plus the joined
@@ -28,20 +29,7 @@ export type SalesReturnOrderPdfLine =
     } | null;
   };
 
-/**
- * A party/address for the parties block. Pass a resolved display `country`
- * ("United States") when known; renderers fall back to mapping `countryCode`.
- */
-export interface ReturnOrderAddress {
-  name?: string | null;
-  addressLine1?: string | null;
-  addressLine2?: string | null;
-  city?: string | null;
-  stateProvince?: string | null;
-  postalCode?: string | null;
-  country?: string | null;
-  countryCode?: string | null;
-}
+export type { ReturnOrderAddress };
 
 /** Everything a Sales Return Order (RMA) block renderer might need. */
 export interface SalesReturnOrderData {

@@ -5,8 +5,7 @@
 import type { JSONContent } from "@carbon/react";
 import {
   DEFAULT_HEADER_OPTIONS,
-  type DocumentBlock,
-  type DocumentSettings,
+  type DocumentTemplate,
   interpolateContent,
   makeText,
   type ResolvedSection,
@@ -21,20 +20,17 @@ import {
  */
 export function documentChrome<E extends readonly TextEntry[]>({
   texts,
-  settings,
+  template: { settings, blocks, headerSectionId, footerSectionId },
   vars,
-  blocks,
-  sections,
-  headerSectionId,
-  footerSectionId
+  sections
 }: {
   texts: E;
-  settings: Pick<DocumentSettings, "text" | "hidden">;
+  template: Pick<
+    DocumentTemplate,
+    "settings" | "blocks" | "headerSectionId" | "footerSectionId"
+  >;
   vars: Record<string, string>;
-  blocks: DocumentBlock[];
   sections: Record<string, ResolvedSection>;
-  headerSectionId: string | null | undefined;
-  footerSectionId: string | null | undefined;
 }) {
   // Every document's catalog has these words, so a wider key type is safe here.
   const words = makeText(texts as readonly TextEntry[], settings, vars);

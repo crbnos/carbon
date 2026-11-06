@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { addressTexts, FOOTER_TEXTS } from "./shared";
+import { addressTexts, cell, FOOTER_TEXTS, valueOf } from "./shared";
 import type { DocumentTextCatalog } from "./types";
 
 export const salesInvoiceTexts = {
@@ -72,135 +72,49 @@ export const salesInvoiceTexts = {
   ],
   lineItems: [
     { key: "number", kind: "column", default: "#" },
-    {
-      key: "numberCell",
-      kind: "value",
-      default: "{line.number}",
-      of: "number",
-      row: "line"
-    },
+    cell("numberCell", "{line.number}", "number", "line"),
     { key: "description", kind: "text", default: "Description" },
-    {
-      key: "descriptionCell",
-      kind: "value",
-      default: "{line.description}",
-      of: "description",
-      row: "line"
-    },
-    {
-      key: "detailsCell",
-      kind: "value",
-      default: "{line.details}",
-      of: "description",
-      row: "line"
-    },
+    cell("descriptionCell", "{line.description}", "description", "line"),
+    cell("detailsCell", "{line.details}", "description", "line"),
     { key: "taxAndFees", kind: "text", default: "Tax & Fees" },
     { key: "shipping", kind: "text", default: "- Shipping" },
-    {
-      key: "shippingValue",
-      kind: "value",
-      default: "{line.shipping}",
-      of: "shipping",
-      row: "line"
-    },
+    cell("shippingValue", "{line.shipping}", "shipping", "line"),
     { key: "addOn", kind: "text", default: "- Add-On" },
-    {
-      key: "addOnValue",
-      kind: "value",
-      default: "{line.addOn}",
-      of: "addOn",
-      row: "line"
-    },
+    cell("addOnValue", "{line.addOn}", "addOn", "line"),
     { key: "nonTaxableAddOn", kind: "text", default: "- Non-Taxable Add-On" },
-    {
-      key: "nonTaxableAddOnValue",
-      kind: "value",
-      default: "{line.nonTaxableAddOn}",
-      of: "nonTaxableAddOn",
-      row: "line"
-    },
+    cell(
+      "nonTaxableAddOnValue",
+      "{line.nonTaxableAddOn}",
+      "nonTaxableAddOn",
+      "line"
+    ),
     {
       key: "tax",
       kind: "text",
       default: "- Tax ({line.taxPercent})",
       row: "line"
     },
-    {
-      key: "taxValue",
-      kind: "value",
-      default: "{line.taxAmount}",
-      of: "tax",
-      row: "line"
-    },
+    cell("taxValue", "{line.taxAmount}", "tax", "line"),
     { key: "qty", kind: "column", default: "Qty" },
-    {
-      key: "qtyCell",
-      kind: "value",
-      default: "{line.quantity} {line.unit}",
-      of: "qty",
-      row: "line"
-    },
+    cell("qtyCell", "{line.quantity} {line.unit}", "qty", "line"),
     { key: "unitPrice", kind: "column", default: "Unit Price" },
-    {
-      key: "unitPriceCell",
-      kind: "value",
-      default: "{line.unitPrice}",
-      of: "unitPrice",
-      row: "line"
-    },
-    {
-      key: "discountCell",
-      kind: "value",
-      default: "{line.discountPercent}",
-      of: "unitPrice",
-      row: "line"
-    },
+    cell("unitPriceCell", "{line.unitPrice}", "unitPrice", "line"),
+    cell("discountCell", "{line.discountPercent}", "unitPrice", "line"),
     { key: "total", kind: "column", default: "Total" },
-    {
-      key: "totalCell",
-      kind: "value",
-      default: "{line.total}",
-      of: "total",
-      row: "line"
-    }
+    cell("totalCell", "{line.total}", "total", "line")
   ],
   summary: [
     { key: "subtotal", kind: "text", default: "Subtotal ({invoice.currency})" },
-    {
-      key: "subtotalValue",
-      kind: "value",
-      default: "{invoice.subtotal}",
-      of: "subtotal"
-    },
+    valueOf("subtotalValue", "{invoice.subtotal}", "subtotal"),
     { key: "discount", kind: "text", default: "Discount ({invoice.currency})" },
-    {
-      key: "discountValue",
-      kind: "value",
-      default: "{invoice.discount}",
-      of: "discount"
-    },
+    valueOf("discountValue", "{invoice.discount}", "discount"),
     { key: "addOns", kind: "text", default: "Add-Ons ({invoice.currency})" },
-    {
-      key: "addOnsValue",
-      kind: "value",
-      default: "{invoice.addOns}",
-      of: "addOns"
-    },
+    valueOf("addOnsValue", "{invoice.addOns}", "addOns"),
     { key: "shipping", kind: "text", default: "Shipping ({invoice.currency})" },
-    {
-      key: "shippingValue",
-      kind: "value",
-      default: "{invoice.shipping}",
-      of: "shipping"
-    },
+    valueOf("shippingValue", "{invoice.shipping}", "shipping"),
     { key: "taxValue", kind: "value", default: "{invoice.tax}" },
     { key: "total", kind: "text", default: "Total ({invoice.currency})" },
-    {
-      key: "totalValue",
-      kind: "value",
-      default: "{invoice.total}",
-      of: "total"
-    }
+    valueOf("totalValue", "{invoice.total}", "total")
   ],
   terms: [
     {
