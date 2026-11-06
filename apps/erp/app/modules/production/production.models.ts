@@ -118,17 +118,32 @@ export function isJobEditableFromPlanning(
 }
 
 /**
- * Whether a suggested job or purchase order starts (else is due) before
- * `today`, the location's `YYYY-MM-DD`. Planning's Make / Order refuses such
- * an order, since nothing can start in the past.
+ * The day a suggested job or purchase order starts: its start (order-by)
+ * date, else its due date less the lead time, as `insertJob` fills it.
+ */
+export function planningOrderStart(
+  order: { startDate?: string | null; dueDate?: string | null },
+  leadTime: number
+): string | null {
+  if (order.startDate) return order.startDate;
+  return order.dueDate
+    ? parseDate(order.dueDate).subtract({ days: leadTime }).toString()
+    : null;
+}
+
+/**
+ * Whether the order starts before `today`, the location's `YYYY-MM-DD`.
+ * Planning's Make / Order refuses such an order, since nothing can start in
+ * the past.
  */
 export function planningOrderStartsInPast(
   order: { startDate?: string | null; dueDate?: string | null },
-  today: string
+  today: string,
+  leadTime: number
 ): boolean {
-  const start = order.startDate || order.dueDate;
+  const start = planningOrderStart(order, leadTime);
   // ISO dates order as strings
-  return !!start && start < today;
+  return start !== null && start < today;
 }
 
 /** A suggested order planning's Make / Order did not create because it

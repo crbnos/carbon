@@ -12039,7 +12039,8 @@ export async function markPlanningActionsActioned(
  * from); without one, or when MRP has replaced that row, it settles its
  * (item, week, segment) action. Only actions of the same item, segment, type,
  * location and company match. Runs under MRP's advisory lock
- * (`planning-actions:<companyId>`) and returns the rows it changed.
+ * (`planning-actions:<companyId>`) and returns the rows it changed, each with
+ * the indexes (in `ordered`) of the orders that answered it.
  */
 export async function settleNewSupplyPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -12059,7 +12060,10 @@ export async function settleNewSupplyPlanningActions(
     }[];
   }
 ) {
-  const ordered = args.ordered.filter((order) => order.quantity > 0);
+  // the index is the order's place in `ordered`, which the caller maps back
+  const ordered = args.ordered.flatMap((order, index) =>
+    order.quantity > 0 ? [{ ...order, index }] : []
+  );
   return planningActionIdList(
     ordered.map((order) => order.itemId),
     () =>
@@ -12069,8 +12073,8 @@ export async function settleNewSupplyPlanningActions(
         );
         const values = sql.join(
           ordered.map(
-            (order, index) =>
-              sql`(${index}::int, ${order.planningActionId ?? null}::text, ${order.itemId}::text, ${order.periodId}::text, ${order.planningSegmentId ?? ""}::text, ${order.quantity}::numeric)`
+            (order) =>
+              sql`(${order.index}::int, ${order.planningActionId ?? null}::text, ${order.itemId}::text, ${order.periodId}::text, ${order.planningSegmentId ?? ""}::text, ${order.quantity}::numeric)`
           )
         );
         const settleable = sql`
@@ -12090,6 +12094,7 @@ export async function settleNewSupplyPlanningActions(
           planningSegmentId: string;
           status: "Open" | "Dismissed" | "Actioned";
           suggestedQuantity: number;
+          orderIndexes: number[];
         }>`
           WITH ordered ("index", "planningActionId", "itemId", "periodId", "planningSegmentId", "quantity") AS (
             VALUES ${values}
@@ -12113,7 +12118,8 @@ export async function settleNewSupplyPlanningActions(
             WHERE o."index" NOT IN (SELECT "index" FROM by_id)
           ),
           answered AS (
-            SELECT m.id, SUM(o."quantity") AS "quantity"
+            SELECT m.id, SUM(o."quantity") AS "quantity",
+              array_agg(m."index" ORDER BY m."index") AS "orderIndexes"
             FROM (SELECT * FROM by_id UNION ALL SELECT * FROM by_week) m
             JOIN ordered o ON o."index" = m."index"
             GROUP BY m.id
@@ -12136,7 +12142,7 @@ export async function settleNewSupplyPlanningActions(
           WHERE pa.id = a.id
             AND pa."companyId" = ${args.companyId}
           RETURNING pa.id, pa."itemId", pa."periodId", pa."planningSegmentId",
-            pa."status", pa."suggestedQuantity"
+            pa."status", pa."suggestedQuantity", a."orderIndexes"
         `.execute(trx);
         return result.rows.map((row) => ({
           ...row,

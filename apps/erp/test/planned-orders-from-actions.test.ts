@@ -13,12 +13,15 @@ vi.mock("@carbon/content/glossary", () => ({
   glossaryEntries: () => []
 }));
 
-import { planningOrderStartsInPast } from "../app/modules/production/production.models";
+import {
+  planningOrderStart,
+  planningOrderStartsInPast
+} from "../app/modules/production/production.models";
 import {
   openNewSupplyActions,
   plannedOrdersFromActions,
   productionOrdersFromActions,
-  refusedOrdersByRowKey,
+  refusedOrderCount,
   supplierConversionFactor
 } from "../app/modules/production/ui/Planning/planned-orders-from-actions";
 
@@ -412,47 +415,35 @@ describe("planningOrderStartsInPast", () => {
     ["starts yesterday", { startDate: "2026-11-04", dueDate: "2026-11-12" }, true],
     ["starts today", { startDate: "2026-11-05", dueDate: "2026-11-12" }, false],
     ["starts tomorrow", { startDate: "2026-11-06", dueDate: "2026-11-13" }, false],
-    ["no start, due yesterday", { startDate: null, dueDate: "2026-11-04" }, true],
-    ["no start, due today", { startDate: null, dueDate: "2026-11-05" }, false],
+    // no start: dated by its due date less the lead time, as the job would be
+    ["no start, due tomorrow", { startDate: null, dueDate: "2026-11-06" }, true],
+    ["no start, due a lead time away", { startDate: null, dueDate: "2026-11-12" }, false],
     ["no dates", { startDate: null, dueDate: null }, false]
   ] as const)("an order that %s is late: %s", (_, order, expected) => {
-    expect(planningOrderStartsInPast(order, today)).toBe(expected);
+    expect(planningOrderStartsInPast(order, today, 7)).toBe(expected);
+  });
+
+  it("takes the start date over the due date", () => {
+    expect(
+      planningOrderStart({ startDate: "2026-11-09", dueDate: "2026-11-10" }, 7)
+    ).toBe("2026-11-09");
   });
 });
 
-describe("refusedOrdersByRowKey", () => {
-  const order = (dueDate: string) => ({ quantity: 10, dueDate });
-  const submitted = [
-    {
-      id: "item1",
-      planningSegmentId: "",
-      orders: [order("2026-11-01"), order("2026-11-08"), order("2026-11-02")]
-    },
-    { id: "item2", planningSegmentId: "", orders: [order("2026-11-09")] },
-    { id: "item1", planningSegmentId: "proj1", orders: [order("2026-11-03")] }
+describe("refusedOrderCount", () => {
+  const refused = [
+    { itemId: "item1", planningSegmentId: "", index: 0 },
+    { itemId: "item1", planningSegmentId: "", index: 2 },
+    { itemId: "item1", planningSegmentId: "proj1", index: 0 },
+    { itemId: "item2", planningSegmentId: "", index: 1 }
   ];
 
-  it("keeps the refused orders of each row, in their order", () => {
+  it("counts a row's refused orders, by item and segment", () => {
+    expect(refusedOrderCount(refused, { id: "item1" })).toBe(2);
     expect(
-      refusedOrdersByRowKey(submitted, [
-        { itemId: "item1", planningSegmentId: "", index: 2 },
-        { itemId: "item1", planningSegmentId: "", index: 0 }
-      ])
-    ).toEqual({
-      "item1\u001f": [order("2026-11-01"), order("2026-11-02")]
-    });
-  });
-
-  it("tells the item's segments apart", () => {
-    expect(
-      refusedOrdersByRowKey(submitted, [
-        { itemId: "item1", planningSegmentId: "proj1", index: 0 }
-      ])
-    ).toEqual({ "item1\u001fproj1": [order("2026-11-03")] });
-  });
-
-  it("is empty when nothing was refused", () => {
-    expect(refusedOrdersByRowKey(submitted, [])).toEqual({});
-    expect(refusedOrdersByRowKey(submitted, undefined)).toEqual({});
+      refusedOrderCount(refused, { id: "item1", planningSegmentId: "proj1" })
+    ).toBe(1);
+    expect(refusedOrderCount(refused, { id: "item3" })).toBe(0);
+    expect(refusedOrderCount(undefined, { id: "item1" })).toBe(0);
   });
 });

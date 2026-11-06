@@ -170,6 +170,30 @@ describe.skipIf(!hasLocalDatabase)("settleNewSupplyPlanningActions", () => {
     }
   );
 
+  databaseTest(
+    "names the orders that answered each action, by their place in the list",
+    async () => {
+      const first = await action({ suggestedQuantity: 30 }, "first");
+      const second = await action(
+        { suggestedQuantity: 30, periodId: week2 },
+        "second"
+      );
+      // a zero order is skipped without moving the other orders' places
+      const result = await settle([
+        { quantity: 0, planningActionId: first },
+        { quantity: 10, planningActionId: second, periodId: week2 },
+        { quantity: 10, planningActionId: first },
+        { quantity: 5, periodId: week2 }
+      ]);
+      const byId = new Map(
+        (result.data ?? []).map((row) => [row.id, row.orderIndexes])
+      );
+      expect(byId.get(first)).toEqual([2]);
+      expect(byId.get(second)).toEqual([1, 3]);
+      expect(await read(second)).toEqual({ status: "Open", quantity: 15 });
+    }
+  );
+
   databaseTest("ordering more than suggested settles the action", async () => {
     const id = await action({ suggestedQuantity: 40 }, "over");
     await settle([{ quantity: 55, planningActionId: id }]);

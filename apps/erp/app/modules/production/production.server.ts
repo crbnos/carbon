@@ -102,6 +102,7 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  planningOrderStart,
   planningOrderStartsInPast,
   procedureStatus,
   productionEventValidator,
@@ -4520,11 +4521,12 @@ export const orderPlannedJobs = defineServiceFn({
       planningActionId?: string;
     }[] = [];
     const errors: string[] = [];
-    let processedItems = 0;
+    // The jobs made, before their methods.
+    const inserted: { itemId: string; id: string; readableId: string }[] = [];
 
     const manufacturingRows = await client
       .from("itemReplenishment")
-      .select("itemId, manufacturingBlocked, requiresConfiguration")
+      .select("itemId, manufacturingBlocked, requiresConfiguration, leadTime")
       .in(
         "itemId",
         items.flatMap((item) => (item.orders.length > 0 ? [item.id] : []))
@@ -4578,9 +4580,11 @@ export const orderPlannedJobs = defineServiceFn({
         continue;
       }
 
+      // insertJob's own default when the item has no lead time
+      const leadTime = manufacturing.leadTime ?? 7;
       const pastIndexes = new Set(
         item.orders.flatMap((order, index) =>
-          planningOrderStartsInPast(order, today) ? [index] : []
+          planningOrderStartsInPast(order, today, leadTime) ? [index] : []
         )
       );
       if (pastIndexes.size > 0) {
@@ -4601,7 +4605,6 @@ export const orderPlannedJobs = defineServiceFn({
         pastStartErrorCount++;
       }
 
-      let itemProcessed = false;
       for (const [index, order] of item.orders.entries()) {
         if (pastIndexes.has(index)) continue;
         const created = await service.insertJob(
@@ -4610,7 +4613,7 @@ export const orderPlannedJobs = defineServiceFn({
           {
             itemId: item.id,
             quantity: order.quantity,
-            startDate: order.startDate ?? undefined,
+            startDate: planningOrderStart(order, leadTime) ?? undefined,
             dueDate: order.dueDate ?? undefined,
             deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
             status: "Planned",
@@ -4638,22 +4641,12 @@ export const orderPlannedJobs = defineServiceFn({
           continue;
         }
         const id = created.data.id;
-
-        const method = await service.upsertJobMethod(client, db, "itemToJob", {
-          sourceId: item.id,
-          targetId: id,
-          companyId,
-          userId
+        inserted.push({
+          itemId: item.id,
+          id,
+          readableId: created.data.jobId ?? ""
         });
-        if (method.error) {
-          errors.push(
-            `Failed to create job method for item ${item.id}: ${method.error.message}`
-          );
-          continue;
-        }
-
-        createdJobs.push({ id, readableId: created.data.jobId ?? "" });
-        itemProcessed = true;
+        // the job is supply from here on, with or without its method
         ordered.push({
           itemId: item.id,
           periodId: order.periodId,
@@ -4681,10 +4674,11 @@ export const orderPlannedJobs = defineServiceFn({
           });
         }
       }
-      if (itemProcessed) processedItems++;
     }
-    for (const error of errors) logger.error(error, { companyId, locationId });
 
+    // Settled as soon as the jobs exist, before their methods: an MRP run
+    // that reads a job between its insert and the settle would net it, and
+    // the settle would take it off the suggestion a second time.
     const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
@@ -4700,43 +4694,44 @@ export const orderPlannedJobs = defineServiceFn({
         error: settled.error
       });
     } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Make's pegs move to the job it created. A failure
-      // leaves them on the action; the next MRP run re-pegs.
-      const jobByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
-      }
-      // Only a fully answered action hands its pegs over: one still open
-      // for a remainder keeps them, and the next MRP run re-pegs.
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (
-          action.status !== "Actioned" ||
-          !segments.planningGroupIds.has(action.planningSegmentId)
-        ) {
-          return [];
-        }
-        const supplyId = jobByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
+      // A grouped Make's pegs move to the jobs that answered it.
+      const moves = (settled.data ?? []).flatMap((action) =>
+        segments.planningGroupIds.has(action.planningSegmentId)
           ? [
               {
                 planningActionId: action.id,
                 supplyType: "Job" as const,
-                supplyId
+                supplies: action.orderIndexes.map((index) => ({
+                  supplyId: ordered[index]!.jobId,
+                  quantity: ordered[index]!.quantity
+                })),
+                keepRemainder: action.status !== "Actioned"
               }
             ]
-          : [];
-      });
+          : []
+      );
       await moveActionPegsToSupply(db, { companyId, userId, moves });
     }
+
+    const processedItemIds = new Set<string>();
+    for (const job of inserted) {
+      const method = await service.upsertJobMethod(client, db, "itemToJob", {
+        sourceId: job.itemId,
+        targetId: job.id,
+        companyId,
+        userId
+      });
+      if (method.error) {
+        errors.push(
+          `Failed to create job method for item ${job.itemId}: ${method.error.message}`
+        );
+        continue;
+      }
+      createdJobs.push({ id: job.id, readableId: job.readableId });
+      processedItemIds.add(job.itemId);
+    }
+    const processedItems = processedItemIds.size;
+    for (const error of errors) logger.error(error, { companyId, locationId });
 
     if (supplyByKey.size > 0) {
       const forecasts = await client

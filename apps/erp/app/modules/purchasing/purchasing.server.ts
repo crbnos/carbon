@@ -3203,11 +3203,26 @@ export const orderPlannedPurchases = defineServiceFn({
     const today = asOf.toString();
     const refusedOrders: RefusedPlanningOrder[] = [];
 
+    // Whether purchasing is blocked, and the lead time an order with no order
+    // date is dated by, for every item ordered, in one read.
+    const purchasingRows = await client
+      .from("itemReplenishment")
+      .select("itemId, purchasingBlocked, leadTime")
+      .in(
+        "itemId",
+        itemsToOrder.map((item) => item.id)
+      )
+      .eq("companyId", companyId);
+    const purchasingByItem = new Map(
+      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
+    );
+
     for (const item of itemsToOrder) {
       itemIds.add(item.id);
       let itemHasUsableOrder = false;
       for (const [index, order] of item.orders.entries()) {
-        if (planningOrderStartsInPast(order, today)) {
+        const leadTime = purchasingByItem.get(item.id)?.leadTime ?? 0;
+        if (planningOrderStartsInPast(order, today, leadTime)) {
           refusedOrders.push({
             itemId: item.id,
             planningSegmentId: item.planningSegmentId,
@@ -3363,16 +3378,6 @@ export const orderPlannedPurchases = defineServiceFn({
     // Readable ids too, so the client can present a clickable toast.
     const poCache = new Map<string, { id: string; readableId: string }>();
 
-    // Whether purchasing is blocked, for every item ordered, in one read.
-    const purchasingRows = await client
-      .from("itemReplenishment")
-      .select("itemId, purchasingBlocked")
-      .in("itemId", Array.from(itemIds))
-      .eq("companyId", companyId);
-    const purchasingByItem = new Map(
-      (purchasingRows.data ?? []).map((row) => [row.itemId, row])
-    );
-
     // Every open PO an order may join, with its lines, in one read: the
     // suppliers' Draft / Planned purchase orders at this location, oldest
     // first. The lines tell which weeks a PO already covers, and which line a
@@ -3380,7 +3385,7 @@ export const orderPlannedPurchases = defineServiceFn({
     const openPurchaseOrders = await client
       .from("purchaseOrder")
       .select(
-        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+        "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, conversionFactor, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
       )
       .eq("companyId", companyId)
       .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -3527,6 +3532,12 @@ export const orderPlannedPurchases = defineServiceFn({
                 planningSegmentId
           );
           let purchaseOrderLineId = existing?.id;
+          // purchase units to the action's inventory units, at the factor of
+          // the line the order lands on
+          const conversionFactor =
+            (existing
+              ? existing.conversionFactor
+              : supplierPart?.conversionFactor) ?? 1;
 
           if (existing) {
             const purchaseQuantity =
@@ -3605,7 +3616,7 @@ export const orderPlannedPurchases = defineServiceFn({
                 supplierPart?.supplierUnitOfMeasureCode ??
                 order.unitOfMeasureCode,
               inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
-              conversionFactor: supplierPart?.conversionFactor ?? 1,
+              conversionFactor,
               supplierUnitPrice,
               exchangeRate: purchaseOrder.exchangeRate,
               taxPercent,
@@ -3636,6 +3647,7 @@ export const orderPlannedPurchases = defineServiceFn({
               planningGroupId: isGroupSegment ? planningSegmentId : null,
               requiredDate,
               purchaseQuantity: adjustedQuantity,
+              conversionFactor,
               supplierUnitPrice,
               supplierShippingCost: 0,
               taxPercent,
@@ -3649,9 +3661,7 @@ export const orderPlannedPurchases = defineServiceFn({
             periodId: order.periodId,
             planningSegmentId,
             purchaseOrderLineId: purchaseOrderLineId!,
-            // The action is in inventory units; the line in purchase units,
-            // after the supplier part's minimum.
-            quantity: adjustedQuantity * (supplierPart?.conversionFactor ?? 1),
+            quantity: adjustedQuantity * conversionFactor,
             planningActionId: order.planningActionId
           });
           allSupplyForecasts.push({
@@ -3715,43 +3725,22 @@ export const orderPlannedPurchases = defineServiceFn({
         error: settled.error
       });
     } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Order's pegs move to the PO line it created. A
-      // failure leaves them on the action; the next MRP run re-pegs.
-      const lineByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!lineByOrder.has(key)) {
-          lineByOrder.set(key, entry.purchaseOrderLineId);
-        }
-      }
-      // Only a fully answered action hands its pegs over: one still open
-      // for a remainder keeps them, and the next MRP run re-pegs.
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (
-          action.status !== "Actioned" ||
-          !segments.planningGroupIds.has(action.planningSegmentId)
-        ) {
-          return [];
-        }
-        const supplyId = lineByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
+      // A grouped Order's pegs move to the PO lines that answered it.
+      const moves = (settled.data ?? []).flatMap((action) =>
+        segments.planningGroupIds.has(action.planningSegmentId)
           ? [
               {
                 planningActionId: action.id,
                 supplyType: "Purchase Order Line" as const,
-                supplyId
+                supplies: action.orderIndexes.map((index) => ({
+                  supplyId: ordered[index]!.purchaseOrderLineId,
+                  quantity: ordered[index]!.quantity
+                })),
+                keepRemainder: action.status !== "Actioned"
               }
             ]
-          : [];
-      });
+          : []
+      );
       await moveActionPegsToSupply(ctx.asSystem.pg, {
         companyId,
         userId,

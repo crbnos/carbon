@@ -37,7 +37,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
@@ -69,8 +69,7 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
-import { refusedOrdersByRowKey } from "~/modules/production/ui/Planning/planned-orders-from-actions";
-import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
+import { refusedOrderCount } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
@@ -166,8 +165,6 @@ export const PurchasingPlanningOrderDrawer = memo(
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
     const fetcher = useFetcher<typeof bulkUpdateAction>();
-    // A refused order is found by its index in the orders as submitted.
-    const submitted = useRef<PlannedOrder[]>([]);
     const pastStartToast = usePastStartToast();
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
@@ -187,6 +184,8 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     // Re-read when the item's actions change: applying one rewrites its line.
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
+    // ...and after an order that left the drawer open placed new lines.
+    const [openLinesVersion, setOpenLinesVersion] = useState(0);
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -287,7 +286,8 @@ export const PurchasingPlanningOrderDrawer = memo(
       selectedItem.id,
       locationId,
       actionsKey,
-      ordersVersion
+      ordersVersion,
+      openLinesVersion
     ]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
@@ -552,7 +552,6 @@ export const PurchasingPlanningOrderDrawer = memo(
           ],
           action: "order" as const
         };
-        submitted.current = ordersWithPeriods;
         fetcher.submit(payload, {
           method: "post",
           action: path.to.bulkUpdatePurchasingPlanning,
@@ -585,22 +584,18 @@ export const PurchasingPlanningOrderDrawer = memo(
               purchaseOrders?: { id: string; readableId: string }[];
             }
           )?.purchaseOrders ?? [];
-        // the late orders stay here to be moved from today
-        const refused =
-          refusedOrdersByRowKey(
-            [
-              {
-                id: selectedItem.id,
-                planningSegmentId: selectedItem.planningSegmentId ?? "",
-                orders: submitted.current
-              }
-            ],
-            (fetcher.data as { refusedOrders?: RefusedPlanningOrder[] })
-              .refusedOrders
-          )[planningRowKey(selectedItem)] ?? [];
-        if (refused.length > 0) {
-          setOrders(selectedItem, refused);
-          toast.error(pastStartToast(purchaseOrders.length, refused.length));
+        const { refusedOrders, processedItems = 0 } = fetcher.data as {
+          refusedOrders?: RefusedPlanningOrder[];
+          processedItems?: number;
+        };
+        const refused = refusedOrderCount(refusedOrders, selectedItem);
+        // This runs once the loaders have reloaded: re-seed from the
+        // suggestions as they are now. A week ordered in part, or refused for
+        // starting in the past, keeps what was not ordered.
+        onSuggestionsStale(selectedItem);
+        if (refused > 0) {
+          setOpenLinesVersion((version) => version + 1);
+          toast.error(pastStartToast(processedItems, refused));
           return;
         }
 
@@ -626,8 +621,6 @@ export const PurchasingPlanningOrderDrawer = memo(
           );
         }
 
-        // re-seed: a week ordered in part keeps its remainder
-        onSuggestionsStale(selectedItem);
         onClose();
       }
     }, [fetcher.state, fetcher.data]);

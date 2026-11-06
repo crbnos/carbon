@@ -29,7 +29,6 @@ import type {
   RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
-import { planningRowKey } from "./planning-action-scope";
 
 type NewSupplyActionFields = {
   id: string;
@@ -232,30 +231,15 @@ export function supplierConversionFactor(
   );
 }
 
-/**
- * The submitted orders that Make / Order refused for starting in the past
- * (`refusedOrders`), by planning row (`planningRowKey`); a row with none is
- * absent. They stay the row's draft to be moved from today.
- */
-export function refusedOrdersByRowKey<O>(
-  submitted: { id: string; planningSegmentId: string; orders: O[] }[],
-  refused: RefusedPlanningOrder[] | null | undefined
-): Record<string, O[]> {
-  const byRowKey: Record<string, O[]> = {};
-  for (const item of submitted) {
-    const indexes = new Set(
-      (refused ?? [])
-        .filter(
-          (r) =>
-            r.itemId === item.id &&
-            r.planningSegmentId === item.planningSegmentId
-        )
-        .map((r) => r.index)
-    );
-    if (indexes.size === 0) continue;
-    byRowKey[planningRowKey(item)] = item.orders.filter((_, index) =>
-      indexes.has(index)
-    );
-  }
-  return byRowKey;
+/** How many of a planning row's orders Make / Order refused for starting in
+ *  the past (`refusedOrders`). */
+export function refusedOrderCount(
+  refused: RefusedPlanningOrder[] | null | undefined,
+  row: { id: string; planningSegmentId?: string | null }
+): number {
+  return (refused ?? []).filter(
+    (order) =>
+      order.itemId === row.id &&
+      order.planningSegmentId === (row.planningSegmentId ?? "")
+  ).length;
 }

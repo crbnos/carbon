@@ -19,7 +19,7 @@ import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -46,8 +46,7 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
-import { refusedOrdersByRowKey } from "~/modules/production/ui/Planning/planned-orders-from-actions";
-import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
+import { refusedOrderCount } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
@@ -119,34 +118,26 @@ export const ProductionPlanningOrderDrawer = memo(
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
     const pastStartToast = usePastStartToast();
-    // A refusal is toasted by useAction. A refused order is found by its
-    // index in the orders as submitted.
-    const submitted = useRef<ProductionOrder[]>([]);
+    // A refusal is toasted by useAction. Success runs after the loaders have
+    // reloaded, so the drawer re-seeds from the suggestions as they are now:
+    // a week ordered in part, or refused for starting in the past, keeps
+    // what was not ordered.
     const fetcher = useAction<typeof bulkUpdateAction>({
       onSuccess: (result) => {
         const data = "data" in result ? result.data : null;
-        const refused =
-          refusedOrdersByRowKey(
-            [
-              {
-                id: row.id,
-                planningSegmentId: row.planningSegmentId ?? "",
-                orders: submitted.current
-              }
-            ],
-            data && "refusedOrders" in data ? data.refusedOrders : []
-          )[planningRowKey(row)] ?? [];
-        if (refused.length === 0) {
+        const refused = refusedOrderCount(
+          data && "refusedOrders" in data ? data.refusedOrders : [],
+          row
+        );
+        onSuggestionsStale(row);
+        if (refused === 0) {
           toast.success(t`Orders submitted`);
-          // re-seed: a week ordered in part keeps its remainder
-          onSuggestionsStale(row);
           onClose();
           return;
         }
-        // the late orders stay here to be moved from today
         const created = data && "jobs" in data ? data.jobs.length : 0;
-        setOrders(row, refused);
-        toast.error(pastStartToast(created, refused.length));
+        setOpenJobsVersion((version) => version + 1);
+        toast.error(pastStartToast(created, refused));
       }
     });
     const { locale } = useLocale();
@@ -486,7 +477,6 @@ export const ProductionPlanningOrderDrawer = memo(
           ],
           action: "order" as const
         };
-        submitted.current = ordersWithPeriods;
         fetcher.submit(payload, {
           method: "post",
           action: path.to.bulkUpdateProductionPlanning,

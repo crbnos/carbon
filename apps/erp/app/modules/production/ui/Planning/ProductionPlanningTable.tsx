@@ -23,7 +23,7 @@ import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -68,8 +68,7 @@ import {
 } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   openNewSupplyActions,
-  productionOrdersFromActions,
-  refusedOrdersByRowKey
+  productionOrdersFromActions
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
   PLANNING_SEGMENT_COLUMN,
@@ -207,24 +206,16 @@ const ProductionPlanningTable = ({
     [changeActionHandlers, isReleasing, onRelease]
   );
   // Create Jobs: the order's created jobs, and the parts it skipped. A refusal
-  // is toasted by useAction; a refused order is found by its index in the
-  // items as submitted.
-  const submittedItems = useRef<
-    { id: string; planningSegmentId: string; orders: ProductionOrder[] }[]
-  >([]);
+  // is toasted by useAction.
   const pastStartToast = usePastStartToast();
   const bulkUpdateFetcher = useAction<typeof bulkUpdateAction>({
     onSuccess: (result) => {
       const data = "data" in result ? result.data : null;
       if (!data || !("jobs" in data)) return;
-      // The drafts became jobs; the next open re-seeds from the new split. An
-      // order refused for starting in the past stays its row's draft.
-      const refused = refusedOrdersByRowKey(
-        submittedItems.current,
-        data.refusedOrders
-      );
-      setOrdersMap(refused);
-      const refusedCount = Object.values(refused).flat().length;
+      // The next open re-seeds from the suggestions as they are now: what an
+      // order left unordered, a refused late order included, is still there.
+      setOrdersMap({});
+      const refusedCount = data.refusedOrders.length;
       if (refusedCount > 0) {
         toast.error(pastStartToast(data.jobs.length, refusedCount));
       }
@@ -394,7 +385,6 @@ const ProductionPlanningTable = ({
           }),
         action: action
       };
-      submittedItems.current = payload.items;
       bulkUpdateFetcher.submit(payload, {
         method: "post",
         action: path.to.bulkUpdateProductionPlanning,
