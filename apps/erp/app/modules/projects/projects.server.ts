@@ -9,6 +9,7 @@ import {
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { Constants, getCompanyTimeZone } from "@carbon/database";
+import { rows } from "@carbon/database/row-schemas";
 import {
   approveRequest,
   canApproveRequest,
@@ -145,6 +146,104 @@ const logger = getLogger("erp", "projects");
  * @mcp read
  */
 export const getProject = defineServiceFn({
+  output: rows.project
+    .pick({
+      active: true,
+      budgetControl: true,
+      budgetTolerancePercent: true,
+      chargeAtReceipt: true,
+      companyId: true,
+      costAccountId: true,
+      costObjective: true,
+      costTreatment: true,
+      createdAt: true,
+      createdBy: true,
+      customerId: true,
+      description: true,
+      endDate: true,
+      fixedAssetClassId: true,
+      fixedAssetId: true,
+      governmentFurnished: true,
+      id: true,
+      identifier: true,
+      isTemplate: true,
+      locationId: true,
+      lockPlanAfterMilestoneId: true,
+      materialMeasurementPoint: true,
+      name: true,
+      nextBaselineSequence: true,
+      nextChangeRequestSequence: true,
+      nextElementSequence: true,
+      ownerId: true,
+      planningGroupId: true,
+      planningPriority: true,
+      priority: true,
+      projectStock: true,
+      restrictCharging: true,
+      startDate: true,
+      status: true,
+      stopWorkDate: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "project" }),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -170,6 +269,11 @@ export const getProject = defineServiceFn({
  * @mcp read
  */
 export const getProjectSwitcherOptions = defineServiceFn({
+  output: z.array(
+    rows.project
+      .pick({ id: true, identifier: true, name: true })
+      .meta({ table: "project" })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -197,6 +301,33 @@ export const getProjectSwitcherOptions = defineServiceFn({
  * @mcp read
  */
 export const getProjects = defineServiceFn({
+  output: z
+    .array(
+      rows.project
+        .pick({
+          id: true,
+          name: true,
+          identifier: true,
+          description: true,
+          status: true,
+          costTreatment: true,
+          costAccountId: true,
+          customerId: true,
+          ownerId: true,
+          locationId: true,
+          startDate: true,
+          endDate: true,
+          priority: true,
+          isTemplate: true,
+          active: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .meta({ table: "project" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -243,6 +374,9 @@ export const getProjects = defineServiceFn({
  * @mcp
  */
 export const createProject = defineServiceFn({
+  output: z.object({
+    projectId: z.string()
+  }),
   input: projectValidator.safeExtend({
     sourceProjectId: z.string().optional(),
     wbsTemplateKey: z.string().optional()
@@ -303,6 +437,17 @@ export const createProject = defineServiceFn({
  * @mcp
  */
 export const updateProject = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      id: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: projectValidator.safeExtend({ id: z.string() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -466,6 +611,16 @@ export const updateProjectTemplate = defineServiceFn({
  * @mcp
  */
 export const updateProjectStatus = defineServiceFn({
+  output: z.object({
+    projectId: z.string(),
+    status: z.enum([
+      "Closed",
+      "Draft",
+      "On Hold",
+      "Released",
+      "Technically Complete"
+    ])
+  }),
   input: z.object({
     projectId: z.string(),
     status: z.enum(projectStatuses)
@@ -534,6 +689,7 @@ export const updateProjectStatus = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProject = defineServiceFn({
+  output: rows.project.pick({ id: true }).meta({ table: "project" }),
   input: z.object({ projectId: z.string() }),
   permission: { delete: "projects" },
   async run(ctx, input) {
@@ -666,6 +822,18 @@ export const updateProjectControlSettings = defineServiceFn({
  * @mcp read
  */
 export const getProjectMembers = defineServiceFn({
+  output: z.array(
+    rows.projectMember
+      .pick({ projectId: true, userId: true, createdAt: true })
+      .extend({
+        user: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "projectMember" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -692,6 +860,9 @@ export const getProjectMembers = defineServiceFn({
  * @mcp
  */
 export const addProjectMember = defineServiceFn({
+  output: rows.projectMember
+    .pick({ projectId: true, userId: true })
+    .meta({ table: "projectMember" }),
   input: projectMemberValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -730,6 +901,9 @@ export const addProjectMember = defineServiceFn({
  * @mcp destructive
  */
 export const removeProjectMember = defineServiceFn({
+  output: rows.projectMember
+    .pick({ projectId: true, userId: true })
+    .meta({ table: "projectMember" }),
   input: projectMemberValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -758,6 +932,26 @@ export const removeProjectMember = defineServiceFn({
  * @mcp read
  */
 export const getChargeNumbers = defineServiceFn({
+  output: z.array(
+    z.object({
+      value: z.string(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      readableId: z.string(),
+      name: z.string(),
+      projectName: z.string(),
+      costTreatment: z.enum([
+        "Capitalize",
+        "Contract",
+        "Expense",
+        "Statistical"
+      ]),
+      projectStock: z.boolean(),
+      targetFixedAssetId: z.string().nullable(),
+      targetFixedAssetLabel: z.string().nullable(),
+      isLeave: z.boolean()
+    })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -780,6 +974,7 @@ export const getChargeNumbers = defineServiceFn({
  * @mcp read
  */
 export const getProjectStates = defineServiceFn({
+  output: z.array(rows.projectState),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -800,6 +995,7 @@ export const getProjectStates = defineServiceFn({
  * @mcp
  */
 export const upsertProjectState = defineServiceFn({
+  output: rows.projectState.pick({ id: true }).meta({ table: "projectState" }),
   input: projectStateValidator,
   permission: { update: "settings" },
   async run(ctx, { id, ...state }) {
@@ -836,6 +1032,7 @@ export const upsertProjectState = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectState = defineServiceFn({
+  output: rows.projectState.pick({ id: true }).meta({ table: "projectState" }),
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -859,6 +1056,7 @@ export const deleteProjectState = defineServiceFn({
  * @mcp
  */
 export const setProjectStateDefault = defineServiceFn({
+  output: rows.projectState.pick({ id: true }).meta({ table: "projectState" }),
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -883,6 +1081,7 @@ export const setProjectStateDefault = defineServiceFn({
  * @mcp read
  */
 export const getProjectLabels = defineServiceFn({
+  output: z.array(rows.projectLabel),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -903,6 +1102,7 @@ export const getProjectLabels = defineServiceFn({
  * @mcp
  */
 export const upsertProjectLabel = defineServiceFn({
+  output: rows.projectLabel.pick({ id: true }).meta({ table: "projectLabel" }),
   input: projectLabelValidator,
   permission: { update: "settings" },
   async run(ctx, { id, ...label }) {
@@ -936,6 +1136,7 @@ export const upsertProjectLabel = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectLabel = defineServiceFn({
+  output: rows.projectLabel.pick({ id: true }).meta({ table: "projectLabel" }),
   input: z.object({ id: z.string() }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -962,6 +1163,53 @@ export const deleteProjectLabel = defineServiceFn({
  * @mcp read
  */
 export const getProjectMilestones = defineServiceFn({
+  output: z.array(
+    rows.projectMilestone
+      .pick({
+        companyId: true,
+        completedAt: true,
+        createdAt: true,
+        createdBy: true,
+        endDate: true,
+        id: true,
+        name: true,
+        projectId: true,
+        sortOrder: true,
+        startDate: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        description: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "projectMilestone" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -986,6 +1234,9 @@ export const getProjectMilestones = defineServiceFn({
  * @mcp
  */
 export const upsertProjectMilestone = defineServiceFn({
+  output: rows.projectMilestone
+    .pick({ id: true })
+    .meta({ table: "projectMilestone" }),
   input: projectMilestoneValidator.safeExtend({ projectId: z.string() }),
   permission: { update: "projects" },
   async run(ctx, { id, projectId, ...milestone }) {
@@ -1024,6 +1275,12 @@ export const upsertProjectMilestone = defineServiceFn({
  * @mcp
  */
 export const completeProjectMilestone = defineServiceFn({
+  output: rows.projectMilestone
+    .pick({ id: true, name: true, projectId: true })
+    .extend({
+      baselineFailed: z.boolean()
+    })
+    .meta({ table: "projectMilestone" }),
   input: z.object({ id: z.string(), completed: z.boolean() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -1075,6 +1332,9 @@ export const completeProjectMilestone = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectMilestone = defineServiceFn({
+  output: rows.projectMilestone
+    .pick({ id: true })
+    .meta({ table: "projectMilestone" }),
   input: z.object({ id: z.string() }),
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -1106,6 +1366,7 @@ export const deleteProjectMilestone = defineServiceFn({
  * @mcp read
  */
 export const getProjectLedger = defineServiceFn({
+  output: z.array(rows.projectLedger).nullable(),
   input: z.looseObject({
     projectId: z.string(),
     projectElementIds: z.array(z.string()).nullable().optional(),
@@ -1140,6 +1401,22 @@ export const getProjectLedger = defineServiceFn({
  * @mcp read
  */
 export const getProjectElementCosts = defineServiceFn({
+  output: z.array(
+    rows.projectElement
+      .pick({
+        id: true,
+        parentId: true,
+        sortOrder: true,
+        readableId: true,
+        name: true,
+        type: true,
+        budget: true,
+        estimateAtCompletion: true,
+        isPreproduction: true,
+        isControlAccount: true
+      })
+      .meta({ table: "projectElement" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1164,6 +1441,80 @@ export const getProjectElementCosts = defineServiceFn({
  * @mcp read
  */
 export const getProjectOpenTimesheetEntries = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      employeeId: z.string(),
+      entryDate: z.string(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      laborCategoryId: z.string(),
+      workLocationId: z.string().nullable(),
+      rdActivityRole: z
+        .enum([
+          "Direct Research",
+          "Direct Supervision",
+          "Direct Support",
+          "Not Qualified"
+        ])
+        .nullable(),
+      workLocation: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      hours: z.number(),
+      note: z.string().nullable(),
+      status: z.enum([
+        "Approved",
+        "Draft",
+        "Pending Employee Review",
+        "Posted",
+        "Rejected",
+        "Submitted"
+      ]),
+      createdAt: z.string(),
+      submittedAt: z.string().nullable(),
+      approvedAt: z.string().nullable(),
+      rejectionNote: z.string().nullable(),
+      costRate: z.number().nullable(),
+      reversalOfId: z.string().nullable(),
+      correctionReason: z.string().nullable(),
+      postedAt: z.string().nullable(),
+      project: z.object({
+        id: z.string(),
+        identifier: z.string().nullable(),
+        name: z.string()
+      }),
+      element: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string(),
+          isLeave: z.boolean()
+        })
+        .nullable(),
+      laborCategory: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      jobId: z.string().nullable(),
+      jobOperationId: z.string().nullable(),
+      job: z
+        .object({
+          id: z.string(),
+          jobId: z.string()
+        })
+        .nullable(),
+      jobOperation: z
+        .object({
+          id: z.string(),
+          description: z.string().nullable()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1188,6 +1539,18 @@ export const getProjectOpenTimesheetEntries = defineServiceFn({
  * @mcp read
  */
 export const getProjectCostSummary = defineServiceFn({
+  output: z.array(
+    z.object({
+      actual: z.number(),
+      actualHours: z.number(),
+      actualUnallowable: z.number(),
+      committed: z.number(),
+      planLabor: z.number(),
+      planMaterial: z.number(),
+      planOther: z.number(),
+      projectElementId: z.string()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1213,6 +1576,15 @@ export const getProjectCostSummary = defineServiceFn({
  * @mcp read
  */
 export const getProjectBurdenSummary = defineServiceFn({
+  output: z.array(
+    z.object({
+      amount: z.number(),
+      indirectPoolId: z.string(),
+      poolName: z.string(),
+      projectElementId: z.string(),
+      unallowableAmount: z.number()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1237,6 +1609,15 @@ export const getProjectBurdenSummary = defineServiceFn({
  * @mcp read
  */
 export const getRdComponents = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      readableId: z.string(),
+      name: z.string(),
+      rdComponentType: z.string().nullable(),
+      rdSoftwareType: z.string().nullable()
+    })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -1261,6 +1642,23 @@ export const getRdComponents = defineServiceFn({
  * @mcp read
  */
 export const getRdSection174AReport = defineServiceFn({
+  output: z.object({
+    taxYear: z.number(),
+    rows: z.array(
+      z.object({
+        componentId: z.string(),
+        readableId: z.string(),
+        name: z.string(),
+        domestic: z.number(),
+        foreign: z.number(),
+        unknown: z.number(),
+        burden: z.number(),
+        funded: z.number(),
+        total: z.number(),
+        isTotal: z.boolean()
+      })
+    )
+  }),
   input: z.object({ taxYear: z.number().int().optional() }),
   permission: { view: ["projects", "accounting"] },
   async run(ctx, { taxYear }) {
@@ -1293,6 +1691,14 @@ export const getRdSection174AReport = defineServiceFn({
  * @mcp read
  */
 export const getRdForm6765GReport = defineServiceFn({
+  output: z.object({
+    taxYear: z.number(),
+    ein: z.string().nullable(),
+    rows: z.array(z.unknown()),
+    officerWages: z.number(),
+    estimatedEmployeeCount: z.number(),
+    unknownCountryHours: z.number()
+  }),
   input: z.object({ taxYear: z.number().int().optional() }),
   permission: { view: ["projects", "accounting"] },
   async run(ctx, { taxYear }) {
@@ -1334,6 +1740,13 @@ export const getRdForm6765GReport = defineServiceFn({
  * @mcp read
  */
 export const getLaborDistributionPeriods = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      endDate: z.string(),
+      startDate: z.string()
+    })
+  ),
   input: z.object({}),
   permission: { view: ["projects", "people"] },
   async run(ctx) {
@@ -1356,6 +1769,14 @@ export const getLaborDistributionPeriods = defineServiceFn({
  * @mcp read
  */
 export const getLaborDistribution = defineServiceFn({
+  output: z.array(
+    z.object({
+      employeeId: z.string().nullable(),
+      employeeName: z.string().nullable(),
+      lines: z.array(z.unknown()),
+      total: z.unknown()
+    })
+  ),
   input: z.object({ periodId: z.string() }),
   permission: { view: ["projects", "people"] },
   async run(ctx, { periodId }) {
@@ -1411,6 +1832,24 @@ export const upsertProjectReportPin = defineServiceFn({
  * @mcp read
  */
 export const getProjectBaselines = defineServiceFn({
+  output: z.array(
+    rows.projectBaseline
+      .pick({
+        id: true,
+        projectId: true,
+        sequence: true,
+        name: true,
+        source: true,
+        milestoneId: true,
+        changeRequestId: true,
+        formatVersion: true,
+        elementCount: true,
+        linkCount: true,
+        createdBy: true,
+        createdAt: true
+      })
+      .meta({ table: "projectBaseline" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1434,6 +1873,7 @@ export const getProjectBaselines = defineServiceFn({
  * @mcp read
  */
 export const getProjectBaseline = defineServiceFn({
+  output: rows.projectBaseline,
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1486,6 +1926,33 @@ export const createProjectBaseline = defineServiceFn({
  * @mcp read
  */
 export const getProjectChangeRequests = defineServiceFn({
+  output: z.array(
+    rows.projectChangeRequest
+      .pick({
+        id: true,
+        projectId: true,
+        readableId: true,
+        title: true,
+        status: true,
+        submittedAt: true,
+        decidedBy: true,
+        decidedAt: true,
+        appliedAt: true,
+        baseBaselineId: true,
+        appliedBaselineId: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true
+      })
+      .extend({
+        items: z.array(
+          z.object({
+            count: z.number()
+          })
+        )
+      })
+      .meta({ table: "projectChangeRequest" })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -1509,6 +1976,84 @@ export const getProjectChangeRequests = defineServiceFn({
  * @mcp read
  */
 export const getProjectChangeRequest = defineServiceFn({
+  output: rows.projectChangeRequest
+    .pick({
+      appliedAt: true,
+      appliedBaselineId: true,
+      baseBaselineId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      decidedAt: true,
+      decidedBy: true,
+      decisionNotes: true,
+      id: true,
+      projectId: true,
+      readableId: true,
+      status: true,
+      submittedAt: true,
+      title: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      reason: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "projectChangeRequest" }),
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2192,6 +2737,74 @@ const sortOrderUpdates = z.array(
  * @mcp read
  */
 export const getProjectElements = defineServiceFn({
+  output: z.array(
+    rows.projectElement
+      .pick({
+        id: true,
+        projectId: true,
+        readableId: true,
+        sequence: true,
+        wbsCode: true,
+        type: true,
+        parentId: true,
+        name: true,
+        stateId: true,
+        ownerId: true,
+        priority: true,
+        milestoneId: true,
+        startDate: true,
+        targetDate: true,
+        completedAt: true,
+        estimatedHours: true,
+        isChargeable: true,
+        isUnallowable: true,
+        isBusinessComponent: true,
+        isControlAccount: true,
+        earnedValueTechnique: true,
+        budget: true,
+        itemId: true,
+        sortOrder: true,
+        createdAt: true,
+        updatedAt: true,
+        requirementCategory: true,
+        targetOperator: true,
+        targetValue: true,
+        targetUpperValue: true,
+        targetUnit: true,
+        verificationMethod: true,
+        actualParameterId: true,
+        qualityDocumentId: true,
+        verdict: true,
+        verdictAt: true,
+        verdictBy: true,
+        parameterValue: true,
+        parameterUnit: true,
+        parameterSource: true,
+        parameterFormula: true,
+        parameterItemField: true,
+        parameterContingencyPercent: true,
+        allocationPercent: true
+      })
+      .extend({
+        state: z.object({
+          name: z.string(),
+          group: z.enum([
+            "Backlog",
+            "Cancelled",
+            "Completed",
+            "Started",
+            "Unstarted"
+          ]),
+          color: z.string()
+        }),
+        labels: z.array(
+          z.object({
+            projectLabelId: z.string()
+          })
+        )
+      })
+      .meta({ table: "projectElement" })
+  ),
   input: z.object({
     projectId: z.string(),
     type: z.array(z.enum(projectElementTypes)).nullish(),
@@ -2225,6 +2838,38 @@ export const getProjectElements = defineServiceFn({
  * @mcp read
  */
 export const getProjectElementDescriptions = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      description: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2248,6 +2893,253 @@ export const getProjectElementDescriptions = defineServiceFn({
  * @mcp read
  */
 export const getProjectElement = defineServiceFn({
+  output: rows.projectElement
+    .pick({
+      actualParameterId: true,
+      allocationPercent: true,
+      apportionedFactor: true,
+      apportionedToElementId: true,
+      budget: true,
+      companyId: true,
+      completedAt: true,
+      controlAccountManagerId: true,
+      costAccountId: true,
+      costTreatment: true,
+      costTreatmentEffectiveFrom: true,
+      createdAt: true,
+      createdBy: true,
+      earnedValuePercent: true,
+      earnedValueTechnique: true,
+      estimateAtCompletion: true,
+      estimatedHours: true,
+      fixedAssetId: true,
+      fixedPrice: true,
+      id: true,
+      isBilling: true,
+      isBusinessComponent: true,
+      isChargeable: true,
+      isControlAccount: true,
+      isFinalAsset: true,
+      isLeave: true,
+      isPreproduction: true,
+      isUnallowable: true,
+      itemId: true,
+      milestoneId: true,
+      name: true,
+      ownerId: true,
+      parameterContingencyPercent: true,
+      parameterFormula: true,
+      parameterItemField: true,
+      parameterSource: true,
+      parameterUnit: true,
+      parameterValue: true,
+      parentId: true,
+      priority: true,
+      projectId: true,
+      qualityDocumentId: true,
+      rdComponentType: true,
+      rdSoftwareType: true,
+      readableId: true,
+      requirementCategory: true,
+      sequence: true,
+      sortOrder: true,
+      startDate: true,
+      stateId: true,
+      targetDate: true,
+      targetOperator: true,
+      targetUnit: true,
+      targetUpperValue: true,
+      targetValue: true,
+      trackedEntityId: true,
+      type: true,
+      updatedAt: true,
+      updatedBy: true,
+      verdict: true,
+      verdictAt: true,
+      verdictBy: true,
+      verificationMethod: true,
+      wbsCode: true
+    })
+    .extend({
+      parent: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      description: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      state: z.object({
+        id: z.string(),
+        name: z.string(),
+        group: z.enum([
+          "Backlog",
+          "Cancelled",
+          "Completed",
+          "Started",
+          "Unstarted"
+        ]),
+        color: z.string()
+      }),
+      owner: z
+        .object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+        .nullable(),
+      milestone: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          endDate: z.string().nullable()
+        })
+        .nullable(),
+      labels: z.array(
+        z.object({
+          projectLabelId: z.string()
+        })
+      ),
+      item: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string(),
+          type: z.enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ]),
+          thumbnailPath: z.string().nullable(),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ])
+        })
+        .nullable(),
+      trackedEntity: z
+        .object({
+          id: z.string(),
+          readableId: z.string().nullable()
+        })
+        .nullable()
+    })
+    .meta({ table: "projectElement" }),
   input: z.object({ id: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2278,6 +3170,9 @@ export const getProjectElement = defineServiceFn({
  * @mcp
  */
 export const createProjectElement = defineServiceFn({
+  output: rows.projectElement
+    .pick({ id: true, readableId: true })
+    .meta({ table: "projectElement" }),
   input: projectElementValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2340,6 +3235,9 @@ export const createProjectElement = defineServiceFn({
  * @mcp
  */
 export const updateProjectElementField = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: projectElementFieldUpdateValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2428,6 +3326,9 @@ export const updateProjectElementField = defineServiceFn({
  * @mcp
  */
 export const updateProjectElementBilling = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     projectId: z.string(),
     ids: z.array(z.string().min(1)).min(1, { message: "Choose an element" }),
@@ -2464,6 +3365,10 @@ export const updateProjectElementBilling = defineServiceFn({
  * @mcp destructive
  */
 export const setProjectElementLabels = defineServiceFn({
+  output: z.object({
+    added: z.array(z.string()),
+    removed: z.array(z.string())
+  }),
   input: z.object({
     projectId: z.string(),
     projectElementId: z.string(),
@@ -2585,6 +3490,9 @@ export const moveProjectElement = defineServiceFn({
  * @mcp
  */
 export const updateProjectElementOrder = defineServiceFn({
+  output: z.object({
+    count: z.number()
+  }),
   input: z.object({
     projectId: z.string(),
     updates: sortOrderUpdates,
@@ -2641,6 +3549,17 @@ export const updateProjectElementOrder = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectElement = defineServiceFn({
+  output: z.union([
+    z.object({
+      elementId: z.string(),
+      changeRequestId: z.string()
+    }),
+    z.object({
+      elementId: z.string(),
+      changeRequestId: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     projectId: z.string(),
     elementId: z.string(),
@@ -2739,6 +3658,7 @@ export const updateProjectElementEarnedValue = defineServiceFn({
  * @mcp read
  */
 export const getProjectElementLinks = defineServiceFn({
+  output: z.array(rows.projectElementLink),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2765,6 +3685,9 @@ export const getProjectElementLinks = defineServiceFn({
  * @mcp
  */
 export const upsertProjectElementLink = defineServiceFn({
+  output: rows.projectElementLink
+    .pick({ id: true })
+    .meta({ table: "projectElementLink" }),
   input: projectElementLinkValidator.safeExtend({
     projectId: z.string(),
     changeRequestId: changeRequestIdField
@@ -2816,6 +3739,9 @@ export const upsertProjectElementLink = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectElementLink = defineServiceFn({
+  output: rows.projectElementLink
+    .pick({ id: true })
+    .meta({ table: "projectElementLink" }),
   input: z.object({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" }),
@@ -2870,6 +3796,11 @@ export const deleteProjectElementLink = defineServiceFn({
  * @mcp
  */
 export const clearSuspectLink = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.object({
     projectId: z.string(),
     id: z.string().min(1, { message: "No link selected" })
@@ -2950,6 +3881,18 @@ export const saveParameterFormula = defineServiceFn({
  * @mcp read
  */
 export const getProjectElementComments = defineServiceFn({
+  output: z.array(
+    rows.projectElementComment
+      .pick({ id: true, content: true, createdAt: true, updatedAt: true })
+      .extend({
+        createdBy: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "projectElementComment" })
+  ),
   input: z.object({ projectElementId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2973,6 +3916,9 @@ export const getProjectElementComments = defineServiceFn({
  * @mcp
  */
 export const insertProjectElementComment = defineServiceFn({
+  output: rows.projectElementComment
+    .pick({ id: true })
+    .meta({ table: "projectElementComment" }),
   input: projectElementCommentValidator,
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -2996,6 +3942,11 @@ export const insertProjectElementComment = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectElementComment = defineServiceFn({
+  output: z.array(
+    rows.projectElementComment
+      .pick({ id: true })
+      .meta({ table: "projectElementComment" })
+  ),
   input: z.object({
     id: z.string().min(1, { message: "No comment was given" })
   }),
@@ -3026,6 +3977,87 @@ export const deleteProjectElementComment = defineServiceFn({
  * @mcp read
  */
 export const getProjectElementPlanLines = defineServiceFn({
+  output: z.object({
+    materials: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        id: z.string(),
+        itemId: z.string(),
+        jobId: z.string().nullable(),
+        methodType: z.enum([
+          "Make to Order",
+          "Pull from Inventory",
+          "Purchase to Order"
+        ]),
+        projectElementId: z.string(),
+        projectId: z.string(),
+        purchaseOrderLineId: z.string().nullable(),
+        quantity: z.number(),
+        quantityIssued: z.number(),
+        requiredDate: z.string().nullable(),
+        unitCost: z.number().nullable(),
+        unitOfMeasureCode: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        item: z.object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string()
+        }),
+        job: z
+          .object({
+            id: z.string(),
+            jobId: z.string()
+          })
+          .nullable(),
+        purchaseOrderLine: z
+          .object({
+            id: z.string(),
+            purchaseOrder: z.object({
+              id: z.string(),
+              purchaseOrderId: z.string()
+            })
+          })
+          .nullable()
+      })
+    ),
+    labor: z.array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        endDate: z.string().nullable(),
+        hours: z.number(),
+        id: z.string(),
+        laborCategoryId: z.string(),
+        projectElementId: z.string(),
+        projectId: z.string(),
+        startDate: z.string().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        laborCategory: z.object({
+          id: z.string(),
+          name: z.string()
+        })
+      })
+    ),
+    costs: z.array(
+      z.object({
+        amount: z.number(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        description: z.string(),
+        id: z.string(),
+        projectElementId: z.string(),
+        projectId: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+  }),
   input: z.object({ projectElementId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -3052,6 +4084,9 @@ export const getProjectElementPlanLines = defineServiceFn({
  * @mcp
  */
 export const upsertProjectElementMaterial = defineServiceFn({
+  output: rows.projectElementMaterial
+    .pick({ id: true })
+    .meta({ table: "projectElementMaterial" }),
   input: projectElementMaterialValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3110,6 +4145,9 @@ export const upsertProjectElementMaterial = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectElementMaterial = defineServiceFn({
+  output: rows.projectElementMaterial
+    .pick({ id: true })
+    .meta({ table: "projectElementMaterial" }),
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3161,6 +4199,9 @@ export const deleteProjectElementMaterial = defineServiceFn({
  * @mcp
  */
 export const upsertProjectElementLabor = defineServiceFn({
+  output: rows.projectElementLabor
+    .pick({ id: true })
+    .meta({ table: "projectElementLabor" }),
   input: projectElementLaborValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3219,6 +4260,9 @@ export const upsertProjectElementLabor = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectElementLabor = defineServiceFn({
+  output: rows.projectElementLabor
+    .pick({ id: true })
+    .meta({ table: "projectElementLabor" }),
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3270,6 +4314,9 @@ export const deleteProjectElementLabor = defineServiceFn({
  * @mcp
  */
 export const upsertProjectElementCost = defineServiceFn({
+  output: rows.projectElementCost
+    .pick({ id: true })
+    .meta({ table: "projectElementCost" }),
   input: projectElementCostValidator.extend({
     projectId: z.string(),
     changeRequestId: z.string().nullish()
@@ -3328,6 +4375,9 @@ export const upsertProjectElementCost = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectElementCost = defineServiceFn({
+  output: rows.projectElementCost
+    .pick({ id: true })
+    .meta({ table: "projectElementCost" }),
   input: z.object({
     id: z.string().min(1),
     projectId: z.string(),
@@ -3383,6 +4433,13 @@ export const deleteProjectElementCost = defineServiceFn({
  * @mcp read
  */
 export const getProjectItemValues = defineServiceFn({
+  output: z.record(
+    z.string(),
+    z.object({
+      unitCost: z.number().nullable(),
+      customFields: z.record(z.string(), z.unknown()).nullable()
+    })
+  ),
   input: z.object({ itemIds: z.array(z.string()) }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -3410,6 +4467,12 @@ export const getProjectItemValues = defineServiceFn({
  * @mcp read
  */
 export const getElementHistoryByItem = defineServiceFn({
+  output: z.object({
+    averageHours: z.number(),
+    averageMaterialCost: z.number(),
+    elementCount: z.number(),
+    lastPostingDate: z.string()
+  }),
   input: z.object({ itemId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -3434,6 +4497,16 @@ export const getElementHistoryByItem = defineServiceFn({
  * @mcp read
  */
 export const getItemNumericCustomFields = defineServiceFn({
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        id: z.string(),
+        name: z.string()
+      })
+    ),
+    z.null()
+  ]),
   input: z.object({
     itemType: z.enum([
       "Part",
@@ -3984,6 +5057,7 @@ export const createProjectPurchaseOrderLine = defineServiceFn({
  * @mcp read
  */
 export const getProjectPegs = defineServiceFn({
+  output: z.array(z.unknown()),
   input: z.object({
     projectId: z.string(),
     asOf: z
@@ -4074,6 +5148,15 @@ export const createManualPeg = defineServiceFn({
  * @mcp
  */
 export const placeProjectAssetsInService = defineServiceFn({
+  output: z.object({
+    results: z.array(
+      z.object({
+        fixedAssetId: z.string(),
+        label: z.string(),
+        error: z.string().nullable()
+      })
+    )
+  }),
   input: placeInServiceValidator.extend({ projectId: z.string() }),
   permission: { update: "projects", create: "accounting" },
   async run(ctx, { projectId, fixedAssetIds, toClassId, inServiceDate }) {
@@ -4164,6 +5247,36 @@ export const placeProjectAssetsInService = defineServiceFn({
  * @mcp read
  */
 export const getLaborCategories = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        description: z.string().nullable(),
+        id: z.string(),
+        name: z.string(),
+        rdActivityRole: z
+          .enum([
+            "Direct Research",
+            "Direct Supervision",
+            "Direct Support",
+            "Not Qualified"
+          ])
+          .nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        rates: z.array(
+          z.object({
+            costRate: z.number(),
+            billRate: z.number().nullable(),
+            effectiveFrom: z.string()
+          })
+        )
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -4195,6 +5308,7 @@ export const getLaborCategories = defineServiceFn({
  * @mcp read
  */
 export const getLaborCategory = defineServiceFn({
+  output: rows.laborCategory,
   input: z.object({ id: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { id }) {
@@ -4211,6 +5325,20 @@ export const getLaborCategory = defineServiceFn({
  * @mcp read
  */
 export const getLaborCategoriesList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      rdActivityRole: z
+        .enum([
+          "Direct Research",
+          "Direct Supervision",
+          "Direct Support",
+          "Not Qualified"
+        ])
+        .nullable()
+    })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -4234,6 +5362,9 @@ export const getLaborCategoriesList = defineServiceFn({
  * @mcp
  */
 export const upsertLaborCategory = defineServiceFn({
+  output: rows.laborCategory
+    .pick({ id: true })
+    .meta({ table: "laborCategory" }),
   input: laborCategoryValidator,
   // Create and update need different permissions: the body decides.
   permission: {},
@@ -4272,6 +5403,7 @@ export const upsertLaborCategory = defineServiceFn({
  * @mcp read
  */
 export const getLaborCategoryRates = defineServiceFn({
+  output: z.array(rows.laborCategoryRate),
   input: z.object({ laborCategoryId: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { laborCategoryId }) {
@@ -4297,6 +5429,9 @@ export const getLaborCategoryRates = defineServiceFn({
  * @mcp
  */
 export const upsertLaborCategoryRate = defineServiceFn({
+  output: rows.laborCategoryRate
+    .pick({ id: true })
+    .meta({ table: "laborCategoryRate" }),
   input: laborCategoryRateValidator,
   permission: { update: "projects" },
   async run(ctx, { id, ...rate }) {
@@ -4331,6 +5466,80 @@ export const upsertLaborCategoryRate = defineServiceFn({
  * @mcp read
  */
 export const getTimesheetWeek = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      employeeId: z.string(),
+      entryDate: z.string(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      laborCategoryId: z.string(),
+      workLocationId: z.string().nullable(),
+      rdActivityRole: z
+        .enum([
+          "Direct Research",
+          "Direct Supervision",
+          "Direct Support",
+          "Not Qualified"
+        ])
+        .nullable(),
+      workLocation: z
+        .object({
+          id: z.string(),
+          name: z.string()
+        })
+        .nullable(),
+      hours: z.number(),
+      note: z.string().nullable(),
+      status: z.enum([
+        "Approved",
+        "Draft",
+        "Pending Employee Review",
+        "Posted",
+        "Rejected",
+        "Submitted"
+      ]),
+      createdAt: z.string(),
+      submittedAt: z.string().nullable(),
+      approvedAt: z.string().nullable(),
+      rejectionNote: z.string().nullable(),
+      costRate: z.number().nullable(),
+      reversalOfId: z.string().nullable(),
+      correctionReason: z.string().nullable(),
+      postedAt: z.string().nullable(),
+      project: z.object({
+        id: z.string(),
+        identifier: z.string().nullable(),
+        name: z.string()
+      }),
+      element: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string(),
+          isLeave: z.boolean()
+        })
+        .nullable(),
+      laborCategory: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      jobId: z.string().nullable(),
+      jobOperationId: z.string().nullable(),
+      job: z
+        .object({
+          id: z.string(),
+          jobId: z.string()
+        })
+        .nullable(),
+      jobOperation: z
+        .object({
+          id: z.string(),
+          description: z.string().nullable()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({
     employeeId: z.string().min(1).optional(),
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -4365,6 +5574,20 @@ export const getTimesheetWeek = defineServiceFn({
  * @mcp
  */
 export const saveTimesheetEntry = defineServiceFn({
+  output: z.object({
+    warning: z.string().nullable(),
+    entryId: z.string().nullable(),
+    status: z
+      .enum([
+        "Approved",
+        "Draft",
+        "Pending Employee Review",
+        "Posted",
+        "Rejected",
+        "Submitted"
+      ])
+      .nullable()
+  }),
   input: saveTimesheetEntryInput.extend({
     employeeId: z.string().min(1).optional(),
     projectElementId: z.string().nullable().optional(),
@@ -4440,6 +5663,38 @@ export const saveTimesheetEntry = defineServiceFn({
  * @mcp
  */
 export const logTimesheetEntry = defineServiceFn({
+  output: z.union([
+    z.object({
+      entryId: z.string(),
+      status: z
+        .enum([
+          "Approved",
+          "Draft",
+          "Pending Employee Review",
+          "Posted",
+          "Rejected"
+        ])
+        .nullable(),
+      outcome: z.literal("saved"),
+      warning: z.string().nullable(),
+      postingError: z.null()
+    }),
+    z.object({
+      entryId: z.string(),
+      status: z.literal("Submitted"),
+      outcome: z.literal("submitted"),
+      warning: z.string().nullable(),
+      postingError: z.null()
+    }),
+    z.object({
+      entryId: z.string(),
+      status: z.literal("Submitted"),
+      outcome: z.literal("posted"),
+      warning: z.string().nullable(),
+      postingError: z.string().nullable()
+    }),
+    z.null()
+  ]),
   input: logTimeValidator,
   permission: {},
   async run(ctx, input) {
@@ -4602,6 +5857,10 @@ export const postTimesheet = defineServiceFn({
  * @mcp
  */
 export const approveTimesheetEntries = defineServiceFn({
+  output: z.object({
+    approvedIds: z.array(z.string()),
+    postingError: z.string().nullable()
+  }),
   input: z.object({ ids: z.array(z.string().min(1)).min(1) }),
   permission: { update: "projects" },
   async run(ctx, { ids }) {
@@ -4665,6 +5924,9 @@ export const approveTimesheetEntries = defineServiceFn({
  * @mcp
  */
 export const rejectTimesheetEntries = defineServiceFn({
+  output: z.object({
+    rejectedIds: z.array(z.string())
+  }),
   input: z.object({
     ids: z.array(z.string().min(1)).min(1),
     note: z.string()
@@ -4707,6 +5969,30 @@ export const rejectTimesheetEntries = defineServiceFn({
  * @mcp
  */
 export const createTimesheetCorrection = defineServiceFn({
+  output: z.union([
+    z.object({
+      outcome: z.literal("transferAwaitingApproval"),
+      postingError: z.null(),
+      reversalId: z.string(),
+      replacementId: z.string().nullable(),
+      isTransfer: z.boolean()
+    }),
+    z.object({
+      outcome: z.literal("awaitingApproval"),
+      postingError: z.null(),
+      reversalId: z.string(),
+      replacementId: z.string().nullable(),
+      isTransfer: z.boolean()
+    }),
+    z.object({
+      outcome: z.literal("posted"),
+      postingError: z.string().nullable(),
+      reversalId: z.string(),
+      replacementId: z.string().nullable(),
+      isTransfer: z.boolean()
+    }),
+    z.null()
+  ]),
   input: timesheetCorrectionValidator,
   permission: {},
   async run(ctx, input) {
@@ -4829,6 +6115,75 @@ export const acceptTimesheetReview = defineServiceFn({
  * @mcp read
  */
 export const getTimesheetRevisions = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      timesheetEntryId: z.string(),
+      employeeId: z.string(),
+      revisedBy: z.string(),
+      revisedAt: z.string(),
+      reason: z.string(),
+      before: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      after: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      reviser: z.object({
+        id: z.string(),
+        fullName: z.string().nullable(),
+        avatarUrl: z.string().nullable()
+      })
+    })
+  ),
   input: z.object({ timesheetEntryId: z.string().min(1) }),
   permission: { view: "projects" },
   async run(ctx, { timesheetEntryId }) {
@@ -4852,6 +6207,98 @@ export const getTimesheetRevisions = defineServiceFn({
  * @mcp read
  */
 export const getPendingReviewEntries = defineServiceFn({
+  output: z.array(
+    z.object({
+      revision: z
+        .object({
+          id: z.string(),
+          timesheetEntryId: z.string(),
+          employeeId: z.string(),
+          revisedBy: z.string(),
+          revisedAt: z.string(),
+          reason: z.string(),
+          before: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          after: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          reviser: z.object({
+            id: z.string(),
+            fullName: z.string().nullable(),
+            avatarUrl: z.string().nullable()
+          })
+        })
+        .nullable(),
+      id: z.string(),
+      entryDate: z.string(),
+      hours: z.number(),
+      projectId: z.string(),
+      projectElementId: z.string().nullable(),
+      laborCategoryId: z.string(),
+      note: z.string().nullable(),
+      project: z.object({
+        id: z.string(),
+        name: z.string(),
+        identifier: z.string().nullable()
+      }),
+      element: z
+        .object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({ employeeId: z.string().min(1).optional() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -4874,6 +6321,9 @@ export const getPendingReviewEntries = defineServiceFn({
  * @mcp read
  */
 export const getTimesheetApprovalCount = defineServiceFn({
+  output: z.object({
+    count: z.number()
+  }),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -4902,6 +6352,20 @@ export const getTimesheetApprovalCount = defineServiceFn({
  * @mcp read
  */
 export const getTimesheetApprovals = defineServiceFn({
+  output: z.array(
+    z.object({
+      key: z.string(),
+      employeeId: z.string(),
+      employee: z.object({
+        id: z.string(),
+        fullName: z.string().nullable(),
+        avatarUrl: z.string().nullable()
+      }),
+      weekStart: z.string(),
+      entries: z.array(z.unknown()),
+      totalHours: z.number()
+    })
+  ),
   input: z.object({ ownerId: z.string().min(1).nullable().optional() }),
   permission: { view: "projects" },
   async run(ctx, input) {
@@ -5031,6 +6495,9 @@ export const updateTimesheetRequired = defineServiceFn({
  * @mcp
  */
 export const createProjectExpense = defineServiceFn({
+  output: z.object({
+    budgetWarning: z.string().nullable()
+  }),
   input: projectExpenseValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -5072,6 +6539,14 @@ export const createProjectExpense = defineServiceFn({
  * @mcp
  */
 export const postProjectIssue = defineServiceFn({
+  output: z.object({
+    budgetWarning: z.string().nullable(),
+    success: z.boolean(),
+    itemLedgerId: z.string(),
+    journalId: z.string().nullable(),
+    cost: z.number(),
+    projectLedgerId: z.string().nullable()
+  }),
   input: projectIssueValidator,
   permission: { update: ["inventory", "projects"] },
   async run(ctx, input) {
@@ -5124,6 +6599,29 @@ export const postProjectIssue = defineServiceFn({
  * @mcp read
  */
 export const getProjectBillingElements = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      readableId: z.string(),
+      name: z.string(),
+      type: z.enum([
+        "Function",
+        "Parameter",
+        "Requirement",
+        "System",
+        "Task",
+        "Test Case"
+      ]),
+      project: z.object({
+        costTreatment: z.enum([
+          "Capitalize",
+          "Contract",
+          "Expense",
+          "Statistical"
+        ])
+      })
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectId }) {
@@ -5149,6 +6647,76 @@ export const getProjectBillingElements = defineServiceFn({
  * @mcp read
  */
 export const getContractBillableItems = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        id: z.string(),
+        projectId: z.string(),
+        projectElementId: z.string().nullable(),
+        projectLedgerId: z.string().nullable(),
+        customerContractLineId: z.string().nullable(),
+        itemId: z.string().nullable(),
+        description: z.string(),
+        quantity: z.number(),
+        unitPrice: z.number(),
+        amount: z.number(),
+        status: z.enum(["Billed", "On Hold", "Unbilled", "Written Off"]),
+        statusReason: z.string().nullable(),
+        reversalOfId: z.string().nullable(),
+        salesInvoiceLineId: z.string().nullable(),
+        voidedSalesInvoiceId: z.string().nullable(),
+        createdAt: z.string(),
+        ledger: z
+          .object({
+            postingDate: z.string(),
+            costType: z.enum([
+              "Burden",
+              "Labor",
+              "Machine",
+              "Material",
+              "Material Variance",
+              "Other Direct",
+              "Outside Processing",
+              "Overhead",
+              "Payback Variance",
+              "Purchased Service"
+            ]),
+            documentType: z.string(),
+            documentId: z.string(),
+            employeeId: z.string().nullable(),
+            laborCategoryId: z.string().nullable(),
+            quantity: z.number().nullable(),
+            amount: z.number()
+          })
+          .nullable(),
+        element: z
+          .object({
+            id: z.string(),
+            readableId: z.string(),
+            name: z.string()
+          })
+          .nullable(),
+        project: z.object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        }),
+        contractLine: z
+          .object({
+            id: z.string(),
+            customerContractId: z.string(),
+            billingMethod: z.enum(["Cost Plus", "Fixed", "Time & Materials"]),
+            description: z.string().nullable()
+          })
+          .nullable(),
+        invoiceLine: z
+          .object({
+            invoiceId: z.string()
+          })
+          .nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     customerContractLineId: z.string().nullable().optional(),
     projectId: z.string().nullable().optional(),
@@ -5185,6 +6753,42 @@ export const getContractBillableItems = defineServiceFn({
  * @mcp read
  */
 export const getContractBillingLines = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      customerContractId: z.string(),
+      projectId: z.string().nullable(),
+      projectElementId: z.string().nullable(),
+      billingMethod: z.enum(["Cost Plus", "Fixed", "Time & Materials"]),
+      revenueMethod: z.enum([
+        "Daily",
+        "Even Period",
+        "Percent Complete",
+        "Right to Invoice"
+      ]),
+      description: z.string().nullable(),
+      fundedAmount: z.number().nullable(),
+      fundedCost: z.number().nullable(),
+      ceilingAmount: z.number().nullable(),
+      noticePercent: z.number(),
+      startDate: z.string(),
+      endDate: z.string().nullable(),
+      item: z.object({
+        name: z.string()
+      }),
+      contract: z.object({
+        id: z.string(),
+        customerContractId: z.string(),
+        status: z.enum(["Active", "Draft", "Ended"])
+      }),
+      element: z
+        .object({
+          readableId: z.string(),
+          name: z.string()
+        })
+        .nullable()
+    })
+  ),
   input: z.object({ projectId: z.string().nullable().optional() }),
   permission: { view: ["projects", "sales"] },
   async run(ctx, { projectId }) {
@@ -5216,6 +6820,11 @@ export const getContractBillingLines = defineServiceFn({
  * @mcp
  */
 export const updateProjectBillableItems = defineServiceFn({
+  output: z.array(
+    rows.projectBillableItem
+      .pick({ id: true })
+      .meta({ table: "projectBillableItem" })
+  ),
   input: billableItemActionValidator,
   // Billing review is contract billing: it also needs the sales permission.
   permission: { update: "projects", view: "sales" },
@@ -5243,6 +6852,30 @@ export const updateProjectBillableItems = defineServiceFn({
  * @mcp read
  */
 export const getPlanningGroups = defineServiceFn({
+  output: z
+    .array(
+      rows.planningGroup
+        .extend({
+          location: z.object({
+            id: z.string(),
+            name: z.string()
+          }),
+          exceptionProject: z
+            .object({
+              id: z.string(),
+              identifier: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable(),
+          members: z.array(
+            z.object({
+              count: z.number()
+            })
+          )
+        })
+        .meta({ table: "planningGroup" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -5271,6 +6904,26 @@ export const getPlanningGroups = defineServiceFn({
  * @mcp read
  */
 export const getPlanningGroup = defineServiceFn({
+  output: rows.planningGroup
+    .extend({
+      location: z.object({
+        id: z.string(),
+        name: z.string()
+      }),
+      exceptionProject: z
+        .object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable(),
+      members: z.array(
+        z.object({
+          count: z.number()
+        })
+      )
+    })
+    .meta({ table: "planningGroup" }),
   input: z.object({ planningGroupId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -5294,6 +6947,11 @@ export const getPlanningGroup = defineServiceFn({
  * @mcp read
  */
 export const getPlanningGroupsList = defineServiceFn({
+  output: z.array(
+    rows.planningGroup
+      .pick({ id: true, name: true, locationId: true })
+      .meta({ table: "planningGroup" })
+  ),
   input: z.object({}),
   permission: { view: "projects" },
   async run(ctx) {
@@ -5314,6 +6972,21 @@ export const getPlanningGroupsList = defineServiceFn({
  * @mcp read
  */
 export const getPlanningGroupMembers = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      identifier: z.string().nullable(),
+      name: z.string(),
+      planningPriority: z.number(),
+      status: z.enum([
+        "Closed",
+        "Draft",
+        "On Hold",
+        "Released",
+        "Technically Complete"
+      ])
+    })
+  ),
   input: z.object({ planningGroupId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -5395,6 +7068,9 @@ export const upsertPlanningGroup = defineServiceFn({
  * @mcp destructive
  */
 export const deletePlanningGroup = defineServiceFn({
+  output: z.object({
+    planningGroupId: z.string()
+  }),
   input: z.object({ planningGroupId: z.string() }),
   permission: { delete: "projects" },
   async run(ctx, { planningGroupId }) {
@@ -5420,6 +7096,28 @@ export const deletePlanningGroup = defineServiceFn({
  * @mcp read
  */
 export const getProjectStockTransfers = defineServiceFn({
+  output: z
+    .array(
+      rows.projectStockTransfer
+        .extend({
+          fromProject: z
+            .object({
+              id: z.string(),
+              identifier: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable(),
+          toProject: z
+            .object({
+              id: z.string(),
+              identifier: z.string().nullable(),
+              name: z.string()
+            })
+            .nullable()
+        })
+        .meta({ table: "projectStockTransfer" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -5452,6 +7150,24 @@ export const getProjectStockTransfers = defineServiceFn({
  * @mcp read
  */
 export const getProjectStockTransfer = defineServiceFn({
+  output: rows.projectStockTransfer
+    .extend({
+      fromProject: z
+        .object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable(),
+      toProject: z
+        .object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "projectStockTransfer" }),
   input: z.object({ projectStockTransferId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectStockTransferId }) {
@@ -5475,6 +7191,24 @@ export const getProjectStockTransfer = defineServiceFn({
  * @mcp read
  */
 export const getProjectStockTransferLines = defineServiceFn({
+  output: z.array(
+    rows.projectStockTransferLine
+      .extend({
+        storageUnit: z
+          .object({
+            id: z.string(),
+            name: z.string()
+          })
+          .nullable(),
+        trackedEntity: z
+          .object({
+            id: z.string(),
+            readableId: z.string().nullable()
+          })
+          .nullable()
+      })
+      .meta({ table: "projectStockTransferLine" })
+  ),
   input: z.object({ projectStockTransferId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectStockTransferId }) {
@@ -5503,6 +7237,9 @@ export const getProjectStockTransferLines = defineServiceFn({
  * @mcp
  */
 export const upsertProjectStockTransfer = defineServiceFn({
+  output: rows.projectStockTransfer
+    .pick({ id: true })
+    .meta({ table: "projectStockTransfer" }),
   input: projectStockTransferValidator,
   permission: { update: "projects" },
   async run(ctx, input) {
@@ -5603,6 +7340,9 @@ export const upsertProjectStockTransfer = defineServiceFn({
  * @mcp
  */
 export const upsertProjectStockTransferLine = defineServiceFn({
+  output: rows.projectStockTransferLine
+    .pick({ id: true })
+    .meta({ table: "projectStockTransferLine" }),
   input: projectStockTransferLineValidator.extend({
     projectStockTransferId: z.string()
   }),
@@ -5628,6 +7368,9 @@ export const upsertProjectStockTransferLine = defineServiceFn({
  * @mcp destructive
  */
 export const deleteProjectStockTransferLine = defineServiceFn({
+  output: rows.projectStockTransferLine
+    .pick({ id: true })
+    .meta({ table: "projectStockTransferLine" }),
   input: z.object({ id: z.string(), projectStockTransferId: z.string() }),
   permission: { update: "projects" },
   async run(ctx, { id, projectStockTransferId }) {
@@ -5675,6 +7418,16 @@ export const postProjectStockTransfer = defineServiceFn({
  * @mcp
  */
 export const updateProjectStockTransferStatus = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string()
+    }),
+    z.object({
+      success: z.boolean(),
+      journalId: z.string().nullable()
+    }),
+    z.null()
+  ]),
   input: z.object({
     id: z.string(),
     action: z.enum(projectStockTransferActions)
@@ -5712,6 +7465,22 @@ export const updateProjectStockTransferStatus = defineServiceFn({
  * @mcp read
  */
 export const getProjectBorrows = defineServiceFn({
+  output: z.array(
+    rows.projectBorrow
+      .extend({
+        borrower: z.object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        }),
+        lender: z.object({
+          id: z.string(),
+          identifier: z.string().nullable(),
+          name: z.string()
+        })
+      })
+      .meta({ table: "projectBorrow" })
+  ),
   input: z.object({
     projectId: z.string().nullable().optional(),
     status: z.array(z.enum(projectBorrowStatuses)).nullable().optional(),
@@ -5741,6 +7510,17 @@ export const getProjectBorrows = defineServiceFn({
  * @mcp read
  */
 export const getProjectStockOnHand = defineServiceFn({
+  output: z.array(
+    z.object({
+      quantity: z.number(),
+      itemId: z.string(),
+      trackedEntityId: z.string().nullable(),
+      locationId: z.string().nullable(),
+      storageUnitId: z.string().nullable(),
+      storageUnitName: z.string().nullable(),
+      trackedEntityReadableId: z.string().nullable()
+    })
+  ),
   input: z.object({ projectId: z.string() }),
   permission: { view: "projects" },
   async run(ctx, { projectId }) {
