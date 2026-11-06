@@ -338,10 +338,43 @@ type Outcome<R> = Result<
   Extract<R, CarbonError> | CarbonError<"internal" | "validation" | "forbidden">
 >;
 
+/**
+ * Whether, and how, an operation is on the API and the MCP. `true` classifies
+ * it from its permission (view only → READ, any delete → DESTRUCTIVE, else
+ * WRITE); `"read"` publishes a read gated on membership alone as READ;
+ * `"destructive"` marks a write that destroys data as DESTRUCTIVE, so an agent
+ * asks before it runs. Unset means a function the app calls and nobody else.
+ */
+export type Publish = true | "read" | "destructive";
+
+/** What a published operation says about itself, beside its input and permission. */
+export type ServiceFnDocs = {
+  /** The operation's name for a person: a plain sentence, no trailing period. */
+  title: string;
+  /** What it does, refuses and returns, for the agent and the API docs. */
+  description?: string;
+  /**
+   * The shape of what `run` returns, as the API sends it: a row schema from
+   * `@carbon/database/row-schemas` (`rows.customer`, `z.array(rows.customer)`
+   * for a list, including a `paged()` one, whose `{ results, count }` envelope
+   * is the dispatcher's), a `.pick()` or `.extend()` of one, or a zod schema
+   * of a custom shape. The catalog publishes it as the operation's response
+   * schema (`describe_tool`'s Returns, the OpenAPI response) and reads the
+   * table a list returns from the row schema's `meta.table`, which is how it
+   * tells callers where an id comes from. CI checks it against the real return
+   * type. Left out when `run` returns nothing.
+   */
+  output?: z.ZodType;
+};
+
 export type ServiceFn<I extends z.ZodType, R> = {
   (ctx: ServiceContext, input: z.input<I>): Promise<Outcome<R>>;
   input: I;
   permission: PermissionRule<z.output<I>>;
+  publish?: Publish;
+  title?: string;
+  description?: string;
+  output?: z.ZodType;
 };
 
 /**
@@ -355,11 +388,16 @@ export type ServiceFn<I extends z.ZodType, R> = {
  * from inside another service function's `run` is not checked again, except
  * that a system-only function still admits only the system actor.
  */
-export function defineServiceFn<I extends z.ZodType, R>(definition: {
-  input: I;
-  permission: PermissionRule<z.output<I>>;
-  run(ctx: ServiceContext, input: z.output<I>): Promise<R>;
-}): ServiceFn<I, R> {
+export function defineServiceFn<I extends z.ZodType, R>(
+  definition: {
+    input: I;
+    permission: PermissionRule<z.output<I>>;
+    run(ctx: ServiceContext, input: z.output<I>): Promise<R>;
+  } & (
+    | ({ publish: Publish } & ServiceFnDocs)
+    | ({ publish?: undefined } & Partial<ServiceFnDocs>)
+  )
+): ServiceFn<I, R> {
   // Compiled on the first call, not at import: a module of service functions
   // would otherwise pay for every schema at startup, used or not.
   let schema: I | undefined;
@@ -442,7 +480,11 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
 
   return Object.assign(call, {
     input: definition.input,
-    permission: definition.permission
+    permission: definition.permission,
+    publish: definition.publish,
+    title: definition.title,
+    description: definition.description,
+    output: definition.output
   });
 }
 

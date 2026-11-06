@@ -228,10 +228,32 @@ function read(
 
   if ("data" in result) {
     return paginates
-      ? { rows: result.data, count: (result.count as number | null) ?? null }
+      ? {
+          rows: result.data,
+          count: (result.count as number | null) ?? null,
+          [PAGED]: true
+        }
       : result.data;
   }
   return result;
+}
+
+/**
+ * Marks what `paged()` returns, so a dispatcher can tell a paged list
+ * `{ rows, count }` from any other object with those two keys without a
+ * reflected return type: the API sends the rows as the list and the total
+ * beside them.
+ */
+export const PAGED: unique symbol = Symbol.for("carbon.paged");
+
+export type Paged<Row = unknown> = {
+  rows: Row;
+  count: number | null;
+  [PAGED]: true;
+};
+
+export function isPaged(value: unknown): value is Paged {
+  return isRecord(value) && (value as Record<symbol, unknown>)[PAGED] === true;
 }
 
 type Envelope = { data?: unknown; error?: unknown; count?: number | null };

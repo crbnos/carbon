@@ -6,6 +6,10 @@ generated operation manifest, and the Standard-Schema wrapper that lets oRPC car
 precomputed JSON Schemas without a zod round-trip. Internal workspace package —
 never published to npm.
 
+Optional service-definition metadata (`publish`, `title`, `description`, `output`) and
+`catalog.server` prepare the registry-based catalog. Until the consumer cutover,
+the generated manifest and existing TSDoc publication tags remain authoritative.
+
 ## Always
 
 - Treat `ManifestEntry` as the shape of the GENERATED manifest — the data itself is
