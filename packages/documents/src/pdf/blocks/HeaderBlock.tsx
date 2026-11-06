@@ -9,8 +9,8 @@ export function HeaderBlock({ data }: { data: SalesInvoiceData }) {
   return (
     <Header
       company={data.company}
-      title="Invoice"
-      documentId={data.salesInvoice?.invoiceId}
+      title={data.documentTitle}
+      documentId={data.documentNumber}
       currencyCode={data.salesInvoice?.currencyCode}
       locale={data.locale}
       options={data.headerOptions}

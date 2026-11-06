@@ -19456,13 +19456,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/select"
@@ -19581,13 +19581,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -19660,13 +19660,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/body.inventoryCountLine"
@@ -24022,13 +24022,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLines.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.inventoryCountLines.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.inventoryCountLines.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLines.assignedReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.projectId"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLines.itemName"
@@ -36844,10 +36844,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
             $ref: "#/parameters/select"
@@ -36921,10 +36921,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -36952,10 +36952,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
             $ref: "#/parameters/body.itemStockQuantities"
@@ -117226,6 +117226,18 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117254,18 +117266,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
@@ -117564,6 +117564,18 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117592,18 +117604,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
@@ -117856,6 +117856,18 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117884,18 +117896,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
@@ -119658,6 +119658,186 @@ export default {
         tags: ["projectBaseline"]
       }
     },
+    "/documentEdit": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/documentEdit"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.documentEdit"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.documentEdit"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["documentEdit"]
+      }
+    },
     "/salesOrderTransaction": {
       get: {
         parameters: [
@@ -120620,7 +120800,7 @@ export default {
       get: {
         parameters: [
           {
-            format: "extensions.vector",
+            format: "vector",
             in: "query",
             name: "query_embedding",
             required: true,
@@ -120681,7 +120861,7 @@ export default {
                   type: "string"
                 },
                 query_embedding: {
-                  format: "extensions.vector",
+                  format: "vector",
                   type: "string"
                 }
               },
@@ -135897,7 +136077,7 @@ export default {
       get: {
         parameters: [
           {
-            format: "extensions.vector",
+            format: "vector",
             in: "query",
             name: "query_embedding",
             required: true,
@@ -135958,7 +136138,7 @@ export default {
                   type: "string"
                 },
                 query_embedding: {
-                  format: "extensions.vector",
+                  format: "vector",
                   type: "string"
                 }
               },
@@ -144964,16 +145144,16 @@ export default {
         customFields: {
           format: "jsonb"
         },
-        projectId: {
-          format: "text",
-          type: "string"
-        },
         foundDuringCount: {
           default: false,
           format: "boolean",
           type: "boolean"
         },
         assignedReadableId: {
+          format: "text",
+          type: "string"
+        },
+        projectId: {
           format: "text",
           type: "string"
         }
@@ -147073,15 +147253,15 @@ export default {
         customFields: {
           format: "jsonb"
         },
-        projectId: {
-          format: "text",
-          type: "string"
-        },
         foundDuringCount: {
           format: "boolean",
           type: "boolean"
         },
         assignedReadableId: {
+          format: "text",
+          type: "string"
+        },
+        projectId: {
           format: "text",
           type: "string"
         },
@@ -153178,8 +153358,8 @@ export default {
         "companyId",
         "locationId",
         "quantityOnHand",
-        "projectId",
-        "quantityNonNettable"
+        "quantityNonNettable",
+        "projectId"
       ],
       properties: {
         itemId: {
@@ -153203,16 +153383,16 @@ export default {
           format: "numeric",
           type: "number"
         },
+        quantityNonNettable: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
         projectId: {
           default: "",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
-        },
-        quantityNonNettable: {
-          default: 0,
-          format: "numeric",
-          type: "number"
         }
       },
       type: "object"
@@ -191442,6 +191622,10 @@ export default {
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -191450,10 +191634,6 @@ export default {
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
-        "requirePurchaseOrderApprovalSignature",
-        "serialNumberTiming",
-        "useCalendarWeeks",
-        "kanbanLabelSize",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles"
@@ -191860,6 +192040,27 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        requirePurchaseOrderApprovalSignature: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        serialNumberTiming: {
+          default: "jobCreation",
+          format: "text",
+          type: "string"
+        },
+        useCalendarWeeks: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        kanbanLabelSize: {
+          default: "letter",
+          enum: ["letter", "label4x2", "label3x2"],
+          format: 'public."kanbanLabelSize"',
+          type: "string"
+        },
         timesheetApprovalRequired: {
           default: false,
           format: "boolean",
@@ -191909,27 +192110,6 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
-        },
-        requirePurchaseOrderApprovalSignature: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        serialNumberTiming: {
-          default: "jobCreation",
-          format: "text",
-          type: "string"
-        },
-        useCalendarWeeks: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        kanbanLabelSize: {
-          default: "letter",
-          enum: ["letter", "label4x2", "label3x2"],
-          format: 'public."kanbanLabelSize"',
-          type: "string"
         },
         serviceLaborCostRate: {
           format: "numeric",
@@ -192677,6 +192857,68 @@ export default {
         },
         createdAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    documentEdit: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('dedit'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        blocks: {
+          format: "jsonb"
+        },
+        settings: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -202849,12 +203091,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.inventoryCountLine.projectId": {
-      name: "projectId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.inventoryCountLine.foundDuringCount": {
       name: "foundDuringCount",
       required: false,
@@ -202863,6 +203099,12 @@ export default {
     },
     "rowFilter.inventoryCountLine.assignedReadableId": {
       name: "assignedReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLine.projectId": {
+      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -205278,12 +205520,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.inventoryCountLines.projectId": {
-      name: "projectId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.inventoryCountLines.foundDuringCount": {
       name: "foundDuringCount",
       required: false,
@@ -205292,6 +205528,12 @@ export default {
     },
     "rowFilter.inventoryCountLines.assignedReadableId": {
       name: "assignedReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inventoryCountLines.projectId": {
+      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -212168,14 +212410,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.itemStockQuantities.projectId": {
-      name: "projectId",
+    "rowFilter.itemStockQuantities.quantityNonNettable": {
+      name: "quantityNonNettable",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemStockQuantities.quantityNonNettable": {
-      name: "quantityNonNettable",
+    "rowFilter.itemStockQuantities.projectId": {
+      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -255110,6 +255352,30 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
+      name: "requirePurchaseOrderApprovalSignature",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serialNumberTiming": {
+      name: "serialNumberTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.useCalendarWeeks": {
+      name: "useCalendarWeeks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.kanbanLabelSize": {
+      name: "kanbanLabelSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.timesheetApprovalRequired": {
       name: "timesheetApprovalRequired",
       required: false,
@@ -255166,30 +255432,6 @@ export default {
     },
     "rowFilter.companySettings.postAppliedBurden": {
       name: "postAppliedBurden",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
-      name: "requirePurchaseOrderApprovalSignature",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.serialNumberTiming": {
-      name: "serialNumberTiming",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.useCalendarWeeks": {
-      name: "useCalendarWeeks",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.kanbanLabelSize": {
-      name: "kanbanLabelSize",
       required: false,
       in: "query",
       type: "string"
@@ -256003,6 +256245,75 @@ export default {
     },
     "rowFilter.projectBaseline.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.documentEdit": {
+      name: "documentEdit",
+      description: "documentEdit",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/documentEdit"
+      }
+    },
+    "rowFilter.documentEdit.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.blocks": {
+      name: "blocks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.settings": {
+      name: "settings",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

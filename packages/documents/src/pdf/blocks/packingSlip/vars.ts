@@ -2,32 +2,82 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { PackingSlipData } from "./types";
+import { formatDate } from "@carbon/utils";
+import type { MergeToken, RowVars } from "../../../template";
+import { addressVars, companyVars, str } from "../textVars";
+import type { PackingSlipData, PackingSlipRentalUnit } from "./types";
 
 /** Merge-field variable map for a Packing Slip. */
 export function buildPackingSlipVars(
   data: Pick<
     PackingSlipData,
-    "shipment" | "customer" | "shippingAddress" | "company"
+    | "shipment"
+    | "customer"
+    | "customerReference"
+    | "sourceDocument"
+    | "sourceDocumentId"
+    | "shippingAddress"
+    | "shippingMethod"
+    | "paymentTerm"
+    | "company"
+    | "locale"
   >
-): Record<string, string> {
+): Record<MergeToken<"packingSlip">, string> {
   const s = data.shipment;
   const a = data.shippingAddress;
-  const str = (v: unknown): string => (v == null ? "" : String(v));
+  // The source prints as "Sales Order: SO-1", so one without the other prints nothing.
+  const hasSource = Boolean(data.sourceDocument && data.sourceDocumentId);
 
   return {
     "shipment.number": str(s?.shipmentId),
     "shipment.trackingNumber": str(s?.trackingNumber),
-    "customer.name": str(data.customer?.name),
-    "customer.addressLine1": str(a?.addressLine1),
-    "customer.city": str(a?.city),
-    "customer.country": str(a?.countryCode),
-    "company.name": str(data.company?.name),
-    "company.city": str(data.company?.city),
-    "company.country": str(data.company?.countryCode),
-    "company.taxId": str(data.company?.taxId),
-    "company.eori": str(data.company?.eori),
-    "company.vatNumber": str(data.company?.vatNumber),
-    "company.registrationNumber": str(data.company?.registrationNumber)
+    "shipment.date": formatDate(s?.postingDate, undefined, data.locale),
+    "shipment.sourceDocument": hasSource ? str(data.sourceDocument) : "",
+    "shipment.sourceDocumentId": hasSource ? str(data.sourceDocumentId) : "",
+    "shipment.customerReference": str(data.customerReference),
+    "shipment.method": str(data.shippingMethod?.name),
+    "shipment.paymentTerm": str(data.paymentTerm?.name),
+    ...addressVars("customer", {
+      name: data.customer?.name,
+      addressLine1: a?.addressLine1,
+      addressLine2: a?.addressLine2,
+      city: a?.city,
+      stateProvince: a?.stateProvince,
+      postalCode: a?.postalCode,
+      country: a?.countryCode
+    }),
+
+    ...companyVars(data.company)
+  };
+}
+
+/**
+ * The serial cell prints once per tracked
+ * entity, and the table passes each id as `line.serialBatch`; elsewhere in the
+ * row `{line.serialBatch}` lists them all.
+ */
+export function buildPackingSlipLineVars(
+  line: PackingSlipData["shipmentLines"][number],
+  serialBatch: string[]
+): RowVars<"packingSlip", "line"> {
+  return {
+    "line.item": str(line.itemReadableId),
+    "line.description": str(line.description),
+    "line.shippedQuantity": str(line.shippedQuantity),
+    "line.orderQuantity": str(line.orderQuantity),
+    "line.unit": str(line.unitOfMeasure),
+    "line.serialBatch": serialBatch.join(", ")
+  };
+}
+
+/** One unit per row. */
+export function buildPackingSlipRentalUnitVars(
+  unit: PackingSlipRentalUnit
+): RowVars<"packingSlip", "unit"> {
+  return {
+    "unit.name": str(unit.name),
+    "unit.assetId": str(unit.assetReadableId),
+    "unit.quantity": unit.quantity ?? "1",
+    "unit.serial": str(unit.serialNumber)
   };
 }

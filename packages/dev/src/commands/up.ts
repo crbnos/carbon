@@ -28,13 +28,17 @@ import {
 import {
   allImagesPresentLocally,
   bootSharedRedis,
+  bootSharedServices,
   bootStack,
   type Container,
   devComposeImageRefs,
   ensureDockerRunning,
+  ensureSharedNetwork,
   listComposeServices,
   listContainers,
+  listSharedContainers,
   pullStack,
+  removeServices,
   restartServices,
   type StackSize,
   sleepStack,
@@ -50,8 +54,10 @@ import {
 import {
   applyBootstrapSql,
   applyMigrations,
+  type DbTarget,
   ensureConfigRow,
   ensureSmokeTestUser,
+  stackHosts,
   syncAuthz,
   waitForApi,
   waitForPostgres,
@@ -71,6 +77,10 @@ import {
   syncHostsFile,
   waitForProxyReady
 } from "../services/portless.js";
+import {
+  createWorktreeDatabase,
+  registerStorageTenant
+} from "../services/shared-db.js";
 import { progress, summaryLines, tasks } from "../ui.js";
 import {
   ensureSlugAvailable,
@@ -80,9 +90,17 @@ import {
   type PortMap,
   persistSlug,
   projectName,
+  readStackMode,
   resolveSlot,
   resolveSlug,
-  SHARED_REDIS_PORT
+  SHARED_DB_PORT,
+  SHARED_INBUCKET_PORT,
+  SHARED_POOLER_PORT,
+  SHARED_REDIS_PORT,
+  type StackMode,
+  stackDatabase,
+  stackPorts,
+  writeStackMode
 } from "../worktree.js";
 import { syncStaleCopyFiles } from "./copy.js";
 import { down } from "./down.js";
@@ -118,15 +136,30 @@ type UpOpts = {
   full?: boolean;
   /** Stop the containers while ERP/MES get no traffic (default true). */
   hibernate?: boolean;
+  /**
+   * Run a private Postgres, PgBouncer, Storage, imgproxy and Inbucket inside
+   * this worktree's project instead of the shared containers — for a branch
+   * that changes one of their images.
+   */
+  isolated?: boolean;
 };
 
 type Ctx = {
   root: string;
   slug: string;
+  /** The effective ports: the shared containers' in shared mode. */
   ports: PortMap;
   redisDb: number;
   jwt: JwtCreds;
   branchPrefix: string;
+  mode: StackMode;
+  /** The worktree database in shared mode, `postgres` on a private stack. */
+  database: string;
+  db: DbTarget;
+  /** The gateway and Inngest as pg_net requests reach them. */
+  hosts: { api: string; inngest: string };
+  /** This boot cloned the worktree database: it holds no service schemas. */
+  freshDatabase?: boolean;
 };
 
 export async function up(opts: UpOpts = {}) {
@@ -231,17 +264,29 @@ export async function up(opts: UpOpts = {}) {
   }
 
   persistSlug(root, slug);
-  log.info(`worktree: ${slug}  (project ${projectName(slug)})`);
+  // A borrowed stack keeps the mode it was started in.
+  const mode: StackMode = borrowSlug
+    ? readStackMode(borrowSlug)
+    : opts.isolated
+      ? "isolated"
+      : "shared";
+  log.info(
+    `worktree: ${slug}  (project ${projectName(slug)}, ${mode === "shared" ? "shared containers" : "isolated stack"})`
+  );
 
   await refreshStaleCopyFiles(root);
   await ensureDepsInstalled(root);
   await ensureSkillsInstalled(root);
+  // Written once the installs are done: a failed install leaves the mode of
+  // the stack that is still running.
+  if (!borrowSlug) writeStackMode(slug, mode);
 
   const ctx = await provisionSlot(
     root,
     slug,
     portless,
     selectedApps.includes("assembler"),
+    { mode, stackSlug: borrowSlug ?? slug },
     borrowedEntry
   );
   if (borrowedEntry) {
@@ -277,7 +322,8 @@ export async function up(opts: UpOpts = {}) {
     ctx.ports,
     selectedApps,
     portless ? ctx.branchPrefix : undefined,
-    size.full || size.studio
+    size.full || size.studio,
+    ctx.mode === "shared" ? ctx.database : undefined
   );
   // `box()` derives its padding from `process.stdout.columns`; some
   // non-interactive terminals (e.g. Conductor's run pane) report a width of 0,
@@ -348,8 +394,8 @@ export async function up(opts: UpOpts = {}) {
   let tearingDown = false;
   const wakeContainers = async () => {
     await bootStack(root, slug, size);
-    await waitForPostgres(ctx.ports.PORT_DB);
-    await waitForApi(ctx.ports.PORT_API, ctx.jwt.anonKey);
+    await waitForPostgres(ctx.db);
+    await waitForApi(ctx.ports.PORT_API, ctx.jwt.serviceKey);
   };
   const stopWatching = hibernates
     ? watchIdle({
@@ -478,8 +524,13 @@ async function provisionSlot(
   slug: string,
   portless: boolean,
   includeAssembler: boolean,
+  // `stackSlug` is the worktree whose containers run: the borrowed one under
+  // --borrow. Its database and network aliases are the ones to use.
+  stack: { mode: StackMode; stackSlug: string },
   borrowedEntry?: { ports: PortMap; redisDb: number; jwt: JwtCreds }
 ): Promise<Ctx> {
+  const shared = stack.mode === "shared";
+  const database = stackDatabase(stack.stackSlug, stack.mode);
   let ctx!: Ctx;
   await tasks([
     {
@@ -513,8 +564,19 @@ async function provisionSlot(
           : ownSlot;
         const branch = await currentBranch(root);
         const branchPrefix = branchToPrefix(branch, slug);
+        const ports = stackPorts(slot.ports, stack.mode);
 
-        ctx = { root, slug, branchPrefix, ...slot };
+        ctx = {
+          root,
+          slug,
+          branchPrefix,
+          ...slot,
+          ports,
+          mode: stack.mode,
+          database,
+          db: { port: ports.PORT_DB, database },
+          hosts: stackHosts(stack.mode, stack.stackSlug)
+        };
 
         writeEnv(
           root,
@@ -523,7 +585,9 @@ async function provisionSlot(
             portless,
             branchPrefix,
             includeAssembler,
-            ...slot
+            ...slot,
+            mode: stack.mode,
+            database
           })
         );
         syncAppPortlessConfigs(root);
@@ -551,7 +615,37 @@ async function provisionSlot(
         await bootSharedRedis();
         return `shared redis on :${SHARED_REDIS_PORT} (index ${ctx.redisDb})`;
       }
-    }
+    },
+    {
+      title: shared
+        ? "Boot shared containers"
+        : "Create the carbon-shared network",
+      task: async () => {
+        if (!shared) {
+          // The dev compose file joins it in both modes.
+          await ensureSharedNetwork();
+          return "network ready (isolated stack)";
+        }
+        const warning = await bootSharedServices(ctx.jwt);
+        if (warning) log.warn(warning);
+        return `crbn-shared up (Postgres :${SHARED_DB_PORT}, pooler :${SHARED_POOLER_PORT}, mail :${SHARED_INBUCKET_PORT})`;
+      }
+    },
+    ...(shared && !borrowedEntry
+      ? [
+          {
+            title: "Create the worktree database",
+            task: async () => {
+              const created = await createWorktreeDatabase(database);
+              ctx.freshDatabase = created;
+              await registerStorageTenant(database, ctx.jwt);
+              return created
+                ? `${database} cloned from carbon_template`
+                : `${database} exists`;
+            }
+          }
+        ]
+      : [])
   ]);
   return ctx;
 }
@@ -581,6 +675,9 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
       ctx.root,
       ctx.slug,
       (line) => {
+        // Layer lines ("98daf4da4175 Downloading 67.37MB") arrive many times
+        // a second for layers of different images; show the service lines only.
+        if (/^[0-9a-f]{12}\b/.test(line)) return;
         bar.message(line.slice(0, 80));
         if (/ Pulled$/.test(line)) bar.advance(1);
       },
@@ -605,6 +702,18 @@ async function bootDockerStack(ctx: Ctx, size: StackSize) {
     {
       title: label,
       task: async () => {
+        // GoTrue and Realtime build their schemas when they start, and
+        // PostgREST caches the schema. Containers from before a new database
+        // (a reset shared volume, `prune --all`) would keep running against
+        // it without them, so bootStack creates them again. Removing a
+        // container that doesn't exist is a no-op.
+        if (ctx.freshDatabase) {
+          await removeServices(ctx.root, ctx.slug, [
+            "gotrue",
+            "realtime",
+            "postgrest"
+          ]);
+        }
         await bootStack(ctx.root, ctx.slug, size);
         return "containers up";
       }
@@ -621,7 +730,7 @@ async function waitForServices(ctx: Ctx) {
   try {
     await waitForTcp(
       [
-        `tcp:${ctx.ports.PORT_DB}`,
+        `tcp:${ctx.db.port}`,
         `tcp:${ctx.ports.PORT_API}`,
         `tcp:${ctx.ports.PORT_INNGEST}`
       ],
@@ -629,25 +738,30 @@ async function waitForServices(ctx: Ctx) {
     );
 
     bar.message("waiting for postgres to accept queries");
-    await waitForPostgres(ctx.ports.PORT_DB);
+    await waitForPostgres(ctx.db);
     bar.advance(1, "postgres ready");
 
-    await waitForStorageReady(ctx.ports.PORT_DB, {
+    await waitForStorageReady(ctx.db, {
       onProgress: (line) => bar.message(line.slice(0, 80)),
-      onHeal: async () => {
-        bar.message("storage stuck — re-applying init.sql");
-        await applyBootstrapSql(ctx.root, ctx.ports.PORT_DB);
-        bar.message("restarting storage / gotrue / postgrest");
-        await restartServices(ctx.root, ctx.slug, [
-          "storage",
-          "gotrue",
-          "postgrest"
-        ]);
-      },
+      // The heal re-applies init.sql and restarts the private Storage. The
+      // shared Storage builds each tenant's schema when the tenant registers.
+      onHeal:
+        ctx.mode === "shared"
+          ? undefined
+          : async () => {
+              bar.message("storage stuck — re-applying init.sql");
+              await applyBootstrapSql(ctx.root, ctx.db);
+              bar.message("restarting storage / gotrue / postgrest");
+              await restartServices(ctx.root, ctx.slug, [
+                "storage",
+                "gotrue",
+                "postgrest"
+              ]);
+            },
       onTimeout: () => dumpStorageDiagnostics(ctx)
     });
     bar.message("waiting for auth / realtime schemas");
-    await waitForServiceSchemas(ctx.ports.PORT_DB);
+    await waitForServiceSchemas(ctx.db);
     bar.advance(1, "service schemas ready");
     bar.stop("all services responding");
   } catch (err) {
@@ -666,7 +780,7 @@ async function runDatabaseMigrations(
       ? {
           title: "Apply database migrations",
           task: async () => {
-            const r = await applyMigrations(ctx.root, ctx.ports.PORT_DB);
+            const r = await applyMigrations(ctx.root, ctx.db);
             migrationsApplied = r.applied;
             return r.applied
               ? "migrations applied"
@@ -684,7 +798,7 @@ async function runDatabaseMigrations(
           {
             title: "Seed pg_net config row",
             task: async () => {
-              await ensureConfigRow(ctx.ports.PORT_DB, ctx.jwt.anonKey);
+              await ensureConfigRow(ctx.db, ctx.jwt.anonKey, ctx.hosts);
               return "config row upserted";
             }
           }
@@ -716,7 +830,7 @@ async function runDatabaseMigrations(
       ? [
           {
             title: "Sync RLS policies with the authz manifest",
-            task: () => syncAuthz(ctx.root, ctx.ports.PORT_DB)
+            task: () => syncAuthz(ctx.root, ctx.db)
           }
         ]
       : [])
@@ -730,7 +844,7 @@ async function seedSmokeTestUser(ctx: Ctx) {
       task: async () => {
         const r = await ensureSmokeTestUser(
           ctx.root,
-          ctx.ports.PORT_DB,
+          ctx.db,
           ctx.ports.PORT_API
         );
         return r.seeded ? "user created" : "already exists";
@@ -966,15 +1080,29 @@ async function runAppsThenCommand(
 // ---------------------------------------------------------------------------
 
 async function dumpStorageDiagnostics(ctx: Ctx) {
-  const containers = await listContainers(ctx.root, ctx.slug);
+  // Shared mode: Postgres and Storage are crbn-shared's carbon-* containers.
+  const shared = ctx.mode === "shared";
+  const containers = shared
+    ? await listSharedContainers()
+    : await listContainers(ctx.root, ctx.slug);
+  const logs = async (service: string, lines: number) =>
+    shared
+      ? ((
+          await execa(
+            "docker",
+            ["logs", "--tail", String(lines), `carbon-${service}`],
+            { reject: false, all: true }
+          )
+        ).all ?? "")
+      : tailServiceLogs(ctx.root, ctx.slug, service, lines);
   const out: string[] = ["", "--- container state ---"];
   for (const name of ["postgres", "storage"]) {
     out.push(formatContainerLine(name, containers));
   }
   out.push("", "--- storage logs (last 50) ---");
-  out.push(await tailServiceLogs(ctx.root, ctx.slug, "storage", 50));
+  out.push(await logs("storage", 50));
   out.push("", "--- postgres logs (last 20) ---");
-  out.push(await tailServiceLogs(ctx.root, ctx.slug, "postgres", 20));
+  out.push(await logs("postgres", 20));
   out.push("");
   process.stderr.write(out.join("\n") + "\n");
 }

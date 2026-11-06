@@ -20,7 +20,7 @@ export async function reload(services: string[]) {
   const names = services.filter((s) => s && !s.startsWith("-"));
   if (names.length === 0) {
     log.error(
-      "Usage: crbn reload <service...>  (e.g. crbn reload storage kong)"
+      "Usage: crbn reload <service...>  (e.g. crbn reload storage api-gw)"
     );
     outro("");
     process.exitCode = 1;

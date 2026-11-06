@@ -4444,6 +4444,34 @@ the error set against an untouched checkout of `main`.
 **Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
 **Applies to:** Scripted refactors in service files.
 
+## A catalog default holding a variable changes what a stored word means
+
+- **Context:** document texts store only the words a user changed, keyed by catalog key.
+- **Problem:** when a key's default goes from `Date:` to `Date: {order.date}`, a stored `Order date:` keeps the key and prints no value, because the block no longer adds it.
+- **Rule:** before moving a value into a catalog default, confirm no stored row holds that key. If one can, migrate the stored words too. Nothing checks a default's variables except `texts.test.ts`, so keep it passing.
+- **Applies to:** `packages/documents/src/template/texts/`, `documentTemplate`, `documentEdit`.
+
+## Content sized from its own scroll box needs a fixed scrollbar
+
+- **Context:** The document preview draws PDF pages at the width of the box that scrolls them.
+- **Problem:** A page about as tall as the box looped forever: the scrollbar narrowed the box, the narrower page fit, the scrollbar left, the wider page no longer fit. It redrew about 60 times a second, at only some window heights, so it looked like a random flicker on open.
+- **Rule:** When a box's content takes its size from the box, keep the scrollbar's space fixed (`overflow-y-scroll`) so the width cannot depend on the content's height.
+- **Applies to:** Any `useResizeObserver` width that sizes content inside the observed scroll box.
+
+## A tagged `t` only works in the component that called `useLingui`
+
+- **Context:** a helper took `t` as a parameter and used it as a tagged template.
+- **Problem:** the Lingui macro transforms `t` only where `useLingui` binds it. Typecheck passes, but `extract` drops the message and the call receives a template array at runtime.
+- **Rule:** keep the tagged `t` in the component or a closure inside it. Pass finished strings to helpers. If a new message is missing after `lingui:extract`, look for this first.
+- **Applies to:** every `t` passed through a function parameter.
+
+## A fetcher's failed load replaces the whole page
+
+- **Context:** A modal loaded an optional extra (the values behind its pencils) with `useFetcher().load`.
+- **Problem:** A loader that throws sends a fetcher's error to the nearest route boundary (`setFetcherError`). The record page became an error screen, and the modal and its unsaved draft went with it.
+- **Rule:** When a page can work without the data, load it with a plain `fetch` and handle the failure there, or return the failure from the loader as data.
+- **Applies to:** Every `fetcher.load` for something optional, especially behind unsaved work.
+
 ## Lingui `plural()` must be the whole message, with no variables in its branches
 
 **Context:** Accessibility labels like "3 jobs for SO000001, in progress" were written as `` t`${plural(n, { one: "# job for", other: "# jobs for" })} ${orderId}` `` and later with `${orderId}` inside the branches.

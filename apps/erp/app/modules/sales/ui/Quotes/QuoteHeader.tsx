@@ -49,6 +49,10 @@ import {
 import { Link, useFetcher, useParams } from "react-router";
 import { RevisionSuffix } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -71,6 +75,7 @@ const QuoteHeader = () => {
   const permissions = usePermissions();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
+  const documentEdit = useDocumentEditModal("quote", quoteId);
 
   const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -250,6 +255,11 @@ const QuoteHeader = () => {
                         <Trans>PDF</Trans>
                       </a>
                     </DropdownMenuItem>
+                    {documentEdit.canEdit && (
+                      <EditDocumentMenuItem
+                        onSelect={documentEdit.openEditor}
+                      />
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </RecordAction>
@@ -408,6 +418,7 @@ const QuoteHeader = () => {
         }}
       />
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

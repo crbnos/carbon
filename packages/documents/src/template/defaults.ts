@@ -635,6 +635,25 @@ function migrateBlocks(
 }
 
 /**
+ * The Summary prints the Line Items table's totals, and the editor shows it as
+ * part of that table, so it always sits directly after it. Blocks are stored
+ * flat, so moving one past Line Items could otherwise land it between the two.
+ */
+export function keepSummaryWithLineItems<B extends { type: string }>(
+  blocks: B[]
+): B[] {
+  const summary = blocks.find((block) => block.type === "summary");
+  if (!summary || !blocks.some((block) => block.type === "lineItems")) {
+    return blocks;
+  }
+  return blocks
+    .filter((block) => block !== summary)
+    .flatMap((block) =>
+      block.type === "lineItems" ? [block, summary] : [block]
+    );
+}
+
+/**
  * Resolve a stored template row to a renderable template, falling back to the
  * type's default when nothing is stored. Built-in blocks that are missing from
  * a stored template are appended (hidden) so a section added in a later release
@@ -693,7 +712,7 @@ export function resolveTemplate(
   return {
     formatVersion,
     documentType,
-    blocks: [...storedBlocks, ...missingBuiltIns],
+    blocks: keepSummaryWithLineItems([...storedBlocks, ...missingBuiltIns]),
     theme,
     settings,
     headerSectionId,

@@ -46,6 +46,10 @@ import {
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { CSVLink } from "~/components/CSVLink";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -192,6 +196,7 @@ const SalesOrderHeader = () => {
   const { t } = useLingui();
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
+  const documentEdit = useDocumentEditModal("salesOrder", orderId);
 
   const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -439,6 +444,9 @@ const SalesOrderHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -733,6 +741,7 @@ const SalesOrderHeader = () => {
         }}
       />
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

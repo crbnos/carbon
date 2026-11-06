@@ -8,14 +8,21 @@ import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
   blockSchema,
+  COMPANY_MERGE_FIELDS,
+  collectSectionIds,
+  DOCUMENT_EDIT_TYPES,
   type DocumentBlock,
   type DocumentSettings,
   type DocumentTheme,
+  diffDocumentEdit,
   documentSectionPlacementSchema,
   documentSettingsSchema,
   documentTemplateTypeSchema,
   sectionConfigSchema,
-  themeSchema
+  themeSchema,
+  unknownVariables,
+  validateDocumentEdit,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
@@ -51,6 +58,10 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
+import {
+  getCompanyTemplate,
+  getDocumentEdit
+} from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
@@ -104,6 +115,10 @@ import {
   timesheetTimecardChecks
 } from "./settings.models";
 import * as service from "./settings.service";
+import {
+  DOCUMENT_TERMS_FIELD,
+  documentEditPermissions
+} from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
 // ─── Operations (`defineServiceFn`) ─────────────────────────────────────────
@@ -1634,6 +1649,125 @@ export const viewPrintJobContent = defineServiceFn({
 });
 
 /**
+ * Get the editor for one document: the company template, this document's own
+ * edits, whether the record is locked, and its notes.
+ */
+export const getDocumentEditor = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1)
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, { documentType, documentId }) {
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    const termsField = DOCUMENT_TERMS_FIELD[documentType];
+    const [template, edit, terms] = await Promise.all([
+      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
+      getDocumentEdit(client, {
+        companyId: ctx.company.id,
+        documentType,
+        documentId
+      }),
+      termsField ? service.getTerms(client, ctx.company.id) : null
+    ]);
+    const termsSeed = termsField
+      ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
+      : null;
+    // The preview's clicks read what the template's sections print.
+    const sections = await service.resolveSections(
+      client,
+      ctx.company.id,
+      collectSectionIds(template)
+    );
+    return {
+      ...record.data,
+      documentType,
+      documentId,
+      template,
+      edit,
+      termsSeed,
+      sections: Object.values(sections)
+    };
+  }
+});
+
+/**
+ * Save how one document prints: the words, hidden fields and blocks, and Terms
+ * that differ from the company template, plus its notes. Refused once the
+ * record is locked.
+ */
+export const saveDocumentEdit = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1),
+    blocks: z.array(blockSchema),
+    settings: documentSettingsSchema,
+    notes: z.record(z.string(), z.unknown()).nullable().optional()
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, input) {
+    const { documentType, documentId } = input;
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+
+    const template = await getCompanyTemplate(client, {
+      companyId: ctx.company.id,
+      documentType
+    });
+    const edit = diffDocumentEdit(documentType, template, {
+      blocks: input.blocks as DocumentBlock[],
+      settings: input.settings as DocumentSettings
+    });
+    const problems = validateDocumentEdit(documentType, template, edit);
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
+
+    const saved = await service.saveDocumentEditRow(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      documentType,
+      documentId,
+      edit,
+      notes: input.notes as JSONContent | null | undefined,
+      userId: ctx.auditUserId
+    });
+    if (saved === "locked") {
+      return ctx.error("rule", "This document is locked.");
+    }
+    if (saved === "notFound") {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    return { documentId };
+  }
+});
+
+/**
  * Save a document's layout.
  *
  * @remarks
@@ -1659,7 +1793,21 @@ export const saveDocumentTemplate = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, template) {
+    // Changed values belong to one document, never to a company template.
+    template.settings.valueEdits = undefined;
     const { headerConfig, headerSectionId } = template;
+
+    const problems = validateTemplateText({
+      documentType: template.documentType,
+      blocks: template.blocks as DocumentBlock[],
+      settings: template.settings as DocumentSettings
+    });
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
 
     let header: Parameters<typeof service.upsertDocumentTemplate>[2];
     if (headerConfig && headerSectionId) {
@@ -1725,6 +1873,18 @@ export const saveDocumentSection = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { id, name, placement, content, config }) {
+    // The registration line prints on every document type, so it may use only
+    // the company variables every type offers.
+    const unknown = unknownVariables(
+      config?.registrationNumber ?? "",
+      COMPANY_MERGE_FIELDS.map((field) => field.token)
+    );
+    if (unknown.length > 0) {
+      return ctx.error(
+        "validation",
+        `Registration number: unknown variable ${unknown.map((token) => `{${token}}`).join(", ")}`
+      );
+    }
     const result = await service.upsertDocumentSection(ctx.asCaller.supabase, {
       id,
       companyId: ctx.company.id,

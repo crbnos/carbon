@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { DocumentBlockType } from "@carbon/documents/template";
+import type {
+  DocumentBlock,
+  DocumentBlockType
+} from "@carbon/documents/template";
 import {
   BLOCK_META,
   BUILT_IN_SECTION_IDS,
@@ -33,6 +36,7 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, type ReactNode } from "react";
 import {
   LuEye,
@@ -63,7 +67,9 @@ import { path } from "~/utils/path";
 import {
   type AddableBlockType,
   FOOTER_BLOCK_ID,
+  type SectionRef,
   useDocumentTemplate,
+  useEditorStore,
   usePickBlock
 } from "./context";
 import { HEADER_LOGO_ID, useHeaderConfig } from "./useHeaderConfig";
@@ -119,24 +125,58 @@ function blockIcon(type: DocumentBlockType): ReactNode {
   return BLOCK_ICON[type] ?? <LuType className="size-4" />;
 }
 
-export function BlockList() {
-  const { documentType, blocks, reorder } = useDocumentTemplate();
-  // Labels have no page chrome — no footer row.
-  const isLabel = documentType === "trackingLabel";
-  // Header & footer are page chrome — pinned (not reorderable). Only the body
-  // blocks between them are sortable.
+/** Whether the editor is on one record's document, and whether it is locked. */
+function useDocumentModeFlags() {
+  const isDocument = useEditorStore((s) => s.document !== null);
+  const locked = useEditorStore((s) => s.document?.locked ?? false);
+  return { isDocument, locked };
+}
+
+/** Blocks that print in the body: everything but the header. */
+function useBodyBlocks() {
+  const { blocks } = useDocumentTemplate();
+  return blocks.filter((b) => b.type !== "header");
+}
+
+/** Body blocks switched off, listed apart under "Not on the page". */
+export function useHiddenBlockCount() {
+  return useBodyBlocks().filter((b) => !b.visible).length;
+}
+
+/**
+ * The header with its logo, and the watermark behind the page: page chrome,
+ * pinned (not reorderable).
+ */
+export function PageTopRows() {
+  const { blocks } = useDocumentTemplate();
   const headerBlock = blocks.find((b) => b.type === "header");
-  const bodyBlocks = blocks.filter((b) => b.type !== "header");
+  const watermark = blocks.find((b) => b.type === "watermark" && b.visible);
+  return (
+    <div className="flex flex-col gap-1">
+      {headerBlock && <HeaderRow id={headerBlock.id} />}
+      {headerBlock && <HeaderLogoRow />}
+      {watermark && <StaticBlockRow id={watermark.id} />}
+    </div>
+  );
+}
+
+/** The body blocks on the page, in print order and sortable. */
+export function BodyBlockList() {
+  const { reorder } = useDocumentTemplate();
+  // The watermark prints behind the whole page, so it sits under "Top of page".
+  const shownBlocks = useBodyBlocks().filter(
+    (b) => b.visible && b.type !== "watermark"
+  );
   // The Summary (totals) belongs to the Line Items table, so it's shown nested
   // under it in the tree rather than as a separate sortable row. Only nest when
-  // a Line Items block is actually present.
-  const hasLineItems = bodyBlocks.some((b) => b.type === "lineItems");
+  // a Line Items block is actually on the page.
+  const hasLineItems = shownBlocks.some((b) => b.type === "lineItems");
   const summaryBlock = hasLineItems
-    ? bodyBlocks.find((b) => b.type === "summary")
+    ? shownBlocks.find((b) => b.type === "summary")
     : undefined;
   const sortableBlocks = summaryBlock
-    ? bodyBlocks.filter((b) => b.id !== summaryBlock.id)
-    : bodyBlocks;
+    ? shownBlocks.filter((b) => b.id !== summaryBlock.id)
+    : shownBlocks;
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
@@ -149,34 +189,52 @@ export function BlockList() {
     }
   };
 
+  if (sortableBlocks.length === 0) {
+    return (
+      <p className="px-1.5 py-2 text-sm text-muted-foreground">
+        <Trans>No blocks on the page</Trans>
+      </p>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        {headerBlock && <HeaderRow id={headerBlock.id} />}
-        {headerBlock && <HeaderLogoRow />}
-      </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={sortableBlocks.map((b) => b.id)}
+        strategy={verticalListSortingStrategy}
       >
-        <SortableContext
-          items={sortableBlocks.map((b) => b.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="flex flex-col gap-1">
-            {sortableBlocks.map((block) => (
-              <Fragment key={block.id}>
-                <BlockRow id={block.id} />
-                {block.type === "lineItems" && summaryBlock && (
-                  <NestedBlockRow id={summaryBlock.id} />
-                )}
-              </Fragment>
-            ))}
-            {!isLabel && <FooterRow />}
-          </div>
-        </SortableContext>
-      </DndContext>
+        <div className="flex flex-col gap-1">
+          {sortableBlocks.map((block) => (
+            <Fragment key={block.id}>
+              <BlockRow id={block.id} />
+              {block.type === "lineItems" && summaryBlock && (
+                <div className="ml-3 border-l border-border/60 pl-2">
+                  <StaticBlockRow id={summaryBlock.id} />
+                </div>
+              )}
+            </Fragment>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+/**
+ * Body blocks switched off. Showing one puts it back where it was in the
+ * order, since hiding never moves a block.
+ */
+export function HiddenBlockList() {
+  const hiddenBlocks = useBodyBlocks().filter((b) => !b.visible);
+  return (
+    <div className="flex flex-col gap-1">
+      {hiddenBlocks.map((block) => (
+        <StaticBlockRow key={block.id} id={block.id} />
+      ))}
     </div>
   );
 }
@@ -317,10 +375,27 @@ function AddMenuItem({
   );
 }
 
+function blockLabel(
+  block: DocumentBlock,
+  sections: SectionRef[],
+  deletedSection: string
+): string {
+  const meta = BLOCK_META[block.type];
+  return block.type === "shared"
+    ? (sections.find((s) => s.id === block.sectionId)?.name ?? deletedSection)
+    : block.type === "customField"
+      ? block.label || meta.label
+      : block.type === "field"
+        ? block.label || block.value || meta.label
+        : meta.label;
+}
+
 function BlockRow({ id }: { id: string }) {
+  const { t } = useLingui();
   const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
+  const { isDocument, locked } = useDocumentModeFlags();
   const block = blocks.find((b) => b.id === id);
   const {
     attributes,
@@ -329,22 +404,14 @@ function BlockRow({ id }: { id: string }) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: isDocument });
 
   if (!block) return null;
   const meta = BLOCK_META[block.type];
   const isSelected = selectedId === id;
   const shown = block.visible;
   const onToggle = () => toggleVisible(id);
-  const label =
-    block.type === "shared"
-      ? (sections.find((s) => s.id === block.sectionId)?.name ??
-        "Shared Section (deleted)")
-      : block.type === "customField"
-        ? block.label || meta.label
-        : block.type === "field"
-          ? block.label || block.value || meta.label
-          : meta.label;
+  const label = blockLabel(block, sections, t`Shared Section (deleted)`);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
@@ -365,22 +432,29 @@ function BlockRow({ id }: { id: string }) {
         !shown && !isSelected && "opacity-60"
       )}
     >
-      <button
-        type="button"
-        aria-label="Drag to reorder"
-        onClick={(e) => e.stopPropagation()}
-        className="relative cursor-grab text-muted-foreground/60 active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        {/* Type icon normally; grip on hover to signal draggability. */}
-        <span className="group-hover:opacity-0 group-focus-within:opacity-0">
+      {isDocument ? (
+        // One record's document keeps the template's order.
+        <span className="p-1 text-muted-foreground/60">
           {blockIcon(block.type)}
         </span>
-        <span className="absolute inset-0 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100">
-          <LuGripVertical className="size-4" />
-        </span>
-      </button>
+      ) : (
+        <button
+          type="button"
+          aria-label={t`Drag to reorder`}
+          onClick={(e) => e.stopPropagation()}
+          className="relative cursor-grab text-muted-foreground/60 active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          {/* Type icon normally; grip on hover to signal draggability. */}
+          <span className="group-hover:opacity-0 group-focus-within:opacity-0">
+            {blockIcon(block.type)}
+          </span>
+          <span className="absolute inset-0 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100">
+            <LuGripVertical className="size-4" />
+          </span>
+        </button>
+      )}
 
       <button
         type="button"
@@ -401,10 +475,10 @@ function BlockRow({ id }: { id: string }) {
         )}
       </button>
 
-      {meta.removable && (
+      {meta.removable && !isDocument && (
         <button
           type="button"
-          aria-label="Remove block"
+          aria-label={t`Remove block`}
           onClick={(e) => {
             e.stopPropagation();
             removeBlock(id);
@@ -418,8 +492,9 @@ function BlockRow({ id }: { id: string }) {
       {meta.hideable ? (
         <button
           type="button"
-          aria-label={shown ? "Hide block" : "Show block"}
+          aria-label={shown ? t`Hide block` : t`Show block`}
           aria-pressed={shown}
+          disabled={locked}
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
@@ -450,97 +525,90 @@ function BlockRow({ id }: { id: string }) {
 }
 
 /**
- * A non-draggable, indented block row — used for blocks shown nested under a
- * parent (e.g. Summary under Line Items). Same selection / visibility / remove
- * behavior as `BlockRow`, just without the drag handle.
+ * A non-draggable block row: Summary nested under Line Items, and the rows
+ * under "Not on the page". Same selection / visibility / remove behavior as
+ * `BlockRow`, without the drag handle.
  */
-function NestedBlockRow({ id }: { id: string }) {
+function StaticBlockRow({ id }: { id: string }) {
+  const { t } = useLingui();
   const { blocks, sections, selectedId, toggleVisible, removeBlock } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
+  const { isDocument, locked } = useDocumentModeFlags();
   const block = blocks.find((b) => b.id === id);
   if (!block) return null;
   const meta = BLOCK_META[block.type];
   const isSelected = selectedId === id;
   const shown = block.visible;
-  const label =
-    block.type === "shared"
-      ? (sections.find((s) => s.id === block.sectionId)?.name ??
-        "Shared Section (deleted)")
-      : block.type === "customField"
-        ? block.label || meta.label
-        : block.type === "field"
-          ? block.label || block.value || meta.label
-          : meta.label;
+  const label = blockLabel(block, sections, t`Shared Section (deleted)`);
 
   return (
-    <div className="ml-3 border-l border-border/60 pl-2">
-      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here */}
-      <div
-        onClick={() => pickBlock(id)}
-        className={cn(
-          "group flex cursor-pointer items-center gap-1.5 rounded-md border px-1.5 py-2",
-          "transition-colors duration-150",
-          isSelected
-            ? "border-primary bg-accent/50"
-            : "border-transparent hover:border-border hover:bg-accent/30",
-          !shown && !isSelected && "opacity-60"
-        )}
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control
+    <div
+      onClick={() => pickBlock(id)}
+      className={cn(
+        "group flex cursor-pointer items-center gap-1.5 rounded-md border px-1.5 py-2",
+        "transition-colors duration-150",
+        isSelected
+          ? "border-primary bg-accent/50"
+          : "border-transparent hover:border-border hover:bg-accent/30",
+        !shown && !isSelected && "opacity-60"
+      )}
+    >
+      <span className="p-1 text-muted-foreground/60">
+        {blockIcon(block.type)}
+      </span>
+      <button
+        type="button"
+        aria-pressed={isSelected}
+        className="flex-1 truncate text-left text-sm"
       >
-        <span className="p-1 text-muted-foreground/60">
-          {blockIcon(block.type)}
-        </span>
+        {label}
+      </button>
+      {meta.removable && !isDocument && (
         <button
           type="button"
-          aria-pressed={isSelected}
-          className="flex-1 truncate text-left text-sm"
+          aria-label={t`Remove block`}
+          onClick={(e) => {
+            e.stopPropagation();
+            removeBlock(id);
+          }}
+          className="rounded p-1 text-muted-foreground md:opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100"
         >
-          {label}
+          <LuTrash2 className="size-4" />
         </button>
-        {meta.removable && (
-          <button
-            type="button"
-            aria-label="Remove block"
-            onClick={(e) => {
-              e.stopPropagation();
-              removeBlock(id);
-            }}
-            className="rounded p-1 text-muted-foreground md:opacity-0 transition-[opacity,color] hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
-          >
-            <LuTrash2 className="size-4" />
-          </button>
-        )}
-        {meta.hideable ? (
-          <button
-            type="button"
-            aria-label={shown ? "Hide block" : "Show block"}
-            aria-pressed={shown}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleVisible(id);
-            }}
-            className={cn(
-              "rounded p-1 transition-colors",
-              shown
-                ? "text-foreground hover:bg-muted"
-                : "text-muted-foreground hover:bg-muted"
-            )}
-          >
-            {shown ? (
-              <LuEye className="size-4" />
-            ) : (
-              <LuEyeOff className="size-4" />
-            )}
-          </button>
-        ) : (
-          <span
-            title="Required — always shown"
-            className="p-1 text-muted-foreground/50"
-          >
-            <LuLock className="size-3.5" />
-          </span>
-        )}
-      </div>
+      )}
+      {meta.hideable ? (
+        <button
+          type="button"
+          aria-label={shown ? t`Hide block` : t`Show block`}
+          aria-pressed={shown}
+          disabled={locked}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleVisible(id);
+          }}
+          className={cn(
+            "rounded p-1 transition-colors",
+            shown
+              ? "text-foreground hover:bg-muted"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          {shown ? (
+            <LuEye className="size-4" />
+          ) : (
+            <LuEyeOff className="size-4" />
+          )}
+        </button>
+      ) : (
+        <span
+          title="Required — always shown"
+          className="p-1 text-muted-foreground/50"
+        >
+          <LuLock className="size-3.5" />
+        </span>
+      )}
     </div>
   );
 }
@@ -579,8 +647,10 @@ function HeaderLogoRow() {
   const { selectedId, headerSectionId } = useDocumentTemplate();
   const pickBlock = usePickBlock();
   const { section, config, patch } = useHeaderConfig();
-  // Hide the node when the header is off or its section isn't available.
-  if (!section || headerSectionId === null) return null;
+  const { isDocument } = useDocumentModeFlags();
+  // Hide the node when the header is off or its section isn't available. The
+  // logo is company-wide, so one record's document does not show it.
+  if (!section || headerSectionId === null || isDocument) return null;
   const isSelected = selectedId === HEADER_LOGO_ID;
   const shown = config.showLogo;
 
@@ -639,7 +709,7 @@ function HeaderLogoRow() {
  * the sortable blocks. Eye toggles the footer on/off; selecting it opens the
  * footer config (page numbers, registration line).
  */
-function FooterRow() {
+export function FooterRow() {
   const { footerSectionId, setFooterSection, selectedId } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();
@@ -676,6 +746,7 @@ function ChromeRow({
   onSelect: () => void;
   onToggle: () => void;
 }) {
+  const { isDocument } = useDocumentModeFlags();
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
     <div
@@ -693,15 +764,13 @@ function ChromeRow({
       <button
         type="button"
         aria-pressed={isSelected}
-        className="flex flex-1 items-center gap-2 truncate text-left text-sm"
+        className="flex-1 truncate text-left text-sm"
       >
-        <span className="truncate">{label}</span>
-        <span className="rounded bg-muted px-1.5 py-px text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">
-          Page
-        </span>
+        {label}
       </button>
       <button
         type="button"
+        hidden={isDocument}
         aria-label={shown ? `Hide ${label}` : `Show ${label}`}
         aria-pressed={shown}
         onClick={(e) => {

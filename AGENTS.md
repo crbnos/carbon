@@ -145,6 +145,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | OEE providers / machine monitoring (Sense, loaded operation, unattributed machine time) | `.claude/rules/oee-provider.md` + `apps/erp/app/modules/production/AGENTS.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
+| Shared dev containers (`crbn-shared`, database per worktree, pg_cron/pg_net forwarding, `--isolated`) | `.claude/rules/dev-shared-services.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |
 | Realtime (broadcast, `handle.realtime`, live lists, change log) | `.claude/rules/realtime-system.md` + `packages/query/AGENTS.md` |
 | Service workers, offline page, app icon badge, installing the app | `.claude/rules/service-workers.md` |
