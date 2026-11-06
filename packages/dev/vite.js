@@ -115,6 +115,10 @@ export function stackActivity() {
       if (!dir) return;
       const activity = path.join(dir, "activity");
       const asleep = path.join(dir, "asleep");
+      // `crbn up` starts the dev servers while it still migrates and seeds
+      // the database; until that marker is gone a request would reach a
+      // half-built schema. A fresh volume takes a few minutes.
+      const booting = path.join(dir, "booting");
       let touched = 0;
       const touch = (force) => {
         const now = Date.now();
@@ -126,7 +130,7 @@ export function stackActivity() {
           // crbn up is gone; nothing is watching
         }
       };
-      server.middlewares.use(async (req, _res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         if (req.url?.startsWith("/api/inngest")) return next();
         touch(false);
         if (fs.existsSync(asleep)) {
@@ -134,6 +138,20 @@ export function stackActivity() {
           const deadline = Date.now() + 120_000;
           while (fs.existsSync(asleep) && Date.now() < deadline) {
             await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        }
+        if (fs.existsSync(booting)) {
+          const deadline = Date.now() + 600_000;
+          while (fs.existsSync(booting) && Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          // Still booting: the schema may be half-built, so the request is
+          // refused in a way the caller retries, never handed to the app.
+          if (fs.existsSync(booting)) {
+            res.statusCode = 503;
+            res.setHeader("Retry-After", "5");
+            res.end("The database is still starting. Retry shortly.");
+            return;
           }
         }
         next();

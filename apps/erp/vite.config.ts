@@ -133,6 +133,27 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
         ".dev",
         ".localhost",
       ],
+      // Cloud container only (scripts/cloud-dev.sh): transform the login page
+      // and the app shell when the server starts, not at the first request,
+      // which otherwise waits about two minutes on a 4-core box; and allow any
+      // host, since the session reaches the server through a forwarded port.
+      ...(process.env.CARBON_DEV_CLOUD === "1"
+        ? {
+            warmup: {
+              ssrFiles: [
+                "./app/root.tsx",
+                "./app/routes/_public+/login.tsx",
+                "./app/routes/x+/_layout.tsx",
+              ],
+              clientFiles: [
+                "./app/entry.client.tsx",
+                "./app/root.tsx",
+                "./app/routes/_public+/login.tsx",
+              ],
+            },
+            allowedHosts: true as const,
+          }
+        : {}),
     },
     plugins: [
       tailwindcss(),

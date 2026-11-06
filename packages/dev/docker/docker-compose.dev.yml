@@ -83,7 +83,7 @@ services:
       - "host.docker.internal:host-gateway"
       - "${DOMAIN}:host-gateway"
     volumes:
-      - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+      - ${PORTLESS_CA_FILE:-${HOME}/.portless/ca.pem}:/etc/ssl/certs/portless-ca.pem:ro
 
   postgrest:
     image: postgrest/postgrest:v13.0.8
@@ -321,7 +321,7 @@ services:
       - "${INNGEST_TLS_HOST}:host-gateway"
     volumes:
       - inngest:/data
-      - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+      - ${PORTLESS_CA_FILE:-${HOME}/.portless/ca.pem}:/etc/ssl/certs/portless-ca.pem:ro
 
 networks:
   carbon-shared:

@@ -64,6 +64,14 @@ describe("botProtection", () => {
     expect(auth.botProtection).toBeNull();
   });
 
+  it("turns the check off with none, though Turnstile keys are set", async () => {
+    const auth = await load({ BOT_PROTECTION: "none", ...turnstileKeys });
+    expect(auth.botProtection).toBeNull();
+    await expect(
+      auth.verifyBotProtection({ ip: "127.0.0.1", actor: "test@carbon.ms" })
+    ).resolves.toBeNull();
+  });
+
   it("uses BotID when chosen, though Turnstile keys are set for GoTrue", async () => {
     const auth = await load({
       IS_VERCEL: true,

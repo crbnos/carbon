@@ -36,6 +36,10 @@ export function stackStateDir(slug: string): string {
 
 export const activityFile = (dir: string) => join(dir, "activity");
 export const asleepFile = (dir: string) => join(dir, "asleep");
+// Present while `crbn up` still migrates and seeds the database the dev
+// servers it already started would answer from. The stack activity plugin
+// holds every request until it is gone.
+export const bootingFile = (dir: string) => join(dir, "booting");
 
 export type StackState = "awake" | "asleep" | "deep";
 export type Step = "sleep" | "deepen" | "wake";
