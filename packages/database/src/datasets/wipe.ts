@@ -450,6 +450,14 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
     }
   }
 
+  // Both order and line deletes update jobs; detach the line before either
+  // cascade can recheck its foreign key against an already-deleted line.
+  await client.query(
+    `UPDATE job SET "salesOrderLineId" = NULL
+     WHERE "companyId" = $1 AND "salesOrderLineId" IS NOT NULL`,
+    [companyId]
+  );
+
   // Delete lines with check constraints that would block nulling their item FKs.
   // salesOrderLine.itemId can't be set NULL (check requires it for Part/Material/Tool/etc).
   // Cascade via the parent headers — the headers are in deleteSet and will be deleted again
