@@ -70,10 +70,12 @@ const PLACEMENT_LABELS: Record<DocumentSectionPlacement, string> = {
  */
 export function SectionFormModal({
   section,
+  open = true,
   onClose,
   action
 }: {
   section: SectionFormValue | null;
+  open?: boolean;
   onClose: () => void;
   action?: string;
 }) {
@@ -122,7 +124,7 @@ export function SectionFormModal({
   };
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <fetcher.Form
           method="post"

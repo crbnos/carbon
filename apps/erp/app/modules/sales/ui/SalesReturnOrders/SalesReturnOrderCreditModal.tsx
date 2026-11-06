@@ -15,7 +15,6 @@ import {
   NumberField,
   NumberInput,
   ScrollArea,
-  useMount,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -32,11 +31,13 @@ import { path } from "~/utils/path";
 
 type SalesReturnOrderCreditModalProps = {
   currencyCode?: string;
+  open?: boolean;
   onClose: () => void;
 };
 
 const SalesReturnOrderCreditModal = ({
   currencyCode,
+  open = true,
   onClose
 }: SalesReturnOrderCreditModalProps) => {
   const { t } = useLingui();
@@ -50,9 +51,10 @@ const SalesReturnOrderCreditModal = ({
   const loadFetcher = useFetcher<typeof creditLoader>();
   const submitFetcher = useFetcher<{ success: boolean }>();
 
-  useMount(() => {
-    loadFetcher.load(path.to.salesReturnOrderCredit(orderId));
-  });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per open; the caller keys the modal per open
+  useEffect(() => {
+    if (open) loadFetcher.load(path.to.salesReturnOrderCredit(orderId));
+  }, [open, orderId]);
 
   const lines = (loadFetcher.data?.lines ?? []).filter(
     (line) => line.creditableQuantity > 0
@@ -118,7 +120,7 @@ const SalesReturnOrderCreditModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -154,6 +154,7 @@ const JobHeader = () => {
     variant: "dropdown"
   });
 
+  // Keyed per open: each open checks the job afresh, and nothing loads before the first.
   const releaseModal = useDisclosure();
   const cancelModal = useDisclosure();
   const completeModal = useDisclosure();
@@ -603,49 +604,49 @@ const JobHeader = () => {
           </>
         }
       />
-      {releaseModal.isOpen && (
+      {releaseModal.openCount > 0 && (
         <JobStartModal
+          key={`releaseModal-${releaseModal.openCount}`}
+          open={releaseModal.isOpen}
           job={routeData?.job}
           onClose={releaseModal.onClose}
           release={release}
         />
       )}
-      {cancelModal.isOpen && (
-        <JobCancelModal
-          job={routeData?.job}
-          onClose={cancelModal.onClose}
-          cancel={cancel}
-        />
-      )}
-      {completeModal.isOpen && (
+      <JobCancelModal
+        open={cancelModal.isOpen}
+        job={routeData?.job}
+        onClose={cancelModal.onClose}
+        cancel={cancel}
+      />
+      {completeModal.openCount > 0 && (
         <JobCompleteModal
+          key={`completeModal-${completeModal.openCount}`}
+          open={completeModal.isOpen}
           job={routeData?.job}
           onClose={completeModal.onClose}
           fetcher={complete}
         />
       )}
-      {expediteModal.isOpen && (
-        <JobExpediteModal
-          job={routeData?.job}
-          onClose={expediteModal.onClose}
-          fetcher={expediteFetcher}
-        />
-      )}
-      {deleteJobModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJob(jobId)}
-          isOpen={deleteJobModal.isOpen}
-          name={routeData?.job?.jobId!}
-          text={`Are you sure you want to delete ${routeData?.job
-            ?.jobId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteJobModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteJobModal.onClose();
-          }}
-        />
-      )}
+      <JobExpediteModal
+        open={expediteModal.isOpen}
+        job={routeData?.job}
+        onClose={expediteModal.onClose}
+        fetcher={expediteFetcher}
+      />
+      <ConfirmDelete
+        action={path.to.deleteJob(jobId)}
+        isOpen={deleteJobModal.isOpen}
+        name={routeData?.job?.jobId!}
+        text={`Are you sure you want to delete ${routeData?.job
+          ?.jobId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteJobModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteJobModal.onClose();
+        }}
+      />
       {auditLogDrawer}
     </>
   );
@@ -692,10 +693,12 @@ const getExplorePath = (jobId: string, type: string) => {
 };
 
 export function JobStartModal({
+  open = true,
   job,
   onClose,
   release
 }: {
+  open?: boolean;
   job?: Job;
   release: JobRelease;
   onClose: () => void;
@@ -999,15 +1002,16 @@ export function JobStartModal({
     setLoading(false);
   };
 
+  // Mounted per open (a `key` at the call site): the checks run once, on open.
   useMount(() => {
-    validate();
+    if (open) validate();
   });
 
   if (!job) return null;
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1274,10 +1278,12 @@ export function JobStartModal({
 }
 
 function JobCancelModal({
+  open = true,
   job,
   onClose,
   cancel
 }: {
+  open?: boolean;
   job?: Job;
   cancel: ReturnType<typeof useAction<typeof cancelAction>>;
   onClose: () => void;
@@ -1286,7 +1292,7 @@ function JobCancelModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1330,10 +1336,12 @@ function JobCancelModal({
 }
 
 function JobExpediteModal({
+  open = true,
   job,
   onClose,
   fetcher
 }: {
+  open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<{
     expedite: {
@@ -1359,7 +1367,7 @@ function JobExpediteModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1449,10 +1457,12 @@ async function getJobReceipts(
 }
 
 function JobCompleteModal({
+  open = true,
   job,
   onClose,
   fetcher
 }: {
+  open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
@@ -1626,8 +1636,9 @@ function JobCompleteModal({
     setLoading(false);
   };
 
+  // Mounted per open (a `key` at the call site): the job is read once, on open.
   useMount(() => {
-    if (!job) return;
+    if (!job || !open) return;
     getJobData();
   });
 
@@ -1656,7 +1667,7 @@ function JobCompleteModal({
   if (!job) return null;
 
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent size={hasLeftover ? "large" : "medium"}>
         {loading ? (
           <ModalBody>

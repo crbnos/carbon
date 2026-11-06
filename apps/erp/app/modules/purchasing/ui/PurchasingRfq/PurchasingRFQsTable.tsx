@@ -313,11 +313,9 @@ const PurchasingRFQsTable = memo(
             text={`Are you sure you want to delete ${selectedPurchasingRFQ.rfqId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchasingRFQModal.onClose();
-              setSelectedPurchasingRFQ(null);
             }}
             onSubmit={() => {
               deletePurchasingRFQModal.onClose();
-              setSelectedPurchasingRFQ(null);
             }}
           />
         )}

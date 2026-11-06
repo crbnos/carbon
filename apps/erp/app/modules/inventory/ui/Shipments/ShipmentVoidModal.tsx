@@ -25,7 +25,13 @@ import { useNavigation, useParams } from "react-router";
 import type { action as voidAction } from "~/routes/x+/shipment+/$shipmentId.void";
 import { path } from "~/utils/path";
 
-const ShipmentVoidModal = ({ onClose }: { onClose: () => void }) => {
+const ShipmentVoidModal = ({
+  open = true,
+  onClose
+}: {
+  open?: boolean;
+  onClose: () => void;
+}) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
@@ -43,7 +49,7 @@ const ShipmentVoidModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <Modal
-      open={true}
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

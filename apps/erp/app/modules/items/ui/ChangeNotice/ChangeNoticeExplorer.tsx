@@ -98,8 +98,10 @@ export default function ChangeNoticeExplorer() {
         )}
       </div>
 
-      {disclosure.isOpen && (
+      {disclosure.openCount > 0 && (
         <AffectedItemForm
+          key={`disclosure-${disclosure.openCount}`}
+          open={disclosure.isOpen}
           changeOrderId={id}
           blacklist={affectedItems.map((a) => a.affectedItem.itemId)}
           onClose={disclosure.onClose}

@@ -327,6 +327,7 @@ export const JobOperation = ({
   const batchOverdue = batchFacts?.dueDate
     ? parseDate(batchFacts.dueDate).compare(today(getLocalTimeZone())) < 0
     : false;
+  // Keyed by its open count: BatchCompleteModal seeds its rows on mount.
   const batchCompleteModal = useDisclosure();
   // The completion fetcher lives HERE, not in BatchCompleteModal: a successful
   // completion flips the batch out of Active/Completing, the loader stops
@@ -682,8 +683,8 @@ export const JobOperation = ({
     attributeRecordDeleteModal.onOpen();
   };
 
+  // The step stays selected while its modal closes; the next open sets it.
   const onDeselectStep = () => {
-    setSelectedStep(null);
     attributeRecordModal.onClose();
     attributeRecordDeleteModal.onClose();
   };
@@ -746,8 +747,10 @@ export const JobOperation = ({
   const renderIssueModal = (
     resolvedMaterials: Awaited<typeof materials> | undefined
   ) =>
-    issueModal.isOpen ? (
+    issueModal.openCount > 0 ? (
       <IssueMaterialModal
+        key={`issue-${issueModal.openCount}`}
+        open={issueModal.isOpen}
         operationId={operation.id}
         // The process view issues the whole quantity at
         // once, so picked lots may pre-fill when the
@@ -2983,8 +2986,9 @@ export const JobOperation = ({
           </BottomSheetBody>
         </BottomSheetContent>
       </BottomSheet>
-      {reworkModal.isOpen && (
+      {reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation}
           jobId={job.id!}
           isOpen={reworkModal.isOpen}
@@ -2995,8 +2999,10 @@ export const JobOperation = ({
           returnFocusRef={actionsSheetOpenerRef}
         />
       )}
-      {scrapModal.isOpen && (
+      {scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
@@ -3013,12 +3019,15 @@ export const JobOperation = ({
           onClose={scrapModal.onClose}
         />
       )}
-      {completeModal.isOpen && (
-        <Suspense key={`complete-modal-${operationId}`}>
+      {completeModal.openCount > 0 && (
+        <Suspense
+          key={`complete-modal-${operationId}-${completeModal.openCount}`}
+        >
           <Await resolve={materials}>
             {(resolvedMaterials) => {
               return (
                 <QuantityModal
+                  open={completeModal.isOpen}
                   type="complete"
                   laborProductionEvent={laborProductionEvent}
                   machineProductionEvent={machineProductionEvent}
@@ -3036,8 +3045,8 @@ export const JobOperation = ({
           </Await>
         </Suspense>
       )}
-      {finishModal.isOpen && (
-        <Suspense key={`finish-modal-${operationId}`}>
+      {finishModal.openCount > 0 && (
+        <Suspense key={`finish-modal-${operationId}-${finishModal.openCount}`}>
           <Await resolve={procedure}>
             {(resolvedProcedure) => {
               const { attributes } = resolvedProcedure;
@@ -3046,6 +3055,7 @@ export const JobOperation = ({
               );
               return (
                 <QuantityModal
+                  open={finishModal.isOpen}
                   type="finish"
                   allStepsRecorded={allStepsRecorded}
                   laborProductionEvent={laborProductionEvent}
@@ -3062,8 +3072,10 @@ export const JobOperation = ({
         </Suspense>
       )}
 
-      {batch && batchCompleteModal.isOpen && (
+      {batch && batchCompleteModal.openCount > 0 && (
         <BatchCompleteModal
+          key={batchCompleteModal.openCount}
+          open={batchCompleteModal.isOpen}
           batch={batch}
           isCompleting={isCompleting}
           fetcher={batchCompleteFetcher}
@@ -3072,8 +3084,10 @@ export const JobOperation = ({
         />
       )}
 
-      {serialModal.isOpen && (
+      {serialModal.openCount > 0 && (
         <SerialSelectorModal
+          key={`serial-${serialModal.openCount}`}
+          open={serialModal.isOpen}
           availableEntities={availableEntities}
           onClose={serialModal.onClose}
           onCancel={() => navigate(path.to.operations)}
@@ -3092,18 +3106,21 @@ export const JobOperation = ({
         />
       )}
 
-      {attributeRecordModal.isOpen && selectedStep ? (
+      {selectedStep && attributeRecordModal.openCount > 0 ? (
         <RecordModal
-          key={selectedStep.id}
+          key={`record-${selectedStep.id}-${attributeRecordModal.openCount}`}
+          open={attributeRecordModal.isOpen}
           activeStep={activeStep}
           attribute={selectedStep}
           onClose={onDeselectStep}
         />
       ) : null}
 
-      {attributeRecordDeleteModal.isOpen && selectedStep && (
+      {selectedStep && attributeRecordDeleteModal.openCount > 0 && (
         <DeleteStepRecordModal
-          onClose={onDeselectStep}
+          key={`delete-step-${attributeRecordDeleteModal.openCount}`}
+          open={attributeRecordDeleteModal.isOpen}
+          onClose={attributeRecordDeleteModal.onClose}
           id={
             selectedStep?.jobOperationStepRecord.find(
               (r) => r.index === activeStep

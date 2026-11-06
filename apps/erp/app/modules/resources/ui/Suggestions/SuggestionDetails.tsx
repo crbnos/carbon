@@ -14,8 +14,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  useCloseRoute,
   useMode,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -53,8 +53,8 @@ export default function SuggestionDetails({
   tags
 }: SuggestionDetailsProps) {
   const { t } = useLingui();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
   const fetcher = useFetcher();
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const mode = useMode();
@@ -87,7 +87,7 @@ export default function SuggestionDetails({
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

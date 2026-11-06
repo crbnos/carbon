@@ -78,11 +78,13 @@ function AddToField({
  * action redirects to the purchase order; a refusal shows in the modal.
  */
 export function AddPurchaseOrderModal({
+  open = true,
   projectId,
   elementId,
   defaultRequiredDate,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   elementId: string;
   defaultRequiredDate?: string;
@@ -106,12 +108,14 @@ export function AddPurchaseOrderModal({
   const [typedPrice, setTypedPrice] = useState<number>();
 
   const load = optionsFetcher.load;
+  // Mounted per open (a `key` at the call site); nothing loads while closed.
   useEffect(() => {
+    if (!open) return;
     const params = new URLSearchParams();
     if (supplierId) params.set("supplierId", supplierId);
     if (itemId) params.set("itemId", itemId);
     load(`${resource}?${params}`);
-  }, [load, resource, supplierId, itemId]);
+  }, [open, load, resource, supplierId, itemId]);
 
   const options = optionsFetcher.data;
   const currencyCode = options?.currencyCode;
@@ -142,7 +146,7 @@ export function AddPurchaseOrderModal({
   ];
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         {options === undefined ? (

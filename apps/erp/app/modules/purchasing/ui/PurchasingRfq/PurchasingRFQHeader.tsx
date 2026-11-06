@@ -52,6 +52,7 @@ const PurchasingRFQHeader = () => {
   if (!rfqId) throw new Error("rfqId not found");
 
   const { t } = useLingui();
+  // The finalize modal seeds its state at its top level; a new key per open resets it.
   const finalizeModal = useDisclosure();
   const requiresSuppliersAlert = useDisclosure();
   const cancelReasonModal = useDisclosure();
@@ -272,50 +273,50 @@ const PurchasingRFQHeader = () => {
           </>
         }
       />
-      {finalizeModal.isOpen && (
+      {finalizeModal.openCount > 0 && (
         <FinalizeRFQModal
+          key={finalizeModal.openCount}
           lines={routeData?.lines ?? []}
           suppliers={routeData?.suppliers ?? []}
           rfqId={rfqId}
+          open={finalizeModal.isOpen}
           onClose={finalizeModal.onClose}
         />
       )}
-      {requiresSuppliersAlert.isOpen && (
-        <RequiresSuppliersAlert onClose={requiresSuppliersAlert.onClose} />
-      )}
-      {cancelReasonModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.cancelPurchasingRfq(rfqId)}
-          isOpen={cancelReasonModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to cancel ${routeData?.rfqSummary
-            ?.rfqId!}? This will also cancel all related supplier quotes.`}
-          deleteText="Cancel"
-          onCancel={() => {
-            cancelReasonModal.onClose();
-          }}
-          onSubmit={() => {
-            cancelReasonModal.onClose();
-          }}
-        />
-      )}
-      {deleteRFQModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchasingRfq(rfqId)}
-          isOpen={deleteRFQModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to delete ${routeData?.rfqSummary
-            ?.rfqId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteRFQModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteRFQModal.onClose();
-          }}
-        />
-      )}
-      {compareQuotesModal.isOpen && (
+      <RequiresSuppliersAlert
+        open={requiresSuppliersAlert.isOpen}
+        onClose={requiresSuppliersAlert.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.cancelPurchasingRfq(rfqId)}
+        isOpen={cancelReasonModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to cancel ${routeData?.rfqSummary
+          ?.rfqId!}? This will also cancel all related supplier quotes.`}
+        deleteText="Cancel"
+        onCancel={() => {
+          cancelReasonModal.onClose();
+        }}
+        onSubmit={() => {
+          cancelReasonModal.onClose();
+        }}
+      />
+      <ConfirmDelete
+        action={path.to.deletePurchasingRfq(rfqId)}
+        isOpen={deleteRFQModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to delete ${routeData?.rfqSummary
+          ?.rfqId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteRFQModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteRFQModal.onClose();
+        }}
+      />
+      {compareQuotesModal.openCount > 0 && (
         <SupplierQuoteCompareDrawer
+          key={`compare-${compareQuotesModal.openCount}`}
           isOpen={compareQuotesModal.isOpen}
           onClose={compareQuotesModal.onClose}
           purchasingRfqId={rfqId}
@@ -327,9 +328,15 @@ const PurchasingRFQHeader = () => {
 
 export default PurchasingRFQHeader;
 
-function RequiresSuppliersAlert({ onClose }: { onClose: () => void }) {
+function RequiresSuppliersAlert({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

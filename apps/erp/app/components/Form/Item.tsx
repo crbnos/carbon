@@ -33,6 +33,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter, LuTriangleAlert } from "react-icons/lu";
+import { useDrawerItem } from "~/hooks";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
@@ -222,7 +223,8 @@ const Item = ({
   ]);
 
   const selectTypeModal = useDisclosure();
-  const newItemsModal = useDisclosure();
+  // The type is kept with the open: a closed form stays mounted while it animates out.
+  const newItem = useDrawerItem<ItemType | "Item">();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -287,10 +289,11 @@ const Item = ({
 
   const storeEmptyMessage = useEmptyState(entityKey, {
     onCreate: () => {
+      setCreated("");
       if (type === "Item") {
         selectTypeModal.onOpen();
       } else {
-        newItemsModal.onOpen();
+        newItem.open(type);
       }
     }
   });
@@ -361,7 +364,7 @@ const Item = ({
                 selectTypeModal.onOpen();
                 setCreated(option);
               } else {
-                newItemsModal.onOpen();
+                newItem.open(type);
                 setCreated(option);
               }
             }}
@@ -476,9 +479,9 @@ const Item = ({
           helperText && <FormHelperText>{helperText}</FormHelperText>
         )}
       </FormControl>
-      {selectTypeModal.isOpen && (
+      {selectTypeModal.openCount > 0 && (
         <Modal
-          open
+          open={selectTypeModal.isOpen}
           onOpenChange={(open) => {
             if (!open) {
               selectTypeModal.onClose();
@@ -534,7 +537,7 @@ const Item = ({
                 isDisabled={type === "Item"}
                 onClick={() => {
                   selectTypeModal.onClose();
-                  newItemsModal.onOpen();
+                  newItem.open(type);
                 }}
               >
                 <Trans>Create</Trans>
@@ -543,13 +546,14 @@ const Item = ({
           </ModalContent>
         </Modal>
       )}
-      {type === "Part" && newItemsModal.isOpen && (
+      {newItem.item === "Part" && (
         <PartForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
@@ -570,13 +574,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Consumable" && newItemsModal.isOpen && (
+      {newItem.item === "Consumable" && (
         <ConsumableForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
@@ -592,13 +597,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Material" && newItemsModal.isOpen && (
+      {newItem.item === "Material" && (
         <MaterialForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
@@ -616,13 +622,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Service" && newItemsModal.isOpen && (
+      {newItem.item === "Service" && (
         <ServiceForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             name: created,
@@ -640,13 +647,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Tool" && newItemsModal.isOpen && (
+      {newItem.item === "Tool" && (
         <ToolForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",

@@ -5,9 +5,10 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteDepreciationRun,
@@ -71,19 +72,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteDepreciationRunRoute() {
   const { depreciationRunId } = useParams();
   const { run } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.depreciationRun(depreciationRunId!));
 
   if (!run) return null;
   if (!depreciationRunId) throw new Error("depreciationRunId is not found");
-
-  const onCancel = () => navigate(path.to.depreciationRun(depreciationRunId));
 
   return (
     <ConfirmDelete
       action={path.to.deleteDepreciationRun(depreciationRunId)}
       name={run.depreciationRunId}
       text={`Are you sure you want to delete ${run.depreciationRunId}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

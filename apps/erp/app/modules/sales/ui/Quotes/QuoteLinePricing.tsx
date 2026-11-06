@@ -35,6 +35,7 @@ import {
   Tr,
   toast,
   toastError,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, round } from "@carbon/utils";
@@ -702,7 +703,8 @@ const QuoteLinePricing = ({
     ]
   );
 
-  const [leadTimeModalOpen, setLeadTimeModalOpen] = useState(false);
+  // The lead time modal keeps its forecast and choices: a new key per open.
+  const leadTimeModal = useDisclosure();
 
   // How each quantity's price was resolved. The stored traces arrive with the
   // prices, so showing the button costs no request; today's calculation (the
@@ -999,7 +1001,7 @@ const QuoteLinePricing = ({
                         icon={<LuCalendarClock />}
                         variant="ghost"
                         size="sm"
-                        onClick={() => setLeadTimeModalOpen(true)}
+                        onClick={leadTimeModal.onOpen}
                       />
                     ) : undefined
                   }
@@ -1625,33 +1627,34 @@ const QuoteLinePricing = ({
           </Tbody>
         </Table>
       </CardContent>
-      {leadTimeModalOpen && (
+      {leadTimeModal.openCount > 0 && (
         <QuoteLeadTimeModal
+          key={leadTimeModal.openCount}
+          open={leadTimeModal.isOpen}
           quoteId={quoteId}
           lineId={lineId}
           quantities={quantities}
           isEditable={isEditable}
           onApply={onUpdateLeadTimes}
-          onClose={() => setLeadTimeModalOpen(false)}
+          onClose={leadTimeModal.onClose}
         />
       )}
-      {priceTraceModalOpen && (
-        <QuoteLinePriceTraceModal
-          traces={priceTraces}
-          isLoading={priceTraceFetcher.state !== "idle"}
-          currencyCode={baseCurrency}
-          unitPricePrecision={unitPricePrecision}
-          isEditable={isEditable}
-          isRepricing={repriceFetcher.state !== "idle"}
-          onReprice={() =>
-            repriceFetcher.submit(null, {
-              method: "post",
-              action: priceTraceUrl
-            })
-          }
-          onClose={() => setPriceTraceModalOpen(false)}
-        />
-      )}
+      <QuoteLinePriceTraceModal
+        open={priceTraceModalOpen}
+        traces={priceTraces}
+        isLoading={priceTraceFetcher.state !== "idle"}
+        currencyCode={baseCurrency}
+        unitPricePrecision={unitPricePrecision}
+        isEditable={isEditable}
+        isRepricing={repriceFetcher.state !== "idle"}
+        onReprice={() =>
+          repriceFetcher.submit(null, {
+            method: "post",
+            action: priceTraceUrl
+          })
+        }
+        onClose={() => setPriceTraceModalOpen(false)}
+      />
     </Card>
   );
 };

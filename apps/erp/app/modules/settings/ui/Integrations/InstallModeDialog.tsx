@@ -40,11 +40,13 @@ export type InstallMode = {
  * imply otherwise.
  */
 export function InstallModeDialog({
+  open = true,
   integrationName,
   modes,
   onClose,
   onChoose
 }: {
+  open?: boolean;
   integrationName: string;
   modes: InstallMode[];
   onClose: () => void;
@@ -55,7 +57,7 @@ export function InstallModeDialog({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

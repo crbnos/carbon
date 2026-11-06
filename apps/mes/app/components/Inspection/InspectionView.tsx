@@ -1115,8 +1115,10 @@ export function InspectionView({
       )}
 
       {/* ── MODALS ── */}
-      {scannerDisclosure.isOpen && (
+      {scannerDisclosure.openCount > 0 && (
         <ScanInspectionSample
+          key={`scan-${scannerDisclosure.openCount}`}
+          open={scannerDisclosure.isOpen}
           inspectionId={inspection.id}
           isSerial={isSerial}
           remaining={remaining}
@@ -1128,8 +1130,10 @@ export function InspectionView({
         />
       )}
 
-      {acceptDisclosure.isOpen && (
+      {acceptDisclosure.openCount > 0 && (
         <AcceptLotModal
+          key={`accept-${acceptDisclosure.openCount}`}
+          open={acceptDisclosure.isOpen}
           inspectionId={inspection.id}
           operationId={operationId}
           fails={fails}
@@ -1139,8 +1143,10 @@ export function InspectionView({
         />
       )}
 
-      {rejectDisclosure.isOpen && (
+      {rejectDisclosure.openCount > 0 && (
         <DispositionModal
+          key={`reject-${rejectDisclosure.openCount}`}
+          open={rejectDisclosure.isOpen}
           decision="Reject"
           inspectionId={inspection.id}
           operationId={operationId}
@@ -1161,8 +1167,10 @@ export function InspectionView({
         />
       )}
 
-      {partialDisclosure.isOpen && (
+      {partialDisclosure.openCount > 0 && (
         <DispositionModal
+          key={`partial-${partialDisclosure.openCount}`}
+          open={partialDisclosure.isOpen}
           decision="Partial"
           inspectionId={inspection.id}
           operationId={operationId}
@@ -1188,8 +1196,10 @@ export function InspectionView({
         onClose={qualityModal.onClose}
       />
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1202,8 +1212,10 @@ export function InspectionView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1217,8 +1229,9 @@ export function InspectionView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -1420,6 +1433,7 @@ function AcceptLotModal({
   fails,
   remaining,
   eventIds,
+  open,
   onClose
 }: {
   inspectionId: string;
@@ -1427,6 +1441,7 @@ function AcceptLotModal({
   fails: number;
   remaining: number;
   eventIds: ProductionEventIdFields;
+  open: boolean;
   onClose: () => void;
 }) {
   const fetcher = useAction<{}>({
@@ -1441,7 +1456,7 @@ function AcceptLotModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

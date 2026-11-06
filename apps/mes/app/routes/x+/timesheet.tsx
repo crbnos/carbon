@@ -25,7 +25,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast
+  toast,
+  useDisclosure
 } from "@carbon/react";
 import { WeekHoursChart, weekHoursTones } from "@carbon/react/WeekHours";
 import {
@@ -461,10 +462,12 @@ export default function MESTimesheetPage() {
   const { t } = useLingui();
   const { locale } = useLocale();
   const formatQuantity = (hours: number) => formatHours(hours, locale);
-  const [certifying, setCertifying] = useState(false);
+  const certifyModal = useDisclosure();
+  // Change on every open: the modals seed their fields on mount.
+  const [reasonKey, setReasonKey] = useState(0);
   const submitFetcher = useAction<typeof action>({
     // The certification modal closes whatever the outcome, as in the ERP.
-    onSettled: () => setCertifying(false),
+    onSettled: () => certifyModal.onClose(),
     onSuccess: (data) => {
       if (data.message) toast.success(data.message);
     },
@@ -473,11 +476,12 @@ export default function MESTimesheetPage() {
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(
     null
   );
+  const [isReasonOpen, setIsReasonOpen] = useState(false);
   const reasonFetcher = useAction<typeof action>({
     onSuccess: (data) => {
       // A budget overrun never refuses the hours; it only warns.
       if (data.message) toast.warning(data.message);
-      setPendingChange(null);
+      setIsReasonOpen(false);
     },
     // A refusal keeps the modal open, so the reason can be fixed.
     onError: (data) => toast.error(data.message ?? t`Failed to save the hours`)
@@ -685,6 +689,8 @@ export default function MESTimesheetPage() {
           ...reasons,
           settle: () => forgetOverride(key)
         });
+        setReasonKey((current) => current + 1);
+        setIsReasonOpen(true);
         return;
       }
     }
@@ -753,7 +759,7 @@ export default function MESTimesheetPage() {
               leftIcon={<LuSend />}
               isDisabled={!hasDraft || isSubmitting}
               isLoading={isSubmitting}
-              onClick={() => setCertifying(true)}
+              onClick={certifyModal.onOpen}
             >
               <Trans>Submit week</Trans>
             </Button>
@@ -999,6 +1005,8 @@ export default function MESTimesheetPage() {
 
       {pendingChange && (
         <TimesheetReasonModal
+          key={reasonKey}
+          open={isReasonOpen}
           label={pendingChange.label}
           before={
             pendingChange.previousHours === null
@@ -1025,13 +1033,15 @@ export default function MESTimesheetPage() {
           onCancel={() => {
             // The bar goes back to its stored hours.
             pendingChange.settle();
-            setPendingChange(null);
+            setIsReasonOpen(false);
           }}
         />
       )}
 
-      {certifying && controls && (
+      {controls && certifyModal.openCount > 0 && (
         <WeekCertificationModal
+          key={`certify-${certifyModal.openCount}`}
+          open={certifyModal.isOpen}
           certificationText={controls.certificationText}
           weekLabel={weekLabel}
           isSubmitting={isSubmitting}
@@ -1046,7 +1056,7 @@ export default function MESTimesheetPage() {
               { method: "post" }
             )
           }
-          onClose={() => setCertifying(false)}
+          onClose={certifyModal.onClose}
         />
       )}
 

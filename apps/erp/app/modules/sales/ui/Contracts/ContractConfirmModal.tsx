@@ -35,6 +35,7 @@ import { useContractLabels } from "./useContractLabels";
 
 type ContractConfirmModalProps = {
   contract: Contract;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -46,6 +47,7 @@ type ContractConfirmModalProps = {
  *  action links the answer before confirming. */
 const ContractConfirmModal = ({
   contract,
+  open = true,
   onClose
 }: ContractConfirmModalProps) => {
   const { t } = useLingui();
@@ -67,8 +69,8 @@ const ContractConfirmModal = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeLink` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
-    if (isStripe) stripeLink.load(path.to.contractConfirm(id));
-  }, [isStripe, id]);
+    if (open && isStripe) stripeLink.load(path.to.contractConfirm(id));
+  }, [open, isStripe, id]);
 
   // The action redirects with a flash; close once it has settled.
   useEffect(() => {
@@ -92,6 +94,12 @@ const ContractConfirmModal = ({
   const billingCustomerId = contract.invoiceCustomerId ?? contract.customerId;
   const [stripeEmail, setStripeEmail] = useState("");
   const [committedEmail, setCommittedEmail] = useState<string | undefined>();
+  // Stays mounted while closed: each open starts without a typed email.
+  useEffect(() => {
+    if (!open) return;
+    setStripeEmail("");
+    setCommittedEmail(undefined);
+  }, [open]);
   const { resolution, isLoading: isResolving } = useStripeCustomerResolution(
     isStripeUnlinked && !needsInvoicing && billingCustomerId
       ? {
@@ -121,7 +129,7 @@ const ContractConfirmModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

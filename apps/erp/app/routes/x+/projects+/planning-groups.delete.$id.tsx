@@ -7,10 +7,11 @@ import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getPlanningGroup } from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
@@ -73,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeletePlanningGroupRoute() {
   const { id } = useParams();
   const { group } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.planningGroups);
   const { t } = useLingui();
 
   if (!id) throw new Error("Planning group ID was not found");
@@ -84,7 +85,8 @@ export default function DeletePlanningGroupRoute() {
       action={path.to.deletePlanningGroup(id)}
       name={name}
       text={t`Are you sure you want to delete the planning group: ${name}? This cannot be undone.`}
-      onCancel={() => navigate(path.to.planningGroups)}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

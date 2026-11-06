@@ -299,8 +299,6 @@ export default function Configurator({
 
   const deleteDialog = useDisclosure();
 
-  if (!open) return null;
-
   return (
     <>
       <Modal
@@ -404,14 +402,17 @@ export default function Configurator({
           </div>
         </ModalContent>
       </Modal>
-      {isActive && deleteDialog.isOpen && (
+      {isActive && (
         <ConfirmDelete
           isOpen={deleteDialog.isOpen}
           action={path.to.deleteConfigurationRule(itemId, configuration.field)}
           name={label}
           text={t`Are you sure you want to deactivate the ${label} configuration rule?`}
           onCancel={deleteDialog.onClose}
-          onSubmit={onClose}
+          onSubmit={() => {
+            deleteDialog.onClose();
+            onClose();
+          }}
         />
       )}
     </>

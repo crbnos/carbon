@@ -71,10 +71,12 @@ type Lookup =
  */
 export function NewServiceJobModal({
   today,
+  open = true,
   onClose
 }: {
   /** The company's day, `YYYY-MM-DD`: the warranty is read on it. */
   today: string;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -95,7 +97,7 @@ export function NewServiceJobModal({
   const lastScanned = useRef("");
 
   useEffect(() => {
-    if (!carbon) return;
+    if (!carbon || !open) return;
     let cancelled = false;
     carbon
       .from("customer")
@@ -115,7 +117,7 @@ export function NewServiceJobModal({
     return () => {
       cancelled = true;
     };
-  }, [carbon, company.id]);
+  }, [carbon, company.id, open]);
 
   // The scan tab of MaintenanceAddPartModal, then the asset that holds the
   // unit. A serial is the tracked entity's readable id; its raw id also works.
@@ -175,7 +177,7 @@ export function NewServiceJobModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

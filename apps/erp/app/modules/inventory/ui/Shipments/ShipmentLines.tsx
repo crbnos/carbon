@@ -779,11 +779,18 @@ function ShipmentLineItem({
           onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
-      {splitDisclosure.isOpen && (
-        <SplitShipmentLineModal line={line} onClose={splitDisclosure.onClose} />
+      {splitDisclosure.openCount > 0 && (
+        <SplitShipmentLineModal
+          key={`splitDisclosure-${splitDisclosure.openCount}`}
+          open={splitDisclosure.isOpen}
+          line={line}
+          onClose={splitDisclosure.onClose}
+        />
       )}
-      {deleteDisclosure.isOpen && (
+      {deleteDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`deleteDisclosure-${deleteDisclosure.openCount}`}
+          isOpen={deleteDisclosure.isOpen}
           name="Shipment Line"
           text="Are you sure you want to delete this shipment line?"
           action={path.to.shipmentLineDelete(line.id!)}
@@ -1511,9 +1518,11 @@ function SerialForm({
 
 function SplitShipmentLineModal({
   line,
+  open,
   onClose
 }: {
   line: ShipmentLine;
+  open: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -1521,7 +1530,7 @@ function SplitShipmentLineModal({
     onSuccess: onClose
   });
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ValidatedForm
           method="post"

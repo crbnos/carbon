@@ -3065,8 +3065,30 @@ the portal and the animated node — each `Presence` looks only at its own child
 a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye.
 
 **Applies to:** `packages/react/src/Drawer.tsx` (`portalVariants` + `sheetVariants` closing
-durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and the
-other state-driven drawers that still unmount on close.
+durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and every
+other modal and drawer (see the next lesson).
+
+## A route dialog closed by navigating cannot animate closed either
+
+**Context:** Every modal and drawer in the ERP animated in and vanished on close (New Gauge was
+the report). The drawer lesson above fixed only the planning drawers.
+
+**Problem:** Two patterns removed the dialog in the same render. A route that renders a form as
+a dialog held `open` at `true` and closed by `useCloseRoute()` / `navigate(...)`: the navigation
+removed the route, so `open` never turned false. And about 300 call sites rendered
+`{disclosure.isOpen && <ConfirmDelete />}`. The modal backdrop also closed in 150ms while the
+box closed in 200ms, and Radix removes both when the backdrop ends.
+
+**Rule:** A route dialog uses `useRouteDialog()` (`@carbon/react`): `close` sets `open` false
+and navigates only when Radix has removed the dialog. With unsaved changes it navigates at once,
+so the `Submit` blocker asks over the open dialog — closing first would unmount the blocker and
+lose the edits silently. A conditional dialog passes its condition as `open`/`isOpen` and keeps
+its record until the next open. A dialog with state or a mount-time fetch at its top level renders
+as `{d.openCount > 0 && <D key={d.openCount} open={d.isOpen} />}`: fresh per open, nothing at page
+load. Enforced by `no-unmounting-dialog`.
+
+**Applies to:** every `Modal`, `Drawer`, `ModalDrawer`, `Confirm`, `ConfirmDelete` and
+`*Modal`/`*Drawer` component; `ModalOverlay` and `ModalContent` durations must match.
 
 ## A cast that silences excess-property errors hides failed writes
 

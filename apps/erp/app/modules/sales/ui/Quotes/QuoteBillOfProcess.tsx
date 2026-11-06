@@ -1408,8 +1408,9 @@ function AttributesListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-step-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteQuoteOperationStep(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={name}
@@ -1632,8 +1633,9 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-parameter-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteQuoteOperationParameter(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={key}
@@ -2649,8 +2651,9 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-tool-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteQuoteOperationTool(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={tool.readableIdWithRevision}

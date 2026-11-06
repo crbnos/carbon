@@ -355,23 +355,26 @@ const CustomerAccountsTable = memo(
           withSelectableRows={canEdit}
         />
 
-        {deactivateCustomerModal.isOpen && (
+        {deactivateCustomerModal.openCount > 0 && (
           <DeactivateUsersModal
+            key={`deactivate-${deactivateCustomerModal.openCount}`}
             userIds={selectedUserIds}
             isOpen={deactivateCustomerModal.isOpen}
             redirectTo={path.to.customerAccounts}
             onClose={deactivateCustomerModal.onClose}
           />
         )}
-        {resendInviteModal.isOpen && (
+        {resendInviteModal.openCount > 0 && (
           <ResendInviteModal
+            key={`resend-invite-${resendInviteModal.openCount}`}
             userIds={selectedUserIds}
             isOpen={resendInviteModal.isOpen}
             onClose={resendInviteModal.onClose}
           />
         )}
-        {revokeInviteModal.isOpen && (
+        {revokeInviteModal.openCount > 0 && (
           <RevokeInviteModal
+            key={`revoke-invite-${revokeInviteModal.openCount}`}
             userIds={selectedUserIds}
             isOpen={revokeInviteModal.isOpen}
             onClose={revokeInviteModal.onClose}

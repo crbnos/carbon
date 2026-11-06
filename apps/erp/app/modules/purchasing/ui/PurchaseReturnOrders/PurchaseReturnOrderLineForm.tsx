@@ -71,6 +71,7 @@ import type {
 type PurchaseReturnOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseReturnOrderLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
   /** Full line row when editing (drives short close and tracking) */
   line?: PurchaseReturnOrderLine;
@@ -119,6 +120,7 @@ function SourceReference({
 const PurchaseReturnOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose,
   line,
   returnReasons,
@@ -551,7 +553,7 @@ const PurchaseReturnOrderLineForm = ({
   return (
     <ModalCardProvider type={type}>
       {type === "modal" ? (
-        <ModalCard onClose={onClose} isCollapsible={isEditing}>
+        <ModalCard open={open} onClose={onClose} isCollapsible={isEditing}>
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
@@ -591,8 +593,10 @@ const PurchaseReturnOrderLineForm = ({
           {serialsCard}
         </ValidatedForm>
       )}
-      {pickerDisclosure.isOpen && (
+      {pickerDisclosure.openCount > 0 && (
         <TrackedEntityPicker
+          key={pickerDisclosure.openCount}
+          open={pickerDisclosure.isOpen}
           trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
           entities={pickerEntities}
           title={t`Pick serials/batches to return`}

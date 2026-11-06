@@ -6,14 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  useLoaderData,
-  useNavigate,
-  useSearchParams
-} from "react-router";
+import { data, useLoaderData, useSearchParams } from "react-router";
 import { groupAccountValidator } from "~/modules/accounting/accounting.models";
 import {
   getGroupAccounts,
@@ -78,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewGroupAccountRoute() {
   const { groupAccounts } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.chartOfAccounts);
   const [searchParams] = useSearchParams();
   const parentId = searchParams.get("parentId") ?? undefined;
 
@@ -93,7 +89,8 @@ export default function NewGroupAccountRoute() {
     <GroupAccountForm
       initialValues={initialValues}
       groupAccounts={groupAccounts}
-      onClose={() => navigate(path.to.chartOfAccounts)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

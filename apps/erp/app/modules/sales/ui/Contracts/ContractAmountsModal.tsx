@@ -48,6 +48,7 @@ type ContractAmountsModalProps = {
   defaults: Record<string, number>;
   defaultDate: string;
   currencyCode: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -62,6 +63,7 @@ const ContractAmountsModal = ({
   defaults,
   defaultDate,
   currencyCode,
+  open = true,
   onClose
 }: ContractAmountsModalProps) => {
   const { t } = useLingui();
@@ -95,7 +97,7 @@ const ContractAmountsModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

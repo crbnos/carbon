@@ -49,7 +49,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { z } from "zod";
-import { usePermissions } from "~/hooks";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import TrackedEntityStatus from "~/modules/inventory/ui/Traceability/TrackedEntityStatus";
 import type { action as assignAction } from "~/routes/x+/issue+/item+/assign-entities";
 import type { action as splitAction } from "~/routes/x+/issue+/item+/split";
@@ -183,8 +183,11 @@ export function AssociatedItemsList({
   });
   const splitFetcher = useFetcher<typeof splitAction>();
   const assignFetcher = useFetcher<typeof assignAction>();
-  const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
-  const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
+  // Keyed per open: both modals keep their selection from the last open.
+  const splitModal = useDrawerItem<SplitTarget>();
+  const moveModal = useDrawerItem<MoveTarget>();
+  const { item: splitTarget, close: closeSplitModal } = splitModal;
+  const { item: moveTarget, close: closeMoveModal } = moveModal;
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -196,9 +199,9 @@ export function AssociatedItemsList({
       toast.error(splitFetcher.data.error.message);
     }
     if (splitFetcher.state === "idle" && (splitFetcher.data as any)?.success) {
-      setSplitTarget(null);
+      closeSplitModal();
     }
-  }, [splitFetcher.data, splitFetcher.state]);
+  }, [closeSplitModal, splitFetcher.data, splitFetcher.state]);
 
   useEffect(() => {
     if (
@@ -212,9 +215,9 @@ export function AssociatedItemsList({
       assignFetcher.state === "idle" &&
       (assignFetcher.data as any)?.success
     ) {
-      setMoveTarget(null);
+      closeMoveModal();
     }
-  }, [assignFetcher.data, assignFetcher.state]);
+  }, [assignFetcher.data, assignFetcher.state, closeMoveModal]);
 
   const onUpdateDisposition = useCallback(
     (nonConformanceItemId: string, dispositionValue: string | null) => {
@@ -474,7 +477,7 @@ export function AssociatedItemsList({
                           {canSplit && (
                             <DropdownMenuItem
                               onClick={() =>
-                                setSplitTarget({
+                                splitModal.open({
                                   id: r.child.id as string,
                                   itemId: item.id,
                                   maxQuantity: r.quantity,
@@ -490,7 +493,7 @@ export function AssociatedItemsList({
                           {canMove && (
                             <DropdownMenuItem
                               onClick={() =>
-                                setMoveTarget({
+                                moveModal.open({
                                   sourceRowId: r.child.id as string,
                                   links: r.links,
                                   siblings
@@ -564,17 +567,21 @@ export function AssociatedItemsList({
 
       {splitTarget && (
         <SplitLineModal
+          key={`splitModal-${splitModal.key}`}
+          open={splitModal.isOpen}
           target={splitTarget}
           fetcher={splitFetcher}
-          onClose={() => setSplitTarget(null)}
+          onClose={closeSplitModal}
         />
       )}
 
       {moveTarget && (
         <MoveEntitiesModal
+          key={`moveModal-${moveModal.key}`}
+          open={moveModal.isOpen}
           target={moveTarget}
           fetcher={assignFetcher}
-          onClose={() => setMoveTarget(null)}
+          onClose={closeMoveModal}
         />
       )}
     </Card>
@@ -584,10 +591,12 @@ export function AssociatedItemsList({
 function SplitLineModal({
   target,
   fetcher,
+  open,
   onClose
 }: {
   target: SplitTarget;
   fetcher: ReturnType<typeof useFetcher<typeof splitAction>>;
+  open: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -620,7 +629,7 @@ function SplitLineModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
@@ -746,10 +755,12 @@ function SplitLineModal({
 function MoveEntitiesModal({
   target,
   fetcher,
+  open,
   onClose
 }: {
   target: MoveTarget;
   fetcher: ReturnType<typeof useFetcher<typeof assignAction>>;
+  open: boolean;
   onClose: () => void;
 }) {
   const isSubmitting = fetcher.state !== "idle";
@@ -769,7 +780,7 @@ function MoveEntitiesModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(next) => {
         if (!next) onClose();
       }}

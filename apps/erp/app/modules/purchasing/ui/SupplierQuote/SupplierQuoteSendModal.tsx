@@ -34,6 +34,7 @@ import type { SupplierQuote, SupplierQuoteLine } from "../../types";
 import SupplierFilesPicker from "./SupplierFilesPicker";
 
 type SupplierQuoteSendModalProps = {
+  open?: boolean;
   onClose: () => void;
   quote?: SupplierQuote;
   lines: SupplierQuoteLine[];
@@ -45,6 +46,7 @@ type SupplierQuoteSendModalProps = {
 const SupplierQuoteSendModal = ({
   quote,
   lines,
+  open = true,
   onClose,
   fetcher,
   externalLinkId,
@@ -69,7 +71,7 @@ const SupplierQuoteSendModal = ({
   if (!canEmail) {
     return (
       <Modal
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) {
             onClose();
@@ -107,7 +109,7 @@ const SupplierQuoteSendModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

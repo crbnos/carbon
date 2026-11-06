@@ -27,7 +27,13 @@ import { useNavigation, useParams } from "react-router";
 import type { action as voidAction } from "~/routes/x+/sales-invoice+/$invoiceId.void";
 import { path } from "~/utils/path";
 
-const SalesInvoiceVoidModal = ({ onClose }: { onClose: () => void }) => {
+const SalesInvoiceVoidModal = ({
+  open = true,
+  onClose
+}: {
+  open?: boolean;
+  onClose: () => void;
+}) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -45,7 +51,7 @@ const SalesInvoiceVoidModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <Modal
-      open={true}
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -232,8 +232,10 @@ function WarehouseTransferLineListItem({
         </div>
       </div>
 
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <DeleteWarehouseTransferLine
+          key={`deleteModalDisclosure-${deleteModalDisclosure.openCount}`}
+          isOpen={deleteModalDisclosure.isOpen}
           lineId={line.id}
           warehouseTransferId={warehouseTransfer.id}
           itemName={item.readableIdWithRevision}
@@ -253,12 +255,14 @@ function DeleteWarehouseTransferLine({
   lineId,
   warehouseTransferId,
   itemName,
+  isOpen = true,
   onCancel,
   onSubmit
 }: {
   lineId: string;
   warehouseTransferId: string;
   itemName: string;
+  isOpen?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 }) {
@@ -274,7 +278,7 @@ function DeleteWarehouseTransferLine({
 
   return (
     <Modal
-      open
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

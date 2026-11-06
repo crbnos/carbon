@@ -44,6 +44,7 @@ import {
   useDateFormatter,
   useQuantityFormatter
 } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import type { getTimesheetApprovals } from "../../projects.service";
 
@@ -62,10 +63,7 @@ export default function TimesheetApprovals({
   groups: ApprovalGroup[];
 }) {
   const { t } = useLingui();
-  const [rejecting, setRejecting] = useState<{
-    ids: string[];
-    label: string;
-  } | null>(null);
+  const rejecting = useDrawerItem<{ ids: string[]; label: string }>();
 
   return (
     <div className="flex w-full max-w-[80rem] flex-col gap-4 overflow-y-auto p-4 pt-2 mx-auto">
@@ -79,15 +77,17 @@ export default function TimesheetApprovals({
           <ApprovalCard
             key={group.key}
             group={group}
-            onReject={(ids, label) => setRejecting({ ids, label })}
+            onReject={(ids, label) => rejecting.open({ ids, label })}
           />
         ))
       )}
-      {rejecting && (
+      {rejecting.item && (
         <RejectModal
-          ids={rejecting.ids}
-          label={rejecting.label}
-          onClose={() => setRejecting(null)}
+          key={rejecting.key}
+          open={rejecting.isOpen}
+          ids={rejecting.item.ids}
+          label={rejecting.item.label}
+          onClose={rejecting.close}
         />
       )}
     </div>
@@ -294,10 +294,12 @@ function ApprovalCard({
 }
 
 function RejectModal({
+  open = true,
   ids,
   label,
   onClose
 }: {
+  open?: boolean;
   ids: string[];
   label: string;
   onClose: () => void;
@@ -308,7 +310,7 @@ function RejectModal({
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <fetcher.Form method="post" action={path.to.projectTimesheetApprovals}>

@@ -89,6 +89,7 @@ export function AssignmentBlock({
 }
 
 type AssignmentModalProps = {
+  open?: boolean;
   assignment: ScheduleAssignment;
   employeeName: string | null;
   isDisabled: boolean;
@@ -100,6 +101,7 @@ type AssignmentModalProps = {
  * intent with the assignment's id.
  */
 export function AssignmentModal({
+  open = true,
   assignment,
   employeeName,
   isDisabled,
@@ -116,7 +118,7 @@ export function AssignmentModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

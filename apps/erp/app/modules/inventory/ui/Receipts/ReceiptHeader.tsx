@@ -45,6 +45,8 @@ const ReceiptHeader = () => {
 
   const permissions = usePermissions();
   const navigation = useNavigation();
+  // Remounted per open: both modals keep state from their last open, and the
+  // post modal checks tracking when it mounts.
   const postModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -224,23 +226,29 @@ const ReceiptHeader = () => {
         }
       />
 
-      {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
-      {voidModal.isOpen && (
+      {postModal.openCount > 0 && (
+        <ReceiptPostModal
+          key={`postModal-${postModal.openCount}`}
+          open={postModal.isOpen}
+          onClose={postModal.onClose}
+        />
+      )}
+      {voidModal.openCount > 0 && (
         <ReceiptVoidModal
+          key={`voidModal-${voidModal.openCount}`}
+          open={voidModal.isOpen}
           isSalesReturn={receipt.sourceDocument === "Sales Return Order"}
           onClose={voidModal.onClose}
         />
       )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteReceipt(receiptId)}
-          isOpen={deleteDisclosure.isOpen}
-          name={receipt.receiptId ?? "receipt"}
-          text={t`Are you sure you want to delete ${receipt.receiptId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteReceipt(receiptId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={receipt.receiptId ?? "receipt"}
+        text={t`Are you sure you want to delete ${receipt.receiptId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

@@ -24,7 +24,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -68,7 +69,8 @@ export function WbsMenu({
 }) {
   const { t } = useLingui();
   const exportBlocked = repeatedCodes.length > 0;
-  const [importing, setImporting] = useState(false);
+  // Keyed per open: the import starts with no file and no result.
+  const importModal = useDisclosure();
   const [pinning, setPinning] = useState(false);
 
   return (
@@ -116,10 +118,7 @@ export function WbsMenu({
             </>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            disabled={!canImport}
-            onClick={() => setImporting(true)}
-          >
+          <DropdownMenuItem disabled={!canImport} onClick={importModal.onOpen}>
             <DropdownMenuIcon icon={<LuFileUp />} />
             <Trans>Import CSV</Trans>
           </DropdownMenuItem>
@@ -132,22 +131,23 @@ export function WbsMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {importing && (
+      {importModal.openCount > 0 && (
         <ImportWbsModal
+          key={importModal.openCount}
+          open={importModal.isOpen}
           projectId={projectId}
-          onClose={() => setImporting(false)}
+          onClose={importModal.onClose}
         />
       )}
-      {pinning && (
-        <Confirm
-          action={path.to.projectWbsPin(projectId)}
-          title={t`Pin WBS codes`}
-          text={t`Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS.`}
-          confirmText={t`Pin`}
-          onCancel={() => setPinning(false)}
-          onSubmit={() => setPinning(false)}
-        />
-      )}
+      <Confirm
+        action={path.to.projectWbsPin(projectId)}
+        isOpen={pinning}
+        title={t`Pin WBS codes`}
+        text={t`Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS.`}
+        confirmText={t`Pin`}
+        onCancel={() => setPinning(false)}
+        onSubmit={() => setPinning(false)}
+      />
     </>
   );
 }
@@ -158,9 +158,11 @@ export function WbsMenu({
  * `readWbsCsv`, so the preview and the apply agree.
  */
 function ImportWbsModal({
+  open = true,
   projectId,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   onClose: () => void;
 }) {
@@ -231,7 +233,7 @@ function ImportWbsModal({
       : (response?.message ?? response?.error?.message));
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent size="xlarge">
         <ModalHeader>
           <ModalTitle>

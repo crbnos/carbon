@@ -530,10 +530,12 @@ export function PreviewStepRecord({
 export function RecordModal({
   attribute,
   activeStep,
+  open = true,
   onClose
 }: {
   attribute: JobOperationStep;
   activeStep: number;
+  open?: boolean;
   onClose: () => void;
 }) {
   const [employees] = usePeople();
@@ -616,7 +618,7 @@ export function RecordModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -821,11 +823,13 @@ export function RecordModal({
 }
 
 export function DeleteStepRecordModal({
+  open = true,
   onClose,
   id,
   title,
   description
 }: {
+  open?: boolean;
   onClose: () => void;
   id: string;
   title: string;
@@ -840,7 +844,7 @@ export function DeleteStepRecordModal({
   });
 
   return (
-    <Modal open={true} onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>{title}</ModalTitle>

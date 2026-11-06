@@ -306,18 +306,12 @@ const AssemblyInstructionsTable = memo(
           renderContextMenu={renderContextMenu}
           title="Assembly Instructions"
         />
-        {deleteDisclosure.isOpen && selectedInstruction && (
+        {selectedInstruction && (
           <ConfirmDelete
             action={path.to.deleteAssemblyInstruction(selectedInstruction.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedInstruction(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedInstruction(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedInstruction.name ?? "assembly instruction"}
             text="Are you sure you want to delete this assembly instruction?"
           />

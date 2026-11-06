@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getAbility } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
@@ -51,13 +52,12 @@ export async function action(args: ActionFunctionArgs) {
 export default function DeleteAbilityRoute() {
   const { id } = useParams();
   const { ability } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.abilities);
   const { t } = useLingui();
 
   if (!ability) return null;
   if (!id) throw new Error("id is not found");
 
-  const onCancel = () => navigate(path.to.abilities);
   const name = ability.name;
 
   return (
@@ -65,7 +65,8 @@ export default function DeleteAbilityRoute() {
       action={path.to.deleteAbility(id)}
       name={name}
       text={t`Are you sure you want to deactivate the ability: ${name}?`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

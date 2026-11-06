@@ -18,11 +18,10 @@ import {
   ModalHeader,
   ModalTitle,
   toast,
-  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useParams } from "react-router";
 import {
@@ -42,6 +41,7 @@ import type {
 } from "../../types";
 
 type QuotationFinalizeModalProps = {
+  open?: boolean;
   onClose: () => void;
   quote?: Quotation;
   shipment: QuotationShipment | null;
@@ -49,6 +49,7 @@ type QuotationFinalizeModalProps = {
 };
 
 const QuotationFinalizeModal = ({
+  open = true,
   quote,
   onClose,
   shipment,
@@ -97,9 +98,10 @@ const QuotationFinalizeModal = ({
     }
   };
 
-  useMount(() => {
-    fetchQuoteData();
-  });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per open; the caller keys the modal per open
+  useEffect(() => {
+    if (open) fetchQuoteData();
+  }, [open]);
 
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "Download"
@@ -160,7 +162,7 @@ const QuotationFinalizeModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

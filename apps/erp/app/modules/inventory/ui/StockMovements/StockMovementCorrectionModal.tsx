@@ -31,6 +31,7 @@ import type { StockMovement } from "../../types";
 
 type StockMovementCorrectionModalProps = {
   movement: StockMovement;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -45,6 +46,7 @@ type StockMovementCorrectionModalProps = {
 // unintended delta.
 const StockMovementCorrectionModal = ({
   movement,
+  open = true,
   onClose
 }: StockMovementCorrectionModalProps) => {
   const { t } = useLingui();
@@ -79,7 +81,7 @@ const StockMovementCorrectionModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

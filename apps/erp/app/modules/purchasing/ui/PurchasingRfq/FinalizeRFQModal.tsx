@@ -38,6 +38,7 @@ type FinalizeRFQModalProps = {
     supplierId: string;
     supplier: { id: string; name: string };
   }[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -45,6 +46,7 @@ const FinalizeRFQModal = ({
   rfqId,
   lines,
   suppliers,
+  open = true,
   onClose
 }: FinalizeRFQModalProps) => {
   const { t } = useLingui();
@@ -73,7 +75,7 @@ const FinalizeRFQModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

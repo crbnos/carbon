@@ -32,6 +32,7 @@ import { path } from "~/utils/path";
 const PAGE_SIZE = 5;
 
 type AddFromAssetsModalProps = {
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -40,7 +41,10 @@ type AddFromAssetsModalProps = {
  * chosen asset becomes one line of one unit, with the return type its
  * warranty suggests (`createReturnOrderLinesFromAssets`).
  */
-const AddFromAssetsModal = ({ onClose }: AddFromAssetsModalProps) => {
+const AddFromAssetsModal = ({
+  open = true,
+  onClose
+}: AddFromAssetsModalProps) => {
   const { t } = useLingui();
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -59,12 +63,13 @@ const AddFromAssetsModal = ({ onClose }: AddFromAssetsModalProps) => {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable; re-run only on query inputs
   useEffect(() => {
+    if (!open) return;
     const params = new URLSearchParams({ limit: String(limit) });
     if (search.trim()) params.set("search", search.trim());
     assetsFetcher.load(
       `${path.to.salesReturnOrderFromAssets(orderId)}?${params.toString()}`
     );
-  }, [orderId, search, limit]);
+  }, [open, orderId, search, limit]);
 
   const assets = assetsFetcher.data?.assets ?? [];
   const count = assetsFetcher.data?.count ?? 0;
@@ -104,7 +109,7 @@ const AddFromAssetsModal = ({ onClose }: AddFromAssetsModalProps) => {
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

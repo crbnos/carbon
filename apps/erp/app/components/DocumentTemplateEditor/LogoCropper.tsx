@@ -70,25 +70,26 @@ export function LogoCropper({
       >
         <img src={src} alt="" className="max-h-full w-auto" />
       </button>
-      {open && (
-        <CropDialog
-          src={src}
-          crop={crop}
-          onChange={onChange}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      <CropDialog
+        open={open}
+        src={src}
+        crop={crop}
+        onChange={onChange}
+        onClose={() => setOpen(false)}
+      />
     </div>
   );
 }
 
 /** The drag-to-crop canvas, in a dialog. Live-updates the crop as you drag. */
 function CropDialog({
+  open,
   src,
   crop,
   onChange,
   onClose
 }: {
+  open: boolean;
   src: string;
   crop?: Crop;
   onChange: (crop: Crop | undefined) => void;
@@ -194,7 +195,7 @@ function CropDialog({
   );
 
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()}>
+    <Modal open={open} onOpenChange={(o) => !o && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>Crop logo</ModalTitle>

@@ -121,7 +121,6 @@ export function MaintenanceDispatchExplorer({
   };
 
   const onDeleteCancel = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -133,7 +132,6 @@ export function MaintenanceDispatchExplorer({
   };
 
   const onEditClose = () => {
-    setSelectedChild(null);
     editDisclosure.onClose();
   };
 
@@ -203,7 +201,7 @@ export function MaintenanceDispatchExplorer({
           ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild?.id && (
+      {selectedChild?.id && (
         <ConfirmDelete
           action={getDeleteAction()}
           name={getDeleteName()}
@@ -215,16 +213,14 @@ export function MaintenanceDispatchExplorer({
           onSubmit={onDeleteCancel}
         />
       )}
-      {editDisclosure.isOpen &&
-        selectedChild?.id &&
-        selectedChild.type === "event" && (
-          <EditTimecardModal
-            open={editDisclosure.isOpen}
-            onClose={onEditClose}
-            dispatchId={dispatchId}
-            event={selectedChild}
-          />
-        )}
+      {selectedChild?.id && selectedChild.type === "event" && (
+        <EditTimecardModal
+          open={editDisclosure.isOpen}
+          onClose={onEditClose}
+          dispatchId={dispatchId}
+          event={selectedChild}
+        />
+      )}
     </ScrollArea>
   );
 }
@@ -249,6 +245,7 @@ function MaintenanceExplorerItem({
   const [isExpanded, setIsExpanded] = useState(
     node.children.length > 0 && node.children.length < 10
   );
+  // Changes per open: the add-part modal's state starts fresh each time.
   const newModal = useDisclosure();
   const permissions = usePermissions();
 
@@ -288,9 +285,7 @@ function MaintenanceExplorerItem({
             variant="ghost"
             icon={<LuCirclePlus />}
             className="ml-auto"
-            onClick={() => {
-              newModal.onOpen();
-            }}
+            onClick={newModal.onOpen}
           />
         )}
       </div>
@@ -320,14 +315,17 @@ function MaintenanceExplorerItem({
         </div>
       )}
 
-      {newModal.isOpen && node.key === "items" && (
+      {node.key === "items" && newModal.openCount > 0 && (
         <MaintenanceAddPartModal
+          key={newModal.openCount}
+          open={newModal.isOpen}
           dispatchId={dispatchId}
           onClose={newModal.onClose}
         />
       )}
-      {newModal.isOpen && node.key === "events" && (
+      {node.key === "events" && newModal.openCount > 0 && (
         <NewTimecardModal
+          key={newModal.openCount}
           open={newModal.isOpen}
           onClose={newModal.onClose}
           dispatchId={dispatchId}

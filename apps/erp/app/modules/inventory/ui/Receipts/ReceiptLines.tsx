@@ -1006,14 +1006,18 @@ function ReceiptLineItem({
             </Await>
           </Suspense>
           <FileDropzone onDrop={upload} />
-          {splitDisclosure.isOpen && (
+          {splitDisclosure.openCount > 0 && (
             <SplitReceiptLineModal
+              key={`splitDisclosure-${splitDisclosure.openCount}`}
+              open={splitDisclosure.isOpen}
               line={line}
               onClose={splitDisclosure.onClose}
             />
           )}
-          {deleteDisclosure.isOpen && (
+          {deleteDisclosure.openCount > 0 && (
             <ConfirmDelete
+              key={`deleteDisclosure-${deleteDisclosure.openCount}`}
+              isOpen={deleteDisclosure.isOpen}
               name="Receipt Line"
               text="Are you sure you want to delete this receipt line?"
               action={path.to.receiptLineDelete(line.id!)}
@@ -1283,12 +1287,14 @@ function BatchForm({
           </Await>
         </Suspense>
       </div>
-      {propertiesDisclosure.isOpen && (
+      {propertiesDisclosure.openCount > 0 && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedBatchProperties) => {
               return (
                 <BatchPropertiesConfig
+                  key={`propertiesDisclosure-${propertiesDisclosure.openCount}`}
+                  open={propertiesDisclosure.isOpen}
                   itemId={line.itemId!}
                   properties={resolvedBatchProperties?.data ?? []}
                   type="modal"
@@ -1533,15 +1539,17 @@ function SerialForm({
 
 function SplitReceiptLineModal({
   line,
+  open,
   onClose
 }: {
   line: ReceiptLine;
+  open: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
   const fetcher = useAction<typeof splitAction>({ onSuccess: onClose });
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ValidatedForm
           method="post"

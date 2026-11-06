@@ -36,8 +36,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { useState } from "react";
 import { LuGripVertical, LuPlus, LuX } from "react-icons/lu";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { useBuilderStore } from "../../context";
 import { OutputHandle } from "../../OutputHandle";
 import { conditionPathLabel } from "../../ports";
@@ -161,10 +161,7 @@ export function ConditionForm({
   const edges = useBuilderStore((s) => s.edges);
   const { t } = useLingui();
   // A path whose removal would disconnect edges waits here for confirmation.
-  const [pendingRemoval, setPendingRemoval] = useState<{
-    pathId: string;
-    count: number;
-  } | null>(null);
+  const pendingRemoval = useDrawerItem<{ pathId: string; count: number }>();
 
   const { paths } = node.data;
 
@@ -207,7 +204,7 @@ export function ConditionForm({
   function removePath(pathId: string) {
     const count = connectionsOf(pathId).length;
     if (count > 0) {
-      setPendingRemoval({ pathId, count });
+      pendingRemoval.open({ pathId, count });
       return;
     }
     setPaths(paths.filter((p) => p.id !== pathId));
@@ -254,6 +251,7 @@ export function ConditionForm({
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
+  const removal = pendingRemoval.item;
 
   return (
     <FormStack spacing={4}>
@@ -403,11 +401,11 @@ export function ConditionForm({
           <Trans>Add otherwise</Trans>
         </Button>
       )}
-      {pendingRemoval && (
+      {removal && (
         <Modal
-          open
+          open={pendingRemoval.isOpen}
           onOpenChange={(open) => {
-            if (!open) setPendingRemoval(null);
+            if (!open) pendingRemoval.close();
           }}
         >
           <ModalOverlay />
@@ -417,7 +415,7 @@ export function ConditionForm({
             </ModalHeader>
             <ModalBody>
               <p className="text-sm text-muted-foreground">
-                {t`${plural(pendingRemoval.count, {
+                {t`${plural(removal.count, {
                   one: "Removing this path will also disconnect # connection.",
                   other:
                     "Removing this path will also disconnect # connections."
@@ -425,17 +423,14 @@ export function ConditionForm({
               </p>
             </ModalBody>
             <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setPendingRemoval(null)}
-              >
+              <Button variant="secondary" onClick={pendingRemoval.close}>
                 <Trans>Cancel</Trans>
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => {
-                  confirmRemovePath(pendingRemoval.pathId);
-                  setPendingRemoval(null);
+                  confirmRemovePath(removal.pathId);
+                  pendingRemoval.close();
                 }}
               >
                 <Trans>Remove</Trans>

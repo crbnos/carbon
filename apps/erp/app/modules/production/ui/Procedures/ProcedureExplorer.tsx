@@ -196,8 +196,6 @@ export default function ProcedureExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setSelectedAttribute(null);
-    setSelectedParameter(null);
     deleteAttributeDisclosure.onClose();
     deleteParameterDisclosure.onClose();
   };
@@ -444,30 +442,36 @@ export default function ProcedureExplorer() {
           </TabsContent>
         </Tabs>
       </VStack>
-      {procedureStepDisclosure.isOpen && (
+      {procedureStepDisclosure.openCount > 0 && (
         <ProcedureStepForm
+          key={`procedureStepDisclosure-${procedureStepDisclosure.openCount}`}
+          open={procedureStepDisclosure.isOpen}
           // @ts-expect-error
           initialValues={procedureAttribtueInitialValues}
           isDisabled={isDisabled}
           onClose={procedureStepDisclosure.onClose}
         />
       )}
-      {deleteAttributeDisclosure.isOpen && selectedAttribute && (
+      {selectedAttribute && (
         <DeleteProcedureStep
           attribute={selectedAttribute}
+          isOpen={deleteAttributeDisclosure.isOpen}
           onCancel={onDeleteCancel}
         />
       )}
-      {procedureParameterDisclosure.isOpen && (
+      {procedureParameterDisclosure.openCount > 0 && (
         <ProcedureParameterForm
+          key={`procedureParameterDisclosure-${procedureParameterDisclosure.openCount}`}
+          open={procedureParameterDisclosure.isOpen}
           initialValues={procedureParameterInitialValues}
           isDisabled={isDisabled}
           onClose={procedureParameterDisclosure.onClose}
         />
       )}
-      {deleteParameterDisclosure.isOpen && selectedParameter && (
+      {selectedParameter && (
         <DeleteProcedureParameter
           parameter={selectedParameter}
+          isOpen={deleteParameterDisclosure.isOpen}
           onCancel={onDeleteCancel}
         />
       )}
@@ -608,9 +612,11 @@ function ProcedureStepItem({
 
 function DeleteProcedureStep({
   attribute,
+  isOpen = true,
   onCancel
 }: {
   attribute: ProcedureStep;
+  isOpen?: boolean;
   onCancel: () => void;
 }) {
   const { id } = useParams();
@@ -620,6 +626,7 @@ function DeleteProcedureStep({
   return (
     <ConfirmDelete
       action={path.to.deleteProcedureStep(id, attribute.id)}
+      isOpen={isOpen}
       name={attribute.name ?? "this step"}
       text={`Are you sure you want to delete the step: ${attribute.name}? This cannot be undone.`}
       onCancel={onCancel}
@@ -700,10 +707,12 @@ function ProcedureParameterItem({
 function ProcedureStepForm({
   initialValues,
   isDisabled,
+  open = true,
   onClose
 }: {
   initialValues: z.infer<typeof procedureStepValidator>;
   isDisabled: boolean;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { id: procedureId } = useParams();
@@ -774,7 +783,7 @@ function ProcedureStepForm({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -898,12 +907,14 @@ function ProcedureStepForm({
 interface ProcedureParameterFormProps {
   initialValues?: z.infer<typeof procedureParameterValidator>;
   isDisabled?: boolean;
+  open?: boolean;
   onClose: () => void;
 }
 
 function ProcedureParameterForm({
   initialValues,
   isDisabled = false,
+  open = true,
   onClose
 }: ProcedureParameterFormProps) {
   const { t } = useLingui();
@@ -923,7 +934,7 @@ function ProcedureParameterForm({
   const isEditing = !!initialValues?.id;
 
   return (
-    <Drawer open onOpenChange={onClose}>
+    <Drawer open={open} onOpenChange={onClose}>
       <DrawerContent position="left">
         <DrawerHeader>
           <DrawerTitle>
@@ -966,9 +977,11 @@ function ProcedureParameterForm({
 
 function DeleteProcedureParameter({
   parameter,
+  isOpen = true,
   onCancel
 }: {
   parameter: ProcedureParameter;
+  isOpen?: boolean;
   onCancel: () => void;
 }) {
   const { id } = useParams();
@@ -978,6 +991,7 @@ function DeleteProcedureParameter({
   return (
     <ConfirmDelete
       action={path.to.deleteProcedureParameter(id, parameter.id)}
+      isOpen={isOpen}
       name={parameter.key ?? "this parameter"}
       text={`Are you sure you want to delete the parameter: ${parameter.key}? This cannot be undone.`}
       onCancel={onCancel}

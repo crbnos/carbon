@@ -69,6 +69,7 @@ function fitsSource(item: ItemRow, source: BuildFromPartSource) {
  * The preview lists what the build creates before anything is written.
  */
 export function BuildFromPartDrawer({
+  open = true,
   projectId,
   elements,
   defaultParentId,
@@ -76,6 +77,7 @@ export function BuildFromPartDrawer({
   initial,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   /** The project's elements, for the parent picker. */
   elements: ParentOption[];
@@ -150,10 +152,11 @@ export function BuildFromPartDrawer({
   const query = params.toString();
 
   const previewFetcher = useFetcher<BuildFromPartPreview>();
+  // Mounted per open (a `key` at the call site); nothing loads while closed.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reload on a new query only
   useEffect(() => {
-    previewFetcher.load(`${buildPath}?${query}`);
-  }, [buildPath, query]);
+    if (open) previewFetcher.load(`${buildPath}?${query}`);
+  }, [open, buildPath, query]);
 
   const submitFetcher = useAction<BuildFromPartResult>({
     onSuccess: (result) => {
@@ -235,7 +238,7 @@ export function BuildFromPartDrawer({
 
   return (
     <ModalDrawerProvider type="drawer">
-      <ModalDrawer open onOpenChange={(open) => !open && onClose()}>
+      <ModalDrawer open={open} onOpenChange={(open) => !open && onClose()}>
         <ModalDrawerContent>
           <ValidatedForm
             validator={buildFromPartValidator}

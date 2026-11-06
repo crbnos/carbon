@@ -166,24 +166,23 @@ export default function RentalAgreementSetupRoute() {
           }
         />
       )}
-      {activate.isOpen && (
-        <Confirm
-          action={path.to.rentalAgreementActivate(id)}
-          title={t`Activate ${readableId}`}
-          text={t`Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards.`}
-          confirmText={t`Activate`}
-          onCancel={activate.onClose}
-          onSubmit={activate.onClose}
-          details={
-            <RentalCommencementPreview
-              rentalAgreement={rentalAgreement}
-              lines={lines}
-              leaseInputs={leaseInputs}
-              leasePolicy={leasePolicy}
-            />
-          }
-        />
-      )}
+      <Confirm
+        action={path.to.rentalAgreementActivate(id)}
+        isOpen={activate.isOpen}
+        title={t`Activate ${readableId}`}
+        text={t`Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards.`}
+        confirmText={t`Activate`}
+        onCancel={activate.onClose}
+        onSubmit={activate.onClose}
+        details={
+          <RentalCommencementPreview
+            rentalAgreement={rentalAgreement}
+            lines={lines}
+            leaseInputs={leaseInputs}
+            leasePolicy={leasePolicy}
+          />
+        }
+      />
     </SetupFrame>
   );
 }

@@ -37,6 +37,7 @@ import {
   ScrollArea,
   Switch,
   toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -217,7 +218,7 @@ function SsoDomainRow({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
-  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const removeModal = useDisclosure();
   const isPending = domain.status !== "verified";
   const isBusy = fetcher.state !== "idle";
   const submitting = fetcher.formData?.get("intent");
@@ -250,17 +251,18 @@ function SsoDomainRow({
             variant="ghost"
             isLoading={isBusy && submitting === "removeDomain"}
             isDisabled={!canEdit || isBusy}
-            onClick={() => setRemoveModalOpen(true)}
+            onClick={removeModal.onOpen}
           >
             <Trans>Remove</Trans>
           </Button>
         </HStack>
       </HStack>
-      {removeModalOpen && (
+      {removeModal.openCount > 0 && (
         <Modal
-          open
+          key={removeModal.openCount}
+          open={removeModal.isOpen}
           onOpenChange={(open) => {
-            if (!open) setRemoveModalOpen(false);
+            if (!open) removeModal.onClose();
           }}
         >
           <ModalOverlay />
@@ -287,10 +289,7 @@ function SsoDomainRow({
               </p>
             </ModalBody>
             <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setRemoveModalOpen(false)}
-              >
+              <Button variant="secondary" onClick={removeModal.onClose}>
                 <Trans>Cancel</Trans>
               </Button>
               <fetcher.Form method="post" action={path.to.sso}>
@@ -666,52 +665,49 @@ export default function Security() {
               </Card>
             )}
 
-            {deactivateModalOpen && (
-              <Modal
-                open
-                onOpenChange={(open) => {
-                  if (!open) setDeactivateModalOpen(false);
-                }}
-              >
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>
-                    <ModalTitle>
-                      <Trans>Deactivate Single Sign-On</Trans>
-                    </ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>
-                        Are you sure you want to deactivate SAML SSO? Users on
-                        your registered domains will no longer be able to sign
-                        in through your identity provider. This cannot be
-                        undone.
-                      </Trans>
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
+            <Modal
+              open={deactivateModalOpen}
+              onOpenChange={(open) => {
+                if (!open) setDeactivateModalOpen(false);
+              }}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>
+                    <Trans>Deactivate Single Sign-On</Trans>
+                  </ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      Are you sure you want to deactivate SAML SSO? Users on
+                      your registered domains will no longer be able to sign in
+                      through your identity provider. This cannot be undone.
+                    </Trans>
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDeactivateModalOpen(false)}
+                  >
+                    <Trans>Cancel</Trans>
+                  </Button>
+                  <deactivateFetcher.Form method="post" action={path.to.sso}>
+                    <input type="hidden" name="intent" value="deactivate" />
                     <Button
-                      variant="secondary"
-                      onClick={() => setDeactivateModalOpen(false)}
+                      variant="destructive"
+                      type="submit"
+                      isLoading={deactivateFetcher.state !== "idle"}
+                      isDisabled={deactivateFetcher.state !== "idle"}
                     >
-                      <Trans>Cancel</Trans>
+                      <Trans>Deactivate</Trans>
                     </Button>
-                    <deactivateFetcher.Form method="post" action={path.to.sso}>
-                      <input type="hidden" name="intent" value="deactivate" />
-                      <Button
-                        variant="destructive"
-                        type="submit"
-                        isLoading={deactivateFetcher.state !== "idle"}
-                        isDisabled={deactivateFetcher.state !== "idle"}
-                      >
-                        <Trans>Deactivate</Trans>
-                      </Button>
-                    </deactivateFetcher.Form>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
-            )}
+                  </deactivateFetcher.Form>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </>
         )}
       </SettingsPage>

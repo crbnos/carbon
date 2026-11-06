@@ -309,11 +309,13 @@ const ItemSupersessionForm = ({
           </Submit>
         </CardFooter>
       </ValidatedForm>
-      {addPredecessorModal.isOpen && (
+      {addPredecessorModal.openCount > 0 && (
         <AddPredecessorModal
+          key={`add-predecessor-${addPredecessorModal.openCount}`}
           itemId={initialValues.itemId}
           itemReadableId={itemReadableId}
           type={type}
+          open={addPredecessorModal.isOpen}
           onClose={addPredecessorModal.onClose}
         />
       )}
@@ -325,11 +327,13 @@ function AddPredecessorModal({
   itemId,
   itemReadableId,
   type,
+  open,
   onClose
 }: {
   itemId: string;
   itemReadableId: string;
   type: ItemType;
+  open: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -345,7 +349,7 @@ function AddPredecessorModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

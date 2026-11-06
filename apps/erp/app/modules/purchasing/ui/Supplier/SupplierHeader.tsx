@@ -40,7 +40,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   LuCheckCheck,
   LuClipboardCheck,
@@ -66,6 +66,7 @@ import {
   ConfirmDelete
 } from "~/components/Modals";
 import {
+  useDrawerItem,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired,
@@ -88,8 +89,8 @@ const SupplierHeader = () => {
   const isApprovalRequired = useSupplierApprovalRequired();
   const deleteModal = useDisclosure();
   const makeInactiveModal = useDisclosure();
-  const [approvalDecision, setApprovalDecision] =
-    useState<ApprovalDecision | null>(null);
+  const approval = useDrawerItem<ApprovalDecision>();
+  const approvalDecision = approval.item;
   const routeData = useRouteData<{
     supplier: SupplierDetail;
     tags: { name: string }[];
@@ -248,7 +249,7 @@ const SupplierHeader = () => {
                       isDisabled={
                         !canApprove || requestApprovalFetcher.state !== "idle"
                       }
-                      onClick={() => setApprovalDecision("Approved")}
+                      onClick={() => approval.open("Approved")}
                     >
                       <Trans>Approve</Trans>
                     </Button>
@@ -261,7 +262,7 @@ const SupplierHeader = () => {
                       isDisabled={
                         !canApprove || requestApprovalFetcher.state !== "idle"
                       }
-                      onClick={() => setApprovalDecision("Rejected")}
+                      onClick={() => approval.open("Rejected")}
                     >
                       <Trans>Reject</Trans>
                     </Button>
@@ -384,53 +385,49 @@ const SupplierHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSupplier(supplierId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.supplier?.name!}
-          text={t`Are you sure you want to delete ${routeData?.supplier?.name!}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
-      {makeInactiveModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) makeInactiveModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Deactivate Supplier</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Trans>
-                Are you sure you want to deactivate {routeData?.supplier?.name}?
-              </Trans>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={makeInactiveModal.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                isLoading={makeInactiveFetcher.state !== "idle"}
-                isDisabled={makeInactiveFetcher.state !== "idle"}
-                onClick={() => {
-                  submitMakeInactive();
-                  makeInactiveModal.onClose();
-                }}
-              >
-                <Trans>Deactivate</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <ConfirmDelete
+        action={path.to.deleteSupplier(supplierId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.supplier?.name!}
+        text={t`Are you sure you want to delete ${routeData?.supplier?.name!}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
+      <Modal
+        open={makeInactiveModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) makeInactiveModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Deactivate Supplier</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Trans>
+              Are you sure you want to deactivate {routeData?.supplier?.name}?
+            </Trans>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={makeInactiveModal.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              isLoading={makeInactiveFetcher.state !== "idle"}
+              isDisabled={makeInactiveFetcher.state !== "idle"}
+              onClick={() => {
+                submitMakeInactive();
+                makeInactiveModal.onClose();
+              }}
+            >
+              <Trans>Deactivate</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       {auditLogDrawer}
       {approvalDecision && approvalRequestId && (
         <ApprovalDecisionModal
@@ -448,7 +445,8 @@ const SupplierHeader = () => {
               : t`Are you sure you want to reject this supplier?`
           }
           fetcher={approvalFetcher}
-          onClose={() => setApprovalDecision(null)}
+          open={approval.isOpen}
+          onClose={approval.close}
         />
       )}
     </>

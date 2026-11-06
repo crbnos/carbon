@@ -41,7 +41,13 @@ import { isShippable } from "./ShipmentLines";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
-const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
+const ShipmentPostModal = ({
+  open = true,
+  onClose
+}: {
+  open?: boolean;
+  onClose: () => void;
+}) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
@@ -263,7 +269,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <Modal
-      open={true}
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -106,6 +106,7 @@ export function IssueMaterialModal({
   jobOperationStepId,
   unitNumber,
   trackedInputs = [],
+  open = true,
   onClose
 }: {
   operationId: string;
@@ -147,6 +148,7 @@ export function IssueMaterialModal({
   jobOperationStepId?: string;
   unitNumber?: number;
   trackedInputs?: TrackedInput[];
+  open?: boolean;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
@@ -391,6 +393,9 @@ export function IssueMaterialModal({
     id: string;
     readableId?: string | null;
   } | null>(null);
+  const [isScrapEntityOpen, setIsScrapEntityOpen] = useState(false);
+  // Goes up on each open: the scrap modal starts fresh every time.
+  const [scrapEntityKey, setScrapEntityKey] = useState(0);
   const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
     []
   );
@@ -1248,7 +1253,7 @@ export function IssueMaterialModal({
 
   return (
     <>
-      <Modal open onOpenChange={onClose}>
+      <Modal open={open} onOpenChange={onClose}>
         <ModalContent>
           <ModalHeader>
             <ModalTitle>
@@ -1460,12 +1465,14 @@ export function IssueMaterialModal({
                         <TabsContent value="scrap">
                           <ScrapTab
                             entities={scrappableEntities}
-                            onScrap={(entity) =>
+                            onScrap={(entity) => {
                               setScrapEntityTarget({
                                 id: entity.id,
                                 readableId: entity.readableId
-                              })
-                            }
+                              });
+                              setIsScrapEntityOpen(true);
+                              setScrapEntityKey((key) => key + 1);
+                            }}
                           />
                         </TabsContent>
                       )}
@@ -1736,12 +1743,14 @@ export function IssueMaterialModal({
                         <TabsContent value="scrap">
                           <ScrapTab
                             entities={scrappableEntities}
-                            onScrap={(entity) =>
+                            onScrap={(entity) => {
                               setScrapEntityTarget({
                                 id: entity.id,
                                 readableId: entity.readableId
-                              })
-                            }
+                              });
+                              setIsScrapEntityOpen(true);
+                              setScrapEntityKey((key) => key + 1);
+                            }}
                           />
                         </TabsContent>
                       )}
@@ -2116,12 +2125,14 @@ export function IssueMaterialModal({
       </Modal>
       {scrapEntityTarget && (
         <ScrapEntityModal
+          key={scrapEntityKey}
+          open={isScrapEntityOpen}
           materialId={material?.id ?? ""}
           trackedEntityId={scrapEntityTarget.id}
           readableId={scrapEntityTarget.readableId}
           parentId={parentId}
           isMakeToOrder={material?.methodType === "Make to Order"}
-          onClose={() => setScrapEntityTarget(null)}
+          onClose={() => setIsScrapEntityOpen(false)}
         />
       )}
     </>

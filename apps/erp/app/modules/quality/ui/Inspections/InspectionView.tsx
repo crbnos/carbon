@@ -236,6 +236,8 @@ const InspectionView = ({
   const [gridBusy, setGridBusy] = useState(false);
   const hasFeatures = liveFeatures.length > 0;
 
+  // Remounted per open: the scanner, reject and plan modals keep their fields
+  // from the last open, and the plan modal loads its options when it mounts.
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
@@ -888,8 +890,10 @@ const InspectionView = ({
         </div>
       )}
 
-      {scannerDisclosure.isOpen && (
+      {scannerDisclosure.openCount > 0 && (
         <ScanInspectionSample
+          key={`scannerDisclosure-${scannerDisclosure.openCount}`}
+          open={scannerDisclosure.isOpen}
           inspectionId={inspection.id}
           isSerial={isSerial}
           remaining={remaining}
@@ -901,23 +905,24 @@ const InspectionView = ({
         />
       )}
 
-      {acceptConfirmDisclosure.isOpen && (
-        <Confirm
-          action={path.to.inspectionAccept(inspection.id)}
-          title={t`Accept lot?`}
-          text={
-            isSerial
-              ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
-              : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
-          }
-          confirmText={t`Accept Lot`}
-          onCancel={acceptConfirmDisclosure.onClose}
-          onSubmit={acceptConfirmDisclosure.onClose}
-        />
-      )}
+      <Confirm
+        isOpen={acceptConfirmDisclosure.isOpen}
+        action={path.to.inspectionAccept(inspection.id)}
+        title={t`Accept lot?`}
+        text={
+          isSerial
+            ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
+            : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
+        }
+        confirmText={t`Accept Lot`}
+        onCancel={acceptConfirmDisclosure.onClose}
+        onSubmit={acceptConfirmDisclosure.onClose}
+      />
 
-      {rejectConfirmDisclosure.isOpen && (
+      {rejectConfirmDisclosure.openCount > 0 && (
         <RejectLotModal
+          key={`rejectConfirmDisclosure-${rejectConfirmDisclosure.openCount}`}
+          open={rejectConfirmDisclosure.isOpen}
           action={path.to.inspectionReject(inspection.id)}
           issueTypes={issueTypes}
           requiresReason={!failedStatistically}
@@ -936,8 +941,10 @@ const InspectionView = ({
         />
       )}
 
-      {documentSwitchDisclosure.isOpen && (
+      {documentSwitchDisclosure.openCount > 0 && (
         <DocumentSwitchModal
+          key={`documentSwitchDisclosure-${documentSwitchDisclosure.openCount}`}
+          open={documentSwitchDisclosure.isOpen}
           inspectionId={inspection.id}
           itemId={inspection.itemId}
           currentDocumentId={inspection.inspectionDocumentId ?? null}
@@ -955,11 +962,13 @@ function DocumentSwitchModal({
   inspectionId,
   itemId,
   currentDocumentId,
+  open,
   onClose
 }: {
   inspectionId: string;
   itemId: string;
   currentDocumentId: string | null;
+  open: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -980,7 +989,7 @@ function DocumentSwitchModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

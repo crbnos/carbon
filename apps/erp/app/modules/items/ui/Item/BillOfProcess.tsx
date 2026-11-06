@@ -938,8 +938,9 @@ const BillOfProcess = ({
           renderItem={renderListItem}
         />
       </CardContent>
-      {configuratorDisclosure.isOpen && configuration && (
+      {configuratorDisclosure.openCount > 0 && configuration && (
         <ConfigurationEditor
+          key={`configurator-${configuratorDisclosure.openCount}`}
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
           parameters={parameters ?? []}
@@ -2931,8 +2932,9 @@ function AttributesListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-step-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteMethodOperationStep(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={name}
@@ -3529,8 +3531,9 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-parameter-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteMethodOperationParameter(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={key}
@@ -4115,8 +4118,9 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-tool-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteMethodOperationTool(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={tool.readableIdWithRevision}

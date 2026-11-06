@@ -48,6 +48,7 @@ import { useFetcher, useParams, useSearchParams } from "react-router";
 import { Empty } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import type { action as replanAction } from "~/routes/x+/assembly+/$id.plan.rerun";
 import type { action as generateAction } from "~/routes/x+/assembly+/$id.steps.generate";
 import { path } from "~/utils/path";
@@ -378,8 +379,7 @@ function AssemblyInstructionExplorer({
     setIsAwaitingPlan
   ]);
 
-  const [stepToDelete, setStepToDelete] =
-    useState<AssemblyInstructionStepRow | null>(null);
+  const stepToDelete = useDrawerItem<AssemblyInstructionStepRow>();
 
   // Select the newly created step
   useEffect(() => {
@@ -532,7 +532,7 @@ function AssemblyInstructionExplorer({
                 isDisabled={isDisabled}
                 onSelectStep={onSelectStep}
                 onPreviewStep={onPreviewStep}
-                onDeleteStep={setStepToDelete}
+                onDeleteStep={stepToDelete.open}
               />
             ) : permissions.can("update", "production") ? (
               <div className="flex h-full w-full flex-col items-center justify-center px-6 py-10">
@@ -721,117 +721,117 @@ function AssemblyInstructionExplorer({
           />
         </TabsContent>
       </Tabs>
-      {stepToDelete && (
+      {stepToDelete.item && (
         <ConfirmDelete
-          action={path.to.deleteAssemblyInstructionStep(id, stepToDelete.id)}
-          name={stepTitles.get(stepToDelete.id) ?? "this step"}
+          action={path.to.deleteAssemblyInstructionStep(
+            id,
+            stepToDelete.item.id
+          )}
+          isOpen={stepToDelete.isOpen}
+          name={stepTitles.get(stepToDelete.item.id) ?? "this step"}
           text={`Are you sure you want to delete the step: ${
-            stepTitles.get(stepToDelete.id) ?? stepToDelete.id
+            stepTitles.get(stepToDelete.item.id) ?? stepToDelete.item.id
           }? This cannot be undone.`}
-          onCancel={() => setStepToDelete(null)}
-          onSubmit={() => setStepToDelete(null)}
+          onCancel={stepToDelete.close}
+          onSubmit={stepToDelete.close}
         />
       )}
-      {showRegenerateConfirm && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setShowRegenerateConfirm(false);
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Regenerate steps?</ModalTitle>
-              <ModalDescription>
-                Replaces all existing steps with fresh drafts from the latest
-                motion plan — titles, descriptions, and other edits on the
-                current steps are lost. Refused if any step is manually authored
-                or marked Done.
-              </ModalDescription>
-            </ModalHeader>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setShowRegenerateConfirm(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                isDisabled={
-                  generateFetcher.state !== "idle" ||
-                  rerunPlanFetcher.state !== "idle"
-                }
-                isLoading={
-                  generateFetcher.state !== "idle" ||
-                  rerunPlanFetcher.state !== "idle"
-                }
-                onClick={() => {
-                  // Regenerate = re-plan from scratch, then rebuild steps from
-                  // the fresh plan. Kick a fresh DERIVE plan and arm the
-                  // awaiting machinery in regenerate mode; when the plan lands
-                  // it replaces the steps. (A stored plan is never reused —
-                  // that's what made planner changes invisible.)
-                  setIgnoredFailedJobId(
-                    planJob?.status === "Failed" ? planJob.id : null
-                  );
-                  generateModeRef.current = "regenerate";
-                  setIsAwaitingPlan(true);
-                  const formData = new FormData();
-                  formData.set("fresh", "1");
-                  rerunPlanFetcher.submit(formData, {
-                    method: "post",
-                    action: path.to.assemblyPlanRerun(id)
-                  });
-                  setShowRegenerateConfirm(false);
-                }}
-              >
-                Regenerate
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
-      {showRerunConfirm && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setShowRerunConfirm(false);
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Run motion planning?</ModalTitle>
-              <ModalDescription>
-                Recomputes how each step's components move into place, using the
-                current step order and avoiding collisions with components from
-                earlier steps. Steps you've marked Done are left as-is.
-              </ModalDescription>
-            </ModalHeader>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setShowRerunConfirm(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                isDisabled={rerunPlanFetcher.state !== "idle"}
-                isLoading={rerunPlanFetcher.state !== "idle"}
-                onClick={() => {
-                  rerunPlanFetcher.submit(new FormData(), {
-                    method: "post",
-                    action: path.to.assemblyPlanRerun(id)
-                  });
-                  setShowRerunConfirm(false);
-                }}
-              >
-                Run
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={showRegenerateConfirm}
+        onOpenChange={(open) => {
+          if (!open) setShowRegenerateConfirm(false);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Regenerate steps?</ModalTitle>
+            <ModalDescription>
+              Replaces all existing steps with fresh drafts from the latest
+              motion plan — titles, descriptions, and other edits on the current
+              steps are lost. Refused if any step is manually authored or marked
+              Done.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setShowRegenerateConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              isDisabled={
+                generateFetcher.state !== "idle" ||
+                rerunPlanFetcher.state !== "idle"
+              }
+              isLoading={
+                generateFetcher.state !== "idle" ||
+                rerunPlanFetcher.state !== "idle"
+              }
+              onClick={() => {
+                // Regenerate = re-plan from scratch, then rebuild steps from
+                // the fresh plan. Kick a fresh DERIVE plan and arm the
+                // awaiting machinery in regenerate mode; when the plan lands
+                // it replaces the steps. (A stored plan is never reused —
+                // that's what made planner changes invisible.)
+                setIgnoredFailedJobId(
+                  planJob?.status === "Failed" ? planJob.id : null
+                );
+                generateModeRef.current = "regenerate";
+                setIsAwaitingPlan(true);
+                const formData = new FormData();
+                formData.set("fresh", "1");
+                rerunPlanFetcher.submit(formData, {
+                  method: "post",
+                  action: path.to.assemblyPlanRerun(id)
+                });
+                setShowRegenerateConfirm(false);
+              }}
+            >
+              Regenerate
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      <Modal
+        open={showRerunConfirm}
+        onOpenChange={(open) => {
+          if (!open) setShowRerunConfirm(false);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Run motion planning?</ModalTitle>
+            <ModalDescription>
+              Recomputes how each step's components move into place, using the
+              current step order and avoiding collisions with components from
+              earlier steps. Steps you've marked Done are left as-is.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setShowRerunConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              isDisabled={rerunPlanFetcher.state !== "idle"}
+              isLoading={rerunPlanFetcher.state !== "idle"}
+              onClick={() => {
+                rerunPlanFetcher.submit(new FormData(), {
+                  method: "post",
+                  action: path.to.assemblyPlanRerun(id)
+                });
+                setShowRerunConfirm(false);
+              }}
+            >
+              Run
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

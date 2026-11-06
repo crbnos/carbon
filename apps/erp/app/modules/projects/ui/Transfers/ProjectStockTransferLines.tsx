@@ -54,6 +54,7 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -132,10 +133,12 @@ type EditingLine = {
 };
 
 function LineModal({
+  open = true,
   transfer,
   initialValues,
   onClose
 }: {
+  open?: boolean;
   transfer: ProjectStockTransfer;
   initialValues: EditingLine;
   onClose: () => void;
@@ -198,7 +201,7 @@ function LineModal({
     : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm
@@ -298,7 +301,7 @@ export default function ProjectStockTransferLines({
   const formatQuantity = useQuantityFormatter();
   const formatCost = useCurrencyFormatter({ rate: true });
   const deleteFetcher = useFetcher<{}>();
-  const [editing, setEditing] = useState<EditingLine | null>(null);
+  const editing = useDrawerItem<EditingLine>();
 
   const isEditable =
     transfer.status === "Draft" && permissions.can("update", "projects");
@@ -322,7 +325,7 @@ export default function ProjectStockTransferLines({
               variant="secondary"
               leftIcon={<LuCirclePlus />}
               isDisabled={!isEditable}
-              onClick={() => setEditing({ itemId: "", quantity: 1 })}
+              onClick={() => editing.open({ itemId: "", quantity: 1 })}
             >
               <Trans>Add Line</Trans>
             </Button>
@@ -405,7 +408,7 @@ export default function ProjectStockTransferLines({
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() =>
-                                setEditing({
+                                editing.open({
                                   id: line.id,
                                   itemId: line.itemId,
                                   storageUnitId:
@@ -447,11 +450,13 @@ export default function ProjectStockTransferLines({
           )}
         </CardContent>
       </Card>
-      {editing && (
+      {editing.item && (
         <LineModal
+          key={editing.key}
+          open={editing.isOpen}
           transfer={transfer}
-          initialValues={editing}
-          onClose={() => setEditing(null)}
+          initialValues={editing.item}
+          onClose={editing.close}
         />
       )}
     </>

@@ -73,9 +73,11 @@ interface ItemDetails {
 
 export function MaintenanceAddPartModal({
   dispatchId,
+  open = true,
   onClose
 }: {
   dispatchId: string;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -325,7 +327,7 @@ export function MaintenanceAddPartModal({
   );
 
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

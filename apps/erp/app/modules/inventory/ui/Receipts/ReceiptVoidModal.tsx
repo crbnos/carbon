@@ -27,9 +27,11 @@ import { path } from "~/utils/path";
 
 const ReceiptVoidModal = ({
   isSalesReturn,
+  open = true,
   onClose
 }: {
   isSalesReturn: boolean;
+  open?: boolean;
   onClose: () => void;
 }) => {
   const { receiptId } = useParams();
@@ -54,7 +56,7 @@ const ReceiptVoidModal = ({
 
   return (
     <Modal
-      open={true}
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -9,7 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { indirectPoolValidator } from "@carbon/ee/indirect-rates";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewIndirectPoolRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   return (
     <IndirectPoolForm
       initialValues={{
@@ -93,7 +93,8 @@ export default function NewIndirectPoolRoute() {
         offsetAbsorbedOverhead: false,
         active: true
       }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

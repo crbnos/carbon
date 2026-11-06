@@ -59,6 +59,9 @@ const ModalOverlay = forwardRef<
     data-backdrop=""
     className={cn(
       "bg-black/40 backdrop-blur-xs",
+      // The content closes inside this backdrop, and Radix removes both when
+      // the backdrop's animation ends: close in the content's 200ms.
+      "data-[state=closed]:duration-200 data-[state=closed]:!pointer-events-none",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       // Phones: a bottom sheet over a dimmed screen.
       "max-md:place-items-end max-md:overflow-hidden",
@@ -119,6 +122,9 @@ const ModalContentVariants = cva(
     "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    // Closing: still on the page while it animates, but no second click.
+    // Important: Radix sets `pointer-events: auto` inline on modal content.
+    "data-[state=closed]:!pointer-events-none",
     "md:data-instant:!animate-none",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%]",

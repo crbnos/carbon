@@ -292,7 +292,10 @@ export default function ConfigurationParametersForm({
                 type="button"
                 variant="secondary"
                 leftIcon={<LuFolderOpen />}
-                onClick={groupDisclosure.onOpen}
+                onClick={() => {
+                  setSelectedGroup(null);
+                  groupDisclosure.onOpen();
+                }}
               >
                 <Trans>Add Group</Trans>
               </Button>
@@ -368,90 +371,76 @@ export default function ConfigurationParametersForm({
           </div>
         </CardContent>
       </Card>
-      {deleteGroupDisclosure.isOpen && selectedGroup && (
+      {selectedGroup && (
         <ConfirmDelete
           action={path.to.deleteConfigurationParameterGroup(
             itemId,
             selectedGroup.id
           )}
-          isOpen
+          isOpen={deleteGroupDisclosure.isOpen}
           name={selectedGroup.name ?? ""}
           text={t`Are you sure you want to delete ${selectedGroup.name}?`}
-          onCancel={() => {
-            deleteGroupDisclosure.onClose();
-            setSelectedGroup(null);
-          }}
-          onSubmit={() => {
-            deleteGroupDisclosure.onClose();
-            setSelectedGroup(null);
-          }}
+          onCancel={deleteGroupDisclosure.onClose}
+          onSubmit={deleteGroupDisclosure.onClose}
         />
       )}
-      {groupDisclosure.isOpen && (
-        <Modal
-          open={groupDisclosure.isOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              groupDisclosure.onClose();
-              setSelectedGroup(null);
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              action={path.to.configurationParameterGroup(itemId)}
-              method="post"
-              validator={configurationParameterGroupValidator}
-              fetcher={fetcher}
-              defaultValues={{
-                id: selectedGroup?.id,
-                name: selectedGroup?.name
-              }}
-              onSubmit={() => {
-                setSelectedGroup(null);
-                groupDisclosure.onClose();
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  {selectedGroup ? (
-                    <Trans>Edit Group</Trans>
-                  ) : (
-                    <Trans>Add Group</Trans>
-                  )}
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="id" />
-                <Input name="name" label={t`Name`} />
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={groupDisclosure.onClose}
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit
-                  isDisabled={
-                    fetcher.state !== "idle" &&
-                    fetcher.formAction ===
-                      path.to.configurationParameterGroup(itemId)
-                  }
-                  isLoading={
-                    fetcher.state !== "idle" &&
-                    fetcher.formAction ===
-                      path.to.configurationParameterGroup(itemId)
-                  }
-                >
-                  <Trans>Save</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={groupDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) groupDisclosure.onClose();
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            action={path.to.configurationParameterGroup(itemId)}
+            method="post"
+            validator={configurationParameterGroupValidator}
+            fetcher={fetcher}
+            defaultValues={{
+              id: selectedGroup?.id,
+              name: selectedGroup?.name
+            }}
+            onSubmit={groupDisclosure.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                {selectedGroup ? (
+                  <Trans>Edit Group</Trans>
+                ) : (
+                  <Trans>Add Group</Trans>
+                )}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="id" />
+              <Input name="name" label={t`Name`} />
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={groupDisclosure.onClose}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit
+                isDisabled={
+                  fetcher.state !== "idle" &&
+                  fetcher.formAction ===
+                    path.to.configurationParameterGroup(itemId)
+                }
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formAction ===
+                    path.to.configurationParameterGroup(itemId)
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </>
   );
 
@@ -1087,8 +1076,9 @@ function ConfigurableParameter({
           )}
         </div>
       )}
-      {deleteParameterDisclosure.isOpen && (
+      {deleteParameterDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={deleteParameterDisclosure.openCount}
           action={path.to.deleteConfigurationParameter(
             parameter.itemId,
             parameter.id

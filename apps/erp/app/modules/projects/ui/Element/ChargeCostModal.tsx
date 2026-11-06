@@ -40,12 +40,14 @@ import { projectExpenseValidator } from "../../projects.models";
  * refusal shows in the modal, which stays open.
  */
 export function ChargeCostModal({
+  open = true,
   projectId,
   element,
   defaultDescription,
   defaultAmount,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   element: { id: string; readableId: string; name: string };
   defaultDescription?: string;
@@ -65,7 +67,7 @@ export function ChargeCostModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm

@@ -109,17 +109,15 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
           )}
         </CardFooter>
       </ValidatedForm>
-      {recalculateModal.isOpen && (
-        <Confirm
-          action={path.to.api.itemCostRecalculate(initialValues.itemId)}
-          title={t`Recalculate Unit Cost`}
-          text={t`This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?`}
-          confirmText={t`Recalculate`}
-          isOpen={recalculateModal.isOpen}
-          onCancel={recalculateModal.onClose}
-          onSubmit={recalculateModal.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.api.itemCostRecalculate(initialValues.itemId)}
+        title={t`Recalculate Unit Cost`}
+        text={t`This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?`}
+        confirmText={t`Recalculate`}
+        isOpen={recalculateModal.isOpen}
+        onCancel={recalculateModal.onClose}
+        onSubmit={recalculateModal.onClose}
+      />
     </Card>
   );
 };

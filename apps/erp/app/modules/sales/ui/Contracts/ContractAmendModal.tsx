@@ -68,6 +68,7 @@ import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePercentFormatter,
   usePermissions,
   useQuantityFormatter
@@ -144,6 +145,7 @@ type PreviewResponse = {
 type ContractAmendModalProps = Pick<ContractRouteData, "lines"> & {
   contract: Contract;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -200,6 +202,7 @@ const ContractAmendModal = ({
   contract,
   lines,
   action,
+  open = true,
   onClose
 }: ContractAmendModalProps) => {
   const { t } = useLingui();
@@ -417,7 +420,13 @@ const ContractAmendModal = ({
         (row.billing.billingMethod === "Cost Plus" ||
           row.billing.revenueMethod === "Percent Complete")
     );
-  const [editingTerms, setEditingTerms] = useState<AmendRow | null>(null);
+  const {
+    item: editingTerms,
+    isOpen: isEditingTerms,
+    key: editingTermsKey,
+    open: openTerms,
+    close: closeTerms
+  } = useDrawerItem<AmendRow>();
   const billingLabels = useBillingMethodLabels(contract.billingBasis);
   const hasChanges = changes.length > 0;
   const changesJson = JSON.stringify(changes);
@@ -747,7 +756,7 @@ const ContractAmendModal = ({
     (row: AmendRow) =>
       row.isNew ? (
         <>
-          <MenuItem onClick={() => setEditingTerms(row)}>
+          <MenuItem onClick={() => openTerms(row)}>
             <MenuIcon icon={<LuReceipt />} />
             <Trans>Billing Terms</Trans>
           </MenuItem>
@@ -779,7 +788,7 @@ const ContractAmendModal = ({
           <Trans>End Line</Trans>
         </MenuItem>
       ),
-    [originals, updateRow]
+    [originals, updateRow, openTerms]
   );
 
   const gridColumns = useMemo(
@@ -792,7 +801,7 @@ const ContractAmendModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -989,8 +998,10 @@ const ContractAmendModal = ({
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
-      {addLines.isOpen && (
+      {addLines.openCount > 0 && (
         <AddServicesModal
+          key={`add-services-${addLines.openCount}`}
+          open={addLines.isOpen}
           withParts={isProject}
           onAdd={addRows}
           onClose={addLines.onClose}
@@ -1000,7 +1011,8 @@ const ContractAmendModal = ({
           tree would bubble its submit to the outer one. */}
       {editingTerms && (
         <BillingTermsModal
-          key={editingTerms.id}
+          key={editingTermsKey}
+          open={isEditingTerms}
           name={editingTerms.description || editingTerms.name}
           terms={editingTerms.billing}
           currencyCode={currencyCode}
@@ -1008,9 +1020,9 @@ const ContractAmendModal = ({
           isGated={projectRevenueGated}
           onSave={(billing) => {
             updateRow(editingTerms.id, { billing });
-            setEditingTerms(null);
+            closeTerms();
           }}
-          onClose={() => setEditingTerms(null)}
+          onClose={closeTerms}
         />
       )}
     </Modal>
@@ -1021,6 +1033,7 @@ const ContractAmendModal = ({
  *  or Cost Plus from a project's billing element. Saved into the amendment's
  *  local state; nothing posts until Amend. */
 const BillingTermsModal = ({
+  open = true,
   name,
   terms,
   currencyCode,
@@ -1029,6 +1042,7 @@ const BillingTermsModal = ({
   onSave,
   onClose
 }: {
+  open?: boolean;
   name: string;
   terms: BillingTerms;
   currencyCode: string;
@@ -1058,7 +1072,7 @@ const BillingTermsModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1186,10 +1200,12 @@ type AddableItem = Pick<
  *  `withParts` (a project contract) it offers parts too, each a One-time
  *  line. */
 const AddServicesModal = ({
+  open = true,
   withParts,
   onAdd,
   onClose
 }: {
+  open?: boolean;
   withParts: boolean;
   onAdd: (itemIds: string[], items: AddableItem[]) => void;
   onClose: () => void;
@@ -1219,7 +1235,7 @@ const AddServicesModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

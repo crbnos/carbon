@@ -107,6 +107,7 @@ const SupplierQuoteHeader = () => {
   const deleteModal = useDisclosure();
   const shareModal = useDisclosure();
   const finalizeModal = useDisclosure();
+  // The send modal seeds its state at its top level; a new key per open resets it.
   const sendModal = useDisclosure();
 
   const finalizeFetcher = useFetcher<{}>();
@@ -341,33 +342,32 @@ const SupplierQuoteHeader = () => {
         lines={routeData?.lines ?? []}
         pricing={routeData?.prices ?? []}
       />
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSupplierQuote(id)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.quote?.supplierQuoteId ?? "supplier quote"}
-          text={t`Are you sure you want to delete ${routeData?.quote?.supplierQuoteId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
-      {finalizeModal.isOpen && (
-        <SupplierQuoteFinalizeModal
-          quote={routeData?.quote}
-          lines={routeData?.lines ?? []}
-          prices={routeData?.prices ?? []}
-          onClose={finalizeModal.onClose}
-          fetcher={finalizeFetcher}
-        />
-      )}
-      {sendModal.isOpen && (
+      <ConfirmDelete
+        action={path.to.deleteSupplierQuote(id)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.quote?.supplierQuoteId ?? "supplier quote"}
+        text={t`Are you sure you want to delete ${routeData?.quote?.supplierQuoteId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      <SupplierQuoteFinalizeModal
+        quote={routeData?.quote}
+        lines={routeData?.lines ?? []}
+        prices={routeData?.prices ?? []}
+        open={finalizeModal.isOpen}
+        onClose={finalizeModal.onClose}
+        fetcher={finalizeFetcher}
+      />
+      {sendModal.openCount > 0 && (
         <SupplierQuoteSendModal
+          key={sendModal.openCount}
           quote={routeData?.quote}
           lines={routeData?.lines ?? []}
+          open={sendModal.isOpen}
           onClose={sendModal.onClose}
           fetcher={sendFetcher}
           externalLinkId={routeData?.quote?.externalLinkId ?? ""}
@@ -381,8 +381,9 @@ const SupplierQuoteHeader = () => {
         onClose={shareModal.onClose}
         isOpen={shareModal.isOpen}
       />
-      {compareModal.isOpen && linkedRfqId && (
+      {compareModal.openCount > 0 && linkedRfqId && (
         <SupplierQuoteCompareDrawer
+          key={`compare-${compareModal.openCount}`}
           isOpen={compareModal.isOpen}
           onClose={compareModal.onClose}
           purchasingRfqId={linkedRfqId}
@@ -396,12 +397,14 @@ function SupplierQuoteFinalizeModal({
   quote,
   lines,
   prices,
+  open,
   onClose,
   fetcher
 }: {
   quote?: SupplierQuote;
   lines: SupplierQuoteLine[];
   prices: SupplierQuoteLinePrice[];
+  open: boolean;
   onClose: () => void;
   fetcher: FetcherWithComponents<{}>;
 }) {
@@ -437,7 +440,7 @@ function SupplierQuoteFinalizeModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

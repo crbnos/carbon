@@ -26,6 +26,7 @@ export function ShortPickModal({
   quantityToPick,
   quantityPicked,
   unitOfMeasureCode,
+  open = true,
   onClose
 }: {
   pickingListId: string;
@@ -34,6 +35,7 @@ export function ShortPickModal({
   quantityToPick: number;
   quantityPicked: number;
   unitOfMeasureCode?: string | null;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -51,7 +53,7 @@ export function ShortPickModal({
   }, [fetcher.state, onClose]);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ValidatedForm
           method="post"

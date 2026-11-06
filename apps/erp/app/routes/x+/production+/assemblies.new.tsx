@@ -5,8 +5,9 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { assemblyInstructionFromItemValidator } from "~/modules/production/production.models";
 import AssemblyInstructionForm from "~/modules/production/ui/Assemblies/AssemblyInstructionForm";
 import { path } from "~/utils/path";
@@ -48,12 +49,13 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function NewAssemblyInstructionRoute() {
   const { initialValues } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.assemblyInstructions);
 
   return (
     <AssemblyInstructionForm
       initialValues={initialValues}
-      onClose={() => navigate(path.to.assemblyInstructions)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

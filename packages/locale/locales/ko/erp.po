@@ -262,7 +262,7 @@ msgstr "{0, plural, one {품목 #개 이동} other {품목 #개 모두 이동}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.} other {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {이 경로를 제거하면 연결 #개도 함께 끊깁니다.} other {이 경로를 제거하면 연결 #개도 함께 끊깁니다.}}"
 
@@ -4405,8 +4405,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -4419,12 +4419,12 @@ msgstr "{orderLabel}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 �
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "{readableId}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "지불 {0}을(를) 삭제하시겠습니까?"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "정말로 \"{0}\" 보기를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
@@ -4756,7 +4756,7 @@ msgstr "이 공급업체를 거부하시겠습니까?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "이 작업 지시를 릴리스하시겠습니까? 현장에서 가용하게 되며 구매 및 생산을 드라이브합니다."
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "정말 {0}과(와) 그 지불 라인을 이 리스에서 제거하시겠습니까?"
 
@@ -9684,7 +9684,7 @@ msgstr "삭제"
 msgid "Delete {0}"
 msgstr "{0} 삭제"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "{0} 및 그 아래의 모든 요소를 삭제하시겠습니까? 원가, 시간, 작업 지시 또는 발주서 라인이 있는 요소는 삭제할 수 없습니다."
@@ -15668,7 +15668,7 @@ msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 정보, BOM, 공정 목록, 설계 변경, CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "이번 주 초안 시간 {0} h가 삭제되었습니다."
 
@@ -21315,7 +21315,7 @@ msgstr "지불"
 msgid "Payment — {0}"
 msgstr "지불 — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "지불 {0}"
 
@@ -23848,7 +23848,7 @@ msgid "Release Batch"
 msgstr "배치 릴리스"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "배치 {0} 릴리스"
 
@@ -23948,7 +23948,7 @@ msgstr "최근 항목에서 {0} 제거"
 msgid "Remove {0} from recent searches"
 msgstr "최근 검색에서 {0} 제거"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일정으로 돌아가 자체적으로 실행됩니다."
 
@@ -23961,7 +23961,7 @@ msgstr "{0}을(를) 이 단계에서 제거"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1}에서 {memberCount}개 공정 중 {0}개를 제거하시겠습니까?"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "{0}을(를) 제거하시겠습니까?"
 

@@ -608,8 +608,9 @@ const BillOfMaterial = ({
           renderItem={renderListItem}
         />
       </CardContent>
-      {configuratorDisclosure.isOpen && configuration && (
+      {configuratorDisclosure.openCount > 0 && configuration && (
         <ConfigurationEditor
+          key={`configurator-${configuratorDisclosure.openCount}`}
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
           parameters={parameters ?? []}

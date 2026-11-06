@@ -57,12 +57,14 @@ type SelectedLine = {
 type ReturnableLinesModalProps = {
   customerId: string;
   salesOrderId?: string | null;
+  open?: boolean;
   onClose: () => void;
 };
 
 const ReturnableLinesModal = ({
   customerId,
   salesOrderId,
+  open = true,
   onClose
 }: ReturnableLinesModalProps) => {
   const { t } = useLingui();
@@ -87,6 +89,7 @@ const ReturnableLinesModal = ({
   // — keyed by shipmentLineId — untouched across loads.
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable; re-run only on query inputs
   useEffect(() => {
+    if (!open) return;
     const params = new URLSearchParams({
       customerId,
       limit: String(limit)
@@ -94,7 +97,7 @@ const ReturnableLinesModal = ({
     if (salesOrderId) params.set("salesOrderId", salesOrderId);
     if (search.trim()) params.set("search", search.trim());
     fetcher.load(`${returnableLinesUrl}?${params.toString()}`);
-  }, [customerId, salesOrderId, search, limit]);
+  }, [open, customerId, salesOrderId, search, limit]);
 
   const lines = fetcher.data?.lines ?? [];
   const totalCount = fetcher.data?.totalCount ?? 0;
@@ -205,7 +208,7 @@ const ReturnableLinesModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
+import { actionOutcome, useAction } from "@carbon/query";
 import {
   Button,
   Modal,
@@ -12,7 +12,8 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  SHORTCUTS
+  SHORTCUTS,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef } from "react";
@@ -50,15 +51,25 @@ const ConfirmDelete = ({
   onSubmit
 }: ConfirmDeleteProps) => {
   const { t } = useLingui();
+  // The dialog stays mounted between opens, and so does its action: the
+  // request outlives a close, as it did before. Each open has an id, so a
+  // request from an earlier open does not close a later one on settling.
+  const { openCount: opens } = useDisclosure({ isOpen });
+  const latest = useRef({ isOpen, opens });
+  latest.current = { isOpen, opens };
+  const submittedIn = useRef<number | null>(null);
   const fetcher = useAction<{}>({
-    onSettled: () => {
-      if (submitted.current) {
-        onSubmit?.();
-        submitted.current = false;
-      }
+    onSettled: (data) => {
+      const from = submittedIn.current;
+      submittedIn.current = null;
+      if (from === null) return;
+      // A later open is on screen: this request was for an earlier one.
+      if (latest.current.isOpen && from !== latest.current.opens) return;
+      // Cancelled while the request ran: act on it only if it went through.
+      if (!latest.current.isOpen && actionOutcome(data) !== "success") return;
+      onSubmit?.();
     }
   });
-  const submitted = useRef(false);
   return (
     <Modal
       open={isOpen}
@@ -83,7 +94,7 @@ const ConfirmDelete = ({
           <fetcher.Form
             method="post"
             action={action}
-            onSubmit={() => (submitted.current = true)}
+            onSubmit={() => (submittedIn.current = opens)}
           >
             {/* Drawer and Modal are both z-50 (Drawer.tsx:23, Modal.tsx:35), so
                 when this modal stacks over a drawer form the topmost-dialog

@@ -34,6 +34,7 @@ type SetIndirectRateModalProps = {
   pools: IndirectPool[];
   fiscalYear: number;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -45,6 +46,7 @@ const SetIndirectRateModal = ({
   pools,
   fiscalYear,
   action,
+  open = true,
   onClose
 }: SetIndirectRateModalProps) => {
   const { t } = useLingui();
@@ -60,7 +62,7 @@ const SetIndirectRateModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

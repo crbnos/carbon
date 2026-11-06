@@ -26,6 +26,7 @@ import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarActions } from "~/components/Layout/Mobile/ChromeSlots";
 import { createValueSlot } from "~/components/Layout/Mobile/slots";
 import { RecordFrameContext } from "~/components/Layout/Panels";
+import { useDrawerItem } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import { type DownloadProps, useCsvDownload } from "../Download";
 import { ActiveFilters } from "../Filter";
@@ -84,9 +85,7 @@ export function CompactToolbar({
   const { t } = useLingui();
   const { urlFiltersParams, hasFilters } = useFilters();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [importTable, setImportTable] = useState<
-    keyof typeof fieldMappings | null
-  >(null);
+  const importCsv = useDrawerItem<keyof typeof fieldMappings>();
 
   const canFilter =
     filters.length > 0 || (withSort && Object.keys(sortKeyToLabel).length > 0);
@@ -118,7 +117,7 @@ export function CompactToolbar({
           <ExportCsvItem csvExport={csvExport} />
         ) : null}
         {importCSV?.map(({ table, label }) => (
-          <DropdownMenuItem key={table} onClick={() => setImportTable(table)}>
+          <DropdownMenuItem key={table} onClick={() => importCsv.open(table)}>
             <DropdownMenuIcon icon={<LuUpload />} />
             {t`Import ${label} CSV`}
           </DropdownMenuItem>
@@ -199,10 +198,12 @@ export function CompactToolbar({
           count={count}
         />
       ) : null}
-      {importTable ? (
+      {importCsv.item ? (
         <ImportCSVModal
-          table={importTable}
-          onClose={() => setImportTable(null)}
+          key={importCsv.key}
+          table={importCsv.item}
+          open={importCsv.isOpen}
+          onClose={importCsv.close}
         />
       ) : null}
     </>

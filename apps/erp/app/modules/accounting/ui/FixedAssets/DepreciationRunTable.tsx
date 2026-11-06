@@ -144,11 +144,9 @@ const DepreciationRunTable = memo(
             text={t`Are you sure you want to delete ${selectedRun.depreciationRunId}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedRun(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedRun(null);
             }}
           />
         )}

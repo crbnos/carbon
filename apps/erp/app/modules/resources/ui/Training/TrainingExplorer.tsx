@@ -162,7 +162,6 @@ export default function TrainingExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setSelectedQuestion(null);
     deleteQuestionDisclosure.onClose();
   };
 
@@ -283,16 +282,19 @@ export default function TrainingExplorer() {
           </Tooltip>
         </div>
       </VStack>
-      {questionDisclosure.isOpen && (
+      {questionDisclosure.openCount > 0 && (
         <TrainingQuestionForm
+          key={`questionDisclosure-${questionDisclosure.openCount}`}
+          open={questionDisclosure.isOpen}
           initialValues={trainingQuestionInitialValues}
           isDisabled={isDisabled}
           onClose={questionDisclosure.onClose}
         />
       )}
-      {deleteQuestionDisclosure.isOpen && selectedQuestion && (
+      {selectedQuestion && (
         <DeleteTrainingQuestion
           question={selectedQuestion}
+          isOpen={deleteQuestionDisclosure.isOpen}
           onCancel={onDeleteCancel}
         />
       )}
@@ -460,9 +462,11 @@ function TrainingQuestionItem({
 
 function DeleteTrainingQuestion({
   question,
+  isOpen = true,
   onCancel
 }: {
   question: TrainingQuestion;
+  isOpen?: boolean;
   onCancel: () => void;
 }) {
   const { id } = useParams();
@@ -472,6 +476,7 @@ function DeleteTrainingQuestion({
   return (
     <ConfirmDelete
       action={path.to.deleteTrainingQuestion(id, question.id)}
+      isOpen={isOpen}
       name={question.question ?? "this question"}
       text={`Are you sure you want to delete this question? This cannot be undone.`}
       onCancel={onCancel}
@@ -483,10 +488,12 @@ function DeleteTrainingQuestion({
 function TrainingQuestionForm({
   initialValues,
   isDisabled,
+  open = true,
   onClose
 }: {
   initialValues: z.infer<typeof trainingQuestionValidator>;
   isDisabled: boolean;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -566,7 +573,7 @@ function TrainingQuestionForm({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
