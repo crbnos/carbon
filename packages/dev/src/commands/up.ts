@@ -2,17 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
 import pc from "picocolors";
-import { APP_CHOICES, type AppId } from "../constants.js";
+import { APP_CHOICES, type AppId, isCloudDev } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
+import { withExponentialBackoff } from "../retry.js";
 import {
   assemblerMissingPrerequisite,
   installDeps,
@@ -47,6 +48,7 @@ import {
 import {
   activityFile,
   asleepFile,
+  bootingFile,
   stackStateDir,
   startWaker,
   watchIdle
@@ -162,6 +164,8 @@ type Ctx = {
   freshDatabase?: boolean;
 };
 
+type Prespawned = { stop: AbortController; exited: Promise<void> };
+
 export async function up(opts: UpOpts = {}) {
   const shouldMigrate = opts.migrate ?? true;
   // Type/swagger regen depends on a freshly-migrated schema. If migrations
@@ -197,11 +201,17 @@ export async function up(opts: UpOpts = {}) {
   // Ctrl+C would otherwise kill crbn and orphan half-booted containers. Tear
   // them down on interrupt; detached once apps take over teardown (below).
   let stripeChild: ExecaChildProcess | undefined;
+  let earlyApps: Prespawned | undefined;
   let interrupted = false;
+  // This marker holds every request to this stack's dev servers. Otherwise,
+  // an interrupted boot left them waiting for ten minutes.
+  let bootMarker: string | undefined;
   const detachEarly = onShutdown(() => {
     if (interrupted) return;
     interrupted = true;
     process.stderr.write("\ninterrupted — stopping partial stack…\n");
+    if (bootMarker) rmSync(bootMarker, { force: true });
+    earlyApps?.stop.abort();
     killStripe(stripeChild);
     void down({ silent: true }).finally(() => process.exit(130));
   });
@@ -289,21 +299,67 @@ export async function up(opts: UpOpts = {}) {
     { mode, stackSlug: borrowSlug ?? slug },
     borrowedEntry
   );
-  if (borrowedEntry) {
-    await waitForServices(ctx);
-  } else {
-    await pullImages(ctx, { force: opts.pull === true, size });
-    await bootDockerStack(ctx, size);
-    await waitForServices(ctx);
+
+  // Currently, we do this in cloud containers only (`CARBON_DEV_CLOUD=1`).
+  // The idea is to start the ERP/MES dev servers before the images are pulled
+  // and the database is migrated. Vite's first page takes about two minutes of
+  // CPU (the dependency optimizer, then the SSR transform of the root and login
+  // module graph), and none of this work needs the database. The `booting`
+  // marker holds every request until the database phase below is done.
+  const earlyAppIds =
+    isCloudDev() && appsRequested && !borrowSlug
+      ? reactRouterApps(selectedApps)
+      : [];
+  if (earlyAppIds.length > 0) {
+    const stateDir = stackStateDir(slug);
+    process.env.CRBN_STACK_STATE = stateDir;
+    mkdirSync(stateDir, { recursive: true });
+    rmSync(asleepFile(stateDir), { force: true });
+    bootMarker = bootingFile(stateDir);
+    writeFileSync(bootMarker, "");
+    const stop = new AbortController();
+    earlyApps = {
+      stop,
+      exited: spawnApps({
+        root,
+        apps: earlyAppIds,
+        ports: ctx.ports,
+        portless,
+        signal: stop.signal
+      })
+    };
+    log.info(
+      `${earlyAppIds.join(" + ")} dev server starting now — requests wait until the database is ready`
+    );
   }
-  await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
-  // Skip when migrations are skipped: the `user` table may not exist yet, and
-  // seeding would fail with `relation "user" does not exist`.
-  if (shouldMigrate) await seedSmokeTestUser(ctx);
-  if (portless) {
-    await setupPortless(ctx, selectedApps);
-    await ensureHostsFile();
+
+  try {
+    if (borrowedEntry) {
+      await waitForServices(ctx);
+    } else {
+      await pullImages(ctx, { force: opts.pull === true, size });
+      await bootDockerStack(ctx, size);
+      await waitForServices(ctx);
+    }
+    await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
+    // Skip when migrations are skipped: the `user` table may not exist yet, and
+    // seeding would fail with `relation "user" does not exist`.
+    if (shouldMigrate) await seedSmokeTestUser(ctx);
+    if (portless) {
+      await setupPortless(ctx, selectedApps);
+      await ensureHostsFile();
+    }
+  } catch (err) {
+    // The boot failed: early dev servers must not outlive the crbn that holds
+    // their requests, and a boot error must read as that error.
+    if (earlyApps) {
+      if (bootMarker) rmSync(bootMarker, { force: true });
+      earlyApps.stop.abort();
+      await earlyApps.exited.catch(() => undefined);
+    }
+    throw err;
   }
+  if (bootMarker) rmSync(bootMarker, { force: true });
 
   if (process.env.CARBON_EDITION === "cloud") {
     stripeChild = spawnStripeListener(root);
@@ -353,7 +409,8 @@ export async function up(opts: UpOpts = {}) {
       portless,
       opts.run,
       stripeChild,
-      opts.volumes ?? false
+      opts.volumes ?? false,
+      earlyApps
     );
     return;
   }
@@ -374,7 +431,10 @@ export async function up(opts: UpOpts = {}) {
   process.env.CRBN_STACK_STATE = stateDir;
   // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
   // stale marker that would hold every request for 120 s.
-  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
+  if (!borrowSlug) {
+    rmSync(asleepFile(stateDir), { force: true });
+    rmSync(bootingFile(stateDir), { force: true });
+  }
   const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
   const hibernates =
     opts.hibernate !== false &&
@@ -456,7 +516,8 @@ export async function up(opts: UpOpts = {}) {
       portless,
       stripeChild,
       parking,
-      stopHibernation
+      stopHibernation,
+      earlyApps
     );
   } finally {
     await stopHibernation();
@@ -670,18 +731,34 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
       ? "Pulling docker images (minimal)"
       : "Pulling docker images"
   );
+  const cloud = isCloudDev();
+  // A cloud container shares its egress IP and Docker Hub rate-limits
+  // anonymous pulls per IP, so a pull can fail with a 429. I add exponential
+  // backoff and then retry a few times.
+  const attempts = cloud ? 4 : 1;
   try {
-    await pullStack(
-      ctx.root,
-      ctx.slug,
-      (line) => {
-        // Layer lines ("98daf4da4175 Downloading 67.37MB") arrive many times
-        // a second for layers of different images; show the service lines only.
-        if (/^[0-9a-f]{12}\b/.test(line)) return;
-        bar.message(line.slice(0, 80));
-        if (/ Pulled$/.test(line)) bar.advance(1);
-      },
-      opts.size
+    await withExponentialBackoff(
+      () =>
+        pullStack(
+          ctx.root,
+          ctx.slug,
+          (line) => {
+            if (/^[0-9a-f]{12}\b/.test(line)) return;
+            const pulled = / Pulled$/.test(line);
+            if (!cloud) bar.message(line.slice(0, 80));
+            else if (pulled) log.info(line.slice(0, 80));
+            if (pulled) bar.advance(1);
+          },
+          opts.size
+        ),
+      {
+        attempts,
+        onRetry: (_error, attempt, delayMs) => {
+          log.warn(
+            `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${delayMs / 1000} s`
+          );
+        }
+      }
     );
     bar.stop("images up to date");
   } catch (err) {
@@ -809,19 +886,29 @@ async function runDatabaseMigrations(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              // Always regenerate types: the on-disk types must match the DB
-              // schema, which can be out of sync even when no NEW migration ran
-              // this boot — the schema is already applied to this worktree's DB
-              // after a branch switch, stash-pop, or reverted generated files.
-              // Gating on `migrationsApplied` left stale types in those cases.
-              await execa("pnpm", ["db:types"], { cwd: ctx.root });
-              // Swagger only changes with the schema and is heavier, so keep it
-              // gated on a migration having actually applied this boot.
-              if (migrationsApplied) {
-                await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
-                return "types + swagger refreshed";
+              // If there are no new migrations, we don't need to regenerate
+              // these types. There is a git workflow that will catch mismatches
+              // before they merge.
+              if (!migrationsApplied) return "skipped (no new migrations)";
+              let typesFailed = false;
+              try {
+                await execa("pnpm", ["db:types"], { cwd: ctx.root });
+              } catch (err) {
+                if (!isCloudDev()) throw err;
+                // Since a cloud container's network policy can block the image the
+                // generator pulls, we will just continue and assume the committed types
+                // still work there. A discrepency will be caught in ci.
+                const detail =
+                  err instanceof Error ? err.message.split("\n").at(-1) : "";
+                log.warn(
+                  `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
+                );
+                typesFailed = true;
               }
-              return "types refreshed";
+              await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
+              return typesFailed
+                ? "types regen failed (kept committed types); swagger refreshed"
+                : "types + swagger refreshed";
             }
           }
         ]
@@ -923,7 +1010,8 @@ async function runAppsThenTeardown(
   portless: boolean,
   stripeChild?: ExecaChildProcess,
   parking: AppParking = { parked: false },
-  beforeTeardown?: () => Promise<void>
+  beforeTeardown?: () => Promise<void>,
+  prespawned?: Prespawned
 ) {
   const apps = reactRouterApps(selectedApps);
   let detachParked: (() => void) | undefined;
@@ -935,15 +1023,22 @@ async function runAppsThenTeardown(
       whenAuxAppExits()
     ]);
   } else {
+    let first = prespawned;
     for (;;) {
-      parking.stop = new AbortController();
-      parking.exited = spawnApps({
-        root,
-        apps,
-        ports,
-        portless,
-        signal: parking.stop.signal
-      });
+      if (first) {
+        parking.stop = first.stop;
+        parking.exited = first.exited;
+        first = undefined;
+      } else {
+        parking.stop = new AbortController();
+        parking.exited = spawnApps({
+          root,
+          apps,
+          ports,
+          portless,
+          signal: parking.stop.signal
+        });
+      }
       await parking.exited;
       // Exited on their own or on Ctrl+C: tear down. Parked: wait for the
       // wake (or a Ctrl+C, which spawnApps is no longer listening for).
@@ -1040,17 +1135,22 @@ async function runAppsThenCommand(
   portless: boolean,
   command: string,
   stripeChild?: ExecaChildProcess,
-  cleanVolumes = false
+  cleanVolumes = false,
+  prespawned?: Prespawned
 ) {
-  const controller = new AbortController();
-  const appsDone = spawnApps({
-    root,
-    apps: reactRouterApps(selectedApps),
-    ports,
-    portless,
-    signal: controller.signal
+  const controller = prespawned?.stop ?? new AbortController();
+  const appsDone = (
+    prespawned?.exited ??
+    spawnApps({
+      root,
+      apps: reactRouterApps(selectedApps),
+      ports,
+      portless,
+      signal: controller.signal
+    })
+  )
     // biome-ignore lint/suspicious/noEmptyBlockStatements: supervisor errors surface via teardown
-  }).catch(() => {});
+    .catch(() => {});
   const detach = onShutdown(() => controller.abort());
 
   let exitCode = 0;

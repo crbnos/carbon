@@ -4,13 +4,13 @@
 
 import { spawnSync } from "node:child_process";
 import {
-  closeSync,
-  mkdtempSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync
+    closeSync,
+    mkdtempSync,
+    openSync,
+    readFileSync,
+    renameSync,
+    rmSync,
+    writeFileSync
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
@@ -154,6 +154,25 @@ export function splitConstants(source: string): {
   };
 }
 
+/**
+ * Extract the tail of the CLI's stderr for the error message.
+ */
+export function describeFailure(
+  result: { error?: Error; stderr?: Buffer | string | null },
+  dbUrl: string
+): string {
+  if (result.error) return ` ${result.error.message}`;
+  const text = (result.stderr ?? "").toString().trim();
+  if (!text) return "";
+  const redacted = text
+    .split(dbUrl)
+    .join("<db-url>")
+    .replace(/postgres(ql)?:\/\/[^\s"']+/g, "<db-url>");
+  const lines = redacted.split("\n");
+  const tail = lines.slice(-12).join("\n");
+  return `\n${lines.length > 12 ? "…\n" : ""}${tail}`;
+}
+
 export function generateDatabaseTypes(databaseUrl: string | undefined): void {
   const dbUrl = validateDatabaseUrl(databaseUrl);
   const target = resolve("packages/database/src/types.ts");
@@ -180,15 +199,22 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
           "--schema",
           "graphql_public"
         ],
-        { stdio: ["ignore", out, "pipe"] }
+        {
+          stdio: ["ignore", out, "pipe"],
+          env:
+            process.env.CARBON_DEV_CLOUD === "1"
+              ? { SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io", ...process.env }
+              : process.env
+        }
       );
       if (result.error || result.status !== 0) {
         const status =
           result.status === null
             ? "could not complete"
             : `exited ${result.status}`;
+        const detail = describeFailure(result, dbUrl);
         throw new Error(
-          `Supabase type generation ${status}; the existing type file was preserved.`
+          `Supabase type generation ${status}; the existing type file was preserved.${detail}`
         );
       }
     } finally {

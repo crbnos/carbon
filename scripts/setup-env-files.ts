@@ -8,7 +8,10 @@ import { join } from "path";
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
 const ROOT_ENV_LOCAL_PATH = join(process.cwd(), ".env.local");
 
-if (!existsSync(ROOT_ENV_PATH)) {
+// Cloud containers can boot without a `.env` file: `crbn up` writes stack
+// configuration to `.env.local`; SESSION_SECRET comes from environment settings.
+const CLOUD_DEV = process.env.CARBON_DEV_CLOUD === "1";
+if (!existsSync(ROOT_ENV_PATH) && !CLOUD_DEV) {
   throw new Error("No .env file found in root directory");
 }
 
@@ -34,7 +37,9 @@ function createSymlink(targetPath: string, sourcePath: string) {
 }
 
 function linkBoth(targetDir: string) {
-  createSymlink(join(targetDir, ".env"), ROOT_ENV_PATH);
+  if (existsSync(ROOT_ENV_PATH)) {
+    createSymlink(join(targetDir, ".env"), ROOT_ENV_PATH);
+  }
   if (existsSync(ROOT_ENV_LOCAL_PATH)) {
     createSymlink(join(targetDir, ".env.local"), ROOT_ENV_LOCAL_PATH);
   }

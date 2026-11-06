@@ -16,6 +16,16 @@ export const COMPOSE_ISOLATED_FILE =
 // back to it when COMPOSE_DEV_FILE is absent so existing checkouts keep working.
 export const COMPOSE_DEV_FILE_LEGACY = "docker-compose.dev.yml";
 
+/**
+ * True when `scripts/cloud-dev.sh` started this process: a Claude Code cloud
+ * container or another root Linux box with no developer at the keyboard. Every
+ * container-only step of `crbn up` checks this, so a developer's own boot is
+ * untouched.
+ */
+export function isCloudDev(): boolean {
+  return process.env.CARBON_DEV_CLOUD === "1";
+}
+
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [
   { value: "erp", label: "ERP", hint: "main app" },
