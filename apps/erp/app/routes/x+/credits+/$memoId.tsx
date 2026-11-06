@@ -8,7 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { memoValidator } from "~/modules/invoicing/invoicing.models";
@@ -26,6 +30,7 @@ import {
 } from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // The memo detail page is one shared URL (so every inbound path.to.memo(id)
@@ -47,6 +52,12 @@ export const handle: Handle = {
   },
   module: "invoicing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    data?.memo?.memoId,
+    data?.memo?.supplierId ? "Supplier Credit" : "Credit Memo"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

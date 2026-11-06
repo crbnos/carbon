@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useEditor } from "@carbon/tiptap";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { LuCheck, LuLink, LuTrash } from "react-icons/lu";
 import { IconButton } from "../../IconButton";
@@ -36,6 +37,7 @@ interface LinkSelectorProps {
 export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { editor } = useEditor();
+  const { t } = useLingui();
 
   // Autofocus on input by default
   useEffect(() => {
@@ -63,6 +65,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
             ref={inputRef}
             type="text"
             placeholder="Paste a link"
+            aria-label={t`Link URL`}
             className="flex-1 bg-transparent p-1 text-sm outline-none"
             defaultValue={editor.getAttributes("link").href || ""}
           />
@@ -79,7 +82,15 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
             />
           ) : (
             <span className="h-8">
-              <IconButton icon={<LuCheck />} aria-label="Linked" />
+              {/* Applies the link in the editor: no request is sent, so it
+                  submits the form itself instead of being a submit button.
+                  Enter in the field still submits the one-field form. */}
+              <IconButton
+                type="button"
+                icon={<LuCheck />}
+                aria-label={t`Apply link`}
+                onClick={(e) => e.currentTarget.form?.requestSubmit()}
+              />
             </span>
           )}
         </form>

@@ -259,6 +259,7 @@ function DayColumn({
       : null;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: a pointer shortcut that fills the day to where it is clicked; each bar is a keyboard slider (role="slider") that sets the same hours
     <div
       className={cn(
         "relative min-w-24 flex-1 border-l border-border",

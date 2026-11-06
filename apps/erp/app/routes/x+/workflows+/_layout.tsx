@@ -4,18 +4,16 @@
 
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Workflows" }];
-};
+export const meta = moduleMeta("Workflows");
 
 function WorkflowsSidebar() {
   const { groups } = useWorkflowsSubmodules();

@@ -8,7 +8,7 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useMemo } from "react";
 import {
   LuCheck,
   LuChevronDown,
@@ -16,6 +16,7 @@ import {
   LuChevronUp
 } from "react-icons/lu";
 import {
+  useContentLabel,
   useFormControl,
   useFormControlLabelledBy
 } from "./Form/useFormControl";
@@ -31,6 +32,7 @@ import {
   SelectSheetValue
 } from "./SelectSheet";
 import { cn } from "./utils/cn";
+import { mergeRefs } from "./utils/react";
 import { useViewport } from "./Viewport";
 
 /*
@@ -88,17 +90,25 @@ const SelectTrigger = forwardRef<
   const { isPhone } = useViewport();
   const labelledBy = useFormControlLabelledBy(props);
   const { ariaProps } = useFormControl(props);
+  const contentLabel = useContentLabel<HTMLButtonElement>(
+    !labelledBy && !props["aria-label"]
+  );
+  const mergedRef = useMemo(
+    () => mergeRefs<HTMLButtonElement | null>(ref, contentLabel.ref),
+    [ref, contentLabel.ref]
+  );
   const Trigger = isPhone ? SelectSheetTrigger : SelectPrimitive.Trigger;
   const icon = (
     <LuChevronsUpDown className="h-4 w-4 flex-shrink-0 opacity-50" />
   );
   return (
     <Trigger
-      ref={ref}
+      ref={mergedRef}
       className={cn(!inline && selectTriggerVariants({ size }), className)}
       {...props}
       {...ariaProps}
       aria-labelledby={labelledBy}
+      aria-label={props["aria-label"] ?? contentLabel.label}
     >
       {children}
       {!hideIcon && !inline ? (

@@ -75,6 +75,7 @@ const Users = ({
         />
       ))}
       <UserSelect
+        id={label ? name : undefined}
         {...props}
         type={type}
         isMulti

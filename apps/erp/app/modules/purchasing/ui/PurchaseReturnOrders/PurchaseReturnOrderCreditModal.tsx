@@ -163,6 +163,7 @@ const PurchaseReturnOrderCreditModal = ({
                 {lines.map((line) => {
                   const isSelected = line.purchaseReturnOrderLineId in selected;
                   const isCreditable = line.creditableQuantity > 0;
+                  const lineNumber = line.lineNumber;
                   return (
                     <HStack
                       key={line.purchaseReturnOrderLineId}
@@ -170,6 +171,7 @@ const PurchaseReturnOrderCreditModal = ({
                     >
                       <HStack spacing={3} className="min-w-0">
                         <Checkbox
+                          aria-label={t`Select line ${lineNumber}`}
                           isChecked={isSelected}
                           disabled={!isCreditable}
                           onCheckedChange={() =>
@@ -203,6 +205,7 @@ const PurchaseReturnOrderCreditModal = ({
                         </span>
                         {isSelected && (
                           <NumberField
+                            aria-label={t`Quantity to credit for line ${lineNumber}`}
                             formatOptions={INPUT_FORMAT.quantity}
                             step={INPUT_STEP.quantity}
                             value={selected[line.purchaseReturnOrderLineId]}

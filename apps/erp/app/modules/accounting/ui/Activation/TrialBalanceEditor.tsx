@@ -199,6 +199,7 @@ export default function TrialBalanceEditor({
             <LuSearch className="h-4 w-4 text-muted-foreground" />
           </InputLeftElement>
           <Input
+            aria-label={t`Search accounts`}
             placeholder={t`Search accounts...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}

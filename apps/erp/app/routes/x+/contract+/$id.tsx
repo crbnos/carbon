@@ -26,6 +26,7 @@ import {
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
+  MetaFunction,
   ShouldRevalidateFunction
 } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
@@ -52,6 +53,7 @@ import {
 } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract");
@@ -73,6 +75,9 @@ export const handle: Handle = {
       : serviceContractsCrumb(params, data),
   module: "sales"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.contract?.customerContractId, "Service Contract");
 
 // An amend / cancel preview posts but commits nothing, so it never refreshes
 // the page; every other submission and navigation does.

@@ -124,6 +124,9 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
     }
   };
 
+  const filterHeader = filter.header;
+  const filterValue = makeLabel(value);
+
   return (
     <HStack spacing={0}>
       <Button
@@ -168,6 +171,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
               value={input}
               onValueChange={setInput}
               placeholder={t`Search...`}
+              aria-label={t`Search filters`}
               className="h-9"
             />
             <CommandEmpty>
@@ -201,7 +205,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
         </PopoverContent>
       </Popover>
       <Button
-        aria-label={t`Remove filter`}
+        aria-label={t`Remove filter ${filterHeader}: ${filterValue}`}
         className="rounded-l-none before:rounded-l-none border-l-0 px-1 w-6"
         size="sm"
         variant="secondary"

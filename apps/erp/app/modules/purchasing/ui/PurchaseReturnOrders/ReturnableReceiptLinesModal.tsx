@@ -233,6 +233,7 @@ const ReturnableReceiptLinesModal = ({
                 <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search returnable receipt lines`}
                 value={searchInput}
                 placeholder={t`Search by receipt, PO, or item`}
                 onChange={(e) => {
@@ -286,6 +287,7 @@ const ReturnableReceiptLinesModal = ({
                   <VStack spacing={2} className="w-full">
                     {lines.map((line) => {
                       const isSelected = line.receiptLineId in selected;
+                      const itemReadableId = line.itemReadableId;
                       return (
                         <HStack
                           key={line.receiptLineId}
@@ -293,6 +295,7 @@ const ReturnableReceiptLinesModal = ({
                         >
                           <HStack spacing={3} className="min-w-0">
                             <Checkbox
+                              aria-label={t`Select ${itemReadableId}`}
                               isChecked={isSelected}
                               onCheckedChange={() => toggle(line)}
                             />
@@ -331,6 +334,7 @@ const ReturnableReceiptLinesModal = ({
                             </span>
                             {isSelected && (
                               <NumberField
+                                aria-label={t`Quantity to return for ${itemReadableId}`}
                                 formatOptions={INPUT_FORMAT.quantity}
                                 step={INPUT_STEP.quantity}
                                 value={selected[line.receiptLineId]?.quantity}

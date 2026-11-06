@@ -15,6 +15,7 @@ import {
 import { Badge } from "./Badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { reactNodeToString } from "./utils/react";
 
 type StatusProps = ComponentProps<"div"> & {
   color?: "green" | "orange" | "red" | "yellow" | "blue" | "gray" | "purple";
@@ -66,9 +67,16 @@ const Status = ({
         iconOnly && "shrink-0 px-1.5",
         className
       )}
-      aria-label={
-        iconOnly && typeof children === "string" ? children : undefined
-      }
+      // The icon alone is an image named by the label it hides.
+      {...(iconOnly
+        ? {
+            role: "img",
+            "aria-label":
+              typeof children === "string"
+                ? children
+                : reactNodeToString(children) || undefined
+          }
+        : {})}
       {...props}
     >
       {getStatusIcon(color)}

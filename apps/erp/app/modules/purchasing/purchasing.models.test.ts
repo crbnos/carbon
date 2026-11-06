@@ -20,6 +20,7 @@ import {
   leaseTerminateValidator,
   leaseValidator,
   lockedReturnLineField,
+  orderItemSupplierFiles,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
   purchaseOrderLineDateRefusal,
@@ -27,7 +28,7 @@ import {
   purchaseOrderValidator,
   resolveLeaseDates,
   shortClosePurchaseOrderLineRefusal,
-  splitRfqModelAttachments,
+  splitRfqFileAttachments,
   supplierContactEmailRequiredValidator,
   supplierContactValidator,
   supplierQuoteValidator
@@ -633,11 +634,54 @@ describe("lockedReturnLineField", () => {
   });
 });
 
-describe("splitRfqModelAttachments", () => {
+describe("orderItemSupplierFiles", () => {
+  const file = (itemId: string, path: string) => ({ itemId, path });
+
+  it("orders by first appearance of each item, keeping each item's order", () => {
+    const files = [
+      file("b", "b/model.step"),
+      file("a", "a/model.step"),
+      file("b", "b/drawing.pdf"),
+      file("a", "a/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a", "b", "a"], files).map((f) => f.path)
+    ).toEqual([
+      "a/model.step",
+      "a/drawing.pdf",
+      "b/model.step",
+      "b/drawing.pdf"
+    ]);
+  });
+
+  it("keeps only the ticked paths of the items asked for", () => {
+    const files = [
+      file("a", "a/model.step"),
+      file("a", "a/drawing.pdf"),
+      file("c", "c/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a"], files, [
+        "a/drawing.pdf",
+        // Another item's file, or any other path, is never shared.
+        "c/drawing.pdf",
+        "other-company/secret.pdf"
+      ]).map((f) => f.path)
+    ).toEqual(["a/drawing.pdf"]);
+  });
+
+  it("shares nothing when nothing is ticked", () => {
+    expect(
+      orderItemSupplierFiles(["a"], [file("a", "a/model.step")], [])
+    ).toEqual([]);
+  });
+});
+
+describe("splitRfqFileAttachments", () => {
   const model = (id: string, size: number) => ({ id, size });
 
   it("attaches what fits in line order and links the rest", () => {
-    const { attach, link } = splitRfqModelAttachments(
+    const { attach, link } = splitRfqFileAttachments(
       [model("a", 10), model("big", 30), model("b", 5)],
       20
     );
@@ -646,7 +690,7 @@ describe("splitRfqModelAttachments", () => {
   });
 
   it("links every model when documents already use the budget", () => {
-    const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
+    const { attach, link } = splitRfqFileAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
   });
@@ -684,12 +728,14 @@ describe("purchaseOrderLineDateRefusal", () => {
         null
     );
 
-  it("fixes the required date once the order is released", () => {
+  it("fixes the required date while in approval and once complete", () => {
     expect(editable("requiredDate")).toEqual([
       "Draft",
       "Planned",
-      "Needs Approval",
       "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
       "Rejected"
     ]);
   });

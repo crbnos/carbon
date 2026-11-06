@@ -169,6 +169,7 @@ export default function PeopleSettingsRoute() {
                 <UpgradeOverlayUpgradeButton />
               ) : (
                 <Switch
+                  aria-label={t`Console Mode`}
                   checked={(companySettings as any).consoleEnabled ?? false}
                   onCheckedChange={handleConsoleToggle}
                   disabled={isToggling}

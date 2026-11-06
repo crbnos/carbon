@@ -46,6 +46,7 @@ function ReorderableActionItem({
   action: ListItem;
   onRemove: () => void;
 }) {
+  const { t } = useLingui();
   const dragControls = useDragControls();
 
   return (
@@ -57,6 +58,8 @@ function ReorderableActionItem({
     >
       <div className="flex items-center gap-2 bg-card border rounded-lg px-3 py-2 w-full">
         <button
+          type="button"
+          aria-label={t`Reorder ${action.name}`}
           className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
           onPointerDown={(e) => dragControls.start(e)}
         >
@@ -65,6 +68,7 @@ function ReorderableActionItem({
         <span className="flex-1 text-sm">{action.name}</span>
         <button
           type="button"
+          aria-label={t`Remove ${action.name}`}
           onClick={onRemove}
           className="text-muted-foreground hover:text-destructive transition-colors p-1"
         >
@@ -152,7 +156,7 @@ const IssueWorkflowForm = ({
       >
         <HStack className="w-full justify-between">
           <VStack spacing={0}>
-            <Heading size="h3">
+            <Heading as="h1" size="h3">
               {isEditing ? (
                 <Trans>
                   Edit <span className="hidden md:inline">Issue</span> Workflow
@@ -185,6 +189,7 @@ const IssueWorkflowForm = ({
             <CardContent className="flex flex-col gap-0 p-6">
               {permissions.can("update", "quality") ? (
                 <Editor
+                  label={t`Issue Template`}
                   initialValue={content}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -275,6 +280,7 @@ const IssueWorkflowForm = ({
                     className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left text-sm max-md:min-h-11"
                   >
                     <Checkbox
+                      aria-hidden
                       onClick={(e) => e.preventDefault()}
                       isChecked={false}
                       disabled

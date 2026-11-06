@@ -240,7 +240,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle
+                aria-level={type === "card" && !isEditing ? 1 : undefined}
+              >
                 {isEditing ? (
                   <Trans>Tool Details</Trans>
                 ) : (

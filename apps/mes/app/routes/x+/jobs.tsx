@@ -21,7 +21,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
@@ -33,6 +33,7 @@ import {
   getTrackedEntitiesByJobMakeMethodIds
 } from "~/services/operations.service";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -40,6 +41,8 @@ export const handle: Handle = {
 };
 
 const log = getLogger("mes");
+
+export const meta: MetaFunction = () => pageMeta("Open Jobs");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -127,13 +130,14 @@ export default function JobsRoute() {
       <MesAppBar title={<Trans>Jobs</Trans>} />
       <MesQueueHeader title={<Trans>Open Jobs</Trans>} />
 
-      <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="p-4">
           <div className="relative mb-4">
             <LuSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label={t`Search jobs`}
               placeholder={t`Search by job or item ID`}
               className="pl-8"
             />
@@ -302,7 +306,7 @@ export default function JobsRoute() {
             />
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

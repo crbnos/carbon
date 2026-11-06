@@ -36,6 +36,8 @@ import {
   Table,
   Tbody,
   Td,
+  Th,
+  Thead,
   Tr,
   toast,
   toastError,
@@ -50,6 +52,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
@@ -130,11 +133,14 @@ export function StepsListItem({
   className,
   onRecord,
   onDelete,
+  stepNumber,
   disabled = false
 }: {
   activeStep: number;
   step: JobOperationStep;
   compact?: boolean;
+  // The step's 1-based position in the list, so its action buttons name it.
+  stepNumber?: number;
   operationId?: string;
   className: string;
   onRecord: (step: JobOperationStep) => void;
@@ -142,10 +148,14 @@ export function StepsListItem({
   // The operator may not record on this operation (ability policy 'block')
   disabled?: boolean;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean }>();
   const user = useUser();
   const { name, description, type } = step;
   const limits = useMeasurementLimits(step);
+  // "step 2: Torque bolts" — names which step each action acts on.
+  const stepLabel =
+    stepNumber === undefined ? name : t`step ${stepNumber}: ${name}`;
 
   const hasDescription = hasStepDescription(description);
   const disclosure = useDisclosure({
@@ -186,7 +196,7 @@ export function StepsListItem({
               {type !== "Task" &&
                 (compact ? (
                   <IconButton
-                    aria-label="Update step"
+                    aria-label={t`Update ${stepLabel}`}
                     variant="secondary"
                     size="lg"
                     icon={<LuCircleCheck />}
@@ -211,12 +221,13 @@ export function StepsListItem({
                     rightIcon={<LuCircleCheck />}
                     isDisabled={disabled}
                     onClick={() => onRecord(step)}
+                    aria-label={t`Update ${stepLabel}`}
                   >
                     <Trans>Update</Trans>
                   </Button>
                 ))}
               <IconButton
-                aria-label="Delete step"
+                aria-label={t`Delete ${stepLabel}`}
                 variant="secondary"
                 size="lg"
                 icon={<LuTrash />}
@@ -232,7 +243,7 @@ export function StepsListItem({
               <input type="hidden" name="booleanValue" value="true" />
               {compact ? (
                 <IconButton
-                  aria-label="Record step"
+                  aria-label={t`Record ${stepLabel}`}
                   variant="secondary"
                   size="lg"
                   icon={<LuCircleCheck />}
@@ -248,6 +259,7 @@ export function StepsListItem({
                   rightIcon={<LuCircleCheck />}
                   isLoading={fetcher.state !== "idle"}
                   isDisabled={disabled || fetcher.state !== "idle"}
+                  aria-label={t`Complete ${stepLabel}`}
                 >
                   <Trans>Complete</Trans>
                 </Button>
@@ -255,7 +267,7 @@ export function StepsListItem({
             </fetcher.Form>
           ) : compact ? (
             <IconButton
-              aria-label="Record step"
+              aria-label={t`Record ${stepLabel}`}
               variant="secondary"
               size="lg"
               icon={<LuCircleCheck />}
@@ -269,12 +281,14 @@ export function StepsListItem({
               rightIcon={<LuCircleCheck />}
               isDisabled={disabled}
               onClick={() => onRecord(step)}
+              aria-label={t`Record ${stepLabel}`}
             >
               <Trans>Record</Trans>
             </Button>
           )}
           {hasDescription && (
             <IconButton
+              aria-expanded={disclosure.isOpen}
               aria-label={
                 disclosure.isOpen ? "Hide description" : "Show description"
               }
@@ -390,6 +404,16 @@ function ItemsSummaryTable({ itemsIds }: { itemsIds: string[] }) {
   }, [itemsIds, allItems]);
   return (
     <Table className="border rounded-md">
+      <Thead className="sr-only">
+        <Tr>
+          <Th>
+            <Trans>Image</Trans>
+          </Th>
+          <Th>
+            <Trans>Item</Trans>
+          </Th>
+        </Tr>
+      </Thead>
       <Tbody>
         {items.map(
           (item) =>
@@ -443,10 +467,16 @@ export function PreviewStepRecord({
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {step.type === "Task" && (
-        <Checkbox checked={record?.booleanValue ?? false} />
+        <Checkbox
+          aria-label={step.name}
+          checked={record?.booleanValue ?? false}
+        />
       )}
       {step.type === "Checkbox" && (
-        <Checkbox checked={record?.booleanValue ?? false} />
+        <Checkbox
+          aria-label={step.name}
+          checked={record?.booleanValue ?? false}
+        />
       )}
       {step.type === "Value" && <p className="text-sm">{record?.value}</p>}
       {step.type === "Measurement" &&
@@ -487,7 +517,10 @@ export function PreviewStepRecord({
           {record?.value && (
             <LuPaperclip className="size-4 text-muted-foreground" />
           )}
-          <Checkbox checked={record?.booleanValue ?? false} />
+          <Checkbox
+            aria-label={step.name}
+            checked={record?.booleanValue ?? false}
+          />
         </div>
       )}
     </div>
@@ -570,6 +603,17 @@ export function RecordModal({
     record?.booleanValue ?? false
   );
 
+  // Enter on a value switch records the step (Space still toggles it). Record's
+  // own Enter shortcut stands down while focus is on another control, so the
+  // switch presses Record itself; a disabled Record ignores the click.
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const recordOnEnter = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "Enter" || event.ctrlKey || event.metaKey || event.altKey)
+      return;
+    event.preventDefault();
+    submitRef.current?.click();
+  };
+
   return (
     <Modal
       open
@@ -640,29 +684,48 @@ export function RecordModal({
                 />
               )}
               {attribute.type === "Value" && (
-                <InputField name="value" label="" size="lg" />
+                <InputField
+                  name="value"
+                  label=""
+                  aria-label={attribute.name}
+                  size="lg"
+                />
               )}
               {attribute.type === "Measurement" && (
                 <Number
                   name="numericValue"
                   label={attribute.unitOfMeasureCode ?? ""}
+                  // The visible label is only the unit; name the measure too.
+                  aria-label={
+                    attribute.unitOfMeasureCode
+                      ? `${attribute.name} (${attribute.unitOfMeasureCode})`
+                      : attribute.name
+                  }
                   helperText={limits ?? undefined}
                   size="lg"
                 />
               )}
               {attribute.type === "Timestamp" && (
-                <DateTimePicker name="value" label="" size="lg" />
+                <DateTimePicker
+                  name="value"
+                  label=""
+                  aria-label={attribute.name}
+                  size="lg"
+                />
               )}
               {attribute.type === "Checkbox" && (
                 <Switch
+                  aria-label={attribute.name}
                   checked={booleanControlled}
                   onCheckedChange={(checked) => setBooleanControlled(!!checked)}
+                  onKeyDown={recordOnEnter}
                 />
               )}
               {attribute.type === "Person" && (
                 <Combobox
                   name="userValue"
                   label=""
+                  aria-label={attribute.name}
                   options={employeeOptions}
                   size="lg"
                 />
@@ -671,6 +734,7 @@ export function RecordModal({
                 <Select
                   name="value"
                   label=""
+                  aria-label={attribute.name}
                   size="lg"
                   options={(attribute.listValues ?? []).map((value) => ({
                     label: value,
@@ -714,10 +778,12 @@ export function RecordModal({
                       <Trans>Passed Inspection</Trans>
                     </span>
                     <Switch
+                      aria-label={t`Passed Inspection`}
                       checked={booleanControlled}
                       onCheckedChange={(checked) =>
                         setBooleanControlled(!!checked)
                       }
+                      onKeyDown={recordOnEnter}
                     />
                   </div>
                 </>
@@ -729,6 +795,7 @@ export function RecordModal({
               <Trans>Cancel</Trans>
             </Button>
             <Submit
+              ref={submitRef}
               size="lg"
               isLoading={fetcher.state !== "idle"}
               isDisabled={
@@ -739,6 +806,9 @@ export function RecordModal({
               // Focus in a field submits natively on Enter; this covers focus
               // elsewhere in the modal and renders the ↵ badge.
               shortcut="enter"
+              // Enter on a focused control (Cancel, Remove, the dropzone, a
+              // combobox) stays that control's: Button's own guard stands
+              // down. The switches record through `recordOnEnter`.
               type="submit"
             >
               <Trans>Record</Trans>

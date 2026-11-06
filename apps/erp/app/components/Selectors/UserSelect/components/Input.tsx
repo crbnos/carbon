@@ -21,7 +21,15 @@ const Input = () => {
   const { t } = useLingui();
   const {
     aria: { inputProps },
-    innerProps: { disabled, isMulti, placeholder, readOnly },
+    innerProps: {
+      "aria-label": ariaLabel,
+      disabled,
+      id,
+      isMulti,
+      label,
+      placeholder,
+      readOnly
+    },
     inputValue,
     loading,
     refs: { inputRef },
@@ -30,6 +38,12 @@ const Input = () => {
     onInputChange,
     onInputFocus
   } = useUserSelectContext();
+  // A combobox takes no name from its value. With an `id`, a field's
+  // `<label htmlFor>` names it; otherwise name it here.
+  const inputLabel =
+    ariaLabel ??
+    label ??
+    (id ? undefined : isMulti ? t`Select users` : t`Select user`);
 
   return (
     <InputGroup>
@@ -49,6 +63,8 @@ const Input = () => {
 
       <InputBase
         {...inputProps}
+        id={id}
+        aria-label={inputLabel}
         isReadOnly={disabled || readOnly}
         isDisabled={disabled || readOnly}
         onBlur={onInputBlur}

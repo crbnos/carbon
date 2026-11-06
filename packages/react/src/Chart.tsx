@@ -4,6 +4,7 @@
 
 "use client";
 
+import { useLingui } from "@lingui/react/macro";
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 
@@ -45,10 +46,23 @@ const ChartContainer = React.forwardRef<
     children: React.ComponentProps<
       typeof RechartsPrimitive.ResponsiveContainer
     >["children"];
+    /** What the chart shows, in words ("Revenue rose 12% over the quarter"),
+     *  read after its name. */
+    summary?: string;
   }
->(({ id, className, children, config, ...props }, ref) => {
+>(({ id, className, children, config, summary, ...props }, ref) => {
+  const { t } = useLingui();
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+  // Recharts' accessibility layer makes the SVG role="application", which a
+  // screen reader names from its axis ticks ("Jan Feb Mar 0 250 500"). The
+  // chart is one image named by its caller's `aria-label`, else its series.
+  const series = Object.values(config)
+    .map((entry) => entry.label)
+    .filter((label): label is string => typeof label === "string")
+    .join(", ");
+  const name =
+    props["aria-label"] ?? (series ? t`Chart of ${series}` : t`Chart`);
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -59,11 +73,21 @@ const ChartContainer = React.forwardRef<
           "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
           className
         )}
+        role="img"
         {...props}
+        aria-label={summary ? `${name}. ${summary}` : name}
       >
         <ChartStyle id={chartId} config={config} />
         <RechartsPrimitive.ResponsiveContainer>
-          {children}
+          {React.isValidElement(children) && typeof children.type !== "string"
+            ? // The chart's own layer would surface the SVG as a focusable,
+              // tick-named application; the wrapper above names it instead.
+              // Legend toggles render outside the SVG and stay reachable.
+              React.cloneElement(
+                children as React.ReactElement<Record<string, unknown>>,
+                { accessibilityLayer: false, "aria-hidden": true }
+              )
+            : children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>
     </ChartContext.Provider>

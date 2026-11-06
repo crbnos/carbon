@@ -85,7 +85,8 @@ const SequenceOrCustomId = forwardRef<
             </Button>
           )}
           <IconButton
-            aria-label={t`Toggle`}
+            aria-label={t`Use custom ID`}
+            aria-pressed={isCustom}
             className={cn(
               "bg-card absolute right-0 top-0",
               "flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border-none -ml-px shadow-button-base",

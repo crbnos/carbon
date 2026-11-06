@@ -26,8 +26,7 @@ import {
   getApproverUserIdsForRule,
   getLatestApprovalRequestForDocument,
   getLowerTierApproverUserIds,
-  isApprovalRequired,
-  rejectRequest
+  isApprovalRequired
 } from "@carbon/ee/approvals.server";
 import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -38,10 +37,8 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
-  async,
   datetime,
   deriveRate,
-  escapeHTMLChars,
   groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
@@ -87,6 +84,7 @@ import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
   isIsoDate,
+  isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
@@ -102,6 +100,7 @@ import {
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
+  purchaseOrderEditRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineReceivingIntents,
@@ -111,7 +110,6 @@ import {
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
   selectedLineSchema,
-  splitRfqModelAttachments,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
 } from "./purchasing.models";
@@ -124,9 +122,6 @@ import type { PurchaseOrderStatus } from "./types";
 // holds every check its button made. Listed by entity in `index.server.ts`.
 
 const logger = getLogger("erp", "purchasing");
-
-/** How long a model link in an RFQ email works: a supplier may open it days later. */
-const RFQ_MODEL_LINK_SECONDS = 7 * 24 * 60 * 60;
 
 /** Custom field values, as `setCustomFields` reads them from a form. */
 const customFieldsInput = z.record(
@@ -319,6 +314,42 @@ export const cancelPurchasingRfq = defineServiceFn({
 });
 
 /**
+ * List the files sent with an RFQ or supplier quote for these items.
+ *
+ * @remarks
+ * Each item's model, then the files on its Files tab, as
+ * `getItemSupplierFiles` finds them. A file's `path` is what `partFiles`
+ * takes on `finalizePurchasingRfqAndNotify` and `sendSupplierQuoteToSupplier`.
+ * `includeSupplierPartFiles` (company settings) is whether the send dialogs
+ * start with every file ticked.
+ *
+ * @mcp read
+ */
+export const listItemSupplierFiles = defineServiceFn({
+  input: z.object({ itemIds: z.array(z.string()) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { itemIds }) {
+    // Parts too: the list is the items' Files tabs. Checked here so the
+    // published permission stays one module.
+    if (!ctx.can({ view: "parts" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
+    const files = await service.getItemSupplierFiles(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      ctx.company.id,
+      itemIds
+    );
+    return files.map(({ itemId, filename, path, size }) => ({
+      itemId,
+      filename,
+      path,
+      size
+    }));
+  }
+});
+
+/**
  * Send an RFQ to its suppliers.
  *
  * @remarks
@@ -326,8 +357,13 @@ export const cancelPurchasingRfq = defineServiceFn({
  * share link, and marks the RFQ Requested, in one transaction
  * (`finalize-purchasing-rfq`, which refuses an RFQ that is not Draft). Then,
  * for each supplier with a `contactId`, emails the contact the quote's link
- * with the RFQ's documents and internal notes attached; a failed email is
- * logged and the rest still go. Refused when the RFQ has no lines.
+ * with the RFQ's documents attached; a failed email is logged and the rest
+ * still go. Refused when the RFQ has no lines.
+ *
+ * `partFiles` are the storage paths of the line items' files to share
+ * (`listItemSupplierFiles`); a path that is not one of them is ignored, and
+ * none are shared when it is left out. They go in each email and are saved
+ * on each quote (`sharedFilePaths`), whose share page lists only them.
  *
  * @mcp
  */
@@ -335,7 +371,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
   input: purchasingRfqFinalizeValidator.extend({ rfqId: z.string() }),
   permission: { create: "purchasing" },
 
-  async run(ctx, { rfqId, suppliers }) {
+  async run(ctx, { rfqId, suppliers, partFiles }) {
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -356,15 +392,24 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
       return ctx.error("rule", "No line items found for this RFQ");
     }
 
-    const [company, user] = await Promise.all([
+    const [company, user, sharedFiles] = await Promise.all([
       getCompany(client, companyId),
-      getUser(client, userId)
+      getUser(client, userId),
+      service.getItemSupplierFiles(
+        client,
+        ctx.asSystem.pg,
+        companyId,
+        (lines.data ?? []).flatMap((line) =>
+          line.itemId ? [line.itemId] : []
+        ),
+        partFiles ?? []
+      )
     ]);
 
     const finalize = await invokePosting(
       ctx,
       "finalize-purchasing-rfq",
-      { rfqId },
+      { rfqId, sharedFilePaths: sharedFiles.map((file) => file.path) },
       service.finalizePurchasingRfq
     );
     if (finalize.error) {
@@ -415,79 +460,14 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
           (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
         ))
       ];
-      // Each part's original CAD file: attached while the email stays under the
-      // limit, a download link past it.
-      const models = await service.getItemModelFiles(
+      // The picked part files: attached while the email stays under the
+      // limit, download links past it.
+      const itemFiles = await service.supplierFileEmailParts(
         client,
-        ctx.asSystem.pg,
         companyId,
-        [
-          ...new Set(
-            (lines.data ?? []).flatMap((line) =>
-              line.itemId ? [line.itemId] : []
-            )
-          )
-        ]
+        sharedFiles,
+        attachments.reduce((sum, file) => sum + (file.size ?? 0), 0)
       );
-      const documentBytes = attachments.reduce(
-        (sum, file) => sum + (file.size ?? 0),
-        0
-      );
-      const split = splitRfqModelAttachments(
-        models,
-        PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
-      );
-      // A model whose attachment link could not be signed goes as a link; one
-      // with no link either is named, so the supplier knows to ask for it.
-      const attachSigned = await async.map(split.attach, async (model) => ({
-        model,
-        url: await service.signOriginalModelFile(client, companyId, model, 3600)
-      }));
-      const modelAttachments = attachSigned.flatMap(({ model, url }) =>
-        url ? [{ filename: model.filename, path: url }] : []
-      );
-      const signedLinks = await async.map(
-        [
-          ...split.link,
-          ...attachSigned.flatMap(({ model, url }) => (url ? [] : [model]))
-        ],
-        async (model) => ({
-          model,
-          url: await service.signOriginalModelFile(
-            client,
-            companyId,
-            model,
-            RFQ_MODEL_LINK_SECONDS
-          )
-        })
-      );
-      const modelLinks = signedLinks.flatMap(({ model, url }) =>
-        url ? [{ filename: model.filename, url }] : []
-      );
-      const missingModels = signedLinks.flatMap(({ model, url }) =>
-        url ? [] : [model.filename]
-      );
-      const missingHtml = missingModels.length
-        ? `<br><br>These models could not be included; reply to ask for them: ${missingModels
-            .map(escapeHTMLChars)
-            .join(", ")}`
-        : "";
-      const missingText = missingModels.length
-        ? `\n\nThese models could not be included; reply to ask for them: ${missingModels.join(", ")}`
-        : "";
-      const modelLinksHtml = modelLinks.length
-        ? `<br><br>Models too large to attach (links valid for 7 days):<br>${modelLinks
-            .map(
-              (model) =>
-                `<a href="${escapeHTMLChars(model.url)}">${escapeHTMLChars(model.filename)}</a>`
-            )
-            .join("<br>")}${missingHtml}`
-        : missingHtml;
-      const modelLinksText = modelLinks.length
-        ? `\n\nModels too large to attach (links valid for 7 days):\n${modelLinks
-            .map((model) => `${model.filename}: ${model.url}`)
-            .join("\n")}${missingText}`
-        : missingText;
       const notesHtml = tiptapToHTML(
         (rfq.data?.internalNotes ?? {}) as JSONContent
       );
@@ -505,14 +485,14 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
             html: [
               body.replace(/\n/g, "<br>"),
               `<br><a href="${link}">${link}</a>`,
-              modelLinksHtml,
+              itemFiles.html,
               notesHtml ? `<br><br>${notesHtml}` : "",
               `<br><br>${signature.replace(/\n/g, "<br>")}`
             ].join(""),
-            text: `${body}\n\n${link}${modelLinksText}\n\n${signature}`,
+            text: `${body}\n\n${link}${itemFiles.text}\n\n${signature}`,
             attachments: [
               ...attachments.map(({ filename, path }) => ({ filename, path })),
-              ...modelAttachments
+              ...itemFiles.attachments
             ],
             companyId
           });
@@ -703,7 +683,14 @@ export const finalizeSupplierQuoteWithLink = defineServiceFn({
  * Makes sure the quote has a share link and stamps it sent; the status stays
  * as it is. With `notification` Email, emails `supplierContact` (required
  * then) the link, copying `cc`, with the interaction's and the lines'
- * documents attached. Share sends nothing: the link is shared by hand.
+ * documents and the picked part files attached (`supplierFileEmailParts`).
+ * Share sends nothing: the link is shared by hand.
+ *
+ * `partFiles` are the storage paths of the line items' files to share
+ * (`listItemSupplierFiles`); a path that is not one of them is ignored. When
+ * sent, they replace the quote's `sharedFilePaths` (what its share page
+ * lists); left out, the email carries no part files and the quote keeps
+ * the ones it had.
  *
  * @mcp
  */
@@ -713,7 +700,10 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
   }),
   permission: { create: "purchasing" },
 
-  async run(ctx, { supplierQuoteId, notification, supplierContact, cc }) {
+  async run(
+    ctx,
+    { supplierQuoteId, notification, supplierContact, cc, partFiles }
+  ) {
     const client = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
@@ -753,10 +743,31 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     });
     if (link instanceof CarbonError) return link;
 
+    const lines = await service.getSupplierQuoteLines(client, supplierQuoteId);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load supplier quote lines",
+        lines.error
+      );
+    }
+    const sharedFiles = partFiles
+      ? await service.getItemSupplierFiles(
+          client,
+          ctx.asSystem.pg,
+          companyId,
+          (lines.data ?? []).flatMap((line) =>
+            line.itemId ? [line.itemId] : []
+          ),
+          partFiles
+        )
+      : [];
+
     const send = await service.sendSupplierQuote(
       client,
       supplierQuoteId,
-      userId
+      userId,
+      partFiles ? sharedFiles.map((file) => file.path) : undefined
     );
     if (send.error) {
       return ctx.error("internal", "Failed to send supplier quote", send.error);
@@ -767,11 +778,10 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
       return ctx.error("validation", "Supplier contact is required for email");
     }
 
-    const [company, contact, user, lines] = await Promise.all([
+    const [company, contact, user] = await Promise.all([
       getCompany(client, companyId),
       service.getSupplierContact(client, supplierContact, companyId),
-      getUser(client, userId),
-      service.getSupplierQuoteLines(client, supplierQuoteId)
+      getUser(client, userId)
     ]);
     if (!company.data || !contact.data?.contact || !user.data) {
       return ctx.error(
@@ -797,6 +807,12 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
         (lines.data ?? []).flatMap((line) => (line.id ? [line.id] : []))
       ))
     ];
+    const itemFiles = await service.supplierFileEmailParts(
+      client,
+      companyId,
+      sharedFiles,
+      attachments.reduce((sum, file) => sum + (file.size ?? 0), 0)
+    );
 
     const url = `${ERP_URL}${path.to.externalSupplierQuote(link)}`;
     const body = `Hey ${
@@ -812,9 +828,12 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
         cc: cc?.length ? cc : undefined,
         from: user.data.email,
         subject: `Supplier Quote ${quote.data.supplierQuoteId} from ${company.data.name}`,
-        html: `${body.replace(/\n/g, "<br>")}<br><a href="${url}">${url}</a><br><br>${signature.replace(/\n/g, "<br>")}`,
-        text: `${body}\n\n${url}\n\n${signature}`,
-        attachments,
+        html: `${body.replace(/\n/g, "<br>")}<br><a href="${url}">${url}</a>${itemFiles.html}<br><br>${signature.replace(/\n/g, "<br>")}`,
+        text: `${body}\n\n${url}${itemFiles.text}\n\n${signature}`,
+        attachments: [
+          ...attachments.map(({ filename, path }) => ({ filename, path })),
+          ...itemFiles.attachments
+        ],
         companyId
       });
     } catch (err) {
@@ -1895,9 +1914,12 @@ const purchaseOrderDeliveryFields = [
  * today's rate (refused when there is none). `receiptRequestedDate`,
  * `receiptPromisedDate`, `locationId` and `deliveryDate` are the delivery's;
  * a new date also moves the lines still on the order's previous one. Refused
- * when any order is released, except for `deliveryDate`, and for
- * `receiptPromisedDate` until the order is fully received (To Invoice,
- * Completed or Closed).
+ * on an order in Needs Approval, Completed or Closed, except for
+ * `deliveryDate`; `supplierId` and `currencyCode` are also refused on a
+ * released order. `receiptPromisedDate` is refused once the order is fully
+ * received (To Invoice, Completed or Closed). A new `exchangeRate` on a
+ * released order that takes it above its approved amount sends it back to
+ * Needs Approval.
  *
  * @mcp
  */
@@ -1916,95 +1938,149 @@ export const updatePurchaseOrders = defineServiceFn({
   permission: { update: "purchasing" },
 
   async run(ctx, { ids, field, value }) {
-    const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
-    const stamp = () => ({
-      updatedBy: ctx.auditUserId,
-      updatedAt: datetime.timestamp()
-    });
+    // One edit of these orders at a time: an exchange rate that sends an
+    // order back to approval, and any other edit of it, never interleave.
+    return service.withPurchaseOrderEditLock(ctx, ids, async () => {
+      const client = ctx.asCaller.supabase;
+      const companyId = ctx.company.id;
+      const stamp = () => ({
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      });
 
-    if (field === "receiptPromisedDate") {
-      const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
-      if (statuses instanceof CarbonError) return statuses;
-      const refusal = statuses
-        .map(purchaseOrderPromisedDateRefusal)
-        .find((message) => message !== null);
-      if (refusal) return ctx.error("rule", refusal);
-    } else if (field !== "deliveryDate") {
-      const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
-      if (statuses instanceof CarbonError) return statuses;
-      if (statuses.some(isPurchaseOrderLocked)) {
-        return ctx.error("rule", "Cannot modify a confirmed purchase order.");
+      if (field === "receiptPromisedDate") {
+        const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
+        if (statuses instanceof CarbonError) return statuses;
+        const refusal = statuses
+          .map(purchaseOrderPromisedDateRefusal)
+          .find((message) => message !== null);
+        if (refusal) return ctx.error("rule", refusal);
+      } else if (field !== "deliveryDate") {
+        const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
+        if (statuses instanceof CarbonError) return statuses;
+        const refusal = statuses
+          .map((status) =>
+            purchaseOrderEditRefusal(status, {
+              changesSupplierOrCurrency:
+                field === "supplierId" || field === "currencyCode"
+            })
+          )
+          .find((message) => message !== null);
+        if (refusal) return ctx.error("rule", refusal);
       }
-    }
 
-    const failed = (error: unknown) =>
-      ctx.error("internal", "Failed to update the purchase order", error);
+      const failed = (error: unknown) =>
+        ctx.error("internal", "Failed to update the purchase order", error);
 
-    if (isPurchaseOrderDateField(field)) {
-      // One transaction: the lines compare against the order's previous date,
-      // so they are written before the delivery row changes it.
-      const saved = await ctx
-        .transaction(async (tx) => {
-          const db = tx.asSystem.pg;
-          await service.cascadePurchaseOrderDateToLines(db, {
-            companyId,
-            userId: ctx.auditUserId,
-            purchaseOrderIds: ids,
-            field,
-            value
-          });
-          await db
-            .updateTable("purchaseOrderDelivery")
-            .set({ [field]: value, ...stamp() })
-            .where("id", "in", ids)
-            .where("companyId", "=", companyId)
-            .execute();
-        })
-        .catch(failed);
-      return saved instanceof CarbonError ? saved : { ids };
-    }
+      if (isPurchaseOrderDateField(field)) {
+        // One transaction: the lines compare against the order's previous date,
+        // so they are written before the delivery row changes it.
+        const saved = await ctx
+          .transaction(async (tx) => {
+            const db = tx.asSystem.pg;
+            await service.cascadePurchaseOrderDateToLines(db, {
+              companyId,
+              userId: ctx.auditUserId,
+              purchaseOrderIds: ids,
+              field,
+              value
+            });
+            await db
+              .updateTable("purchaseOrderDelivery")
+              .set({ [field]: value, ...stamp() })
+              .where("id", "in", ids)
+              .where("companyId", "=", companyId)
+              .execute();
+          })
+          .catch(failed);
+        return saved instanceof CarbonError ? saved : { ids };
+      }
 
-    if ((purchaseOrderDeliveryFields as readonly string[]).includes(field)) {
-      const delivery = await client
-        .from("purchaseOrderDelivery")
-        .update(unchecked({ [field]: value, ...stamp() }))
+      if ((purchaseOrderDeliveryFields as readonly string[]).includes(field)) {
+        const delivery = await client
+          .from("purchaseOrderDelivery")
+          .update(unchecked({ [field]: value, ...stamp() }))
+          .in("id", ids)
+          .eq("companyId", companyId);
+        return delivery.error ? failed(delivery.error) : { ids };
+      }
+
+      let patch: Database["public"]["Tables"]["purchaseOrder"]["Update"];
+      if (field === "supplierId") {
+        patch = { supplierId: value ?? undefined };
+        if (value && ids.length === 1) {
+          const supplier = await client
+            .from("supplier")
+            .select("currencyCode")
+            .eq("id", value)
+            .single();
+          const currencyCode = supplier.data?.currencyCode;
+          if (currencyCode) {
+            const rate = await getExchangeRate(client, companyId, currencyCode);
+            if (rate.error)
+              return ctx.error("rule", rate.error.message, rate.error);
+            patch = { ...patch, currencyCode, exchangeRate: rate.data };
+          }
+        }
+      } else if (field === "currencyCode" && value) {
+        const rate = await getExchangeRate(client, companyId, value);
+        if (rate.error)
+          return ctx.error("rule", rate.error.message, rate.error);
+        patch = { currencyCode: value, exchangeRate: rate.data };
+      } else {
+        patch = unchecked({ [field]: value ? value : null });
+      }
+
+      // A new rate changes the base total: a released order above its approved
+      // amount goes back to Needs Approval.
+      const before =
+        field === "exchangeRate"
+          ? await service.getPurchaseOrderApprovalStates(
+              ctx.asSystem.supabase,
+              companyId,
+              ids
+            )
+          : null;
+      if (before?.error) return failed(before.error);
+      // Each released order before the change: a rejection restores it.
+      const amendableIds = [...(before?.data?.values() ?? [])]
+        .filter((order) => isPurchaseOrderAmendable(order.status))
+        .map((order) => order.id);
+      const priorVersions = await service
+        .getPurchaseOrderVersions(ctx.asSystem.pg, companyId, amendableIds)
+        .catch((error: unknown) => failed(error));
+      if (priorVersions instanceof CarbonError) return priorVersions;
+
+      const update = await client
+        .from("purchaseOrder")
+        .update({ ...patch, ...stamp() })
         .in("id", ids)
         .eq("companyId", companyId);
-      return delivery.error ? failed(delivery.error) : { ids };
-    }
+      if (update.error) return failed(update.error);
 
-    let patch: Database["public"]["Tables"]["purchaseOrder"]["Update"];
-    if (field === "supplierId") {
-      patch = { supplierId: value ?? undefined };
-      if (value && ids.length === 1) {
-        const supplier = await client
-          .from("supplier")
-          .select("currencyCode")
-          .eq("id", value)
-          .single();
-        const currencyCode = supplier.data?.currencyCode;
-        if (currencyCode) {
-          const rate = await getExchangeRate(client, companyId, currencyCode);
-          if (rate.error)
-            return ctx.error("rule", rate.error.message, rate.error);
-          patch = { ...patch, currencyCode, exchangeRate: rate.data };
-        }
+      for (const order of before?.data?.values() ?? []) {
+        if (!isPurchaseOrderAmendable(order.status)) continue;
+        await service
+          .settlePurchaseOrderAmendment(
+            ctx.asSystem.pg,
+            ctx.asSystem.supabase,
+            {
+              companyId,
+              userId: ctx.auditUserId,
+              purchaseOrderId: order.id,
+              previousTotal: order.total,
+              priorVersion: priorVersions.get(order.id)
+            }
+          )
+          .catch((error) =>
+            logger.error(
+              "Failed to settle the approval of an edited purchase order",
+              { companyId, purchaseOrderId: order.id, error }
+            )
+          );
       }
-    } else if (field === "currencyCode" && value) {
-      const rate = await getExchangeRate(client, companyId, value);
-      if (rate.error) return ctx.error("rule", rate.error.message, rate.error);
-      patch = { currencyCode: value, exchangeRate: rate.data };
-    } else {
-      patch = unchecked({ [field]: value ? value : null });
-    }
-
-    const update = await client
-      .from("purchaseOrder")
-      .update({ ...patch, ...stamp() })
-      .in("id", ids)
-      .eq("companyId", companyId);
-    return update.error ? failed(update.error) : { ids };
+      return { ids };
+    });
   }
 });
 
@@ -2069,8 +2145,10 @@ export const updatePurchaseOrderLineDate = defineServiceFn({
 });
 
 /**
- * Save a purchase order's Shipping card. Refused once the order is released.
- * A new date also moves the lines still on the order's previous one.
+ * Save a purchase order's Shipping card. Refused in Needs Approval, Completed
+ * and Closed. A new date also moves the lines still on the order's previous
+ * one. A released order whose new shipping cost takes it above its approved
+ * amount goes back to Needs Approval.
  */
 export const updatePurchaseOrderDelivery = defineServiceFn({
   input: z.object({
@@ -2094,47 +2172,51 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
 
   async run(ctx, { id, customFields, ...delivery }) {
     const companyId = ctx.company.id;
-    const statuses = await service.statusesOf(ctx, "purchaseOrder", [id]);
-    if (statuses instanceof CarbonError) return statuses;
-    if (statuses.length === 0) {
-      return ctx.error("notFound", "Purchase order not found");
-    }
-    if (statuses.some(isPurchaseOrderLocked)) {
-      return ctx.error("rule", "Cannot modify a confirmed purchase order.");
-    }
-
-    const saved = await ctx
-      .transaction(async (tx) => {
-        const db = tx.asSystem.pg;
-        for (const field of [
-          "receiptRequestedDate",
-          "receiptPromisedDate",
-          "deliveryDate"
-        ] as const) {
-          await service.cascadePurchaseOrderDateToLines(db, {
-            companyId,
-            userId: ctx.auditUserId,
-            purchaseOrderIds: [id],
-            field,
-            value: delivery[field] ?? null
-          });
-        }
-        await db
-          .updateTable("purchaseOrderDelivery")
-          .set({
-            ...sanitize(delivery),
-            customFields: (customFields ?? null) as Json,
-            updatedBy: ctx.auditUserId,
-            updatedAt: datetime.timestamp()
-          })
-          .where("id", "=", id)
-          .where("companyId", "=", companyId)
-          .execute();
-      })
-      .catch((error: unknown) =>
-        ctx.error("internal", "Failed to update purchase order delivery", error)
-      );
-    return saved instanceof CarbonError ? saved : { id };
+    // The card re-sends an unchanged promised date; only a change is checked.
+    const promised = await service.purchaseOrderPromisedDateChangeRefusal(
+      ctx,
+      id,
+      delivery.receiptPromisedDate
+    );
+    if (promised) return promised;
+    return service.amendPurchaseOrder(ctx, id, async () => {
+      const saved = await ctx
+        .transaction(async (tx) => {
+          const db = tx.asSystem.pg;
+          for (const field of [
+            "receiptRequestedDate",
+            "receiptPromisedDate",
+            "deliveryDate"
+          ] as const) {
+            await service.cascadePurchaseOrderDateToLines(db, {
+              companyId,
+              userId: ctx.auditUserId,
+              purchaseOrderIds: [id],
+              field,
+              value: delivery[field] ?? null
+            });
+          }
+          await db
+            .updateTable("purchaseOrderDelivery")
+            .set({
+              ...sanitize(delivery),
+              customFields: (customFields ?? null) as Json,
+              updatedBy: ctx.auditUserId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute();
+        })
+        .catch((error: unknown) =>
+          ctx.error(
+            "internal",
+            "Failed to update purchase order delivery",
+            error
+          )
+        );
+      return saved instanceof CarbonError ? saved : { id };
+    });
   }
 });
 
@@ -2852,7 +2934,10 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
  * approved order is released: the supplier prices are updated (when the
  * company does that on finalize), the PDF is stored as a document, and with
  * `notification` Email the supplier contact gets it. Those follow-ups are
- * logged when they fail; the decision stands.
+ * logged when they fail; the decision stands. Rejecting the request for an
+ * edit of a released order puts back the version that was approved; when
+ * that version can no longer be written, the order is left Rejected with the
+ * edited values and `warning` says so.
  *
  * @mcp
  */
@@ -2929,10 +3014,19 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       );
     }
 
+    // An edit's rejection puts back the version that was approved.
+    const rejected =
+      decision === "Rejected"
+        ? await service.rejectPurchaseOrderApproval(ctx.asSystem.pg, {
+            approvalRequestId,
+            purchaseOrderId,
+            companyId,
+            userId
+          })
+        : null;
     const decided =
-      decision === "Approved"
-        ? await approveRequest(ctx.asSystem.pg, approvalRequestId, userId)
-        : await rejectRequest(ctx.asSystem.pg, approvalRequestId, userId);
+      rejected ??
+      (await approveRequest(ctx.asSystem.pg, approvalRequestId, userId));
     if (decided.error && "code" in decided.error) {
       return ctx.error("validation", decided.error.message);
     }
@@ -2994,7 +3088,13 @@ export const decidePurchaseOrderApproval = defineServiceFn({
     if (decision === "Approved") {
       await service.releaseApprovedPurchaseOrder(ctx, input);
     }
-    return { purchaseOrderId, decision };
+    // The rejection stands; the order is Rejected with the edit's values, and
+    // someone has to correct the lines or reopen it.
+    const warning =
+      rejected?.data?.versionKept && !rejected.data.restored
+        ? "Rejected, but the approved version could not be put back, so the order is Rejected with the edited values. Correct the lines, or reopen it."
+        : null;
+    return { purchaseOrderId, decision, warning };
   }
 });
 /**
@@ -4290,18 +4390,43 @@ export const convertSupplierQuoteToOrder = defineServiceFn({
 /**
  * Delete purchase order line
  *
+ * @remarks
+ * Refused in Needs Approval, Completed and Closed, on a released order (lower
+ * the line's quantity instead), and for a line with anything received or
+ * invoiced.
+ *
  * @mcp destructive
  */
 export const deletePurchaseOrderLine = defineServiceFn({
   input: z.looseObject({ purchaseOrderLineId: z.string() }),
   permission: { delete: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    const line = await service.getPurchaseOrderLineForAmendment(
       ctx,
-      await service.deletePurchaseOrderLine(
-        ctx.asCaller.supabase,
-        input.purchaseOrderLineId as never
-      )
+      input.purchaseOrderLineId
+    );
+    if (line.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order line",
+        line.error
+      );
+    }
+    if (!line.data) {
+      return ctx.error("notFound", "Purchase order line not found");
+    }
+    return service.amendPurchaseOrder(
+      ctx,
+      line.data.purchaseOrderId,
+      async () =>
+        unwrap(
+          ctx,
+          await service.deletePurchaseOrderLine(
+            ctx.asCaller.supabase,
+            input.purchaseOrderLineId
+          )
+        ),
+      { line: { ...line.data, purchaseQuantity: null }, restatesStatus: true }
     );
   }
 });
@@ -5387,11 +5512,13 @@ export const updatePurchaseOrderExchangeRate = defineServiceFn({
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.updatePurchaseOrderExchangeRate(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+    return service.amendPurchaseOrder(ctx, input.id, async () =>
+      unwrap(
+        ctx,
+        await service.updatePurchaseOrderExchangeRate(
+          ctx.asCaller.supabase,
+          payload(ctx, input).forUpdate() as never
+        )
       )
     );
   }
@@ -5667,6 +5794,7 @@ export const updateSupplierTax = defineServiceFn({
  *
  * @remarks
  * Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.
+ * The order starts as Draft (or Planned): finalize it to release it, through approval when a rule applies.
  *
  * @mcp
  */
@@ -5678,20 +5806,8 @@ export const insertPurchaseOrder = defineServiceFn({
       .enum(["Purchase", "Return", "Outside Processing"])
       .optional(),
     locationId: z.string().optional(),
-    status: z
-      .enum([
-        "Draft",
-        "Planned",
-        "Needs Approval",
-        "To Review",
-        "To Receive",
-        "To Receive and Invoice",
-        "To Invoice",
-        "Completed",
-        "Rejected",
-        "Closed"
-      ])
-      .optional(),
+    // A new order starts unreleased: finalize and approval release it.
+    status: z.enum(["Draft", "Planned"]).optional(),
     currencyCode: z.string().optional(),
     orderDate: z.string().optional(),
     supplierContactId: z.string().optional(),
@@ -5721,8 +5837,9 @@ export const insertPurchaseOrder = defineServiceFn({
  * @remarks
  * The supplier, its contact and location, the supplier reference, the type,
  * the order date, the currency (its exchange rate is read again), internal
- * notes and custom fields. Refused on a finalized order. The status changes
- * only through finalize, reopen and close.
+ * notes and custom fields. Refused in Needs Approval, Completed and Closed,
+ * and a new supplier or currency is refused on a released order. The status
+ * changes only through finalize, approval, reopen and close.
  *
  * @mcp
  */
@@ -5741,33 +5858,25 @@ export const updatePurchaseOrder = defineServiceFn({
   }),
   permission: { update: "purchasing" },
   async run(ctx, { customFields, ...input }) {
-    const current = await ctx.asCaller.supabase
-      .from("purchaseOrder")
-      .select("status")
-      .eq("id", input.id)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (current.error) {
-      return ctx.error(
-        "internal",
-        "Failed to read the purchase order",
-        current.error
-      );
-    }
-    if (!current.data) return ctx.error("notFound", "Purchase order not found");
-    if (isPurchaseOrderLocked(current.data.status)) {
-      return ctx.error(
-        "rule",
-        "Cannot modify a finalized purchase order. To make changes, please cancel this PO and create a new one."
-      );
-    }
-    return unwrap(
+    // The header holds no amount, but a new currency reads a new rate; a
+    // released order never changes its supplier or currency.
+    return service.amendPurchaseOrder(
       ctx,
-      await service.updatePurchaseOrder(ctx.asCaller.supabase, {
-        ...input,
-        customFields: customFields as Json | undefined,
-        updatedBy: ctx.auditUserId
-      })
+      input.id,
+      async () =>
+        unwrap(
+          ctx,
+          await service.updatePurchaseOrder(ctx.asCaller.supabase, {
+            ...input,
+            customFields: customFields as Json | undefined,
+            updatedBy: ctx.auditUserId
+          })
+        ),
+      {
+        supplierId: input.supplierId,
+        currencyCode: input.currencyCode,
+        settle: false
+      }
     );
   }
 });
@@ -5811,11 +5920,20 @@ export const upsertPurchaseOrderDelivery = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    // The same promised-date rule as updatePurchaseOrderDelivery.
+    const promised = await service.purchaseOrderPromisedDateChangeRefusal(
       ctx,
-      await service.upsertPurchaseOrderDelivery(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+      input.id,
+      input.receiptPromisedDate
+    );
+    if (promised) return promised;
+    return service.amendPurchaseOrder(ctx, input.id, async () =>
+      unwrap(
+        ctx,
+        await service.upsertPurchaseOrderDelivery(
+          ctx.asCaller.supabase,
+          payload(ctx, input).forUpdate() as never
+        )
       )
     );
   }
@@ -5877,13 +5995,23 @@ export const createPurchaseOrderLine = defineServiceFn({
       .optional()
   }),
   permission: { create: "purchasing" },
-  async run(ctx, input) {
-    return unwrap(
+  async run(ctx, { id: _id, ...input }) {
+    // Always a new line: an `id` would turn the write into an update of a
+    // line on another order, past that order's own gate.
+    const held = await service.unreleasedChangeOrderRefusal(ctx, input.itemId);
+    if (held) return held;
+    return service.amendPurchaseOrder(
       ctx,
-      await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      input.purchaseOrderId,
+      async () =>
+        unwrap(
+          ctx,
+          await service.upsertPurchaseOrderLine(
+            ctx.asCaller.supabase,
+            payload(ctx, input).forCreate() as never
+          )
+        ),
+      { restatesStatus: true }
     );
   }
 });
@@ -5947,12 +6075,53 @@ export const updatePurchaseOrderLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    const line = await service.getPurchaseOrderLineForAmendment(ctx, input.id);
+    if (line.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order line",
+        line.error
+      );
+    }
+    if (!line.data || line.data.purchaseOrderId !== input.purchaseOrderId) {
+      return ctx.error("notFound", "Purchase order line not found");
+    }
+    if (input.itemId !== undefined && input.itemId !== line.data.itemId) {
+      const held = await service.unreleasedChangeOrderRefusal(
+        ctx,
+        input.itemId
+      );
+      if (held) return held;
+    }
+    return service.amendPurchaseOrder(
       ctx,
-      await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
-        ...payload(ctx, input).forUpdate(),
-        companyId: ctx.company.id
-      } as never)
+      line.data.purchaseOrderId,
+      async () =>
+        unwrap(
+          ctx,
+          await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
+            ...payload(ctx, input).forUpdate(),
+            companyId: ctx.company.id
+          } as never)
+        ),
+      {
+        line: {
+          ...line.data,
+          purchaseQuantity: input.purchaseQuantity,
+          edit: {
+            purchaseOrderLineType: input.purchaseOrderLineType,
+            itemId: input.itemId,
+            assetId: input.assetId,
+            purchaseUnitOfMeasureCode: input.purchaseUnitOfMeasureCode,
+            conversionFactor: input.conversionFactor
+          },
+          dates: {
+            requiredDate: input.requiredDate,
+            promisedDate: input.promisedDate
+          }
+        },
+        restatesStatus: true
+      }
     );
   }
 });
@@ -6026,12 +6195,18 @@ export const upsertPurchaseOrderPayment = defineServiceFn({
   }),
   permission: { create: "purchasing", update: "purchasing" },
   async run(ctx, input) {
-    return unwrap(
+    return service.amendPurchaseOrder(
       ctx,
-      await service.upsertPurchaseOrderPayment(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      input.id,
+      async () =>
+        unwrap(
+          ctx,
+          await service.upsertPurchaseOrderPayment(
+            ctx.asCaller.supabase,
+            payload(ctx, input).forUpdate() as never
+          )
+        ),
+      { settle: false }
     );
   }
 });

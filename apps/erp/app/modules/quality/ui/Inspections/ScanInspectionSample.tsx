@@ -159,6 +159,7 @@ export default function ScanInspectionSample({
                     <VStack spacing={3} className="w-full">
                       <InputGroup className="w-full">
                         <Input
+                          aria-label={t`Tracked entity ID, serial, or batch`}
                           autoFocus
                           placeholder={t`Scan or enter tracked entity ID, serial, or batch`}
                           value={serial}

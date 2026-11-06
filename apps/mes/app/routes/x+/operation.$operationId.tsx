@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
@@ -38,6 +38,7 @@ import {
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
+import { recordMeta } from "~/utils/meta";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -93,6 +94,15 @@ export const handle: Handle = {
 };
 
 const logger = getLogger("mes", "operation");
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    [
+      data?.batch?.readableId ?? data?.operation?.jobReadableId,
+      data?.operation?.description
+    ],
+    "Operation"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});

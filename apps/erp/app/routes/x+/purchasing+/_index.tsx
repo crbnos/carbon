@@ -41,6 +41,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import { round } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -374,6 +375,14 @@ export default function PurchaseDashboard() {
     return numberFormatter.format(value);
   };
 
+  const formattedTotal = formatValue(total);
+  const kpiLabel = kpiLabels[selectedKpiData.key];
+  const chartLabel = ["week", "month"].includes(interval)
+    ? t`${kpiLabel} by day`
+    : t`${kpiLabel} by month`;
+  const chartChange = `${percentageChange >= 0 ? "+" : ""}${round(percentageChange, 0)}%`;
+  const chartSummary = t`Total ${formattedTotal}, ${chartChange} versus the previous period`;
+
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
     return [
@@ -393,6 +402,9 @@ export default function PurchaseDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
+      <h1 className="sr-only">
+        <Trans>Purchasing Dashboard</Trans>
+      </h1>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuPackageSearch />}
@@ -455,6 +467,7 @@ export default function PurchaseDashboard() {
 
               <Combobox
                 asButton
+                aria-label={t`Supplier`}
                 value={supplierId}
                 onChange={setSupplierId}
                 options={supplierOptions}
@@ -519,6 +532,8 @@ export default function PurchaseDashboard() {
           >
             <ChartContainer
               config={chartConfig}
+              aria-label={chartLabel}
+              summary={chartSummary}
               className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
             >
               <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>

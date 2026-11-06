@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -253,6 +254,9 @@ export default function TrialBalanceRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Trial Balance</Trans>
+      </h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}

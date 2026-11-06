@@ -858,6 +858,7 @@ const ContractAmendModal = ({
                 </div>
               ) : (
                 // Enter commits a cell; it must not submit the amendment.
+                // biome-ignore lint/a11y/noStaticElementInteractions: keydown-only wrapper that stops Enter in a grid cell from submitting the form; the grid's own cells are the controls
                 <div
                   className="w-full overflow-hidden rounded-lg border border-border"
                   style={{
