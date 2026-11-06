@@ -1166,7 +1166,7 @@
     {"name":"purchasing_upsertPurchasingRFQ","classification":"WRITE","schema":"f07e48851fa6","response":"3797626bd17e","permission":"purchasing:create+update","paginates":false},
     {"name":"purchasing_upsertPurchasingRFQSuppliers","classification":"DESTRUCTIVE","schema":"1a9592989eed","response":"5c9ba5bee3f1","permission":"purchasing:create+update","paginates":false},
     {"name":"quality_activateGauge","classification":"DESTRUCTIVE","schema":"d9b1ccc8ebda","response":"cd0490fe992f","permission":"quality:delete+update","paginates":false},
-    {"name":"quality_completeIssue","classification":"WRITE","schema":"3797626bd17e","response":"3797626bd17e","permission":"quality:update","paginates":false},
+    {"name":"quality_completeIssue","classification":"WRITE","schema":"3797626bd17e","response":"8e58a21e4c94","permission":"quality:update","paginates":false},
     {"name":"quality_createGaugeCalibrationRecord","classification":"WRITE","schema":"3a249da341fa","response":"3797626bd17e","permission":"quality:create","paginates":false},
     {"name":"quality_createGaugeType","classification":"WRITE","schema":"941ecf1f3462","response":"8394fbabd845","permission":"quality:create","paginates":false},
     {"name":"quality_createIssue","classification":"WRITE","schema":"0bbab249bae5","response":"67030fdab724","permission":"quality:create","paginates":false},

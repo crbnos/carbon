@@ -4148,7 +4148,7 @@ export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: { nonConformanceId: string; companyId: string; userId: string }
-): Promise<Result<{ id: string }>> {
+): Promise<Result<{ id: string; warning?: string }>> {
   const { nonConformanceId, companyId, userId } = args;
 
   // Preflight reads via Supabase (uses nested selects / RLS-aware service role)
@@ -4589,6 +4589,8 @@ export async function closeIssue(
   }
 
   try {
+    // Set when a Partial lot's Scrap found less in its unit than it held.
+    let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
       // The issue lock every disposition writer takes first: no row, link or
       // lot changes between the checks below and the close.
@@ -4857,11 +4859,37 @@ export async function closeIssue(
           locationId: remainderLocationId,
           documentIds: heldPartial.documentIds
         });
+        const scrap = round(
+          Math.min(heldPartial.requested, heldPartial.remainder)
+        );
         const draws = engine.drawHeldStripes(
-          Math.min(heldPartial.requested, heldPartial.remainder, claimable),
+          Math.min(scrap, claimable),
           stripes,
           { overflow: false }
         );
+        // A count may have left the unit short: the close writes off what is
+        // there, and says what was not.
+        const writtenOff = round(
+          draws.reduce((sum, draw) => sum + draw.quantity, 0)
+        );
+        const missing = round(scrap - writtenOff);
+        if (missing > EPSILON) {
+          const unitName = heldPartial.storageUnitId
+            ? (
+                await trx
+                  .selectFrom("storageUnit")
+                  .select("name")
+                  .where("id", "=", heldPartial.storageUnitId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst()
+              )?.name
+            : undefined;
+          warning = `${writtenOff} of ${scrap} rejected written off: the other ${missing} ${
+            missing === 1 ? "is" : "are"
+          } not in ${unitName ?? "the location's stock"}, or another lot holds ${
+            missing === 1 ? "it" : "them"
+          }.`;
+        }
         for (const draw of draws) {
           movements.push({
             itemId: heldPartial.itemId,
@@ -4982,7 +5010,7 @@ export async function closeIssue(
       return { id: updated.id };
     });
 
-    return { data: result, error: null };
+    return { data: { ...result, warning }, error: null };
   } catch (err) {
     logger.error("closeIssue failed", { companyId, nonConformanceId, err });
     // A deadlock or serialization failure reads as "try again"; a hold

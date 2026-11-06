@@ -493,7 +493,7 @@ export const completeIssue = defineServiceFn({
         ),
       "Failed to send close notifications"
     );
-    return { id };
+    return { id, warning: result.data.warning };
   }
 });
 

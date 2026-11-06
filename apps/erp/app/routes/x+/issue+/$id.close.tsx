@@ -15,6 +15,11 @@ export async function action(args: ActionFunctionArgs) {
   const result = await api.quality.completeIssue({ id });
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.issueDetails(id),
-    { message: "NCR closed" }
+    {
+      // A Partial lot's Scrap that found less than it held says so.
+      message: result.data?.warning
+        ? `NCR closed. ${result.data.warning}`
+        : "NCR closed"
+    }
   );
 }
