@@ -10,6 +10,7 @@ cd "$(dirname "$0")/../../../apps/erp"
 port=54692
 env DOMAIN=localhost PORT=$port "$@" node ./node_modules/@react-router/dev/bin.js dev --port $port --host 127.0.0.1 --force > /dev/null 2>&1 &
 pid=$!
+start=$(date +%s)
 trap 'kill $pid 2>/dev/null || true' EXIT
 until curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$port/@vite/client"; do sleep 1; done
 # The optimizer runs on the first request for a page's dependencies.
@@ -22,5 +23,5 @@ while [ $quiet -lt 5 ]; do
   if awk "BEGIN{exit !($now - $last < 0.1)}"; then quiet=$((quiet+1)); else quiet=0; fi
   last=$now
 done
-echo "env: ${*:-default}"
+echo "env: ${*:-default}  (idle after $(( $(date +%s) - start - 10 )) s)"
 vmmap --summary $pid 2>/dev/null | grep -E "^(Physical footprint:|IOAccelerator |Memory Tag 255 )" | awk '{print "  " $0}' | cut -c1-110

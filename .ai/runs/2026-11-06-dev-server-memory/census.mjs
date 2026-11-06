@@ -38,7 +38,9 @@ export async function census(cdp, erp) {
           for (const c of map.sourcesContent ?? []) sourcesContent += c?.length ?? 0;
         }
       }
-      return { name: env.name, server: env.config?.root?.split('/').slice(-2).join('/'), configFile: env.config?.configFile?.split('/').pop() ?? null, modules, transformed, codeMB: mb(code), mappingsMB: mb(mappings), sourcesContentMB: mb(sourcesContent) };
+      let watcherClosers = 0;
+      for (const list of env.pluginContainer?.watcher?._closers?.values?.() ?? []) watcherClosers += list.length;
+      return { watcherClosers, name: env.name, server: env.config?.root?.split('/').slice(-2).join('/'), configFile: env.config?.configFile?.split('/').pop() ?? null, modules, transformed, codeMB: mb(code), mappingsMB: mb(mappings), sourcesContentMB: mb(sourcesContent) };
     });
   }`)).value;
 

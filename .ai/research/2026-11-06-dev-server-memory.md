@@ -11,9 +11,14 @@ Node 24.22.1) grows to 4 GB, what holds the memory, and what changed.
   and re-run the whole SSR module graph (a "program reload"), and two pieces of
   app code kept the old graph alive. Heap grew about 66 MB for each edit, and
   the server died after about 30 edits.
-- Five changes, all dev-only or SSR-only, take the heap after 30 edits from
-  3,347 MB to 1,385 MB and the footprint from 4,223 MB to 2,148 MB. The growth
-  for each edit goes from about 66 MB to about 1.5 MB.
+- With the changes, edits cost nothing: the heap after 37 edits is the heap
+  after the first 8 pages (1,262 vs 1,274 MB), against 3,347 MB at 30 edits on
+  `main`. Footprint after 30 edits: 4,223 → 1,987 MB.
+- The changes: two app fixes (HMR store, query timers), a Vite patch (watch
+  each file once, map SSR stacks on demand), a `carbon()` plugin that drops
+  browser pages that stopped reading HMR messages, rolldown thread and purge
+  settings in `crbn`'s app spawn, and two smaller fixed costs (icon sources,
+  Vercel preset import).
 - The fixed cost (about 1.3 GB of heap after a few pages) comes from React
   Router's dev build, which evaluates all 1,700 routes (about 6,000 modules) on
   the first request. The in-flight `lazyRoutes` plugin (uncommitted, in the
@@ -34,7 +39,8 @@ phase edits 4 files in rotation (a service, two components and
 | + `gcTime` fix | 97 / 229 | 1,352 / 2,390 | 1,630 / 2,406 | 1,666 / 2,457 (31) | 1,696 / 2,509 (38) |
 | + lazy source maps | 97 / 212 | 1,330 / 2,392 | 1,374 / 2,162 | 1,388 / 2,139 (25) | — ¹ |
 | + icon cache, preset import (all) | **70** / 228 | **1,284** / 2,301 | **1,344** / 2,196 | **1,385** / 2,148 | 1,413 / 2,221 (37) |
-| all + `lazyRoutes` (not committed) | 76 / — ² | 952 / 2,603 ² | 971 / 2,410 | 1,019 / 2,387 (29) | 1,062 / 2,398 (37) |
+| + Vite patch, stalled-client plugin, rolldown env (final) | 70 / 165 | 1,274 / 2,151 | **1,261** / 1,972 | **1,262** / 1,987 (29) | **1,262** / 2,031 (37) |
+| all of the first five + `lazyRoutes` (not committed) | 76 / — ² | 952 / 2,603 ² | 971 / 2,410 | 1,019 / 2,387 (29) | 1,062 / 2,398 (37) |
 
 ¹ The last page load of that run timed out in the headless browser (the server
 answered it in under 1 s), so nothing rendered after the final reload. Not
@@ -101,20 +107,52 @@ the sampling profile), and reads the `.map` of every externalized package.
 Its cache keeps `sourceMapURL` as sliced strings that pin whole old script
 sources after each reload.
 
-Fix: `lazySourceMaps()` in `@carbon/dev/vite` sets the runner to Vite's
+Fix: `patches/vite@8.3.3.patch` makes the runner default to Vite's
 `"prepareStackTrace"` interceptor, which decodes a module's map only when a
-stack is formatted. Measured: heap after warming `/login` 1,188 → 701 MB. After
+stack is formatted. (First done as a `carbon()` plugin that set the private
+`ssr._runnerOptions`; the patch replaced it.) Measured: heap after warming `/login` 1,188 → 701 MB. After
 pages the gain is small (−22 MB), because React 19's dev build formats owner
 stacks and Vite then caches decoded maps itself (`mod.map`). After reloads it
 is large: 1,630 → 1,374 MB at 15 edits. Stack traces still point at the source
 line (`stack-probe.mjs`: `__stack_probe__.ts:8:9`).
 
-There is no public way in: `environments.ssr.dev.createEnvironment` would have
-to build the environment with the Vite copy React Router runs. pnpm installs
-three copies of vite 8.3.3 (peer variants), and the app, `@carbon/dev` and
-React Router each resolve a different one. The plugin sets
-`ssr._runnerOptions` before the runner is created (on the first request), and
-does nothing if that field is missing.
+A plugin has no public way in: `environments.ssr.dev.createEnvironment` would
+have to build the environment with the Vite copy React Router runs, and pnpm
+installs several copies of vite 8.3.3 (peer variants) that the app,
+`@carbon/dev` and React Router resolve differently. The patch covers every copy
+(they have the same `dist`), and a Vite upgrade fails `pnpm install` until the
+patch is redone or dropped.
+
+### Leak 3: Vite's watcher adds a listener for each transform (vitejs/vite#23940)
+
+`ensureWatchedFile` (`packages/vite/src/node/utils.ts:785` in 8.3.3, read with
+`opensrc`) calls `watcher.add()` for every transform of a file outside the root:
+all of `packages/*` for an app. On macOS the bundled chokidar 3.6 registers one
+more FSEvents listener for each add of a watched file. That was about 4,500
+listeners per edit (36,559 `filteredListener`/`watchCallback` closures over 8
+edits), and every file event is delivered to all of them.
+
+Reported as [vitejs/vite#23940](https://github.com/vitejs/vite/issues/23940)
+(open). Its two PRs (#23949, #23963) were closed by Vite's AI-contribution bot
+without review. Fix: the same patch adds each file once per watcher (and again
+after chokidar reports it deleted), as the issue proposes. Watcher closers after
+the patch: 4,694, unchanged across 20 edits.
+
+### Leak 4: pages that stopped reading HMR messages
+
+After the fixes above, the last growth (about 2 MB per edit) was HMR update
+messages held in a TCP socket's write buffer (`Socket._writableState` →
+`kBufferedValue`). Both ends were in the browser: pages the browser keeps
+connected but does not run any more (earlier pages in the back/forward cache,
+or a tab frozen in the background). Vite writes every update to each such
+socket; after 5 edits three of them held 18 MB, 9.6 MB and 9.6 MB unsent
+(`sockets.mjs`).
+
+Fix: `dropStalledHmrClients()` in `carbon()` terminates a client with more
+than 4 MB unsent (checked every 5 s, through the public `server.ws.clients`).
+A page that wakes up finds the connection gone; Vite's client then pings the
+server and reloads, which a page that missed updates needs anyway. With it,
+6 `Button.tsx` edits left the heap at 1,263–1,264 MB.
 
 ### Smaller fixed costs
 
@@ -147,18 +185,31 @@ which is why `lazyRoutes` is the next big step.
 - `Memory Tag 255` is the V8 heap.
 - `IOAccelerator` is rolldown's Rust heap (mimalloc), not GPU memory: a script
   that only runs `rolldown` transforms shows the same region. After a dependency
-  re-optimisation it holds about 1 GB (1.0 GB default, 944 MB with
-  `MIMALLOC_PURGE_DELAY=0`, so allocator purging does not release it). 717 MB of
-  it was swapped out in the 5.5 h `crbn up` ERP. Not fixable from the app;
-  restart the dev server after a re-optimisation if the footprint matters.
+  re-optimisation it holds about 1 GB; 717 MB of it was swapped out in the
+  5.5 h `crbn up` ERP. Upstream: [rolldown/rolldown#11143](https://github.com/rolldown/rolldown/issues/11143)
+  (mimalloc memory not released, with a Vite 8 dev server data point),
+  [#10985](https://github.com/rolldown/rolldown/issues/10985) (retention since
+  rolldown 1.2, `MIMALLOC_ARENA_PURGE_MULT=0` workaround) and
+  [#11233](https://github.com/rolldown/rolldown/issues/11233) (optimizer memory
+  scales with worker threads), all open. Measured after a forced re-bundle
+  (`mimalloc-ab.sh`, 14-core Mac):
+
+  | Env | rolldown region | idle after |
+  |---|---|---|
+  | default | 985 MB | 43 s |
+  | `MIMALLOC_PURGE_DELAY=0` | 944 MB | — |
+  | `MIMALLOC_ARENA_PURGE_MULT=0` | 827 MB | — |
+  | purge + `ROLLDOWN_WORKER_THREADS=4` + `ROLLDOWN_MAX_BLOCKING_THREADS=4` | 586 MB | 51 s |
+  | the same + `RAYON_NUM_THREADS=4` | **319 MB** | 37 s |
+
+  `crbn` now sets the last row for the dev servers it spawns
+  (`packages/dev/src/services/apps.ts`); they must be set before Node starts,
+  and the shell or a `.env` file overrides them.
 - `MALLOC_SMALL` about 275 MB (libuv, lightningcss, Tailwind oxide, Lingui
   native tools).
 
 ### Not changed
 
-- **chokidar listeners.** Vite's bundled chokidar adds an fsevents listener each
-  time `ensureWatchedFile` re-adds a file outside the root after a program
-  reload (36,559 closures over 8 edits, about 0.5 MB per edit). Upstream Vite.
 - **`sourcesContent` in the SSR inline maps.** It is 46 MB of the 156 MB of code
   and is copied into each script source. Stripping it would need a wrapper
   around `DevEnvironment.fetchModule` and would remove original source from
@@ -185,7 +236,8 @@ Scripts in `.ai/runs/2026-11-06-dev-server-memory/`:
   750 MB, 6–7 M nodes). The reader prints shortest retainer paths, a dominator
   tree with retained sizes (Cooper–Harvey–Kennedy), what an edge name retains
   (`CUT=`), and constructor diffs between two snapshots.
-- `timers.mjs`, `stack-probe.mjs`, `hmr-probe.mjs`, `mimalloc-ab.sh`,
+- `sockets.mjs` (open sockets by unsent bytes), `timers.mjs`, `stack-probe.mjs`,
+  `hmr-probe.mjs` (heap, census and watcher closers per edit), `mimalloc-ab.sh`,
   `summarize.mjs` (sampling heap profile by package and frame).
 - `out/*.json`: the rows of each run in the table.
 
@@ -198,8 +250,9 @@ releases it, and the reader skips "DevTools console" handles.
 
 - Land `lazyRoutes` (or React Router upstream lazy route discovery in dev): it
   takes the first request from ~25 s to ~9.5 s and the base heap down 330 MB.
-- Report the chokidar listener growth and the rolldown native memory after
-  re-optimisation upstream.
+- Drop `patches/vite@8.3.3.patch` once vitejs/vite#23940 is fixed and Vite's
+  SSR runner stops defaulting to Node's source maps; drop the rolldown env once
+  rolldown releases its memory.
 - The other process-level singletons that pin the first graph (`initFlags` keeps
   the first provider and its callbacks; the process error handlers in
   `entry.server.tsx` keep the first closures). Small on their own now.

@@ -150,10 +150,13 @@ for (const name of (process.env.CUT ?? "").split(",").filter(Boolean)) {
   console.log(`retained only through "${name}": ${(bytes / 1048576).toFixed(1)} MB in ${count} objects`);
 }
 
-const markerName = strings.indexOf(marker);
+// A marker is a constructor name, or with PREFIX=1 the start of a string's text.
+const isMarker = process.env.PREFIX
+  ? (n) => nodeTypes[nodes[n * NF + nType]] === "string" && strings[nodes[n * NF + nName]].startsWith(marker)
+  : ((name) => (n) => nodes[n * NF + nName] === name && nodeTypes[nodes[n * NF + nType]] === "object")(strings.indexOf(marker));
 let shown = 0;
-for (let n = 0; n < N && shown < Number(process.env.MARKERS ?? 3) && markerName >= 0; n++) {
-  if (nodes[n * NF + nName] !== markerName || nodeTypes[nodes[n * NF + nType]] !== "object") continue;
+for (let n = 0; n < N && shown < Number(process.env.MARKERS ?? 3); n++) {
+  if (!isMarker(n)) continue;
   shown++;
   console.log(`\nretainer path to ${label(n)}${seen[n] ? "" : " (not strongly reachable)"}:`);
   const path = [];

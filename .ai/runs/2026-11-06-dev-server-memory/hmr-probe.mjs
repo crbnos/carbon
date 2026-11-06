@@ -44,8 +44,9 @@ async function measure(label) {
     .filter((e) => e.transformed > 0)
     .map((e) => `${e.name}:${e.transformed}/${e.codeMB}MB`)
     .join(" ");
+  const closers = Math.max(...c.environments.map((e) => e.watcherClosers));
   console.log(
-    `${label} heap=${Math.round(result.result.value / 1048576)}MB ${envs} runner=${c.runners.map((r) => r.modules).join(",")} nodesAlive=${c.evaluatedModuleNodesAlive}`
+    `${label} heap=${Math.round(result.result.value / 1048576)}MB ${envs} runner=${c.runners.map((r) => r.modules).join(",")} nodesAlive=${c.evaluatedModuleNodesAlive} watcherClosers=${closers}`
   );
 }
 
