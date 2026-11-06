@@ -27,6 +27,7 @@ import {
   returnReasons,
   scrapReasons,
   sequences,
+  supplierStages,
   unitOfMeasures
 } from "../seed-data.ts";
 import type { Database } from "../types.ts";
@@ -203,6 +204,13 @@ export async function seedCompanyReferenceData(
   for (const name of customerStatuses) {
     await client.query(
       `INSERT INTO "customerStatus" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
+      [name, companyId]
+    );
+  }
+
+  for (const name of supplierStages) {
+    await client.query(
+      `INSERT INTO "supplierStage" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
       [name, companyId]
     );
   }

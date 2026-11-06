@@ -51,6 +51,7 @@ import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import {
+  useCompanySettings,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired,
@@ -65,7 +66,8 @@ import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import {
   canCreatePurchaseOrderRevision,
-  isPurchaseOrderLocked
+  isPurchaseOrderLocked,
+  isPurchaseOrderMissingPromisedDate
 } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 import ApprovalSignatureModal from "./ApprovalSignatureModal";
@@ -106,6 +108,7 @@ const PurchaseOrderHeader = () => {
 
   const { t } = useLingui();
   const supplierApprovalRequired = useSupplierApprovalRequired();
+  const companySettings = useCompanySettings();
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
@@ -701,6 +704,15 @@ const PurchaseOrderHeader = () => {
           onClose={finalizeDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}
           resolvedAttachments={resolvedAttachments}
+          refusal={
+            companySettings?.requirePromisedDateToFinalizePurchaseOrder &&
+            isPurchaseOrderMissingPromisedDate(
+              routeData?.lines ?? [],
+              routeData?.purchaseOrder?.receiptPromisedDate
+            )
+              ? t`Add a promised date before you finalize this purchase order.`
+              : null
+          }
         />
       )}
       {deleteModal.isOpen && (

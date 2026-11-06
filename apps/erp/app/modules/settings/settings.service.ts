@@ -52,6 +52,7 @@ import {
   returnReasons,
   scrapReasons,
   sequences,
+  supplierStages,
   unitOfMeasures
 } from "@carbon/database/seed-data";
 import {
@@ -3979,6 +3980,17 @@ export async function seedCompany(
         .insertInto("customerStatus")
         .values(
           customerStatuses.map((name) => ({
+            name,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
+      await trx
+        .insertInto("supplierStage")
+        .values(
+          supplierStages.map((name) => ({
             name,
             companyId,
             createdBy: "system"

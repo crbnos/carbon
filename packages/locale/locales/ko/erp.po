@@ -607,6 +607,10 @@ msgstr "{0}건의 지불"
 msgid "{0} per hour"
 msgstr "시간당 {0}"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}개 문제 — 게시됨 아님"
@@ -1074,6 +1078,9 @@ msgstr "{missingCount}개의 전표가 공급자에서 누락됨"
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount}개의 누락된 전표 및 {mismatchCount}개의 불일치 월"
+
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr ""
 
 msgid "{name} at {station}"
 msgstr "{name} {station}에서"
@@ -1989,6 +1996,12 @@ msgstr "구매 발주서 라인, 문제 또는 프로젝트 소비 작업 지시
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "작업 지시, 발주서 또는 송장 라인, 타임시트 항목 또는 자재 불출이 원가를 청구하는 프로젝트 또는 프로젝트와 해당 요소 중 하나. 릴리스됨 프로젝트와 미시작 또는 시작됨 상태의 청구 가능한 요소만 선택할 수 있습니다."
 
+msgid "A promised date is optional to finalize"
+msgstr ""
+
+msgid "A promised date is required to finalize"
+msgstr ""
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "회계 전환 날짜 이전에 작성된 임시 전표입니다. 회계를 설정하면 개시 전표로 대체되며, 다시는 변경할 수 없습니다."
 
@@ -2000,6 +2013,9 @@ msgstr "각 마감일마다 매입 송장이 작성되며, 각 자산의 지불�
 
 msgid "A purchase invoice is posted"
 msgstr "매입 송장이 전기됩니다."
+
+msgid "A purchase order cannot leave Draft or Planned until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr ""
 
 msgid "A purchase order is created"
 msgstr "발주서가 생성됩니다."
@@ -2899,6 +2915,9 @@ msgstr "매개변수 추가(절차서만 해당)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr ""
 
 msgid "Add a requirement"
 msgstr "요구사항 추가"
@@ -4617,6 +4636,10 @@ msgstr "저장 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "보관 단위를 삭제하시겠습니까: {0}? 이 작업은 취소할 수 없습니다."
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "공급업체 유형 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
@@ -5910,6 +5933,9 @@ msgstr "역할 기반 교육 자료 제작"
 msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
 
+msgid "Builds"
+msgstr ""
+
 msgid "Built after this step"
 msgstr "이 단계 후에 빌드됨"
 
@@ -6761,6 +6787,9 @@ msgstr "옵션 선택"
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
 
+msgid "Choose at least one part and a supplier."
+msgstr ""
+
 msgid "Choose avatar"
 msgstr "아바타 선택"
 
@@ -6778,6 +6807,12 @@ msgstr "{unitName}을(를) 반환할 위치 선택"
 
 msgid "Choose stock to move"
 msgstr "이동할 재고를 선택하세요"
+
+msgid "Choose supplier"
+msgstr ""
+
+msgid "Choose suppliers"
+msgstr ""
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "현재 기간 또는 그 이전 3개 기간 중 하나의 첫 날을 선택하세요."
@@ -8459,6 +8494,9 @@ msgstr "{0} 값 생성"
 msgid "Create {name}"
 msgstr "생성 {name}"
 
+msgid "Create {rfqCount} RFQs"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "생성 & 릴리스"
 
@@ -8593,6 +8631,9 @@ msgstr "교체 생성"
 
 msgid "Create Revision"
 msgstr "리비전 생성"
+
+msgid "Create RFQ"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "규칙 생성"
@@ -8755,6 +8796,9 @@ msgstr "재고 이송 라인이 생성되었습니다."
 msgid "Created storage type"
 msgstr "저장 유형 생성됨"
 
+msgid "Created supplier stage"
+msgstr ""
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "공급업체 생성됨: {0}"
@@ -8773,6 +8817,9 @@ msgstr "프로젝트가 릴리스됨될 때 생성됨"
 
 msgid "Created work center"
 msgstr "작업장 생성됨"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr ""
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "아직 대변전표로 처리되지 않은 출하된 수량에 대한 공급업체 대변전표 초안을 생성합니다"
@@ -10025,6 +10072,9 @@ msgstr "공급업체 견적 삭제"
 
 msgid "Delete Supplier Return"
 msgstr "공급업체 반품 삭제"
+
+msgid "Delete Supplier Stage"
+msgstr ""
 
 msgid "Delete Supplier Type"
 msgstr "공급업체 유형 삭제"
@@ -11462,6 +11512,9 @@ msgstr "공급업체 부품 편집"
 msgid "Edit supplier process"
 msgstr "공급업체 공법 편집"
 
+msgid "Edit Supplier Stage"
+msgstr ""
+
 msgid "Edit Supplier Type"
 msgstr "공급업체 유형 편집"
 
@@ -12720,6 +12773,10 @@ msgid "Failed to create service: {0}"
 msgstr "서비스 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "공급업체 생성 실패: {0}"
 
@@ -13197,6 +13254,9 @@ msgstr "금융"
 
 msgid "Financing Terms"
 msgstr "금융 약관"
+
+msgid "Find a part"
+msgstr ""
 
 msgid "Find an element"
 msgstr "요소 찾기"
@@ -14800,6 +14860,10 @@ msgstr "수입 검사"
 
 msgid "Inbox"
 msgstr "받은함"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr ""
 
 msgid "Include bought components"
 msgstr "구매된 부품 포함"
@@ -22576,6 +22640,12 @@ msgstr "약속된"
 msgid "Promised Date"
 msgstr "약속일"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr ""
+
+msgid "Promised date required to finalize purchase orders"
+msgstr ""
+
 msgid "Properties"
 msgstr "속성"
 
@@ -23122,6 +23192,9 @@ msgstr "견적서 수락 이메일"
 
 msgid "Quote expired"
 msgstr "견적 만료됨"
+
+msgid "Quote for"
+msgstr ""
 
 msgid "Quote ID"
 msgstr "견적 ID"
@@ -24358,6 +24431,9 @@ msgstr "승인 요청"
 msgid "Request date"
 msgstr "요청 날짜"
 
+msgid "Request Quote"
+msgstr ""
+
 msgid "Requested"
 msgstr "요청됨"
 
@@ -24378,6 +24454,9 @@ msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
 msgid "Require a Customer Contact and Location"
 msgstr "고객 담당자 및 사업장 필수"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr ""
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "발주서 승인을 위해 서명 필요"
@@ -26061,6 +26140,9 @@ msgstr "전체 선택"
 msgid "Select all jobs"
 msgstr "모든 작업 지시 선택"
 
+msgid "Select all parts"
+msgstr ""
+
 msgid "Select all rows"
 msgstr "모든 행 선택"
 
@@ -26218,6 +26300,9 @@ msgstr "{0} 시리얼 번호 선택"
 
 msgid "Select station"
 msgstr "역 선택"
+
+msgid "Select Supplier Stage"
+msgstr ""
 
 msgid "Select Supplier Status"
 msgstr "공급업체 상태 선택"
@@ -26850,6 +26935,9 @@ msgstr "배송됨 {shippedOn}"
 
 msgid "Shipped <0/>"
 msgstr "배송됨 <0/>"
+
+msgid "Shipped Date"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "이 고객의 배송 라인 중 반품할 수량이 남아 있는 라인"
@@ -27502,6 +27590,12 @@ msgstr "인원 요구사항이 비활성화되었습니다"
 
 msgid "Staffing requirement enabled"
 msgstr "인원 요구사항 활성화됨"
+
+msgid "Stage"
+msgstr ""
+
+msgid "Stages"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
@@ -28205,6 +28299,10 @@ msgstr "공급업체 크레딧"
 msgid "Supplier email settings updated"
 msgstr "공급업체 이메일 설정 업데이트됨"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr ""
+
 msgid "Supplier ID"
 msgstr "공급업체 ID"
 
@@ -28337,6 +28435,18 @@ msgstr "공급업체 반품"
 
 msgid "Supplier RMA #"
 msgstr "공급업체 RMA #"
+
+msgid "supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr ""
+
+msgid "supplier stages"
+msgstr ""
+
+msgid "Supplier Stages"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "공급업체 상태"
@@ -30642,6 +30752,9 @@ msgstr "이 품목은 단종되었습니다(재고 없음)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "이 부품은 대체되었으며 재고만으로 설정됩니다 — 소요량과 무관하게 스페어 예비 바닥까지 보충됩니다."
+
+msgid "This part only"
+msgstr ""
 
 msgid "This path only decides what runs next"
 msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
@@ -33264,6 +33377,9 @@ msgstr "렌탈이 시작할 때와 종료가 있는지 여부입니다."
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "공급업체가 납품을 약속한 시점으로, 계획에서는 이 날짜를 입고 재고 도착 예측에 사용합니다."
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr ""
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "공급업체의 가격이 더 이상 유효하지 않을 때; 이 날짜 이후에 이 견적서를 발주서로 전환하는 것은 다시 견적이 필요할 수 있습니다."
 
@@ -33302,6 +33418,9 @@ msgstr "칸반을 사용할 때 전체 바코드는 하나만이 아닌 작업�
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "귀사가 납품하기로 약속한 시점으로, 계획에서는 이를 이행을 위한 수요 마감일로 취급합니다."
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr ""
 
 msgid "When your fiscal and tax years start"
 msgstr "귀사의 회계연도 및 세무연도가 시작될 때"
@@ -33365,6 +33484,9 @@ msgstr "입고 시 라인의 물품이 입고되는 재고 위치; 공란인 경
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "이 유지보수 요청의 출처 — 작업자 보고, 예약, 상태 모니터링 트리거, 작업 후 검사 — 로, 유지보수 보고서의 출처별 분류에 사용됩니다."
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr ""
 
 msgid "Where you are today"
 msgstr "현재 상황"

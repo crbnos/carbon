@@ -288,6 +288,18 @@ const SupplierHeader = () => {
               </CardAttribute>
               <CardAttribute>
                 <CardAttributeLabel>
+                  <Trans>Stage</Trans>
+                </CardAttributeLabel>
+                <CardAttributeValue>
+                  {routeData?.supplier?.stage ? (
+                    <Enumerable value={routeData.supplier.stage} />
+                  ) : (
+                    "-"
+                  )}
+                </CardAttributeValue>
+              </CardAttribute>
+              <CardAttribute>
+                <CardAttributeLabel>
                   <Trans>Type</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>

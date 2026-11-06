@@ -607,6 +607,10 @@ msgstr "{0} Zahlungen"
 msgid "{0} per hour"
 msgstr "{0} pro Stunde"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} Probleme — nicht veröffentlicht"
@@ -1074,6 +1078,9 @@ msgstr "{missingCount} fehlende Buchungssätze beim Anbieter"
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} fehlende Buchungssätze und {mismatchCount} nicht übereinstimmende Monate"
+
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr ""
 
 msgid "{name} at {station}"
 msgstr "{name} an {station}"
@@ -1989,6 +1996,12 @@ msgstr "Eine Projekteinstellung, Keine, Warnen oder Blockieren, die eine Bestell
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "Ein Projekt oder ein Projekt und eines seiner Elemente, auf das ein Fertigungsauftrag, eine Bestellung oder eine Rechnungsposition, ein Stundenzettel-Eintrag oder eine Materialentnahme seine Kosten abbucht. Nur freigegebene Projekte und abrechenbare Elemente in einem nicht gestarteten oder gestarteten Zustand können ausgewählt werden."
 
+msgid "A promised date is optional to finalize"
+msgstr ""
+
+msgid "A promised date is required to finalize"
+msgstr ""
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "Ein provisorischer Buchungssatz mit einem Datum vor dem Buchhaltungsstichtag; das Einrichten der Buchhaltung ersetzt ihn durch den Eröffnungsbuchungssatz und er kann sich nie wieder ändern."
 
@@ -2000,6 +2013,9 @@ msgstr "Für jedes Fälligkeitsdatum wird eine Eingangsrechnung mit einer Positi
 
 msgid "A purchase invoice is posted"
 msgstr "Eine Eingangsrechnung wird gebucht"
+
+msgid "A purchase order cannot leave Draft or Planned until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr ""
 
 msgid "A purchase order is created"
 msgstr "Eine Bestellung wird erstellt"
@@ -2899,6 +2915,9 @@ msgstr "Einen Parameter hinzufügen (nur Verfahrensanweisungen)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr ""
 
 msgid "Add a requirement"
 msgstr "Anforderung hinzufügen"
@@ -4617,6 +4636,10 @@ msgstr "Sind Sie sicher, dass Sie den Speichertyp: {0} löschen möchten? Dies k
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie die Lagereinheit: {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie den Lieferantentyp: {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
@@ -5910,6 +5933,9 @@ msgstr "Erstellen Sie rollenbasierte Schulungsmaterialien"
 msgid "Build tailored, role-based training materials"
 msgstr "Erstellen Sie maßgeschneiderte, rollenbasierte Schulungsmaterialien"
 
+msgid "Builds"
+msgstr ""
+
 msgid "Built after this step"
 msgstr "Nach diesem Schritt erstellt"
 
@@ -6761,6 +6787,9 @@ msgstr "Option wählen"
 msgid "Choose another file"
 msgstr "Wählen Sie eine andere Datei"
 
+msgid "Choose at least one part and a supplier."
+msgstr ""
+
 msgid "Choose avatar"
 msgstr "Avatar auswählen"
 
@@ -6778,6 +6807,12 @@ msgstr "Wählen Sie Rückgabeziel für {unitName}"
 
 msgid "Choose stock to move"
 msgstr "Bestand zum Umlagern auswählen"
+
+msgid "Choose supplier"
+msgstr ""
+
+msgid "Choose suppliers"
+msgstr ""
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Wählen Sie den ersten Tag der aktuellen Periode oder einen der 3 Perioden davor."
@@ -8459,6 +8494,9 @@ msgstr "Erstelle {0} Werte"
 msgid "Create {name}"
 msgstr "{name} erstellen"
 
+msgid "Create {rfqCount} RFQs"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "Erstellen & Freigeben"
 
@@ -8593,6 +8631,9 @@ msgstr "Ersatz erstellen"
 
 msgid "Create Revision"
 msgstr "Revision erstellen"
+
+msgid "Create RFQ"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "Regel erstellen"
@@ -8755,6 +8796,9 @@ msgstr "Umlagerungsposition erstellt"
 msgid "Created storage type"
 msgstr "Speichertyp erstellt"
 
+msgid "Created supplier stage"
+msgstr ""
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "Lieferant erstellt: {0}"
@@ -8773,6 +8817,9 @@ msgstr "Wird erstellt, wenn das Projekt freigegeben ist"
 
 msgid "Created work center"
 msgstr "Arbeitsplatz erstellt"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr ""
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Erstellt einen Entwurf einer Lieferantengutschrift für die versandten Mengen, die noch nicht gutgeschrieben wurden"
@@ -10025,6 +10072,9 @@ msgstr "Lieferantenangebotsanfrage löschen"
 
 msgid "Delete Supplier Return"
 msgstr "Lieferantenrückgabe löschen"
+
+msgid "Delete Supplier Stage"
+msgstr ""
 
 msgid "Delete Supplier Type"
 msgstr "Lieferantentyp löschen"
@@ -11462,6 +11512,9 @@ msgstr "Lieferantenteil bearbeiten"
 msgid "Edit supplier process"
 msgstr "Lieferantenverfahren bearbeiten"
 
+msgid "Edit Supplier Stage"
+msgstr ""
+
 msgid "Edit Supplier Type"
 msgstr "Lieferantentyp bearbeiten"
 
@@ -12720,6 +12773,10 @@ msgid "Failed to create service: {0}"
 msgstr "Fehler beim Erstellen der Dienstleistung: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Fehler beim Erstellen des Lieferanten: {0}"
 
@@ -13197,6 +13254,9 @@ msgstr "Finanzierung"
 
 msgid "Financing Terms"
 msgstr "Finanzierungsbedingungen"
+
+msgid "Find a part"
+msgstr ""
 
 msgid "Find an element"
 msgstr "Finden Sie ein Element"
@@ -14800,6 +14860,10 @@ msgstr "Wareneingangsprüfung"
 
 msgid "Inbox"
 msgstr "Posteingang"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr ""
 
 msgid "Include bought components"
 msgstr "Gekaufte Komponenten einbeziehen"
@@ -22576,6 +22640,12 @@ msgstr "Zugesagt"
 msgid "Promised Date"
 msgstr "Zugesagter Termin"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr ""
+
+msgid "Promised date required to finalize purchase orders"
+msgstr ""
+
 msgid "Properties"
 msgstr "Eigenschaften"
 
@@ -23122,6 +23192,9 @@ msgstr "Angebot angenommen per E-Mail"
 
 msgid "Quote expired"
 msgstr "Angebot abgelaufen"
+
+msgid "Quote for"
+msgstr ""
 
 msgid "Quote ID"
 msgstr "Angebots-ID"
@@ -24358,6 +24431,9 @@ msgstr "Genehmigung anfordern"
 msgid "Request date"
 msgstr "Anfragedatum"
 
+msgid "Request Quote"
+msgstr ""
+
 msgid "Requested"
 msgstr "Angefordert"
 
@@ -24378,6 +24454,9 @@ msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anme
 
 msgid "Require a Customer Contact and Location"
 msgstr "Kundenkontakt und Standort erforderlich"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr ""
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "Signatur erforderlich zum Genehmigen von Bestellungen"
@@ -26061,6 +26140,9 @@ msgstr "Alle auswählen"
 msgid "Select all jobs"
 msgstr "Alle Fertigungsaufträge auswählen"
 
+msgid "Select all parts"
+msgstr ""
+
 msgid "Select all rows"
 msgstr "Alle Zeilen auswählen"
 
@@ -26218,6 +26300,9 @@ msgstr "Seriennummer {0} wählen"
 
 msgid "Select station"
 msgstr "Station auswählen"
+
+msgid "Select Supplier Stage"
+msgstr ""
 
 msgid "Select Supplier Status"
 msgstr "Lieferantenstatus auswählen"
@@ -26850,6 +26935,9 @@ msgstr "Versendet {shippedOn}"
 
 msgid "Shipped <0/>"
 msgstr "Versendet <0/>"
+
+msgid "Shipped Date"
+msgstr ""
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Versandte Zeilen für diesen Kunden mit zu returnierenden Restmengen"
@@ -27502,6 +27590,12 @@ msgstr "Personalbedarfsanforderung deaktiviert"
 
 msgid "Staffing requirement enabled"
 msgstr "Personalanforderung aktiviert"
+
+msgid "Stage"
+msgstr ""
+
+msgid "Stages"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Hosting einrichten"
@@ -28205,6 +28299,10 @@ msgstr "Lieferantengutschriften"
 msgid "Supplier email settings updated"
 msgstr "Lieferanten-E-Mail-Einstellungen aktualisiert"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr ""
+
 msgid "Supplier ID"
 msgstr "Lieferanten-ID"
 
@@ -28337,6 +28435,18 @@ msgstr "Lieferantenrücksendungen"
 
 msgid "Supplier RMA #"
 msgstr "Lieferanten-RMA-Nummer"
+
+msgid "supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr ""
+
+msgid "supplier stages"
+msgstr ""
+
+msgid "Supplier Stages"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "Lieferantenstatus"
@@ -30642,6 +30752,9 @@ msgstr "Dieses Teil ist veraltet (Kein Bestand)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "Dieses Teil wird durch ein anderes ersetzt und auf „Nur Bestand\" gesetzt – es wird auf seinen Ersatzteile-Reservemindestwert aufgefüllt, unabhängig vom Bedarf."
+
+msgid "This part only"
+msgstr ""
 
 msgid "This path only decides what runs next"
 msgstr "Dieser Pfad entscheidet nur darüber, was als nächstes ausgeführt wird"
@@ -33264,6 +33377,9 @@ msgstr "Wann das Mietverhältnis beginnt und ob es ein Ende hat."
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "Wann sich der Lieferant zur Lieferung verpflichtet hat; Planung nutzt dieses Datum für die Eingangslagerprognose."
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr ""
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Wenn die Preisfindung des Lieferanten nicht mehr gültig ist; das Umwandeln dieses Angebots in eine Bestellung nach diesem Datum kann ein Neuangebot erfordern."
 
@@ -33302,6 +33418,9 @@ msgstr "Bei Verwendung von Kanbans vervollständigt der komplette Barcode alle M
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Wann Sie sich zur Lieferung verpflichtet haben; Planung behandelt dies als das Nachfragefälligkeitsdatum für die Erfüllung."
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr ""
 
 msgid "When your fiscal and tax years start"
 msgstr "Wenn Ihr Geschäftsjahr und Steuerjahr beginnen"
@@ -33365,6 +33484,9 @@ msgstr "Wohin die Waren dieser Position beim Wareneingang ins Lager landen; wenn
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Woher diese Instandhaltungsanforderung stammt – Werkerraktion, geplant, Zustandsüberwachungs-Trigger, Nach-Fertigungsauftrag-Prüfung; bestimmt die Quellenverteilung in Instandhaltungsberichten."
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr ""
 
 msgid "Where you are today"
 msgstr "Wo du heute stehst"

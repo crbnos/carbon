@@ -52,6 +52,7 @@ import { type CalendarDate, parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
+import { getMethodTreeArray } from "~/modules/items/items.service";
 import {
   assignPlanningActions,
   dismissPlanningActions,
@@ -83,6 +84,8 @@ import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
+  getRfqLinesFromMethod,
+  groupRequestQuoteLines,
   isIsoDate,
   isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
@@ -99,6 +102,7 @@ import {
   PURCHASE_ORDER_REOPEN_STATUSES,
   plannedOrderValidator,
   planningPurchaseOrderWeek,
+  promisedDateOf,
   purchaseOrderDeleteRefusal,
   purchaseOrderEditRefusal,
   purchaseOrderLineDateFields,
@@ -109,6 +113,8 @@ import {
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
   purchasingRfqValidator,
+  type RfqLineFromMethod,
+  requestQuoteValidator,
   selectedLineSchema,
   supplierQuoteFinalizeValidator,
   taxPairForQuantity
@@ -2157,6 +2163,8 @@ export const updatePurchaseOrderDelivery = defineServiceFn({
     shippingMethodId: z.string().optional(),
     trackingNumber: z.string(),
     deliveryDate: z.string().optional(),
+    shippedDate: z.string().optional(),
+    expectedReceiptDate: z.string().optional(),
     receiptRequestedDate: z.string().optional(),
     receiptPromisedDate: z.string().optional(),
     dropShipment: z.boolean(),
@@ -2687,6 +2695,12 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
     );
     if (contactRule) return ctx.error("rule", contactRule);
 
+    const promisedDateRule = await service.requiredPromisedDateRefusal(
+      ctx,
+      purchaseOrderId
+    );
+    if (promisedDateRule) return ctx.error("rule", promisedDateRule);
+
     if (
       purchaseOrder.data.supplierId &&
       (await isApprovalRequired(system, "supplier", companyId))
@@ -2988,6 +3002,15 @@ export const decidePurchaseOrderApproval = defineServiceFn({
         "forbidden",
         "You do not have permission to approve this request"
       );
+    }
+
+    // The date can be cleared while the order waits for approval.
+    if (decision === "Approved") {
+      const promisedDateRule = await service.requiredPromisedDateRefusal(
+        ctx,
+        purchaseOrderId
+      );
+      if (promisedDateRule) return ctx.error("rule", promisedDateRule);
     }
 
     if (
@@ -3915,7 +3938,7 @@ export const updatePlanningPurchaseOrderLine = defineServiceFn({
     }
     if (
       line.field === "dueDate" &&
-      service.promisedDateOf({
+      promisedDateOf({
         promisedDate: target.data.promisedDate,
         receiptPromisedDate:
           target.data.purchaseOrder?.purchaseOrderDelivery?.receiptPromisedDate
@@ -4146,7 +4169,7 @@ export const applyPlanningActions = defineServiceFn({
       }
       const datePromised =
         (row.type === "Expedite" || row.type === "Defer") &&
-        service.promisedDateOf(line) !== null;
+        promisedDateOf(line) !== null;
       if (
         !isPurchaseOrderEditableFromPlanning(line.purchaseOrderStatus) ||
         datePromised
@@ -6227,6 +6250,7 @@ export const createSupplier = defineServiceFn({
       .enum(["Active", "Inactive", "Pending", "Rejected"])
       .nullable()
       .optional(),
+    supplierStageId: z.string().optional(),
     supplierTypeId: z.string().optional(),
     accountManagerId: z.string().optional(),
     currencyCode: z.string().optional(),
@@ -6267,6 +6291,7 @@ export const updateSupplier = defineServiceFn({
         .enum(["Active", "Inactive", "Pending", "Rejected"])
         .nullable()
         .optional(),
+      supplierStageId: z.string().optional(),
       supplierTypeId: z.string().optional(),
       accountManagerId: z.string().optional(),
       currencyCode: z.string().optional(),
@@ -7700,5 +7725,269 @@ export const getLeaseRelatedDocuments = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Get a supplier stage
+ *
+ * @mcp read
+ */
+export const getSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { view: "purchasing" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages
+ *
+ * @mcp read
+ */
+export const getSupplierStages = defineServiceFn({
+  input: z.object({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "purchasing" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getSupplierStages(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get supplier stages list
+ *
+ * @mcp read
+ */
+export const getSupplierStagesList = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "purchasing" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getSupplierStagesList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create a supplier stage
+ *
+ * @mcp
+ */
+export const createSupplierStage = defineServiceFn({
+  input: z.object({ name: z.string().trim().min(1) }),
+  permission: { create: "purchasing" },
+  async run(ctx, { name }) {
+    return unwrap(
+      ctx,
+      await service.insertSupplierStage(ctx.asCaller.supabase, {
+        name,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Update a supplier stage
+ *
+ * @mcp
+ */
+export const updateSupplierStage = defineServiceFn({
+  input: z.object({ id: z.string(), name: z.string().trim().min(1) }),
+  permission: { update: "purchasing" },
+  async run(ctx, { id, name }) {
+    return unwrap(
+      ctx,
+      await service.updateSupplierStage(ctx.asCaller.supabase, {
+        id,
+        name,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete a supplier stage. Its suppliers keep their Supplier Status and lose the stage.
+ *
+ * @mcp destructive
+ */
+export const deleteSupplierStage = defineServiceFn({
+  input: z.object({ supplierStageId: z.string() }),
+  permission: { delete: "purchasing" },
+  async run(ctx, { supplierStageId }) {
+    return unwrap(
+      ctx,
+      await service.deleteSupplierStage(
+        ctx.asCaller.supabase,
+        supplierStageId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * The parts an item's Request Quote offers: the item, and the parts to buy for
+ * one of it from its Active make method, or its latest version without one.
+ * Each has a supplier to start from: the preferred supplier, else the only
+ * supplier with a supplier part.
+ *
+ * @mcp read
+ */
+export const getRequestQuoteRows = defineServiceFn({
+  input: z.object({ itemId: z.string().min(1) }),
+  permission: { view: "purchasing" },
+
+  async run(ctx, { itemId }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const item = await client
+      .from("item")
+      .select("id, readableIdWithRevision, name")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .single();
+    if (item.error) return ctx.error("notFound", "Item not found");
+
+    const methods = await client
+      .from("makeMethod")
+      .select("id, status, version")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .order("version", { ascending: false });
+    if (methods.error) {
+      return ctx.error("internal", "Failed to read the methods", methods.error);
+    }
+    const method =
+      methods.data.find((m) => m.status === "Active") ?? methods.data[0];
+
+    let lines: RfqLineFromMethod[] = [];
+    if (method) {
+      const tree = await getMethodTreeArray(client, method.id);
+      if (tree.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the Bill of Material",
+          tree.error
+        );
+      }
+      lines = getRfqLinesFromMethod(
+        tree.data ?? [],
+        method.id,
+        item.data.readableIdWithRevision ?? ""
+      );
+    }
+
+    const itemIds = [itemId, ...lines.map((line) => line.itemId)];
+    const [replenishment, supplierParts] = await Promise.all([
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("itemReplenishment")
+          .select("itemId, preferredSupplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("itemId")
+      ),
+      fetchAllByIds(itemIds, (batch) =>
+        client
+          .from("supplierPart")
+          .select("itemId, supplierId")
+          .in("itemId", batch)
+          .eq("companyId", companyId)
+          .order("id")
+      )
+    ]);
+    if (replenishment.error || supplierParts.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the suppliers",
+        replenishment.error ?? supplierParts.error
+      );
+    }
+
+    const preferred = new Map(
+      replenishment.data.map((r) => [r.itemId, r.preferredSupplierId])
+    );
+    const suppliersOf = new Map<string, string[]>();
+    for (const { itemId, supplierId } of supplierParts.data) {
+      suppliersOf.set(itemId, [...(suppliersOf.get(itemId) ?? []), supplierId]);
+    }
+    const defaultSupplierId = (id: string) => {
+      const supplierIds = suppliersOf.get(id);
+      return (
+        preferred.get(id) ??
+        (supplierIds?.length === 1 ? supplierIds[0] : null) ??
+        null
+      );
+    };
+
+    return {
+      item: {
+        id: item.data.id,
+        readableId: item.data.readableIdWithRevision ?? "",
+        name: item.data.name,
+        defaultSupplierId: defaultSupplierId(itemId)
+      },
+      rows: lines.map((line) => ({
+        ...line,
+        defaultSupplierId: defaultSupplierId(line.itemId)
+      }))
+    };
+  }
+});
+
+/**
+ * Creates the Draft RFQs for an item or its Bill of Material, one per set of
+ * suppliers, in one transaction. Nothing goes to a supplier until each RFQ is
+ * finalized.
+ *
+ * @returns `rfqs`, the id and number of each new RFQ.
+ *
+ * @mcp
+ */
+export const requestQuoteFromItem = defineServiceFn({
+  input: requestQuoteValidator,
+  permission: { create: "purchasing" },
+
+  async run(ctx, { locationId, lines }) {
+    const companyId = ctx.company.id;
+    const rfqs = await service.insertRequestQuoteRfqs(ctx.asSystem.pg, {
+      companyId,
+      userId: ctx.auditUserId,
+      rfqDate: datetime
+        .today(await getCompanyTimeZone(ctx.asSystem.supabase, companyId))
+        .toString(),
+      locationId,
+      groups: groupRequestQuoteLines(lines)
+    });
+    return { rfqs };
   }
 });
