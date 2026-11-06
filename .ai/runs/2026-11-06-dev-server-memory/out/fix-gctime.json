@@ -1,0 +1,65 @@
+{
+  "label": "fix-gctime",
+  "nodeFlags": [],
+  "pages": [
+    "/x",
+    "/x/items/parts",
+    "/x/part/item_NN5oJLSWqzKqpa2EKDcv4h",
+    "/x/sales/orders",
+    "/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw",
+    "/x/production/jobs",
+    "/x/job/job_JQGwnjHaARLmCpmRCrypiB",
+    "/x/purchasing/orders"
+  ],
+  "rows": [
+    {
+      "stage": "boot",
+      "seconds": 6,
+      "footprintMB": 229,
+      "rssMB": 241,
+      "heapUsedMB": 97,
+      "heapTotalMB": 99,
+      "externalMB": 64
+    },
+    {
+      "stage": "pages",
+      "seconds": 77,
+      "footprintMB": 2390,
+      "rssMB": 1100,
+      "heapUsedMB": 1352,
+      "heapTotalMB": 1607,
+      "externalMB": 71
+    },
+    {
+      "stage": "hmr+16",
+      "seconds": 201,
+      "footprintMB": 2406,
+      "rssMB": 1135,
+      "heapUsedMB": 1630,
+      "heapTotalMB": 1783,
+      "externalMB": 70,
+      "edits": 16
+    },
+    {
+      "stage": "hmr+31",
+      "seconds": 325,
+      "footprintMB": 2457,
+      "rssMB": 1191,
+      "heapUsedMB": 1666,
+      "heapTotalMB": 1826,
+      "externalMB": 71,
+      "edits": 31
+    },
+    {
+      "stage": "hmr",
+      "seconds": 387,
+      "footprintMB": 2509,
+      "rssMB": 1641,
+      "heapUsedMB": 1696,
+      "heapTotalMB": 1876,
+      "externalMB": 71,
+      "edits": 38,
+      "failedVisits": 0
+    }
+  ]
+}

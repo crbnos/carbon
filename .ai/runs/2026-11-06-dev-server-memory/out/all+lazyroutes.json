@@ -1,0 +1,65 @@
+{
+  "label": "all+lazyroutes",
+  "nodeFlags": [],
+  "pages": [
+    "/x",
+    "/x/items/parts",
+    "/x/part/item_NN5oJLSWqzKqpa2EKDcv4h",
+    "/x/sales/orders",
+    "/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw",
+    "/x/production/jobs",
+    "/x/job/job_JQGwnjHaARLmCpmRCrypiB",
+    "/x/purchasing/orders"
+  ],
+  "rows": [
+    {
+      "stage": "boot",
+      "seconds": 9,
+      "footprintMB": 2554,
+      "rssMB": 2361,
+      "heapUsedMB": 76,
+      "heapTotalMB": 78,
+      "externalMB": 64
+    },
+    {
+      "stage": "pages",
+      "seconds": 66,
+      "footprintMB": 2603,
+      "rssMB": 804,
+      "heapUsedMB": 952,
+      "heapTotalMB": 1103,
+      "externalMB": 71
+    },
+    {
+      "stage": "hmr+15",
+      "seconds": 190,
+      "footprintMB": 2410,
+      "rssMB": 754,
+      "heapUsedMB": 971,
+      "heapTotalMB": 1061,
+      "externalMB": 71,
+      "edits": 15
+    },
+    {
+      "stage": "hmr+29",
+      "seconds": 307,
+      "footprintMB": 2387,
+      "rssMB": 827,
+      "heapUsedMB": 1019,
+      "heapTotalMB": 1128,
+      "externalMB": 71,
+      "edits": 29
+    },
+    {
+      "stage": "hmr",
+      "seconds": 377,
+      "footprintMB": 2398,
+      "rssMB": 852,
+      "heapUsedMB": 1062,
+      "heapTotalMB": 1123,
+      "externalMB": 71,
+      "edits": 37,
+      "failedVisits": 0
+    }
+  ]
+}

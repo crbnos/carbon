@@ -1,0 +1,27 @@
+{"stage":"boot","seconds":49,"footprintMB":2404,"rssMB":1113,"heapUsedMB":1333,"heapTotalMB":1670,"externalMB":71,"census":{"evaluatedModuleNodesAlive":0}}
+first request 113 ms
+[agent-browser] launched browser
+visit /x -> http://127.0.0.1:54690/x 2228 ms
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 4421 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 3316 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 1864 ms
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 2081 ms
+visit /x/production/jobs -> http://127.0.0.1:54690/x/production/jobs 4274 ms
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB -> http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB/details 2426 ms
+visit /x/purchasing/orders -> http://127.0.0.1:54690/x/purchasing/orders 4330 ms
+{"stage":"pages","seconds":97,"footprintMB":2145,"rssMB":1015,"heapUsedMB":1362,"heapTotalMB":1483,"externalMB":71,"census":{"evaluatedModuleNodesAlive":0}}
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 3770 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 5010 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 4391 ms
+{"stage":"hmr+15","seconds":233,"footprintMB":3130,"rssMB":1508,"heapUsedMB":2340,"heapTotalMB":2430,"externalMB":71,"census":{"evaluatedModuleNodesAlive":0}}
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 4937 ms
+hmr edits: 19, failed visits: 0
+{"stage":"hmr","seconds":303,"footprintMB":3740,"rssMB":2025,"heapUsedMB":2874,"heapTotalMB":2985,"externalMB":71,"census":{"evaluatedModuleNodesAlive":0}}
+┌─────────┬──────────┬─────────┬─────────────┬───────┬────────────┬─────────────┬────────────┬──────────┬───────┬──────────────┐
+│ (index) │ stage    │ seconds │ footprintMB │ rssMB │ heapUsedMB │ heapTotalMB │ externalMB │ census   │ edits │ failedVisits │
+├─────────┼──────────┼─────────┼─────────────┼───────┼────────────┼─────────────┼────────────┼──────────┼───────┼──────────────┤
+│ 0       │ 'boot'   │ 49      │ 2404        │ 1113  │ 1333       │ 1670        │ 71         │ [Object] │       │              │
+│ 1       │ 'pages'  │ 97      │ 2145        │ 1015  │ 1362       │ 1483        │ 71         │ [Object] │       │              │
+│ 2       │ 'hmr+15' │ 233     │ 3130        │ 1508  │ 2340       │ 2430        │ 71         │ [Object] │ 15    │              │
+│ 3       │ 'hmr'    │ 303     │ 3740        │ 2025  │ 2874       │ 2985        │ 71         │ [Object] │ 19    │ 0            │
+└─────────┴──────────┴─────────┴─────────────┴───────┴────────────┴─────────────┴────────────┴──────────┴───────┴──────────────┘

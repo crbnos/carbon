@@ -1,0 +1,34 @@
+{
+  "label": "baseline",
+  "nodeFlags": [],
+  "pages": [
+    "/x",
+    "/x/items/parts",
+    "/x/part/item_NN5oJLSWqzKqpa2EKDcv4h",
+    "/x/sales/orders",
+    "/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw",
+    "/x/production/jobs",
+    "/x/job/job_JQGwnjHaARLmCpmRCrypiB",
+    "/x/purchasing/orders"
+  ],
+  "rows": [
+    {
+      "stage": "boot",
+      "seconds": 6,
+      "footprintMB": 217,
+      "rssMB": 397,
+      "heapUsedMB": 97,
+      "heapTotalMB": 99,
+      "externalMB": 64
+    },
+    {
+      "stage": "pages",
+      "seconds": 77,
+      "footprintMB": 2367,
+      "rssMB": 727,
+      "heapUsedMB": 1361,
+      "heapTotalMB": 1544,
+      "externalMB": 71
+    }
+  ]
+}

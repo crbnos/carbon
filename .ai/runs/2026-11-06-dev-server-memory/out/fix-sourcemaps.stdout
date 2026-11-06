@@ -1,0 +1,36 @@
+{"stage":"boot","seconds":6,"footprintMB":212,"rssMB":391,"heapUsedMB":97,"heapTotalMB":99,"externalMB":64}
+first request 24377 ms
+[agent-browser] launched browser
+visit /x -> http://127.0.0.1:54690/x 2741 ms
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 3671 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 4387 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 2522 ms
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 2839 ms
+visit /x/production/jobs -> http://127.0.0.1:54690/x/production/jobs 4924 ms
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB -> http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB/details 4676 ms
+visit /x/purchasing/orders -> http://127.0.0.1:54690/x/purchasing/orders 3379 ms
+{"stage":"pages","seconds":77,"footprintMB":2392,"rssMB":1083,"heapUsedMB":1330,"heapTotalMB":1592,"externalMB":71}
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 4938 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 4043 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 2943 ms
+{"stage":"hmr+15","seconds":198,"footprintMB":2162,"rssMB":1064,"heapUsedMB":1374,"heapTotalMB":1609,"externalMB":71}
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 5088 ms
+✗ Operation timed out. The page may still be loading or the element may not exist.
+visit /x/production/jobs failed: Command failed: agent-browser --session devmem open http://127.0.0.1:54690/x/production/jobs
+✗ Operation timed out. The page may still be loading or the element may not exist.
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB failed: Command failed: agent-browser --session devmem open http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB
+{"stage":"hmr+25","seconds":324,"footprintMB":2139,"rssMB":1038,"heapUsedMB":1388,"heapTotalMB":1550,"externalMB":71}
+✗ Failed to read: Resource temporarily unavailable (os error 35) (the command reached the daemon but no response came back; it may or may not have run, so it was not retried)
+visit /x/purchasing/orders failed: Command failed: agent-browser --session devmem open http://127.0.0.1:54690/x/purchasing/orders
+hmr edits: 29, failed visits: 3
+{"stage":"hmr","seconds":389,"footprintMB":1822,"rssMB":896,"heapUsedMB":1073,"heapTotalMB":1241,"externalMB":71}
+┌─────────┬──────────┬─────────┬─────────────┬───────┬────────────┬─────────────┬────────────┬───────┬──────────────┐
+│ (index) │ stage    │ seconds │ footprintMB │ rssMB │ heapUsedMB │ heapTotalMB │ externalMB │ edits │ failedVisits │
+├─────────┼──────────┼─────────┼─────────────┼───────┼────────────┼─────────────┼────────────┼───────┼──────────────┤
+│ 0       │ 'boot'   │ 6       │ 212         │ 391   │ 97         │ 99          │ 64         │       │              │
+│ 1       │ 'pages'  │ 77      │ 2392        │ 1083  │ 1330       │ 1592        │ 71         │       │              │
+│ 2       │ 'hmr+15' │ 198     │ 2162        │ 1064  │ 1374       │ 1609        │ 71         │ 15    │              │
+│ 3       │ 'hmr+25' │ 324     │ 2139        │ 1038  │ 1388       │ 1550        │ 71         │ 25    │              │
+│ 4       │ 'hmr'    │ 389     │ 1822        │ 896   │ 1073       │ 1241        │ 71         │ 29    │ 3            │
+└─────────┴──────────┴─────────┴─────────────┴───────┴────────────┴─────────────┴────────────┴───────┴──────────────┘
+done

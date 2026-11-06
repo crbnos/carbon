@@ -1,0 +1,32 @@
+{"stage":"boot","seconds":7,"footprintMB":249,"rssMB":367,"heapUsedMB":97,"heapTotalMB":99,"externalMB":64}
+first request 29406 ms
+[agent-browser] launched browser
+visit /x -> http://127.0.0.1:54690/x 2768 ms
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 3424 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 4287 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 3129 ms
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 2994 ms
+visit /x/production/jobs -> http://127.0.0.1:54690/x/production/jobs 5591 ms
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB -> http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB/details 4569 ms
+visit /x/purchasing/orders -> http://127.0.0.1:54690/x/purchasing/orders 3226 ms
+{"stage":"pages","seconds":82,"footprintMB":2421,"rssMB":1116,"heapUsedMB":1355,"heapTotalMB":1583,"externalMB":71}
+sampling profile /Users/sidwebworks/Documents/crbnos/carbon-dev-server-memory/.ai/runs/2026-11-06-dev-server-memory/out/baseline-pages.heapprofile
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 4489 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 3837 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 6258 ms
+{"stage":"hmr+15","seconds":206,"footprintMB":3191,"rssMB":1554,"heapUsedMB":2357,"heapTotalMB":2465,"externalMB":71}
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 4273 ms
+visit /x/production/jobs -> http://127.0.0.1:54690/x/production/jobs 6031 ms
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB -> http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB/details 5625 ms
+visit /x/purchasing/orders -> http://127.0.0.1:54690/x/purchasing/orders 3877 ms
+{"stage":"hmr+30","seconds":332,"footprintMB":4223,"rssMB":2086,"heapUsedMB":3347,"heapTotalMB":3423,"externalMB":71}
+visit /x -> http://127.0.0.1:54690/x 4132 ms
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 5350 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 7321 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 1576 ms
+Warning: Detected unsettled top-level await at file:///Users/sidwebworks/Documents/crbnos/carbon-dev-server-memory/.ai/runs/2026-11-06-dev-server-memory/bench.mjs:296
+        rows.push({ ...(await sample(`hmr+${n}`)), edits: n });
+                        ^
+
+
+

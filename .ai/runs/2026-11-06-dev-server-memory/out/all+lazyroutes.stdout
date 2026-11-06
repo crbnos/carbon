@@ -1,0 +1,35 @@
+{"stage":"boot","seconds":9,"footprintMB":2554,"rssMB":2361,"heapUsedMB":76,"heapTotalMB":78,"externalMB":64}
+first request 9457 ms
+[agent-browser] launched browser
+visit /x -> http://127.0.0.1:54690/x 2391 ms
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 6110 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 3936 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 3079 ms
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 3239 ms
+visit /x/production/jobs -> http://127.0.0.1:54690/x/production/jobs 5565 ms
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB -> http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB/details 4040 ms
+visit /x/purchasing/orders -> http://127.0.0.1:54690/x/purchasing/orders 3462 ms
+{"stage":"pages","seconds":66,"footprintMB":2603,"rssMB":804,"heapUsedMB":952,"heapTotalMB":1103,"externalMB":71}
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 4587 ms
+visit /x/part/item_NN5oJLSWqzKqpa2EKDcv4h -> http://127.0.0.1:54690/x/part/item_NN5oJLSWqzKqpa2EKDcv4h/details 6278 ms
+visit /x/sales/orders -> http://127.0.0.1:54690/x/sales/orders 4240 ms
+{"stage":"hmr+15","seconds":190,"footprintMB":2410,"rssMB":754,"heapUsedMB":971,"heapTotalMB":1061,"externalMB":71}
+visit /x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw -> http://127.0.0.1:54690/x/sales-order/so_5JVys8j3KR1jE6P2d6P9Vw/details 3811 ms
+visit /x/production/jobs -> http://127.0.0.1:54690/x/production/jobs 5285 ms
+visit /x/job/job_JQGwnjHaARLmCpmRCrypiB -> http://127.0.0.1:54690/x/job/job_JQGwnjHaARLmCpmRCrypiB/details 6221 ms
+visit /x/purchasing/orders -> http://127.0.0.1:54690/x/purchasing/orders 5488 ms
+{"stage":"hmr+29","seconds":307,"footprintMB":2387,"rssMB":827,"heapUsedMB":1019,"heapTotalMB":1128,"externalMB":71}
+visit /x -> http://127.0.0.1:54690/x 3900 ms
+visit /x/items/parts -> http://127.0.0.1:54690/x/items/parts 4162 ms
+hmr edits: 37, failed visits: 0
+{"stage":"hmr","seconds":377,"footprintMB":2398,"rssMB":852,"heapUsedMB":1062,"heapTotalMB":1123,"externalMB":71}
+┌─────────┬──────────┬─────────┬─────────────┬───────┬────────────┬─────────────┬────────────┬───────┬──────────────┐
+│ (index) │ stage    │ seconds │ footprintMB │ rssMB │ heapUsedMB │ heapTotalMB │ externalMB │ edits │ failedVisits │
+├─────────┼──────────┼─────────┼─────────────┼───────┼────────────┼─────────────┼────────────┼───────┼──────────────┤
+│ 0       │ 'boot'   │ 9       │ 2554        │ 2361  │ 76         │ 78          │ 64         │       │              │
+│ 1       │ 'pages'  │ 66      │ 2603        │ 804   │ 952        │ 1103        │ 71         │       │              │
+│ 2       │ 'hmr+15' │ 190     │ 2410        │ 754   │ 971        │ 1061        │ 71         │ 15    │              │
+│ 3       │ 'hmr+29' │ 307     │ 2387        │ 827   │ 1019       │ 1128        │ 71         │ 29    │              │
+│ 4       │ 'hmr'    │ 377     │ 2398        │ 852   │ 1062       │ 1123        │ 71         │ 37    │ 0            │
+└─────────┴──────────┴─────────┴─────────────┴───────┴────────────┴─────────────┴────────────┴───────┴──────────────┘
+done
