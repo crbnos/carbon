@@ -51,15 +51,15 @@ type RegistryEntry = {
 };
 type Registry = Record<string, RegistryEntry>;
 
-export const SHARED_REDIS_PORT = 6379;
 // The shared containers' host ports (packages/dev/docker/docker-compose.shared.yml).
 // The Postgres and pooler ports match config.toml's [db] and [db.pooler].
+export const SHARED_REDIS_PORT = 6379;
 export const SHARED_DB_PORT = 54322;
 export const SHARED_POOLER_PORT = 54329;
 export const SHARED_INBUCKET_PORT = 54324;
 export const SHARED_STORAGE_ADMIN_PORT = 54326;
-// One logical DB per worktree slot on the shared redis, which `bootSharedRedis`
-// starts with this many. Redis's own default (16) filled up: a slot is held
+// One logical DB per worktree slot on the shared redis, which crbn-shared
+// starts with this many (REDIS_DATABASES). Redis's own default (16) filled up: a slot is held
 // until `crbn remove`, `crbn down --purge` or `crbn prune` releases it, and a
 // worktree kept on disk keeps its slot.
 export const REDIS_DB_MAX = 25;

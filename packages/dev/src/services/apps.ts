@@ -9,7 +9,12 @@ import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { dirname, join } from "pathe";
 import pc from "picocolors";
-import { isAtLeastAsNew, onShutdown, readLines } from "../helpers.js";
+import {
+  isAtLeastAsNew,
+  lineWriter,
+  onShutdown,
+  readLines
+} from "../helpers.js";
 import { type PortMap, sameWorktreePath } from "../worktree.js";
 
 const APP_COLORS: Record<string, (s: string) => string> = {
@@ -148,11 +153,12 @@ export function spawnApps(opts: {
       sink: NodeJS.WriteStream
     ) => {
       if (!stream) return;
+      const write = lineWriter(sink);
       disposers.push(
         readLines(stream, (line) => {
           // Mute shutdown noise (EPIPE, ELIFECYCLE 143, esbuild "stopped").
           if (shuttingDown || isNoiseLine(line)) return;
-          sink.write(`${prefix}${line}\n`);
+          write(`${prefix}${line}\n`);
         })
       );
     };
@@ -432,9 +438,10 @@ export function spawnAssembler(opts: {
     sink: NodeJS.WriteStream
   ) => {
     if (!stream) return;
+    const write = lineWriter(sink);
     readLines(stream, (line) => {
       if (isNoiseLine(line)) return;
-      sink.write(`${prefix}${line}\n`);
+      write(`${prefix}${line}\n`);
     });
   };
   pipe(child.stdout, process.stdout);
@@ -486,9 +493,10 @@ export function spawnEmailPreview(opts: {
     sink: NodeJS.WriteStream
   ) => {
     if (!stream) return;
+    const write = lineWriter(sink);
     readLines(stream, (line) => {
       if (isNoiseLine(line) || isEmailStartupLine(line)) return;
-      sink.write(`${EMAIL_PREFIX}${line}\n`);
+      write(`${EMAIL_PREFIX}${line}\n`);
     });
   };
   pipe(child.stdout, process.stdout);

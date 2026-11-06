@@ -278,12 +278,13 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
       stdio: "ignore"
     });
   }
-  if (opts.all) await stopSharedServices();
+  // Flush before stopping the shared containers: redis is one of them.
   for (const slug of Object.keys(slots)) {
     if (!dead.has(slug) && !opts.all) continue;
     await flushDb(slots[slug]!.redisDb);
     if (dead.has(slug)) removeSlot(slug);
   }
+  if (opts.all) await stopSharedServices();
   await forgetMissingTrees();
   let removedTrees = 0;
   const removedSlugs = new Set<string>();
