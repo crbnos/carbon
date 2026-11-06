@@ -16091,6 +16091,9 @@ msgstr "Оставить строку"
 msgid "Keep matching items"
 msgstr "Сохранить соответствующие элементы"
 
+msgid "Keep mine"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
 
@@ -16832,6 +16835,9 @@ msgstr "Связанный ПО"
 
 msgid "Linked Record"
 msgstr "Связанная запись"
+
+msgid "Linked to a shared section. Edit it in the library to update it everywhere."
+msgstr ""
 
 msgid "Links"
 msgstr "Ссылки"
@@ -19927,6 +19933,9 @@ msgstr "Значение не требуется"
 
 msgid "No values available"
 msgstr "Нет доступных значений"
+
+msgid "No values found"
+msgstr ""
 
 msgid "No variable matches {query}"
 msgstr "Нет переменных соответствующих {query}"
@@ -24314,6 +24323,9 @@ msgstr "Убрать основное средство"
 msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
+msgid "Remove block"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "Убрать условие"
 
@@ -27142,6 +27154,9 @@ msgstr "Общий доступ"
 msgid "Shared channel"
 msgstr "Общий канал"
 
+msgid "Shared Section (deleted)"
+msgstr ""
+
 msgid "Shared Sections"
 msgstr "Общие разделы"
 
@@ -27781,6 +27796,9 @@ msgstr "Некоторые смены"
 
 msgid "Someone"
 msgstr "Кто-то"
+
+msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
+msgstr ""
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
@@ -29757,6 +29775,9 @@ msgstr "Прямая стоимость в проектном журнале п�
 msgid "The document could not be downloaded."
 msgstr "Не удалось скачать документ."
 
+msgid "The document could not be opened."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
 
@@ -30323,6 +30344,9 @@ msgstr "Проведенные часы сторнированы и вместо
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
+
+msgid "The preview could not be drawn. It shows the last one that was."
+msgstr ""
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Цена часа на строке Time & Materials: ставка строки для сотрудника, иначе для категории труда, иначе стандартная ставка выставления счета категории труда, действующая на день."
@@ -31168,6 +31192,9 @@ msgstr "Этот PIN больше не будет показан. Если он 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
+msgid "This preview is paused: a text changes a figure. Save shows which."
+msgstr ""
+
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
 
@@ -31230,6 +31257,9 @@ msgstr "Этот образец был удалён"
 
 msgid "This serial"
 msgstr "Этот серийный номер"
+
+msgid "This shared section no longer exists. Remove the block or recreate the section."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."

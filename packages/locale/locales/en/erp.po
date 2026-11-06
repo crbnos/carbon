@@ -16091,6 +16091,9 @@ msgstr "Keep Line"
 msgid "Keep matching items"
 msgstr "Keep matching items"
 
+msgid "Keep mine"
+msgstr "Keep mine"
+
 msgid "Keep navigation open"
 msgstr "Keep navigation open"
 
@@ -16832,6 +16835,9 @@ msgstr "Linked PO"
 
 msgid "Linked Record"
 msgstr "Linked Record"
+
+msgid "Linked to a shared section. Edit it in the library to update it everywhere."
+msgstr "Linked to a shared section. Edit it in the library to update it everywhere."
 
 msgid "Links"
 msgstr "Links"
@@ -19927,6 +19933,9 @@ msgstr "No value needed"
 
 msgid "No values available"
 msgstr "No values available"
+
+msgid "No values found"
+msgstr "No values found"
 
 msgid "No variable matches {query}"
 msgstr "No variable matches {query}"
@@ -24314,6 +24323,9 @@ msgstr "Remove Asset"
 msgid "Remove authenticator app"
 msgstr "Remove authenticator app"
 
+msgid "Remove block"
+msgstr "Remove block"
+
 msgid "Remove clause"
 msgstr "Remove clause"
 
@@ -27142,6 +27154,9 @@ msgstr "Shared"
 msgid "Shared channel"
 msgstr "Shared channel"
 
+msgid "Shared Section (deleted)"
+msgstr "Shared Section (deleted)"
+
 msgid "Shared Sections"
 msgstr "Shared Sections"
 
@@ -27781,6 +27796,9 @@ msgstr "Some Shifts"
 
 msgid "Someone"
 msgstr "Someone"
+
+msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
+msgstr "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
@@ -29757,6 +29775,9 @@ msgstr "The direct cost in the project ledger of a work package and the elements
 msgid "The document could not be downloaded."
 msgstr "The document could not be downloaded."
 
+msgid "The document could not be opened."
+msgstr "The document could not be opened."
+
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
 
@@ -30323,6 +30344,9 @@ msgstr "The posted hours are reversed and these hours are charged instead"
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
+
+msgid "The preview could not be drawn. It shows the last one that was."
+msgstr "The preview could not be drawn. It shows the last one that was."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
@@ -31168,6 +31192,9 @@ msgstr "This PIN will not be shown again. If it is lost, reset it from the opera
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 
+msgid "This preview is paused: a text changes a figure. Save shows which."
+msgstr "This preview is paused: a text changes a figure. Save shows which."
+
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "This price was entered manually, so no pricing rules were applied."
 
@@ -31230,6 +31257,9 @@ msgstr "This sample was removed"
 
 msgid "This serial"
 msgstr "This serial"
+
+msgid "This shared section no longer exists. Remove the block or recreate the section."
+msgstr "This shared section no longer exists. Remove the block or recreate the section."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."

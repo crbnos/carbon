@@ -16091,6 +16091,9 @@ msgstr "Conserver la ligne"
 msgid "Keep matching items"
 msgstr "Conserver les articles correspondants"
 
+msgid "Keep mine"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "Garder la navigation ouverte"
 
@@ -16832,6 +16835,9 @@ msgstr "Bon de commande lié"
 
 msgid "Linked Record"
 msgstr "Enregistrement lié"
+
+msgid "Linked to a shared section. Edit it in the library to update it everywhere."
+msgstr ""
 
 msgid "Links"
 msgstr "Liens"
@@ -19927,6 +19933,9 @@ msgstr "Aucune valeur requise"
 
 msgid "No values available"
 msgstr "Aucune valeur disponible"
+
+msgid "No values found"
+msgstr ""
 
 msgid "No variable matches {query}"
 msgstr "Aucune variable ne correspond à {query}"
@@ -24314,6 +24323,9 @@ msgstr "Retirer l'immobilisation"
 msgid "Remove authenticator app"
 msgstr "Retirer l'application authenticateur"
 
+msgid "Remove block"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "Retirer la clause"
 
@@ -27142,6 +27154,9 @@ msgstr "Partagé"
 msgid "Shared channel"
 msgstr "Canal partagé"
 
+msgid "Shared Section (deleted)"
+msgstr ""
+
 msgid "Shared Sections"
 msgstr "Sections partagées"
 
@@ -27781,6 +27796,9 @@ msgstr "Certaines équipes"
 
 msgid "Someone"
 msgstr "Quelqu'un"
+
+msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
+msgstr ""
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Quelqu'un qui peut mettre à jour la comptabilité doit entrer le coût de fabrication avant qu'il puisse être capitalisé."
@@ -29757,6 +29775,9 @@ msgstr "Le coût direct dans le grand livre du projet d'un lot de travail et des
 msgid "The document could not be downloaded."
 msgstr "Le document n'a pas pu être téléchargé."
 
+msgid "The document could not be opened."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "Les premières heures, {name}."
 
@@ -30323,6 +30344,9 @@ msgstr "Les heures comptabilisées sont extournées et ces heures sont facturée
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "Le paquet prédéfini de tâches et d'exigences d'approbation appliqué à ce problème ; remplace le workflow par défaut du type de problème lorsqu'il est défini."
+
+msgid "The preview could not be drawn. It shows the last one that was."
+msgstr ""
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Le prix d'une heure sur une ligne Temps et Matériel : le taux de la ligne pour l'employé, sinon pour la catégorie de main-d'œuvre, sinon le taux de facturation par défaut de la catégorie de main-d'œuvre, en vigueur le jour."
@@ -31168,6 +31192,9 @@ msgstr "Ce code PIN ne sera plus affiché. Si vous l'avez oublié, réinitialise
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Ce code PIN ne sera plus affiché. Vous en aurez besoin pour quitter le mode console sur les terminaux MES."
 
+msgid "This preview is paused: a text changes a figure. Save shows which."
+msgstr ""
+
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ce prix a été saisi manuellement, donc aucune règle de tarification n'a été appliquée."
 
@@ -31230,6 +31257,9 @@ msgstr "Cet échantillon a été supprimé"
 
 msgid "This serial"
 msgstr "Ce numéro de série"
+
+msgid "This shared section no longer exists. Remove the block or recreate the section."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Cette station exécute du travail soumis à gating d'aptitude — elle ne fonctionne que si un opérateur qualifié est de service ; les opérateurs assignés sur le tableau de charge affinent davantage la main-d'œuvre disponible."

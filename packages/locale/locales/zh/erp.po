@@ -16091,6 +16091,9 @@ msgstr "保留行"
 msgid "Keep matching items"
 msgstr "保留匹配的物料"
 
+msgid "Keep mine"
+msgstr ""
+
 msgid "Keep navigation open"
 msgstr "保持导航展开"
 
@@ -16832,6 +16835,9 @@ msgstr "关联采购订单"
 
 msgid "Linked Record"
 msgstr "关联记录"
+
+msgid "Linked to a shared section. Edit it in the library to update it everywhere."
+msgstr ""
 
 msgid "Links"
 msgstr "链接"
@@ -19927,6 +19933,9 @@ msgstr "不需要值"
 
 msgid "No values available"
 msgstr "没有可用的值"
+
+msgid "No values found"
+msgstr ""
 
 msgid "No variable matches {query}"
 msgstr "没有变量匹配{query}"
@@ -24314,6 +24323,9 @@ msgstr "移除资产"
 msgid "Remove authenticator app"
 msgstr "移除身份验证器应用"
 
+msgid "Remove block"
+msgstr ""
+
 msgid "Remove clause"
 msgstr "移除条款"
 
@@ -27142,6 +27154,9 @@ msgstr "共享"
 msgid "Shared channel"
 msgstr "共享频道"
 
+msgid "Shared Section (deleted)"
+msgstr ""
+
 msgid "Shared Sections"
 msgstr "共享部分"
 
@@ -27781,6 +27796,9 @@ msgstr "某些班次"
 
 msgid "Someone"
 msgstr "某人"
+
+msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
+msgstr ""
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "能够更新会计的人员必须先输入该资产的制造成本，才能将其资本化。"
@@ -29757,6 +29775,9 @@ msgstr "项目分类账中工作包及其下方元素的直接成本。"
 msgid "The document could not be downloaded."
 msgstr "无法下载文档。"
 
+msgid "The document could not be opened."
+msgstr ""
+
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
 
@@ -30323,6 +30344,9 @@ msgstr "已过账的小时数被冲销，改为计费这些小时数"
 
 msgid "The preset bundle of tasks and approval requirements applied to this issue; overrides the issue type's default workflow when set."
 msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖问题类型的默认工作流。"
+
+msgid "The preview could not be drawn. It shows the last one that was."
+msgstr ""
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "时间和物料订单行上一小时的价格：员工的订单行费率，或劳动力分类的费率，或劳动力分类的默认账单费率，有效期为当天。"
@@ -31168,6 +31192,9 @@ msgstr "此PIN将不再显示。如果丢失，可从操作员列表中重置。
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
+msgid "This preview is paused: a text changes a figure. Save shows which."
+msgstr ""
+
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"
 
@@ -31230,6 +31257,9 @@ msgstr "此样本已被删除"
 
 msgid "This serial"
 msgstr "此序列号"
+
+msgid "This shared section no longer exists. Remove the block or recreate the section."
+msgstr ""
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"
