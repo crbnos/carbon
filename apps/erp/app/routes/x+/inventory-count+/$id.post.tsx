@@ -11,6 +11,21 @@ import { path } from "~/utils/path";
 // cookie too large to set: name the first few and count the rest.
 const NAMED_PARTS = 5;
 
+// "QC-Inspection: 3 there, 11 held" in place of the unit's name alone.
+function shortfall(row: {
+  part: string;
+  unit: string | null;
+  onHand: number | null;
+  held: number | null;
+}) {
+  if (row.onHand === null || row.held === null) return row;
+  const place = row.unit ? `${row.unit}: ` : "";
+  return {
+    part: row.part,
+    unit: `${place}${row.onHand} there, ${row.held} held`
+  };
+}
+
 function partList(rows: Array<{ part: string; unit: string | null }>) {
   const names = rows.map((row) =>
     row.unit ? `${row.part} (${row.unit})` : row.part
@@ -44,7 +59,7 @@ export async function action(args: ActionFunctionArgs) {
   const message = ["Inventory count posted."];
   if (short.length > 0) {
     message.push(
-      `${partList(short)} ${short.length === 1 ? "was" : "were"} counted short in ${short.length === 1 ? "its" : "their"} inspection unit: the lot holds more than is there. Reject writes off what is there.`
+      `${partList(short.map(shortfall))} ${short.length === 1 ? "was" : "were"} counted short in ${short.length === 1 ? "its" : "their"} inspection unit: the lot holds more than is there. Reject writes off what is there.`
     );
   }
   if (movable.length > 0) {

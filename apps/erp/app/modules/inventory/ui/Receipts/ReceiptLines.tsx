@@ -903,7 +903,9 @@ function ReceiptLineItem({
                 />
               </NumberField>
             </VStack>
-            <VStack spacing={1} className="text-center items-center">
+            {/* Fixed widths keep every line's columns aligned, a Surplus
+                line's alert icon included. */}
+            <VStack spacing={1} className="text-center items-center w-16">
               <label className="text-xs text-muted-foreground">
                 <Trans>Ordered</Trans>
               </label>
@@ -912,7 +914,7 @@ function ReceiptLineItem({
               </span>
             </VStack>
 
-            <VStack spacing={1} className="text-center items-center">
+            <VStack spacing={1} className="text-center items-center w-24">
               <label className="text-xs text-muted-foreground">
                 {isSurplus ? (
                   <Trans>Surplus</Trans>
@@ -947,7 +949,7 @@ function ReceiptLineItem({
           {/* A fixed width, so a long unit name truncates (full name in its
               tooltip) instead of pushing into the quantities; narrower on a
               narrow row so the item name keeps its room. */}
-          <div className="flex flex-col items-start gap-1 w-44 @5xl:w-56 max-w-full min-w-0 text-sm max-md:w-full">
+          <div className="flex flex-col items-start gap-1 w-48 @5xl:w-60 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
               <Trans>Storage Unit</Trans>
             </label>

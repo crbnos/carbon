@@ -161,6 +161,10 @@ BEGIN
     JOIN "storageUnit" su
       ON su."id" = i."storageUnitId"
      AND su."effectiveNettable" = false
+    -- A voided receipt received nothing, so it has nothing to inspect.
+    JOIN "receipt" r
+      ON r."id" = i."sourceDocumentId"
+     AND r."status" <> 'Voided'
     WHERE i."sourceDocument" = 'Receipt'
       AND i."sourceDocumentId" = p_receipt_id
       AND i."status" <> 'Cancelled'

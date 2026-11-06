@@ -1411,7 +1411,7 @@ export const rejectInspection = defineServiceFn({
       if (raced) return { id, issueId: raced.nonConformanceId };
       return opened;
     }
-    return { id, issueId: opened.issueId };
+    return { id, issueId: opened.issueId, ncrOpened: true };
   }
 });
 /**
@@ -1626,7 +1626,7 @@ export const partialInspection = defineServiceFn({
             opened
           );
     }
-    return { id, issueId: opened.issueId };
+    return { id, issueId: opened.issueId, ncrOpened: true };
   }
 });
 // --- Inspection documents ---------------------------------------------------------

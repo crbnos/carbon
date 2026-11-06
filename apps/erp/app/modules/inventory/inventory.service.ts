@@ -7334,6 +7334,9 @@ export type HeldStockWarning = {
    * is there, and its Reject writes off what is.
    */
   countedShort: boolean;
+  /** Untracked rows: what is left in the unit, and what its open lots hold. */
+  onHand: number | null;
+  held: number | null;
 };
 
 /**
@@ -7348,7 +7351,12 @@ export async function heldStockMovedByCount(
   inventoryCountId: string,
   heldTrackedEntityIds: readonly string[]
 ): Promise<HeldStockWarning[]> {
-  const rows = await sql<HeldStockWarning>`
+  const rows = await sql<
+    Omit<HeldStockWarning, "onHand" | "held"> & {
+      onHand: string | null;
+      held: string | null;
+    }
+  >`
     SELECT DISTINCT
       COALESCE(i."readableIdWithRevision", i."id") AS "part",
       su."name" AS "unit",
@@ -7362,7 +7370,17 @@ export async function heldStockMovedByCount(
           AND found."trackedEntityId" IS NULL
           AND found."quantity" > 0
           AND found."storageUnitId" IS DISTINCT FROM il."storageUnitId"
-      )) AS "countedShort"
+      )) AS "countedShort",
+      CASE WHEN il."trackedEntityId" IS NULL THEN (
+        SELECT COALESCE(SUM(x."quantity"), 0) FROM "itemLedger" x
+        WHERE x."companyId" = il."companyId"
+          AND x."itemId" = il."itemId"
+          AND x."storageUnitId" = il."storageUnitId"
+          AND x."trackedEntityId" IS NULL
+      ) END AS "onHand",
+      CASE WHEN il."trackedEntityId" IS NULL THEN
+        public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId")
+      END AS "held"
     FROM "itemLedger" il
     JOIN "item" i ON i."id" = il."itemId"
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
@@ -7405,7 +7423,11 @@ export async function heldStockMovedByCount(
       )
     ORDER BY 1, 2
   `.execute(db);
-  return rows.rows;
+  return rows.rows.map((row) => ({
+    ...row,
+    onHand: row.onHand === null ? null : round(Number(row.onHand)),
+    held: row.held === null ? null : round(Number(row.held))
+  }));
 }
 
 type EntityStockRow = {
@@ -14844,6 +14866,9 @@ export async function postReceipt(
           .where("id", "=", receiptId)
           .where("companyId", "=", companyId)
           .execute();
+        await sql`SELECT public.refresh_receipt_inspection_status(${receiptId})`.execute(
+          trx
+        );
       });
 
       return { success: true };

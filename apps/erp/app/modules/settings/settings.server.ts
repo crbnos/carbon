@@ -628,7 +628,7 @@ export const updateQualitySettings = defineServiceFn({
         if (row === "sameUnit") {
           return tx.error(
             "rule",
-            "Choose a different storage unit for rejected stock."
+            "Use different storage units for inspection and rejected stock."
           );
         }
       }

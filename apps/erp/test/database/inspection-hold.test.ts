@@ -602,6 +602,36 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
   });
 
   databaseTest(
+    "a voided receipt with a decided lot needs no inspection",
+    async () => {
+      const voided = await receiveFromPurchaseOrder(f, "voided-decided");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("inspection")
+          .set({ status: "Passed" })
+          .where("sourceDocumentId", "=", voided)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const posted = await withGuard(() =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-receipt",
+          { type: "void", receiptId: voided },
+          postReceipt
+        )
+      );
+      expect(posted.error).toBeNull();
+      const receipt = await f.db
+        .selectFrom("receipt")
+        .select("inspectionStatus")
+        .where("id", "=", voided)
+        .executeTakeFirstOrThrow();
+      expect(receipt.inspectionStatus).toBe("Not Required");
+    }
+  );
+
+  databaseTest(
     "a serial Partial needs a failed unit and complete sampling, then accepts every unit that did not fail",
     async () => {
       const item = `${f.prefix}-serial`;

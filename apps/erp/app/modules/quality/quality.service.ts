@@ -4206,6 +4206,9 @@ export async function closeIssue(
     projectId: string | null;
     quantity: number;
   }[] = [];
+  // A receipt lot's reject wrote off what its unit held: Use As Is / Rework
+  // restores that and no more.
+  let restoreCappedAtWriteOff = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
     const [trackingRes, inspectionRes] = await Promise.all([
@@ -4258,6 +4261,7 @@ export async function closeIssue(
     inspectionOriginated =
       (inspectionRes.data?.length ?? 0) > 0 && !fromPartialReceiptLot;
     if (inspectionOriginated && link) {
+      restoreCappedAtWriteOff = linkedLot?.sourceDocument === "Receipt";
       // The reject wrote the lot off from where it was held: a restore puts
       // it back there, on the stripe it left.
       const rows = await db
@@ -4442,8 +4446,9 @@ export async function closeIssue(
           comment
         });
       }
-      // More than the reject wrote off (none posted): at the NCR's location.
-      if (remaining > EPSILON) {
+      // A job operation lot's reject posts no write-off: restore at the
+      // NCR's location.
+      if (remaining > EPSILON && !restoreCappedAtWriteOff) {
         movements.push({
           itemId: row.itemId,
           locationId,

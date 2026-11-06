@@ -227,7 +227,8 @@ or `acceptedQuantity`, and when a `stockTransfer` with a `receiptId` becomes
 ### 8. Receipt void
 
 Voiding a purchase receipt sets each open lot to `Cancelled`. A cancelled lot
-holds nothing, and the roll-up ignores it. The existing refusal stays: the void
+holds nothing, and the roll-up ignores it. The roll-up also ignores every lot of
+a voided receipt, so the receipt reads `Not Required`. The existing refusal stays: the void
 refuses once a lot has acted (`assertNoRejectedUntrackedLot` and the
 existing checks).
 
@@ -670,8 +671,9 @@ These came out of the research and are not part of this spec:
   - Update Inventory asks the hold before a storage rule asks for an
     acknowledgement. An adjustment of a batch or serial unit held under an
     open lot is refused.
-  - A receipt line refuses a negative received quantity, except on a return
-    line (a negative order quantity).
+  - A receipt line that needs inspection refuses a negative received
+    quantity, except on a return line (a negative order quantity). Other
+    lines keep main's behavior.
   - A batch lot is accepted or rejected as a whole. An untracked Partial needs
     an accepted quantity above 0.
   - The UI shows the refusals of a return shipment post, an MES Issue Material
@@ -680,3 +682,11 @@ These came out of the research and are not part of this spec:
     unit.
   - The handler migration was generated again as `20261106012250`. The PR
     still has three migrations.
+- 2026-11-06: Browser round 2 fixes:
+  - Use As Is or Rework on a receipt lot's NCR restores no more than the
+    Reject wrote off. A lot counted short no longer gets back stock that was
+    never there.
+  - A voided receipt reads `Not Required`, so it leaves the putaway queue.
+  - The count warning for stock counted short names the quantity left in the
+    unit and the quantity the lots hold.
+  - A repeated Reject or Partial says it opened an NCR only when it did.

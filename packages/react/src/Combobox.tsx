@@ -62,7 +62,6 @@ export type ComboboxProps = Omit<
   /** Inline mode: what the empty field reads, "Add owner". */
   inlinePlaceholder?: ReactNode;
   itemHeight?: number;
-  /** The clear button's accessible name, when "Clear" alone is ambiguous. */
 };
 
 const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(

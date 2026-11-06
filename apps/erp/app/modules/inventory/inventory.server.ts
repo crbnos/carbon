@@ -722,9 +722,9 @@ export const splitReceiptLine = defineServiceFn({
  *
  * @remarks
  * `storageUnitId` or `receivedQuantity`, on every line in `ids`. An empty
- * value clears the field. A negative received quantity is refused unless
- * every line is a return line (a negative order quantity). Storage rules run when the receipt is posted, not
- * here.
+ * value clears the field. A negative received quantity is refused on a line
+ * that needs inspection, unless it is a return line (a negative order
+ * quantity). Storage rules run when the receipt is posted, not here.
  *
  * @mcp
  */
@@ -740,7 +740,7 @@ export const updateReceiptLines = defineServiceFn({
     const lines = await ctx.asCaller.supabase
       .from("receiptLine")
       .select(
-        "id, receiptId, orderQuantity, receipt!receiptLine_receiptId_fkey(status)"
+        "id, receiptId, orderQuantity, requiresInspection, receipt!receiptLine_receiptId_fkey(status)"
       )
       .in("id", ids)
       .eq("companyId", ctx.company.id);
@@ -774,11 +774,14 @@ export const updateReceiptLines = defineServiceFn({
       if (!Number.isFinite(receivedQuantity)) {
         return ctx.error("validation", "Received quantity must be a number");
       }
-      // Only a return line (a negative order quantity) receives a negative
-      // quantity: on any other line it would take stock out by a receipt.
+      // A negative quantity on an inspected line would take held stock out
+      // of the inspection unit by a receipt. A return line may still.
       if (
         receivedQuantity < 0 &&
-        lines.data.some((line) => Number(line.orderQuantity ?? 0) >= 0)
+        lines.data.some(
+          (line) =>
+            line.requiresInspection && Number(line.orderQuantity ?? 0) >= 0
+        )
       ) {
         return ctx.error("validation", "Received quantity cannot be negative");
       }

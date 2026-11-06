@@ -38,7 +38,15 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   let rejectedUnit: string;
   let shelf: string;
   const unitOf = (key: string) => `${f.prefix}-qc-${key}`;
-  const UNIT_KEYS = ["count", "put", "batch", "reject", "keep", "serial"];
+  const UNIT_KEYS = [
+    "count",
+    "put",
+    "batch",
+    "reject",
+    "keep",
+    "short",
+    "serial"
+  ];
 
   beforeAll(async () => {
     f = await alwaysPostFixture();
@@ -406,11 +414,16 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         part: `${f.prefix}-AWAITING`,
         unit: unitOf("batch"),
         awaitingInspection: true,
-        countedShort: false
+        countedShort: false,
+        onHand: null,
+        held: null
       });
+      // The lot of 10 holds 10; the count left 7.
       expect(first[unitOf("count")]).toMatchObject({
         awaitingInspection: false,
-        countedShort: true
+        countedShort: true,
+        onHand: 7,
+        held: 10
       });
 
       // The same count found the 3 on the shelf: stock found elsewhere.
@@ -741,7 +754,71 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   );
 
   it.skipIf(!client)(
-    "a receipt line refuses a negative received quantity",
+    "Use As Is on a lot counted short restores only what the reject wrote off",
+    async () => {
+      await ensureIssueType();
+      const { lotId } = await receiveInto("short");
+      // A count found 4 of the lot's 10 missing from its unit.
+      await seed(f, (trx) =>
+        trx
+          .insertInto("itemLedger")
+          .values({
+            entryType: "Negative Adjmt.",
+            documentType: "Inventory Count",
+            documentId: `${f.prefix}-short-count`,
+            locationId: f.locationId,
+            itemId: f.partId,
+            storageUnitId: unitOf("short"),
+            quantity: -4,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const rejected = await withGuard(() =>
+        quality.rejectInspection(stackContext(), {
+          id: lotId,
+          createNcr: true,
+          reason: "Transit damage"
+        })
+      );
+      expect(rejected.error).toBeNull();
+      const issueId = rejected.data!.issueId!;
+      expect(await untrackedAt(unitOf("short"))).toBe(0);
+
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Use As Is" })
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      expect(
+        (
+          await f.db
+            .selectFrom("itemLedger")
+            .select(["storageUnitId", "quantity"])
+            .where("documentType", "=", "Non-Conformance")
+            .where("documentId", "=", issueId)
+            .where("companyId", "=", f.companyId)
+            .execute()
+        ).map((row) => ({ ...row, quantity: Number(row.quantity) }))
+      ).toEqual([{ storageUnitId: unitOf("short"), quantity: 6 }]);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an inspected receipt line refuses a negative received quantity; another line keeps it",
     async () => {
       const receiptId = await draftReceiptFromPurchaseOrder(f, "negative");
       const lines = await f.db
@@ -774,6 +851,22 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           .where("id", "in", ids)
           .execute()
       ).toEqual([{ receivedQuantity: 3 }]);
+
+      await f.db
+        .updateTable("receiptLine")
+        .set({ requiresInspection: false })
+        .where("id", "in", ids)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        (
+          await inventory.updateReceiptLines(ctx, {
+            ids,
+            field: "receivedQuantity",
+            value: "-5"
+          })
+        ).error
+      ).toBeNull();
     },
     60_000
   );

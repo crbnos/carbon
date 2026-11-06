@@ -450,13 +450,18 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   Use As Is books nothing (closing releases the hold). Use As Is or Rework on
   a rejected lot's NCR restores the write-off where it was taken: from the
   lot's `Inbound Inspection` write-off rows, per location, storage unit and
-  project stripe (any rest at the NCR's location, as before). A tracked Scrap posts
+  project stripe. On a receipt lot it restores no more than the write-off, so a
+  lot counted short gets back only what its Reject wrote off; a job operation
+  lot's NCR, which has no write-off, restores at the NCR's location, as
+  before. A tracked Scrap posts
   against each entity's current storage unit. A voided receipt's lot answers
   "The receipt of this inspection was voided" before "closed".
 - **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by
   `sync_receipt_inspection_status` → `refresh_receipt_inspection_status`
   (after-interceptors on `inspection` and `stockTransfer`). Cancelled lots are
-  ignored. Put Away is judged per receipt line: the picked quantity of its
+  ignored, and so is every lot of a voided receipt: the void calls the refresh
+  after it sets the receipt `Voided`, so the receipt reads **Not Required** and
+  leaves the queues. Put Away is judged per receipt line: the picked quantity of its
   completed linked transfer lines must cover its passed quantity.
 - **Put Away.** `createReceiptPutAway` runs the `stockTransfer` storage rules,
   then `insertReceiptPutAway` locks the receipt, reads `getReceiptPutAwayLines`
@@ -482,14 +487,16 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   instead of a stock transfer. Untracked stock taken below what an open lot
   holds is `countedShort` when the count found none of the part in another
   unit ("counted short in its inspection unit … Reject writes off what is
-  there"), otherwise it was found elsewhere ("Move it back").
+  there", with the unit's `onHand` and the lots' `held` quantity), otherwise it
+  was found elsewhere ("Move it back").
 - **Adjustments.** `adjustInventory` asks `inspectionHoldAdjustmentRefusal`
   before the storage rules, so a warning rule is not acknowledged for an
   adjustment the hold refuses; `post-inventory-adjustment` refuses any
   adjustment of a serial or batch unit On Hold under its open receipt lot (an
   increase would add units the decision then moves).
 - **Receipt lines.** `updateReceiptLines` refuses a negative received quantity
-  unless every line is a return line (negative order quantity).
+  on a line with `requiresInspection`, unless it is a return line (negative
+  order quantity). Other lines keep a negative quantity.
 - **Outside processing** receipt lines open no lot, and their tracked units
   stay Available.
 - **Put Away acknowledgement.** The receipt's Put Away button submits through
