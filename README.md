@@ -292,7 +292,7 @@ No external accounts are needed to run locally. Email, Google/Microsoft sign-in,
 
 ### Claude Code cloud sessions and other agents
 
-A Claude Code cloud session boots the stack by itself: the `SessionStart` hook in `.claude/settings.json` runs `scripts/cloud-dev.sh` (only when `CLAUDE_CODE_REMOTE=true`), which selects Node 24, starts `crbn up --no-portless` in the background and points `agent-browser` at the preinstalled Chrome. The ERP answers on `http://localhost:3000` a few minutes later; a request made before that waits instead of failing.
+`scripts/cloud-dev.sh` boots the stack in a Claude Code cloud container: run it from the repo root, or from a `SessionStart` hook in your own Claude Code settings. It selects Node 24, starts `crbn up --no-portless` in the background and points `agent-browser` at the preinstalled Chrome. The ERP answers on `http://localhost:3000` a few minutes later; a request made before that waits instead of failing.
 
 To take the image pull (about 50 s on a fresh container) out of that wait, put this in the environment's Setup script (cloud environment menu, Edit). It installs dependencies, starts Docker and pulls the images the default stack boots, then stops; the environment keeps the result for new sessions, and the guard makes it harmless on a branch without the script:
 
