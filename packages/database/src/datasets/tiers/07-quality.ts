@@ -459,7 +459,6 @@ async function receiptLot(
       itemId: item.id,
       itemReadableId: item.readableId,
       supplierId: line.supplierId ?? undefined,
-      // The non-nettable unit holding the received stock, if any.
       storageUnitId: line.storageUnitId ?? undefined
     }
   };

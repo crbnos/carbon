@@ -95,7 +95,6 @@ const ReceiptHeader = () => {
 
   const hasTrackingLabels = (routeData?.receiptLineTracking ?? []).length > 0;
 
-  // The inspection flag before posting, and the putaway state after.
   const inspectedItemIds = routeData?.inspectedItemIds ?? [];
   const requiresInspection =
     !isPosted &&

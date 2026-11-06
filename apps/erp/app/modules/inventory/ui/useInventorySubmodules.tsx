@@ -87,7 +87,6 @@ export default function useInventorySubmodules() {
           icon: <LuHandCoins />,
           table: "receipt"
         },
-        // The stores' inspection queue: receipts filtered on inspection status.
         {
           name: t`Pending inspection`,
           to: receiptsByInspectionStatus([

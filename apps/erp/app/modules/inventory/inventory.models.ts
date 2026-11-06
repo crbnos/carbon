@@ -115,7 +115,6 @@ export const receiptStatusType = [
   "Voided"
 ] as const;
 
-// The receipt's roll-up of its inspection lots (receipt."inspectionStatus").
 export const receiptInspectionStatusType = [
   "Not Required",
   "Pending Inspection",

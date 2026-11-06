@@ -138,7 +138,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
         })
         .execute();
     });
-    // 10 of the part, received against a purchase order.
     receiptId = await receiveFromPurchaseOrder(f, "inspected");
   });
 

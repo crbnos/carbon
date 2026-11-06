@@ -1574,7 +1574,6 @@ export const partialInspection = defineServiceFn({
         .map((row) => row.trackedEntityId)
         .filter((entityId): entityId is string => !!entityId);
       if (trackedEntityIds.length === 0) return { id, issueId: null };
-      // A batch unit carries a quantity; a serial unit is one.
       quantity = failedRows.reduce(
         (sum, row) => sum + Number(row.trackedEntity?.quantity ?? 1),
         0

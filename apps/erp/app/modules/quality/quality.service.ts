@@ -6243,7 +6243,6 @@ export const postNonConformanceInput = z.object({
       z.object({
         itemId: z.string(),
         locationId: z.string().optional().nullable(),
-        // The bin the stock sits in (an inspection lot's held unit), if any.
         storageUnitId: z.string().optional().nullable(),
         projectId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),

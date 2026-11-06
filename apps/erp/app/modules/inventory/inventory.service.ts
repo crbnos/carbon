@@ -7447,7 +7447,6 @@ export async function getReceiptPutAwayLines(
       ])
       .where("storageUnit.effectiveNettable", "=", true)
       .execute(),
-    // Each received unit's stock per bin; only Available units put away.
     trackedLineIds.length > 0
       ? sql<EntityStockRow>`
           SELECT te."attributes" ->> 'Receipt Line' AS "receiptLineId",
@@ -15232,7 +15231,6 @@ export async function postReceipt(
             severity: plan.severity ?? null,
             codeLetter: snapshot.codeLetter,
             inspectionDocumentId: assignedDocumentId,
-            // Where the held stock sits; the hold guard reads it.
             storageUnitId: receiptLine.storageUnitId ?? null,
             status: "Pending",
             companyId,
@@ -16060,7 +16058,6 @@ export async function postReceipt(
 
         await db.transaction().execute(async (trx) => {
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-          // Check the lines and plans the lots below are opened from.
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,
