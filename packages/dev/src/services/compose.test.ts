@@ -2,12 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
-import { REDIS_DB_MAX } from "../worktree.js";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "pathe";
+import { afterAll, describe, expect, it } from "vitest";
+import { REDIS_DB_MAX, writeStackMode } from "../worktree.js";
 import {
   buildDownArgs,
   buildUpArgs,
+  PG_MAJOR,
+  redisDatabasesNeeded,
   redisDatabasesOf,
+  SHARED_PROJECT,
+  sharedComposeEnv,
   teardownExitCode
 } from "./compose.js";
 
@@ -124,6 +137,47 @@ describe("buildUpArgs", () => {
   });
 });
 
+describe("compose files per mode", () => {
+  const home = process.env.HOME;
+  const tmp = mkdtempSync(join(tmpdir(), "crbn-compose-"));
+  const root = join(tmp, "repo");
+  mkdirSync(join(root, "packages/dev/docker"), { recursive: true });
+  for (const f of ["docker-compose.dev.yml", "docker-compose.isolated.yml"]) {
+    writeFileSync(join(root, "packages/dev/docker", f), "services: {}\n");
+  }
+  afterAll(() => {
+    process.env.HOME = home;
+    rmSync(tmp, { recursive: true, force: true });
+  });
+  const files = (args: string[]) =>
+    args.flatMap((a, i) => (a === "-f" ? [args[i + 1]] : []));
+  const dev = join(root, "packages/dev/docker/docker-compose.dev.yml");
+  const isolated = join(
+    root,
+    "packages/dev/docker/docker-compose.isolated.yml"
+  );
+
+  it("uses the dev file alone in shared mode, both in isolated mode", () => {
+    process.env.HOME = tmp;
+    writeStackMode("shared-slug", "shared");
+    writeStackMode("isolated-slug", "isolated");
+    expect(files(buildUpArgs(root, "shared-slug"))).toEqual([dev]);
+    expect(files(buildUpArgs(root, "isolated-slug"))).toEqual([dev, isolated]);
+  });
+
+  it("tears down with both files whatever the mode", () => {
+    process.env.HOME = tmp;
+    expect(files(buildDownArgs(root, "shared-slug", true))).toEqual([
+      dev,
+      isolated
+    ]);
+    expect(files(buildDownArgs(root, "isolated-slug", true))).toEqual([
+      dev,
+      isolated
+    ]);
+  });
+});
+
 describe("redisDatabasesOf", () => {
   it("reads --databases from the container command", () => {
     expect(
@@ -132,9 +186,9 @@ describe("redisDatabasesOf", () => {
         "--appendonly",
         "yes",
         "--databases",
-        "256"
+        "25"
       ])
-    ).toBe(256);
+    ).toBe(25);
   });
 
   it("is redis's default 16 when the command does not set it", () => {
@@ -142,5 +196,56 @@ describe("redisDatabasesOf", () => {
     const old = redisDatabasesOf(["redis-server", "--appendonly", "yes"]);
     expect(old).toBe(16);
     expect(old).toBeLessThan(REDIS_DB_MAX);
+  });
+});
+
+describe("SHARED_PROJECT", () => {
+  it("is outside the carbon-* projects that orphan cleanup force-removes", () => {
+    // reset and prune (in this and older crbn versions) remove every carbon-*
+    // project with no slot; the shared containers have none.
+    expect(SHARED_PROJECT.startsWith("carbon-")).toBe(false);
+  });
+});
+
+describe("sharedComposeEnv", () => {
+  it("keeps what docker needs and drops the worktree's .env.local", () => {
+    const env = sharedComposeEnv({
+      PATH: "/usr/bin",
+      HOME: "/home/x",
+      DOCKER_HOST: "unix:///var/run/docker.sock",
+      SSH_AUTH_SOCK: "/tmp/agent.sock",
+      PG_MAX_CONNECTIONS: "100",
+      MEM_POSTGRES: "1g",
+      COMPOSE_FILE: "other.yml",
+      SUPABASE_DB_URL: "postgresql://localhost/x"
+    });
+    expect(env).toEqual({
+      PATH: "/usr/bin",
+      HOME: "/home/x",
+      DOCKER_HOST: "unix:///var/run/docker.sock",
+      SSH_AUTH_SOCK: "/tmp/agent.sock"
+    });
+  });
+});
+
+describe("redisDatabasesNeeded", () => {
+  it("is the pool, or one past the highest index a slot holds", () => {
+    expect(redisDatabasesNeeded([])).toBe(REDIS_DB_MAX);
+    expect(redisDatabasesNeeded([{ redisDb: 3 }])).toBe(REDIS_DB_MAX);
+    expect(redisDatabasesNeeded([{ redisDb: 3 }, { redisDb: 40 }])).toBe(41);
+  });
+});
+
+describe("PG_MAJOR", () => {
+  it("matches the Postgres image of the shared and isolated stacks", () => {
+    for (const file of [
+      "docker-compose.shared.yml",
+      "docker-compose.isolated.yml"
+    ]) {
+      const text = readFileSync(join(__dirname, "../../docker", file), "utf8");
+      expect(text).toMatch(
+        new RegExp(`image: supabase/postgres:${PG_MAJOR}\\.`)
+      );
+    }
   });
 });
