@@ -10,7 +10,34 @@ vi.mock("@carbon/auth/client.server", () => ({
 }));
 
 import { NotificationTopic } from "@carbon/notifications";
-import { staleDigests } from "./notification-digest";
+import { isCronDigest, staleDigests } from "./notification-digest";
+
+describe("isCronDigest", () => {
+  it("claims a digest this job made", () => {
+    expect(
+      isCronDigest({ count: 5, event: "digest", topic: NotificationTopic.Job })
+    ).toBe(true);
+  });
+
+  it("leaves alone a digest a notify event made", () => {
+    // The weekly training reminder finds last week's digest by this marker to
+    // mark it read. Rewriting the payload erased it, so every week stacked a
+    // new digest beside the old one and the next pass merged them into one
+    // that listed each training twice.
+    expect(
+      isCronDigest({
+        count: 2,
+        event: "digest",
+        sourceEvent: "training-reminder",
+        topic: NotificationTopic.Training
+      })
+    ).toBe(false);
+  });
+
+  it("claims a digest whose payload is missing", () => {
+    expect(isCronDigest(null)).toBe(true);
+  });
+});
 
 const keeper = (id: string, count: number | null) => ({
   id,
