@@ -35,6 +35,10 @@ msgstr "{0}前"
 msgid "{0} customers"
 msgstr "{0}件の得意先"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 件不合格"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0}個の品目"
 msgid "{0} jobs"
 msgstr "{0} 製造指図"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}個の合格ユニットが完了します。"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 件不合格"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
@@ -162,6 +169,9 @@ msgstr "バージョン情報"
 
 msgid "About this field"
 msgstr "このフィールドについて"
+
+msgid "Above the upper limit"
+msgstr "上限を超えています"
 
 msgid "Accept"
 msgstr "承諾"
@@ -370,6 +380,9 @@ msgstr "バッチ合計"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
 
+msgid "Below the lower limit"
+msgstr "下限を下回っています"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "大きいまたは小さいテキスト。レイアウトは変わりません。"
 
@@ -396,6 +409,12 @@ msgstr "ご心配なく。パスワード忘却フローを使用して新しい
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "作成者: <0>{0}</0>, ライセンス: <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "特性別"
+
+msgid "By part"
+msgstr "部品別"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることにより、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意したものとみなされます。"
@@ -859,6 +878,9 @@ msgstr "面"
 msgid "Face {0}"
 msgstr "面{0}"
 
+msgid "Fail"
+msgstr "不合格"
+
 msgid "Failed"
 msgstr "失敗"
 
@@ -983,11 +1005,17 @@ msgstr "オンボーディングに移動"
 msgid "Gradient"
 msgstr "グラデーション"
 
+msgid "Grid layout"
+msgstr "グリッドレイアウト"
+
 msgid "Heading {level}"
 msgstr "見出し {level}"
 
 msgid "Hide description"
 msgstr "説明を非表示"
+
+msgid "Hide drawing"
+msgstr "図面を非表示"
 
 msgid "Hours"
 msgstr "時間"
@@ -1400,6 +1428,9 @@ msgstr "利用可能なシリアル番号が見つかりません"
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
 
+msgid "No cell could take the pasted values"
+msgstr "貼り付けた値を受け取れるセルがありません"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
 
@@ -1692,6 +1723,13 @@ msgstr "一部処置"
 msgid "Parts"
 msgstr "部品"
 
+msgid "Pass"
+msgstr "合格"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} の空のセルをすべて合格にする"
+
 msgid "Passed inspection"
 msgstr "検査合格"
 
@@ -1956,6 +1994,9 @@ msgstr "部品を除去"
 msgid "Remove two-factor authentication"
 msgstr "二要素認証を除去"
 
+msgid "Removed"
+msgstr "削除済み"
+
 msgid "Removed signature"
 msgstr "署名を除去"
 
@@ -1979,6 +2020,12 @@ msgstr "解決策"
 
 msgid "Result"
 msgstr "結果"
+
+msgid "Results recorded: {done}"
+msgstr "記録した結果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "記録した結果: {done}。スキップした値: {skipped}。"
 
 msgid "Retry Completion"
 msgstr "完了を再試行"
@@ -2011,6 +2058,9 @@ msgstr "受注"
 msgid "Same for every job"
 msgstr "すべての製造指図で同じ"
 
+msgid "Sample"
+msgstr "サンプル"
+
 msgid "Save"
 msgstr "保存"
 
@@ -2022,6 +2072,11 @@ msgstr "編集中のフォームを保存"
 
 msgid "Saved signature"
 msgstr "署名が保存されました"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "保存中 {0}/{1}"
 
 msgid "Scan"
 msgstr "スキャン"
@@ -2241,6 +2296,9 @@ msgstr "短いピック {itemName}"
 
 msgid "Show description"
 msgstr "説明を表示"
+
+msgid "Show drawing"
+msgstr "図面を表示"
 
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"
@@ -2504,6 +2562,9 @@ msgstr "このバッチには作業手順書がありません。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "これは合否判定の項目です。P または F を押してください。"
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "この製造指図には請求レートがありません。時間が請求される前にオフィスに設定するよう依頼してください。"
 
@@ -2521,6 +2582,9 @@ msgstr "この部品は在庫からスクラップされます。その要求事
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "これは製造指図の時間を転記します。製造指図は変更できなくなります。"
+
+msgid "This sample was removed"
+msgstr "このサンプルは削除されました"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "これはクロックを停止して、製造指図の時間を転記します。製造指図は変更できなくなります。"

@@ -35,6 +35,10 @@ msgstr "hace {0}"
 msgid "{0} customers"
 msgstr "{0} clientes"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} fallidos"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} artículos"
 msgid "{0} jobs"
 msgstr "{0} órdenes de trabajo"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} de {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} unidades superadas se completarán."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} fallidos"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} fallo(s) muestreado(s) registrado(s) y NO serán completado(s) — resuélvalo(s) desde el menú de acciones."
@@ -162,6 +169,9 @@ msgstr "Acerca de"
 
 msgid "About this field"
 msgstr "Acerca de este campo"
+
+msgid "Above the upper limit"
+msgstr "Por encima del límite superior"
 
 msgid "Accept"
 msgstr "Aceptar"
@@ -370,6 +380,9 @@ msgstr "total del lote de producción"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Retrasado por {daysBehindTarget} día(s)"
 
+msgid "Below the lower limit"
+msgstr "Por debajo del límite inferior"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Texto más grande o más pequeño. La disposición permanece."
 
@@ -396,6 +409,12 @@ msgstr "Pero no te preocupes. Puedes usar el flujo de contraseña olvidada para 
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Por <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Por característica"
+
+msgid "By part"
+msgstr "Por pieza"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Al iniciar sesión, acepta los <0>Términos de servicio</0> y la <1>Política de privacidad.</1>"
@@ -859,6 +878,9 @@ msgstr "Rostro"
 msgid "Face {0}"
 msgstr "Rostro {0}"
 
+msgid "Fail"
+msgstr "No conforme"
+
 msgid "Failed"
 msgstr "Fallido"
 
@@ -983,11 +1005,17 @@ msgstr "Ir a la incorporación"
 msgid "Gradient"
 msgstr "Degradado"
 
+msgid "Grid layout"
+msgstr "Diseño de la cuadrícula"
+
 msgid "Heading {level}"
 msgstr "Encabezado {level}"
 
 msgid "Hide description"
 msgstr "Ocultar descripción"
+
+msgid "Hide drawing"
+msgstr "Ocultar plano"
 
 msgid "Hours"
 msgstr "Horas"
@@ -1400,6 +1428,9 @@ msgstr "No se encontraron números de serie disponibles"
 msgid "No available tracked entities found"
 msgstr "No se encontraron entidades rastreadas disponibles"
 
+msgid "No cell could take the pasted values"
+msgstr "Ninguna celda pudo recibir los valores pegados"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No se establece ningún texto de certificación para usted. Pídale a un administrador que lo establezca en Configuración → Tiempo."
 
@@ -1692,6 +1723,13 @@ msgstr "Disposición Parcial"
 msgid "Parts"
 msgstr "Piezas"
 
+msgid "Pass"
+msgstr "Conforme"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Marcar como conformes todas las celdas vacías de {0}"
+
 msgid "Passed inspection"
 msgstr "Superó la inspección"
 
@@ -1956,6 +1994,9 @@ msgstr "Quitar pieza"
 msgid "Remove two-factor authentication"
 msgstr "Quitar la autenticación de dos factores"
 
+msgid "Removed"
+msgstr "Eliminado"
+
 msgid "Removed signature"
 msgstr "Firma eliminada"
 
@@ -1979,6 +2020,12 @@ msgstr "Resolución"
 
 msgid "Result"
 msgstr "Resultado"
+
+msgid "Results recorded: {done}"
+msgstr "Resultados registrados: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Resultados registrados: {done}. Valores omitidos: {skipped}."
 
 msgid "Retry Completion"
 msgstr "Reintentar Finalización"
@@ -2011,6 +2058,9 @@ msgstr "Pedido de venta"
 msgid "Same for every job"
 msgstr "Lo mismo para cada orden de trabajo"
 
+msgid "Sample"
+msgstr "Muestra"
+
 msgid "Save"
 msgstr "Guardar"
 
@@ -2022,6 +2072,11 @@ msgstr "Guardar el formulario que estás editando"
 
 msgid "Saved signature"
 msgstr "Firma guardada"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Guardando {0}/{1}"
 
 msgid "Scan"
 msgstr "Escanear"
@@ -2241,6 +2296,9 @@ msgstr "Picking corto {itemName}"
 
 msgid "Show description"
 msgstr "Mostrar descripción"
+
+msgid "Show drawing"
+msgstr "Mostrar plano"
 
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atajos de teclado"
@@ -2504,6 +2562,9 @@ msgstr "Este lote de producción no tiene instrucciones de trabajo."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Esta información será visible para todos los usuarios, así que ten cuidado con lo que compartes."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Esta es una comprobación de pasa / falla. Pulse P o F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Esta orden de trabajo no tiene una tarifa de facturación. Pida a la oficina que la establezca antes de que se facture el tiempo."
 
@@ -2521,6 +2582,9 @@ msgstr "Esta pieza será descartada del inventario. Su requisito permanece abier
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Esto contabiliza el tiempo de la orden de trabajo. La orden de trabajo ya no puede cambiar."
+
+msgid "This sample was removed"
+msgstr "Esta muestra se eliminó"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Esto detiene tu reloj y contabiliza el tiempo de la orden de trabajo. La orden de trabajo ya no puede cambiar."
