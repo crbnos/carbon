@@ -1046,7 +1046,8 @@ const InspectionMeasurementMatrix = ({
           sample?.trackedEntity?.readableId ??
           sample?.trackedEntityId?.slice(0, 8);
         if (!isSerial) return `${index + 1}`;
-        return entityLabel ?? t`Removed`;
+        if (!sample) return t`Removed`;
+        return entityLabel ?? `${index + 1}`;
       }),
     [columnCount, sampleAt, isSerial, t]
   );

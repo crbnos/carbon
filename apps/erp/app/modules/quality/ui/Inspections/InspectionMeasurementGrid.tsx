@@ -1150,7 +1150,9 @@ const InspectionMeasurementGrid = ({
           characteristicIndex: -1,
           sampleIndex,
           sampleLabel: isSerial
-            ? (sample?.trackedEntity?.readableId ?? t`Removed`)
+            ? sample
+              ? (sample.trackedEntity?.readableId ?? `${sampleIndex + 1}`)
+              : t`Removed`
             : `${sampleIndex + 1}`
         };
         characteristics.forEach((characteristic, characteristicIndex) => {
@@ -1572,7 +1574,9 @@ const InspectionMeasurementGrid = ({
       cols.push({
         accessorKey: sampleKey(i),
         header: isSerial
-          ? (sample?.trackedEntity?.readableId ?? t`Removed`)
+          ? sample
+            ? (sample.trackedEntity?.readableId ?? `${i + 1}`)
+            : t`Removed`
           : `${i + 1}`,
         meta: { headerClassName: "justify-center" },
         cell: ({ row }) => {
