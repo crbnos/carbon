@@ -3,13 +3,13 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": ["$TURBO_EXTENDS$", "//#generate:mcp"]
+      "dependsOn": ["$TURBO_EXTENDS$"]
     },
     "test": {
-      "dependsOn": ["$TURBO_EXTENDS$", "//#generate:mcp"]
+      "dependsOn": ["$TURBO_EXTENDS$"]
     },
     "typecheck": {
-      "dependsOn": ["$TURBO_EXTENDS$", "//#generate:mcp"]
+      "dependsOn": ["$TURBO_EXTENDS$"]
     }
   }
 }

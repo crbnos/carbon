@@ -68,7 +68,7 @@ pnpm --filter erp test -- people   # vitest filters by file path
 
 ## Operations (`people.server.ts`)
 
-Each is a `defineServiceFn` const in `people.server.ts`. The route calls it as `api.people.<name>(input)`; the API and MCP publish the ones tagged `@mcp` as `people_<name>`. Routes validate the request, call one, and answer with `respond(request, result).redirect(…)` (a flash) or the result.
+Each is a `defineServiceFn` const in `people.server.ts`. The route calls it as `api.people.<name>(input)`; the API and MCP publish the ones with `publish` as `people_<name>`. Routes validate the request, call one, and answer with `respond(request, result).redirect(…)` (a flash) or the result.
 
 - `createShift` (people create), `updateShift` (people create and update: the old route's gate and the `shift` UPDATE policy; refused `notFound` when the update reaches no row of the company), `deleteShift` (people delete; sets `active: false`). All three notify the scheduler with kind `shift` and the shift id, so the mark step stamps the jobs on the work centers that run the shift; an update that moves the shift to another location notifies kind `location` (company-wide), since the stations it left lose its hours too. Published.
 - `createHoliday`, `updateHoliday`, `deleteHoliday` — the holiday calendar (`x+/people+/holidays.*`). A holiday closes the plant for the scheduler, so each one notifies kind `location` after it saves.

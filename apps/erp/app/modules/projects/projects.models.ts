@@ -363,7 +363,9 @@ export const projectElementValidator = z
     budget: zfd.numeric(z.number().min(0).optional()),
     itemId: zfd.text(z.string().optional()),
     // Markdown from the API, the rich-text document as JSON from the New element modal.
-    description: optionalTiptapDoc,
+    description: optionalTiptapDoc.describe(
+      "The description as Markdown: headings, **bold**, _italic_, lists, links, quotes and code."
+    ),
     labelIds: zfd.repeatableOfType(z.string()).optional()
   })
   .refine((data) => data.type !== "Parameter" || data.isChargeable !== true, {
@@ -482,7 +484,11 @@ export const projectElementFieldUpdateValidator = z.object({
   field: z.enum(projectElementEditableFields, {
     error: "Field is required"
   }),
-  value: zfd.text(z.string().optional())
+  value: zfd
+    .text(z.string().optional())
+    .describe(
+      "The new value as text; empty clears it. `description` takes Markdown."
+    )
 });
 
 // --- Trace links -------------------------------------------------------------
@@ -702,14 +708,22 @@ export const billableItemActionValidator = z
   .object({
     ids: zfd
       .repeatableOfType(z.string().min(1))
-      .pipe(
-        z.array(z.string()).min(1, { message: "Choose at least one item" })
-      ),
-    action: z.enum(billableItemActions, { error: "Action is required" }),
-    reason: zfd.text(z.string().trim().optional()),
-    unitPrice: zfd.numeric(
-      z.number().min(0, { message: "The price cannot be negative" }).optional()
-    )
+      .pipe(z.array(z.string()).min(1, { message: "Choose at least one item" }))
+      .describe("The billable items to change."),
+    action: z
+      .enum(billableItemActions, { error: "Action is required" })
+      .describe("`hold`, `release`, `writeOff` or `price`."),
+    reason: zfd
+      .text(z.string().trim().optional())
+      .describe("Required to hold or write off."),
+    unitPrice: zfd
+      .numeric(
+        z
+          .number()
+          .min(0, { message: "The price cannot be negative" })
+          .optional()
+      )
+      .describe("The new unit price (`price`, one item only).")
   })
   .refine(
     (data) =>
@@ -829,7 +843,10 @@ export const timesheetCellValidator = z.object({
 /** A project member: who may charge time to a project that restricts it. */
 export const projectMemberValidator = z.object({
   projectId: z.string().min(1, { message: "Project is required" }),
-  userId: z.string().min(1, { message: "Employee is required" })
+  userId: z
+    .string()
+    .min(1, { message: "Employee is required" })
+    .describe("The employee's user id.")
 });
 
 /** Submits a week of the timesheet. DCAA mode also certifies it. */

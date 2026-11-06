@@ -110,7 +110,7 @@ describe("Carbon API v1 spec and response shaping", () => {
   });
 
   it("returns single results bare and lists in the { results, count } envelope", () => {
-    // Schema and runtime shaping both key off isListOperation; they must agree.
+    // A paged operation is known to be a list before it runs; its schema says so.
     const single = meta({
       responseSchema: { type: "object", properties: { id: { type: "string" } } }
     });
@@ -128,12 +128,16 @@ describe("Carbon API v1 spec and response shaping", () => {
     expect(wrapped.required).toEqual(["results"]);
     expect(outputSchema(meta({ responseSchema: undefined }))).toEqual({});
 
-    expect(shapeHttpBody(single, { data: { id: "x" } })).toEqual({ id: "x" });
-    expect(shapeHttpBody(list, { data: [1], count: 7 })).toEqual({
+    // The body is shaped from the dispatch result itself: a paged result is
+    // marked, any other array is a list.
+    expect(shapeHttpBody({ data: { id: "x" }, list: false })).toEqual({
+      id: "x"
+    });
+    expect(shapeHttpBody({ data: [1], count: 7, list: true })).toEqual({
       results: [1],
       count: 7
     });
-    expect(shapeHttpBody(list, { data: [] })).toEqual({
+    expect(shapeHttpBody({ data: [], list: true })).toEqual({
       results: [],
       count: null
     });

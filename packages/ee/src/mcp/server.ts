@@ -33,6 +33,14 @@ import {
   projectFields
 } from "./format-result";
 import { getServerInstructions } from "./instructions";
+
+/** Whether an input schema declares both `limit` and `offset`. */
+function declaresPaging(schema: unknown): boolean {
+  const properties = (schema as { properties?: Record<string, unknown> })
+    ?.properties;
+  return !!properties && "limit" in properties && "offset" in properties;
+}
+
 import {
   DESTRUCTIVE_ANNOTATIONS,
   type McpContext,
@@ -297,9 +305,47 @@ function buildMcpServer<Ctx extends McpContext>(
           args && typeof args === "object" ? Object.keys(args) : typeof args
       });
 
+      const meta = operationsByName.get(name);
+      const body =
+        args && typeof args === "object" && !Array.isArray(args)
+          ? (args as Record<string, unknown>)
+          : null;
+      const responsePaging = (source: Record<string, unknown>) => {
+        const { limit, offset } = source;
+        return {
+          limit:
+            Number.isInteger(limit) && (limit as number) > 0
+              ? capped
+                ? Math.min(limit as number, MCP_MAX_ROWS)
+                : (limit as number)
+              : MCP_DEFAULT_LIMIT,
+          offset:
+            Number.isInteger(offset) && (offset as number) >= 0
+              ? (offset as number)
+              : 0
+        };
+      };
+      // An operation the catalog cannot tell is a list before the call (that
+      // needs a response schema the registry does not carry) and whose input
+      // declares no paging: the caller's limit and offset are MCP paging
+      // controls, not the operation's, so they are taken out here — before
+      // the unknown-argument check refuses them — and, when the result is a
+      // list, applied to the response below.
+      let deferredPaging: { limit: number; offset: number } | null = null;
+      if (
+        meta &&
+        body &&
+        !isListOperation(meta) &&
+        !declaresPaging(meta.schema) &&
+        ("limit" in body || "offset" in body)
+      ) {
+        deferredPaging = responsePaging(body);
+        delete body.limit;
+        delete body.offset;
+      }
+
       // The HTTP API accepts and drops a field an operation does not take;
       // an agent reads that success as "saved", so MCP names the field.
-      const meta = operationsByName.get(name);
       const unknown = unknownArguments(meta?.schema, args);
       if (unknown.length > 0) {
         const fields = Object.keys(
@@ -341,12 +387,8 @@ function buildMcpServer<Ctx extends McpContext>(
         }
         if (target.offset === undefined) target.offset = 0;
       };
-      let mcpPaging: { limit: number; offset: number } | null = null;
+      let mcpPaging: { limit: number; offset: number } | null = deferredPaging;
       if (meta && isListOperation(meta)) {
-        const body =
-          args && typeof args === "object" && !Array.isArray(args)
-            ? (args as Record<string, unknown>)
-            : null;
         if (meta.paginates) {
           if (!body) {
             // The argless call is the worst offender — no limit at all.
@@ -355,21 +397,7 @@ function buildMcpServer<Ctx extends McpContext>(
             fillPagination(body);
           }
         } else {
-          const source = body ?? {};
-          const limit = source.limit;
-          const offset = source.offset;
-          mcpPaging = {
-            limit:
-              Number.isInteger(limit) && (limit as number) > 0
-                ? capped
-                  ? Math.min(limit as number, MCP_MAX_ROWS)
-                  : (limit as number)
-                : MCP_DEFAULT_LIMIT,
-            offset:
-              Number.isInteger(offset) && (offset as number) >= 0
-                ? (offset as number)
-                : 0
-          };
+          mcpPaging = responsePaging(body ?? {});
         }
       }
 
@@ -386,10 +414,13 @@ function buildMcpServer<Ctx extends McpContext>(
           hasData: result.data !== undefined,
           responseTime
         });
+        if (Array.isArray(result.data) && !meta?.paginates) {
+          mcpPaging ??= responsePaging({});
+        }
         let output: string;
         if (result.data === undefined) {
           output = "Operation completed successfully";
-        } else if (mcpPaging) {
+        } else if (mcpPaging && Array.isArray(result.data)) {
           const { rows, total } = pageMcpListResult(result.data, mcpPaging);
           output = formatMcpResult(projectFields(rows, fields), {
             count: total,

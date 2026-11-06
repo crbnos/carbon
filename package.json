@@ -83,7 +83,7 @@
     "lingui:compile": "lingui compile --namespace es",
     "lingui:extract": "lingui extract --clean",
     "lint": "turbo run lint",
-    "postinstall": "MCP=//#generate:mcp; [ -n \"$VERCEL\" ] && [ \"${INIT_CWD##*/}\" = mes ] && MCP=; [ -n \"$CI\" ] && [ -z \"$VERCEL\" ] && MCP=; turbo run @carbon/documents#build $MCP --output-logs=new-only",
+    "postinstall": "turbo run @carbon/documents#build --output-logs=new-only",
     "prepare": "case \"$(git config core.hooksPath)\" in *.husky) git config --unset core.hooksPath; git config --worktree --unset core.hooksPath;; esac; simple-git-hooks; if [ -f .ai/scripts/install-skills.sh ]; then bash .ai/scripts/install-skills.sh; fi",
     "test": "turbo run test",
     "translate": "pnpm run lingui:extract && pnpm exec linguito translate --llm && pnpm lingui:clean",

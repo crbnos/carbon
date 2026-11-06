@@ -418,35 +418,21 @@ export const releaseCheckedJobs = defineServiceFn({
 
 type JobRef = { jobId: string; readableId: string };
 
-/**
- * Release jobs to the shop floor.
- *
- * @remarks
- * Checks each Draft or Planned job and releases the ones that pass, then
- * schedules their locations. A job that fails a check stays as it is.
- *
- * A job is not released when:
- * - it has nothing to make
- * - manufacturing is blocked for its item
- * - an assembly has no operations
- * - an outside operation has no supplier, or several and none chosen
- * - it is Make to Asset and cannot complete to its asset
- * - a supplier has Draft purchase orders and no choice was sent
- *
- * @param jobIds - The jobs to release.
- * @param supplierProcessByOperationId - The supplier process to use for each outside operation, by operation id.
- * A release of many jobs can run as several calls: `carriedPurchaseOrders`
- * passes in the PO each supplier went on in an earlier call, so the jobs of a
- * later call go on it instead of asking for a choice.
- *
- * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
- * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
- *
- * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order or its serial numbers failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
- *
- * @mcp
- */
 export const releaseJobs = defineServiceFn({
+  publish: true,
+  title: "Release jobs to the shop floor",
+  description: `Checks each Draft or Planned job and releases the ones that pass, then
+schedules their locations. A job that fails a check stays as it is.
+
+A job is not released when:
+- it has nothing to make
+- manufacturing is blocked for its item
+- an assembly has no operations
+- an outside operation has no supplier, or several and none chosen
+- it is Make to Asset and cannot complete to its asset
+- a supplier has Draft purchase orders and no choice was sent
+
+Returns \`released\`, \`failed\` (each with its reason), \`skipped\` (not Draft or Planned), \`warnings\` (released, but a purchase order or its serial numbers failed), whether the locations were \`scheduled\`, and \`purchaseOrdersBySupplierId\` for the next call.`,
   output: z.object({
     released: z.array(
       z.object({
@@ -461,10 +447,25 @@ export const releaseJobs = defineServiceFn({
     purchaseOrdersBySupplierId: z.record(z.string(), z.string())
   }),
   input: z.object({
-    jobIds: z.array(z.string()).min(1),
-    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
-    carriedPurchaseOrders: z.record(z.string(), z.string()).optional(),
-    supplierProcessByOperationId: z.record(z.string(), z.string()).default({})
+    jobIds: z.array(z.string()).min(1).describe("The jobs to release."),
+    purchaseOrdersBySupplierId: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "For each supplier, `new` or the id of one of its Draft purchase orders to add to."
+      ),
+    carriedPurchaseOrders: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "The PO each supplier went on in an earlier call of the same release, as that call returned it"
+      ),
+    supplierProcessByOperationId: z
+      .record(z.string(), z.string())
+      .default({})
+      .describe(
+        "The supplier process to use for each outside operation, by operation id. A release of many jobs can run as several calls: `carriedPurchaseOrders` passes in the PO each supplier went on in an earlier call, so the jobs of a later call go on it instead of asking for a choice."
+      )
   }),
   permission: { update: "production" },
 
@@ -623,25 +624,20 @@ export const releaseJobs = defineServiceFn({
     };
   }
 });
-/**
- * Cancel a job.
- *
- * @remarks
- * The one cancel path: the job status route and the planning Cancel action
- * both call it, so neither can skip a step. In order:
- *   1. set the job Cancelled and clear its assignee, only while it is in
- *      `fromStatuses` (by default any status a job can be cancelled from),
- *   2. return the picked material the job did not consume,
- *   3. cancel its lines on every open picking list.
- * A refused cancel changes nothing. The job stays Cancelled when step 2 or 3
- * fails; that failure is returned as `warning`.
- *
- * Returns `notFound` for a job that is not this company's, and `conflict`
- * when the job is not in `fromStatuses`.
- *
- * @mcp
- */
 export const cancelJob = defineServiceFn({
+  publish: true,
+  title: "Cancel a job",
+  description: `The one cancel path: the job status route and the planning Cancel action
+both call it, so neither can skip a step. In order:
+  1. set the job Cancelled and clear its assignee, only while it is in
+     \`fromStatuses\` (by default any status a job can be cancelled from),
+  2. return the picked material the job did not consume,
+  3. cancel its lines on every open picking list.
+A refused cancel changes nothing. The job stays Cancelled when step 2 or 3
+fails; that failure is returned as \`warning\`.
+
+Returns \`notFound\` for a job that is not this company's, and \`conflict\`
+when the job is not in \`fromStatuses\`.`,
   output: z.union([
     z.object({
       jobId: z.string(),
@@ -734,16 +730,11 @@ export const cancelJob = defineServiceFn({
     return { jobId, warning: null };
   }
 });
-/**
- * Pause a job on the floor.
- *
- * @remarks
- * Only a Ready or In Progress job can be paused. The status is the only
- * change: its operations, picks and schedule stay as they are.
- *
- * @mcp
- */
 export const pauseJob = defineServiceFn({
+  publish: true,
+  title: "Pause a job on the floor",
+  description: `Only a Ready or In Progress job can be paused. The status is the only
+change: its operations, picks and schedule stay as they are.`,
   output: z.object({
     jobId: z.string(),
     status: z.enum([
@@ -771,20 +762,15 @@ export const pauseJob = defineServiceFn({
   }
 });
 
-/**
- * Resume a paused job.
- *
- * @remarks
- * Only a Paused job can be resumed, and it goes back to Ready. It is refused
- * when its item's manufacturing is blocked, and for a Make to Asset job when
- * the item cannot complete to the asset (`makeToAssetItemError`) or the job is
- * on a sales order line. Then, in order: the requirements are recalculated and
- * MRP runs (a failure of either is logged and does not stop the resume), and
- * the status flips.
- *
- * @mcp
- */
 export const resumeJob = defineServiceFn({
+  publish: true,
+  title: "Resume a paused job",
+  description: `Only a Paused job can be resumed, and it goes back to Ready. It is refused
+when its item's manufacturing is blocked, and for a Make to Asset job when
+the item cannot complete to the asset (\`makeToAssetItemError\`) or the job is
+on a sales order line. Then, in order: the requirements are recalculated and
+MRP runs (a failure of either is logged and does not stop the resume), and
+the status flips.`,
   output: z.object({
     jobId: z.string(),
     status: z.enum([
@@ -877,17 +863,12 @@ const REOPENED_STATUS = {
   Completed: "In Progress"
 } as const satisfies Partial<Record<JobStatus, JobStatus>>;
 
-/**
- * Reopen a cancelled or completed job.
- *
- * @remarks
- * A Cancelled job goes back to Draft, a Completed one to In Progress; any
- * other status is refused. Leaving a completed state clears the completed
- * date. Nothing that the completion received or consumed is reversed.
- *
- * @mcp
- */
 export const reopenJob = defineServiceFn({
+  publish: true,
+  title: "Reopen a cancelled or completed job",
+  description: `A Cancelled job goes back to Draft, a Completed one to In Progress; any
+other status is refused. Leaving a completed state clears the completed
+date. Nothing that the completion received or consumed is reversed.`,
   output: z.object({
     jobId: z.string(),
     status: z.enum([
@@ -932,18 +913,13 @@ export const reopenJob = defineServiceFn({
   }
 });
 
-/**
- * Close a completed job.
- *
- * @remarks
- * Only a Completed job can be closed. The status flips to Closed, then
- * whatever is left in WIP for the job is written off as production variance
- * (`close-job`; Provisional before the accounting cutover, Posted after). A
- * failed write-off leaves the job Closed and is returned as `warning`.
- *
- * @mcp
- */
 export const closeJob = defineServiceFn({
+  publish: true,
+  title: "Close a completed job",
+  description: `Only a Completed job can be closed. The status flips to Closed, then
+whatever is left in WIP for the job is written off as production variance
+(\`close-job\`; Provisional before the accounting cutover, Posted after). A
+failed write-off leaves the job Closed and is returned as \`warning\`.`,
   output: z.union([
     z.object({
       warning: z.string(),
@@ -1008,25 +984,20 @@ export const closeJob = defineServiceFn({
   }
 });
 
-/**
- * Complete a job to inventory.
- *
- * @remarks
- * `quantityComplete` is CUMULATIVE: the job's total good quantity so far, not
- * this completion's. `complete_job_to_inventory` receives the difference from
- * what was already received (into `storageUnitId` at `locationId`, else the
- * job's own), backflushes materials, rolls up cost and, for a Make to Asset
- * job, creates the fixed assets. It refuses a quantity of zero or below what
- * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). Units it takes that
- * have no serial number yet (a deferred serial number timing) are numbered by
- * the same function, so a refused completion spends no numbers. Then the
- * picked material the job did not consume is returned to the warehouse; a
- * failure there leaves the job completed and is returned as `warning`.
- *
- * @mcp
- */
 export const completeJob = defineServiceFn({
+  publish: true,
+  title: "Complete a job to inventory",
+  description: `\`quantityComplete\` is CUMULATIVE: the job's total good quantity so far, not
+this completion's. \`complete_job_to_inventory\` receives the difference from
+what was already received (into \`storageUnitId\` at \`locationId\`, else the
+job's own), backflushes materials, rolls up cost and, for a Make to Asset
+job, creates the fixed assets. It refuses a quantity of zero or below what
+was received, a fractional quantity on a serial job, and the Make to Asset
+rules; its message says what to fix (a \`rule\` error). Units it takes that
+have no serial number yet (a deferred serial number timing) are numbered by
+the same function, so a refused completion spends no numbers. Then the
+picked material the job did not consume is returned to the warehouse; a
+failure there leaves the job completed and is returned as \`warning\`.`,
   output: z.union([
     z.object({
       jobId: z.string(),
@@ -1199,26 +1170,19 @@ export const releaseBatchMemberJobs = defineServiceFn({
   }
 });
 
-/**
- * Release operation batches.
- *
- * @remarks
- * What the batch drawer's Release and the batches table's Release run. Per
- * Planned batch, in order: release its Draft / Planned member jobs through
- * the job page's checks (any problem refuses the batch untouched), put the
- * batch on the floor, then tell the scheduler. A batch that is not Planned is
- * listed in `skipped`. `purchaseOrdersBySupplierId` is the release dialog's
- * choice; without one, a batch whose suppliers have Draft purchase orders is
- * refused, except for the PO this release itself made: a supplier's
- * outside operations from every batch go on the one PO the first batch
- * created. `carriedPurchaseOrders` names the POs an earlier call of the same
- * release made; the result returns the map for the next call.
- *
- * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
- *
- * @mcp
- */
 export const releaseBatches = defineServiceFn({
+  publish: true,
+  title: "Release operation batches",
+  description: `What the batch drawer's Release and the batches table's Release run. Per
+Planned batch, in order: release its Draft / Planned member jobs through
+the job page's checks (any problem refuses the batch untouched), put the
+batch on the floor, then tell the scheduler. A batch that is not Planned is
+listed in \`skipped\`. \`purchaseOrdersBySupplierId\` is the release dialog's
+choice; without one, a batch whose suppliers have Draft purchase orders is
+refused, except for the PO this release itself made: a supplier's
+outside operations from every batch go on the one PO the first batch
+created. \`carriedPurchaseOrders\` names the POs an earlier call of the same
+release made; the result returns the map for the next call.`,
   output: z.object({
     released: z.array(
       z.object({
@@ -1233,7 +1197,12 @@ export const releaseBatches = defineServiceFn({
   input: z.object({
     batchIds: z.array(z.string()).min(1),
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
-    carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
+    carriedPurchaseOrders: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "The PO each supplier went on in an earlier call of the same release, as that call returned it"
+      )
   }),
   permission: { update: "production" },
 
@@ -1358,23 +1327,18 @@ export const releaseBatches = defineServiceFn({
   }
 });
 
-/**
- * Move operations on the schedule board: into a work center's column, in a
- * dispatch order.
- *
- * @remarks
- * Writes the priorities (and work center) a drop on the operations board gives
- * one card or several, as one all-or-nothing statement. Every operation must
- * exist and be open, its job unlocked and at the work center's location, and
- * the work center active and running its process; anything else is "Invalid
- * scheduling request". A job or operation that changed between the checks and
- * the write is a `conflict`. When any operation changed work center, the
- * scheduler is told, so the forecast follows; a reorder within one work center
- * only re-sequences the dispatch order.
- *
- * @mcp
- */
 export const reorderScheduleOperations = defineServiceFn({
+  publish: true,
+  title:
+    "Move operations on the schedule board: into a work center's column, in a dispatch order",
+  description: `Writes the priorities (and work center) a drop on the operations board gives
+one card or several, as one all-or-nothing statement. Every operation must
+exist and be open, its job unlocked and at the work center's location, and
+the work center active and running its process; anything else is "Invalid
+scheduling request". A job or operation that changed between the checks and
+the write is a \`conflict\`. When any operation changed work center, the
+scheduler is told, so the forecast follows; a reorder within one work center
+only re-sequences the dispatch order.`,
   output: z.object({
     workCenterChanged: z.boolean()
   }),
@@ -1506,22 +1470,18 @@ export const reorderScheduleOperations = defineServiceFn({
   }
 });
 
-/**
- * Move a job on the dates board: to a due date column, in a dispatch order.
- *
- * @remarks
- * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
- * which clears the due date. Writes the due date and priority of a job at
- * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
- * The deadline type follows the date: a dated "No Deadline" or "ASAP" job
- * becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
- * "No Deadline".
- * Then the scheduler is told; the debounced wave regenerates the location in
- * due date, then priority, order. A failed notice is logged and not returned.
- *
- * @mcp
- */
 export const moveScheduleJob = defineServiceFn({
+  publish: true,
+  title:
+    "Move a job on the dates board: to a due date column, in a dispatch order",
+  description: `\`columnId\` is a date (\`YYYY-MM-DD\`) or one of the board's undated columns,
+which clears the due date. Writes the due date and priority of a job at
+\`locationId\` that is not locked; a job elsewhere or locked is a \`conflict\`.
+The deadline type follows the date: a dated "No Deadline" or "ASAP" job
+becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
+"No Deadline".
+Then the scheduler is told; the debounced wave regenerates the location in
+due date, then priority, order. A failed notice is logged and not returned.`,
   output: z.object({
     id: z.string()
   }),
@@ -1583,18 +1543,14 @@ export const moveScheduleJob = defineServiceFn({
   }
 });
 
-/**
- * Record a production event (labor, machine or setup time) on a job operation.
- *
- * @remarks
- * Refused when the operation's job is locked (Completed, Closed or
- * Cancelled). An event sent with an `endTime` is posted to the GL right away
- * (`post-production-event`); when that is skipped or fails the event is still
- * saved and the reason is returned as `postingError`.
- *
- * @mcp
- */
 export const createProductionEvent = defineServiceFn({
+  publish: true,
+  title:
+    "Record a production event (labor, machine or setup time) on a job operation",
+  description: `Refused when the operation's job is locked (Completed, Closed or
+Cancelled). An event sent with an \`endTime\` is posted to the GL right away
+(\`post-production-event\`); when that is skipped or fails the event is still
+saved and the reason is returned as \`postingError\`.`,
   output: z.object({
     id: z.string(),
     postingError: z.string().nullable()
@@ -1644,19 +1600,14 @@ export const createProductionEvent = defineServiceFn({
   }
 });
 
-/**
- * Update a production event.
- *
- * @remarks
- * Writes the event's operation, type, employee, work center, times and notes.
- * An event that now has an `endTime` is posted to the GL again
- * (`post-production-event` posts the difference from what it posted before);
- * when that is skipped or fails the update still stands and the reason is
- * returned as `postingError`.
- *
- * @mcp
- */
 export const updateProductionEvent = defineServiceFn({
+  publish: true,
+  title: "Update a production event",
+  description: `Writes the event's operation, type, employee, work center, times and notes.
+An event that now has an \`endTime\` is posted to the GL again
+(\`post-production-event\` posts the difference from what it posted before);
+when that is skipped or fails the update still stands and the reason is
+returned as \`postingError\`.`,
   output: z.object({
     id: z.string(),
     postingError: z.string().nullable()
@@ -1690,20 +1641,15 @@ export const updateProductionEvent = defineServiceFn({
 });
 const jobIdsInput = z.array(z.string()).min(1);
 
-/**
- * Delete jobs.
- *
- * @remarks
- * Deletes the Draft and Planned jobs (and old Due Today and Overdue ones) and
- * skips the rest. The status is part of the DELETE, so a job released since
- * it was selected stays. Refused when none of the jobs could be deleted. The
- * jobs' methods, materials and operations go with them.
- *
- * @returns `ids`, the jobs deleted, and `skipped`, how many were not.
- *
- * @mcp destructive
- */
 export const deleteJobs = defineServiceFn({
+  publish: "destructive",
+  title: "Delete jobs",
+  description: `Deletes the Draft and Planned jobs (and old Due Today and Overdue ones) and
+skips the rest. The status is part of the DELETE, so a job released since
+it was selected stays. Refused when none of the jobs could be deleted. The
+jobs' methods, materials and operations go with them.
+
+Returns \`ids\`, the jobs deleted, and \`skipped\`, how many were not.`,
   output: z.object({
     ids: z.array(z.string()),
     skipped: z.number()
@@ -1735,20 +1681,15 @@ export const deleteJobs = defineServiceFn({
   }
 });
 
-/**
- * Change the item jobs make.
- *
- * @remarks
- * Refused when any job is locked, and for a Make to Asset job when the new
- * item cannot complete to the asset (`makeToAssetItemError`, judged at the
- * item's lot size when it has one). Then each job takes the item's unit of
- * measure and model, its lot size as the quantity (when it has one) and the
- * scrap that lot size allows; its root method is re-pulled from the item
- * (`itemToJob`) and its requirements are recalculated in the background.
- *
- * @mcp
- */
 export const setJobItem = defineServiceFn({
+  publish: true,
+  title: "Change the item jobs make",
+  description: `Refused when any job is locked, and for a Make to Asset job when the new
+item cannot complete to the asset (\`makeToAssetItemError\`, judged at the
+item's lot size when it has one). Then each job takes the item's unit of
+measure and model, its lot size as the quantity (when it has one) and the
+scrap that lot size allows; its root method is re-pulled from the item
+(\`itemToJob\`) and its requirements are recalculated in the background.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -1844,21 +1785,16 @@ export const setJobItem = defineServiceFn({
   }
 });
 
-/**
- * Change jobs' due date or deadline type.
- *
- * @remarks
- * Refused when any job is locked. Each job's priority is recalculated among
- * the jobs at its location on the new date (`nextJobPriority`), in one read
- * and one write for every job. A field left out keeps the job's current
- * value; a `dueDate` of null clears it. The two stay in step
- * (`nextJobDeadline`): ASAP and No Deadline clear the date, and a date given
- * to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
- * told; a failed notice is logged and not returned.
- *
- * @mcp
- */
 export const setJobDeadline = defineServiceFn({
+  publish: true,
+  title: "Change jobs' due date or deadline type",
+  description: `Refused when any job is locked. Each job's priority is recalculated among
+the jobs at its location on the new date (\`nextJobPriority\`), in one read
+and one write for every job. A field left out keeps the job's current
+value; a \`dueDate\` of null clears it. The two stay in step
+(\`nextJobDeadline\`): ASAP and No Deadline clear the date, and a date given
+to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
+told; a failed notice is logged and not returned.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -1947,16 +1883,11 @@ export const setJobDeadline = defineServiceFn({
   }
 });
 
-/**
- * Change jobs' quantity or scrap quantity.
- *
- * @remarks
- * Refused when any job is locked. After the write, each job's requirements
- * are recalculated; the first failure stops there and is returned.
- *
- * @mcp
- */
 export const setJobQuantity = defineServiceFn({
+  publish: true,
+  title: "Change jobs' quantity or scrap quantity",
+  description: `Refused when any job is locked. After the write, each job's requirements
+are recalculated; the first failure stops there and is returned.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -2005,19 +1936,14 @@ export const setJobQuantity = defineServiceFn({
   }
 });
 
-/**
- * Link jobs to a sales order line, or unlink them.
- *
- * @remarks
- * Refused when any job is locked. A line links the jobs to its order and its
- * order's customer; a line of a completed or cancelled order is refused, and
- * so is linking a job that consumes to a project or receives into project
- * stock.
- * `null` clears the order and line and leaves the customer.
- *
- * @mcp
- */
 export const setJobSalesOrderLine = defineServiceFn({
+  publish: true,
+  title: "Link jobs to a sales order line, or unlink them",
+  description: `Refused when any job is locked. A line links the jobs to its order and its
+order's customer; a line of a completed or cancelled order is refused, and
+so is linking a job that consumes to a project or receives into project
+stock.
+\`null\` clears the order and line and leaves the customer.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -2089,31 +2015,29 @@ export const setJobSalesOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Set or clear jobs' charge number: the project and, optionally, one of its
- * elements.
- *
- * @remarks
- * Refused when any job is locked, and once any job is released (only Draft
- * and Planned jobs): issued material and labor already carry the charge
- * number. The project must be this company's and the element one of its
- * elements. Consume to project is cleared when there is no project or it is
- * Statistical; receive to project stock is cleared when the project has no
- * project stock.
- *
- * @param projectId - The project, or null to clear the charge number.
- * @param projectElementId - One of the project's elements, or null.
- *
- * @mcp
- */
 export const setJobChargeNumber = defineServiceFn({
+  publish: true,
+  title:
+    "Set or clear jobs' charge number: the project and, optionally, one of its elements",
+  description: `Refused when any job is locked, and once any job is released (only Draft
+and Planned jobs): issued material and labor already carry the charge
+number. The project must be this company's and the element one of its
+elements. Consume to project is cleared when there is no project or it is
+Statistical; receive to project stock is cleared when the project has no
+project stock.`,
   output: z.object({
     ids: z.array(z.string())
   }),
   input: z.object({
     ids: jobIdsInput,
-    projectId: z.string().nullable(),
-    projectElementId: z.string().nullable()
+    projectId: z
+      .string()
+      .nullable()
+      .describe("The project, or null to clear the charge number."),
+    projectElementId: z
+      .string()
+      .nullable()
+      .describe("One of the project's elements, or null.")
   }),
   permission: { update: "production" },
 
@@ -2175,17 +2099,12 @@ export const setJobChargeNumber = defineServiceFn({
   }
 });
 
-/**
- * Change jobs' plain fields: customer, job number, location, storage unit,
- * start date or unit of measure.
- *
- * @remarks
- * Refused when any job is locked. A field left out is unchanged; null clears
- * it. Nothing is recalculated or rescheduled.
- *
- * @mcp
- */
 export const setJobFields = defineServiceFn({
+  publish: true,
+  title:
+    "Change jobs' plain fields: customer, job number, location, storage unit, start date or unit of measure",
+  description: `Refused when any job is locked. A field left out is unchanged; null clears
+it. Nothing is recalculated or rescheduled.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -2231,24 +2150,19 @@ const customFieldsInput = z
   .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
   .optional();
 
-/**
- * Save a job's details: item, quantities, dates, deadline, location, unit of
- * measure, customer, model and Make to Asset target.
- *
- * @remarks
- * Refused when the job is locked. The asset class or asset must be this
- * company's, and the item must be able to complete to it
- * (`makeToAssetItemError`). The charge number is checked as in `createJob`. A
- * job that consumes to its project is checked against the project's budget:
- * its new amount is quantity × the item's unit cost less the job's cost
- * already in the project ledger. Block refuses the save, Warn saves and
- * returns the overrun as `budgetNote`. A changed date or deadline type
- * re-ranks the job's priority. Then the job's requirements are recalculated;
- * a failure there is returned after the details are saved.
- *
- * @mcp
- */
 export const updateJobDetails = defineServiceFn({
+  publish: true,
+  title:
+    "Save a job's details: item, quantities, dates, deadline, location, unit of measure, customer, model and Make to Asset target",
+  description: `Refused when the job is locked. The asset class or asset must be this
+company's, and the item must be able to complete to it
+(\`makeToAssetItemError\`). The charge number is checked as in \`createJob\`. A
+job that consumes to its project is checked against the project's budget:
+its new amount is quantity × the item's unit cost less the job's cost
+already in the project ledger. Block refuses the save, Warn saves and
+returns the overrun as \`budgetNote\`. A changed date or deadline type
+re-ranks the job's priority. Then the job's requirements are recalculated;
+a failure there is returned after the details are saved.`,
   output: z.object({
     budgetNote: z.string().nullable().optional(),
     id: z.string()
@@ -2338,17 +2252,13 @@ export const updateJobDetails = defineServiceFn({
   }
 });
 
-/**
- * Configure a job: save its configuration and rebuild its method from it.
- *
- * @remarks
- * Saves `configuration` on the job, re-pulls the root method from the job's
- * item with that configuration (`itemToJob`), and recalculates the job's
- * requirements in the background.
- *
- * @mcp
- */
 export const configureJob = defineServiceFn({
+  publish: true,
+  title:
+    "Configure a job: save its configuration and rebuild its method from it",
+  description: `Saves \`configuration\` on the job, re-pulls the root method from the job's
+item with that configuration (\`itemToJob\`), and recalculates the job's
+requirements in the background.`,
   output: z.object({
     jobId: z.string()
   }),
@@ -2415,21 +2325,16 @@ export const configureJob = defineServiceFn({
     return { jobId };
   }
 });
-/**
- * Create several jobs for one item, splitting a total quantity.
- *
- * @remarks
- * `totalQuantity` is split into jobs of `quantityPerJob`, the last taking the
- * remainder. With both due dates, the jobs' due dates are spread between them
- * (`spreadDueDates`); with only the first, every job is due then. The item,
- * location, customer and model must be this company's. Every job takes the
- * item's default storage unit at the location and its method; their
- * requirements are recalculated in the background. It stops at the first job
- * that cannot be created; the jobs before it stay.
- *
- * @mcp
- */
 export const createJobs = defineServiceFn({
+  publish: true,
+  title: "Create several jobs for one item, splitting a total quantity",
+  description: `\`totalQuantity\` is split into jobs of \`quantityPerJob\`, the last taking the
+remainder. With both due dates, the jobs' due dates are spread between them
+(\`spreadDueDates\`); with only the first, every job is due then. The item,
+location, customer and model must be this company's. Every job takes the
+item's default storage unit at the location and its method; their
+requirements are recalculated in the background. It stops at the first job
+that cannot be created; the jobs before it stay.`,
   output: z.object({
     jobIds: z.array(z.string())
   }),
@@ -2505,25 +2410,20 @@ export const createJobs = defineServiceFn({
   }
 });
 
-/**
- * Create a job.
- *
- * @remarks
- * The item, location, customer, model, and fixed-asset class or asset must be
- * this company's. Refused for an item an unreleased change notice holds (the
- * job would take its draft method) and for a Make to Asset job whose item
- * cannot complete to an asset. The charge number (`projectId`,
- * `projectElementId`) must be this company's project and one of its elements;
- * a job that consumes to the project needs an Expense or Contract project, and
- * one that receives into project stock a project with project stock. A job
- * that consumes to its project is checked against the project's budget
- * (quantity × the item's unit cost): Block refuses it, Warn creates it and
- * returns the overrun as `budgetNote`. The job takes the item's method and its
- * requirements are calculated.
- *
- * @mcp
- */
 export const createJob = defineServiceFn({
+  publish: true,
+  title: "Create a job",
+  description: `The item, location, customer, model, and fixed-asset class or asset must be
+this company's. Refused for an item an unreleased change notice holds (the
+job would take its draft method) and for a Make to Asset job whose item
+cannot complete to an asset. The charge number (\`projectId\`,
+\`projectElementId\`) must be this company's project and one of its elements;
+a job that consumes to the project needs an Expense or Contract project, and
+one that receives into project stock a project with project stock. A job
+that consumes to its project is checked against the project's budget
+(quantity × the item's unit cost): Block refuses it, Warn creates it and
+returns the overrun as \`budgetNote\`. The job takes the item's method and its
+requirements are calculated.`,
   output: z.object({
     budgetNote: z.string().nullable().optional(),
     jobId: z.string()
@@ -2586,20 +2486,15 @@ const methodPartsInput = z.object({
   steps: z.boolean(),
   workInstructions: z.boolean()
 });
-/**
- * Overwrite a job's method with another: an item's make method, a quote
- * line's method, or another job's.
- *
- * @remarks
- * Copies the chosen parts (bill of material, bill of process and, with it,
- * parameters, tools, steps and work instructions) of `sourceId` onto job
- * `targetId`, using the item's make method version `versionId` when given and
- * `configuration` for a configurable item. Then the job's requirements and
- * operation dependencies are recalculated.
- *
- * @mcp
- */
 export const copyMethodToJob = defineServiceFn({
+  publish: true,
+  title:
+    "Overwrite a job's method with another: an item's make method, a quote line's method, or another job's",
+  description: `Copies the chosen parts (bill of material, bill of process and, with it,
+parameters, tools, steps and work instructions) of \`sourceId\` onto job
+\`targetId\`, using the item's make method version \`versionId\` when given and
+\`configuration\` for a configurable item. Then the job's requirements and
+operation dependencies are recalculated.`,
   output: z.object({
     jobId: z.string()
   }),
@@ -2646,17 +2541,13 @@ export const copyMethodToJob = defineServiceFn({
   }
 });
 
-/**
- * Overwrite a made sub-assembly's method on a job with an item's make method.
- *
- * @remarks
- * `targetId` is the job material's make method. Copies the chosen parts of
- * item `sourceId`'s make method (version `versionId` when given, with
- * `configuration` for a configurable item) into it.
- *
- * @mcp
- */
 export const copyMethodToMaterial = defineServiceFn({
+  publish: true,
+  title:
+    "Overwrite a made sub-assembly's method on a job with an item's make method",
+  description: `\`targetId\` is the job material's make method. Copies the chosen parts of
+item \`sourceId\`'s make method (version \`versionId\` when given, with
+\`configuration\` for a configurable item) into it.`,
   output: z.object({
     jobMakeMethodId: z.string()
   }),
@@ -2719,19 +2610,14 @@ const jobMaterialInput = z.object({
   customFields: customFieldsInput
 });
 
-/**
- * Add a material to a job's method.
- *
- * @remarks
- * The make method, and the operation when one is given, must be this job's.
- * A Make to Order material pulls its item's method into its own make method.
- * When the job is already released (not Draft or Planned), the method's
- * requirements and the job's operation dependencies are recalculated; a
- * Draft or Planned job's estimates fill in at release.
- *
- * @mcp
- */
 export const createJobMaterial = defineServiceFn({
+  publish: true,
+  title: "Add a material to a job's method",
+  description: `The make method, and the operation when one is given, must be this job's.
+A Make to Order material pulls its item's method into its own make method.
+When the job is already released (not Draft or Planned), the method's
+requirements and the job's operation dependencies are recalculated; a
+Draft or Planned job's estimates fill in at release.`,
   // The bill of material sends its new row's id, so the row keeps its key;
   // without one the table makes it.
   output: rows.jobMaterial.pick({ id: true }).meta({ table: "jobMaterial" }),
@@ -2798,20 +2684,15 @@ export const createJobMaterial = defineServiceFn({
   }
 });
 
-/**
- * Update a material of a job's method.
- *
- * @remarks
- * The material must be on this job and make method, and the operation, when
- * given, on this job; the material never moves to another job or method.
- * Changing it INTO Make to Order pulls its item's method (a material that was
- * already Make to Order keeps its edited method). Then the method's
- * requirements are recalculated, and for a Make to Order material on an
- * operation the job's operation dependencies too.
- *
- * @mcp
- */
 export const updateJobMaterial = defineServiceFn({
+  publish: true,
+  title: "Update a material of a job's method",
+  description: `The material must be on this job and make method, and the operation, when
+given, on this job; the material never moves to another job or method.
+Changing it INTO Make to Order pulls its item's method (a material that was
+already Make to Order keeps its edited method). Then the method's
+requirements are recalculated, and for a Make to Order material on an
+operation the job's operation dependencies too.`,
   output: rows.jobMaterial
     .pick({ id: true, methodType: true })
     .meta({ table: "jobMaterial" }),
@@ -2892,16 +2773,11 @@ export const updateJobMaterial = defineServiceFn({
     return { id, methodType: update.data.methodType };
   }
 });
-/**
- * Remove a material from a job's method.
- *
- * @remarks
- * Deletes the material (a Make to Order material's make method goes with
- * it), then recalculates the job's operation dependencies.
- *
- * @mcp destructive
- */
 export const deleteJobMaterial = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a material from a job's method",
+  description: `Deletes the material (a Make to Order material's make method goes with
+it), then recalculates the job's operation dependencies.`,
   output: rows.jobMaterial.pick({ id: true }).meta({ table: "jobMaterial" }),
   input: z.object({ jobId: z.string(), id: z.string() }),
   permission: { delete: "production" },
@@ -2983,20 +2859,15 @@ const newJobOperationInput = jobOperationFields
   .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
-/**
- * Add an operation to a job's method.
- *
- * @remarks
- * The make method must be this job's. Times, units and rates left out are
- * filled as the bill of process form fills them: from the work center, else
- * the process's default standard factor and the average of its active work
- * centers, with times 0; an outside operation's minimum cost and lead time
- * come from its supplier process. Then the method's requirements and the
- * job's operation dependencies are recalculated.
- *
- * @mcp
- */
 export const createJobOperation = defineServiceFn({
+  publish: true,
+  title: "Add an operation to a job's method",
+  description: `The make method must be this job's. Times, units and rates left out are
+filled as the bill of process form fills them: from the work center, else
+the process's default standard factor and the average of its active work
+centers, with times 0; an outside operation's minimum cost and lead time
+come from its supplier process. Then the method's requirements and the
+job's operation dependencies are recalculated.`,
   output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: newJobOperationInput,
   permission: { create: "production" },
@@ -3031,17 +2902,12 @@ export const createJobOperation = defineServiceFn({
   }
 });
 
-/**
- * Update an operation of a job's method.
- *
- * @remarks
- * Writes the operation's process, type, times, rates, work center, outside
- * processing costs and links; a field left out keeps its value. It never
- * moves to another job or method. Nothing is recalculated.
- *
- * @mcp
- */
 export const updateJobOperation = defineServiceFn({
+  publish: true,
+  title: "Update an operation of a job's method",
+  description: `Writes the operation's process, type, times, rates, work center, outside
+processing costs and links; a field left out keeps its value. It never
+moves to another job or method. Nothing is recalculated.`,
   output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: jobOperationInput,
   permission: { create: "production" },
@@ -3065,23 +2931,21 @@ export const updateJobOperation = defineServiceFn({
   }
 });
 
-/**
- * Set the work instruction of a job operation.
- *
- * @remarks
- * Replaces the operation's work instruction; the rest of the operation is
- * unchanged. Refused while the job is locked (completed or cancelled), as
- * the job's editor is.
- *
- * @param id - The job operation's id.
- * @param text - The work instruction as Markdown: headings, **bold**,
- *   _italic_, lists, links, quotes and code. Empty text clears it.
- *
- * @mcp
- */
 export const setJobOperationWorkInstruction = defineServiceFn({
+  publish: true,
+  title: "Set the work instruction of a job operation",
+  description: `Replaces the operation's work instruction; the rest of the operation is
+unchanged. Refused while the job is locked (completed or cancelled), as
+the job's editor is.`,
   output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
-  input: z.object({ id: z.string().min(1), text: z.string() }),
+  input: z.object({
+    id: z.string().min(1).describe("The job operation's id."),
+    text: z
+      .string()
+      .describe(
+        "The work instruction as Markdown: headings, **bold**, _italic_, lists, links, quotes and code. Empty text clears it."
+      )
+  }),
   permission: { update: "production" },
 
   async run(ctx, { id, text }) {
@@ -3105,16 +2969,11 @@ export const setJobOperationWorkInstruction = defineServiceFn({
   }
 });
 
-/**
- * Remove an operation from a job's method.
- *
- * @remarks
- * Refused when production events are recorded against the operation. Then
- * the job's operation dependencies are recalculated.
- *
- * @mcp destructive
- */
 export const deleteJobOperation = defineServiceFn({
+  publish: "destructive",
+  title: "Remove an operation from a job's method",
+  description: `Refused when production events are recorded against the operation. Then
+the job's operation dependencies are recalculated.`,
   output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: z.object({ jobId: z.string(), id: z.string() }),
   permission: { delete: "production" },
@@ -3214,17 +3073,12 @@ export const deleteJobOperations = defineServiceFn({
   }
 });
 
-/**
- * Reorder a job's operations.
- *
- * @remarks
- * `orders` maps an operation id to its new order. All or nothing: an id that
- * is not one of the job's operations refuses the whole reorder. Then the
- * job's operation dependencies are recalculated.
- *
- * @mcp
- */
 export const reorderJobOperations = defineServiceFn({
+  publish: true,
+  title: "Reorder a job's operations",
+  description: `\`orders\` maps an operation id to its new order. All or nothing: an id that
+is not one of the job's operations refuses the whole reorder. Then the
+job's operation dependencies are recalculated.`,
   output: rows.jobOperation
     .pick({ jobId: true })
     .meta({ table: "jobOperation" }),
@@ -3262,18 +3116,13 @@ export const reorderJobOperations = defineServiceFn({
   }
 });
 
-/**
- * Set a job operation's status.
- *
- * @remarks
- * Marking it Done may complete the job (a database trigger), so the picked
- * material the operation (or the job) did not consume is then returned to the
- * warehouse; a failure there leaves the status changed and is returned as
- * `warning`.
- *
- * @mcp
- */
 export const setJobOperationStatus = defineServiceFn({
+  publish: true,
+  title: "Set a job operation's status",
+  description: `Marking it Done may complete the job (a database trigger), so the picked
+material the operation (or the job) did not consume is then returned to the
+warehouse; a failure there leaves the status changed and is returned as
+\`warning\`.`,
   output: z.union([
     z.object({
       id: z.string(),
@@ -3331,23 +3180,18 @@ export const setJobOperationStatus = defineServiceFn({
   }
 });
 
-/**
- * Report a produced quantity on a job operation, and finish the operation
- * when it reaches its target.
- *
- * @remarks
- * For an operation whose item is not serial or batch tracked; a tracked one is
- * completed per tracked entity at the MES station. In order: the good
- * quantity is recorded (refused on a locked job), the operation's materials
- * are backflushed (`issue`), and when good plus reworked quantity reaches the
- * operation's target it is set Done, which completes the job when it was the
- * last operation. Then its ended production events are posted to the GL and
- * the picked material it did not consume is returned; a failure there is
- * returned as `warning`. A failed backflush leaves the quantity recorded.
- *
- * @mcp
- */
 export const completeOperation = defineServiceFn({
+  publish: true,
+  title:
+    "Report a produced quantity on a job operation, and finish the operation when it reaches its target",
+  description: `For an operation whose item is not serial or batch tracked; a tracked one is
+completed per tracked entity at the MES station. In order: the good
+quantity is recorded (refused on a locked job), the operation's materials
+are backflushed (\`issue\`), and when good plus reworked quantity reaches the
+operation's target it is set Done, which completes the job when it was the
+last operation. Then its ended production events are posted to the GL and
+the picked material it did not consume is returned; a failure there is
+returned as \`warning\`. A failed backflush leaves the quantity recorded.`,
   output: z.object({
     operationId: z.string(),
     done: z.boolean(),
@@ -3513,18 +3357,13 @@ export const completeOperation = defineServiceFn({
   }
 });
 
-/**
- * Pin a job operation's need-by date, or clear the pin.
- *
- * @remarks
- * A date marks the operation manually scheduled: the scheduler takes it as
- * the operation's need-by and never overwrites it; null hands it back to the
- * scheduler. Then the schedule is regenerated, so the pin propagates to the
- * operations upstream.
- *
- * @mcp
- */
 export const setJobOperationDueDate = defineServiceFn({
+  publish: true,
+  title: "Pin a job operation's need-by date, or clear the pin",
+  description: `A date marks the operation manually scheduled: the scheduler takes it as
+the operation's need-by and never overwrites it; null hands it back to the
+scheduler. Then the schedule is regenerated, so the pin propagates to the
+operations upstream.`,
   output: rows.jobOperation.pick({ id: true }).meta({ table: "jobOperation" }),
   input: z.object({ id: z.string(), dueDate: z.string().nullable() }),
   permission: { update: "production" },
@@ -3555,16 +3394,11 @@ export const setJobOperationDueDate = defineServiceFn({
   }
 });
 
-/**
- * Copy a procedure's steps and parameters onto a job operation.
- *
- * @remarks
- * Syncs procedure `procedureId` into operation `operationId`
- * (`get-method` `procedureToOperation`).
- *
- * @mcp
- */
 export const syncJobOperationProcedure = defineServiceFn({
+  publish: true,
+  title: "Copy a procedure's steps and parameters onto a job operation",
+  description: `Syncs procedure \`procedureId\` into operation \`operationId\`
+(\`get-method\` \`procedureToOperation\`).`,
   output: z.object({
     operationId: z.string()
   }),
@@ -3610,17 +3444,13 @@ export const syncJobOperationProcedure = defineServiceFn({
   }
 });
 
-/**
- * Move a batch card on the operations board: its place in the dispatch order.
- *
- * @remarks
- * A batch card sits at its earliest member's priority, so every open member
- * takes `priority`. Only the dispatch order changes; nothing is rescheduled.
- * A Completing or Completed batch is read-only ("Batch unavailable").
- *
- * @mcp
- */
 export const reprioritizeBatch = defineServiceFn({
+  publish: true,
+  title:
+    "Move a batch card on the operations board: its place in the dispatch order",
+  description: `A batch card sits at its earliest member's priority, so every open member
+takes \`priority\`. Only the dispatch order changes; nothing is rescheduled.
+A Completing or Completed batch is read-only ("Batch unavailable").`,
   output: z.object({
     batchId: z.string()
   }),
@@ -3663,19 +3493,14 @@ export const reprioritizeBatch = defineServiceFn({
   }
 });
 
-/**
- * Merge a completed batch's output lots of one item into one lot.
- *
- * @remarks
- * The ERP catch-up for a batch whose completion prompt was skipped. Only a
- * Completed batch qualifies. Its members' Available output lots of `itemId`
- * are read here, never taken from the caller; fewer than two is refused. The
- * merged lot's genealogy keeps every source job (`issue`
- * `mergeTrackedEntities`).
- *
- * @mcp
- */
 export const mergeBatchOutputs = defineServiceFn({
+  publish: true,
+  title: "Merge a completed batch's output lots of one item into one lot",
+  description: `The ERP catch-up for a batch whose completion prompt was skipped. Only a
+Completed batch qualifies. Its members' Available output lots of \`itemId\`
+are read here, never taken from the caller; fewer than two is refused. The
+merged lot's genealogy keeps every source job (\`issue\`
+\`mergeTrackedEntities\`).`,
   output: z.object({
     readableId: z.record(z.string(), z.unknown()).nullable()
   }),
@@ -3734,22 +3559,17 @@ export const mergeBatchOutputs = defineServiceFn({
   }
 });
 
-/**
- * Create an operation batch, optionally released at once.
- *
- * @remarks
- * Groups open operations of one batchable process at `locationId` into a
- * Planned batch (`batch-operations` `create`: eligibility, the process's
- * material rules and the planned output lots are checked there). With
- * `release`, the operations' Draft / Planned jobs are then released through
- * the job page's checks (`purchaseOrdersBySupplierId` is the release dialog's
- * choice), the batch is put on the floor and the scheduler is told. When the
- * jobs' checks refuse, nothing is released and the batch is taken apart
- * again; any other failure leaves it Planned, to release or dissolve.
- *
- * @mcp
- */
 export const createBatch = defineServiceFn({
+  publish: true,
+  title: "Create an operation batch, optionally released at once",
+  description: `Groups open operations of one batchable process at \`locationId\` into a
+Planned batch (\`batch-operations\` \`create\`: eligibility, the process's
+material rules and the planned output lots are checked there). With
+\`release\`, the operations' Draft / Planned jobs are then released through
+the job page's checks (\`purchaseOrdersBySupplierId\` is the release dialog's
+choice), the batch is put on the floor and the scheduler is told. When the
+jobs' checks refuse, nothing is released and the batch is taken apart
+again; any other failure leaves it Planned, to release or dissolve.`,
   output: z.object({
     batchId: z.string().nullable(),
     readableId: z.string().nullable()
@@ -3854,16 +3674,11 @@ export const createBatch = defineServiceFn({
   }
 });
 
-/**
- * Take a released batch back off the floor.
- *
- * @remarks
- * Allowed only before its first production event (`batch-operations`
- * `unrelease`); the batch goes back to Planned. Then the scheduler is told.
- *
- * @mcp
- */
 export const unreleaseBatch = defineServiceFn({
+  publish: true,
+  title: "Take a released batch back off the floor",
+  description: `Allowed only before its first production event (\`batch-operations\`
+\`unrelease\`); the batch goes back to Planned. Then the scheduler is told.`,
   output: z.object({
     batchId: z.string()
   }),
@@ -3903,19 +3718,14 @@ export const unreleaseBatch = defineServiceFn({
   }
 });
 
-/**
- * Change a batch's members or work center, or dissolve it.
- *
- * @remarks
- * `add` and `remove` take `jobOperationIds`; `update` sets the work center
- * (none clears it); `dissolve` deletes a batch that has not started. The
- * `batch-operations` server function checks each (eligibility, the material
- * rules, the batch's status) and its refusal is returned as a `rule` error.
- * Release and unrelease are their own operations.
- *
- * @mcp
- */
 export const updateBatch = defineServiceFn({
+  publish: true,
+  title: "Change a batch's members or work center, or dissolve it",
+  description: `\`add\` and \`remove\` take \`jobOperationIds\`; \`update\` sets the work center
+(none clears it); \`dissolve\` deletes a batch that has not started. The
+\`batch-operations\` server function checks each (eligibility, the material
+rules, the batch's status) and its refusal is returned as a \`rule\` error.
+Release and unrelease are their own operations.`,
   output: z.object({
     batchId: z.string()
   }),
@@ -4001,18 +3811,13 @@ export const dissolveBatches = defineServiceFn({
 });
 
 // --- People board ---------------------------------------------------------
-/**
- * Put a person at a work center for a date.
- *
- * @remarks
- * Without `hours` the person works the whole shift there and their other
- * stations that day are replaced; with `hours` this station gets that part of
- * the day. The employee, location, work center and shift must be this
- * company's. Then the work center is rescheduled.
- *
- * @mcp
- */
 export const assignPerson = defineServiceFn({
+  publish: true,
+  title: "Put a person at a work center for a date",
+  description: `Without \`hours\` the person works the whole shift there and their other
+stations that day are replaced; with \`hours\` this station gets that part of
+the day. The employee, location, work center and shift must be this
+company's. Then the work center is rescheduled.`,
   output: z.object({
     employeeId: z.string()
   }),
@@ -4047,15 +3852,10 @@ export const assignPerson = defineServiceFn({
   }
 });
 
-/**
- * Remove a person's assignment.
- *
- * @remarks
- * Then the work center it was at is rescheduled.
- *
- * @mcp destructive
- */
 export const unassignPerson = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a person's assignment",
+  description: "Then the work center it was at is rescheduled.",
   output: z.object({
     id: z.string()
   }),
@@ -4082,16 +3882,11 @@ export const unassignPerson = defineServiceFn({
   }
 });
 
-/**
- * Mark a person absent on a date.
- *
- * @remarks
- * The scheduler stops counting them that day; every work center they are
- * assigned at is rescheduled.
- *
- * @mcp
- */
 export const markPersonAbsent = defineServiceFn({
+  publish: true,
+  title: "Mark a person absent on a date",
+  description: `The scheduler stops counting them that day; every work center they are
+assigned at is rescheduled.`,
   output: z.object({
     id: z.string()
   }),
@@ -4124,16 +3919,11 @@ export const markPersonAbsent = defineServiceFn({
   }
 });
 
-/**
- * Clear a person's absence.
- *
- * @remarks
- * Every work center they are assigned at on `date` (the company's today when
- * not given) is rescheduled.
- *
- * @mcp destructive
- */
 export const clearPersonAbsence = defineServiceFn({
+  publish: "destructive",
+  title: "Clear a person's absence",
+  description: `Every work center they are assigned at on \`date\` (the company's today when
+not given) is rescheduled.`,
   output: z.object({
     id: z.string()
   }),
@@ -4164,16 +3954,11 @@ export const clearPersonAbsence = defineServiceFn({
   }
 });
 
-/**
- * Move a person's assignment to another work center.
- *
- * @remarks
- * A move onto a station the person already works that day merges the two.
- * Both the station they left and the one they joined are rescheduled.
- *
- * @mcp
- */
 export const movePerson = defineServiceFn({
+  publish: true,
+  title: "Move a person's assignment to another work center",
+  description: `A move onto a station the person already works that day merges the two.
+Both the station they left and the one they joined are rescheduled.`,
   output: z.object({
     id: z.string()
   }),
@@ -4205,19 +3990,14 @@ export const movePerson = defineServiceFn({
   }
 });
 
-/**
- * Move a person's assignment to another person or another day, at the same
- * work center.
- *
- * @remarks
- * A move onto a day where that person already works the same work center
- * merges the two (hours add). Refused when the person is absent that day, or
- * already works another work center in that shift. The work center is
- * rescheduled.
- *
- * @mcp
- */
 export const movePersonCell = defineServiceFn({
+  publish: true,
+  title:
+    "Move a person's assignment to another person or another day, at the same work center",
+  description: `A move onto a day where that person already works the same work center
+merges the two (hours add). Refused when the person is absent that day, or
+already works another work center in that shift. The work center is
+rescheduled.`,
   output: z.object({
     id: z.string()
   }),
@@ -4257,18 +4037,13 @@ export const movePersonCell = defineServiceFn({
   }
 });
 
-/**
- * Set a person's whole day: the stations they work, their hours at each, the
- * day's note and overtime.
- *
- * @remarks
- * The given rows become the day's assignments in one transaction (updated,
- * inserted or deleted to match). Every station they are at afterwards is
- * rescheduled.
- *
- * @mcp
- */
 export const setPersonDay = defineServiceFn({
+  publish: true,
+  title:
+    "Set a person's whole day: the stations they work, their hours at each, the day's note and overtime",
+  description: `The given rows become the day's assignments in one transaction (updated,
+inserted or deleted to match). Every station they are at afterwards is
+rescheduled.`,
   output: z.object({
     employeeId: z.string()
   }),
@@ -4306,16 +4081,11 @@ export const setPersonDay = defineServiceFn({
   }
 });
 
-/**
- * Set the hours of one assignment; none means the whole shift.
- *
- * @remarks
- * Lowering them frees the rest of the day for another station. Then the work
- * center is rescheduled.
- *
- * @mcp
- */
 export const setPersonHours = defineServiceFn({
+  publish: true,
+  title: "Set the hours of one assignment; none means the whole shift",
+  description: `Lowering them frees the rest of the day for another station. Then the work
+center is rescheduled.`,
   output: z.object({
     id: z.string()
   }),
@@ -4338,19 +4108,14 @@ export const setPersonHours = defineServiceFn({
   }
 });
 
-/**
- * Authorize overtime for every assignment at a location on a date, or a range
- * of dates.
- *
- * @remarks
- * Optionally only a department's work centers or one shift. One UPDATE, so it
- * applies to all or none. Every work center touched is rescheduled. Returns
- * how many assignments were updated (`updated`), and on how many person-days
- * (`personDays`: a person split across stations is one).
- *
- * @mcp
- */
 export const setPeopleOvertime = defineServiceFn({
+  publish: true,
+  title:
+    "Authorize overtime for every assignment at a location on a date, or a range of dates",
+  description: `Optionally only a department's work centers or one shift. One UPDATE, so it
+applies to all or none. Every work center touched is rescheduled. Returns
+how many assignments were updated (\`updated\`), and on how many person-days
+(\`personDays\`: a person split across stations is one).`,
   output: z.object({
     updated: z.number(),
     personDays: z.number()
@@ -4393,16 +4158,11 @@ export const setPeopleOvertime = defineServiceFn({
   }
 });
 
-/**
- * Copy one day's people board at a location to another date.
- *
- * @remarks
- * People already assigned on the target date, or absent there, are skipped;
- * overtime is not copied. Then the location is rescheduled.
- *
- * @mcp
- */
 export const copyPeopleDay = defineServiceFn({
+  publish: true,
+  title: "Copy one day's people board at a location to another date",
+  description: `People already assigned on the target date, or absent there, are skipped;
+overtime is not copied. Then the location is rescheduled.`,
   output: z.object({
     copied: z.number(),
     skipped: z.number()
@@ -4437,20 +4197,15 @@ export const copyPeopleDay = defineServiceFn({
   }
 });
 
-/**
- * Put a person at a work center for a whole week.
- *
- * @remarks
- * One assignment per working day of their shift (Monday to Friday when it has
- * none) from `weekStart`, leaving a day they are off or already booked in that
- * shift as it is. Then the work center is rescheduled.
- *
- * @returns `assigned`, the days written, and `skipped`, the working days left
- * as they were.
- *
- * @mcp
- */
 export const assignPersonWeek = defineServiceFn({
+  publish: true,
+  title: "Put a person at a work center for a whole week",
+  description: `One assignment per working day of their shift (Monday to Friday when it has
+none) from \`weekStart\`, leaving a day they are off or already booked in that
+shift as it is. Then the work center is rescheduled.
+
+Returns \`assigned\`, the days written, and \`skipped\`, the working days left
+as they were.`,
   output: z.object({
     employeeId: z.string(),
     assigned: z.number(),
@@ -4490,15 +4245,10 @@ export const assignPersonWeek = defineServiceFn({
   }
 });
 
-/**
- * Remove a person from a work center for the week from `weekStart`.
- *
- * @remarks
- * Then the work center is rescheduled.
- *
- * @mcp destructive
- */
 export const unassignPersonWeek = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a person from a work center for the week from `weekStart`",
+  description: "Then the work center is rescheduled.",
   output: z.object({
     employeeId: z.string()
   }),
@@ -4531,15 +4281,10 @@ export const unassignPersonWeek = defineServiceFn({
   }
 });
 
-/**
- * Move a person's week from one work center to another.
- *
- * @remarks
- * Then the work center they joined is rescheduled.
- *
- * @mcp
- */
 export const movePersonWeek = defineServiceFn({
+  publish: true,
+  title: "Move a person's week from one work center to another",
+  description: "Then the work center they joined is rescheduled.",
   output: z.object({
     employeeId: z.string()
   }),
@@ -4572,16 +4317,11 @@ export const movePersonWeek = defineServiceFn({
   }
 });
 
-/**
- * Copy a whole week's people board at a location to another week.
- *
- * @remarks
- * The same skip rules as a day copy, day by day. Then the location is
- * rescheduled.
- *
- * @mcp
- */
 export const copyPeopleWeekBoard = defineServiceFn({
+  publish: true,
+  title: "Copy a whole week's people board at a location to another week",
+  description: `The same skip rules as a day copy, day by day. Then the location is
+rescheduled.`,
   output: z.object({
     copied: z.number(),
     skipped: z.number()
@@ -4616,16 +4356,11 @@ export const copyPeopleWeekBoard = defineServiceFn({
   }
 });
 
-/**
- * Mark a person absent for a range of dates (at most 62 days).
- *
- * @remarks
- * One absence per date; a date already marked is skipped. Then the scheduler
- * is told. Returns how many days were marked.
- *
- * @mcp
- */
 export const markPersonAbsentRange = defineServiceFn({
+  publish: true,
+  title: "Mark a person absent for a range of dates (at most 62 days)",
+  description: `One absence per date; a date already marked is skipped. Then the scheduler
+is told. Returns how many days were marked.`,
   output: z.object({
     created: z.number(),
     skipped: z.number()
@@ -4658,27 +4393,22 @@ export const markPersonAbsentRange = defineServiceFn({
 
 // --- Production planning --------------------------------------------------
 
-/**
- * Create planned jobs for planning's suggested Make orders.
- *
- * @remarks
- * `items` are the parts being ordered, each with its orders (quantity, start
- * and due date, the planning week). Only new jobs: an order naming an
- * existing job is refused, since an existing job is changed through
- * `updatePlannedJob` or Apply. The location and every item must
- * be this company's. Per item: one whose manufacturing is blocked, needs
- * configuration or is held by an unreleased change notice is skipped and
- * named in `errors`; each order becomes a
- * Planned job (ASAP or Soft Deadline) at the location with the item's method.
- * Then the Make suggestions those orders answer are settled, the jobs' supply
- * is recorded per week (`supplyForecast`) and their requirements are
- * recalculated. An item with no orders is counted as already planned (it has
- * an open job) or as needing nothing. When not one item could be ordered the
- * call fails with the first errors.
- *
- * @mcp
- */
 export const orderPlannedJobs = defineServiceFn({
+  publish: true,
+  title: "Create planned jobs for planning's suggested Make orders",
+  description: `\`items\` are the parts being ordered, each with its orders (quantity, start
+and due date, the planning week). Only new jobs: an order naming an
+existing job is refused, since an existing job is changed through
+\`updatePlannedJob\` or Apply. The location and every item must
+be this company's. Per item: one whose manufacturing is blocked, needs
+configuration or is held by an unreleased change notice is skipped and
+named in \`errors\`; each order becomes a
+Planned job (ASAP or Soft Deadline) at the location with the item's method.
+Then the Make suggestions those orders answer are settled, the jobs' supply
+is recorded per week (\`supplyForecast\`) and their requirements are
+recalculated. An item with no orders is counted as already planned (it has
+an open job) or as needing nothing. When not one item could be ordered the
+call fails with the first errors.`,
   output: z.object({
     jobs: z.array(
       z.object({
@@ -5051,20 +4781,15 @@ export const orderPlannedJobs = defineServiceFn({
 const notEditableFromPlanning =
   "This job is no longer Draft or Planned. Change it on the job.";
 
-/**
- * Change a planned job's quantity or due date from the planning drawer.
- *
- * @remarks
- * Only a Draft or Planned job at `locationId` (`isJobEditableFromPlanning`,
- * checked again in the UPDATE itself), so a job released to the floor is
- * never edited from planning; a quantity change restates the scrap. Then a
- * new quantity recalculates the job's requirements, a new date tells the
- * scheduler. A failure there leaves the edit saved and is returned as
- * `warning`.
- *
- * @mcp
- */
 export const updatePlannedJob = defineServiceFn({
+  publish: true,
+  title: "Change a planned job's quantity or due date from the planning drawer",
+  description: `Only a Draft or Planned job at \`locationId\` (\`isJobEditableFromPlanning\`,
+checked again in the UPDATE itself), so a job released to the floor is
+never edited from planning; a quantity change restates the scrap. Then a
+new quantity recalculates the job's requirements, a new date tells the
+scheduler. A failure there leaves the edit saved and is returned as
+\`warning\`.`,
   output: z.object({
     id: z.string(),
     warning: z.string().nullable()
@@ -5145,18 +4870,13 @@ export const updatePlannedJob = defineServiceFn({
     };
   }
 });
-/**
- * Plan a Draft job from the planning drawer.
- *
- * @remarks
- * Only this location's make-to-stock Draft jobs: a job a sales order owns is
- * that order's, not planning's. Then `planDraftJob`: the requirements
- * recalculation, Draft → Planned, and MRP, so the job counts as supply and
- * the Make suggestion shrinks by it. `warning` is set when MRP did not run.
- *
- * @mcp
- */
 export const planJobFromPlanning = defineServiceFn({
+  publish: true,
+  title: "Plan a Draft job from the planning drawer",
+  description: `Only this location's make-to-stock Draft jobs: a job a sales order owns is
+that order's, not planning's. Then \`planDraftJob\`: the requirements
+recalculation, Draft → Planned, and MRP, so the job counts as supply and
+the Make suggestion shrinks by it. \`warning\` is set when MRP did not run.`,
   output: z.object({
     id: z.string(),
     warning: z.string().nullable()
@@ -5199,28 +4919,23 @@ const CHANGE_ACTION_TYPES = [
   "Cancel"
 ] as const;
 
-/**
- * Apply MRP's change suggestions to their jobs.
- *
- * @remarks
- * Every id is read from the persisted worklist (only an Open change action on
- * a job; the type, job and suggested value come from the row, never the
- * caller); `type` keeps only actions of that type. A job that is not Draft or
- * Planned is never edited from planning: its action is listed in
- * `requiresManualAction`. Expedite / Defer move the jobs' due dates in one
- * transaction, then the scheduler is told once. Increase / Decrease set the
- * job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
- * it; Cancel runs `cancelJob` from Draft / Planned. Each of those
- * is claimed right before its change, three jobs at a time, and a failed one
- * gives its claim back. With no `type`, an Open Transfer or Borrow creates a
- * Draft project stock transfer (`applyTransferPlanningActions`, which needs
- * `update: projects`). Returns what was `applied`, the `transfers` created,
- * what needs review, `warnings` (applied, with a follow-up step that failed)
- * and `errors`.
- *
- * @mcp
- */
 export const applyPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Apply MRP's change suggestions to their jobs",
+  description: `Every id is read from the persisted worklist (only an Open change action on
+a job; the type, job and suggested value come from the row, never the
+caller); \`type\` keeps only actions of that type. A job that is not Draft or
+Planned is never edited from planning: its action is listed in
+\`requiresManualAction\`. Expedite / Defer move the jobs' due dates in one
+transaction, then the scheduler is told once. Increase / Decrease set the
+job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
+it; Cancel runs \`cancelJob\` from Draft / Planned. Each of those
+is claimed right before its change, three jobs at a time, and a failed one
+gives its claim back. With no \`type\`, an Open Transfer or Borrow creates a
+Draft project stock transfer (\`applyTransferPlanningActions\`, which needs
+\`update: projects\`). Returns what was \`applied\`, the \`transfers\` created,
+what needs review, \`warnings\` (applied, with a follow-up step that failed)
+and \`errors\`.`,
   output: z.object({
     applied: z.array(z.string()),
     transfers: z.array(
@@ -5555,16 +5270,11 @@ export const applyPlanningActions = defineServiceFn({
     };
   }
 });
-/**
- * Dismiss production planning suggestions.
- *
- * @remarks
- * Only Open Make-side actions change; a dismissed one stays dismissed until
- * its need changes materially. Returns how many changed.
- *
- * @mcp
- */
 export const dismissProductionPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Dismiss production planning suggestions",
+  description: `Only Open Make-side actions change; a dismissed one stays dismissed until
+its need changes materially. Returns how many changed.`,
   output: z.object({
     changed: z.number(),
     requested: z.number()
@@ -5588,15 +5298,11 @@ export const dismissProductionPlanningActions = defineServiceFn({
   }
 });
 
-/**
- * Reopen dismissed production planning suggestions.
- *
- * @remarks
- * Only Dismissed Make-side actions change. Returns how many changed.
- *
- * @mcp
- */
 export const reopenProductionPlanningActions = defineServiceFn({
+  publish: true,
+  title: "Reopen dismissed production planning suggestions",
+  description:
+    "Only Dismissed Make-side actions change. Returns how many changed.",
   output: z.object({
     changed: z.number(),
     requested: z.number()
@@ -5623,17 +5329,13 @@ export const reopenProductionPlanningActions = defineServiceFn({
   }
 });
 
-/**
- * Assign production planning suggestions to an employee, or unassign them.
- *
- * @remarks
- * The assignee must be an active employee of this company; none unassigns.
- * The assignment overrides the owner MRP would resolve on its next run. Only
- * Open and Dismissed Make-side actions change. Returns how many changed.
- *
- * @mcp
- */
 export const assignProductionPlanningActions = defineServiceFn({
+  publish: true,
+  title:
+    "Assign production planning suggestions to an employee, or unassign them",
+  description: `The assignee must be an active employee of this company; none unassigns.
+The assignment overrides the owner MRP would resolve on its next run. Only
+Open and Dismissed Make-side actions change. Returns how many changed.`,
   output: z.object({
     changed: z.number(),
     requested: z.number()
@@ -5673,17 +5375,13 @@ export const assignProductionPlanningActions = defineServiceFn({
 
 // --- Production quantities and procedures ---------------------------------
 
-/**
- * Record a production quantity (good, scrap or rework) on a job operation.
- *
- * @remarks
- * Refused when the operation's job is locked (Completed, Closed or
- * Cancelled). A scrap reason is kept only on Scrap. A back-office entry: the
- * work event says it came from the ERP, not the shop floor.
- *
- * @mcp
- */
 export const createProductionQuantity = defineServiceFn({
+  publish: true,
+  title:
+    "Record a production quantity (good, scrap or rework) on a job operation",
+  description: `Refused when the operation's job is locked (Completed, Closed or
+Cancelled). A scrap reason is kept only on Scrap. A back-office entry: the
+work event says it came from the ERP, not the shop floor.`,
   output: rows.productionQuantity
     .pick({ id: true })
     .meta({ table: "productionQuantity" }),
@@ -5787,15 +5485,11 @@ export const updateProductionQuantity = defineServiceFn({
   }
 });
 
-/**
- * Change procedures' name, content, status, process or tags.
- *
- * @remarks
- * A field left out is unchanged. One UPDATE for every procedure given.
- *
- * @mcp
- */
 export const setProcedureFields = defineServiceFn({
+  publish: true,
+  title: "Change procedures' name, content, status, process or tags",
+  description:
+    "A field left out is unchanged. One UPDATE for every procedure given.",
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -5834,20 +5528,15 @@ export const setProcedureFields = defineServiceFn({
 });
 
 // --- Assembly instructions -------------------------------------------------
-/**
- * Create an assembly instruction for an item from its 3D model.
- *
- * @remarks
- * The model is `modelUploadId` when it is this company's and usable, else
- * the item's own. Refused when there is no usable model, and when the model
- * still needs converting while the geometry service is down. Then the
- * instruction is created, and the model converted when it is not yet, or
- * motion planning started when it is converted and has no plan. `autogen`
- * says the page should generate the steps once the plan is ready.
- *
- * @mcp
- */
 export const createAssemblyInstruction = defineServiceFn({
+  publish: true,
+  title: "Create an assembly instruction for an item from its 3D model",
+  description: `The model is \`modelUploadId\` when it is this company's and usable, else
+the item's own. Refused when there is no usable model, and when the model
+still needs converting while the geometry service is down. Then the
+instruction is created, and the model converted when it is not yet, or
+motion planning started when it is converted and has no plan. \`autogen\`
+says the page should generate the steps once the plan is ready.`,
   output: z.object({
     id: z.string(),
     autogen: z.boolean()
@@ -5944,20 +5633,15 @@ export const createAssemblyInstruction = defineServiceFn({
   }
 });
 
-/**
- * Re-run motion planning for an instruction's model.
- *
- * @remarks
- * The model must be converted, the geometry service up and no plan running.
- * A stale Queued or Processing plan row (its event lost, or its worker gone)
- * is failed first so it can't shadow the new run. With steps, the plan keeps
- * their order and re-plans the motions; `fresh` (Regenerate Steps) plans from
- * scratch, re-detecting grouping, and is refused while a step is manually
- * authored or Done. `mode` says which run started.
- *
- * @mcp
- */
 export const replanAssembly = defineServiceFn({
+  publish: true,
+  title: "Re-run motion planning for an instruction's model",
+  description: `The model must be converted, the geometry service up and no plan running.
+A stale Queued or Processing plan row (its event lost, or its worker gone)
+is failed first so it can't shadow the new run. With steps, the plan keeps
+their order and re-plans the motions; \`fresh\` (Regenerate Steps) plans from
+scratch, re-detecting grouping, and is refused while a step is manually
+authored or Done. \`mode\` says which run started.`,
   output: z.object({
     mode: z.enum(["fresh", "plan", "remotion"])
   }),
@@ -6045,20 +5729,15 @@ export const replanAssembly = defineServiceFn({
   }
 });
 
-/**
- * Generate an instruction's steps from its model's motion plan.
- *
- * @remarks
- * `generate` needs an instruction with no steps; `regenerate` replaces them
- * and is refused while a step is manually authored or Done. With no plan yet
- * this starts one (planning is lazy) unless the model is still converting or a
- * plan is already running, and answers `planning: true`: the page polls and
- * submits again when the plan lands. Steps are seeded with the BOM items the
- * components map to; `unmappedComponentCount` is the components with none.
- *
- * @mcp destructive
- */
 export const generateAssemblySteps = defineServiceFn({
+  publish: "destructive",
+  title: "Generate an instruction's steps from its model's motion plan",
+  description: `\`generate\` needs an instruction with no steps; \`regenerate\` replaces them
+and is refused while a step is manually authored or Done. With no plan yet
+this starts one (planning is lazy) unless the model is still converting or a
+plan is already running, and answers \`planning: true\`: the page polls and
+submits again when the plan lands. Steps are seeded with the BOM items the
+components map to; \`unmappedComponentCount\` is the components with none.`,
   output: z.object({
     planning: z.boolean(),
     created: z.number(),
@@ -6126,18 +5805,13 @@ export const generateAssemblySteps = defineServiceFn({
   }
 });
 
-/**
- * Cancel an instruction's running model conversion or motion plan.
- *
- * @remarks
- * Fails the Processing job rows of that `kind`, then tells the geometry
- * service to stop them (best effort: without it, a finishing job would bring
- * the run back). Cancelling a conversion fails the model's conversion too.
- * `cancelled` is how many jobs were running.
- *
- * @mcp destructive
- */
 export const cancelAssemblyJob = defineServiceFn({
+  publish: "destructive",
+  title: "Cancel an instruction's running model conversion or motion plan",
+  description: `Fails the Processing job rows of that \`kind\`, then tells the geometry
+service to stop them (best effort: without it, a finishing job would bring
+the run back). Cancelling a conversion fails the model's conversion too.
+\`cancelled\` is how many jobs were running.`,
   output: z.object({
     cancelled: z.number()
   }),
@@ -6196,13 +5870,10 @@ export const cancelAssemblyJob = defineServiceFn({
   }
 });
 
-/**
- * Throw away an instruction's converted model and plans, and convert it
- * again from the source file.
- *
- * @mcp destructive
- */
 export const reconvertAssemblyModel = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Throw away an instruction's converted model and plans, and convert it again from the source file",
   output: z.object({
     modelUploadId: z.string()
   }),
@@ -6232,18 +5903,13 @@ export const reconvertAssemblyModel = defineServiceFn({
   }
 });
 
-/**
- * Convert an instruction's model that has not been converted, or whose last
- * conversion failed.
- *
- * @remarks
- * Refused while a conversion is running, for a converted model, for a format
- * the geometry service cannot convert (only STEP), and while the service is
- * down.
- *
- * @mcp
- */
 export const convertAssemblyModel = defineServiceFn({
+  publish: true,
+  title:
+    "Convert an instruction's model that has not been converted, or whose last conversion failed",
+  description: `Refused while a conversion is running, for a converted model, for a format
+the geometry service cannot convert (only STEP), and while the service is
+down.`,
   output: z.object({
     modelUploadId: z.string()
   }),
@@ -6279,19 +5945,15 @@ export const convertAssemblyModel = defineServiceFn({
   }
 });
 
-/**
- * Match an instruction's model components to its item's bill of materials.
- *
- * @remarks
- * Strong name matches first, then unique quantity matches as low-confidence
- * fallbacks; existing mappings are kept. Then every step's materials are
- * backfilled from the full mapping set (additive: manual edits survive).
- * Returns how many components were mapped, the BOM lines left unmatched and
- * the step materials added.
- *
- * @mcp
- */
 export const matchAssemblyBom = defineServiceFn({
+  publish: true,
+  title:
+    "Match an instruction's model components to its item's bill of materials",
+  description: `Strong name matches first, then unique quantity matches as low-confidence
+fallbacks; existing mappings are kept. Then every step's materials are
+backfilled from the full mapping set (additive: manual edits survive).
+Returns how many components were mapped, the BOM lines left unmatched and
+the step materials added.`,
   output: z.object({
     materialsCreated: z.number(),
     mapped: z.number(),
@@ -6320,16 +5982,11 @@ export const matchAssemblyBom = defineServiceFn({
   }
 });
 
-/**
- * Map one model component (by geometry) to a BOM item.
- *
- * @remarks
- * A human-confirmed (high-confidence) mapping. The item flows onto every step
- * of the instruction that installs the component (additive).
- *
- * @mcp
- */
 export const mapAssemblyComponent = defineServiceFn({
+  publish: true,
+  title: "Map one model component (by geometry) to a BOM item",
+  description: `A human-confirmed (high-confidence) mapping. The item flows onto every step
+of the instruction that installs the component (additive).`,
   output: z.object({
     geometryHash: z.string()
   }),
@@ -6371,18 +6028,13 @@ export const mapAssemblyComponent = defineServiceFn({
   }
 });
 
-/**
- * Move, copy or remove model components between an instruction's steps.
- *
- * @remarks
- * `move` takes them off every other step, `duplicate` adds them to the target
- * and keeps them where they are, `remove` takes them off every step. One
- * transaction. The target step then gets the BOM items those components map
- * to.
- *
- * @mcp destructive
- */
 export const reassignAssemblyComponents = defineServiceFn({
+  publish: "destructive",
+  title: "Move, copy or remove model components between an instruction's steps",
+  description: `\`move\` takes them off every other step, \`duplicate\` adds them to the target
+and keeps them where they are, \`remove\` takes them off every step. One
+transaction. The target step then gets the BOM items those components map
+to.`,
   output: z.object({
     id: z.string()
   }),
@@ -6420,16 +6072,11 @@ export const reassignAssemblyComponents = defineServiceFn({
   }
 });
 
-/**
- * Set the model components a step installs.
- *
- * @remarks
- * The components added pull their mapped BOM items onto the step's materials
- * (additive: a removal or a manual material edit is left alone).
- *
- * @mcp
- */
 export const setAssemblyStepComponents = defineServiceFn({
+  publish: true,
+  title: "Set the model components a step installs",
+  description: `The components added pull their mapped BOM items onto the step's materials
+(additive: a removal or a manual material edit is left alone).`,
   output: z.object({
     stepId: z.string()
   }),
@@ -6478,19 +6125,14 @@ export const setAssemblyStepComponents = defineServiceFn({
   }
 });
 
-/**
- * Copy an instruction's steps into a job operation.
- *
- * @remarks
- * Refused when the operation's job is locked. Steps are matched by the
- * instruction step they came from: updated, inserted, or deleted when gone;
- * the operation's own steps are untouched. Each synced step's BOM parts,
- * slides and tools are linked from the operation's materials and tools.
- * Returns the counts, and the parts that had no matching material.
- *
- * @mcp destructive
- */
 export const syncAssemblyToOperation = defineServiceFn({
+  publish: "destructive",
+  title: "Copy an instruction's steps into a job operation",
+  description: `Refused when the operation's job is locked. Steps are matched by the
+instruction step they came from: updated, inserted, or deleted when gone;
+the operation's own steps are untouched. Each synced step's BOM parts,
+slides and tools are linked from the operation's materials and tools.
+Returns the counts, and the parts that had no matching material.`,
   output: z.object({
     created: z.number(),
     updated: z.number(),
@@ -6535,20 +6177,15 @@ export const syncAssemblyToOperation = defineServiceFn({
     }
   }
 });
-/**
- * Convert sales order lines to jobs
- *
- * @remarks
- * One job per lot (the item's batch size) for every Make to Order line of
- * order `orderId` that has no job yet, each with the line's configuration and
- * its quote line's method (the item's when the line was reconfigured). A line
- * whose item an unreleased change notice holds gets no job. A line that is
- * refused or fails is named in the refusal; the jobs made for the other lines
- * stay.
- *
- * @mcp
- */
 export const convertSalesOrderLinesToJobs = defineServiceFn({
+  publish: true,
+  title: "Convert sales order lines to jobs",
+  description: `One job per lot (the item's batch size) for every Make to Order line of
+order \`orderId\` that has no job yet, each with the line's configuration and
+its quote line's method (the item's when the line was reconfigured). A line
+whose item an unreleased change notice holds gets no job. A line that is
+refused or fails is named in the refusal; the jobs made for the other lines
+stay.`,
   output: z.object({
     orderId: z.string()
   }),
@@ -6690,12 +6327,9 @@ export const createSalesOrderLineJob = defineServiceFn({
   }
 });
 
-/**
- * Delete job operation step
- *
- * @mcp destructive
- */
 export const deleteJobOperationStep = defineServiceFn({
+  publish: "destructive",
+  title: "Delete job operation step",
   output: z.array(
     rows.jobOperationStep.pick({ id: true }).meta({ table: "jobOperationStep" })
   ),
@@ -6712,12 +6346,9 @@ export const deleteJobOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Delete job operation step slide
- *
- * @mcp destructive
- */
 export const deleteJobOperationStepSlide = defineServiceFn({
+  publish: "destructive",
+  title: "Delete job operation step slide",
   output: z.array(
     rows.jobOperationStepSlide
       .pick({ id: true })
@@ -6736,12 +6367,9 @@ export const deleteJobOperationStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Delete job operation parameter
- *
- * @mcp destructive
- */
 export const deleteJobOperationParameter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete job operation parameter",
   output: z.array(
     rows.jobOperationParameter
       .pick({ id: true })
@@ -6760,12 +6388,9 @@ export const deleteJobOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Delete job operation tool
- *
- * @mcp destructive
- */
 export const deleteJobOperationTool = defineServiceFn({
+  publish: "destructive",
+  title: "Delete job operation tool",
   output: z.array(
     rows.jobOperationTool.pick({ id: true }).meta({ table: "jobOperationTool" })
   ),
@@ -6782,12 +6407,9 @@ export const deleteJobOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Delete procedure
- *
- * @mcp destructive
- */
 export const deleteProcedure = defineServiceFn({
+  publish: "destructive",
+  title: "Delete procedure",
   output: z.array(
     rows.procedure.pick({ id: true }).meta({ table: "procedure" })
   ),
@@ -6804,12 +6426,9 @@ export const deleteProcedure = defineServiceFn({
   }
 });
 
-/**
- * Delete procedure step
- *
- * @mcp destructive
- */
 export const deleteProcedureStep = defineServiceFn({
+  publish: "destructive",
+  title: "Delete procedure step",
   output: z.array(
     rows.procedureStep.pick({ id: true }).meta({ table: "procedureStep" })
   ),
@@ -6827,12 +6446,9 @@ export const deleteProcedureStep = defineServiceFn({
   }
 });
 
-/**
- * Delete procedure parameter
- *
- * @mcp destructive
- */
 export const deleteProcedureParameter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete procedure parameter",
   output: z.array(
     rows.procedureParameter
       .pick({ id: true })
@@ -6852,12 +6468,9 @@ export const deleteProcedureParameter = defineServiceFn({
   }
 });
 
-/**
- * Delete production event
- *
- * @mcp destructive
- */
 export const deleteProductionEvent = defineServiceFn({
+  publish: "destructive",
+  title: "Delete production event",
   output: z.array(
     rows.productionEvent.pick({ id: true }).meta({ table: "productionEvent" })
   ),
@@ -6877,12 +6490,9 @@ export const deleteProductionEvent = defineServiceFn({
   }
 });
 
-/**
- * Delete production quantity
- *
- * @mcp destructive
- */
 export const deleteProductionQuantity = defineServiceFn({
+  publish: "destructive",
+  title: "Delete production quantity",
   output: z.array(
     rows.productionQuantity
       .pick({ id: true })
@@ -6901,12 +6511,9 @@ export const deleteProductionQuantity = defineServiceFn({
   }
 });
 
-/**
- * Get active job operation by job id
- *
- * @mcp read
- */
 export const getActiveJobOperationByJobId = defineServiceFn({
+  publish: "read",
+  title: "Get active job operation by job id",
   output: rows.jobOperation
     .pick({ id: true, setupTime: true, laborTime: true, machineTime: true })
     .meta({ table: "jobOperation" }),
@@ -6921,12 +6528,9 @@ export const getActiveJobOperationByJobId = defineServiceFn({
   }
 });
 
-/**
- * Get active job operations by location
- *
- * @mcp read
- */
 export const getActiveJobOperationsByLocation = defineServiceFn({
+  publish: "read",
+  title: "Get active job operations by location",
   output: z.array(
     z.object({
       assignee: z.string(),
@@ -7052,12 +6656,9 @@ export const getActiveJobOperationsByLocation = defineServiceFn({
   }
 });
 
-/**
- * Get jobs by date range
- *
- * @mcp read
- */
 export const getJobsByDateRange = defineServiceFn({
+  publish: "read",
+  title: "Get jobs by date range",
   output: z.array(
     z.object({
       assignee: z.string(),
@@ -7124,12 +6725,9 @@ export const getJobsByDateRange = defineServiceFn({
   }
 });
 
-/**
- * Get unscheduled jobs
- *
- * @mcp read
- */
 export const getUnscheduledJobs = defineServiceFn({
+  publish: "read",
+  title: "Get unscheduled jobs",
   output: z.array(
     z.object({
       assignee: z.string(),
@@ -7188,12 +6786,9 @@ export const getUnscheduledJobs = defineServiceFn({
   }
 });
 
-/**
- * Get active production events
- *
- * @mcp read
- */
 export const getActiveProductionEvents = defineServiceFn({
+  publish: "read",
+  title: "Get active production events",
   output: z.array(
     rows.productionEvent
       .extend({
@@ -7227,12 +6822,9 @@ export const getActiveProductionEvents = defineServiceFn({
   }
 });
 
-/**
- * Delete scrap reason
- *
- * @mcp destructive
- */
 export const deleteScrapReason = defineServiceFn({
+  publish: "destructive",
+  title: "Delete scrap reason",
   output: z.array(
     rows.scrapReason.pick({ id: true }).meta({ table: "scrapReason" })
   ),
@@ -7249,12 +6841,9 @@ export const deleteScrapReason = defineServiceFn({
   }
 });
 
-/**
- * Delete failure mode
- *
- * @mcp destructive
- */
 export const deleteFailureMode = defineServiceFn({
+  publish: "destructive",
+  title: "Delete failure mode",
   output: z.array(
     z.object({
       id: z.string()
@@ -7273,12 +6862,9 @@ export const deleteFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Delete maintenance dispatch
- *
- * @mcp destructive
- */
 export const deleteMaintenanceDispatch = defineServiceFn({
+  publish: "destructive",
+  title: "Delete maintenance dispatch",
   output: z.array(
     rows.maintenanceDispatch
       .pick({ id: true })
@@ -7297,12 +6883,9 @@ export const deleteMaintenanceDispatch = defineServiceFn({
   }
 });
 
-/**
- * Delete maintenance dispatch event
- *
- * @mcp destructive
- */
 export const deleteMaintenanceDispatchEvent = defineServiceFn({
+  publish: "destructive",
+  title: "Delete maintenance dispatch event",
   output: z.array(
     rows.maintenanceDispatchEvent
       .pick({ id: true })
@@ -7321,12 +6904,9 @@ export const deleteMaintenanceDispatchEvent = defineServiceFn({
   }
 });
 
-/**
- * Delete maintenance schedule
- *
- * @mcp destructive
- */
 export const deleteMaintenanceSchedule = defineServiceFn({
+  publish: "destructive",
+  title: "Delete maintenance schedule",
   output: z.array(
     rows.maintenanceSchedule
       .pick({ id: true })
@@ -7345,12 +6925,9 @@ export const deleteMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Get demand projections
- *
- * @mcp read
- */
 export const getDemandProjections = defineServiceFn({
+  publish: "read",
+  title: "Get demand projections",
   output: z.array(rows.demandProjection),
   input: z.looseObject({
     itemId: z.string(),
@@ -7369,12 +6946,9 @@ export const getDemandProjections = defineServiceFn({
   }
 });
 
-/**
- * Get job documents
- *
- * @mcp read
- */
 export const getJobDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get job documents",
   output: z.array(z.unknown()),
   input: z.looseObject({
     id: z.string().nullable(),
@@ -7392,12 +6966,9 @@ export const getJobDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get job documents with item id
- *
- * @mcp read
- */
 export const getJobDocumentsWithItemId = defineServiceFn({
+  publish: "read",
+  title: "Get job documents with item id",
   output: z.array(z.unknown()),
   input: z.looseObject({
     job: z.looseObject({
@@ -7418,12 +6989,9 @@ export const getJobDocumentsWithItemId = defineServiceFn({
   }
 });
 
-/**
- * Get job
- *
- * @mcp read
- */
 export const getJob = defineServiceFn({
+  publish: "read",
+  title: "Get job",
   output: z.object({
     active: z.boolean().nullable(),
     actualTime: z.number().nullable(),
@@ -7676,12 +7244,9 @@ export const getJob = defineServiceFn({
   }
 });
 
-/**
- * Get job expedite forecast
- *
- * @mcp read
- */
 export const getJobExpediteForecast = defineServiceFn({
+  publish: "read",
+  title: "Get job expedite forecast",
   output: z.object({
     projectedCompletionAt: z.string().nullable(),
     cause: z.string().nullable()
@@ -7702,12 +7267,9 @@ export const getJobExpediteForecast = defineServiceFn({
   }
 });
 
-/**
- * Get job by operation id
- *
- * @mcp read
- */
 export const getJobByOperationId = defineServiceFn({
+  publish: "read",
+  title: "Get job by operation id",
   output: z.object({
     id: z.string(),
     companyId: z.string(),
@@ -7726,12 +7288,9 @@ export const getJobByOperationId = defineServiceFn({
   }
 });
 
-/**
- * Get job purchase order lines
- *
- * @mcp read
- */
 export const getJobPurchaseOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get job purchase order lines",
   output: z.array(
     rows.purchaseOrderLine
       .pick({
@@ -7783,13 +7342,10 @@ export const getJobPurchaseOrderLines = defineServiceFn({
   }
 });
 
-/**
- * The Outbound report: open jobs at a location that fill a sales order, with
- * where each one ships, ordered by the plant-calendar day they complete.
- *
- * @mcp read
- */
 export const getCompletionJobs = defineServiceFn({
+  publish: "read",
+  title:
+    "The Outbound report: open jobs at a location that fill a sales order, with where each one ships, ordered by the plant-calendar day they complete",
   output: z.array(
     z.object({
       completionDate: z.string(),
@@ -7881,12 +7437,9 @@ export const getCompletionJobs = defineServiceFn({
   }
 });
 
-/**
- * Get capacity reservations for resources
- *
- * @mcp read
- */
 export const getCapacityReservationsForResources = defineServiceFn({
+  publish: "read",
+  title: "Get capacity reservations for resources",
   output: z.array(
     rows.capacityReservation
       .pick({
@@ -7983,12 +7536,9 @@ export const getCapacityReservationsForResources = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance downtime for resources
- *
- * @mcp read
- */
 export const getMaintenanceDowntimeForResources = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance downtime for resources",
   output: z.array(
     z.object({
       id: z.string(),
@@ -8014,12 +7564,9 @@ export const getMaintenanceDowntimeForResources = defineServiceFn({
   }
 });
 
-/**
- * Get jobs
- *
- * @mcp read
- */
 export const getJobs = defineServiceFn({
+  publish: "read",
+  title: "Get jobs",
   output: z
     .array(
       rows.jobs
@@ -8189,12 +7736,9 @@ export const getJobs = defineServiceFn({
   }
 });
 
-/**
- * Get jobs by sales order line
- *
- * @mcp read
- */
 export const getJobsBySalesOrderLine = defineServiceFn({
+  publish: "read",
+  title: "Get jobs by sales order line",
   output: z.array(
     rows.jobs
       .pick({
@@ -8353,12 +7897,9 @@ export const getJobsBySalesOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Get jobs list
- *
- * @mcp read
- */
 export const getJobsList = defineServiceFn({
+  publish: "read",
+  title: "Get jobs list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -8396,12 +7937,9 @@ export const getJobsList = defineServiceFn({
   }
 });
 
-/**
- * Get job make method by id
- *
- * @mcp read
- */
 export const getJobMakeMethodById = defineServiceFn({
+  publish: "read",
+  title: "Get job make method by id",
   output: rows.jobMakeMethod
     .pick({
       companyId: true,
@@ -8501,12 +8039,9 @@ export const getJobMakeMethodById = defineServiceFn({
   }
 });
 
-/**
- * Get root make method
- *
- * @mcp read
- */
 export const getRootMakeMethod = defineServiceFn({
+  publish: "read",
+  title: "Get root make method",
   output: z.object({
     companyId: z.string(),
     createdAt: z.string(),
@@ -8602,12 +8137,9 @@ export const getRootMakeMethod = defineServiceFn({
   }
 });
 
-/**
- * Get job materials with quantity on hand
- *
- * @mcp read
- */
 export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
+  publish: "read",
+  title: "Get job materials with quantity on hand",
   output: z.array(
     z.object({
       description: z.string(),
@@ -8680,12 +8212,9 @@ export const getJobMaterialsWithQuantityOnHand = defineServiceFn({
   }
 });
 
-/**
- * Get job material item ids
- *
- * @mcp read
- */
 export const getJobMaterialItemIds = defineServiceFn({
+  publish: "read",
+  title: "Get job material item ids",
   output: z.array(
     rows.jobMaterial.pick({ itemId: true }).meta({ table: "jobMaterial" })
   ),
@@ -8703,12 +8232,9 @@ export const getJobMaterialItemIds = defineServiceFn({
   }
 });
 
-/**
- * Get job order status map
- *
- * @mcp read
- */
 export const getJobOrderStatusMap = defineServiceFn({
+  publish: "read",
+  title: "Get job order status map",
   output: z.record(
     z.string(),
     z.object({
@@ -8816,12 +8342,9 @@ export const getJobOrderStatusMap = defineServiceFn({
   }
 });
 
-/**
- * Get job method tree
- *
- * @mcp read
- */
 export const getJobMethodTree = defineServiceFn({
+  publish: "read",
+  title: "Get job method tree",
   output: z.array(
     z.object({
       id: z.string(),
@@ -8863,12 +8386,9 @@ export const getJobMethodTree = defineServiceFn({
   }
 });
 
-/**
- * Get job materials by method id
- *
- * @mcp read
- */
 export const getJobMaterialsByMethodId = defineServiceFn({
+  publish: "read",
+  title: "Get job materials by method id",
   output: z.array(
     rows.jobMaterial
       .pick({
@@ -8961,12 +8481,9 @@ export const getJobMaterialsByMethodId = defineServiceFn({
   }
 });
 
-/**
- * Get job operations
- *
- * @mcp read
- */
 export const getJobOperations = defineServiceFn({
+  publish: "read",
+  title: "Get job operations",
   output: z
     .array(
       rows.jobOperation
@@ -9084,12 +8601,9 @@ export const getJobOperations = defineServiceFn({
   }
 });
 
-/**
- * Get job operation dependencies
- *
- * @mcp read
- */
 export const getJobOperationDependencies = defineServiceFn({
+  publish: "read",
+  title: "Get job operation dependencies",
   output: z.array(
     z.object({
       operationId: z.string(),
@@ -9109,12 +8623,9 @@ export const getJobOperationDependencies = defineServiceFn({
   }
 });
 
-/**
- * Get job operation attachments
- *
- * @mcp read
- */
 export const getJobOperationAttachments = defineServiceFn({
+  publish: "read",
+  title: "Get job operation attachments",
   output: z.record(z.string(), z.array(z.string())),
   input: z.looseObject({ jobOperationIds: z.array(z.string()) }),
   permission: { view: "production" },
@@ -9126,12 +8637,9 @@ export const getJobOperationAttachments = defineServiceFn({
   }
 });
 
-/**
- * Get job operations list
- *
- * @mcp read
- */
 export const getJobOperationsList = defineServiceFn({
+  publish: "read",
+  title: "Get job operations list",
   output: z.array(
     rows.jobOperation
       .pick({ id: true, description: true, order: true })
@@ -9150,12 +8658,9 @@ export const getJobOperationsList = defineServiceFn({
   }
 });
 
-/**
- * Get job operations by method id
- *
- * @mcp read
- */
 export const getJobOperationsByMethodId = defineServiceFn({
+  publish: "read",
+  title: "Get job operations by method id",
   output: z.array(
     rows.jobOperation
       .pick({
@@ -9366,12 +8871,9 @@ export const getJobOperationsByMethodId = defineServiceFn({
   }
 });
 
-/**
- * Get job operation step records
- *
- * @mcp read
- */
 export const getJobOperationStepRecords = defineServiceFn({
+  publish: "read",
+  title: "Get job operation step records",
   output: z
     .array(
       z.object({
@@ -9433,18 +8935,12 @@ export const getJobOperationStepRecords = defineServiceFn({
   }
 });
 
-/**
- * Get step timings for a job operation
- *
- * @remarks
- * Estimates how long each step of a job operation took, from the times its steps were recorded. A step's time is measured from the same operator's previous step record on this operation, or from their latest clock-in to it, whichever is later. Steps recorded at the same instant (a manager's Complete All, or a batch record) are flagged `bulk` and left out of the per-step statistics. A step's time includes any break the operator did not clock out for, and steps recorded together after the work was done read as near zero.
- *
- * @param jobOperationId - The job operation whose steps to time.
- * @returns `steps`: each step in order, with the number of timed units and the average, median, minimum and maximum seconds. `records`: every step record in the order it was made, with its 0-based unit index, the operator, the seconds, what they were measured from (`previousStep`, `clockIn`, or null when there was nothing to measure from) and whether it was a `bulk` record.
- *
- * @mcp read
- */
 export const getJobOperationStepTimings = defineServiceFn({
+  publish: "read",
+  title: "Get step timings for a job operation",
+  description: `Estimates how long each step of a job operation took, from the times its steps were recorded. A step's time is measured from the same operator's previous step record on this operation, or from their latest clock-in to it, whichever is later. Steps recorded at the same instant (a manager's Complete All, or a batch record) are flagged \`bulk\` and left out of the per-step statistics. A step's time includes any break the operator did not clock out for, and steps recorded together after the work was done read as near zero.
+
+Returns \`steps\`: each step in order, with the number of timed units and the average, median, minimum and maximum seconds. \`records\`: every step record in the order it was made, with its 0-based unit index, the operator, the seconds, what they were measured from (\`previousStep\`, \`clockIn\`, or null when there was nothing to measure from) and whether it was a \`bulk\` record.`,
   output: z.object({
     steps: z.array(
       z.object({
@@ -9472,7 +8968,11 @@ export const getJobOperationStepTimings = defineServiceFn({
       })
     )
   }),
-  input: z.object({ jobOperationId: z.string() }),
+  input: z.object({
+    jobOperationId: z
+      .string()
+      .describe("The job operation whose steps to time.")
+  }),
   permission: { view: "production" },
   async run(ctx, input) {
     const timings = unwrap(
@@ -9489,12 +8989,9 @@ export const getJobOperationStepTimings = defineServiceFn({
   }
 });
 
-/**
- * Get outside operations by job id
- *
- * @mcp read
- */
 export const getOutsideOperationsByJobId = defineServiceFn({
+  publish: "read",
+  title: "Get outside operations by job id",
   output: z.array(
     z.object({
       id: z.string(),
@@ -9515,12 +9012,9 @@ export const getOutsideOperationsByJobId = defineServiceFn({
   }
 });
 
-/**
- * Get procedure
- *
- * @mcp read
- */
 export const getProcedure = defineServiceFn({
+  publish: "read",
+  title: "Get procedure",
   output: rows.procedure
     .extend({
       procedureStep: z.array(
@@ -9605,12 +9099,9 @@ export const getProcedure = defineServiceFn({
   }
 });
 
-/**
- * Get procedure versions
- *
- * @mcp read
- */
 export const getProcedureVersions = defineServiceFn({
+  publish: "read",
+  title: "Get procedure versions",
   output: z.array(rows.procedure),
   input: z.looseObject({ name: z.string(), version: z.number() }),
   permission: { view: "production" },
@@ -9626,12 +9117,9 @@ export const getProcedureVersions = defineServiceFn({
   }
 });
 
-/**
- * Get procedures
- *
- * @mcp read
- */
 export const getProcedures = defineServiceFn({
+  publish: "read",
+  title: "Get procedures",
   output: z
     .array(
       rows.procedures
@@ -9699,12 +9187,9 @@ export const getProcedures = defineServiceFn({
   }
 });
 
-/**
- * Get procedures list
- *
- * @mcp read
- */
 export const getProceduresList = defineServiceFn({
+  publish: "read",
+  title: "Get procedures list",
   output: z.array(
     rows.procedure
       .pick({ id: true, name: true, version: true })
@@ -9724,12 +9209,9 @@ export const getProceduresList = defineServiceFn({
   }
 });
 
-/**
- * Get production event
- *
- * @mcp read
- */
 export const getProductionEvent = defineServiceFn({
+  publish: "read",
+  title: "Get production event",
   output: rows.productionEvent
     .extend({
       jobOperation: z.object({
@@ -9747,12 +9229,9 @@ export const getProductionEvent = defineServiceFn({
   }
 });
 
-/**
- * Get production events
- *
- * @mcp read
- */
 export const getProductionEvents = defineServiceFn({
+  publish: "read",
+  title: "Get production events",
   output: z
     .array(
       rows.productionEvent
@@ -9795,12 +9274,9 @@ export const getProductionEvents = defineServiceFn({
   }
 });
 
-/**
- * Get production planning
- *
- * @mcp read
- */
 export const getProductionPlanning = defineServiceFn({
+  publish: "read",
+  title: "Get production planning",
   output: z
     .array(
       z.object({
@@ -9937,12 +9413,9 @@ export const getProductionPlanning = defineServiceFn({
   }
 });
 
-/**
- * Get production projections
- *
- * @mcp read
- */
 export const getProductionProjections = defineServiceFn({
+  publish: "read",
+  title: "Get production projections",
   output: z
     .array(
       z.object({
@@ -10066,12 +9539,9 @@ export const getProductionProjections = defineServiceFn({
   }
 });
 
-/**
- * Get production quantity
- *
- * @mcp read
- */
 export const getProductionQuantity = defineServiceFn({
+  publish: "read",
+  title: "Get production quantity",
   output: rows.productionQuantity
     .extend({
       jobOperation: z.object({
@@ -10092,12 +9562,9 @@ export const getProductionQuantity = defineServiceFn({
   }
 });
 
-/**
- * Get production quantities
- *
- * @mcp read
- */
 export const getProductionQuantities = defineServiceFn({
+  publish: "read",
+  title: "Get production quantities",
   output: z
     .array(
       z.object({
@@ -10154,12 +9621,9 @@ export const getProductionQuantities = defineServiceFn({
   }
 });
 
-/**
- * Get production data by operations
- *
- * @mcp read
- */
 export const getProductionDataByOperations = defineServiceFn({
+  publish: "read",
+  title: "Get production data by operations",
   output: z.object({
     quantities: z.array(
       z.object({
@@ -10247,12 +9711,9 @@ export const getProductionDataByOperations = defineServiceFn({
   }
 });
 
-/**
- * Get scrap reasons list
- *
- * @mcp read
- */
 export const getScrapReasonsList = defineServiceFn({
+  publish: "read",
+  title: "Get scrap reasons list",
   output: z.array(
     rows.scrapReason
       .pick({ id: true, name: true })
@@ -10268,12 +9729,9 @@ export const getScrapReasonsList = defineServiceFn({
   }
 });
 
-/**
- * Get scrap reason
- *
- * @mcp read
- */
 export const getScrapReason = defineServiceFn({
+  publish: "read",
+  title: "Get scrap reason",
   output: rows.scrapReason
     .pick({
       companyId: true,
@@ -10355,12 +9813,9 @@ export const getScrapReason = defineServiceFn({
   }
 });
 
-/**
- * Get scrap reasons
- *
- * @mcp read
- */
 export const getScrapReasons = defineServiceFn({
+  publish: "read",
+  title: "Get scrap reasons",
   output: z
     .array(
       z.object({
@@ -10418,12 +9873,9 @@ export const getScrapReasons = defineServiceFn({
   }
 });
 
-/**
- * Get failure mode
- *
- * @mcp read
- */
 export const getFailureMode = defineServiceFn({
+  publish: "read",
+  title: "Get failure mode",
   output: rows.maintenanceFailureMode,
   input: z.looseObject({ failureModeId: z.string() }),
   permission: { view: "production" },
@@ -10438,12 +9890,9 @@ export const getFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Get failure modes
- *
- * @mcp read
- */
 export const getFailureModes = defineServiceFn({
+  publish: "read",
+  title: "Get failure modes",
   output: z.array(rows.maintenanceFailureMode).nullable(),
   input: z.looseObject({
     limit: z
@@ -10467,12 +9916,9 @@ export const getFailureModes = defineServiceFn({
   }
 });
 
-/**
- * Get failure modes list
- *
- * @mcp read
- */
 export const getFailureModesList = defineServiceFn({
+  publish: "read",
+  title: "Get failure modes list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -10489,12 +9935,9 @@ export const getFailureModesList = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch
- *
- * @mcp read
- */
 export const getMaintenanceDispatch = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch",
   output: rows.maintenanceDispatch
     .pick({
       actualEndTime: true,
@@ -10560,12 +10003,9 @@ export const getMaintenanceDispatch = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch comments
- *
- * @mcp read
- */
 export const getMaintenanceDispatchComments = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch comments",
   output: z.array(
     rows.maintenanceDispatchComment
       .pick({ id: true, comment: true, createdAt: true })
@@ -10591,12 +10031,9 @@ export const getMaintenanceDispatchComments = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch events
- *
- * @mcp read
- */
 export const getMaintenanceDispatchEvents = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch events",
   output: z.array(
     rows.maintenanceDispatchEvent
       .pick({
@@ -10632,12 +10069,9 @@ export const getMaintenanceDispatchEvents = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance dispatch items
- *
- * @mcp read
- */
 export const getMaintenanceDispatchItems = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance dispatch items",
   output: z.array(
     rows.maintenanceDispatchItem
       .pick({
@@ -10669,12 +10103,9 @@ export const getMaintenanceDispatchItems = defineServiceFn({
   }
 });
 
-/**
- * Get maintenance schedule
- *
- * @mcp read
- */
 export const getMaintenanceSchedule = defineServiceFn({
+  publish: "read",
+  title: "Get maintenance schedule",
   output: rows.maintenanceSchedule
     .extend({
       workCenter: z.object({
@@ -10696,12 +10127,9 @@ export const getMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Get tracked entity by job id
- *
- * @mcp read
- */
 export const getTrackedEntityByJobId = defineServiceFn({
+  publish: "read",
+  title: "Get tracked entity by job id",
   output: rows.trackedEntity,
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
@@ -10716,12 +10144,9 @@ export const getTrackedEntityByJobId = defineServiceFn({
   }
 });
 
-/**
- * Get tracked entities by job id
- *
- * @mcp read
- */
 export const getTrackedEntitiesByJobId = defineServiceFn({
+  publish: "read",
+  title: "Get tracked entities by job id",
   output: z.array(rows.trackedEntity),
   input: z.looseObject({ jobId: z.string() }),
   permission: { view: "production" },
@@ -10736,12 +10161,10 @@ export const getTrackedEntitiesByJobId = defineServiceFn({
   }
 });
 
-/**
- * What a job has already received to inventory: its received quantity and the tracked entities its receipts posted
- *
- * @mcp read
- */
 export const getJobReceiptSnapshot = defineServiceFn({
+  publish: "read",
+  title:
+    "What a job has already received to inventory: its received quantity and the tracked entities its receipts posted",
   output: z.object({
     quantityReceivedToInventory: z.number(),
     trackedEntityIds: z.array(z.string())
@@ -10757,12 +10180,9 @@ export const getJobReceiptSnapshot = defineServiceFn({
   }
 });
 
-/**
- * Recalculate job requirements
- *
- * @mcp
- */
 export const recalculateJobRequirements = defineServiceFn({
+  publish: true,
+  title: "Recalculate job requirements",
   output: z.object({
     success: z.boolean()
   }),
@@ -10780,19 +10200,14 @@ export const recalculateJobRequirements = defineServiceFn({
   }
 });
 
-/**
- * Run MRP
- *
- * @remarks
- * Plans the whole company whatever `type` and `id` name (they are logged),
- * and rewrites its forecasts and planning actions. It reads with the service
- * role, as every MRP run does: a caller's partial view would plan from part of
- * the demand. The planning pages' Recalculate (`api+/mrp.ts`) needs the same
- * inventory update.
- *
- * @mcp
- */
 export const runMRP = defineServiceFn({
+  publish: true,
+  title: "Run MRP",
+  description: `Plans the whole company whatever \`type\` and \`id\` name (they are logged),
+and rewrites its forecasts and planning actions. It reads with the service
+role, as every MRP run does: a caller's partial view would plan from part of
+the demand. The planning pages' Recalculate (\`api+/mrp.ts\`) needs the same
+inventory update.`,
   output: z.object({
     success: z.boolean()
   }),
@@ -10821,12 +10236,9 @@ export const runMRP = defineServiceFn({
   }
 });
 
-/**
- * Update job batch number
- *
- * @mcp
- */
 export const updateJobBatchNumber = defineServiceFn({
+  publish: true,
+  title: "Update job batch number",
   output: z.array(
     z.object({
       id: z.string(),
@@ -10851,12 +10263,9 @@ export const updateJobBatchNumber = defineServiceFn({
   }
 });
 
-/**
- * Get job release readiness
- *
- * @mcp read
- */
 export const getJobReleaseReadiness = defineServiceFn({
+  publish: "read",
+  title: "Get job release readiness",
   output: z.object({
     jobs: z.array(
       z.object({
@@ -10927,12 +10336,9 @@ export const getJobReleaseReadiness = defineServiceFn({
   }
 });
 
-/**
- * Update job material order
- *
- * @mcp
- */
 export const updateJobMaterialOrder = defineServiceFn({
+  publish: true,
+  title: "Update job material order",
   output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
@@ -10949,12 +10355,9 @@ export const updateJobMaterialOrder = defineServiceFn({
   }
 });
 
-/**
- * Update job operation step order
- *
- * @mcp
- */
 export const updateJobOperationStepOrder = defineServiceFn({
+  publish: true,
+  title: "Update job operation step order",
   output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -10971,12 +10374,9 @@ export const updateJobOperationStepOrder = defineServiceFn({
   }
 });
 
-/**
- * Update kanban job
- *
- * @mcp
- */
 export const updateKanbanJob = defineServiceFn({
+  publish: true,
+  title: "Update kanban job",
   output: z.array(rows.kanban.pick({ id: true }).meta({ table: "kanban" })),
   input: z.looseObject({ id: z.string(), jobId: z.string().nullable() }),
   permission: { update: "production" },
@@ -10996,17 +10396,12 @@ const stepOrderInput = z.object({
   updates: z.array(z.object({ id: z.string(), sortOrder: z.number() })).min(1)
 });
 
-/**
- * Reorder the steps of a quote line's operation.
- *
- * @remarks
- * All or nothing: a step that is not on `operationId` refuses the whole
- * reorder. Needs sales update, as the quote's method editor does, and
- * production update, which the step rows require.
- *
- * @mcp
- */
 export const updateQuoteOperationStepOrder = defineServiceFn({
+  publish: true,
+  title: "Reorder the steps of a quote line's operation",
+  description: `All or nothing: a step that is not on \`operationId\` refuses the whole
+reorder. Needs sales update, as the quote's method editor does, and
+production update, which the step rows require.`,
   output: rows.quoteOperationStep
     .pick({ operationId: true })
     .meta({ table: "quoteOperationStep" }),
@@ -11025,19 +10420,14 @@ export const updateQuoteOperationStepOrder = defineServiceFn({
   }
 });
 
-/**
- * Reorder the steps of an item's make method operation.
- *
- * @remarks
- * Refused unless the method is a Draft, when the item's revision is released
- * and release control enforces it, and while a change notice holds the
- * method. All or nothing: a step that is not on `operationId` refuses the
- * whole reorder. Needs parts update, as the method editor does, and
- * production update, which the step rows require.
- *
- * @mcp
- */
 export const updateMethodOperationStepOrder = defineServiceFn({
+  publish: true,
+  title: "Reorder the steps of an item's make method operation",
+  description: `Refused unless the method is a Draft, when the item's revision is released
+and release control enforces it, and while a change notice holds the
+method. All or nothing: a step that is not on \`operationId\` refuses the
+whole reorder. Needs parts update, as the method editor does, and
+production update, which the step rows require.`,
   output: rows.methodOperationStep
     .pick({ operationId: true })
     .meta({ table: "methodOperationStep" }),
@@ -11068,12 +10458,9 @@ export const updateMethodOperationStepOrder = defineServiceFn({
   }
 });
 
-/**
- * Update procedure step order
- *
- * @mcp
- */
 export const updateProcedureStepOrder = defineServiceFn({
+  publish: true,
+  title: "Update procedure step order",
   output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -11090,19 +10477,14 @@ export const updateProcedureStepOrder = defineServiceFn({
   }
 });
 
-/**
- * Create a job for an item.
- *
- * @remarks
- * Draft unless `status` is Planned; a job reaches the floor only through its
- * release. The records it names must be this company's, and it is refused for
- * an item an unreleased change notice holds and for a Make to Asset item that
- * cannot complete to an asset, as `createJob` is. `options.source` is
- * telemetry only: it records which surface raised the job.
- *
- * @mcp
- */
 export const insertJob = defineServiceFn({
+  publish: true,
+  title: "Create a job for an item",
+  description: `Draft unless \`status\` is Planned; a job reaches the floor only through its
+release. The records it names must be this company's, and it is refused for
+an item an unreleased change notice holds and for a Make to Asset item that
+cannot complete to an asset, as \`createJob\` is. \`options.source\` is
+telemetry only: it records which surface raised the job.`,
   output: z.object({
     id: z.string(),
     jobId: z.string()
@@ -11174,15 +10556,10 @@ export const insertJob = defineServiceFn({
   }
 });
 
-/**
- * Create a job operation step
- *
- * @remarks
- * Upsert job operation step
- *
- * @mcp
- */
 export const createJobOperationStep = defineServiceFn({
+  publish: true,
+  title: "Create a job operation step",
+  description: "Upsert job operation step",
   output: rows.jobOperationStep
     .pick({ id: true })
     .meta({ table: "jobOperationStep" }),
@@ -11224,15 +10601,10 @@ export const createJobOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Update a job operation step
- *
- * @remarks
- * Upsert job operation step
- *
- * @mcp
- */
 export const updateJobOperationStep = defineServiceFn({
+  publish: true,
+  title: "Update a job operation step",
+  description: "Upsert job operation step",
   output: rows.jobOperationStep
     .pick({ id: true })
     .meta({ table: "jobOperationStep" }),
@@ -11276,12 +10648,9 @@ export const updateJobOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Duplicate job operation step
- *
- * @mcp
- */
 export const duplicateJobOperationStep = defineServiceFn({
+  publish: true,
+  title: "Duplicate job operation step",
   output: rows.jobOperationStep
     .pick({ id: true })
     .meta({ table: "jobOperationStep" }),
@@ -11298,15 +10667,10 @@ export const duplicateJobOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Create a job operation step slide
- *
- * @remarks
- * Upsert job operation step slide
- *
- * @mcp
- */
 export const createJobOperationStepSlide = defineServiceFn({
+  publish: true,
+  title: "Create a job operation step slide",
+  description: "Upsert job operation step slide",
   output: rows.jobOperationStepSlide
     .pick({ id: true })
     .meta({ table: "jobOperationStepSlide" }),
@@ -11348,15 +10712,10 @@ export const createJobOperationStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Update a job operation step slide
- *
- * @remarks
- * Upsert job operation step slide
- *
- * @mcp
- */
 export const updateJobOperationStepSlide = defineServiceFn({
+  publish: true,
+  title: "Update a job operation step slide",
+  description: "Upsert job operation step slide",
   output: rows.jobOperationStepSlide
     .pick({ id: true })
     .meta({ table: "jobOperationStepSlide" }),
@@ -11400,15 +10759,10 @@ export const updateJobOperationStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Create a job operation parameter
- *
- * @remarks
- * Upsert job operation parameter
- *
- * @mcp
- */
 export const createJobOperationParameter = defineServiceFn({
+  publish: true,
+  title: "Create a job operation parameter",
+  description: "Upsert job operation parameter",
   output: rows.jobOperationParameter
     .pick({ id: true })
     .meta({ table: "jobOperationParameter" }),
@@ -11434,15 +10788,10 @@ export const createJobOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Update a job operation parameter
- *
- * @remarks
- * Upsert job operation parameter
- *
- * @mcp
- */
 export const updateJobOperationParameter = defineServiceFn({
+  publish: true,
+  title: "Update a job operation parameter",
+  description: "Upsert job operation parameter",
   output: rows.jobOperationParameter
     .pick({ id: true })
     .meta({ table: "jobOperationParameter" }),
@@ -11470,15 +10819,10 @@ export const updateJobOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Create a job operation tool
- *
- * @remarks
- * Upsert job operation tool
- *
- * @mcp
- */
 export const createJobOperationTool = defineServiceFn({
+  publish: true,
+  title: "Create a job operation tool",
+  description: "Upsert job operation tool",
   output: rows.jobOperationTool
     .pick({ id: true })
     .meta({ table: "jobOperationTool" }),
@@ -11504,15 +10848,10 @@ export const createJobOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Update a job operation tool
- *
- * @remarks
- * Upsert job operation tool
- *
- * @mcp
- */
 export const updateJobOperationTool = defineServiceFn({
+  publish: true,
+  title: "Update a job operation tool",
+  description: "Upsert job operation tool",
   output: rows.jobOperationTool
     .pick({ id: true })
     .meta({ table: "jobOperationTool" }),
@@ -11540,12 +10879,9 @@ export const updateJobOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Set job material step link
- *
- * @mcp destructive
- */
 export const setJobMaterialStepLink = defineServiceFn({
+  publish: "destructive",
+  title: "Set job material step link",
   output: z.null(),
   input: z.looseObject({
     jobMaterialId: z.string(),
@@ -11565,12 +10901,9 @@ export const setJobMaterialStepLink = defineServiceFn({
   }
 });
 
-/**
- * Set job operation tool step link
- *
- * @mcp destructive
- */
 export const setJobOperationToolStepLink = defineServiceFn({
+  publish: "destructive",
+  title: "Set job operation tool step link",
   output: z.null(),
   input: z.looseObject({
     operationId: z.string(),
@@ -11596,17 +10929,12 @@ const saveMethodInput = z.object({
   parts: methodPartsInput.optional()
 });
 
-/**
- * Save a job's method onto an item's make method (Save Method).
- *
- * @remarks
- * Overwrites make method `targetId` with job `sourceId`'s root method, the
- * parts `parts` names. Needs parts update, since it rewrites the item's bill
- * of material and process, and is refused under the same revision lock.
- *
- * @mcp destructive
- */
 export const upsertMakeMethodFromJob = defineServiceFn({
+  publish: "destructive",
+  title: "Save a job's method onto an item's make method (Save Method)",
+  description: `Overwrites make method \`targetId\` with job \`sourceId\`'s root method, the
+parts \`parts\` names. Needs parts update, since it rewrites the item's bill
+of material and process, and is refused under the same revision lock.`,
   output: z.object({
     success: z.boolean(),
     newQuoteId: z.string().nullable().optional()
@@ -11627,17 +10955,12 @@ export const upsertMakeMethodFromJob = defineServiceFn({
   }
 });
 
-/**
- * Save a job's sub-assembly method onto an item's make method.
- *
- * @remarks
- * Overwrites make method `targetId` with job make method `sourceId`, the
- * parts `parts` names. Needs parts update and is refused under the same
- * revision lock as `upsertMakeMethodFromJob`.
- *
- * @mcp destructive
- */
 export const upsertMakeMethodFromJobMethod = defineServiceFn({
+  publish: "destructive",
+  title: "Save a job's sub-assembly method onto an item's make method",
+  description: `Overwrites make method \`targetId\` with job make method \`sourceId\`, the
+parts \`parts\` names. Needs parts update and is refused under the same
+revision lock as \`upsertMakeMethodFromJob\`.`,
   output: z.null(),
   input: saveMethodInput,
   permission: { update: ["production", "parts"] },
@@ -11655,15 +10978,10 @@ export const upsertMakeMethodFromJobMethod = defineServiceFn({
   }
 });
 
-/**
- * Create a procedure
- *
- * @remarks
- * Upsert procedure
- *
- * @mcp
- */
 export const createProcedure = defineServiceFn({
+  publish: true,
+  title: "Create a procedure",
+  description: "Upsert procedure",
   output: rows.procedure.pick({ id: true }).meta({ table: "procedure" }),
   input: z.looseObject({
     name: z.string().min(1),
@@ -11688,15 +11006,10 @@ export const createProcedure = defineServiceFn({
   }
 });
 
-/**
- * Update a procedure
- *
- * @remarks
- * Upsert procedure
- *
- * @mcp
- */
 export const updateProcedure = defineServiceFn({
+  publish: true,
+  title: "Update a procedure",
+  description: "Upsert procedure",
   output: rows.procedure.pick({ id: true }).meta({ table: "procedure" }),
   input: z
     .looseObject({
@@ -11723,15 +11036,10 @@ export const updateProcedure = defineServiceFn({
   }
 });
 
-/**
- * Create a procedure step
- *
- * @remarks
- * Upsert procedure step
- *
- * @mcp
- */
 export const createProcedureStep = defineServiceFn({
+  publish: true,
+  title: "Create a procedure step",
+  description: "Upsert procedure step",
   output: rows.procedureStep
     .pick({ id: true })
     .meta({ table: "procedureStep" }),
@@ -11772,15 +11080,10 @@ export const createProcedureStep = defineServiceFn({
   }
 });
 
-/**
- * Update a procedure step
- *
- * @remarks
- * Upsert procedure step
- *
- * @mcp
- */
 export const updateProcedureStep = defineServiceFn({
+  publish: true,
+  title: "Update a procedure step",
+  description: "Upsert procedure step",
   output: rows.procedureStep
     .pick({ id: true })
     .meta({ table: "procedureStep" }),
@@ -11823,15 +11126,10 @@ export const updateProcedureStep = defineServiceFn({
   }
 });
 
-/**
- * Create a procedure parameter
- *
- * @remarks
- * Upsert procedure parameter
- *
- * @mcp
- */
 export const createProcedureParameter = defineServiceFn({
+  publish: true,
+  title: "Create a procedure parameter",
+  description: "Upsert procedure parameter",
   output: rows.procedureParameter
     .pick({ id: true })
     .meta({ table: "procedureParameter" }),
@@ -11856,15 +11154,10 @@ export const createProcedureParameter = defineServiceFn({
   }
 });
 
-/**
- * Update a procedure parameter
- *
- * @remarks
- * Upsert procedure parameter
- *
- * @mcp
- */
 export const updateProcedureParameter = defineServiceFn({
+  publish: true,
+  title: "Update a procedure parameter",
+  description: "Upsert procedure parameter",
   output: rows.procedureParameter
     .pick({ id: true })
     .meta({ table: "procedureParameter" }),
@@ -11891,15 +11184,10 @@ export const updateProcedureParameter = defineServiceFn({
   }
 });
 
-/**
- * Create a scrap reason
- *
- * @remarks
- * Upsert scrap reason
- *
- * @mcp
- */
 export const createScrapReason = defineServiceFn({
+  publish: true,
+  title: "Create a scrap reason",
+  description: "Upsert scrap reason",
   output: z.array(
     rows.scrapReason.pick({ id: true }).meta({ table: "scrapReason" })
   ),
@@ -11923,15 +11211,10 @@ export const createScrapReason = defineServiceFn({
   }
 });
 
-/**
- * Update a scrap reason
- *
- * @remarks
- * Upsert scrap reason
- *
- * @mcp
- */
 export const updateScrapReason = defineServiceFn({
+  publish: true,
+  title: "Update a scrap reason",
+  description: "Upsert scrap reason",
   output: z.array(
     rows.scrapReason.pick({ id: true }).meta({ table: "scrapReason" })
   ),
@@ -11957,15 +11240,10 @@ export const updateScrapReason = defineServiceFn({
   }
 });
 
-/**
- * Create a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
 export const createFailureMode = defineServiceFn({
+  publish: true,
+  title: "Create a failure mode",
+  description: "Upsert failure mode",
   output: z.array(
     z.object({
       id: z.string()
@@ -11991,15 +11269,10 @@ export const createFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Update a failure mode
- *
- * @remarks
- * Upsert failure mode
- *
- * @mcp
- */
 export const updateFailureMode = defineServiceFn({
+  publish: true,
+  title: "Update a failure mode",
+  description: "Upsert failure mode",
   output: z.array(
     z.object({
       id: z.string()
@@ -12027,15 +11300,10 @@ export const updateFailureMode = defineServiceFn({
   }
 });
 
-/**
- * Create a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
 export const createMaintenanceDispatchComment = defineServiceFn({
+  publish: true,
+  title: "Create a maintenance dispatch comment",
+  description: "Upsert maintenance dispatch comment",
   output: rows.maintenanceDispatchComment
     .pick({ id: true })
     .meta({ table: "maintenanceDispatchComment" }),
@@ -12059,15 +11327,10 @@ export const createMaintenanceDispatchComment = defineServiceFn({
   }
 });
 
-/**
- * Update a maintenance dispatch comment
- *
- * @remarks
- * Upsert maintenance dispatch comment
- *
- * @mcp
- */
 export const updateMaintenanceDispatchComment = defineServiceFn({
+  publish: true,
+  title: "Update a maintenance dispatch comment",
+  description: "Upsert maintenance dispatch comment",
   output: rows.maintenanceDispatchComment
     .pick({ id: true })
     .meta({ table: "maintenanceDispatchComment" }),
@@ -12093,15 +11356,10 @@ export const updateMaintenanceDispatchComment = defineServiceFn({
   }
 });
 
-/**
- * Create a maintenance dispatch event
- *
- * @remarks
- * Upsert maintenance dispatch event
- *
- * @mcp
- */
 export const createMaintenanceDispatchEvent = defineServiceFn({
+  publish: true,
+  title: "Create a maintenance dispatch event",
+  description: "Upsert maintenance dispatch event",
   output: rows.maintenanceDispatchEvent
     .pick({ id: true })
     .meta({ table: "maintenanceDispatchEvent" }),
@@ -12129,15 +11387,10 @@ export const createMaintenanceDispatchEvent = defineServiceFn({
   }
 });
 
-/**
- * Update a maintenance dispatch event
- *
- * @remarks
- * Upsert maintenance dispatch event
- *
- * @mcp
- */
 export const updateMaintenanceDispatchEvent = defineServiceFn({
+  publish: true,
+  title: "Update a maintenance dispatch event",
+  description: "Upsert maintenance dispatch event",
   output: rows.maintenanceDispatchEvent
     .pick({ id: true })
     .meta({ table: "maintenanceDispatchEvent" }),
@@ -12167,15 +11420,10 @@ export const updateMaintenanceDispatchEvent = defineServiceFn({
   }
 });
 
-/**
- * Create a maintenance dispatch item
- *
- * @remarks
- * Upsert maintenance dispatch item
- *
- * @mcp
- */
 export const createMaintenanceDispatchItem = defineServiceFn({
+  publish: true,
+  title: "Create a maintenance dispatch item",
+  description: "Upsert maintenance dispatch item",
   output: rows.maintenanceDispatchItem
     .pick({ id: true })
     .meta({ table: "maintenanceDispatchItem" }),
@@ -12202,15 +11450,10 @@ export const createMaintenanceDispatchItem = defineServiceFn({
   }
 });
 
-/**
- * Update a maintenance dispatch item
- *
- * @remarks
- * Upsert maintenance dispatch item
- *
- * @mcp
- */
 export const updateMaintenanceDispatchItem = defineServiceFn({
+  publish: true,
+  title: "Update a maintenance dispatch item",
+  description: "Upsert maintenance dispatch item",
   output: rows.maintenanceDispatchItem
     .pick({ id: true })
     .meta({ table: "maintenanceDispatchItem" }),
@@ -12239,15 +11482,10 @@ export const updateMaintenanceDispatchItem = defineServiceFn({
   }
 });
 
-/**
- * Create a maintenance schedule
- *
- * @remarks
- * Upsert maintenance schedule
- *
- * @mcp
- */
 export const createMaintenanceSchedule = defineServiceFn({
+  publish: true,
+  title: "Create a maintenance schedule",
+  description: "Upsert maintenance schedule",
   output: rows.maintenanceSchedule
     .pick({ id: true })
     .meta({ table: "maintenanceSchedule" }),
@@ -12276,15 +11514,10 @@ export const createMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Update a maintenance schedule
- *
- * @remarks
- * Upsert maintenance schedule
- *
- * @mcp
- */
 export const updateMaintenanceSchedule = defineServiceFn({
+  publish: true,
+  title: "Update a maintenance schedule",
+  description: "Upsert maintenance schedule",
   output: rows.maintenanceSchedule
     .pick({ id: true })
     .meta({ table: "maintenanceSchedule" }),
@@ -12315,12 +11548,9 @@ export const updateMaintenanceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Get people assignments
- *
- * @mcp read
- */
 export const getPeopleAssignments = defineServiceFn({
+  publish: "read",
+  title: "Get people assignments",
   output: z.array(
     rows.peopleAssignment
       .pick({
@@ -12349,12 +11579,9 @@ export const getPeopleAssignments = defineServiceFn({
   }
 });
 
-/**
- * Get people absences
- *
- * @mcp read
- */
 export const getPeopleAbsences = defineServiceFn({
+  publish: "read",
+  title: "Get people absences",
   output: z.array(
     rows.peopleAbsence
       .pick({
@@ -12380,12 +11607,9 @@ export const getPeopleAbsences = defineServiceFn({
   }
 });
 
-/**
- * Get people assignments range
- *
- * @mcp read
- */
 export const getPeopleAssignmentsRange = defineServiceFn({
+  publish: "read",
+  title: "Get people assignments range",
   output: z.array(
     rows.peopleAssignment
       .pick({
@@ -12418,12 +11642,9 @@ export const getPeopleAssignmentsRange = defineServiceFn({
   }
 });
 
-/**
- * Get people absences range
- *
- * @mcp read
- */
 export const getPeopleAbsencesRange = defineServiceFn({
+  publish: "read",
+  title: "Get people absences range",
   output: z.array(
     rows.peopleAbsence
       .pick({ id: true, employeeId: true, shiftId: true, date: true })
@@ -12443,12 +11664,9 @@ export const getPeopleAbsencesRange = defineServiceFn({
   }
 });
 
-/**
- * Open job-operation hours per work center for the capacity view
- *
- * @mcp read
- */
 export const getPeopleCapacityOperations = defineServiceFn({
+  publish: "read",
+  title: "Open job-operation hours per work center for the capacity view",
   output: z.array(
     z.object({
       started: z.boolean(),
@@ -12520,12 +11738,10 @@ export const getPeopleCapacityOperations = defineServiceFn({
   }
 });
 
-/**
- * The `workCenterShift` links (rung 1 of the availability ladder) for a set of work centers, in ONE `.in()` query
- *
- * @mcp read
- */
 export const getWorkCenterShifts = defineServiceFn({
+  publish: "read",
+  title:
+    "The `workCenterShift` links (rung 1 of the availability ladder) for a set of work centers, in ONE `.in()` query",
   output: z.array(
     rows.workCenterShift
       .pick({ workCenterId: true, shiftId: true })
@@ -12545,12 +11761,10 @@ export const getWorkCenterShifts = defineServiceFn({
   }
 });
 
-/**
- * WorkCenter-kind reservations overlapping a window — the Capacity view's Scheduled series
- *
- * @mcp read
- */
 export const getWorkCenterReservationsRange = defineServiceFn({
+  publish: "read",
+  title:
+    "WorkCenter-kind reservations overlapping a window — the Capacity view's Scheduled series",
   output: z.array(
     z.object({
       id: z.string(),
@@ -12575,12 +11789,9 @@ export const getWorkCenterReservationsRange = defineServiceFn({
   }
 });
 
-/**
- * Get location employees
- *
- * @mcp read
- */
 export const getLocationEmployees = defineServiceFn({
+  publish: "read",
+  title: "Get location employees",
   output: z.array(
     rows.employees
       .pick({ id: true, name: true, avatarUrl: true })
@@ -12600,12 +11811,10 @@ export const getLocationEmployees = defineServiceFn({
   }
 });
 
-/**
- * Gated abilities per work center at a location, for the people board's advisory qualification badge
- *
- * @mcp read
- */
 export const getWorkCenterRequiredAbilities = defineServiceFn({
+  publish: "read",
+  title:
+    "Gated abilities per work center at a location, for the people board's advisory qualification badge",
   output: z.array(
     z.object({
       workCenterId: z.string(),
@@ -12627,12 +11836,9 @@ export const getWorkCenterRequiredAbilities = defineServiceFn({
   }
 });
 
-/**
- * Get active employee abilities
- *
- * @mcp read
- */
 export const getActiveEmployeeAbilities = defineServiceFn({
+  publish: "read",
+  title: "Get active employee abilities",
   output: z.array(
     z.object({
       employeeId: z.string(),
@@ -12658,12 +11864,10 @@ export const getActiveEmployeeAbilities = defineServiceFn({
   }
 });
 
-/**
- * Reactive replanning: notify that a scheduling INPUT changed (shift, qualification, work center, location)
- *
- * @mcp
- */
 export const notifyScheduleInputsChanged = defineServiceFn({
+  publish: true,
+  title:
+    "Reactive replanning: notify that a scheduling INPUT changed (shift, qualification, work center, location)",
   output: z.null(),
   input: z.looseObject({
     kind: z.enum([
@@ -12690,12 +11894,9 @@ export const notifyScheduleInputsChanged = defineServiceFn({
   }
 });
 
-/**
- * Get unbatched batchable operation count
- *
- * @mcp read
- */
 export const getUnbatchedBatchableOperationCount = defineServiceFn({
+  publish: "read",
+  title: "Get unbatched batchable operation count",
   output: z.array(
     z.object({
       id: z.string(),
@@ -12731,12 +11932,9 @@ export const getUnbatchedBatchableOperationCount = defineServiceFn({
   }
 });
 
-/**
- * Get job operation batches
- *
- * @mcp read
- */
 export const getJobOperationBatches = defineServiceFn({
+  publish: "read",
+  title: "Get job operation batches",
   output: z
     .array(
       rows.jobOperationBatch
@@ -12818,12 +12016,9 @@ export const getJobOperationBatches = defineServiceFn({
   }
 });
 
-/**
- * Get job operation batch member stats
- *
- * @mcp read
- */
 export const getJobOperationBatchMemberStats = defineServiceFn({
+  publish: "read",
+  title: "Get job operation batch member stats",
   output: z.record(
     z.string(),
     z.object({
@@ -12846,12 +12041,9 @@ export const getJobOperationBatchMemberStats = defineServiceFn({
   }
 });
 
-/**
- * Get job operation batch members
- *
- * @mcp read
- */
 export const getJobOperationBatchMembers = defineServiceFn({
+  publish: "read",
+  title: "Get job operation batch members",
   output: z.record(
     z.string(),
     z.array(
@@ -12882,12 +12074,9 @@ export const getJobOperationBatchMembers = defineServiceFn({
   }
 });
 
-/**
- * Get batch output lots
- *
- * @mcp read
- */
 export const getBatchOutputLots = defineServiceFn({
+  publish: "read",
+  title: "Get batch output lots",
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -12913,12 +12102,9 @@ export const getBatchOutputLots = defineServiceFn({
   }
 });
 
-/**
- * Get job operation batch with members
- *
- * @mcp read
- */
 export const getJobOperationBatchWithMembers = defineServiceFn({
+  publish: "read",
+  title: "Get job operation batch with members",
   output: rows.jobOperationBatch
     .pick({
       companyId: true,
@@ -13118,12 +12304,9 @@ export const getJobOperationBatchWithMembers = defineServiceFn({
   }
 });
 
-/**
- * Get job operation batch events
- *
- * @mcp read
- */
 export const getJobOperationBatchEvents = defineServiceFn({
+  publish: "read",
+  title: "Get job operation batch events",
   output: z.array(
     z.object({
       id: z.string(),
@@ -13149,12 +12332,9 @@ export const getJobOperationBatchEvents = defineServiceFn({
   }
 });
 
-/**
- * Get batchable operations
- *
- * @mcp read
- */
 export const getBatchableOperations = defineServiceFn({
+  publish: "read",
+  title: "Get batchable operations",
   output: z.array(
     z.object({
       batchReadableId: z.string(),
@@ -13239,12 +12419,9 @@ export const getBatchableOperations = defineServiceFn({
   }
 });
 
-/**
- * Get batchable processes
- *
- * @mcp read
- */
 export const getBatchableProcesses = defineServiceFn({
+  publish: "read",
+  title: "Get batchable processes",
   output: z.array(
     rows.process
       .pick({ id: true, name: true, batchable: true, batchType: true })
@@ -13289,12 +12466,9 @@ export const getBatchableProcesses = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instruction
- *
- * @mcp read
- */
 export const getAssemblyInstruction = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instruction",
   output: rows.assemblyInstruction
     .pick({
       assemblyPlanJobId: true,
@@ -13460,12 +12634,9 @@ export const getAssemblyInstruction = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instructions
- *
- * @mcp read
- */
 export const getAssemblyInstructions = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instructions",
   output: z
     .array(
       rows.assemblyInstructions
@@ -13605,12 +12776,9 @@ export const getAssemblyInstructions = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instructions for item
- *
- * @mcp read
- */
 export const getAssemblyInstructionsForItem = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instructions for item",
   output: z.array(
     rows.assemblyInstruction
       .pick({ id: true, name: true, version: true, status: true })
@@ -13630,12 +12798,9 @@ export const getAssemblyInstructionsForItem = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instruction steps
- *
- * @mcp read
- */
 export const getAssemblyInstructionSteps = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instruction steps",
   output: z.array(
     rows.assemblyInstructionStep
       .pick({
@@ -13874,12 +13039,9 @@ export const getAssemblyInstructionSteps = defineServiceFn({
   }
 });
 
-/**
- * Upsert assembly instruction
- *
- * @mcp
- */
 export const upsertAssemblyInstruction = defineServiceFn({
+  publish: true,
+  title: "Upsert assembly instruction",
   output: rows.assemblyInstruction
     .pick({ id: true })
     .meta({ table: "assemblyInstruction" }),
@@ -13901,12 +13063,9 @@ export const upsertAssemblyInstruction = defineServiceFn({
   }
 });
 
-/**
- * Update assembly instruction status
- *
- * @mcp
- */
 export const updateAssemblyInstructionStatus = defineServiceFn({
+  publish: true,
+  title: "Update assembly instruction status",
   output: rows.assemblyInstruction
     .pick({ id: true })
     .meta({ table: "assemblyInstruction" }),
@@ -13927,12 +13086,10 @@ export const updateAssemblyInstructionStatus = defineServiceFn({
   }
 });
 
-/**
- * Sibling versions of an instruction, for the header's version switcher
- *
- * @mcp read
- */
 export const getAssemblyInstructionVersions = defineServiceFn({
+  publish: "read",
+  title:
+    "Sibling versions of an instruction, for the header's version switcher",
   output: z.array(
     rows.assemblyInstruction
       .pick({
@@ -13960,17 +13117,12 @@ export const getAssemblyInstructionVersions = defineServiceFn({
   }
 });
 
-/**
- * Create a new Draft version of an assembly instruction as a copy of an
- * existing one, with every step and its materials, slides and tools.
- *
- * @remarks
- * The new version is the highest version plus one. A copy that fails partway
- * leaves a Draft that can be deleted.
- *
- * @mcp
- */
 export const copyAssemblyInstructionAsVersion = defineServiceFn({
+  publish: true,
+  title:
+    "Create a new Draft version of an assembly instruction as a copy of an existing one, with every step and its materials, slides and tools",
+  description: `The new version is the highest version plus one. A copy that fails partway
+leaves a Draft that can be deleted.`,
   output: rows.assemblyInstruction
     .pick({ id: true })
     .meta({ table: "assemblyInstruction" }),
@@ -13987,17 +13139,12 @@ export const copyAssemblyInstructionAsVersion = defineServiceFn({
   }
 });
 
-/**
- * Publish a version of an assembly instruction: archive the version that was
- * Published, publish this one, and move in-flight work to it.
- *
- * @remarks
- * Only job operations that are not Done or Canceled, on jobs that are not
- * Completed, Closed or Cancelled, move. Method operations are not changed.
- *
- * @mcp
- */
 export const activateAssemblyInstructionVersion = defineServiceFn({
+  publish: true,
+  title:
+    "Publish a version of an assembly instruction: archive the version that was Published, publish this one, and move in-flight work to it",
+  description: `Only job operations that are not Done or Canceled, on jobs that are not
+Completed, Closed or Cancelled, move. Method operations are not changed.`,
   output: rows.assemblyInstruction
     .pick({ id: true })
     .meta({ table: "assemblyInstruction" }),
@@ -14014,12 +13161,9 @@ export const activateAssemblyInstructionVersion = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly instruction
- *
- * @mcp destructive
- */
 export const deleteAssemblyInstruction = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly instruction",
   output: z.array(
     rows.assemblyInstruction
       .pick({ id: true })
@@ -14038,12 +13182,9 @@ export const deleteAssemblyInstruction = defineServiceFn({
   }
 });
 
-/**
- * Upsert assembly instruction step
- *
- * @mcp
- */
 export const upsertAssemblyInstructionStep = defineServiceFn({
+  publish: true,
+  title: "Upsert assembly instruction step",
   output: rows.assemblyInstructionStep
     .pick({ id: true })
     .meta({ table: "assemblyInstructionStep" }),
@@ -14171,12 +13312,10 @@ export const upsertAssemblyInstructionStep = defineServiceFn({
   }
 });
 
-/**
- * Partial update of a step's viewer-authored motion path and/or camera pose
- *
- * @mcp
- */
 export const updateAssemblyStepMotion = defineServiceFn({
+  publish: true,
+  title:
+    "Partial update of a step's viewer-authored motion path and/or camera pose",
   output: z.object({
     id: z.string()
   }),
@@ -14276,12 +13415,9 @@ export const updateAssemblyStepMotion = defineServiceFn({
   }
 });
 
-/**
- * Update assembly step hidden components
- *
- * @mcp
- */
 export const updateAssemblyStepHiddenComponents = defineServiceFn({
+  publish: true,
+  title: "Update assembly step hidden components",
   output: z.object({
     id: z.string()
   }),
@@ -14302,12 +13438,10 @@ export const updateAssemblyStepHiddenComponents = defineServiceFn({
   }
 });
 
-/**
- * Wrap a top-level step into a new sub-assembly; the step becomes its first step
- *
- * @mcp
- */
 export const makeAssemblySubAssembly = defineServiceFn({
+  publish: true,
+  title:
+    "Wrap a top-level step into a new sub-assembly; the step becomes its first step",
   output: z.string(),
   input: z.looseObject({
     assemblyInstructionId: z.string(),
@@ -14322,12 +13456,10 @@ export const makeAssemblySubAssembly = defineServiceFn({
   }
 });
 
-/**
- * Add a step at the end of the instruction, or at the end of the sub-assembly `parentStepId` names (directly before its header)
- *
- * @mcp
- */
 export const insertAssemblyInstructionStep = defineServiceFn({
+  publish: true,
+  title:
+    "Add a step at the end of the instruction, or at the end of the sub-assembly `parentStepId` names (directly before its header)",
   output: z.string(),
   input: z.looseObject({
     title: z.string().nullable().optional(),
@@ -14449,12 +13581,10 @@ export const insertAssemblyInstructionStep = defineServiceFn({
   }
 });
 
-/**
- * Rename a sub-assembly and/or set the step that uses it (`null` = it joins the main build)
- *
- * @mcp
- */
 export const updateAssemblySubAssembly = defineServiceFn({
+  publish: true,
+  title:
+    "Rename a sub-assembly and/or set the step that uses it (`null` = it joins the main build)",
   input: z.looseObject({
     assemblyInstructionId: z.string(),
     headerId: z.string(),
@@ -14470,12 +13600,10 @@ export const updateAssemblySubAssembly = defineServiceFn({
   }
 });
 
-/**
- * Remove the sub-assembly but keep its steps: they return to the top level in place
- *
- * @mcp destructive
- */
 export const ungroupAssemblySubAssembly = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Remove the sub-assembly but keep its steps: they return to the top level in place",
   input: z.looseObject({
     assemblyInstructionId: z.string(),
     headerId: z.string()
@@ -14489,12 +13617,9 @@ export const ungroupAssemblySubAssembly = defineServiceFn({
   }
 });
 
-/**
- * Delete a sub-assembly together with its steps
- *
- * @mcp destructive
- */
 export const deleteAssemblySubAssembly = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a sub-assembly together with its steps",
   input: z.looseObject({
     assemblyInstructionId: z.string(),
     headerId: z.string()
@@ -14508,12 +13633,9 @@ export const deleteAssemblySubAssembly = defineServiceFn({
   }
 });
 
-/**
- * Update assembly instruction step status
- *
- * @mcp
- */
 export const updateAssemblyInstructionStepStatus = defineServiceFn({
+  publish: true,
+  title: "Update assembly instruction step status",
   output: rows.assemblyInstructionStep
     .pick({ id: true })
     .meta({ table: "assemblyInstructionStep" }),
@@ -14534,12 +13656,10 @@ export const updateAssemblyInstructionStepStatus = defineServiceFn({
   }
 });
 
-/**
- * Drag-sort of the step list: each step's new position and sub-assembly (`parentStepId`, `null` = top level; omitted = unchanged)
- *
- * @mcp
- */
 export const updateAssemblyInstructionStepOrder = defineServiceFn({
+  publish: true,
+  title:
+    "Drag-sort of the step list: each step's new position and sub-assembly (`parentStepId`, `null` = top level; omitted = unchanged)",
   input: z.looseObject({
     assemblyInstructionId: z.string(),
     updates: z.array(
@@ -14562,12 +13682,9 @@ export const updateAssemblyInstructionStepOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly instruction step
- *
- * @mcp destructive
- */
 export const deleteAssemblyInstructionStep = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly instruction step",
   output: z.array(
     rows.assemblyInstructionStep
       .pick({ id: true })
@@ -14586,12 +13703,9 @@ export const deleteAssemblyInstructionStep = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instruction step slides
- *
- * @mcp read
- */
 export const getAssemblyInstructionStepSlides = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instruction step slides",
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -14652,15 +13766,10 @@ export const getAssemblyInstructionStepSlides = defineServiceFn({
   }
 });
 
-/**
- * Create a assembly instruction step slide
- *
- * @remarks
- * Upsert assembly instruction step slide
- *
- * @mcp
- */
 export const createAssemblyInstructionStepSlide = defineServiceFn({
+  publish: true,
+  title: "Create a assembly instruction step slide",
+  description: "Upsert assembly instruction step slide",
   output: rows.assemblyInstructionStepSlide
     .pick({ id: true })
     .meta({ table: "assemblyInstructionStepSlide" }),
@@ -14702,15 +13811,10 @@ export const createAssemblyInstructionStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Update a assembly instruction step slide
- *
- * @remarks
- * Upsert assembly instruction step slide
- *
- * @mcp
- */
 export const updateAssemblyInstructionStepSlide = defineServiceFn({
+  publish: true,
+  title: "Update a assembly instruction step slide",
+  description: "Upsert assembly instruction step slide",
   output: rows.assemblyInstructionStepSlide
     .pick({ id: true })
     .meta({ table: "assemblyInstructionStepSlide" }),
@@ -14754,12 +13858,9 @@ export const updateAssemblyInstructionStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly instruction step slide
- *
- * @mcp destructive
- */
 export const deleteAssemblyInstructionStepSlide = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly instruction step slide",
   output: z.array(
     rows.assemblyInstructionStepSlide
       .pick({ id: true })
@@ -14778,12 +13879,9 @@ export const deleteAssemblyInstructionStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instruction step tools
- *
- * @mcp read
- */
 export const getAssemblyInstructionStepTools = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instruction step tools",
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -14820,12 +13918,9 @@ export const getAssemblyInstructionStepTools = defineServiceFn({
   }
 });
 
-/**
- * Upsert assembly instruction step tool
- *
- * @mcp
- */
 export const upsertAssemblyInstructionStepTool = defineServiceFn({
+  publish: true,
+  title: "Upsert assembly instruction step tool",
   output: rows.assemblyInstructionStepTool
     .pick({ id: true })
     .meta({ table: "assemblyInstructionStepTool" }),
@@ -14848,12 +13943,9 @@ export const upsertAssemblyInstructionStepTool = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly instruction step tool
- *
- * @mcp destructive
- */
 export const deleteAssemblyInstructionStepTool = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly instruction step tool",
   output: z.array(
     rows.assemblyInstructionStepTool
       .pick({ id: true })
@@ -14872,12 +13964,9 @@ export const deleteAssemblyInstructionStepTool = defineServiceFn({
   }
 });
 
-/**
- * Get assembly instruction step materials
- *
- * @mcp read
- */
 export const getAssemblyInstructionStepMaterials = defineServiceFn({
+  publish: "read",
+  title: "Get assembly instruction step materials",
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -14914,12 +14003,9 @@ export const getAssemblyInstructionStepMaterials = defineServiceFn({
   }
 });
 
-/**
- * Upsert assembly instruction step material
- *
- * @mcp
- */
 export const upsertAssemblyInstructionStepMaterial = defineServiceFn({
+  publish: true,
+  title: "Upsert assembly instruction step material",
   output: rows.assemblyInstructionStepMaterial
     .pick({ id: true })
     .meta({ table: "assemblyInstructionStepMaterial" }),
@@ -14942,12 +14028,9 @@ export const upsertAssemblyInstructionStepMaterial = defineServiceFn({
   }
 });
 
-/**
- * Update assembly instruction step material order
- *
- * @mcp
- */
 export const updateAssemblyInstructionStepMaterialOrder = defineServiceFn({
+  publish: true,
+  title: "Update assembly instruction step material order",
   input: z.looseObject({
     assemblyInstructionId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -14964,12 +14047,9 @@ export const updateAssemblyInstructionStepMaterialOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly instruction step material
- *
- * @mcp destructive
- */
 export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly instruction step material",
   output: z.array(
     rows.assemblyInstructionStepMaterial
       .pick({ id: true })
@@ -14988,12 +14068,9 @@ export const deleteAssemblyInstructionStepMaterial = defineServiceFn({
   }
 });
 
-/**
- * Get assembly units
- *
- * @mcp read
- */
 export const getAssemblyUnits = defineServiceFn({
+  publish: "read",
+  title: "Get assembly units",
   output: z.array(rows.assemblyUnit),
   input: z.looseObject({ modelUploadId: z.string() }),
   permission: { view: "production" },
@@ -15008,12 +14085,9 @@ export const getAssemblyUnits = defineServiceFn({
   }
 });
 
-/**
- * Upsert assembly unit
- *
- * @mcp
- */
 export const upsertAssemblyUnit = defineServiceFn({
+  publish: true,
+  title: "Upsert assembly unit",
   output: rows.assemblyUnit.pick({ id: true }).meta({ table: "assemblyUnit" }),
   input: z.looseObject({
     id: z.string().optional(),
@@ -15034,12 +14108,9 @@ export const upsertAssemblyUnit = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly unit
- *
- * @mcp destructive
- */
 export const deleteAssemblyUnit = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly unit",
   output: z.array(
     rows.assemblyUnit.pick({ id: true }).meta({ table: "assemblyUnit" })
   ),
@@ -15053,12 +14124,10 @@ export const deleteAssemblyUnit = defineServiceFn({
   }
 });
 
-/**
- * Latest plan job in any state — used to tell "planning is running" apart from "planning failed" and to avoid enqueueing duplicate plan runs
- *
- * @mcp read
- */
 export const getLatestAssemblyPlanJob = defineServiceFn({
+  publish: "read",
+  title:
+    'Latest plan job in any state — used to tell "planning is running" apart from "planning failed" and to avoid enqueueing duplicate plan runs',
   output: rows.assemblyPlanJob
     .pick({
       id: true,
@@ -15081,12 +14150,9 @@ export const getLatestAssemblyPlanJob = defineServiceFn({
   }
 });
 
-/**
- * Downloads and parses plan.json for a model's latest successful plan
- *
- * @mcp read
- */
 export const getAssemblyPlanJson = defineServiceFn({
+  publish: "read",
+  title: "Downloads and parses plan.json for a model's latest successful plan",
   output: z.object({
     version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     unit: z.literal("mm"),
@@ -15225,12 +14291,10 @@ export const getAssemblyPlanJson = defineServiceFn({
   }
 });
 
-/**
- * Mappings from distinct model components (geometry hashes) to BOM items
- *
- * @mcp read
- */
 export const getAssemblyComponentMappings = defineServiceFn({
+  publish: "read",
+  title:
+    "Mappings from distinct model components (geometry hashes) to BOM items",
   output: z.array(
     rows.assemblyComponentMapping
       .extend({
@@ -15255,12 +14319,9 @@ export const getAssemblyComponentMappings = defineServiceFn({
   }
 });
 
-/**
- * Delete assembly component mapping
- *
- * @mcp destructive
- */
 export const deleteAssemblyComponentMapping = defineServiceFn({
+  publish: "destructive",
+  title: "Delete assembly component mapping",
   output: z.array(
     rows.assemblyComponentMapping
       .pick({ id: true })
@@ -15279,16 +14340,11 @@ export const deleteAssemblyComponentMapping = defineServiceFn({
   }
 });
 
-/**
- * The engineering bill of materials of a made item, flattened through its Make
- * subassemblies with quantities multiplied per level.
- *
- * @remarks
- * Uses the Active make method, else the first one.
- *
- * @mcp read
- */
 export const getFlattenedBomMaterials = defineServiceFn({
+  publish: "read",
+  title:
+    "The engineering bill of materials of a made item, flattened through its Make subassemblies with quantities multiplied per level",
+  description: "Uses the Active make method, else the first one.",
   output: z.array(
     z.object({
       itemId: z.string(),
@@ -15310,12 +14366,9 @@ export const getFlattenedBomMaterials = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for a job document
- *
- * @mcp
- */
 export const createJobDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title: "Create a presigned upload URL for a job document",
   output: z.object({
     signedUrl: z.string(),
     token: z.string(),

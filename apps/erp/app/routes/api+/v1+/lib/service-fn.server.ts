@@ -5,20 +5,19 @@
 // Runs a published service function (`defineServiceFn`) for an API, MCP or
 // workflow caller: the same function, with the same checks, the route calls.
 
-import type { ManifestEntry } from "@carbon/api";
 import { permissionsFromClaims } from "@carbon/api/permissions";
 import type {
   ErrorCategory,
   ServiceContext,
   ServiceFn
 } from "@carbon/api/service-fn.server";
+import { isPaged } from "@carbon/api/service-tools.server";
 import { ORPCError } from "@orpc/server";
 import type { z } from "zod";
-import { router as services } from "~/modules/router.server";
 import { contextFor } from "~/modules/service-context.server";
 import type { AuthedContext } from "./base.server";
 import { scopedToCompany } from "./company-scope.server";
-import { COMPANY_TABLES } from "./operations.server";
+import { COMPANY_TABLES, type DispatchResult } from "./operations.server";
 
 /** The oRPC code each refusal goes out as; its status is the category's own. */
 const CODES: Record<ErrorCategory, string> = {
@@ -33,15 +32,6 @@ const CODES: Record<ErrorCategory, string> = {
   internal: "INTERNAL_SERVER_ERROR",
   unavailable: "SERVICE_UNAVAILABLE"
 };
-
-function serviceFnAt(path: string[]): ServiceFn<z.ZodType, unknown> {
-  let node: unknown = services;
-  for (const key of path) node = (node as Record<string, unknown>)?.[key];
-  if (typeof node !== "function") {
-    throw new Error(`No service function at router.${path.join(".")}`);
-  }
-  return node as ServiceFn<z.ZodType, unknown>;
-}
 
 /**
  * The service context for an authenticated API, MCP or workflow caller. Its
@@ -62,21 +52,11 @@ export function contextFromAuthed(context: AuthedContext): ServiceContext {
 }
 
 /** Run the operation's service function; a refusal becomes an `ORPCError`. */
-export async function runServiceFn(
-  meta: ManifestEntry,
-  context: AuthedContext,
-  input: unknown
-): Promise<{ data: unknown; count?: number }> {
-  return callServiceFn(serviceFnAt(meta.serviceFn.path), meta, context, input);
-}
-
-/** `runServiceFn` for a function already resolved from the router. */
 export async function callServiceFn<I extends z.ZodType>(
   fn: ServiceFn<I, unknown>,
-  meta: Pick<ManifestEntry, "paginates">,
   context: AuthedContext,
   input: z.input<I>
-): Promise<{ data: unknown; count?: number }> {
+): Promise<DispatchResult> {
   const result = await fn(contextFromAuthed(context), input);
   if (result.error) {
     const { category, message, status } = result.error;
@@ -86,13 +66,10 @@ export async function callServiceFn<I extends z.ZodType>(
       data: { category }
     });
   }
-  if (meta.paginates) {
+  if (isPaged(result.data)) {
     // A `paged` result: the rows go out as the list, the total beside them.
-    const { rows, count } = result.data as {
-      rows: unknown;
-      count: number | null;
-    };
-    return { data: rows, ...(count !== null ? { count } : {}) };
+    const { rows, count } = result.data;
+    return { data: rows, list: true, ...(count !== null ? { count } : {}) };
   }
-  return { data: result.data };
+  return { data: result.data, list: Array.isArray(result.data) };
 }

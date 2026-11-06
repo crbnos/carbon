@@ -2,77 +2,92 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The operation catalog for the Carbon API v1 surface. Reads the generated MCP
-// manifest (tool-metadata.json, gitignored build output of `pnpm generate:mcp`)
-// and shapes it for the oRPC router and the MCP/agent bridges — a single source
-// of truth for HTTP and MCP.
+// The operation catalog for the Carbon API v1 surface, built from the
+// service-function registry at startup (`buildOperationCatalog`): every
+// `defineServiceFn` with `publish` set, its input schema from its own zod
+// validator, its title and description from its definition. The oRPC router,
+// the MCP bridge and the OpenAPI document are views of this one list; nothing
+// here reads generated output.
 
 import type { ManifestEntry } from "@carbon/api";
-import raw from "../../mcp+/lib/tool-metadata.json";
+import {
+  buildOperationCatalog,
+  type Operation
+} from "@carbon/api/catalog.server";
+import { COMPANY_TABLES as companyTables } from "@carbon/database/company-tables";
+import { router as services } from "~/modules/router.server";
 
-export const OPERATIONS = (raw as { tools: ManifestEntry[] }).tools;
+export type { Operation };
 
-const companyTables = (raw as { companyTables?: string[] }).companyTables;
-// The dispatcher confines every write to the caller's company by this list
-// (`scopedToCompany`). An empty one would switch that off without a sound, so
-// a manifest generated before the list existed stops the module loading.
-if (!Array.isArray(companyTables) || companyTables.length === 0) {
-  throw new Error(
-    "tool-metadata.json has no companyTables. Regenerate it: pnpm run generate:mcp"
-  );
-}
+/** Every published operation, in router order. */
+export const OPERATIONS: Operation[] = buildOperationCatalog(services);
 
-/** Every table with a `companyId` column, from the generated database types. */
+/**
+ * Every table with a `companyId` column, from the generated database types.
+ * The dispatcher confines every write to the caller's company by this list
+ * (`scopedToCompany`).
+ */
 export const COMPANY_TABLES: ReadonlySet<string> = new Set(companyTables);
+
 /** Every published operation by its name. */
-export const operationsByName = new Map<string, ManifestEntry>(
+export const operationsByName = new Map<string, Operation>(
   OPERATIONS.map((op) => [op.name, op])
 );
 
 /** The bare operation id (the name without its `module_` prefix). */
-export function operationId(op: ManifestEntry): string {
+export function operationId(
+  op: Pick<ManifestEntry, "name" | "module">
+): string {
   return op.name.slice(op.module.length + 1);
 }
 
 /** The operation's HTTP path: `/{module}/{operationId}` (`/production/cancelJob`). */
-export function operationPath(op: ManifestEntry): `/${string}` {
+export function operationPath(
+  op: Pick<ManifestEntry, "name" | "module">
+): `/${string}` {
   return `/${op.module}/${operationId(op)}`;
 }
 
 /**
- * Whether an operation's HTTP response is the LIST envelope `{ results, count }`
- * or the bare payload.
- *
- * The old contract wrapped everything, which stacked our envelope under every
- * generated client's own result wrapper — callers wrote `res.data.data.field`.
- * The Stripe convention fixes it: single results are the body itself; only list
- * results carry an envelope, because `count` means something there.
- *
- * Decided STATICALLY from the reflected response schema so the runtime shaping
- * (router handler), the reverse mapping (`callOperation`), and the published
- * output schema can never disagree. An operation with no reflected schema is
- * treated as bare — those are `any`/void shapes with no pagination.
+ * What a dispatch produced: the data, the total of a paged list, and whether
+ * the HTTP body is the list envelope. Decided from the result itself — a
+ * `paged()` result is marked, any other array is a list — not from a
+ * reflected return type, so it needs nothing generated.
  */
-export function isListOperation(op: ManifestEntry): boolean {
+export type DispatchResult = { data: unknown; count?: number; list: boolean };
+
+/**
+ * Whether an operation is known to answer with a list before it runs: a
+ * paged one. A non-paged list is found out from its result. Used by the MCP
+ * to describe a tool and to page a response; with a declared `output`
+ * (phase 2) every list is known here.
+ */
+export function isListOperation(
+  op: Pick<ManifestEntry, "paginates" | "responseSchema">
+): boolean {
   const type = (op.responseSchema as { type?: string | string[] } | undefined)
     ?.type;
-  return type === "array" || (Array.isArray(type) && type.includes("array"));
+  return (
+    op.paginates ||
+    type === "array" ||
+    (Array.isArray(type) && type.includes("array"))
+  );
 }
 
 /**
  * The success body over HTTP. Single results are the payload itself — wrapping
  * everything in `{ data }` stacked our envelope under every generated client's own
  * result wrapper, so callers wrote `res.data.data.field`. Lists keep the envelope
- * because `count` belongs there (the Stripe convention). Keyed off
- * `isListOperation` — the same bit `shapeHttpBody` and `callOperation` use — so the
- * published schema and the runtime behavior cannot drift.
+ * because `count` belongs there (the Stripe convention).
  */
-export function outputSchema(op: ManifestEntry): Record<string, unknown> {
+export function outputSchema(
+  op: Pick<ManifestEntry, "paginates" | "responseSchema">
+): Record<string, unknown> {
   if (!isListOperation(op)) return op.responseSchema ?? {};
   return {
     type: "object",
     properties: {
-      results: op.responseSchema ?? {},
+      results: op.responseSchema ?? { type: "array" },
       count: {
         type: ["number", "null"],
         description: "Total matching rows, present on paginated reads."
@@ -83,31 +98,10 @@ export function outputSchema(op: ManifestEntry): Record<string, unknown> {
 }
 
 /** Shape a dispatch result into the HTTP body `outputSchema` promises. */
-export function shapeHttpBody(
-  op: ManifestEntry,
-  result: { data: unknown; count?: number }
-): unknown {
+export function shapeHttpBody(result: DispatchResult): unknown {
   // `results`, not `data`: generated clients wrap responses in their own `.data`,
   // so an envelope field named `data` reads back as `res.data.data`.
-  return isListOperation(op)
+  return result.list
     ? { results: result.data, count: result.count ?? null }
     : result.data;
-}
-
-/**
- * Reverse of `shapeHttpBody`, for the non-HTTP callers (MCP, agent, workflows)
- * that need DispatchResult semantics back. Keyed off the same static bit — never
- * value sniffing, which would mis-unwrap a payload that happens to carry a
- * `data` key.
- */
-export function unshapeHttpBody(
-  op: ManifestEntry,
-  body: unknown
-): { data: unknown; count?: number } {
-  if (!isListOperation(op)) return { data: body };
-  const envelope = body as { results: unknown; count: number | null };
-  return {
-    data: envelope.results,
-    ...(envelope.count !== null ? { count: envelope.count } : {})
-  };
 }

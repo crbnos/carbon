@@ -16,7 +16,14 @@ import {
   searchLineDescription
 } from "@carbon/ee/mcp";
 import { describe, expect, test } from "vitest";
-import toolMetadata from "./tool-metadata.json";
+import { OPERATIONS } from "../../v1+/lib/operations.server";
+
+// The catalog the server describes: built from the service-function registry.
+const toolMetadata = {
+  tools: OPERATIONS,
+  totalTools: OPERATIONS.length,
+  modules: new Set(OPERATIONS.map((tool) => tool.module)).size
+};
 
 const baseTool: ManifestEntry = {
   name: "sales_getCustomer",
@@ -166,7 +173,7 @@ describe("formatSchemaType", () => {
   test("is far shorter than the JSON Schema across the manifest", () => {
     let json = 0;
     let typed = 0;
-    for (const tool of toolMetadata.tools as unknown as ManifestEntry[]) {
+    for (const tool of toolMetadata.tools) {
       for (const schema of [tool.schema, tool.responseSchema]) {
         if (!schema) continue;
         json += JSON.stringify(schema).length;
@@ -214,9 +221,7 @@ describe("formatSearchResults", () => {
 });
 
 describe("closestToolNames", () => {
-  const names = (toolMetadata.tools as unknown as ManifestEntry[]).map(
-    (tool) => tool.name
-  );
+  const names = toolMetadata.tools.map((tool) => tool.name);
 
   test("puts the real name first for a near-typo", () => {
     expect(closestToolNames("inventory_getInventoryItem", names)[0]).toBe(
@@ -281,10 +286,7 @@ describe("paginatingSibling", () => {
 
 describe("getServerInstructions", () => {
   test("lists every module in the manifest", () => {
-    const instructions = getServerInstructions(
-      "2026-09-11",
-      toolMetadata as unknown as Parameters<typeof getServerInstructions>[1]
-    );
+    const instructions = getServerInstructions("2026-09-11", toolMetadata);
     const modules = [...new Set(toolMetadata.tools.map((t) => t.module))];
     for (const module of modules) {
       expect(instructions).toContain(module);

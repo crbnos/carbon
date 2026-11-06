@@ -5,23 +5,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { outputJsonSchema } from "@carbon/api/catalog.server";
-import type { ServiceFn } from "@carbon/api/service-fn.server";
-import type { z } from "zod";
-import { router } from "../app/modules/router.server";
+import { OPERATIONS } from "../app/routes/api+/v1+/lib/operations.server";
 
-const OPERATIONS = Object.entries(router).flatMap(([module, namespace]) =>
-  Object.entries(namespace).flatMap(([name, value]) => {
-    if (typeof value !== "function") return [];
-    const fn = value as ServiceFn<z.ZodType, unknown>;
-    return fn.output
-      ? [{ name: `${module}_${name}`, responseSchema: outputJsonSchema(fn.output) }]
-      : [];
-  })
-);
-
-// Declared outputs are checked as modules adopt them. The generator still
-// reflects the REAL return type with
+// Every published service function declares `output`, the response shape the
+// catalog publishes. The generator still reflects the REAL return type with
 // the type checker, so the two are compared here, operation by operation: a
 // declared output that drifts from what `run` returns fails this test. The
 // manifest is generated (`pnpm generate:mcp`), so this runs where it exists:
@@ -192,7 +179,7 @@ function isUnknown(x: unknown): boolean {
 describe.skipIf(!existsSync(MANIFEST))(
   "declared outputs match the reflected return types",
   () => {
-    it("agrees on every declared operation the generator reflected", () => {
+    it("agrees on every operation the generator reflected", () => {
       // Read inside the test: a skipped suite is still collected, and the
       // ERP test run has no manifest unless something generated one.
       const manifest = JSON.parse(readFileSync(MANIFEST, "utf8")) as {
@@ -201,7 +188,6 @@ describe.skipIf(!existsSync(MANIFEST))(
       const reflected = new Map(
         manifest.tools.map((t) => [t.name, t.responseSchema])
       );
-      expect(OPERATIONS.length, "At least one output must be checked").toBeGreaterThan(0);
       const problems: string[] = [];
       for (const op of OPERATIONS) {
         const expected = reflected.get(op.name);

@@ -25,6 +25,23 @@ function inputOf(call: CallExpression): Node | undefined {
  */
 function baseValidator(expression: Node): Node | undefined {
   let node: Node = expression;
+  while (Node.isCallExpression(node)) node = node.getExpression();
+  // `service.createInvoicesInput`: a validator a namespace import names.
+  // Resolved through the import's own file, not the checker, which binds
+  // the whole program for a definition lookup and runs out of heap.
+  if (
+    Node.isPropertyAccessExpression(node) &&
+    Node.isIdentifier(node.getExpression())
+  ) {
+    const namespace = node.getExpression().getText();
+    const imported = node
+      .getSourceFile()
+      .getImportDeclarations()
+      .find((decl) => decl.getNamespaceImport()?.getText() === namespace);
+    const file = imported?.getModuleSpecifierSourceFile();
+    const named = file?.getVariableDeclaration(node.getName());
+    if (named) return named.getInitializer();
+  }
   while (Node.isCallExpression(node) || Node.isPropertyAccessExpression(node)) {
     node = node.getExpression();
   }
@@ -76,7 +93,13 @@ export function inputFieldDescriptions(
       .filter((candidate) => {
         const callee = candidate.getExpression();
         const name = Node.isPropertyAccessExpression(callee) ? callee.getName() : "";
-        return ["object", "looseObject", "strictObject", "extend"].includes(name);
+        return [
+          "object",
+          "looseObject",
+          "strictObject",
+          "extend",
+          "safeExtend"
+        ].includes(name);
       })
       .map((candidate) => candidate.getArguments()[0])
       .filter(Node.isObjectLiteralExpression);

@@ -23459,9 +23459,12 @@ async function processProjectBillingContract(
 
 export const createProjectBillingInvoicesInput = z.object({
   /** `YYYY-MM-DD` in the company's timezone. */
-  asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  asOf: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .describe("The day to bill up to, `YYYY-MM-DD` in the company's timezone."),
   /** Draft one contract only. */
-  customerContractId: z.string().optional()
+  customerContractId: z.string().optional().describe("Draft one contract only.")
 });
 
 export const createProjectBillingInvoicesPermission = {
