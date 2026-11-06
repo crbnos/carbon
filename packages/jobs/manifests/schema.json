@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105143333",
+  "schemaVersion": "20261105230630",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-05T17:50:29.352Z",
+  "exportedAt": "2026-11-06T04:50:14.831Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -316,7 +316,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "decisionSignaturePath"
+        "decisionSignaturePath",
+        "hasPriorVersion"
       ]
     },
     {
@@ -512,7 +513,8 @@
         "serviceLaborCostRate",
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
-        "requireCustomerContactEmail"
+        "requireCustomerContactEmail",
+        "includeSupplierPartFiles"
       ]
     },
     {
@@ -7461,6 +7463,78 @@
       ]
     },
     {
+      "name": "purchaseOrderVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "approvalRequestId",
+        "purchaseOrderId",
+        "exchangeRate",
+        "hasDelivery",
+        "locationId",
+        "shippingMethodId",
+        "shippingTermId",
+        "receiptRequestedDate",
+        "notes",
+        "trackingNumber",
+        "dropShipment",
+        "customerId",
+        "customerLocationId",
+        "customFields",
+        "supplierShippingCost",
+        "incoterm",
+        "incotermLocation",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "purchaseOrderLineVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderVersionId",
+        "purchaseOrderLineId",
+        "purchaseOrderLineType",
+        "itemId",
+        "description",
+        "purchaseQuantity",
+        "purchaseUnitOfMeasureCode",
+        "inventoryUnitOfMeasureCode",
+        "conversionFactor",
+        "supplierUnitPrice",
+        "supplierShippingCost",
+        "supplierTaxAmount",
+        "taxPercent",
+        "setupPrice",
+        "exchangeRate",
+        "locationId",
+        "storageUnitId",
+        "accountId",
+        "assetId",
+        "costCenterId",
+        "jobId",
+        "jobOperationId",
+        "supplierPartId",
+        "requiredDate",
+        "customFields",
+        "tags",
+        "sortOrder",
+        "externalNotes",
+        "internalNotes",
+        "modelUploadId",
+        "ownerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "purchaseReturnOrderLineTrackedEntity",
       "rows": 0,
       "columns": [
@@ -8825,7 +8899,8 @@
         "updatedBy",
         "supplierInteractionId",
         "supplierQuoteType",
-        "externalLinkId"
+        "externalLinkId",
+        "sharedFilePaths"
       ]
     },
     {

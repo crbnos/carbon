@@ -62,9 +62,15 @@ const StorageTypesTable = memo((props: StorageTypesTableProps) => {
       {
         accessorKey: "nettable",
         header: t`Non-nettable`,
-        cell: (item) => (
-          <Checkbox isChecked={item.getValue<boolean>() === false} />
-        ),
+        cell: (item) => {
+          const name = item.row.original.name;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>() === false}
+              aria-label={t`Non-nettable: ${name}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",

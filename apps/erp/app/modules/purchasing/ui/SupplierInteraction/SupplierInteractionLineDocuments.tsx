@@ -257,6 +257,16 @@ const SupplierInteractionLineDocuments = ({
                       <HStack>
                         <DocumentIcon type={type} />
                         <span
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLSpanElement>
+                          ) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
                           className="font-medium"
                           onClick={() => {
                             if (["PDF", "Image"].includes(type)) {

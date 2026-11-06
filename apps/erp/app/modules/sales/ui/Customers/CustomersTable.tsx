@@ -311,6 +311,7 @@ const CustomersTable = memo(
     return (
       <>
         <Table<CustomerListItem>
+          getRowLabel={(row) => row.name ?? undefined}
           count={count}
           infinite={infinite}
           columns={columns}

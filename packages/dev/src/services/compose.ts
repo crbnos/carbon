@@ -8,7 +8,7 @@ import { execa } from "execa";
 import { join } from "pathe";
 import { COMPOSE_DEV_FILE, COMPOSE_DEV_FILE_LEGACY } from "../constants.js";
 import { readLines } from "../helpers.js";
-import { projectName, SHARED_REDIS_PORT } from "../worktree.js";
+import { projectName, REDIS_DB_MAX, SHARED_REDIS_PORT } from "../worktree.js";
 
 // Resolve the dev compose file for a given worktree root. Prefers the current
 // location, falls back to the pre-move root path so older checkouts still work.
@@ -283,16 +283,52 @@ async function projectContainerIds(project: string): Promise<string[]> {
     .filter(Boolean);
 }
 
+/** The `--databases` a redis container was started with: redis's default
+ *  (16) when its command does not set it. */
+export function redisDatabasesOf(cmd: string[]): number {
+  const at = cmd.indexOf("--databases");
+  return at >= 0 ? Number(cmd[at + 1]) || 16 : 16;
+}
+
 // One redis per host, run directly via `docker run` (no compose file).
 // Idempotent: reuse a running container, start a stopped one, otherwise create.
+// A container started with fewer DBs than the slot pool (made before the pool
+// grew) is recreated on the same volume, so its data is kept.
 export async function bootSharedRedis() {
   const state = await execa(
     "docker",
-    ["container", "inspect", "-f", "{{.State.Running}}", REDIS_CONTAINER],
+    [
+      "container",
+      "inspect",
+      "-f",
+      "{{.State.Running}} {{json .Config.Cmd}}",
+      REDIS_CONTAINER
+    ],
     { reject: false }
   );
-  if (state.exitCode === 0) {
-    if (state.stdout.trim() === "true") return;
+  const [running = "", cmd = "[]"] = state.stdout.trim().split(/ (.*)/);
+  const tooFewDbs =
+    state.exitCode === 0 &&
+    redisDatabasesOf((JSON.parse(cmd) as string[] | null) ?? []) < REDIS_DB_MAX;
+  if (tooFewDbs) {
+    log.info(`recreating shared redis with ${REDIS_DB_MAX} DBs (data kept)`);
+    // Stop first: a SIGTERM lets redis flush its AOF buffer, `rm -f` alone
+    // would kill it with acknowledged writes still unwritten. `docker stop`
+    // succeeds on a stopped container, so a failure means it may still run.
+    const stopped = await execa("docker", ["stop", REDIS_CONTAINER], {
+      reject: false
+    });
+    if (stopped.exitCode !== 0) {
+      throw new Error(
+        `Could not stop ${REDIS_CONTAINER} to resize it: ${stopped.stderr.trim()}`
+      );
+    }
+    await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
+      reject: false,
+      stdio: "ignore"
+    });
+  } else if (state.exitCode === 0) {
+    if (running === "true") return;
     // Exists but stopped — try to start it; if that fails, recreate below.
     const started = await execa("docker", ["start", REDIS_CONTAINER], {
       reject: false,
@@ -327,7 +363,9 @@ export async function bootSharedRedis() {
     "redis:7-alpine",
     "redis-server",
     "--appendonly",
-    "yes"
+    "yes",
+    "--databases",
+    String(REDIS_DB_MAX)
   ];
   // Recover from a stale container holding the name.
   let r = await execa("docker", args, { reject: false });

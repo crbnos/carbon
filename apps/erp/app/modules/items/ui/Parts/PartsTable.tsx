@@ -406,7 +406,15 @@ const PartsTable = memo((props: PartsTableProps) => {
       {
         accessorKey: "active",
         header: t`Active`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const itemId = item.row.original.readableIdWithRevision;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Active: ${itemId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -701,6 +709,7 @@ const PartsTable = memo((props: PartsTableProps) => {
   return (
     <>
       <Table<PartListItem>
+        getRowLabel={(row) => row.readableIdWithRevision ?? undefined}
         count={count}
         columns={columns}
         data={data}

@@ -119,6 +119,7 @@ import {
   contractLineItemTypeMessage,
   DEFAULT_CURRENCY_DECIMALS,
   datetime,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   type ExistingBillingPeriod,
   earnsInterest,
@@ -14514,7 +14515,7 @@ export async function emailQuote(
   const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(args.documentFilePath, 3600);
+    .createSignedUrl(args.documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
   if (signed.error) {
     logger.error("Failed to create signed URL for attachment", {
       storagePath: args.documentFilePath,

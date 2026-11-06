@@ -246,6 +246,11 @@ export const baseQuantityValidator = finishValidator.extend({
 
 export const nonScrapQuantityValidator = baseQuantityValidator;
 
+// The completed quantity the page showed; the route skips a stale completion.
+export const completeQuantityValidator = nonScrapQuantityValidator.extend({
+  expectedQuantityComplete: zfd.numeric(z.number().min(0).optional())
+});
+
 export const scrapQuantityValidator = baseQuantityValidator.extend({
   scrapReasonId: zfd.text(z.string()),
   notes: zfd.text(z.string().optional())

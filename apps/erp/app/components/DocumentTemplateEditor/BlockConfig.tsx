@@ -601,8 +601,13 @@ function OperationsConfig({ block }: { block: OperationsBlock }) {
   );
 }
 
+/**
+ * The Line Items block's options: thumbnails, striped rows, item text
+ * overflow, and the Show Supplier Part ID switch on purchase orders only.
+ */
 function LineItemsConfig({ block }: { block: LineItemsBlock }) {
-  const { updateBlock } = useDocumentTemplate();
+  const { t } = useLingui();
+  const { updateBlock, documentType } = useDocumentTemplate();
   const opts = { ...DEFAULT_LINE_ITEMS_OPTIONS, ...block.options };
   const set = <K extends keyof typeof opts>(key: K, value: (typeof opts)[K]) =>
     updateBlock(block.id, { options: { ...opts, [key]: value } });
@@ -619,6 +624,13 @@ function LineItemsConfig({ block }: { block: LineItemsBlock }) {
         checked={opts.zebra}
         onChange={(v) => set("zebra", v)}
       />
+      {documentType === "purchaseOrder" && (
+        <ToggleRow
+          label={t`Show Supplier Part ID`}
+          checked={opts.showSupplierPartId}
+          onChange={(v) => set("showSupplierPartId", v)}
+        />
+      )}
       <div className="flex flex-col gap-1.5">
         <Label>Item text</Label>
         <Select
@@ -648,7 +660,7 @@ function TokenEditor({
   minHeight
 }: {
   block: RichTextBlock | TermsBlock | ApprovalBlock;
-  label: ReactNode;
+  label: string;
   content: JSONContent;
   minHeight: string;
 }) {
@@ -672,6 +684,7 @@ function TokenEditor({
         />
       </div>
       <Editor
+        label={label}
         key={`${block.id}-${nonce}`}
         className={`${minHeight} w-full rounded-md border bg-transparent p-3`}
         initialValue={content}
@@ -684,6 +697,7 @@ function TokenEditor({
 }
 
 function RichTextConfig({ block }: { block: RichTextBlock }) {
+  const { t } = useLingui();
   const { updateBlock } = useDocumentTemplate();
 
   return (
@@ -698,7 +712,7 @@ function RichTextConfig({ block }: { block: RichTextBlock }) {
       </div>
       <TokenEditor
         block={block}
-        label={<Trans>Content</Trans>}
+        label={t`Content`}
         content={block.content}
         minHeight="min-h-[140px]"
       />
@@ -719,6 +733,7 @@ function hasDocContent(content?: JSONContent | null): boolean {
  * point.
  */
 function TermsConfig({ block }: { block: TermsBlock }) {
+  const { t } = useLingui();
   const { termsSeed } = useDocumentTemplate();
 
   const initialValue: JSONContent = (hasDocContent(block.content)
@@ -735,7 +750,7 @@ function TermsConfig({ block }: { block: TermsBlock }) {
       </p>
       <TokenEditor
         block={block}
-        label={<Trans>Content</Trans>}
+        label={t`Content`}
         content={initialValue}
         minHeight="min-h-[160px]"
       />
@@ -749,6 +764,7 @@ function TermsConfig({ block }: { block: TermsBlock }) {
  * "Approved by … on …" is written here rather than in a separate block.
  */
 function ApprovalConfig({ block }: { block: ApprovalBlock }) {
+  const { t } = useLingui();
   const { updateBlock } = useDocumentTemplate();
   const caption = hasDocContent(block.content)
     ? (block.content as JSONContent)
@@ -774,7 +790,7 @@ function ApprovalConfig({ block }: { block: ApprovalBlock }) {
       />
       <TokenEditor
         block={block}
-        label={<Trans>Caption</Trans>}
+        label={t`Caption`}
         content={caption}
         minHeight="min-h-[96px]"
       />
@@ -783,6 +799,7 @@ function ApprovalConfig({ block }: { block: ApprovalBlock }) {
 }
 
 function KeyValueConfig({ block }: { block: KeyValueBlock }) {
+  const { t } = useLingui();
   const { updateBlock } = useDocumentTemplate();
   const rows = block.rows ?? [];
 
@@ -805,6 +822,7 @@ function KeyValueConfig({ block }: { block: KeyValueBlock }) {
           <div key={index} className="flex items-center gap-2">
             <Input
               placeholder="Label"
+              aria-label={t`Label ${index + 1}`}
               value={row.label}
               onChange={(e) =>
                 setRows(
@@ -816,6 +834,7 @@ function KeyValueConfig({ block }: { block: KeyValueBlock }) {
             />
             <Input
               placeholder="Value"
+              aria-label={t`Value ${index + 1}`}
               value={row.value}
               onChange={(e) =>
                 setRows(

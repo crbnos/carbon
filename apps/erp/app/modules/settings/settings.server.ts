@@ -495,7 +495,9 @@ export const updateProductionSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether documents print the
  * centralized payables billing address, that address itself (a null field
  * clears it), whether a supplier needs a contact with an email before its
- * documents issue, whether every supplier contact needs an email, whether approving a purchase order needs the approver's
+ * documents issue, whether every supplier contact needs an email, whether the
+ * RFQ and supplier quote send dialogs start with every part file ticked,
+ * whether approving a purchase order needs the approver's
  * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
@@ -509,6 +511,7 @@ export const updatePurchasingSettings = defineServiceFn({
     accountsPayableBillingAddress: billingAddressInput.optional(),
     requireSupplierContactAndLocation: z.boolean().optional(),
     requireSupplierContactEmail: z.boolean().optional(),
+    includeSupplierPartFiles: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)

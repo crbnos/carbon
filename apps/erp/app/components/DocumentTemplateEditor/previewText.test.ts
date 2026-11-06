@@ -242,6 +242,7 @@ describe("groupTexts", () => {
       "description",
       "descriptionCell",
       "detailsCell",
+      "supplierPartCell",
       "operationCell",
       "shipping"
     ]);

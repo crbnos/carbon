@@ -4450,6 +4450,40 @@ the error set against an untouched checkout of `main`.
 - **Rule:** When a page can work without the data, load it with a plain `fetch` and handle the failure there, or return the failure from the loader as data.
 - **Applies to:** Every `fetcher.load` for something optional, especially behind unsaved work.
 
+## Lingui `plural()` must be the whole message, with no variables in its branches
+
+**Context:** Accessibility labels like "3 jobs for SO000001, in progress" were written as `` t`${plural(n, { one: "# job for", other: "# jobs for" })} ${orderId}` `` and later with `${orderId}` inside the branches.
+
+**Problem:** The macro only folds `plural()` into the ICU message when it is the entire `t` template and its branches are plain strings. Text around it, or template variables inside a branch, leave `plural()` to run at render through Lingui's global instance, which has no active locale on the server — the whole route throws ("Attempted to call a translation function without setting a locale"). Typecheck and unit tests pass; only rendering the cell shows it.
+
+**Rule:** Use `` t`${plural(n, { one: "# job", other: "# jobs" })}` `` with literal branches and nothing else in the template, or phrase the string so the count needs no agreement (`` t`Jobs for ${orderId}: ${n}` ``). Load the page after adding any `plural()`.
+
+**Applies to:** every `plural()` / `select()` from `@lingui/core/macro` inside `t`/`msg`, especially in table cell renderers.
+
+## A clickable row made keyboard-reachable must not wrap its own controls
+
+**Context:** Turning on Biome's `useKeyWithClickEvents` / `noStaticElementInteractions` meant giving every clickable `div` a role, `tabIndex` and an Enter/Space handler.
+
+**Problem:** The quick fix, `role="button"` on the row, was applied to rows that already held a link, a chevron button or a date picker (document line summaries, share pages, the BOM list title). A button's children are presentational, so a screen reader hears one button named after the whole row and cannot reach the controls inside. A keyboard user gets two tab stops for one toggle. And a row handler that calls `preventDefault()` on Enter with no target check swallows Enter on the link inside, which then opens the row instead of following the link. Lint, typecheck and tests all pass.
+
+**Rule:** Before adding `role="button"`, look inside the element. If it holds a link, button or field, keep the row pointer-only (`biome-ignore` with the reason, ignore clicks on `a, button`) and make the existing chevron or a stretched link the control. Any `role="button"` Enter/Space handler starts with `if (e.target !== e.currentTarget) return;`. A page-wide bare-key shortcut (MES Space) checks `isBareKeyForAnotherControl` in its guard.
+
+**Applies to:** every a11y lint fix on a clickable container; `conventions-ui.md` → Accessibility tree.
+
+## A posting that restates a document's status can release it past its approval
+
+**Context:** Purchase order approval enforcement (TCK-36). Receipt and invoice postings set the order's status from its lines: Completed, To Receive, To Invoice or To Receive and Invoice.
+**Problem:** The postings were gated, but their voids were not, and none of the four writes checked the status they replaced. Voiding an invoice on an order waiting for re-approval set it to a released status with no approval, and posting an invoice against a Closed order reopened it.
+**Rule:** A write that derives a document's status from its lines matches the statuses it may replace in its own `WHERE` (`.where("status", "in", PURCHASE_ORDER_RELEASED_STATUSES)`). Audit the voids and reversals along with the posts.
+**Applies to:** Every posting and void that writes `purchaseOrder.status`, `salesOrder.status` or a similar derived header status.
+
+## A rule on a posting belongs in the posting, not in the operation that wraps it
+
+**Context:** The purchase order funds gate was first placed in the `postPurchaseInvoice` operation (`invoicing.server.ts`), ahead of the `post-purchase-invoice` posting.
+**Problem:** The Ramp bill sync and `@carbon/jobs` call the posting through `posting()` from `@carbon/api/postings.server`, never the operation. They posted invoices against unapproved orders, and the PR had to list it as a known gap.
+**Rule:** A check that must hold for every caller of a posting goes in the posting body (`<module>.service.ts`), thrown as a `ServerFnError` with a status whose category fits (422 for a rule). The operation adds only what is specific to the route's caller.
+**Applies to:** every posting registered in `apps/erp/app/modules/postings.server.ts`.
+
 ## `permission: {}` admits a read-only API key
 
 **Context:** A person logs their own time, so `logTimesheetEntry` and its siblings gate on
@@ -4482,6 +4516,13 @@ that exports `config` gets its own bundle and keeps its routes, and each one sti
 
 **Applies to:** `apps/erp/react-router.config.ts`, and MES or another app if it nears 1016
 dynamic routes.
+
+## A grid position must name a sample id, not `samples[index]` of a reloaded list
+
+- **Context:** Inspection grids (ERP `InspectionMeasurementGrid`, MES `InspectionMeasurementMatrix`) map each column or row to an `inspectionSample`.
+- **Problem:** The loader embedded `inspectionSample(*)` with no order, and an UPDATE moves a row. Each save broadcasts `inspectionSample`, so the page reloaded and `samples[index]` named another sample: the next reading was saved on the wrong part. A stubbed harness never showed it; only the running stack (realtime + Postgres) did.
+- **Rule:** Order embedded children explicitly (`.order(col, { referencedTable })`). Bind a UI position to the record's id once (`placeSamples`), key per-cell state by that id, and never re-derive a position from a reloaded array's index. Test write paths on `crbn up`, not only against a stub.
+- **Applies to:** any grid or list that writes through positions over data a realtime reload can reorder.
 
 ## A cookie-only save must not re-run every loader on the page
 
@@ -4563,6 +4604,35 @@ answer that the class did not reach the animation.
 **Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
 compiled Tailwind output.
 
+## An inline editor built in a memo with changing dependencies drops keystrokes
+
+**Context:** The inspection grid (`InspectionMeasurementGrid.tsx`) moves to the next
+cell on Enter. Typing "0.139" straight after Enter saved "39".
+
+**Problem:** `editableComponents` was a `useMemo` that called `EditableNumber(...)`
+per column, with the grid's cell status among its dependencies. The previous cell's
+save landed while the inspector typed: its status changed, the memo made new editor
+component types, and React remounted the open input. The new input started from the
+saved value, so the characters typed before the remount were lost. A slow, step-by-step
+test passed because the save had landed before the first key.
+
+A browser stress run found two more remounts of the same kind. The By part rows were
+keyed by sample id, so the first save of a part (which creates the sample) re-keyed the
+row; and the editors were rebuilt whenever a spare sample column was added. A first fix
+also passed Lingui's `t` through the ref and crashed: `t` is a macro bound to
+`useLingui()`, not a function value. Typecheck passed; only the browser showed it.
+
+**Rule:** The components in a Table's `editableComponents` keep one identity while a
+cell is open: make each column's editor once (cache it by column key) and read changing
+state (statuses, callbacks) through a ref. Translate strings before they go into the
+ref; never pass `t` itself. A row's `getRowId` never changes while the row is on
+screen — key a row by something that exists before its first save. To test an inline
+editor, hold the save (wrap `fetch` with a delay), type half a value, let the save land,
+then type the rest.
+
+**Applies to:** every `<Table editableComponents>` whose editors are made inside
+`useMemo`/`useCallback` (`EditableNumber`, `EditableText`, `EditableList`, …).
+
 ## react-pdf: `wrap={false}` loses text when the node is taller than the page
 
 **Context:** A list item in a PDF note rendered its bullet on one page and its text on the
@@ -4598,3 +4668,22 @@ publishes it. After moving any building block, check `git diff` on
 regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
 
 **Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.
+
+## `null` as "no bin chosen" and `null` as "no storage unit" are different things
+
+**Context:** The untracked draw planner (`planStripedUntrackedDraw`) and its SQL twin in
+`backflush_job_materials` took a preferred bin, where `null` meant "no bin chosen", and
+listed the other bins as "every bin that is not the preferred one".
+
+**Problem:** With no bin chosen, "not the preferred one" also dropped the bin whose id
+is `null`: stock with no storage unit. A draw with 8 in a bin and 3 in no storage unit
+took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
+`IS DISTINCT FROM NULL` both excluded it, so the twins agreed and unit tests passed.
+
+**Rule:** When one value can mean "nothing chosen" and also name a real bucket, test the
+"nothing chosen" case against stock in that bucket. In code, guard the comparison:
+`preferred === null || id !== preferred`, and in SQL
+`v_preferred IS NULL OR id IS DISTINCT FROM v_preferred`.
+
+**Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
+and any bin or stripe filter where `null` is both a key and "unset".

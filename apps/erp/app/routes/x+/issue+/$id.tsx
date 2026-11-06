@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
@@ -34,6 +34,7 @@ import IssueHeader from "~/modules/quality/ui/Issue/IssueHeader";
 import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "issue-detail");
@@ -55,6 +56,9 @@ export const handle: Handle = {
   ),
   module: "quality"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.nonConformance?.nonConformanceId, "Issue");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

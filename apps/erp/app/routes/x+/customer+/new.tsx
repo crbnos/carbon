@@ -17,7 +17,10 @@ import { upsertCustomer } from "~/modules/sales/sales.service";
 import { CustomerForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Customer");
 
 export const handle: Handle = {
   breadcrumb: msg`Customers`,

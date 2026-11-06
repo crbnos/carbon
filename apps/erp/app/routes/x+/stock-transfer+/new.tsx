@@ -11,7 +11,7 @@ import { getLogger } from "@carbon/logger";
 import { Combobox, Heading, HStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
@@ -26,9 +26,12 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { clearStockTransferWizard } from "~/stores";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "stock-transfer-new");
+
+export const meta = newRecordMeta("Stock Transfer");
 
 export const handle: Handle = {
   breadcrumb: msg`Stock Transfers`,
@@ -161,6 +164,7 @@ export default function NewStockTransferRoute() {
     useLoaderData<typeof loader>();
   const locations = useLocations();
   const navigate = useNavigate();
+  const { t } = useLingui();
 
   // Lines belong to one location: start empty, and again on a switch.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per location on purpose
@@ -177,6 +181,7 @@ export default function NewStockTransferRoute() {
         <div className="shrink-0">
           <Combobox
             asButton
+            aria-label={t`Location`}
             size="sm"
             value={locationId}
             options={locations}

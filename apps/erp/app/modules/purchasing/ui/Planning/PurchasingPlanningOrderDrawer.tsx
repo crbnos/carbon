@@ -617,7 +617,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                     selectedItem.id
                   )}
                 >
-                  <LuExternalLink />
+                  <LuExternalLink aria-hidden />
+                  <span className="sr-only">
+                    <Trans>Open item planning</Trans>
+                  </span>
                 </Link>
               </DrawerTitle>
               {distinctItemText(

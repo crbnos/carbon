@@ -49,6 +49,7 @@ export function MousePositionProvider({ children }: { children: ReactNode }) {
   );
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: tracks pointer position for the hover cursor line only; not a control
     <div
       ref={ref}
       onMouseEnter={handleMouseMove}

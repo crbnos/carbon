@@ -437,10 +437,10 @@ function EditorToolbar({
  * seeded from the company's configured label size.
  */
 function LabelSizePicker() {
+  const { t } = useLingui();
   const documentType = useEditorStore((s) => s.documentType);
   const labelSizeId = useEditorStore((s) => s.labelSizeId);
   const setLabelSizeId = useEditorStore((s) => s.setLabelSizeId);
-  const { t } = useLingui();
   if (documentType !== "trackingLabel") return null;
 
   return (

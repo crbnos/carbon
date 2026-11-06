@@ -18,6 +18,11 @@ import { useTw } from "../tw";
 import type { PurchaseOrderData } from "./types";
 import { buildPurchaseOrderLineVars } from "./vars";
 
+/**
+ * The purchase order's line table. Each row prints the item ID (an indirect
+ * line prints its description), then the supplier's part number on its own
+ * line when the template's `showSupplierPartId` option is on.
+ */
 export function LineItemsBlock({
   block,
   data
@@ -130,6 +135,12 @@ export function LineItemsBlock({
                       }}
                     >
                       {t("detailsCell", row)}
+                    </Text>
+                  ) : null}
+                  {opts.showSupplierPartId &&
+                  t.prints("supplierPartCell", row) ? (
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
+                      {t("supplierPartCell", row)}
                     </Text>
                   ) : null}
                   {t.prints("operationCell", row) ? (

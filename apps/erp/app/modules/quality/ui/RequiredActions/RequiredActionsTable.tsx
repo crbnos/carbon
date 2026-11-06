@@ -57,7 +57,9 @@ const RequiredActionsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => <Checkbox checked={row.original.active} />,
+          cell: ({ row }) => (
+            <Checkbox aria-label={t`Active`} checked={row.original.active} />
+          ),
           meta: {
             mobile: "P2"
           }

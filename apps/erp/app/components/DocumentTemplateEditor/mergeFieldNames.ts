@@ -118,6 +118,7 @@ export const MERGE_FIELD_NAMES: Record<string, MessageDescriptor> = {
   "Line Non-Taxable Add-On": msg`Line Non-Taxable Add-On`,
   "Line Number": msg`Line Number`,
   "Line Operation": msg`Line Operation`,
+  "Line Supplier Part ID": msg`Line Supplier Part ID`,
   "Line Shipping": msg`Line Shipping`,
   "Line Total": msg`Line Total`,
   "Linked Record": msg`Linked Record`,

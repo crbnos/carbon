@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { describe, expect, it } from "vitest";
-import { getLineDescription } from "./purchase-order";
+import { getLineDescription, getLineSupplierPartId } from "./purchase-order";
 
 type Line = Database["public"]["Views"]["purchaseOrderLines"]["Row"];
 const line = (overrides: Partial<Line>) =>
@@ -41,19 +41,69 @@ describe("getLineDescription", () => {
     ).toBe("P000123.B (SUP-778)");
   });
 
-  it("does not repeat a supplier part number that equals the item id", () => {
-    expect(
-      getLineDescription(
-        line({ itemReadableId: "P000123.B", supplierPartId: "P000123.B" })
-      )
-    ).toBe("P000123.B");
-  });
-
   it("falls back to the supplier part number when the line has no item", () => {
     expect(
       getLineDescription(
         line({ itemReadableId: null, supplierPartId: "SUP-778" })
       )
     ).toBe("SUP-778");
+  });
+});
+
+describe("getLineSupplierPartId", () => {
+  it("prefers the line's supplier part number over the supplier part record's", () => {
+    expect(
+      getLineSupplierPartId(
+        line({
+          supplierPartId: "SUP-778",
+          supplierPartIdFromSupplier: "SUP-001"
+        })
+      )
+    ).toBe("SUP-778");
+  });
+
+  it("uses the supplier part record when the line's number is blank", () => {
+    for (const supplierPartId of ["", "  ", null]) {
+      expect(
+        getLineSupplierPartId(
+          line({ supplierPartId, supplierPartIdFromSupplier: "SUP-001" })
+        )
+      ).toBe("SUP-001");
+    }
+  });
+
+  // The item id already prints on the line, so repeating it adds nothing.
+  it("returns null when there is no number or it repeats the item id", () => {
+    expect(getLineSupplierPartId(line({ supplierPartId: "  " }))).toBeNull();
+    expect(
+      getLineSupplierPartId(
+        line({ itemReadableId: "P000123.B", supplierPartId: "P000123.B" })
+      )
+    ).toBeNull();
+  });
+
+  it("trims the number before it returns or compares it", () => {
+    expect(getLineSupplierPartId(line({ supplierPartId: "  SUP-778  " }))).toBe(
+      "SUP-778"
+    );
+    expect(
+      getLineSupplierPartId(
+        line({ itemReadableId: "P000123.B", supplierPartId: " P000123.B " })
+      )
+    ).toBeNull();
+  });
+
+  // A Service line's PDF row prints its description, not its item id.
+  it("compares with the identifier the caller says the line shows", () => {
+    const service = line({
+      purchaseOrderLineType: "Service",
+      itemReadableId: "Anodizing",
+      description: "Black anodize, Type II",
+      supplierPartId: "Anodizing"
+    });
+    expect(getLineSupplierPartId(service, service.description)).toBe(
+      "Anodizing"
+    );
+    expect(getLineSupplierPartId(service, " Anodizing ")).toBeNull();
   });
 });

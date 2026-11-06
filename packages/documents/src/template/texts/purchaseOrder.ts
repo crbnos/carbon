@@ -104,6 +104,13 @@ export const purchaseOrderTexts = {
       row: "line"
     },
     {
+      key: "supplierPartCell",
+      kind: "value",
+      default: "Supplier Part ID: {line.supplierPartId}",
+      of: "description",
+      row: "line"
+    },
+    {
       key: "operationCell",
       kind: "value",
       default: "{line.operation}",

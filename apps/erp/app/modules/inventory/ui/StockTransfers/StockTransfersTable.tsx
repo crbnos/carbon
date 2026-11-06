@@ -296,6 +296,7 @@ const StockTransfersTable = memo(
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={locationId}

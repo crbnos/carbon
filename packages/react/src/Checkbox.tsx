@@ -19,30 +19,49 @@ export interface CheckboxProps
 const Checkbox = forwardRef<
   ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ isChecked, isIndeterminate, className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "peer size-4 shrink-0 rounded-[4px] border border-muted-foreground/50 shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary",
-      isIndeterminate && "bg-primary text-primary-foreground",
-      // Phones: a 44x44 hit area around the visual box.
-      "max-md:hit-area",
-      className
-    )}
-    {...props}
-    checked={typeof isChecked === "boolean" ? isChecked : props.checked}
-  >
-    <CheckboxPrimitive.Indicator
-      className={cn("grid place-content-center text-current transition-none")}
-    >
-      {isIndeterminate ? (
-        <LuMinus className="w-4 h-4" />
-      ) : (
-        <LuCheck className="w-4 h-4" />
+>(
+  (
+    { isChecked, isIndeterminate, className, onCheckedChange, ...props },
+    ref
+  ) => (
+    <CheckboxPrimitive.Root
+      ref={ref}
+      className={cn(
+        "peer size-4 shrink-0 rounded-[4px] border border-muted-foreground/50 shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary",
+        isIndeterminate &&
+          "bg-primary text-primary-foreground data-[state=indeterminate]:border-primary dark:data-[state=indeterminate]:bg-primary",
+        // Phones: a 44x44 hit area around the visual box.
+        "max-md:hit-area",
+        className
       )}
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-));
+      {...props}
+      // An indeterminate box reports aria-checked="mixed". A click still flips
+      // `isChecked` as before, rather than Radix's mixed → checked.
+      checked={
+        isIndeterminate
+          ? "indeterminate"
+          : typeof isChecked === "boolean"
+            ? isChecked
+            : props.checked
+      }
+      onCheckedChange={
+        isIndeterminate && typeof isChecked === "boolean" && onCheckedChange
+          ? () => onCheckedChange(!isChecked)
+          : onCheckedChange
+      }
+    >
+      <CheckboxPrimitive.Indicator
+        className={cn("grid place-content-center text-current transition-none")}
+      >
+        {isIndeterminate ? (
+          <LuMinus className="w-4 h-4" />
+        ) : (
+          <LuCheck className="w-4 h-4" />
+        )}
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  )
+);
 Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
 export { Checkbox };

@@ -48,6 +48,7 @@
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./machine-time": "./src/machine-time.ts",
+    "./inspection-verdict": "./src/inspection-verdict.ts",
     "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",

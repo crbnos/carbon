@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Config, Preset } from "@react-router/dev/config";
-import { vercelPreset } from "@vercel/react-router/vite";
 
 /**
  * Vercel allows 2048 routes per deployment and its builder spends two on every
@@ -12,7 +11,10 @@ import { vercelPreset } from "@vercel/react-router/vite";
  * URL, so a dynamic route left out of the build result is still served through
  * the builder's `/(.*)` fallback. Static routes cost no routing entries and stay.
  */
-function vercelPresetWithoutDynamicRoutes(): Preset {
+async function vercelPresetWithoutDynamicRoutes(): Promise<Preset> {
+  // Imported only on Vercel: the module loads ts-morph, and with it a
+  // TypeScript compiler (~30 MB of heap), into every dev server.
+  const { vercelPreset } = await import("@vercel/react-router/vite");
   const preset = vercelPreset();
   return {
     ...preset,
@@ -50,7 +52,7 @@ function vercelPresetWithoutDynamicRoutes(): Preset {
 export default {
   ssr: true,
   presets: process.env.VERCEL
-    ? [vercelPresetWithoutDynamicRoutes()]
+    ? [await vercelPresetWithoutDynamicRoutes()]
     : undefined,
   future: { unstable_optimizeDeps: true, v8_middleware: true, v8_viteEnvironmentApi: true },
   allowedActionOrigins:

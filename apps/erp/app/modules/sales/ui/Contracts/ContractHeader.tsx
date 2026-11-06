@@ -130,7 +130,11 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
               variant="ghost"
             />
             <Link to={path.to.contractDetails(id)} className="min-w-0">
-              <Heading size="h4" className="flex items-center gap-2 min-w-0">
+              <Heading
+                as="h1"
+                size="h4"
+                className="flex items-center gap-2 min-w-0"
+              >
                 <span className="whitespace-nowrap">{readableId}</span>
                 {contract.name && (
                   <span className="text-muted-foreground font-normal truncate">

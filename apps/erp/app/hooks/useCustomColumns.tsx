@@ -113,10 +113,11 @@ export function useCustomColumns<T extends { customFields: Json }>(
               return isObject(item.row.original.customFields) &&
                 field.id in item.row.original.customFields ? (
                 <Checkbox
+                  aria-label={field.name}
                   isChecked={item.row.original?.customFields[field.id] === "on"}
                 />
               ) : (
-                <Checkbox isChecked={false} />
+                <Checkbox aria-label={field.name} isChecked={false} />
               );
             case DataType.Date:
               return isObject(item.row.original.customFields) &&

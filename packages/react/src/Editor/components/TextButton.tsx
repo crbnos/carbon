@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { EditorBubbleItem, useEditor } from "@carbon/tiptap";
+import { useLingui } from "@lingui/react/macro";
 import {
   BsCodeSlash,
   BsTypeBold,
@@ -16,7 +17,16 @@ import type { SelectorItem } from "./NodeSelector";
 
 export const TextButtons = () => {
   const { editor } = useEditor();
+  const { t } = useLingui();
   if (!editor) return null;
+
+  const labels: Record<string, string> = {
+    bold: t`Bold`,
+    italic: t`Italic`,
+    underline: t`Underline`,
+    strike: t`Strikethrough`,
+    code: t`Code`
+  };
 
   const items: SelectorItem[] = [
     {
@@ -53,20 +63,24 @@ export const TextButtons = () => {
 
   return (
     <div className="flex">
-      {items.map((item, index) => (
-        <EditorBubbleItem
-          key={index}
-          onSelect={(editor) => {
-            item.command(editor);
-          }}
-        >
-          <IconButton
-            aria-label={item.name}
-            icon={<item.icon />}
-            variant={item.isActive(editor) ? "active" : "ghost"}
-          />
-        </EditorBubbleItem>
-      ))}
+      {items.map((item, index) => {
+        const isActive = item.isActive(editor);
+        return (
+          <EditorBubbleItem
+            key={index}
+            onSelect={(editor) => {
+              item.command(editor);
+            }}
+          >
+            <IconButton
+              aria-label={labels[item.name] ?? item.name}
+              aria-pressed={isActive}
+              icon={<item.icon />}
+              variant={isActive ? "active" : "ghost"}
+            />
+          </EditorBubbleItem>
+        );
+      })}
     </div>
   );
 };

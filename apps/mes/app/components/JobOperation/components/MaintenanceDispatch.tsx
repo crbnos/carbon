@@ -25,6 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
@@ -83,6 +84,7 @@ export function MaintenanceDispatch({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher<{ id?: string }>();
   const failureModeFetcher = useLoaderQuery<
     PostgrestResponse<{
@@ -151,6 +153,7 @@ export function MaintenanceDispatch({
               <div className="flex flex-col gap-2 w-full">
                 <Label>Description</Label>
                 <Editor
+                  label={t`Description`}
                   initialValue={content}
                   onUpload={onUploadImage}
                   onChange={(value) => {

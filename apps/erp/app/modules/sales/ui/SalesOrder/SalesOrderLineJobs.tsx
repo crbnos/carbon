@@ -374,6 +374,7 @@ export function SalesOrderJobItem({
             Release
           </Button>
           <IconButton
+            aria-expanded={disclosure.isOpen}
             aria-label={disclosure.isOpen ? "Collapse" : "Expand"}
             icon={disclosure.isOpen ? <LuChevronDown /> : <LuChevronRight />}
             variant="ghost"
@@ -537,7 +538,7 @@ function JobDetails({ job }: { job: Job }) {
                   </VStack>
 
                   <IconButton
-                    aria-label={t`Edit`}
+                    aria-label={t`Edit ${operation.description}`}
                     icon={<LuSettings2 />}
                     variant="ghost"
                     onClick={() => {

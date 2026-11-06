@@ -45,7 +45,7 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
 
   return (
     <div className="grid w-full gap-4 grid-cols-[auto_1fr_auto]">
-      <Avatar size="sm" name={`${name}`} />
+      <Avatar size="sm" name={`${name}`} decorative />
       <VStack spacing={0}>
         <HStack>
           {url ? (
@@ -78,7 +78,7 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
         </p>
       </VStack>
       {actions.length > 0 && (
-        <ActionMenu>
+        <ActionMenu label={t`Actions for ${name}`}>
           {actions.map((action) => (
             <DropdownMenuItem key={action.label} onClick={action.onClick}>
               {action.icon && <DropdownMenuIcon icon={action.icon} />}
