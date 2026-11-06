@@ -35,8 +35,18 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalidLineIds" in result.data) return result.data;
   const warnings = result.data.heldStockWarnings ?? [];
   const awaiting = warnings.filter((row) => row.awaitingInspection);
-  const movable = warnings.filter((row) => !row.awaitingInspection);
+  const short = warnings.filter(
+    (row) => !row.awaitingInspection && row.countedShort
+  );
+  const movable = warnings.filter(
+    (row) => !row.awaitingInspection && !row.countedShort
+  );
   const message = ["Inventory count posted."];
+  if (short.length > 0) {
+    message.push(
+      `${partList(short)} ${short.length === 1 ? "was" : "were"} counted short in ${short.length === 1 ? "its" : "their"} inspection unit: the lot holds more than is there. Reject writes off what is there.`
+    );
+  }
   if (movable.length > 0) {
     message.push(
       `Stock held for inspection was counted outside its inspection unit: ${partList(movable)}. Move it back.`

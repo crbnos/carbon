@@ -1545,6 +1545,9 @@ msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" 또는 3\" x 2\" 라벨은 Zebra 같은 감열 프린터용으로 라벨당 카드 한 장을 인쇄합니다."
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분할하려면 대신 Dissolve를 사용하세요."
 
@@ -18695,8 +18698,8 @@ msgstr "모듈이 없습니다"
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
-msgid "No non-nettable storage units"
-msgstr "MRP 제외 보관 단위가 없습니다"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "메모 없음"
@@ -19251,6 +19254,9 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 
 msgid "None"
 msgstr "없음"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "일반"
@@ -19880,6 +19886,9 @@ msgstr "미결 조치"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR 열기"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "미결 매입채무"
@@ -28016,6 +28025,9 @@ msgstr "해당 필드는 여러 값을 가지고 있으므로 하나의 목록�
 msgid "That integration is not available"
 msgstr "해당 연동을 사용할 수 없습니다"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "로트 전체입니다. 대신 로트 수락을 사용하세요."
 
@@ -29777,6 +29789,9 @@ msgstr "이 로트는 만료됨이며 피킹할 수 없습니다."
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "이 로트는 부분 수락되었지만 NCR이 열리지 않았습니다. 로트의 반려 부분은 NCR이 결정합니다."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "잠시 시간이 걸릴 수 있습니다. 잠시만 기다려 주세요."

@@ -86,7 +86,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
     fetchStorageUnitsByLocationId();
   });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the result object so every completed submission toasts once, repeated failures included
   useEffect(() => {
     if (fetcher.data?.success === true) {
       surface.done();
@@ -98,7 +98,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
         fetcher.data?.message ?? t`Failed to complete inventory adjustment`
       );
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.data]);
 
   const itemOptions = useMemo(() => {
     return items

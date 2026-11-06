@@ -80,15 +80,17 @@ export function IssueTypeField({
 type OpenNcrModalProps = {
   action: string;
   issueTypes: IssueTypeListItem[];
+  /** A serial or batch lot, whose NCR is optional: none is missing, only not opened. */
+  isTrackedLot: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
 
-// Opens the NCR a Partial lot is missing (its first attempt failed); the
-// inspector picks its issue type.
+// Opens the NCR for a Partial lot that has none; the inspector picks its issue type.
 const OpenNcrModal = ({
   action,
   issueTypes,
+  isTrackedLot,
   onCancel,
   onSubmit
 }: OpenNcrModalProps) => {
@@ -118,16 +120,27 @@ const OpenNcrModal = ({
       <ModalContent>
         <ModalHeader>
           <ModalTitle>
-            <Trans>Open NCR</Trans>
+            {isTrackedLot ? (
+              <Trans>Open an NCR for the failed units</Trans>
+            ) : (
+              <Trans>Open NCR</Trans>
+            )}
           </ModalTitle>
         </ModalHeader>
         <ModalBody>
           <VStack spacing={4}>
             <p className="text-sm text-muted-foreground">
-              <Trans>
-                This lot is partly accepted, but its NCR did not open. The NCR
-                decides the rejected part of the lot.
-              </Trans>
+              {isTrackedLot ? (
+                <Trans>
+                  This lot is partly accepted. An NCR records the failed units
+                  and decides what happens to them.
+                </Trans>
+              ) : (
+                <Trans>
+                  This lot is partly accepted, but its NCR did not open. The NCR
+                  decides the rejected part of the lot.
+                </Trans>
+              )}
             </p>
             <IssueTypeField
               issueTypes={issueTypes}

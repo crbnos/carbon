@@ -641,3 +641,42 @@ These came out of the research and are not part of this spec:
     The guard, `inspection_held_quantity` and the interceptors use it.
   - Put Away asks to acknowledge a warning storage rule. Open NCR asks for the
     issue type.
+- 2026-11-06: Regression and browser round fixes:
+  - A return shipment checks the hold only where an open lot holds stock. A
+    return from any other bin posts, even when it leaves the bin below zero.
+  - A posted count reports an On Hold unit only when its receipt lot is open.
+    An RMA unit On Hold is not reported. Untracked stock counted short in its
+    inspection unit gets its own message: Reject writes off what is there.
+  - An untracked Reject writes off what the lot can still claim in its held
+    unit. It never writes off more than is there, and other open lots keep
+    their stock. A short untracked Partial is still refused, and the message
+    says a Reject is possible.
+  - Deleting a company or a subsidiary is never refused. The lot, NCR and link
+    checks return when the company row is gone. A lot with no storage unit
+    holds no untracked stock, so a direct delete of it passes.
+  - `check_nonconformance_inspection_link` guards the link of a Partial lot's
+    held remainder. It refuses a link to a Closed NCR, a changed link and a
+    removed link. The NCR check also refuses deleting that NCR. A failed NCR
+    open deletes its own NCR under the release flag.
+  - A goods-in storage unit cannot move to another location.
+  - A repeated Reject keeps the NCR the lot already has.
+  - A failed NCR after a committed Partial says the lot is marked partial and
+    the NCR did not open. A read error no longer reads as "not found". A
+    second submit that finds the lot already partial returns that decision.
+  - Use As Is or Rework on a rejected lot's NCR puts the stock back in the
+    unit and project stripe the reject wrote it off from.
+  - A putaway pick cannot take more untracked stock than its source unit still
+    has. An ordinary transfer pick does not change.
+  - Update Inventory asks the hold before a storage rule asks for an
+    acknowledgement. An adjustment of a batch or serial unit held under an
+    open lot is refused.
+  - A receipt line refuses a negative received quantity, except on a return
+    line (a negative order quantity).
+  - A batch lot is accepted or rejected as a whole. An untracked Partial needs
+    an accepted quantity above 0.
+  - The UI shows the refusals of a return shipment post, an MES Issue Material
+    and every MES Remove Inventory. A tracked lot's Open NCR is a secondary
+    action with neutral wording. The picking list marks a non-nettable source
+    unit.
+  - The handler migration was generated again as `20261106012250`. The PR
+    still has three migrations.

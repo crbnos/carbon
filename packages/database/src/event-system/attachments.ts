@@ -262,6 +262,9 @@ export const attachments = {
   },
   nonConformanceApprovalTask: { events: true },
   nonConformanceItem: { events: true, statement: ["broadcast_table_changes"] },
+  nonConformanceInspection: {
+    before: ["check_nonconformance_inspection_link"]
+  },
   nonConformanceRequiredAction: {
     before: ["sync_protect_system_required_actions"],
     events: true

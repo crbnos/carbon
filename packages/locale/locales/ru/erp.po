@@ -1545,6 +1545,9 @@ msgstr "4-значный PIN создается при создании опер
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "Этикетка 4\" x 2\" или 3\" x 2\" печатает одну карточку на этикетку, для термопринтера, например Zebra."
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Серия должна содержать по крайней мере одну операцию. Чтобы разделить всю серию, используйте вместо этого «Растворить»."
 
@@ -18695,8 +18698,8 @@ msgstr "Модули не найдены"
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
-msgid "No non-nettable storage units"
-msgstr "Нет единиц хранения, не учитываемых в MRP"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "Нет примечаний"
@@ -19251,6 +19254,9 @@ msgstr "Нерабочие дни, которые учитываются при 
 
 msgid "None"
 msgstr "Нет"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "Обычный"
@@ -19880,6 +19886,9 @@ msgstr "Открытые действия"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения о браке"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "Открытые кредиторские задолженности"
@@ -28016,6 +28025,9 @@ msgstr "Это поле содержит несколько значений, п
 msgid "That integration is not available"
 msgstr "Эта интеграция недоступна"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "Это вся партия. Используйте «Принять партию»."
 
@@ -29777,6 +29789,9 @@ msgstr "Эта партия с истекшим сроком и не может 
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "Партия принята частично, но её NCR не открыт. Об отклонённой части партии решает NCR."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "Это может занять некоторое время. Не волнуйтесь."

@@ -1545,6 +1545,9 @@ msgstr "4-cyfrowy PIN jest generowany podczas tworzenia operatora."
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "Etykieta 4\" x 2\" lub 3\" x 2\" drukuje jedną kartę na etykietę, dla drukarki termicznej, np. Zebra."
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Partia produkcyjna wymaga co najmniej jednej operacji. Aby rozbić całą partię produkcyjną, zamiast tego użyj opcji Rozpuszczenie."
 
@@ -18695,8 +18698,8 @@ msgstr "Nie znaleziono modułów"
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"
 
-msgid "No non-nettable storage units"
-msgstr "Brak jednostek magazynowych nieuwzględnianych w MRP"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "Brak notatek"
@@ -19251,6 +19254,9 @@ msgstr "Dni wolne, które harmonogram i pojemność uwzględniają"
 
 msgid "None"
 msgstr "Brak"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "Normalny"
@@ -19880,6 +19886,9 @@ msgstr "Otwarte Działania"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Otwórz NCR do dyspozycji MRB"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "Otwarte zobowiązania"
@@ -28016,6 +28025,9 @@ msgstr "To pole zawiera wiele wartości, dlatego są łączone w jedną listę."
 msgid "That integration is not available"
 msgstr "Ta integracja jest niedostępna"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "To cała partia. Zamiast tego użyj opcji Zaakceptuj partię."
 
@@ -29777,6 +29789,9 @@ msgstr "Ta partia wygasła i nie można jej pobrać."
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "Ta partia jest częściowo zaakceptowana, ale jej NCR nie został otwarty. O odrzuconej części partii decyduje NCR."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "To może chwilę potrwać. Czekaj cierpliwie."

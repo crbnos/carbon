@@ -722,7 +722,8 @@ export const splitReceiptLine = defineServiceFn({
  *
  * @remarks
  * `storageUnitId` or `receivedQuantity`, on every line in `ids`. An empty
- * value clears the field. Storage rules run when the receipt is posted, not
+ * value clears the field. A negative received quantity is refused unless
+ * every line is a return line (a negative order quantity). Storage rules run when the receipt is posted, not
  * here.
  *
  * @mcp
@@ -738,7 +739,9 @@ export const updateReceiptLines = defineServiceFn({
   async run(ctx, { ids, field, value }) {
     const lines = await ctx.asCaller.supabase
       .from("receiptLine")
-      .select("id, receiptId, receipt!receiptLine_receiptId_fkey(status)")
+      .select(
+        "id, receiptId, orderQuantity, receipt!receiptLine_receiptId_fkey(status)"
+      )
       .in("id", ids)
       .eq("companyId", ctx.company.id);
     if (lines.error) {
@@ -770,6 +773,14 @@ export const updateReceiptLines = defineServiceFn({
       const receivedQuantity = Number(value || 0);
       if (!Number.isFinite(receivedQuantity)) {
         return ctx.error("validation", "Received quantity must be a number");
+      }
+      // Only a return line (a negative order quantity) receives a negative
+      // quantity: on any other line it would take stock out by a receipt.
+      if (
+        receivedQuantity < 0 &&
+        lines.data.some((line) => Number(line.orderQuantity ?? 0) >= 0)
+      ) {
+        return ctx.error("validation", "Received quantity cannot be negative");
       }
       // Drop serials beyond the new quantity in the same transaction.
       try {
@@ -1885,11 +1896,8 @@ export const postShipment = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.serverFnFailure(
-          ctx,
-          posted.error,
-          "Failed to post shipment"
-        );
+        // The posting's own refusal (the inspection hold's included) is shown.
+        return fromServerFn(ctx, posted.error, "Failed to post shipment");
       }
       splitEntityIds = posted.data?.splitEntityIds ?? [];
     } catch (thrown) {
@@ -3599,7 +3607,9 @@ export const postInventoryCount = defineServiceFn({
  * `inventoryAdjustment` surface and, when a storage unit is named, on `pick`
  * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
  * returns its `violations` and `ruleNames` and changes nothing; send
- * `acknowledged: true` to adjust past warnings.
+ * `acknowledged: true` to adjust past warnings. Stock held for inspection is
+ * refused before the rules run: a serial or batch unit under an open receipt
+ * lot, and untracked stock below what open lots hold in the unit.
  *
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
@@ -3642,6 +3652,15 @@ export const adjustInventory = defineServiceFn({
       adjustment.quantity
     );
     if (serial) return serial;
+
+    // The hold refuses before a storage rule asks to be acknowledged, as the
+    // receipt post does.
+    const held = await service.inspectionHoldAdjustmentRefusal(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      adjustment
+    );
+    if (held) return ctx.error("rule", held);
 
     const line = [
       {

@@ -6,17 +6,28 @@ AS $function$
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
 -- A Partial receipt lot holds its rejected remainder until its NCR closes, and
 -- closing the NCR (closeIssue) writes that remainder off. A direct status edit
--- (PostgREST) to Closed would release it with no write-off. Only closeIssue,
--- which sets app.inspection_release, closes such an NCR; a company wipe,
--- restore or import sets one of the two flags. A plain RAISE (P0001), so the
--- API shows the text.
+-- (PostgREST) to Closed would release it with no write-off, and deleting the
+-- NCR would leave it held with no NCR to decide it. Only closeIssue, which
+-- sets app.inspection_release, closes such an NCR; a company wipe, restore or
+-- import sets one of the two flags, and deleting the company is never refused.
+-- A plain RAISE (P0001), so the API shows the text.
 DECLARE
+  v_ncr JSONB;
   v_lot TEXT;
 BEGIN
-  -- Hot path: only a change of status to Closed.
-  IF p_operation <> 'UPDATE'
-     OR p_new->>'status' IS DISTINCT FROM 'Closed'
-     OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+  -- Hot path: only a change of status to Closed, or a delete.
+  IF p_operation = 'UPDATE' THEN
+    IF p_new->>'status' IS DISTINCT FROM 'Closed'
+       OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+      RETURN;
+    END IF;
+    v_ncr := p_new;
+  ELSIF p_operation = 'DELETE' THEN
+    IF p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+      RETURN;
+    END IF;
+    v_ncr := p_old;
+  ELSE
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'
@@ -28,7 +39,7 @@ BEGIN
   FROM "nonConformanceInspection" nci
   JOIN "inspection" i ON i."id" = nci."inspectionId"
   JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
-  WHERE nci."nonConformanceId" = p_new->>'id'
+  WHERE nci."nonConformanceId" = v_ncr->>'id'
     AND i."sourceDocument" = 'Receipt'
     AND i."status" = 'Partial'
     AND it."itemTrackingType" = 'Inventory'
@@ -36,9 +47,18 @@ BEGIN
     AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity")
   ORDER BY 1
   LIMIT 1;
-  IF FOUND THEN
-    RAISE EXCEPTION 'This NCR holds the rejected part of inspection lot %. Complete the NCR to post its disposition and close it.',
+  IF NOT FOUND THEN
+    RETURN;
+  END IF;
+  IF p_operation = 'DELETE' THEN
+    -- A company deletion cascades here after the company row is gone.
+    IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = v_ncr->>'companyId') THEN
+      RETURN;
+    END IF;
+    RAISE EXCEPTION 'This NCR holds the rejected part of inspection lot %. Complete the NCR to post its disposition instead of deleting it.',
       v_lot;
   END IF;
+  RAISE EXCEPTION 'This NCR holds the rejected part of inspection lot %. Complete the NCR to post its disposition and close it.',
+    v_lot;
 END;
 $function$;

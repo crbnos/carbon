@@ -19,9 +19,10 @@ import {
   Textarea,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useRef, useState } from "react";
+import { useQuantityFormatter } from "~/hooks";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 import { IssueTypeField } from "./OpenNcrModal";
 
@@ -62,16 +63,17 @@ const PartialLotModal = ({
     issueTypes[0]?.id ?? ""
   );
 
+  const formatQuantity = useQuantityFormatter();
   const hasIssueTypes = issueTypes.length > 0;
   const ncrRequired = isUntracked;
   const openNcr = ncrRequired || createNcr;
+  const acceptedEntered = Number.isFinite(acceptedQuantity);
   const acceptedValid =
     !isUntracked ||
-    (Number.isFinite(acceptedQuantity) &&
-      acceptedQuantity >= 0 &&
-      acceptedQuantity < lotSize);
-  const rejectedQuantity = Number.isFinite(acceptedQuantity)
-    ? lotSize - acceptedQuantity
+    (acceptedEntered && acceptedQuantity > 0 && acceptedQuantity < lotSize);
+  // Rounded: the plain difference of two decimals carries float noise.
+  const rejectedQuantity = acceptedEntered
+    ? formatQuantity(round(lotSize - acceptedQuantity))
     : null;
 
   return (
@@ -127,14 +129,20 @@ const PartialLotModal = ({
                     </Trans>
                   </p>
                 )}
-                {Number.isFinite(acceptedQuantity) &&
-                  acceptedQuantity >= lotSize && (
-                    <p className="text-xs text-muted-foreground">
-                      <Trans>
-                        That is the whole lot. Use Accept Lot instead.
-                      </Trans>
-                    </p>
-                  )}
+                {acceptedEntered && acceptedQuantity >= lotSize && (
+                  <p className="text-xs text-muted-foreground">
+                    <Trans>
+                      That is the whole lot. Use Accept Lot instead.
+                    </Trans>
+                  </p>
+                )}
+                {acceptedEntered && acceptedQuantity <= 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    <Trans>
+                      That is the whole lot rejected. Use Reject Lot instead.
+                    </Trans>
+                  </p>
+                )}
               </div>
             )}
             <div className="flex flex-col gap-2 w-full">

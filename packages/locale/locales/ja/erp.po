@@ -1545,6 +1545,9 @@ msgstr "4 桁の PIN は、作業者が作成されるときに生成されま�
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" または 3\" x 2\" ラベルは、Zebra などのサーマルプリンター向けに 1 ラベルに 1 枚のカードを印刷します。"
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "バッチには少なくとも 1 つの工程が必要です。バッチ全体を分割するには、代わりに [分割] を使用してください。"
 
@@ -18695,8 +18698,8 @@ msgstr "モジュールが見つかりません"
 msgid "No new notifications"
 msgstr "新しい通知はありません"
 
-msgid "No non-nettable storage units"
-msgstr "MRP対象外の保管ユニットがありません"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "メモなし"
@@ -19251,6 +19254,9 @@ msgstr "スケジューリングと容量計画が考慮する非稼働日"
 
 msgid "None"
 msgstr "なし"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "通常"
@@ -19880,6 +19886,9 @@ msgstr "オープンアクション"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを作成する"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "オープン買掛金"
@@ -28016,6 +28025,9 @@ msgstr "そのフィールドは複数の値を保持しているため、1 つ�
 msgid "That integration is not available"
 msgstr "その連携は利用できません"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "これはロット全体です。代わりにロット承諾を使用してください。"
 
@@ -29777,6 +29789,9 @@ msgstr "このロットは期限切れであり、ピックできません。"
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "このロットは一部承諾されていますが、NCR が作成されていません。ロットの却下分は NCR で決定します。"
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "これには少し時間がかかる場合があります。お待ちください。"

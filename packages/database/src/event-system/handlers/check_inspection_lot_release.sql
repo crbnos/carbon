@@ -8,8 +8,8 @@ AS $function$
 -- edit or delete (PostgREST) could release held stock without moving it. Only
 -- the postings that ARE the release (they set app.inspection_release) change
 -- them; samples move an open lot between Pending and In Progress. A company
--- wipe, restore or import sets one of the two flags. A plain RAISE (P0001), so
--- the API shows the text.
+-- wipe, restore or import sets one of the two flags, and deleting the company
+-- is never refused. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_holds BOOLEAN;
 BEGIN
@@ -33,6 +33,23 @@ BEGIN
     END IF;
     IF current_setting('app.inspection_release', true) = 'on'
        OR current_setting('app.sync_in_progress', true) = 'true' THEN
+      RETURN;
+    END IF;
+    -- A lot from before the hold (no storage unit) holds untracked stock
+    -- nowhere; it holds serial or batch units only while they are On Hold.
+    IF p_old->>'storageUnitId' IS NULL AND NOT (
+      p_old->>'status' IN ('Pending', 'In Progress')
+      AND EXISTS (
+        SELECT 1 FROM "trackedEntity" te
+        WHERE te."companyId" = p_old->>'companyId'
+          AND te."attributes" ->> 'Receipt Line' = p_old->>'sourceDocumentLineId'
+          AND te."status" = 'On Hold'
+      )
+    ) THEN
+      RETURN;
+    END IF;
+    -- A company deletion cascades here after the company row is gone.
+    IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
       RETURN;
     END IF;
     RAISE EXCEPTION 'Inspection lot % holds stock. Quality must decide it before it can be deleted.',
@@ -67,6 +84,11 @@ BEGIN
 
   IF current_setting('app.inspection_release', true) = 'on'
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+  -- A company deletion's cascade (a storage unit's SET NULL) after the
+  -- company row is gone.
+  IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
     RETURN;
   END IF;
 

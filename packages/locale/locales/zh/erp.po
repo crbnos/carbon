@@ -1545,6 +1545,9 @@ msgstr "创建操作员时会生成4位数PIN。"
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" 或 3\" x 2\" 标签每张打印一张卡片，适用于 Zebra 等热敏打印机。"
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "生产批次需要至少一个工序。要分解整个生产批次，请改用\"分解\"。"
 
@@ -18695,8 +18698,8 @@ msgstr "未找到模块"
 msgid "No new notifications"
 msgstr "没有新通知"
 
-msgid "No non-nettable storage units"
-msgstr "没有不计入MRP的存储单元"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "没有备注"
@@ -19251,6 +19254,9 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 
 msgid "None"
 msgstr "无"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "正常"
@@ -19880,6 +19886,9 @@ msgstr "未结操作"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "打开 NCR 进行 MRB 处置"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "未结应付账款"
@@ -28016,6 +28025,9 @@ msgstr "该字段包含多个值，因此它们被合并为一个列表。"
 msgid "That integration is not available"
 msgstr "该集成不可用"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "这是整个批次。请改用接受批次。"
 
@@ -29777,6 +29789,9 @@ msgstr "此批次已过期且无法拣货。"
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "此批次已部分接受，但其 NCR 未能创建。批次的拒收部分由 NCR 决定。"
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "这可能需要一些时间。请稍候。"

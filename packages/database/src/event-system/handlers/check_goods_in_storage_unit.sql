@@ -9,12 +9,14 @@ AS $function$
 -- picking, and an inactive unit cannot be picked for a receipt line. Every
 -- change of effectiveNettable is written by util.refresh_storage_unit_nettable
 -- as an UPDATE of the unit, so a change of the unit's own flag, a parent's or a
--- storage type's reaches this check. A plain RAISE (P0001), so the API shows
--- the text.
+-- storage type's reaches this check. It stays at the location that names it,
+-- where its lots and ledger rows are booked. A plain RAISE (P0001), so the API
+-- shows the text.
 DECLARE
   v_location TEXT;
   v_becomes_nettable BOOLEAN;
   v_deactivated BOOLEAN;
+  v_moved BOOLEAN;
 BEGIN
   IF p_operation <> 'UPDATE' THEN
     RETURN;
@@ -23,7 +25,8 @@ BEGIN
     AND NOT COALESCE((p_old->>'effectiveNettable')::boolean, true);
   v_deactivated := COALESCE((p_old->>'active')::boolean, true)
     AND NOT COALESCE((p_new->>'active')::boolean, true);
-  IF NOT v_becomes_nettable AND NOT v_deactivated THEN
+  v_moved := (p_new->'locationId') IS DISTINCT FROM (p_old->'locationId');
+  IF NOT v_becomes_nettable AND NOT v_deactivated AND NOT v_moved THEN
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'
@@ -33,8 +36,8 @@ BEGIN
 
   SELECT l."name" INTO v_location
   FROM "location" l
-  WHERE l."companyId" = p_new->>'companyId'
-    AND (l."inspectionStorageUnitId" = p_new->>'id' OR l."rejectedStorageUnitId" = p_new->>'id')
+  WHERE l."companyId" = p_old->>'companyId'
+    AND (l."inspectionStorageUnitId" = p_old->>'id' OR l."rejectedStorageUnitId" = p_old->>'id')
   ORDER BY l."name"
   LIMIT 1;
   IF FOUND THEN

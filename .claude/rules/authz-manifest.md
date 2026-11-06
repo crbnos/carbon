@@ -25,7 +25,7 @@ owns that table and its RLS switch, so sync and the generated migration never ru
 `ENABLE ROW LEVEL SECURITY` on it — sync fails instead if the switch is off. To add another
 external table, extend `ExternalTable` in `rules.ts` and `MANIFEST_SCHEMAS` in the check.
 
-The same machinery owns the event system's 45 functions, its 81 table handlers and the event triggers — see
+The same machinery owns the event system's 45 functions, its 83 table handlers and the event triggers — see
 [Event-system functions](#event-system-functions) below.
 
 | File | What it is |
@@ -118,7 +118,7 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
   `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
   goes in the file.
 - **Table handlers are managed too**: `../event-system/handlers/<name>.sql` holds every
-  function a table attaches — the 76 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
+  function a table attaches — the 78 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
   `storage_unit_*`, `check_*`) and the 5 statement handlers (`apply_item_stock_quantities`,
   `check_inspection_hold`, `queue_kanban_level_checks`, `queue_model_pipeline`,
   `queue_pmi_inspection_plans`). Same format,

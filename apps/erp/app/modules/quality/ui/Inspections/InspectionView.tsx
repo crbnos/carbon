@@ -29,6 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -182,6 +185,9 @@ const InspectionView = ({
   const [items] = useItems();
 
   const isSerial = itemTrackingType === "Serial";
+  const isBatch = itemTrackingType === "Batch";
+  // A tracked lot's NCR is optional; an untracked lot's remainder waits on it.
+  const isTrackedLot = isSerial || isBatch;
   // Accept/Reject dispositions here carry no physical production posting, so they
   // are Receipt-only. Job Operation lots are verdict-only in the ERP — their
   // complete/scrap/rework outcome is orchestrated by the MES disposition route
@@ -460,10 +466,11 @@ const InspectionView = ({
       !!sample.trackedEntityId &&
       (sampleStatuses.get(sample.id) ?? sample.status) === "Failed"
   );
+  // A batch lot's samples name no unit, so no part of it can be held back.
   const canPartial =
     canReject &&
-    ((itemTrackingType !== "Serial" && itemTrackingType !== "Batch") ||
-      (hasFailedUnit && passes > 0 && sampledComplete));
+    !isBatch &&
+    (!isSerial || (hasFailedUnit && passes > 0 && sampledComplete));
   // A Partial lot whose NCR failed to open: an untracked one still holds its
   // remainder, a serial or batch one has failed units no NCR decides.
   const ncrMissing =
@@ -682,8 +689,9 @@ const InspectionView = ({
             </RecordAction>
           )}
           {ncrMissing && (
-            <RecordAction slot="primary">
+            <RecordAction slot={isTrackedLot ? "secondary" : "primary"}>
               <Button
+                variant={isTrackedLot ? "secondary" : "primary"}
                 onClick={openNcrDisclosure.onOpen}
                 isDisabled={!canUpdate}
               >
@@ -703,13 +711,32 @@ const InspectionView = ({
                 </Button>
               </RecordAction>
               <RecordAction slot="secondary">
-                <Button
-                  variant="secondary"
-                  onClick={partialDisclosure.onOpen}
-                  isDisabled={!canUpdate || !canPartial}
-                >
-                  <Trans>Partial</Trans>
-                </Button>
+                {isBatch && !lotClosed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {/* A disabled button fires no pointer events, so the
+                          span carries the tooltip. */}
+                      <span tabIndex={0} className="inline-flex">
+                        <Button variant="secondary" isDisabled>
+                          <Trans>Partial</Trans>
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <Trans>
+                        A batch lot is accepted or rejected as a whole.
+                      </Trans>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={partialDisclosure.onOpen}
+                    isDisabled={!canUpdate || !canPartial}
+                  >
+                    <Trans>Partial</Trans>
+                  </Button>
+                )}
               </RecordAction>
               <RecordAction slot="primary">
                 <Button
@@ -967,6 +994,7 @@ const InspectionView = ({
         <OpenNcrModal
           action={path.to.inspectionPartial(inspection.id)}
           issueTypes={issueTypes}
+          isTrackedLot={isTrackedLot}
           onCancel={openNcrDisclosure.onClose}
           onSubmit={openNcrDisclosure.onClose}
         />

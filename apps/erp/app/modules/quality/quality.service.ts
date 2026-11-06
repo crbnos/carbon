@@ -4191,6 +4191,15 @@ export async function closeIssue(
     stripes: engine.HeldStripe[];
   } | null = null;
   let fromPartialReceiptLot = false;
+  // A rejected lot's write-off, per place and stripe, drawn down as rows
+  // restore it.
+  let writtenOffAtReject: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    projectId: string | null;
+    quantity: number;
+  }[] = [];
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
     const [trackingRes, inspectionRes] = await Promise.all([
@@ -4242,6 +4251,29 @@ export async function closeIssue(
     }
     inspectionOriginated =
       (inspectionRes.data?.length ?? 0) > 0 && !fromPartialReceiptLot;
+    if (inspectionOriginated && link) {
+      // The reject wrote the lot off from where it was held: a restore puts
+      // it back there, on the stripe it left.
+      const rows = await db
+        .selectFrom("itemLedger")
+        .select([
+          "itemId",
+          "locationId",
+          "storageUnitId",
+          "projectId",
+          sql<number>`-SUM("quantity")`.as("quantity")
+        ])
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", "Inbound Inspection")
+        .where("documentId", "=", link.inspectionId)
+        .where("trackedEntityId", "is", null)
+        .groupBy(["itemId", "locationId", "storageUnitId", "projectId"])
+        .execute();
+      writtenOffAtReject = rows
+        .map((row) => ({ ...row, quantity: round(Number(row.quantity)) }))
+        .filter((row) => row.quantity > EPSILON)
+        .sort((a, b) => b.quantity - a.quantity);
+    }
   }
 
   // A tracked unit is written off where its balance is, not at the NCR's location.
@@ -4382,15 +4414,38 @@ export async function closeIssue(
       continue;
     }
     if (isKeep && inspectionOriginated) {
-      movements.push({
-        itemId: row.itemId,
-        locationId,
-        trackedEntityId: null,
-        quantity: row.quantity,
-        comment: `NC ${readableNc} ${
-          row.disposition === "Rework" ? "rework" : "use as is"
-        } — restore on-hand`
-      });
+      const comment = `NC ${readableNc} ${
+        row.disposition === "Rework" ? "rework" : "use as is"
+      } — restore on-hand`;
+      let remaining = round(row.quantity);
+      for (const source of writtenOffAtReject) {
+        if (remaining <= EPSILON) break;
+        if (source.itemId !== row.itemId || source.quantity <= EPSILON) {
+          continue;
+        }
+        const take = round(Math.min(remaining, source.quantity));
+        source.quantity = round(source.quantity - take);
+        remaining = round(remaining - take);
+        movements.push({
+          itemId: row.itemId,
+          locationId: source.locationId ?? locationId,
+          storageUnitId: source.storageUnitId,
+          trackedEntityId: null,
+          projectId: source.projectId,
+          quantity: take,
+          comment
+        });
+      }
+      // More than the reject wrote off (none posted): at the NCR's location.
+      if (remaining > EPSILON) {
+        movements.push({
+          itemId: row.itemId,
+          locationId,
+          trackedEntityId: null,
+          quantity: remaining,
+          comment
+        });
+      }
     }
   }
 
@@ -6234,8 +6289,28 @@ export async function openInspectionNcr(
     );
   }
   const { id: issueId, nonConformanceId } = created.data;
+  // Deletes the NCR this call opened. Once linked it holds a Partial lot's
+  // remainder, so the delete runs as the release; the lot then offers Open NCR.
+  const removeOpenedIssue = async () => {
+    try {
+      await ctx.asSystem.pg.transaction().execute(async (trx) => {
+        await setInspectionRelease(trx);
+        await trx
+          .deleteFrom("nonConformance")
+          .where("id", "=", issueId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+    } catch (error) {
+      logger.error("Failed to delete an inspection NCR that did not open", {
+        companyId,
+        issueId,
+        error
+      });
+    }
+  };
   const abandon = async (message: string, cause: unknown) => {
-    await deleteIssue(serviceRole, issueId);
+    await removeOpenedIssue();
     return ctx.error("internal", message, cause);
   };
 
@@ -6398,7 +6473,7 @@ export async function openInspectionNcr(
     });
   } catch (err) {
     if (err instanceof LotHasNcrError) {
-      await deleteIssue(serviceRole, issueId);
+      await removeOpenedIssue();
       return ctx.error("conflict", err.message);
     }
     return abandon(

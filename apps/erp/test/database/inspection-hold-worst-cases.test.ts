@@ -44,6 +44,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     "a",
     "b",
     "c",
+    "c2",
     "d",
     "e",
     "e2",
@@ -395,18 +396,56 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
   };
 
   databaseTest(
-    "refuses an untracked Reject whose held unit cannot cover the lot",
+    "an untracked Reject whose held unit is short writes off only what is there",
     async () => {
       const { lotId } = await shortLot("c");
       const rejected = await decide(lotId, "Reject");
-      expect(rejected.error?.message).toMatch(/Only 4 of the lot's 10/);
-      expect(await statusOf(lotId)).toBe("Pending");
-      expect(await stripesAt(unitOf("c"))).toEqual({ "": 4 });
+      expect(rejected.error).toBeNull();
+      expect(rejected.data?.writeOff).toEqual({
+        itemId: f.partId,
+        quantity: -4,
+        locationId: f.locationId,
+        storageUnitId: unitOf("c"),
+        stripes: [{ projectId: null, quantity: -4 }]
+      });
+      expect(await statusOf(lotId)).toBe("Failed");
+      expect((await postWriteOff(lotId, rejected.data!.writeOff)).error).toBeNull();
+      expect(await stripesAt(unitOf("c"))).toEqual({ "": 0 });
     }
   );
 
   databaseTest(
-    "with no rejected unit set, refuses a short untracked Partial or Reject",
+    "a short Reject leaves another open lot's stock in the unit",
+    async () => {
+      // Two lots of 10 in one unit, 14 there: the first claims only 4.
+      const first = await shortLot("c2");
+      const secondReceipt = await draftReceiptFromPurchaseOrder(f, "c2-second");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("receiptLine")
+          .set({ storageUnitId: unitOf("c2") })
+          .where("receiptId", "=", secondReceipt)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      expect(
+        (
+          await invokePosting(
+            handlesOf(f.ctx),
+            "post-receipt",
+            { type: "post", receiptId: secondReceipt },
+            postReceipt
+          )
+        ).error
+      ).toBeNull();
+      const rejected = await decide(first.lotId, "Reject");
+      expect(rejected.error).toBeNull();
+      expect(rejected.data?.writeOff?.quantity).toBe(-4);
+    }
+  );
+
+  databaseTest(
+    "with no rejected unit set, refuses a short untracked Partial",
     async () => {
       const { lotId } = await shortLot("d");
       const setRejectedUnit = (unit: string | null) =>
@@ -422,9 +461,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
       try {
         expect((await decide(lotId, "Partial", 2)).error?.message).toMatch(
           /Only 4 of the 8 rejected/
-        );
-        expect((await decide(lotId, "Reject")).error?.message).toMatch(
-          /Only 4 of the lot's 10/
         );
         expect(await statusOf(lotId)).toBe("Pending");
         // Within what is there, the Partial holds its remainder in place.

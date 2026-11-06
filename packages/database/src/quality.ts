@@ -830,6 +830,14 @@ export async function dispositionInspection(
       // A serial or batch Partial releases every unit that did not fail, so
       // it needs a failed unit to hold back, a passed sample, and the sampling
       // Accept requires: without them it is an Accept with no checks.
+      // A batch lot's samples name no unit, so no part of it can be held back.
+      if (
+        args.decision === "Partial" &&
+        isReceiptSource &&
+        item?.itemTrackingType === "Batch"
+      ) {
+        throw new Error("A batch lot is accepted or rejected as a whole.");
+      }
       const isTrackedReceiptLot = isReceiptSource && allLotIds.length > 0;
       if (
         args.decision === "Partial" &&
@@ -930,7 +938,12 @@ export async function dispositionInspection(
           round(inspection.lotSize - accepted) <= EPSILON
         ) {
           throw new Error(
-            "Enter the accepted quantity: at least 0 and less than the lot size"
+            "Enter the accepted quantity: more than 0 and less than the lot size"
+          );
+        }
+        if (accepted <= EPSILON) {
+          throw new Error(
+            "That is the whole lot rejected. Use Reject Lot instead."
           );
         }
         acceptedQuantity = accepted;
@@ -952,8 +965,9 @@ export async function dispositionInspection(
         acceptedQuantity = round(Number(passed?.quantity ?? 0));
       }
 
-      // Untracked stock has no id: a Partial holds, and a Reject writes off,
-      // a quantity from the held unit, so that quantity must be there. A
+      // Untracked stock has no id: a Partial holds a quantity in the held
+      // unit, so that quantity must be there. A Reject writes off what the lot
+      // can still claim there (a count may have found less), never more. A
       // write-off retry whose write-off already posted takes nothing more.
       const untrackedTake =
         isReceiptSource && isUntracked && heldStorageUnitId
@@ -964,6 +978,9 @@ export async function dispositionInspection(
               : null
           : null;
       let heldStripes: HeldStripe[] = [];
+      // The untracked quantity a Reject writes off; the lot size unless the
+      // held unit is short.
+      let writeOffQuantity = inspection.lotSize;
       if (untrackedTake !== null && heldStorageUnitId) {
         const writtenOff =
           !wasOpen &&
@@ -988,11 +1005,29 @@ export async function dispositionInspection(
         // and its Reject writes off from the receipt line's unit as before.
         const holdsStock =
           inspection.storageUnitId !== null || args.decision === "Partial";
-        if (holdsStock && !writtenOff && untrackedTake - onHand > EPSILON) {
+        if (
+          args.decision === "Partial" &&
+          !writtenOff &&
+          untrackedTake - onHand > EPSILON
+        ) {
           throw new Error(
-            args.decision === "Partial"
-              ? `Only ${onHand} of the ${untrackedTake} rejected are in the held storage unit. Correct the stock there before you mark the lot partial.`
-              : `Only ${onHand} of the lot's ${untrackedTake} are in the held storage unit. Correct the stock there before you reject the lot.`
+            `Only ${onHand} of the ${untrackedTake} rejected are in the held storage unit, so the rest cannot stay held. Correct the stock there, or reject the lot: a Reject writes off what is there.`
+          );
+        }
+        if (args.decision === "Reject" && holdsStock && !writtenOff) {
+          // Other open lots in the unit keep what they hold.
+          const [{ held }] = (
+            await sql<{
+              held: number;
+            }>`SELECT public.inspection_held_quantity(${args.companyId}, ${inspection.itemId}, ${heldStorageUnitId}) AS held`.execute(
+              trx
+            )
+          ).rows as [{ held: number }];
+          const otherHeld = round(
+            Number(held) - (wasOpen ? inspection.lotSize : 0)
+          );
+          writeOffQuantity = round(
+            Math.min(inspection.lotSize, Math.max(onHand - otherHeld, 0))
           );
         }
       }
@@ -1095,16 +1130,16 @@ export async function dispositionInspection(
         args.decision === "Reject" &&
         isReceiptSource &&
         item?.itemTrackingType === "Inventory" &&
-        inspection.lotSize > 0
+        writeOffQuantity > EPSILON
           ? {
               itemId: inspection.itemId,
-              quantity: -inspection.lotSize,
+              quantity: -writeOffQuantity,
               locationId: receiptLine?.locationId ?? null,
               // From the held unit, where the rejected stock is.
               storageUnitId: heldStorageUnitId,
               // From the stripes it was held on; what none covers, from
               // unassigned stock.
-              stripes: drawHeldStripes(inspection.lotSize, heldStripes, {
+              stripes: drawHeldStripes(writeOffQuantity, heldStripes, {
                 overflow: true
               }).map((draw) => ({
                 projectId: draw.projectId,

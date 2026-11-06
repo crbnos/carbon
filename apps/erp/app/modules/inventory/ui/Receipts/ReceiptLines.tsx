@@ -937,8 +937,9 @@ function ReceiptLineItem({
           </HStack>
 
           {/* A fixed width, so a long unit name truncates (full name in its
-              tooltip) instead of pushing into the quantities. */}
-          <div className="flex flex-col items-start gap-1 w-56 max-w-full min-w-0 text-sm max-md:w-full">
+              tooltip) instead of pushing into the quantities; narrower on a
+              narrow row so the item name keeps its room. */}
+          <div className="flex flex-col items-start gap-1 w-44 @5xl:w-56 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
               <Trans>Storage Unit</Trans>
             </label>

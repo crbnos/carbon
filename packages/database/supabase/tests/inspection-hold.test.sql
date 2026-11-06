@@ -383,12 +383,15 @@ BEGIN
     public.inspection_held_quantity(company, item, unit)::text, '0');
   DELETE FROM "nonConformanceInspection" WHERE "nonConformanceId" = open_ncr;
 
-  -- Closing the lot's NCR releases the remainder.
+  -- A lot linked to a Closed NCR holds nothing (linking it to one is itself a
+  -- release: check_nonconformance_inspection_link).
   INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
   VALUES ('NCR-HOLD-TEST', 'Hold test', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'Closed')
   RETURNING "id" INTO ncr;
+  PERFORM set_config('app.inspection_release', 'on', true);
   INSERT INTO "nonConformanceInspection" ("nonConformanceId", "inspectionId", "companyId", "createdBy")
   VALUES (ncr, lot, company, usr);
+  PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('a Partial lot whose NCR closed holds nothing',
     public.inspection_held_quantity(company, item, unit)::text, '0');
   PERFORM pg_temp.expect('its remainder moves once the NCR closed',
@@ -535,6 +538,177 @@ BEGIN
     PERFORM pg_temp.expect('a nettable unit is not named a goods-in unit',
       pg_temp.refused_edit(format('UPDATE "location" SET "inspectionStorageUnitId" = %L WHERE "id" = %L', bin, location),
         '%must be non-nettable%')::text, 'true');
+  END;
+
+  -- The NCR link of a Partial lot's held remainder
+  -- (check_nonconformance_inspection_link, and the NCR delete in
+  -- check_nonconformance_inspection_release): linking it to a Closed NCR
+  -- would release the remainder with no write-off; re-pointing or removing
+  -- its link, or deleting its NCR, would leave it held with no NCR.
+  DECLARE
+    rline5 text;
+    partial_lot text;
+    held_ncr text;
+    other_ncr text;
+    closed_ncr text;
+    held_before numeric;
+  BEGIN
+    INSERT INTO "receiptLine" ("receiptId", "itemId", "locationId", "storageUnitId", "companyId", "createdBy", "requiresInspection", "orderQuantity", "unitOfMeasure", "unitPrice")
+    VALUES (rcpt, item, location, unit2, company, usr, true, 10, 'EA', 0)
+    RETURNING "id" INTO rline5;
+    PERFORM set_config('app.inspection_release', 'on', true);
+    INSERT INTO "inspection" (
+      "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+      "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+      "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status", "acceptedQuantity"
+    ) VALUES (
+      'INS-HOLD-TEST-LINK', item, 10, 'ANSI_Z1_4', 'All', 10, 0, 1, company, usr,
+      'Receipt', rcpt, rline5, unit2, 'Partial', 6
+    ) RETURNING "id" INTO partial_lot;
+    INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
+    VALUES ('NCR-HOLD-TEST-CLOSED', 'Hold test closed', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'Closed')
+    RETURNING "id" INTO closed_ncr;
+    PERFORM set_config('app.inspection_release', '', true);
+    INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
+    VALUES ('NCR-HOLD-TEST-HELD', 'Hold test held', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'In Progress')
+    RETURNING "id" INTO held_ncr;
+    INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
+    VALUES ('NCR-HOLD-TEST-OTHER', 'Hold test other', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'In Progress')
+    RETURNING "id" INTO other_ncr;
+    held_before := public.inspection_held_quantity(company, item, unit2);
+
+    PERFORM pg_temp.expect('a held remainder is not linked to a Closed NCR',
+      pg_temp.refused_edit(format('INSERT INTO "nonConformanceInspection" ("nonConformanceId", "inspectionId", "companyId", "createdBy") VALUES (%L, %L, %L, %L)', closed_ncr, partial_lot, company, usr),
+        '%holds its rejected part%')::text, 'true');
+    PERFORM pg_temp.expect('a held remainder is linked to an open NCR',
+      pg_temp.refused_edit(format('INSERT INTO "nonConformanceInspection" ("nonConformanceId", "inspectionId", "companyId", "createdBy") VALUES (%L, %L, %L, %L)', held_ncr, partial_lot, company, usr),
+        '%holds its rejected part%')::text, 'false');
+    PERFORM pg_temp.expect('the link is not re-pointed to a Closed NCR',
+      pg_temp.refused_edit(format('UPDATE "nonConformanceInspection" SET "nonConformanceId" = %L WHERE "inspectionId" = %L', closed_ncr, partial_lot),
+        '%holds its rejected part%')::text, 'true');
+    PERFORM pg_temp.expect('the link is not re-pointed to another NCR',
+      pg_temp.refused_edit(format('UPDATE "nonConformanceInspection" SET "nonConformanceId" = %L WHERE "inspectionId" = %L', other_ncr, partial_lot),
+        '%holds its rejected part%')::text, 'true');
+    PERFORM pg_temp.expect('the link is not removed',
+      pg_temp.refused_edit(format('DELETE FROM "nonConformanceInspection" WHERE "inspectionId" = %L', partial_lot),
+        '%holds its rejected part%')::text, 'true');
+    PERFORM pg_temp.expect('the linked open NCR is not deleted',
+      pg_temp.refused_edit(format('DELETE FROM "nonConformance" WHERE "id" = %L', held_ncr),
+        '%holds the rejected part%')::text, 'true');
+    PERFORM pg_temp.expect('an NCR with no held lot is deleted',
+      pg_temp.refused_edit(format('DELETE FROM "nonConformance" WHERE "id" = %L', other_ncr),
+        '%holds the rejected part%')::text, 'false');
+    PERFORM pg_temp.expect('the refused edits leave the remainder held',
+      public.inspection_held_quantity(company, item, unit2)::text, held_before::text);
+    -- Under the release flag (closeIssue, a failed NCR's clean-up) it may.
+    PERFORM set_config('app.inspection_release', 'on', true);
+    PERFORM pg_temp.expect('the linked NCR is deleted under the release flag',
+      pg_temp.refused_edit(format('DELETE FROM "nonConformance" WHERE "id" = %L', held_ncr),
+        '%holds the rejected part%')::text, 'false');
+    PERFORM set_config('app.inspection_release', '', true);
+  END;
+
+  -- A goods-in unit stays at its location (check_goods_in_storage_unit).
+  DECLARE
+    moved_to text;
+  BEGIN
+    INSERT INTO "location" ("name", "addressLine1", "city", "postalCode", "timezone", "companyId", "createdBy")
+    VALUES ('HOLD-TEST-LOC2-' || substr(md5(random()::text), 1, 8), '1 Test St', 'Testville', '00000', 'UTC', company, usr)
+    RETURNING "id" INTO moved_to;
+    PERFORM pg_temp.expect('the inspection unit is not moved to another location',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "locationId" = %L WHERE "id" = %L', moved_to, unit),
+        '%goods-in storage unit of%')::text, 'true');
+    PERFORM pg_temp.expect('a unit no location names may move',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "locationId" = %L WHERE "id" = %L', moved_to, bin),
+        '%goods-in storage unit of%')::text, 'false');
+  END;
+
+  -- A lot from before the hold (no storage unit) holds no untracked stock,
+  -- so it is deleted directly.
+  DECLARE
+    legacy_lot text;
+  BEGIN
+    INSERT INTO "inspection" (
+      "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+      "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+      "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status"
+    ) VALUES (
+      'INS-HOLD-TEST-LEGACY', item, 5, 'ANSI_Z1_4', 'All', 5, 0, 1, company, usr,
+      'Receipt', rcpt, NULL, NULL, 'Pending'
+    ) RETURNING "id" INTO legacy_lot;
+    PERFORM pg_temp.expect('a legacy lot with no storage unit is deleted directly',
+      pg_temp.refused_edit(format('DELETE FROM "inspection" WHERE "id" = %L', legacy_lot),
+        '%holds stock%')::text, 'false');
+  END;
+
+  -- Deleting a company is never refused by the hold: its open lot, its
+  -- Partial lot's NCR and link, and its goods-in units all go with it.
+  DECLARE
+    co text;
+    co_loc text;
+    co_unit text;
+    co_rejected text;
+    co_item text;
+    co_rcpt text;
+    co_line text;
+    co_lot text;
+    co_type text;
+    co_ncr text;
+  BEGIN
+    PERFORM set_config('app.sync_in_progress', 'true', true);
+    INSERT INTO "company" ("name", "baseCurrencyCode", "companyGroupId")
+    SELECT 'HOLD-TEST-CO-' || substr(md5(random()::text), 1, 8), 'USD', c."companyGroupId"
+    FROM "company" c WHERE c."id" = company
+    RETURNING "id" INTO co;
+    INSERT INTO "location" ("name", "addressLine1", "city", "postalCode", "timezone", "companyId", "createdBy")
+    VALUES ('HOLD-TEST-CO-LOC', '1 Test St', 'Testville', '00000', 'UTC', co, usr)
+    RETURNING "id" INTO co_loc;
+    INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "nettable")
+    VALUES ('QC', co_loc, co, usr, false) RETURNING "id" INTO co_unit;
+    INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy", "nettable")
+    VALUES ('MRB', co_loc, co, usr, false) RETURNING "id" INTO co_rejected;
+    UPDATE "location" SET "inspectionStorageUnitId" = co_unit, "rejectedStorageUnitId" = co_rejected WHERE "id" = co_loc;
+    INSERT INTO "item" ("readableId", "name", "type", "itemTrackingType", "companyId", "createdBy")
+    VALUES ('HOLD-TEST-CO-ITEM', 'held', 'Part', 'Inventory', co, usr) RETURNING "id" INTO co_item;
+    INSERT INTO "receipt" ("receiptId", "companyId", "createdBy", "locationId", "sourceDocument", "status")
+    VALUES ('RE-HOLD-CO', co, usr, co_loc, 'Purchase Order', 'Posted') RETURNING "id" INTO co_rcpt;
+    INSERT INTO "receiptLine" ("receiptId", "itemId", "locationId", "storageUnitId", "companyId", "createdBy", "requiresInspection", "orderQuantity", "unitOfMeasure", "unitPrice")
+    VALUES (co_rcpt, co_item, co_loc, co_unit, co, usr, true, 10, 'EA', 0) RETURNING "id" INTO co_line;
+    INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
+    VALUES ('Positive Adjmt.', 'Purchase Receipt', co_item, co_loc, co_unit, 20, co, usr);
+    INSERT INTO "inspection" (
+      "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+      "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+      "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status"
+    ) VALUES (
+      'INS-HOLD-CO-OPEN', co_item, 10, 'ANSI_Z1_4', 'All', 10, 0, 1, co, usr,
+      'Receipt', co_rcpt, co_line, co_unit, 'Pending'
+    );
+    INSERT INTO "inspection" (
+      "inspectionId", "itemId", "lotSize", "samplingStandard", "samplingPlanType",
+      "sampleSize", "acceptanceNumber", "rejectionNumber", "companyId", "createdBy",
+      "sourceDocument", "sourceDocumentId", "sourceDocumentLineId", "storageUnitId", "status", "acceptedQuantity"
+    ) VALUES (
+      'INS-HOLD-CO-PARTIAL', co_item, 10, 'ANSI_Z1_4', 'All', 10, 0, 1, co, usr,
+      'Receipt', co_rcpt, NULL, co_unit, 'Partial', 6
+    ) RETURNING "id" INTO co_lot;
+    INSERT INTO "nonConformanceType" ("name", "companyId", "createdBy")
+    VALUES ('HOLD-TEST-CO-TYPE', co, usr) RETURNING "id" INTO co_type;
+    INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
+    VALUES ('NCR-HOLD-CO', 'Hold test co', 'Internal', co_loc, co_type, CURRENT_DATE, co, usr, 'In Progress')
+    RETURNING "id" INTO co_ncr;
+    INSERT INTO "nonConformanceInspection" ("nonConformanceId", "inspectionId", "companyId", "createdBy")
+    VALUES (co_ncr, co_lot, co, usr);
+    PERFORM set_config('app.sync_in_progress', 'false', true);
+    -- Intercompany partners of the group refer to the new company.
+    UPDATE "supplier" SET "intercompanyCompanyId" = NULL WHERE "intercompanyCompanyId" = co OR "companyId" = co;
+    UPDATE "customer" SET "intercompanyCompanyId" = NULL WHERE "intercompanyCompanyId" = co OR "companyId" = co;
+    PERFORM pg_temp.expect('the new company holds stock',
+      public.inspection_held_quantity(co, co_item, co_unit)::text, '14');
+    PERFORM pg_temp.expect('a company with held stock is deleted',
+      pg_temp.refused_edit(format('DELETE FROM "company" WHERE "id" = %L', co), '%')::text, 'false');
+    PERFORM pg_temp.expect('the deleted company left no lot',
+      (SELECT count(*)::text FROM "inspection" WHERE "companyId" = co), '0');
   END;
 
   RAISE NOTICE 'inspection-hold: all checks passed';

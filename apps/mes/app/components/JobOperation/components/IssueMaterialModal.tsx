@@ -47,7 +47,8 @@ import {
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
-  SCALE_FORMAT
+  SCALE_FORMAT,
+  type Violation
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
@@ -621,7 +622,12 @@ export function IssueMaterialModal({
     }>;
   }>();
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
-  const inventoryFetcher = useFetcher<{ success: boolean; message: string }>();
+  const inventoryFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+    violations?: Violation[];
+    ruleNames?: Record<string, string>;
+  }>();
 
   // Fetch item details when item is selected (only when no material provided)
   const handleItemChange = useCallback(
@@ -1213,11 +1219,34 @@ export function IssueMaterialModal({
     }
   }, [unconsumeFetcher.data, onClose]);
 
+  const processedInventoryData = useRef<typeof inventoryFetcher.data | null>(
+    null
+  );
+
   useEffect(() => {
-    if (inventoryFetcher.data?.success) {
-      onClose();
+    const result = inventoryFetcher.data;
+    if (
+      inventoryFetcher.state !== "idle" ||
+      !result ||
+      result === processedInventoryData.current
+    ) {
+      return;
     }
-  }, [inventoryFetcher.data, onClose]);
+    processedInventoryData.current = result;
+
+    if (result.success) {
+      onClose();
+    } else if (result.violations?.length) {
+      for (const violation of result.violations) {
+        const ruleName = result.ruleNames?.[violation.ruleId];
+        toast.error(
+          ruleName ? `${ruleName}: ${violation.message}` : violation.message
+        );
+      }
+    } else if (result.message) {
+      toast.error(result.message);
+    }
+  }, [inventoryFetcher.state, inventoryFetcher.data, onClose]);
 
   // Determine what to render based on state
   const showItemSelector = !material?.itemId;
@@ -1272,7 +1301,6 @@ export function IssueMaterialModal({
             <ValidatedForm
               method="post"
               action={path.to.issue}
-              onSubmit={onClose}
               validator={issueValidator}
               defaultValues={{
                 materialId: material?.id ?? "",

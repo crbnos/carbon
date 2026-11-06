@@ -13,12 +13,14 @@ AS $function$
 -- picking, and an inactive unit cannot be picked for a receipt line. Every
 -- change of effectiveNettable is written by util.refresh_storage_unit_nettable
 -- as an UPDATE of the unit, so a change of the unit's own flag, a parent's or a
--- storage type's reaches this check. A plain RAISE (P0001), so the API shows
--- the text.
+-- storage type's reaches this check. It stays at the location that names it,
+-- where its lots and ledger rows are booked. A plain RAISE (P0001), so the API
+-- shows the text.
 DECLARE
   v_location TEXT;
   v_becomes_nettable BOOLEAN;
   v_deactivated BOOLEAN;
+  v_moved BOOLEAN;
 BEGIN
   IF p_operation <> 'UPDATE' THEN
     RETURN;
@@ -27,7 +29,8 @@ BEGIN
     AND NOT COALESCE((p_old->>'effectiveNettable')::boolean, true);
   v_deactivated := COALESCE((p_old->>'active')::boolean, true)
     AND NOT COALESCE((p_new->>'active')::boolean, true);
-  IF NOT v_becomes_nettable AND NOT v_deactivated THEN
+  v_moved := (p_new->'locationId') IS DISTINCT FROM (p_old->'locationId');
+  IF NOT v_becomes_nettable AND NOT v_deactivated AND NOT v_moved THEN
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'
@@ -37,8 +40,8 @@ BEGIN
 
   SELECT l."name" INTO v_location
   FROM "location" l
-  WHERE l."companyId" = p_new->>'companyId'
-    AND (l."inspectionStorageUnitId" = p_new->>'id' OR l."rejectedStorageUnitId" = p_new->>'id')
+  WHERE l."companyId" = p_old->>'companyId'
+    AND (l."inspectionStorageUnitId" = p_old->>'id' OR l."rejectedStorageUnitId" = p_old->>'id')
   ORDER BY l."name"
   LIMIT 1;
   IF FOUND THEN
@@ -176,8 +179,8 @@ AS $function$
 -- edit or delete (PostgREST) could release held stock without moving it. Only
 -- the postings that ARE the release (they set app.inspection_release) change
 -- them; samples move an open lot between Pending and In Progress. A company
--- wipe, restore or import sets one of the two flags. A plain RAISE (P0001), so
--- the API shows the text.
+-- wipe, restore or import sets one of the two flags, and deleting the company
+-- is never refused. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_holds BOOLEAN;
 BEGIN
@@ -201,6 +204,23 @@ BEGIN
     END IF;
     IF current_setting('app.inspection_release', true) = 'on'
        OR current_setting('app.sync_in_progress', true) = 'true' THEN
+      RETURN;
+    END IF;
+    -- A lot from before the hold (no storage unit) holds untracked stock
+    -- nowhere; it holds serial or batch units only while they are On Hold.
+    IF p_old->>'storageUnitId' IS NULL AND NOT (
+      p_old->>'status' IN ('Pending', 'In Progress')
+      AND EXISTS (
+        SELECT 1 FROM "trackedEntity" te
+        WHERE te."companyId" = p_old->>'companyId'
+          AND te."attributes" ->> 'Receipt Line' = p_old->>'sourceDocumentLineId'
+          AND te."status" = 'On Hold'
+      )
+    ) THEN
+      RETURN;
+    END IF;
+    -- A company deletion cascades here after the company row is gone.
+    IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
       RETURN;
     END IF;
     RAISE EXCEPTION 'Inspection lot % holds stock. Quality must decide it before it can be deleted.',
@@ -235,6 +255,11 @@ BEGIN
 
   IF current_setting('app.inspection_release', true) = 'on'
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+  -- A company deletion's cascade (a storage unit's SET NULL) after the
+  -- company row is gone.
+  IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
     RETURN;
   END IF;
 
@@ -292,6 +317,71 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_link(p_table text, p_operation text, p_new jsonb, p_old jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+-- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
+-- A Partial untracked receipt lot holds its rejected remainder until its
+-- linked NCR closes, and closing that NCR (closeIssue) writes the remainder
+-- off. A direct link to an NCR that is already Closed would release the
+-- remainder with no write-off; re-pointing or deleting the lot's link would
+-- leave it held with no NCR to decide it. Only a posting that sets
+-- app.inspection_release changes such a link; a company wipe, restore or
+-- import sets one of the two flags, and deleting the company is never
+-- refused. A plain RAISE (P0001), so the API shows the text.
+DECLARE
+  v_lot TEXT;
+BEGIN
+  IF p_operation = 'UPDATE'
+     AND (p_new->'inspectionId') IS NOT DISTINCT FROM (p_old->'inspectionId')
+     AND (p_new->'nonConformanceId') IS NOT DISTINCT FROM (p_old->'nonConformanceId') THEN
+    RETURN;
+  END IF;
+  IF current_setting('app.inspection_release', true) = 'on'
+     OR current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+
+  -- The lot this change takes the link from (re-point, unlink).
+  IF p_operation IN ('UPDATE', 'DELETE') THEN
+    SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+    FROM "inspection" i
+    JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+    WHERE i."id" = p_old->>'inspectionId'
+      AND i."sourceDocument" = 'Receipt'
+      AND i."status" = 'Partial'
+      AND it."itemTrackingType" = 'Inventory'
+      AND i."lotSize" - COALESCE(i."acceptedQuantity", 0) > 0
+      AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
+    IF FOUND AND EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
+      RAISE EXCEPTION 'Inspection lot % holds its rejected part until its NCR is completed. Complete the NCR instead of moving or removing its link.',
+        v_lot;
+    END IF;
+  END IF;
+
+  -- The lot this change links to an NCR that is already Closed.
+  IF p_operation IN ('INSERT', 'UPDATE') THEN
+    SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+    FROM "inspection" i
+    JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+    JOIN "nonConformance" nc
+      ON nc."id" = p_new->>'nonConformanceId' AND nc."status" = 'Closed'
+    WHERE i."id" = p_new->>'inspectionId'
+      AND i."sourceDocument" = 'Receipt'
+      AND i."status" = 'Partial'
+      AND it."itemTrackingType" = 'Inventory'
+      AND i."lotSize" - COALESCE(i."acceptedQuantity", 0) > 0
+      AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
+    IF FOUND THEN
+      RAISE EXCEPTION 'Inspection lot % holds its rejected part until its own NCR is completed. Link it to an open NCR.',
+        v_lot;
+    END IF;
+  END IF;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_release(p_table text, p_operation text, p_new jsonb, p_old jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -300,17 +390,28 @@ AS $function$
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
 -- A Partial receipt lot holds its rejected remainder until its NCR closes, and
 -- closing the NCR (closeIssue) writes that remainder off. A direct status edit
--- (PostgREST) to Closed would release it with no write-off. Only closeIssue,
--- which sets app.inspection_release, closes such an NCR; a company wipe,
--- restore or import sets one of the two flags. A plain RAISE (P0001), so the
--- API shows the text.
+-- (PostgREST) to Closed would release it with no write-off, and deleting the
+-- NCR would leave it held with no NCR to decide it. Only closeIssue, which
+-- sets app.inspection_release, closes such an NCR; a company wipe, restore or
+-- import sets one of the two flags, and deleting the company is never refused.
+-- A plain RAISE (P0001), so the API shows the text.
 DECLARE
+  v_ncr JSONB;
   v_lot TEXT;
 BEGIN
-  -- Hot path: only a change of status to Closed.
-  IF p_operation <> 'UPDATE'
-     OR p_new->>'status' IS DISTINCT FROM 'Closed'
-     OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+  -- Hot path: only a change of status to Closed, or a delete.
+  IF p_operation = 'UPDATE' THEN
+    IF p_new->>'status' IS DISTINCT FROM 'Closed'
+       OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+      RETURN;
+    END IF;
+    v_ncr := p_new;
+  ELSIF p_operation = 'DELETE' THEN
+    IF p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+      RETURN;
+    END IF;
+    v_ncr := p_old;
+  ELSE
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'
@@ -322,7 +423,7 @@ BEGIN
   FROM "nonConformanceInspection" nci
   JOIN "inspection" i ON i."id" = nci."inspectionId"
   JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
-  WHERE nci."nonConformanceId" = p_new->>'id'
+  WHERE nci."nonConformanceId" = v_ncr->>'id'
     AND i."sourceDocument" = 'Receipt'
     AND i."status" = 'Partial'
     AND it."itemTrackingType" = 'Inventory'
@@ -330,10 +431,19 @@ BEGIN
     AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity")
   ORDER BY 1
   LIMIT 1;
-  IF FOUND THEN
-    RAISE EXCEPTION 'This NCR holds the rejected part of inspection lot %. Complete the NCR to post its disposition and close it.',
+  IF NOT FOUND THEN
+    RETURN;
+  END IF;
+  IF p_operation = 'DELETE' THEN
+    -- A company deletion cascades here after the company row is gone.
+    IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = v_ncr->>'companyId') THEN
+      RETURN;
+    END IF;
+    RAISE EXCEPTION 'This NCR holds the rejected part of inspection lot %. Complete the NCR to post its disposition instead of deleting it.',
       v_lot;
   END IF;
+  RAISE EXCEPTION 'This NCR holds the rejected part of inspection lot %. Complete the NCR to post its disposition and close it.',
+    v_lot;
 END;
 $function$;
 
@@ -421,6 +531,7 @@ SELECT set_event_triggers('inspection', ARRAY['check_inspection_lot_release']::t
 SELECT set_event_triggers('itemLedger', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['apply_item_stock_quantities', 'broadcast_table_changes', 'check_inspection_hold', 'queue_kanban_level_checks']::text[]);
 SELECT set_event_triggers('location', ARRAY['check_location_goods_in_storage_units']::text[], ARRAY['sync_create_location_related_records']::text[], true, ARRAY['broadcast_reference_changes']::text[]);
 SELECT set_event_triggers('nonConformance', ARRAY['check_nonconformance_inspection_release']::text[], ARRAY['sync_advance_document_sequence']::text[], true, ARRAY['broadcast_table_changes']::text[]);
+SELECT set_event_triggers('nonConformanceInspection', ARRAY['check_nonconformance_inspection_link']::text[], ARRAY[]::text[], false, ARRAY[]::text[]);
 SELECT set_event_triggers('stockTransfer', ARRAY[]::text[], ARRAY['sync_advance_document_sequence', 'sync_receipt_inspection_status']::text[], true, ARRAY['broadcast_table_changes']::text[]);
 SELECT set_event_triggers('storageUnit', ARRAY['storage_unit_enforce_same_location', 'storage_unit_block_location_change_with_children', 'storage_unit_enforce_no_cycle', 'storage_unit_release_non_nettable_stock', 'check_goods_in_storage_unit']::text[], ARRAY['sync_storage_unit_nettable']::text[], true, ARRAY['broadcast_reference_changes']::text[]);
 SELECT set_event_triggers('trackedEntity', ARRAY['check_tracked_entity_inspection_hold']::text[], ARRAY[]::text[], false, ARRAY['broadcast_table_changes']::text[]);

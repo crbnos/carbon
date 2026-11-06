@@ -6989,32 +6989,55 @@ export async function refuseShippingOpenLotStock(
     `${a.itemId}:${a.unitId}`.localeCompare(`${b.itemId}:${b.unitId}`)
   );
   let short: { itemId: string; unitId: string } | undefined;
-  if (pairs.length > 0) {
+  // Only where an open lot holds stock (inspection_hold_idx), as the guard
+  // reads it: a return from any other bin may leave it at or below zero.
+  const heldPairs =
+    pairs.length > 0
+      ? (
+          await sql<{ itemId: string; unitId: string }>`
+            SELECT k.i AS "itemId", k.u AS "unitId"
+            FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
+            WHERE EXISTS (
+              SELECT 1 FROM "inspection" h
+              WHERE h."storageUnitId" = k.u
+                AND h."itemId" = k.i
+                AND h."companyId" = ${companyId}
+                AND h."status" IN ('Pending', 'In Progress')
+            )
+            ORDER BY k.i, k.u`.execute(trx)
+        ).rows
+      : [];
+  if (heldPairs.length > 0) {
     // The hold guard's lock: a concurrent move out of the same (item, unit)
     // reads on-hand after this commits.
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('inspection-hold:' || ${companyId} || ':' || k.i || ':' || k.u, 0))
-      FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
+      FROM unnest(${heldPairs.map((p) => p.itemId)}::text[], ${heldPairs.map((p) => p.unitId)}::text[]) AS k(i, u)
       ORDER BY k.i, k.u`.execute(trx);
     const result = await sql<{ itemId: string; unitId: string }>`
       SELECT k.i AS "itemId", k.u AS "unitId"
-      FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
-      WHERE (
-        SELECT COALESCE(SUM(i."lotSize"), 0)
-        FROM "inspection" i
-        JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
-        WHERE i."companyId" = ${companyId}
-          AND i."itemId" = k.i
-          AND i."storageUnitId" = k.u
-          AND i."status" IN ('Pending', 'In Progress')
-          AND it."itemTrackingType" = 'Inventory'
-      ) > (
-        SELECT COALESCE(SUM(il."quantity"), 0)
-        FROM "itemLedger" il
-        WHERE il."storageUnitId" = k.u
-          AND il."itemId" = k.i
-          AND il."companyId" = ${companyId}
-          AND il."trackedEntityId" IS NULL
-      ) + ${EPSILON}
+      FROM unnest(${heldPairs.map((p) => p.itemId)}::text[], ${heldPairs.map((p) => p.unitId)}::text[]) AS k(i, u)
+      CROSS JOIN LATERAL (
+        SELECT
+          (
+            SELECT COALESCE(SUM(i."lotSize"), 0)
+            FROM "inspection" i
+            JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+            WHERE i."companyId" = ${companyId}
+              AND i."itemId" = k.i
+              AND i."storageUnitId" = k.u
+              AND i."status" IN ('Pending', 'In Progress')
+              AND it."itemTrackingType" = 'Inventory'
+          ) AS held,
+          (
+            SELECT COALESCE(SUM(il."quantity"), 0)
+            FROM "itemLedger" il
+            WHERE il."storageUnitId" = k.u
+              AND il."itemId" = k.i
+              AND il."companyId" = ${companyId}
+              AND il."trackedEntityId" IS NULL
+          ) AS on_hand
+      ) s
+      WHERE s.held > 0 AND s.held > s.on_hand + ${EPSILON}
       ORDER BY k.i, k.u
       LIMIT 1`.execute(trx);
     short = result.rows[0];
@@ -7044,6 +7067,95 @@ export async function refuseShippingOpenLotStock(
       ? `Decide the inspection lot first: ${part} in ${unit.name} is held for inspection.`
       : `Decide the inspection lot first: ${part} is held for inspection.`
   );
+}
+
+/**
+ * Why the inspection hold refuses this adjustment, or null: a serial or batch
+ * unit On Hold under its open receipt lot changes only through the lot's
+ * decision (an increase would add units the decision then moves), and
+ * untracked stock may not go below what open lots hold in the unit. The
+ * hold guard refuses the decrease anyway; asking first keeps a storage rule
+ * from asking to be acknowledged for an adjustment that cannot post.
+ */
+export async function inspectionHoldAdjustmentRefusal(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string,
+  args: {
+    itemId: string;
+    storageUnitId?: string | null;
+    trackedEntityId?: string | null;
+    adjustmentType: string;
+    quantity: number;
+  }
+): Promise<string | null> {
+  const partName = async () => {
+    const item = await db
+      .selectFrom("item")
+      .select("readableIdWithRevision")
+      .where("id", "=", args.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    return item?.readableIdWithRevision ?? args.itemId;
+  };
+
+  if (args.trackedEntityId) {
+    const held = await db
+      .selectFrom("trackedEntity as te")
+      .innerJoin("inspection as i", (join) =>
+        join
+          .on("i.sourceDocument", "=", "Receipt")
+          .onRef(
+            "i.sourceDocumentLineId",
+            "=",
+            sql<string>`te."attributes" ->> 'Receipt Line'`
+          )
+          .onRef("i.companyId", "=", "te.companyId")
+      )
+      .select("te.readableId")
+      .where("te.id", "=", args.trackedEntityId)
+      .where("te.companyId", "=", companyId)
+      .where("te.status", "=", "On Hold")
+      .where("i.status", "in", ["Pending", "In Progress"])
+      .executeTakeFirst();
+    if (!held) return null;
+    const unit = held.readableId ? ` ${held.readableId}` : "";
+    return `${await partName()}${unit} is held for inspection. Quality must decide its inspection lot before it can be adjusted.`;
+  }
+
+  if (!args.storageUnitId) return null;
+  const row = await sql<{ held: number; onHand: number; name: string }>`
+    SELECT
+      public.inspection_held_quantity(${companyId}, ${args.itemId}, ${args.storageUnitId}) AS "held",
+      COALESCE((
+        SELECT SUM(il."quantity") FROM "itemLedger" il
+        WHERE il."companyId" = ${companyId}
+          AND il."itemId" = ${args.itemId}
+          AND il."storageUnitId" = ${args.storageUnitId}
+          AND il."trackedEntityId" IS NULL
+      ), 0) AS "onHand",
+      (SELECT su."name" FROM "storageUnit" su WHERE su."id" = ${args.storageUnitId}) AS "name"
+    WHERE EXISTS (
+      SELECT 1 FROM "inspection" h
+      WHERE h."storageUnitId" = ${args.storageUnitId}
+        AND h."itemId" = ${args.itemId}
+        AND h."companyId" = ${companyId}
+        AND h."status" IN ('Pending', 'In Progress', 'Partial')
+    )
+  `.execute(db);
+  const hold = row.rows[0];
+  if (!hold || Number(hold.held) <= EPSILON) return null;
+  const onHand = Number(hold.onHand);
+  const after =
+    args.adjustmentType === "Set Quantity"
+      ? args.quantity
+      : args.adjustmentType === "Negative Adjmt." ||
+          args.adjustmentType === "Scrap"
+        ? onHand - args.quantity
+        : onHand;
+  if (after >= onHand - EPSILON || Number(hold.held) - after <= EPSILON) {
+    return null;
+  }
+  return `${await partName()} is held for inspection in ${hold.name ?? args.storageUnitId}. Quality must decide its inspection lot before it can move.`;
 }
 
 /**
@@ -7207,7 +7319,7 @@ export async function unheldInspectedLineRefusal(
   return `${readableId} needs inspection. Choose a non-nettable storage unit at ${location.name}.`;
 }
 
-/** Held stock a posted count found outside the unit it was held in. */
+/** Held stock a posted count found short or outside the unit it was held in. */
 export type HeldStockWarning = {
   part: string;
   unit: string | null;
@@ -7216,12 +7328,19 @@ export type HeldStockWarning = {
    * hold refuses to move it, so Quality decides the lot before it moves back.
    */
   awaitingInspection: boolean;
+  /**
+   * Untracked stock counted short in the unit its lot holds it in, with none
+   * of the part found in another unit by the count: the lot holds more than
+   * is there, and its Reject writes off what is.
+   */
+  countedShort: boolean;
 };
 
 /**
- * Stock held for inspection that a posted count moved out of its unit: a
- * serial or batch unit On Hold before the count (`heldTrackedEntityIds`), or
- * untracked stock taken below what an open lot holds. One row per part and unit.
+ * Stock held for inspection that a posted count took out of its unit: a
+ * serial or batch unit On Hold before the count (`heldTrackedEntityIds`)
+ * whose receipt lot is still open, or untracked stock taken below what an open
+ * lot holds. One row per part and unit.
  */
 export async function heldStockMovedByCount(
   db: Kysely<KyselyDatabase>,
@@ -7233,7 +7352,17 @@ export async function heldStockMovedByCount(
     SELECT DISTINCT
       COALESCE(i."readableIdWithRevision", i."id") AS "part",
       su."name" AS "unit",
-      (lot."id" IS NOT NULL) AS "awaitingInspection"
+      (lot."id" IS NOT NULL) AS "awaitingInspection",
+      (il."trackedEntityId" IS NULL AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" found
+        WHERE found."companyId" = il."companyId"
+          AND found."documentType" = 'Inventory Count'
+          AND found."documentId" = il."documentId"
+          AND found."itemId" = il."itemId"
+          AND found."trackedEntityId" IS NULL
+          AND found."quantity" > 0
+          AND found."storageUnitId" IS DISTINCT FROM il."storageUnitId"
+      )) AS "countedShort"
     FROM "itemLedger" il
     JOIN "item" i ON i."id" = il."itemId"
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
@@ -7252,7 +7381,10 @@ export async function heldStockMovedByCount(
       AND il."documentId" = ${inventoryCountId}
       AND il."quantity" < 0
       AND (
-        il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
+        -- On Hold for its open receipt lot: a unit On Hold for another
+        -- reason (a customer return) is not held for inspection.
+        (il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
+          AND lot."id" IS NOT NULL)
         OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
           -- CASE keeps the two sums behind the indexed EXISTS: most counted
           -- items have no lot at the unit.
@@ -8129,6 +8261,85 @@ export async function updateStockTransferLineStorageUnits(
   });
 }
 
+/**
+ * Why a pick of putaway lines (`receiptLineId` set) takes more untracked
+ * stock than is still in their source unit, or null. A putaway moves the
+ * receipt's own stock, so it must not drive its unit negative after another
+ * move took that stock; an ordinary transfer pick is not checked.
+ */
+export async function putAwayPickShortfall(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  picks: Array<{
+    receiptLineId: string | null;
+    itemId: string | null;
+    fromStorageUnitId: string | null;
+    quantity: number;
+  }>
+): Promise<string | null> {
+  const byPair = new Map<
+    string,
+    { itemId: string; unitId: string; quantity: number }
+  >();
+  for (const pick of picks) {
+    if (!pick.receiptLineId || !pick.itemId || !pick.fromStorageUnitId) {
+      continue;
+    }
+    const key = `${pick.itemId}:${pick.fromStorageUnitId}`;
+    const pair = byPair.get(key) ?? {
+      itemId: pick.itemId,
+      unitId: pick.fromStorageUnitId,
+      quantity: 0
+    };
+    pair.quantity = round(pair.quantity + pick.quantity);
+    byPair.set(key, pair);
+  }
+  if (byPair.size === 0) return null;
+  const pairs = [...byPair.values()];
+  const onHand = await sql<{
+    itemId: string;
+    unitId: string;
+    quantity: number;
+  }>`
+    SELECT k.i AS "itemId", k.u AS "unitId", COALESCE((
+      SELECT SUM(il."quantity") FROM "itemLedger" il
+      WHERE il."companyId" = ${companyId}
+        AND il."itemId" = k.i
+        AND il."storageUnitId" = k.u
+        AND il."trackedEntityId" IS NULL
+    ), 0) AS "quantity"
+    FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
+  `.execute(trx);
+  const there = new Map(
+    onHand.rows.map((row) => [
+      `${row.itemId}:${row.unitId}`,
+      round(Math.max(Number(row.quantity), 0))
+    ])
+  );
+  const short = pairs.find(
+    (pair) =>
+      pair.quantity - (there.get(`${pair.itemId}:${pair.unitId}`) ?? 0) >
+      EPSILON
+  );
+  if (!short) return null;
+  const [item, unit] = await Promise.all([
+    trx
+      .selectFrom("item")
+      .select("readableIdWithRevision")
+      .where("id", "=", short.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("storageUnit")
+      .select("name")
+      .where("id", "=", short.unitId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+  ]);
+  const available = there.get(`${short.itemId}:${short.unitId}`) ?? 0;
+  return `Only ${available} of the ${short.quantity} ${item?.readableIdWithRevision ?? short.itemId} to put away are still in ${unit?.name ?? short.unitId}. Pick what is there.`;
+}
+
 /** A pick the transfer's own state refuses, worded for the person. */
 export class StockTransferPickRefusal extends Error {}
 
@@ -8176,7 +8387,8 @@ export async function pickUntrackedStockTransferLines(
         "quantity",
         "pickedQuantity",
         "fromStorageUnitId",
-        "toStorageUnitId"
+        "toStorageUnitId",
+        "receiptLineId"
       ])
       .where("stockTransferId", "=", stockTransferId)
       .where("companyId", "=", companyId)
@@ -8194,6 +8406,12 @@ export async function pickUntrackedStockTransferLines(
       }))
       .filter((line) => line.remaining > 0);
     if (toPick.length === 0) return [];
+    const shortfall = await putAwayPickShortfall(
+      trx,
+      companyId,
+      toPick.map((line) => ({ ...line, quantity: line.remaining }))
+    );
+    if (shortfall) throw new StockTransferPickRefusal(shortfall);
 
     await trx
       .insertInto("itemLedger")
@@ -10795,6 +11013,10 @@ export async function postStockTransfer(
               : "This line is already fully picked"
           );
         }
+        const shortfall = await putAwayPickShortfall(trx, companyId, [
+          { ...stockTransferLine, quantity: round(quantity) }
+        ]);
+        if (shortfall) throw new InvalidInputError(shortfall);
 
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
@@ -23316,6 +23538,18 @@ export async function postInventoryAdjustment(
     if (existing && existing.companyId !== companyId) {
       throw new NotFoundError("Tracked entity not found");
     }
+    // A unit held for inspection changes only through its lot's decision:
+    // the guard refuses a decrease, and an increase would add units the
+    // decision then moves.
+    const held =
+      existing &&
+      (await inspectionHoldAdjustmentRefusal(db, companyId, {
+        itemId,
+        trackedEntityId,
+        adjustmentType,
+        quantity
+      }));
+    if (held) throw new InvalidInputError(held);
   }
 
   const today = datetime

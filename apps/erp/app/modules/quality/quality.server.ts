@@ -1299,8 +1299,10 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * 9001:2015 §8.7). Only a Receipt lot: a Job Operation lot is rejected from
  * the shop floor. A non-tracked Inventory lot's value is written off through
  * `post-nonconformance` in the decision's transaction; when the write-off
- * fails the lot is not rejected. Rejecting a Failed lot again posts a
- * write-off that is still missing. With `createNcr` false that is all
+ * fails the lot is not rejected. The write-off takes what the lot can still
+ * claim in its held unit (never more than is there). Rejecting a Failed lot
+ * again posts a write-off that is still missing and keeps the NCR the lot
+ * already has. With `createNcr` false that is all
  * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId` or the
  * first issue type, at the caller's default location: its item's disposition
  * row takes the lot quantity and Scrap, the lot's entities and receipt line
@@ -1380,6 +1382,19 @@ export const rejectInspection = defineServiceFn({
 
     if (!createNcr) return { id, issueId: null };
 
+    // A repeated Reject (double submit, a second tab, the write-off retry)
+    // keeps the NCR the lot already has.
+    const existingNcr = () =>
+      ctx.asSystem.pg
+        .selectFrom("nonConformanceInspection")
+        .select("nonConformanceId")
+        .where("inspectionId", "=", id)
+        .where("companyId", "=", companyId)
+        .orderBy("createdAt")
+        .executeTakeFirst();
+    const linked = await existingNcr();
+    if (linked) return { id, issueId: linked.nonConformanceId };
+
     const opened = await service.openInspectionNcr(ctx, {
       id,
       nonConformanceTypeId,
@@ -1387,9 +1402,15 @@ export const rejectInspection = defineServiceFn({
       title: "Rejected lot",
       outcome: "Lot rejected",
       quantity: null,
-      trackedEntityIds: null
+      trackedEntityIds: null,
+      oncePerLot: true
     });
-    if (opened instanceof CarbonError) return opened;
+    if (opened instanceof CarbonError) {
+      // A concurrent Reject opened it first.
+      const raced = opened.category === "conflict" && (await existingNcr());
+      if (raced) return { id, issueId: raced.nonConformanceId };
+      return opened;
+    }
     return { id, issueId: opened.issueId };
   }
 });
@@ -1398,15 +1419,16 @@ export const rejectInspection = defineServiceFn({
  *
  * @remarks
  * Only a Receipt lot. For an untracked (Inventory) part, `acceptedQuantity`
- * is required (at least 0, less than the lot size) and so is an NCR: the rest
+ * is required (more than 0, less than the lot size) and so is an NCR: the rest
  * of the lot stays held, in the location's rejected storage unit when one is
- * set, until that NCR closes. For a serial or batch part every unit that did
- * not fail is accepted, as on Accept, and the failed units move to the
- * rejected storage unit. An NCR opens for the failed part when one is required
+ * set, until that NCR closes. For a serial part every unit that did not fail
+ * is accepted, as on Accept, and the failed units move to the rejected
+ * storage unit. A batch lot is accepted or rejected as a whole. If the NCR
+ * does not open after the lot was marked partial, the error says so. An NCR opens for the failed part when one is required
  * or `createNcr` is true. The accepted part can then be put away. A receipt
  * lot is decided once, so a Partial lot refuses a second decision. A Partial
- * lot whose NCR failed to open (untracked, or serial or batch with failed
- * units and `createNcr`) gets the NCR when it is marked partial again, and
+ * lot whose NCR failed to open (untracked, or serial with failed units and
+ * `createNcr`) gets the NCR when it is marked partial again, and
  * nothing else changes.
  *
  * @mcp
@@ -1437,8 +1459,12 @@ export const partialInspection = defineServiceFn({
       .eq("id", id)
       .eq("companyId", companyId)
       .maybeSingle();
-    if (lot.error || !lot.data) {
-      return ctx.error("notFound", "Inspection not found", lot.error);
+    // A failed read is not a missing lot.
+    if (lot.error) {
+      return ctx.error("internal", "Failed to read the inspection", lot.error);
+    }
+    if (!lot.data) {
+      return ctx.error("notFound", "Inspection not found");
     }
     const trackingType = lot.data.item?.itemTrackingType;
     const untracked = trackingType === "Inventory";
@@ -1506,6 +1532,28 @@ export const partialInspection = defineServiceFn({
         requireSource: "Receipt"
       });
       if (partial.error || !partial.data) {
+        // A second submit of the same decision finds the lot marked partial
+        // by the first: that decision stands, and the first opens its NCR.
+        if (
+          lot.data.status === "Pending" ||
+          lot.data.status === "In Progress"
+        ) {
+          const now = await ctx.asSystem.pg
+            .selectFrom("inspection")
+            .select("status")
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (now?.status === "Partial") {
+            const link = await ctx.asSystem.pg
+              .selectFrom("nonConformanceInspection")
+              .select("nonConformanceId")
+              .where("inspectionId", "=", id)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+            return { id, issueId: link?.nonConformanceId ?? null };
+          }
+        }
         return ctx.error(
           "rule",
           partial.error?.message ?? "Failed to mark the lot partial",
@@ -1558,7 +1606,26 @@ export const partialInspection = defineServiceFn({
       trackedEntityIds,
       oncePerLot: true
     });
-    if (opened instanceof CarbonError) return opened;
+    if (opened instanceof CarbonError) {
+      if (opened.category === "conflict") {
+        // A concurrent call opened it first.
+        const link = await ctx.asSystem.pg
+          .selectFrom("nonConformanceInspection")
+          .select("nonConformanceId")
+          .where("inspectionId", "=", id)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (link) return { id, issueId: link.nonConformanceId };
+      }
+      // The decision committed; only its NCR is missing, and Open NCR opens it.
+      return ncrMissing
+        ? opened
+        : ctx.error(
+            opened.category,
+            "Lot marked partial, but its NCR did not open. Use Open NCR.",
+            opened
+          );
+    }
     return { id, issueId: opened.issueId };
   }
 });

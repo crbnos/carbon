@@ -1545,6 +1545,9 @@ msgstr "Operatör oluşturulduğunda bir 4 haneli PIN oluşturulur."
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" veya 3\" x 2\" etiket, Zebra gibi bir termal yazıcı için etiket başına bir kart yazdırır."
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Bir parti en az bir operasyon gerektirir. Bütün partiyi ayırmak için bunun yerine Çöz'ü kullanın."
 
@@ -18695,8 +18698,8 @@ msgstr "Modül bulunamadı"
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
-msgid "No non-nettable storage units"
-msgstr "MRP dışı depolama birimi yok"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "Notlar yok"
@@ -19251,6 +19254,9 @@ msgstr "Planlama ve kapasite tarafından dikkate alınan çalışılmayan günle
 
 msgid "None"
 msgstr "Yok"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "Normal"
@@ -19880,6 +19886,9 @@ msgstr "Açık Aksiyonlar"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için bir NCR aç"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "Açık Borç hesapları"
@@ -28016,6 +28025,9 @@ msgstr "Bu alan birden fazla değer içerir, bu nedenle tek bir listede birleşt
 msgid "That integration is not available"
 msgstr "Bu entegrasyon kullanılamıyor"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "Bu lotun tamamı. Bunun yerine Lotu Kabul Et'i kullanın."
 
@@ -29777,6 +29789,9 @@ msgstr "Bu lot süresi doldu ve toplama yapılamaz."
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "Bu lot kısmen kabul edildi ancak NCR'si açılmadı. Lotun reddedilen kısmına NCR karar verir."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "Bu biraz zaman alabilir. Sabrın."

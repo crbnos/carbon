@@ -102,10 +102,9 @@ export function GoodsInStorageCard({
         <div className="flex flex-col">
           {locations.map((location, index) => {
             const options = optionsByLocation.get(location.id) ?? [];
+            // Short enough not to truncate; the full meaning is the select's title.
             const placeholder =
-              options.length === 0
-                ? t`No non-nettable storage units`
-                : t`Not set`;
+              options.length === 0 ? t`None available` : t`Not set`;
             return (
               <div
                 key={location.id}
@@ -183,6 +182,7 @@ function GoodsInStorageSelect({
 }) {
   const { t } = useLingui();
   const warningId = useId();
+  const noneAvailableId = useId();
   // A stored unit that is no longer offered (made nettable or inactive since)
   // still shows by name, with why it no longer fits.
   const notOffered = !!value && !options.some((o) => o.value === value);
@@ -190,6 +190,10 @@ function GoodsInStorageSelect({
   const shownOptions = notOffered
     ? [...options, { value: value!, label: name }]
     : options;
+  const noneAvailable = options.length === 0 && !value;
+  const noneAvailableText = noneAvailable
+    ? t`No non-nettable storage units at this location`
+    : undefined;
   const warning = !notOffered
     ? null
     : storedUnit?.effectiveNettable
@@ -209,11 +213,19 @@ function GoodsInStorageSelect({
         isClearable
         clearLabel={clearLabel}
         aria-label={ariaLabel}
-        aria-describedby={warning ? warningId : undefined}
+        aria-describedby={
+          warning ? warningId : noneAvailable ? noneAvailableId : undefined
+        }
         aria-invalid={warning ? true : undefined}
-        disabled={isPending || (options.length === 0 && !value)}
+        disabled={isPending || noneAvailable}
         placeholder={placeholder}
+        title={noneAvailableText}
       />
+      {noneAvailable && (
+        <span id={noneAvailableId} className="sr-only">
+          {noneAvailableText}
+        </span>
+      )}
       {warning && (
         <span id={warningId} className="text-xs text-destructive">
           {warning}

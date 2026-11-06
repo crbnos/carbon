@@ -1545,6 +1545,9 @@ msgstr "ऑपरेटर बनाए जाने पर एक 4-अंक�
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" या 3\" x 2\" लेबल प्रति लेबल एक कार्ड प्रिंट करता है, Zebra जैसे थर्मल प्रिंटर के लिए।"
 
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr ""
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "बैच को कम से कम एक ऑपरेशन की आवश्यकता है। पूरे बैच को विभाजित करने के लिए, इसके बजाय विघटन का उपयोग करें।"
 
@@ -18695,8 +18698,8 @@ msgstr "कोई मॉड्यूल नहीं मिला"
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
-msgid "No non-nettable storage units"
-msgstr "MRP से बाहर कोई भंडारण इकाई नहीं"
+msgid "No non-nettable storage units at this location"
+msgstr ""
 
 msgid "No notes"
 msgstr "कोई नोट नहीं"
@@ -19251,6 +19254,9 @@ msgstr "गैर-कार्य दिन जिन्हें शेड्�
 
 msgid "None"
 msgstr "कोई नहीं"
+
+msgid "None available"
+msgstr ""
 
 msgid "Normal"
 msgstr "सामान्य"
@@ -19880,6 +19886,9 @@ msgstr "खुली कार्रवाइयाँ"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
+
+msgid "Open an NCR for the failed units"
+msgstr ""
 
 msgid "Open AP"
 msgstr "खुले देय खाते"
@@ -28016,6 +28025,9 @@ msgstr "उस फ़ील्ड में कई मान हैं, इस�
 msgid "That integration is not available"
 msgstr "वह एकीकरण उपलब्ध नहीं है"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr ""
+
 msgid "That is the whole lot. Use Accept Lot instead."
 msgstr "यह पूरा लॉट है। इसके बजाय लॉट स्वीकार करें का उपयोग करें।"
 
@@ -29777,6 +29789,9 @@ msgstr "यह लॉट समाप्त हो गया है और इ�
 
 msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
 msgstr "यह लॉट आंशिक रूप से स्वीकृत है, लेकिन इसकी NCR नहीं खुली। NCR लॉट के अस्वीकृत भाग का निर्णय करती है।"
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr ""
 
 msgid "This may take a moment. Hang tight."
 msgstr "यह एक पल ले सकता है। धैर्य रखें।"
