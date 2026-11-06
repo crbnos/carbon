@@ -41,10 +41,39 @@ Routes: MES `/x/operation/<jobOperationId>`, ERP `/x/sales-order/new`, `/x/shipm
 8. Verify: a "Rule Violation" dialog with "Not enough stock in the storage unit" names the bin with stock.
 9. Either Cancel and pick that bin, then post: no dialog, and the row is on that bin. Or click "Acknowledge & continue": it posts from the chosen bin.
 
+### 4. Assembly view: step backflush, auto-complete, two tabs (all in the UI)
+1. ERP `/x/job/new`: Item `BINTEST-ASSY`, Quantity 2 (fill, then Tab to commit), Save.
+2. Job page: dismiss the Academy popup ("Dismiss"). "Add Operation": Process "Clean Room Assembly" (Operation Type becomes Assembly), Work Center, Description, Save.
+3. Operation card → "Steps" tab → "Add Step": Name, "Save Step".
+4. "Add Item": Part, Quantity (Tab), "Backflush" row → Operation = the new operation, Save. A new-material form has no step field.
+5. Link the part to the step: the saved step's ⋯ → Edit → "Add parts" → pick the part.
+6. "Release" → "Release Job".
+7. MES `/x/operation/<op>` redirects to `/x/assembly/<op>`. "Mark done" on Unit 1.
+8. Verify: one Consumption row per material, from the bin that holds stock; production row 1; Quantity 1/2; the view moves to Unit 2. No second issue.
+9. Two tabs: `agent-browser tab new <same url>`. Mark done in one tab; the other updates to 1/2 by itself. Still one production row.
+10. Save Method (job page) writes the operation and materials to the item, but not the step-part link; a new job from it still issues the loose parts at the step.
+
+### 5. Serial completion repeated
+1. MES serial operation with no steps (a `Process` operation of a serial make method) → "Select Serial Number" → Select tab → pick a unit.
+2. "Log completed": read the form, `requestSubmit` it and `fetch('/x/complete.data')` the same FormData at once.
+3. Verify: one production row; the resend returns `{}` and the ERP log says "This unit is already complete on this operation".
+
+### 6. Quote → order with no default bin
+1. `/x/quote/new`: Customer, Customer Location (dismiss the popup first), Save. "Add Line Item": item, Method "Pull from Inventory", Save.
+2. Pricing grid: click Unit Price, fill, Enter.
+3. "Finalize" → confirm. "Won" → wizard: "Skip" → pick the quantity radio → Next → "Convert".
+4. Verify: the order line names the bin that holds the stock.
+
+### 7. ERP job Complete (SQL backflush)
+1. Create and release a 1-unit job from the saved method. "Complete" → Quantity Completed 1 (Tab) → "Complete Job".
+2. Verify: each material's Consumption row is on the bin that holds the stock; the job is Completed.
+
 ## Selector Notes
 - The sales order page has several forms with a Save button. Find the line form by `input[name=itemId]` together with `input[name=saleQuantity]`.
 - Pressing Escape in the line drawer closes it.
 - The shipment line's bin picker is a button labelled with the current bin name.
+- An Academy video popup ("Dismiss") covers buttons on job and quote pages; dismiss it first.
+- Inventory → Quantities: open an item with its row's "Open" link; a direct URL to the panel can render blank (dev hydration error). "Update Inventory" opens the adjustment form.
 
 ## Common Failures
 - "Customer country is required" on a line save: the order has no customer location.
