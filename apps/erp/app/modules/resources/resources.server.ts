@@ -1726,6 +1726,35 @@ export const updateTrainingAssignment = defineServiceFn({
     }
     const isExternal = stored.data.trainingId === null;
 
+    // Everyone else was told when they were assigned; telling them again on
+    // every save emailed a whole group for adding one person. Resolved before
+    // the save: a failure after it would leave the added people never told,
+    // and saving again would find no one new.
+    let added: string[] = [];
+    if (!isExternal) {
+      const [before, after] = await Promise.all([
+        client.rpc("users_for_groups", { groups: stored.data.groupIds ?? [] }),
+        client.rpc("users_for_groups", { groups: groupIds })
+      ]);
+      if (before.error || after.error) {
+        const error = before.error ?? after.error;
+        logger.error("Failed to resolve training assignees", {
+          companyId,
+          trainingAssignmentId: id,
+          error
+        });
+        return ctx.error(
+          "internal",
+          "Failed to resolve who is assigned this training",
+          error
+        );
+      }
+      added = newTrainingAssignees(
+        (before.data ?? []) as string[],
+        (after.data ?? []) as string[]
+      );
+    }
+
     const update = await service.upsertTrainingAssignment(client, {
       id,
       name: isExternal ? name : null,
@@ -1737,31 +1766,11 @@ export const updateTrainingAssignment = defineServiceFn({
       return ctx.error("internal", "Failed to update assignment", update.error);
     }
 
-    if (!isExternal) {
-      // Everyone else was told when they were assigned; telling them again on
-      // every save emailed a whole group for adding one person.
-      const [before, after] = await Promise.all([
-        client.rpc("users_for_groups", { groups: stored.data.groupIds ?? [] }),
-        client.rpc("users_for_groups", { groups: groupIds })
-      ]);
-      if (before.error || after.error) {
-        logger.error("Failed to resolve training assignees", {
-          companyId,
-          trainingAssignmentId: id,
-          error: before.error ?? after.error
-        });
-      } else {
-        const added = newTrainingAssignees(
-          (before.data ?? []) as string[],
-          (after.data ?? []) as string[]
-        );
-        if (added.length > 0) {
-          await service.notifyTrainingAssignment(ctx, id, {
-            type: "users",
-            userIds: added
-          });
-        }
-      }
+    if (added.length > 0) {
+      await service.notifyTrainingAssignment(ctx, id, {
+        type: "users",
+        userIds: added
+      });
     }
     return { id };
   }
