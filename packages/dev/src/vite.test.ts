@@ -299,23 +299,39 @@ describe("assetModuleUrl", () => {
 });
 
 describe("dropStalledHmrClients", () => {
-  it("disconnects a client holding more than 4 MB unsent, and only that one", () => {
+  it("disconnects a client whose backlog is over 4 MB and not shrinking", () => {
     vi.useFakeTimers();
-    const socket = (bufferedAmount: number) => ({
-      bufferedAmount,
-      terminate: vi.fn()
-    });
-    const reading = socket(64 * 1024);
-    const stalled = socket(5 * 1024 * 1024);
-    const hook = dropStalledHmrClients().configureServer as (
-      server: unknown
-    ) => void;
-    hook({
-      ws: { clients: new Set([{ socket: reading }, { socket: stalled }]) }
-    });
-    vi.advanceTimersByTime(5000);
-    expect(stalled.terminate).toHaveBeenCalledOnce();
-    expect(reading.terminate).not.toHaveBeenCalled();
-    vi.useRealTimers();
+    try {
+      const MB = 1024 * 1024;
+      const socket = (bufferedAmount: number) => ({
+        bufferedAmount,
+        terminate: vi.fn()
+      });
+      const reading = socket(64 * 1024);
+      const slow = socket(6 * MB);
+      const stalled = socket(5 * MB);
+      const hook = dropStalledHmrClients().configureServer as (
+        server: unknown
+      ) => void;
+      hook({
+        ws: {
+          clients: new Set([
+            { socket: reading },
+            { socket: slow },
+            { socket: stalled }
+          ])
+        }
+      });
+      vi.advanceTimersByTime(5000);
+      // One look is not enough: a slow page may be draining.
+      expect(stalled.terminate).not.toHaveBeenCalled();
+      slow.bufferedAmount = 5 * MB;
+      vi.advanceTimersByTime(5000);
+      expect(stalled.terminate).toHaveBeenCalledOnce();
+      expect(slow.terminate).not.toHaveBeenCalled();
+      expect(reading.terminate).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

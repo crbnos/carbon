@@ -31,7 +31,9 @@ function isNoiseLine(line: string): boolean {
 // keeps what the workers freed: on a 14-core Mac about 1 GB stayed in each dev
 // server after a re-bundle, 320 MB with these (rolldown/rolldown#10985,
 // #11233). Read when the binding loads, so they must be set before Node starts.
-// The shell or a `.env` file overrides them.
+// Only for the react-router dev servers `crbn` spawns: the assembler's planner
+// uses rayon too, and an app's own `dev` script does not get them. The shell or
+// a `.env` file overrides them.
 const ROLLDOWN_MEMORY_ENV = {
   MIMALLOC_ARENA_PURGE_MULT: "0",
   ROLLDOWN_WORKER_THREADS: "4",
@@ -44,10 +46,7 @@ const ROLLDOWN_MEMORY_ENV = {
 // `.env.local`. Merge the same `.env*` stack as ERP Vite (app then repo, last
 // wins) so spawned dev servers always see worktree URLs.
 function spawnAppEnv(repoRoot: string, appId: string): NodeJS.ProcessEnv {
-  const env: Record<string, string | undefined> = {
-    ...ROLLDOWN_MEMORY_ENV,
-    ...process.env
-  };
+  const env: Record<string, string | undefined> = { ...process.env };
   const appRoot = join(repoRoot, "apps", appId);
   const mergeFile = (abs: string) => {
     if (!existsSync(abs)) return;
@@ -130,6 +129,7 @@ export function spawnApps(opts: {
     const child = execa(file, args, {
       cwd: join(root, "apps", id),
       env: {
+        ...ROLLDOWN_MEMORY_ENV,
         ...appEnv,
         ...extraCaEnv,
         HOST: "127.0.0.1",

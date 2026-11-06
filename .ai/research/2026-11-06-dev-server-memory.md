@@ -113,8 +113,13 @@ stack is formatted. (First done as a `carbon()` plugin that set the private
 `ssr._runnerOptions`; the patch replaced it.) Measured: heap after warming `/login` 1,188 → 701 MB. After
 pages the gain is small (−22 MB), because React 19's dev build formats owner
 stacks and Vite then caches decoded maps itself (`mod.map`). After reloads it
-is large: 1,630 → 1,374 MB at 15 edits. Stack traces still point at the source
-line (`stack-probe.mjs`: `__stack_probe__.ts:8:9`).
+is large: 1,630 → 1,374 MB at 15 edits. Stack traces from the app and
+`packages/*` still point at the source line (`stack-probe.mjs`:
+`__stack_probe__.ts:8:9`). Two things are no longer mapped: frames inside an
+externalized package (Node used its `.map` file; now its `dist` line shows),
+and code from a module graph a reload just dropped (Vite maps only modules
+still in the runner). Vite's interceptor also replaces `Error.prepareStackTrace`
+for the whole process.
 
 A plugin has no public way in: `environments.ssr.dev.createEnvironment` would
 have to build the environment with the Vite copy React Router runs, and pnpm
@@ -135,8 +140,12 @@ edits), and every file event is delivered to all of them.
 Reported as [vitejs/vite#23940](https://github.com/vitejs/vite/issues/23940)
 (open). Its two PRs (#23949, #23963) were closed by Vite's AI-contribution bot
 without review. Fix: the same patch adds each file once per watcher (and again
-after chokidar reports it deleted), as the issue proposes. Watcher closers after
-the patch: 4,694, unchanged across 20 edits.
+after chokidar reports it deleted), as the issue proposes. Transforming one
+out-of-root file three times makes 1 `watcher.add` call with the patch and 3
+without it; `src/vite-patch.test.ts` in `@carbon/dev` checks this, and the
+source-map default. (chokidar's `_closers` map is no evidence either way: it
+holds one entry per path however often the path is added; the leaked closures
+are FSEvents listeners in a private map.)
 
 ### Leak 4: pages that stopped reading HMR messages
 
@@ -146,10 +155,15 @@ messages held in a TCP socket's write buffer (`Socket._writableState` →
 connected but does not run any more (earlier pages in the back/forward cache,
 or a tab frozen in the background). Vite writes every update to each such
 socket; after 5 edits three of them held 18 MB, 9.6 MB and 9.6 MB unsent
-(`sockets.mjs`).
+(`sockets.mjs`). This was reproduced with agent-browser's headless Chrome
+(earlier pages of the same tab). Whether desktop Chrome keeps such sockets open
+for back/forward-cached or frozen tabs was not checked, so part of the "zero
+growth per edit" result may come from the test browser.
 
-Fix: `dropStalledHmrClients()` in `carbon()` terminates a client with more
-than 4 MB unsent (checked every 5 s, through the public `server.ws.clients`).
+Fix: `dropStalledHmrClients()` in `carbon()` terminates a client whose unsent
+backlog is over 4 MB and has not shrunk since the previous check (every 5 s,
+through the public `server.ws.clients`); a slow page that is still reading
+drains between checks and is kept.
 A page that wakes up finds the connection gone; Vite's client then pings the
 server and reloads, which a page that missed updates needs anyway. With it,
 6 `Button.tsx` edits left the heap at 1,263–1,264 MB.
@@ -202,9 +216,10 @@ which is why `lazyRoutes` is the next big step.
   | purge + `ROLLDOWN_WORKER_THREADS=4` + `ROLLDOWN_MAX_BLOCKING_THREADS=4` | 586 MB | 51 s |
   | the same + `RAYON_NUM_THREADS=4` | **319 MB** | 37 s |
 
-  `crbn` now sets the last row for the dev servers it spawns
-  (`packages/dev/src/services/apps.ts`); they must be set before Node starts,
-  and the shell or a `.env` file overrides them.
+  `crbn` now sets the last row for the react-router dev servers it spawns
+  (`packages/dev/src/services/apps.ts`), not for the assembler (its planner
+  uses rayon) and not for an app's own `dev` script. They must be set before
+  Node starts; the shell or a `.env` file overrides them.
 - `MALLOC_SMALL` about 275 MB (libuv, lightningcss, Tailwind oxide, Lingui
   native tools).
 

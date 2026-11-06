@@ -708,13 +708,16 @@ export function datasetAssets() {
 }
 
 /**
- * Dev-server only: disconnects a page that stopped reading HMR messages. A tab
- * the browser froze in the background, or a page it keeps in the back/forward
- * cache, stays connected without reading, and Vite writes every update to it:
+ * Dev-server only: disconnects a page that stopped reading HMR messages. A
+ * page the browser keeps connected but no longer runs (seen with headless
+ * Chrome's earlier pages; a frozen or cached tab can do the same) never reads,
+ * and Vite writes every update to it:
  * the unsent bytes stay in the dev server's memory, about 2 MB per edit for
  * each such page in the ERP. A page that wakes up finds the server gone, then
  * reconnects and reloads (Vite's client does this), as it must after missing
- * updates. A page that reads keeps nothing buffered for long.
+ * updates. A page that reads but is slow (a tunnel, a busy tab) drains some
+ * of its backlog between two checks, so only a backlog over the limit that has
+ * not shrunk since the last check counts as stalled.
  *
  * @returns {import("vite").Plugin}
  */
@@ -724,9 +727,16 @@ export function dropStalledHmrClients() {
     name: "carbon:drop-stalled-hmr-clients",
     apply: "serve",
     configureServer(server) {
+      /** @type {WeakMap<object, number>} */
+      const previous = new WeakMap();
       const timer = setInterval(() => {
-        for (const client of server.ws.clients) {
-          if (client.socket.bufferedAmount > LIMIT) client.socket.terminate();
+        for (const { socket } of server.ws.clients) {
+          const unsent = socket.bufferedAmount;
+          const before = previous.get(socket);
+          previous.set(socket, unsent);
+          if (unsent > LIMIT && before !== undefined && unsent >= before) {
+            socket.terminate();
+          }
         }
       }, 5000);
       timer.unref();

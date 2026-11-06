@@ -46,10 +46,8 @@ export const CarbonProvider = ({
         set({ accessToken, isRealtimeAuthSet: true });
       }
     }));
-    // Keep a module-level reference for HMR recovery, in the browser only. On
-    // the server it would hold the last request's session for every request,
-    // and keep that render's whole route tree alive across dev reloads.
-    if (isBrowser) setCarbonHmrStore(store.current);
+    // Keep a module-level reference for HMR recovery
+    setCarbonHmrStore(store.current);
   }
 
   const { carbon, setAuthToken } = useStore<StoreApi<ICarbonStore>>(

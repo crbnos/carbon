@@ -309,7 +309,7 @@ export async function bootSharedRedis() {
   const [running = "", cmd = "[]"] = state.stdout.trim().split(/ (.*)/);
   const tooFewDbs =
     state.exitCode === 0 &&
-    redisDatabasesOf(JSON.parse(cmd) as string[]) < REDIS_DB_MAX;
+    redisDatabasesOf((JSON.parse(cmd) as string[] | null) ?? []) < REDIS_DB_MAX;
   if (tooFewDbs) {
     log.info(`recreating shared redis with ${REDIS_DB_MAX} DBs (data kept)`);
     // Stop first: a SIGTERM lets redis flush its AOF buffer, `rm -f` alone
