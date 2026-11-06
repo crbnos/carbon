@@ -119,13 +119,13 @@ With the values on hand, `findPrintedValue` can match a value literally. In docu
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Whether changed values are saved | Save keeps them on `documentEdit` | Owner's answer. Carbon's own send and PDF route then match what the user sees, and the row records who changed it. |
+| Whether changed values are saved | Save keeps them on `documentEdit` | Decided. Carbon's own send and PDF route then match what the user sees, and the row records who changed it. |
 | Where saved values live | `documentEdit.settings.valueEdits`, no new column | The edit row already has its RLS, lock and copy rules, and `settings` already flows through every renderer. No migration and no change to any render path. |
 | How the browser learns the values | One render with a collector, in a route of its own | Row variables only exist during a render. A header on the PDF response would overflow on long documents. |
 | Where the row hook sits | One `values.row` call at each of the 18 row sites | The row id is only known there, and `makeText` does not know which row it prints. |
-| Which values change | All but amounts, quantities and the `fixed` fields | Owner's answer. The document always adds up. Dates can still change. A `fixed` value has no pencil, but the words holding it can still be retyped; the owner kept this. |
-| Locked records | Read-only | Owner's answer. Saved values keep printing, and a sent document gets no differing copy. |
-| Where values are edited | A small popover from a pencil on the chip | Owner's call after using the first version, a list in the right panel. It keeps the panel to the words, and the value sits next to the chip that prints it. |
+| Which values change | All but amounts, quantities and the `fixed` fields | Decided. The document always adds up. Dates can still change. A `fixed` value has no pencil, but the words holding it can still be retyped; the owner kept this. |
+| Locked records | Read-only | Decided. Saved values keep printing, and a sent document gets no differing copy. |
+| Where values are edited | A small popover from a pencil on the chip | Changed after using the first version, a list in the right panel. It keeps the panel to the words, and the value sits next to the chip that prints it. |
 | Download validation | Only on `intent=download` | A preview must render mid-edit; a file leaving the system must not carry a typed amount. |
 | Saved templates in the wrong order | Corrected on read | Same read-time normalizing `resolveTemplate` already does. No data migration, and old rows stay untouched until saved. |
 | Italic | Stays upright | Adding italic faces changes the bundled fonts, which `packages/documents/AGENTS.md` says to ask about first, and it was not requested. |
@@ -144,7 +144,7 @@ N/A: this adds no record type. The words panel (`TextConfig.tsx`) is the pattern
 
 ## Risks
 
-- **A document can differ from its record.** Its PDF can differ in everything but amounts and quantities, including dates. Retyping the words around a `fixed` value can also replace the invoice number, a tax percent or a currency. The edit row shows who changed it last, but an unsaved download leaves no trace. The owner accepted this.
+- **A document can differ from its record.** Its PDF can differ in everything but amounts and quantities, including dates. Retyping the words around a `fixed` value can also replace the invoice number, a tax percent or a currency. The edit row shows who changed it last, but an unsaved download leaves no trace. Accepted.
 - **A saved value stops following the record.** If a customer's address changes later, that document keeps the old one until someone puts the record's value back.
 - **Repeating invoices.** A generated rental invoice starts with the record's text each period, so the user retypes changes every time. A stored description on the agreement line is the lasting fix.
 - **Row ids in JSON.** Row values are keyed by line id. A quote revision and a company restore rewrite the keys. A removed line's entry is ignored.
@@ -169,10 +169,10 @@ N/A: this adds no record type. The words panel (`TextConfig.tsx`) is the pattern
 
 ## Open Questions
 
-- [x] Where is a value edited? — **Answer:** a small popover from a pencil on the chip. This replaced a list in the right panel after the owner tried it.
+- [x] Where is a value edited? — **Answer:** a small popover from a pencil on the chip. This replaced a list in the right panel after trying it.
 - [x] Which values can change? — **Answer:** all but amounts and quantities.
 - [x] Can a locked record's values change for a download? — **Answer:** no, it stays read-only.
-- [x] Are changed values saved? — **Answer:** yes, Save keeps them on that document. This replaced the first answer, download only, after the owner weighed manual sending against saving.
+- [x] Are changed values saved? — **Answer:** yes, Save keeps them on that document. This replaced the first answer, download only, after weighing manual sending against saving.
 
 ## Changelog
 

@@ -65,7 +65,7 @@ Twelve parties across 7 documents each have 6 merge fields, 6 catalog entries, 6
 
 ## Risks / questions
 
-- **R1. Money is now free text.** A user with update rights can replace `{order.total}` on an unlocked document with typed digits, and the PDF then disagrees with the ledger. The lock covers sent documents only. Decision for the owner: leave it, or refuse a save that removes the variable from an amount.
+- **R1. Money is now free text.** A user with update rights can replace `{order.total}` on an unlocked document with typed digits, and the PDF then disagrees with the ledger. The lock covers sent documents only. Open decision: leave it, or refuse a save that removes the variable from an amount.
 - **R2. Chip names are English only.** About 250 new merge-field labels sit in `@carbon/documents`, which `lingui.config.js` does not extract. The earlier labels have the same gap. New copy is meant to be translatable.
 - **R3. Saved labels print without their value.** A stored `"Tax ID:"` now prints no value. Verified not to reach production: `git log origin/main -- packages/documents/src/template/texts` is empty. Local test rows only.
 - **R4. Same-word rows.** Clicks on two rows with the same words ("Contact:") are told apart by print order, and a row of only variables lands on the row above. Accepted; documented in the rule.
@@ -113,7 +113,7 @@ Not committed.
 | J3 | `textVars.ts`, `useTextRows`, `RowVars`. | Typecheck. |
 | Docs | Rule, patterns, AGENTS and lessons updated. | |
 
-| R1 | Owner chose to protect amounts. Money tokens carry `amount: true`; `validateTemplateText` refuses a stored text that drops one (`amountRemoved`). Words around it and hiding its column stay allowed. | In the modal, typing 99.00 over Unit Price showed the error and saved nothing. A direct POST replacing the total answered `validation`. |
-| R2 | Owner chose to translate now. `MERGE_FIELD_NAMES` holds 224 names with `msg`; `useMergeFieldName` reads them in `TextConfig` and `MergeFieldMenu`. 170 strings (132 names plus this editor's untranslated copy) were added to all 12 languages. | `mergeFieldNames.test.ts`; `pnpm lingui:compile`; a scan found no mixed scripts or lost placeholders. |
+| R1 | Chose to protect amounts. Money tokens carry `amount: true`; `validateTemplateText` refuses a stored text that drops one (`amountRemoved`). Words around it and hiding its column stay allowed. | In the modal, typing 99.00 over Unit Price showed the error and saved nothing. A direct POST replacing the total answered `validation`. |
+| R2 | Chose to translate now. `MERGE_FIELD_NAMES` holds 224 names with `msg`; `useMergeFieldName` reads them in `TextConfig` and `MergeFieldMenu`. 170 strings (132 names plus this editor's untranslated copy) were added to all 12 languages. | `mergeFieldNames.test.ts`; `pnpm lingui:compile`; a scan found no mixed scripts or lost placeholders. |
 
 All 11 real records render the same text as before the fixes, with no stray `{codes}` or "null". `@carbon/documents` 163 tests, editor 15, `@carbon/checks` 419; erp, mes, jobs, lib and documents typecheck.

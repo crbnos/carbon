@@ -134,7 +134,7 @@ The name is a real identifier, which the repo's rules forbid (**ran:** matched a
 
 ## Outcomes
 
-The owner chose to lock tax percent, currency and document numbers. Every finding below is fixed unless the table says otherwise. Nothing is committed.
+Decided to lock tax percent, currency and document numbers. Every finding below is fixed unless the table says otherwise. Nothing is committed.
 
 | Item | Outcome | Proof |
 |---|---|---|
@@ -187,7 +187,7 @@ A second review read the fixes above. These are its findings and what happened t
 
 **Left as they are:**
 
-- `operation.setupTime`, `laborTime`, `machineTime`, `price.leadTime` and `quote.maxLeadTime` stay editable. The owner's rule was "all but amounts and quantities". This needs the owner's decision.
+- `operation.setupTime`, `laborTime`, `machineTime`, `price.leadTime` and `quote.maxLeadTime` stay editable. The rule was "all but amounts and quantities". This needs the owner's decision.
 - Picker names stay English.
 - A failed read during a save or print is a generic 500. The cause is logged.
 - `document-edit-authz.test.sql` runs by hand, like its siblings. No runner exists.
@@ -226,7 +226,7 @@ The local database and app were stopped for this pass, so nothing below ran agai
 - **The database was stopped.** The cost of the delete trigger is unmeasured. It does one index lookup per deleted row (**read**). The generated types confirm that all 10 notes columns are JSON and that the record tables have `status`, `updatedBy` and `updatedAt`.
 - **No automated test covers the save path.** No test mentions `saveDocumentEdit`, `DocumentEditModal`, `draftProblems` or `useTextErrors`. Removing the save's lock check, the preview's locked branch or a fix for T2 would fail no test. The lock has only been checked by hand.
 - **Two people editing one document:** the last save wins with no warning. The template editor has `useTemplateConflict` for this, and document mode does not use it.
-- **Owner decision, now wider.** Setup, labor and machine times and lead times are editable, and so are dates such as `invoice.dateDue` (`mergeFields.ts:66`), a date a customer pays by. The rule "all but amounts and quantities" allows this.
+- **Decision, now wider.** Setup, labor and machine times and lead times are editable, and so are dates such as `invoice.dateDue` (`mergeFields.ts:66`), a date a customer pays by. The rule "all but amounts and quantities" allows this.
 - **Still open:** merge `main` (R1), the not-run list (R4), payload limits (R5), and English names in the picker.
 
 ### Suggested improvements
@@ -269,9 +269,9 @@ The local database and app were stopped for this pass, so nothing below ran agai
 
 - **J12, the renderer switch.** Optional, and it touches about 20 callers.
 - **The preview going stale silently.** It existed before this branch, and it is a separate change.
-- **Folding the unshipped migrations.** Local databases have them applied, so folding needs a database rebuild. It should happen just before the merge, with the owner's approval.
+- **Folding the unshipped migrations.** Local databases have them applied, so folding needs a database rebuild. It should happen just before the merge, with approval.
 - **Automated tests for the save's lock check and the preview's locked branch.** The repo has no way to test these operations with a real database, so they remain checked by hand.
-- **The owner's decision** on times, lead times and due dates, and everything under "Still open" above.
+- **The decision** on times, lead times and due dates, and everything under "Still open" above.
 
 ## Fourth pass
 
@@ -325,7 +325,7 @@ A fifth review read the whole branch after the merge of `main`. **Verdict: Block
 
 | Finding | Outcome | Proof |
 |---|---|---|
-| Words could replace a locked value: a tax text of `0%` or a document number of `INV-TYPED-999` passed validation. | **The owner kept this.** The pencil stays off these values, and the words holding them can be retyped. The spec and rule now say so. | **Ran:** validation returned no problems. |
+| Words could replace a locked value: a tax text of `0%` or a document number of `INV-TYPED-999` passed validation. | **Kept.** The pencil stays off these values, and the words holding them can be retyped. The spec and rule now say so. | **Ran:** validation returned no problems. |
 | A digit against a figure passed validation: `1{line.quantity}` would print 15 for 5. | Refused as `amountChanged`, in a template and on one document, and a preview refuses it too. Translated into all 12 languages (machine-written). | `validate.test.ts`. A test also finds no default text that breaks the rule. |
 | A revision and its edits saved separately, and pairing lines by their contents lost changed values on identical lines. | `copyDocumentEdit` runs inside the `quoteToQuote` transaction, using the line map built there. `pairCopiedQuoteLines` and the `documentEditsCopied` warning are gone, and `copyQuote` matches `main` again. | `document-edit.test.ts`, on the local database. |
 | Nothing tested the save's lock or the preview's locked branch. | Both are tested. The third pass said the repo could not test this with a real database. That was wrong: `apps/erp/test/database` does. | **Ran:** removing the lock check and removing the locked branch each failed one test. Both were then restored. |

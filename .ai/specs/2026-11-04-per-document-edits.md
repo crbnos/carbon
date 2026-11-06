@@ -25,7 +25,7 @@ download the PDF and change the template back.
 The market research found no product that renames printed labels on one document
 (`.ai/research/2026-11-04-per-document-edits-market.md`). Products keep one-document text in fields on the
 record, such as terms or a message. Carbon goes further on purpose: the template system already stores each
-change as a small `text` / `hidden` map, so the same shape works for one document.
+change as a small `text` map and a list of what it hides or shows, so the same shape works for one document.
 
 ## Goals
 
@@ -80,13 +80,13 @@ New table `documentEdit`. One row per document that has edits.
 | `companyId` | `TEXT` | FK `company`, part of the PK `("id", "companyId")` |
 | `documentType` | `TEXT` | one of the 11 types above; a CHECK lists them |
 | `documentId` | `TEXT` | the record id from the table above; no FK (it points at 11 tables) |
-| `blocks` | `JSONB` | per block id: `{ text?, hidden?, visible?, content? }` |
-| `settings` | `JSONB` | `{ text?, hidden? }` for the document's own texts (title, footer words) |
+| `blocks` | `JSONB` | per block id: `{ text?, hide?, show?, visible?, content? }` |
+| `settings` | `JSONB` | `{ text?, hide?, show? }` for the document's own texts (title, footer words) |
 | `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | | standard audit columns |
 
 - `UNIQUE ("companyId", "documentType", "documentId")`: one row per document.
 - `blocks` keys are block ids of the company template. Built-in block ids equal their type (`parties`, `lineItems`).
-- `text` and `hidden` have the slice 1 shape. `visible` shows or hides the block. `content` is the Terms rich text.
+- `text` has the slice 1 shape. `hide` and `show` are this document's own changes to the hidden list, so what the template hides later still reaches it. `visible` shows or hides the block. `content` is the Terms rich text.
 - An empty edit is no row. "Reset to template" deletes the row.
 - RLS: SELECT for company employees. INSERT, UPDATE and DELETE check the permission of the row's `documentType`
   (the table above). The plan writes the policy with the repo's RLS helpers and the authz manifest.
@@ -100,9 +100,9 @@ applyDocumentEdit(template: DocumentTemplate, edit: DocumentEditShape | null): D
 ```
 
 1. If `edit` is null, return `template` unchanged.
-2. For each block with an entry in `edit.blocks`, merge `text` over the block's `text`, replace `hidden`, and set
+2. For each block with an entry in `edit.blocks`, merge `text` over the block's `text`, apply `hide` and `show` to its `hidden`, and set
    `visible` and `content` when present.
-3. Merge `edit.settings.text` over `settings.text`, and replace `settings.hidden`.
+3. Merge `edit.settings.text` over `settings.text`, and apply `hide` and `show` to `settings.hidden`.
 4. Ignore an entry for a block id the template no longer has.
 
 A word the document did not change keeps the template's word, so a later template change still reaches it.
@@ -152,12 +152,12 @@ The Save writes the Notes edit to the record's column in the same transaction, o
 | # | Decision | Why |
 |---|---|---|
 | D1 | Store edits in a new `documentEdit` table, not on each record table | 11 record tables; one table, one service and one RLS policy set. No record table has a free JSON column for this (research section 5). |
-| D2 | Store only the changes (`text`, `hidden`, `visible`, `content`), keyed by block id | Same shape as slice 1, so `makeText` prints the edits with no renderer change. A template change still reaches unchanged words. |
+| D2 | Store only the changes (`text`, `hide`, `show`, `visible`, `content`), keyed by block id | Same shape as slice 1, so `makeText` prints the edits with no renderer change. A template change still reaches unchanged words. |
 | D3 | Apply edits after `toDocumentTemplate` in each renderer | That is the one merge point every render path shares (research section 5). |
-| D4 | Lock with each record's existing `is<Doc>Locked` | The user chose "when the record locks". It follows reopen and revision too. |
+| D4 | Lock with each record's existing `is<Doc>Locked` | Chosen: "when the record locks". It follows reopen and revision too. |
 | D5 | Edit permission = the record's own update permission | Editing how a PO prints is editing the PO. The template editor keeps update settings. |
-| D6 | Notes edit the record's notes field | The user chose one copy of the notes. |
-| D7 | The editor opens in a modal | The user asked for a modal that opens anywhere. |
+| D6 | Notes edit the record's notes field | One copy of the notes. |
+| D7 | The editor opens in a modal | A modal opens anywhere. |
 | D8 | No re-render of an already saved PDF on edit | A saved PDF is what the customer or supplier got. The next send saves a new one, as today. |
 | D9 | Quote revisions copy the edits; conversions do not | A revision is the same document again; a conversion is a new document type with other blocks. |
 | D10 | Labels are out of scope | A label has no document record or lock. |

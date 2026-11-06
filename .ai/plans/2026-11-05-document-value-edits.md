@@ -1,7 +1,7 @@
 # Change a document's values — implementation plan
 
 **Spec / source:** `.ai/specs/2026-11-05-document-value-edits.md`
-**Branch:** `feat/document-editor-edits` (uncommitted work on top of `7d02ac3c00`; commits only when the owner asks)
+**Branch:** `feat/document-editor-edits` (uncommitted work on top of `7d02ac3c00`; commits only on request)
 
 ## Progress
 - [x] Task 1: Value edits in the template package
