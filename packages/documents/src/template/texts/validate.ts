@@ -26,6 +26,7 @@ export interface TextProblem {
     | "unknownText"
     | "notHideable"
     | "amountRemoved"
+    | "amountChanged"
     | "valueLocked";
   /** The variable at fault, for every code but the text ones. */
   token?: string;
@@ -146,6 +147,24 @@ export function validateTemplateText(
           code: "amountRemoved",
           token,
           message: `${label} › ${entry.default}: the figure {${token}} must stay`
+        });
+      }
+    }
+    // Words around a figure are fine, but `1{line.quantity}` prints 15 for 5.
+    for (const match of value.matchAll(TOKEN_RE)) {
+      const token = match[1] ?? "";
+      const before = value.slice(0, match.index);
+      const after = value.slice(match.index + match[0].length);
+      if (
+        amounts.has(token) &&
+        (/\d[.,]?$/.test(before) || /^[.,]?\d/.test(after))
+      ) {
+        problems.push({
+          blockId,
+          field: entry.key,
+          code: "amountChanged",
+          token,
+          message: `${label} › ${entry.default}: a number cannot touch the figure {${token}}`
         });
       }
     }

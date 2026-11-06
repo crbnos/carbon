@@ -1873,6 +1873,9 @@ msgstr "確定済の根本原因を修正する不適合タスク — 予防措�
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "数値を金額や数量のすぐ隣に置くことはできません。間にスペースか語句を入れてください。"
+
 msgid "A part"
 msgstr "部品"
 
@@ -30217,9 +30220,6 @@ msgstr "このリビジョンはリリース済（生産）です。変更は通
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "このリビジョンはリリース済（生産）です。それを修正するために変更通知を開いてください。"
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "このリビジョンはテンプレートの文言で印刷されます。文書の編集をコピーできませんでした。"
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "この実行には、ここに表示するよりも多くのステップがあります。最初の {MAX_RUN_STEPS} のみが表示されます。"

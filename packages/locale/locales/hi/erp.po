@@ -1873,6 +1873,9 @@ msgstr "एक गैर-अनुरूपता कार्य जो एक 
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "एक गैर-अनुरूपता कार्य जो समस्या को अन्य स्थानों पर फिर से होने से रोकता है — सुधारात्मक सुधार और नियंत्रण से अलग।"
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "कोई संख्या किसी राशि के ठीक बगल में नहीं आ सकती। उनके बीच एक खाली जगह या शब्द जोड़ें।"
+
 msgid "A part"
 msgstr "एक पार्ट"
 
@@ -30217,9 +30220,6 @@ msgstr "यह रिवीजन जारी है (उत्पादन)।
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "यह रिवीजन जारी है (उत्पादन)। इसे संशोधित करने के लिए एक परिवर्तन सूचना खोलें।"
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "यह संशोधन टेम्पलेट के शब्द प्रिंट करता है: इसके दस्तावेज़ संपादन कॉपी नहीं हो सके।"
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "यह रन हमारे यहां दिखाए गए की तुलना में अधिक चरण हैं। केवल पहले {MAX_RUN_STEPS} सूचीबद्ध हैं।"

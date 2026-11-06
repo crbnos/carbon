@@ -292,6 +292,9 @@ function useDescribeProblem() {
       if (problem.code === "amountRemoved") {
         return t`This figure must stay. Add it back with Insert value.`;
       }
+      if (problem.code === "amountChanged") {
+        return t`A number can't sit right next to a figure. Add a space or a word between them.`;
+      }
       return t`This text is not part of this document`;
     },
     [t]

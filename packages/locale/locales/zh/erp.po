@@ -1873,6 +1873,9 @@ msgstr "一项不合格任务，用于修复已确认的根本原因——相对
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "一项不合格任务，用于防止问题在其他地方重复出现——不同于纠正修复和围堵。"
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "数字不能紧贴金额。请在两者之间添加空格或文字。"
+
 msgid "A part"
 msgstr "一个零件"
 
@@ -30217,9 +30220,6 @@ msgstr "这个修订版已下达（生产）。更改应该通常通过变更通
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "此修订版已下达（生产）。打开变更通知以修改它。"
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "此修订版打印模板文字：无法复制其文档编辑内容。"
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "此运行的步骤比我们此处显示的要多。仅列出前 {MAX_RUN_STEPS} 个。"

@@ -1873,6 +1873,9 @@ msgstr "Uma tarefa de não conformidade que corrige uma causa raiz confirmada �
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Uma tarefa de não conformidade que impede que o problema se repita em outro lugar — distinta da correção corretiva e contenção."
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "Um número não pode ficar logo ao lado de um valor. Adicione um espaço ou uma palavra entre eles."
+
 msgid "A part"
 msgstr "Uma peça"
 
@@ -30217,9 +30220,6 @@ msgstr "Esta revisão é liberada (Produção). As alterações devem normalment
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Esta revisão é liberada (Produção). Abra um aviso de alteração para modificá-la."
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "Esta revisão imprime as palavras do modelo: as edições do documento não puderam ser copiadas."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Esta execução tem mais etapas do que mostramos aqui. Apenas os primeiros {MAX_RUN_STEPS} são listados."

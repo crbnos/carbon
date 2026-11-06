@@ -1873,6 +1873,9 @@ msgstr "Задача несоответствия, которая устраня
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "Число не может стоять вплотную к сумме. Добавьте между ними пробел или слово."
+
 msgid "A part"
 msgstr "Деталь"
 
@@ -30217,9 +30220,6 @@ msgstr "Эта ревизия запущена (Производство). Из�
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Эта ревизия запущена (Производство). Откройте извещение об изменении для его изменения."
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "Эта редакция печатает слова шаблона: изменения документа скопировать не удалось."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Этот прогон имеет больше шагов, чем мы показываем здесь. Показаны только первые {MAX_RUN_STEPS}."

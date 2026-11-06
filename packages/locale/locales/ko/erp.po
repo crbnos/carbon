@@ -1873,6 +1873,9 @@ msgstr "확정된 근본 원인을 해결하는 부적합 작업 — 예방 또�
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "부적합 작업으로 다른 곳에서 문제 재발을 방지합니다 — 시정 수정 및 격리와는 구별됩니다."
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "숫자를 금액이나 수량 바로 옆에 둘 수 없습니다. 사이에 공백이나 단어를 넣으세요."
+
 msgid "A part"
 msgstr "부품"
 
@@ -30217,9 +30220,6 @@ msgstr "이 리비전은 릴리스되었습니다 (생산). 변경 사항은 정
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "이 리비전은 릴리스되었습니다 (생산). 수정하려면 변경 통지를 열으세요."
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "이 개정판은 템플릿 문구로 인쇄됩니다. 문서 편집 내용을 복사할 수 없습니다."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "이 실행은 여기에 표시된 것보다 더 많은 단계가 있습니다. 처음 {MAX_RUN_STEPS}개만 나열됩니다."

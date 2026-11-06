@@ -1873,6 +1873,9 @@ msgstr "Zadanie niezgodności, które naprawia potwierdzoną przyczynę źródł
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Zadanie niezgodności, które uniemożliwia powtarzanie się problemu gdzie indziej — różne od poprawy naprawczej i zabezpieczenia."
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "Liczba nie może stać tuż obok kwoty. Dodaj między nimi spację lub słowo."
+
 msgid "A part"
 msgstr "Część"
 
@@ -30217,9 +30220,6 @@ msgstr "Ta rewizja jest zwolniona (Produkcja). Zmiany powinny normalnie przechod
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Ta rewizja jest zwolniona (Produkcja). Otwórz zawiadomienie o zmianie, aby ją zmodyfikować."
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "Ta wersja drukuje słowa szablonu: nie udało się skopiować zmian dokumentu."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "To uruchomienie ma więcej kroków niż pokazujemy tutaj. Wymienione są tylko pierwsze {MAX_RUN_STEPS}."

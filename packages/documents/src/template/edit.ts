@@ -71,8 +71,19 @@ export function isDocumentEditType(type: string): type is DocumentEditType {
   return (DOCUMENT_EDIT_TYPES as readonly string[]).includes(type);
 }
 
+/**
+ * A Notes block carrying the modal's unsaved notes. Only `applyDocumentEdit` sets
+ * this: `blockSchema` has no such field, so nothing posted or saved can.
+ */
+type BlockWithDraftNotes = DocumentBlock & {
+  draftNotes?: JSONContent | null;
+};
+
 /** What an edit changes in how a block prints, beyond the block's own entry. */
-function forPrinting(block: DocumentBlock, edit: DocumentEdit): DocumentBlock {
+function forPrinting(
+  block: DocumentBlock,
+  edit: DocumentEdit
+): BlockWithDraftNotes {
   // A changed line can run longer than the record's, so the table wraps it
   // rather than cutting it off at one line.
   if (
@@ -84,22 +95,20 @@ function forPrinting(block: DocumentBlock, edit: DocumentEdit): DocumentBlock {
       options: { ...block.options, textOverflow: "wrap" }
     } as DocumentBlock;
   }
-  // `blockSchema` has no such field, so nothing posted or saved can set it.
   if (block.type === "notes" && edit.notes !== undefined) {
-    return { ...block, draftNotes: edit.notes } as DocumentBlock;
+    return { ...block, draftNotes: edit.notes };
   }
   return block;
 }
 
 /** What a Notes block prints: the modal's unsaved notes, else the record's. */
 export function printedNotes(
-  block: DocumentBlock,
+  block: BlockWithDraftNotes,
   recordNotes: unknown
 ): JSONContent | null | undefined {
-  return ("draftNotes" in block ? block.draftNotes : recordNotes) as
-    | JSONContent
-    | null
-    | undefined;
+  return "draftNotes" in block
+    ? block.draftNotes
+    : (recordNotes as JSONContent | null | undefined);
 }
 
 /** The template as this one document prints it. */
@@ -249,7 +258,11 @@ export function validateDocumentEdit(
 
 /** Refused even in a preview: a figure the record does not say would print. */
 export function isFigureProblem({ code }: TextProblem): boolean {
-  return code === "amountRemoved" || code === "valueLocked";
+  return (
+    code === "amountRemoved" ||
+    code === "amountChanged" ||
+    code === "valueLocked"
+  );
 }
 
 /**

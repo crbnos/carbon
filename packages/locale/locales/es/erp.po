@@ -1873,6 +1873,9 @@ msgstr "Una tarea de inconformidad que corrige una causa raíz confirmada, a dif
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Una tarea de inconformidad que evita que el problema se repita en otra parte, distinta de la corrección y contención."
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "Un número no puede ir justo al lado de una cifra. Añade un espacio o una palabra entre ellos."
+
 msgid "A part"
 msgstr "Una Pieza"
 
@@ -30217,9 +30220,6 @@ msgstr "Esta revisión se ha liberado (Producción). Los cambios normalmente deb
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Esta revisión se ha liberado (Producción). Abra un aviso de cambio para modificarla."
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "Esta revisión imprime las palabras de la plantilla: no se pudieron copiar sus ediciones del documento."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Esta ejecución tiene más pasos de los que mostramos aquí. Solo se enumeran los primeros {MAX_RUN_STEPS}."

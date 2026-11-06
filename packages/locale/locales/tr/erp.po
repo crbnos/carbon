@@ -1873,6 +1873,9 @@ msgstr "Teyit edilmiş bir kök neden düzelten uygunsuzluk görevi — önleyic
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
+msgid "A number can't sit right next to a figure. Add a space or a word between them."
+msgstr "Bir sayı, bir tutarın hemen yanında duramaz. Aralarına boşluk veya sözcük ekleyin."
+
 msgid "A part"
 msgstr "Bir parça"
 
@@ -30217,9 +30220,6 @@ msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir d
 
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Bunu değiştirmek için bir değişiklik bildirisi açın."
-
-msgid "This revision prints the template's words: its document edits could not be copied."
-msgstr "Bu revizyon şablonun sözcüklerini yazdırır: belge düzenlemeleri kopyalanamadı."
 
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Bu çalıştırmada burada gösterdiklerimizden daha fazla adım var. Yalnızca ilk {MAX_RUN_STEPS} listelenir."

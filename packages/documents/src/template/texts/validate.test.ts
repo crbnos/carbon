@@ -79,6 +79,47 @@ describe("validateTemplateText", () => {
     ).toEqual([]);
   });
 
+  it("refuses a number typed against a figure, which would change what it says", () => {
+    for (const qtyCell of [
+      "1{line.quantity}",
+      "{line.quantity}0",
+      "1.{line.quantity}",
+      "{line.quantity},5"
+    ]) {
+      expect(
+        validateTemplateText(withWords("lineItems", { qtyCell })),
+        qtyCell
+      ).toMatchObject([{ code: "amountChanged", token: "line.quantity" }]);
+    }
+    expect(
+      validateTemplateText(
+        withWords("lineItems", { qtyCell: "x {line.quantity} 2" })
+      )
+    ).toEqual([]);
+  });
+
+  it("finds no number against a figure in any default text", () => {
+    for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {
+      const amounts = new Set(
+        [...getMergeFields(documentType), ...getLineMergeFields(documentType)]
+          .filter((field) => field.amount)
+          .map((field) => field.token)
+      );
+      for (const entry of Object.values(catalog).flatMap((e) => [
+        ...(e ?? [])
+      ])) {
+        for (const match of entry.default.matchAll(/\{([\w.]+)\}/g)) {
+          if (!amounts.has(match[1] ?? "")) continue;
+          const before = entry.default.slice(0, match.index);
+          const after = entry.default.slice(match.index + match[0].length);
+          expect(`${before}|${after}`, entry.key).not.toMatch(
+            /\d[.,]?\||\|[.,]?\d/
+          );
+        }
+      }
+    }
+  });
+
   it("lets a user hide an amount's column", () => {
     const hidden = {
       ...template([]),
