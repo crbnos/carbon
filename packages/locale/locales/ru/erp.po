@@ -654,6 +654,10 @@ msgstr "{0} поставщиков с остатком"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} необследованные единицы будут переведены в Доступно. Пройденные образцы остаются в Доступно, отклоненные образцы остаются в Отклонено."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "Неотфактурованных отгрузок: {0}"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1445,6 +1449,9 @@ msgstr "1 предложенная серия"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 цель зафиксирована — проверка в заказе"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 неотфактурованная отгрузка"
 
 msgid "1 unit"
 msgstr "1 единица"
@@ -22355,6 +22362,9 @@ msgstr "Дата проведения"
 msgid "Posting Date"
 msgstr "Дата проведения"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "При проведении возвращаются авансы, удерживаемые по этому документу."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Проводит счет-фактуру и отправляет ее через подключенный аккаунт Stripe со ссылкой платежа. Счет-фактура для покупателя без привязки к Stripe проводится и помечается как неотправленная."
 
@@ -22387,6 +22397,15 @@ msgstr "Префикс"
 
 msgid "Preparing the backup for restore…"
 msgstr "Подготовка резервной копии для восстановления…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Предоплата (только счета-фактуры по этому заказу)"
+
+msgid "Prepayment for"
+msgstr "Предоплата для"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "Предоплата для документа {document} (только счета-фактуры по нему)"
 
 msgid "Prepayments"
 msgstr "Предоплаты"
@@ -24064,6 +24083,9 @@ msgstr "Возврат от Поставщика"
 
 msgid "Refund memos"
 msgstr "Служебные записки о возврате"
+
+msgid "Refund prepayment for"
+msgstr "Возврат предоплаты для"
 
 msgid "Refund to Customer"
 msgstr "Возврат Покупателю"
@@ -28769,6 +28791,9 @@ msgstr "Скидки по платежам поставщика (по умолч
 msgid "Supplier Prepayments"
 msgstr "Предоплаты поставщику"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Предоплаты поставщикам необходимо сверить с сальдовой ведомостью. <0>Перейти к сальдовой ведомости</0>"
+
 msgid "supplier process"
 msgstr "Процесс поставщика"
 
@@ -29050,6 +29075,9 @@ msgstr "Вступает в силу"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Вступает в силу {effectiveDate}."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Списывает предоплату, удерживаемую по этому заказу, из предоплат поставщикам."
 
 msgid "Takes work center offline"
 msgstr "Отключает рабочий центр"
@@ -30923,6 +30951,9 @@ msgstr "Эти строки связаны с данными вне этой о�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Эти строки ссылаются на данные вне этой организации, поэтому они не могут быть восстановлены. Всё остальное было сохранено в резервной копии."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Себестоимость этих отгрузок отражена в этом периоде, но к его концу счета были выставлены не на все количество. Новые выданные счета-фактуры проводятся текущей датой, поэтому выставление счета после окончания периода не устранит это предупреждение. Проверьте разницу в датах признания и необходимые бухгалтерские корректировки. Если предупреждение останется, пропустите задачу, указав причину, которая описывает принятое решение."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Эти единицы учитываются как продажи. Активация исключает каждую из них и проводит ее начальную операцию:"
 
@@ -32195,6 +32226,12 @@ msgstr "Неприменённые"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Неприменные денежные средства удерживаются в качестве предоплаты покупателя за этот документ вместо кредита в счет на счета."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Нераспределенные денежные средства учитываются как предоплата поставщику по этому заказу, а не как кредитовый остаток на счете."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Нераспределенные денежные средства учитываются как аванс по этому документу."
+
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
 
@@ -32288,6 +32325,9 @@ msgstr "Сначала удалите {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Сначала удалите {conflictsWith}"
+
+msgid "Uninvoiced Shipments"
+msgstr "Неотфактурованные отгрузки"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Уникальный, заглавными буквами, без пробелов (макс. 10 символов)"

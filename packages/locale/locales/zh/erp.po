@@ -654,6 +654,10 @@ msgstr "{0}个有余额的供应商"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可用，已采样的不合格品保持已拒绝。"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0}笔未开票发货"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1445,6 +1449,9 @@ msgstr "1 个建议生产批次"
 
 msgid "1 target is committed — review on the order"
 msgstr "已提交 1 个目标 — 在订单上查看"
+
+msgid "1 uninvoiced shipment"
+msgstr "1笔未开票发货"
 
 msgid "1 unit"
 msgstr "1 件"
@@ -22355,6 +22362,9 @@ msgstr "过账日期"
 msgid "Posting Date"
 msgstr "过账日期"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "过账时将退还为此文件保留的预付款。"
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "过账发票并通过您已连接的Stripe账户发送支付链接。没有关联Stripe客户的客户的发票将被过账并标记为未发送。"
 
@@ -22387,6 +22397,15 @@ msgstr "前缀"
 
 msgid "Preparing the backup for restore…"
 msgstr "正在准备用于恢复的备份…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "预付款（仅限其订单的发票）"
+
+msgid "Prepayment for"
+msgstr "预付款："
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "{document}的预付款（仅限其发票）"
 
 msgid "Prepayments"
 msgstr "预付款（默认）"
@@ -24064,6 +24083,9 @@ msgstr "来自供应商的退款"
 
 msgid "Refund memos"
 msgstr "退款单据"
+
+msgid "Refund prepayment for"
+msgstr "退还预付款："
 
 msgid "Refund to Customer"
 msgstr "向客户退款"
@@ -28769,6 +28791,9 @@ msgstr "供应商付款折扣（默认）"
 msgid "Supplier Prepayments"
 msgstr "供应商预付款"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "供应商预付款必须与试算平衡表核对一致。<0>前往试算平衡表</0>"
+
 msgid "supplier process"
 msgstr "供应商工艺"
 
@@ -29050,6 +29075,9 @@ msgstr "生效"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "在 {effectiveDate} 生效。"
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "将此订单持有的预付款从供应商预付款中转出。"
 
 msgid "Takes work center offline"
 msgstr "使工作中心离线"
@@ -30923,6 +30951,9 @@ msgstr "这些行链接到此公司外的数据，因此无法创建当前数据
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "这些发货已在本期间记录成本，但部分数量在期末前尚未开票。新的销售发票使用当天日期过账，因此期末后开票不会消除此警告。请检查入账时间差异以及是否需要会计调整；如果警告仍然存在，请填写说明处理方式的原因后跳过此任务。"
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "这些单位被视为销售。激活时注销每一个单位并过账其开始凭证："
 
@@ -32195,6 +32226,12 @@ msgstr "未应用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "未应用的现金作为本文件的客户预付款而不是账户信用存储。"
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "未分配现金作为此订单的供应商预付款持有，而不是记为账户贷方余额。"
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "未分配现金作为此文件的预收款持有。"
+
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
 
@@ -32288,6 +32325,9 @@ msgstr "请先卸载 {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "先卸载 {conflictsWith}"
+
+msgid "Uninvoiced Shipments"
+msgstr "未开票发货"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"

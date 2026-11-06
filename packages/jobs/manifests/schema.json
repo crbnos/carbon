@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105230630",
+  "schemaVersion": "20261106195705",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-06T09:31:33.941Z",
+  "exportedAt": "2026-11-06T20:16:26.878Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -496,10 +496,6 @@
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
-        "requirePurchaseOrderApprovalSignature",
-        "serialNumberTiming",
-        "useCalendarWeeks",
-        "kanbanLabelSize",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -510,6 +506,10 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
         "serviceLaborCostRate",
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
@@ -1249,8 +1249,8 @@
         "companyId",
         "locationId",
         "quantityOnHand",
-        "quantityNonNettable",
-        "projectId"
+        "projectId",
+        "quantityNonNettable"
       ]
     },
     {
@@ -5452,9 +5452,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
+        "projectId",
         "foundDuringCount",
-        "assignedReadableId",
-        "projectId"
+        "assignedReadableId"
       ]
     },
     {
@@ -5997,41 +5997,6 @@
         "updatedAt",
         "customFields",
         "tags"
-      ]
-    },
-    {
-      "name": "payment",
-      "rows": 0,
-      "columns": [
-        "id",
-        "paymentId",
-        "paymentType",
-        "status",
-        "customerId",
-        "supplierId",
-        "paymentDate",
-        "postingDate",
-        "currencyCode",
-        "exchangeRate",
-        "totalAmount",
-        "bankAccount",
-        "reference",
-        "memo",
-        "journalId",
-        "postedAt",
-        "postedBy",
-        "voidedAt",
-        "voidedBy",
-        "companyId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields",
-        "employeeId",
-        "salesOrderId",
-        "rentalAgreementId",
-        "customerContractId"
       ]
     },
     {
@@ -8551,6 +8516,42 @@
       ]
     },
     {
+      "name": "payment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "paymentId",
+        "paymentType",
+        "status",
+        "customerId",
+        "supplierId",
+        "paymentDate",
+        "postingDate",
+        "currencyCode",
+        "exchangeRate",
+        "totalAmount",
+        "bankAccount",
+        "reference",
+        "memo",
+        "journalId",
+        "postedAt",
+        "postedBy",
+        "voidedAt",
+        "voidedBy",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "employeeId",
+        "salesOrderId",
+        "rentalAgreementId",
+        "customerContractId",
+        "purchaseOrderId"
+      ]
+    },
+    {
       "name": "purchaseInvoiceLine",
       "rows": 0,
       "columns": [
@@ -8715,7 +8716,8 @@
         "updatedBy",
         "sourcePaymentId",
         "sourceAmount",
-        "targetReimbursementId"
+        "targetReimbursementId",
+        "targetPaymentId"
       ]
     },
     {

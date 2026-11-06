@@ -654,6 +654,10 @@ msgstr "{0} Lieferanten mit einem Saldo"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} nicht beprobte Entitäten werden freigegeben. Beprobte Annahmen bleiben verfügbar und beprobte Fehler bleiben abgelehnt."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} nicht fakturierte Lieferungen"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1445,6 +1449,9 @@ msgstr "1 empfohlenes Los"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 Ziel ist bestätigt — überprüfen Sie auf der Bestellung"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 nicht fakturierte Lieferung"
 
 msgid "1 unit"
 msgstr "1 Einheit"
@@ -22355,6 +22362,9 @@ msgstr "Buchungsdatum"
 msgid "Posting Date"
 msgstr "Buchungsdatum"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Durch die Buchung werden die für dieses Dokument gehaltenen Anzahlungen erstattet."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Bucht die Rechnung und versendet sie über Ihr verbundenes Stripe-Konto mit einem Zahlungslink. Eine Rechnung für einen Kunden ohne verbundenen Stripe-Kunden wird gebucht und als nicht versendet markiert."
 
@@ -22387,6 +22397,15 @@ msgstr "Präfix"
 
 msgid "Preparing the backup for restore…"
 msgstr "Sicherung für Wiederherstellung wird vorbereitet…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Anzahlung (nur Rechnungen des zugehörigen Auftrags)"
+
+msgid "Prepayment for"
+msgstr "Anzahlung für"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "Anzahlung für {document} (nur zugehörige Rechnungen)"
 
 msgid "Prepayments"
 msgstr "Anzahlungen"
@@ -24064,6 +24083,9 @@ msgstr "Gutschrift vom Lieferanten"
 
 msgid "Refund memos"
 msgstr "Gutschriftsnotizen"
+
+msgid "Refund prepayment for"
+msgstr "Anzahlung erstatten für"
 
 msgid "Refund to Customer"
 msgstr "Gutschrift an den Kunden"
@@ -28769,6 +28791,9 @@ msgstr "Lieferanten-Zahlungsrabatte (Standard)"
 msgid "Supplier Prepayments"
 msgstr "Lieferantenanzahlungen"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Anzahlungen an Lieferanten müssen mit der Rohbilanz abgestimmt sein. <0>Zur Rohbilanz</0>"
+
 msgid "supplier process"
 msgstr "Lieferantenverfahren"
 
@@ -29050,6 +29075,9 @@ msgstr "Wird wirksam"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Wird am {effectiveDate} wirksam."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Entnimmt die für diesen Auftrag gehaltene Anzahlung wieder den Lieferantenanzahlungen."
 
 msgid "Takes work center offline"
 msgstr "Nimmt Arbeitsplatz offline"
@@ -30923,6 +30951,9 @@ msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher k
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Diese Zeilen sind mit Daten außerhalb dieses Unternehmens verknüpft, daher könnten sie nie wiederhergestellt werden. Alles andere wurde gesichert."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Diese Lieferungen haben in dieser Periode Kosten erfasst, aber einige Mengen waren zum Periodenende noch nicht fakturiert. Neue Ausgangsrechnungen werden mit dem heutigen Datum gebucht; eine Fakturierung nach Periodenende beseitigt diese Warnung daher nicht. Prüfen Sie die zeitliche Differenz und gegebenenfalls erforderliche Korrekturbuchungen. Falls die Warnung bestehen bleibt, überspringen Sie die Aufgabe mit einer Begründung, die die Behandlung dokumentiert."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Diese Einheiten werden als Verkäufe behandelt. Die Aktivierung hebt die Bilanzierung auf und bucht das Anfangsbuchungssatz:"
 
@@ -32195,6 +32226,12 @@ msgstr "Nicht angewendet"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Nicht angewendetes Bargeld wird als Kundenanzahlung für dieses Dokument statt als Kundenguthaben gehalten."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Nicht zugeordnete Zahlungen werden für diesen Auftrag als Lieferantenanzahlung statt als Guthaben auf dem Kundenkonto gehalten."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Nicht zugeordnete Zahlungen werden als Vorschuss für dieses Dokument gehalten."
+
 msgid "Unapproved Supplier"
 msgstr "Nicht genehmigter Lieferant"
 
@@ -32288,6 +32325,9 @@ msgstr "Deinstallieren Sie {0} zuerst"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Deinstallieren Sie {conflictsWith} zuerst"
+
+msgid "Uninvoiced Shipments"
+msgstr "Nicht fakturierte Lieferungen"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Eindeutig, Großbuchstaben, ohne Leerzeichen (max. 10 Zeichen)"

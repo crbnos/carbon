@@ -5,7 +5,9 @@
 import { expect, it } from "vitest";
 import {
   CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
-  CUSTOMER_DEPOSIT_DESCRIPTION
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION
 } from "./accounting-posting.ts";
 import {
   buildPaymentJournal,
@@ -213,26 +215,6 @@ it("applying a deposit to an invoice releases the prepayment account against rec
   expect(result.signedDebitTotal).toEqual(0);
 });
 
-it("refunding a deposit is a customer Disbursement that debits the prepayment account", () => {
-  const result = buildPaymentJournal(
-    base({
-      cashIn: false,
-      totalAmount: 2500,
-      newOnAccountBase: 2500,
-      isDeposit: true,
-      depositAccountId: "prepayment"
-    })
-  );
-  expect(amountOf(result, "bank")).toEqual(-2500);
-  expect(
-    result.lines.find((line) => line.accountId === "prepayment")
-  ).toMatchObject({ amount: -2500, description: CUSTOMER_DEPOSIT_DESCRIPTION });
-  // Never restored to receivables: the customer was not owed on account.
-  expect(amountOf(result, "today-control")).toBeUndefined();
-  expect(decodedDebitTotal(result, depositClasses)).toEqual(0);
-  expect(result.signedDebitTotal).toEqual(0);
-});
-
 it("a receipt without a document reference keeps its remainder on receivables", () => {
   const result = buildPaymentJournal(
     base({
@@ -258,4 +240,252 @@ it("a deposit refuses to post without a prepayment account", () => {
       })
     )
   ).toThrow(CUSTOMER_DEPOSIT_DESCRIPTION);
+});
+
+// A SUPPLIER PREPAYMENT — a Disbursement referencing a purchase order — is
+// our money held by the supplier against that order: an ASSET on the supplier
+// prepayment account (1150), never an on-account debit inside payables.
+// Applying it later releases 1150 against the invoice's AP; a Receipt carrying
+// the same reference refunds it from 1150.
+const prepaymentClasses: Record<string, AccountClass> = {
+  bank: "Asset",
+  prepayment: "Asset",
+  "original-control": "Liability",
+  "today-control": "Liability"
+};
+
+it("supplier prepayment holds its unapplied cash on the prepayment asset, not payables", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      totalAmount: 3000,
+      newOnAccountBase: 3000,
+      isDeposit: true,
+      depositAccountId: "prepayment"
+    })
+  );
+  expect(amountOf(result, "bank")).toEqual(-3000);
+  // A debit to an asset is stored positive: 3,000 owed to us in goods.
+  expect(
+    result.lines.find((line) => line.accountId === "prepayment")
+  ).toMatchObject({
+    amount: 3000,
+    description: SUPPLIER_PREPAYMENT_DESCRIPTION
+  });
+  expect(amountOf(result, "today-control")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("applying a supplier prepayment to a purchase invoice releases the asset against payables", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      paymentId: "application",
+      applications: [
+        {
+          targetPurchaseInvoiceId: "invoice",
+          targetControlAccountId: "original-control",
+          sourcePaymentId: "prepayment-payment",
+          sourceControlAccountId: "prepayment",
+          sourceIsDeposit: true,
+          sourceAmount: 500,
+          appliedAmount: 500,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+          fxGainLossAmount: 0
+        }
+      ],
+      isDeposit: false,
+      depositAccountId: "prepayment"
+    })
+  );
+  // A credit to an asset is stored negative: 500 less owed to us.
+  expect(
+    result.lines.find((line) => line.accountId === "prepayment")
+  ).toMatchObject({
+    amount: -500,
+    description: SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION
+  });
+  // A debit to a liability is stored negative: 500 less owed to the supplier.
+  expect(amountOf(result, "original-control")).toEqual(-500);
+  expect(amountOf(result, "bank")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
+  expect(result.signedDebitTotal).toEqual(0);
+});
+
+it("a supplier disbursement without a purchase order keeps its remainder on payables", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: false,
+      cashIn: false,
+      totalAmount: 3000,
+      newOnAccountBase: 3000,
+      isDeposit: false,
+      depositAccountId: "prepayment"
+    })
+  );
+  // A debit to a liability is stored negative.
+  expect(amountOf(result, "today-control")).toEqual(-3000);
+  expect(amountOf(result, "prepayment")).toBeUndefined();
+  expect(decodedDebitTotal(result, prepaymentClasses)).toEqual(0);
+});
+
+it.each([false, true])(
+  "refunds original deposit carrying value and books only cash FX (isAR=%s)",
+  (isAR) => {
+    const result = buildPaymentJournal(
+      base({
+        isAR,
+        cashIn: !isAR,
+        totalAmount: 55,
+        exchangeRate: 1.25,
+        isDeposit: true,
+        depositAccountId: "changed-default",
+        applications: [
+          {
+            targetPaymentId: "advance",
+            sourcePaymentId: "advance",
+            sourceControlAccountId: "original-deposit",
+            sourceIsDeposit: true,
+            sourceAmount: 55,
+            appliedAmount: 50,
+            sourceExchangeRate: 1.1,
+            targetExchangeRate: 1.1,
+            discountAmount: 0,
+            writeOffAmount: 0,
+            fxGainLossAmount: 0
+          }
+        ]
+      })
+    );
+    expect(amountOf(result, "bank")).toBe(isAR ? -44 : 44);
+    expect(
+      result.lines.find((line) => line.accountId === "original-deposit")
+    ).toMatchObject({
+      amount: -50,
+      description: isAR
+        ? CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+        : SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION,
+      documentLineReference: "advance"
+    });
+    expect(amountOf(result, "changed-default")).toBeUndefined();
+    expect(result.totalFxImpact).toBe(isAR ? 6 : -6);
+    expect(result.signedDebitTotal).toBe(0);
+  }
+);
+
+it("refuses an unallocated deposit refund", () => {
+  expect(() =>
+    buildPaymentJournal(
+      base({
+        isAR: false,
+        cashIn: true,
+        totalAmount: 10,
+        newOnAccountBase: 10,
+        isDeposit: true,
+        depositAccountId: "prepayment"
+      })
+    )
+  ).toThrow();
+});
+
+it("reconstructs a legacy customer deposit refund without payment-target applications", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: true,
+      cashIn: false,
+      totalAmount: 110,
+      exchangeRate: 1.1,
+      newOnAccountBase: 100,
+      isDeposit: true,
+      depositAccountId: "prepayment",
+      legacyCustomerDepositRefund: true
+    })
+  );
+  expect(
+    result.lines.map(({ accountId, amount, description }) => ({
+      accountId,
+      amount,
+      description
+    }))
+  ).toEqual([
+    { accountId: "bank", amount: -100, description: "Bank / Cash" },
+    {
+      accountId: "prepayment",
+      amount: -100,
+      description: CUSTOMER_DEPOSIT_DESCRIPTION
+    }
+  ]);
+  expect(result.signedDebitTotal).toBe(0);
+});
+
+it("reconstructs a legacy customer deposit refund's memo application and remaining deposit debit", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: true,
+      cashIn: false,
+      totalAmount: 110,
+      exchangeRate: 1.1,
+      newOnAccountBase: 60,
+      isDeposit: true,
+      depositAccountId: "prepayment",
+      legacyCustomerDepositRefund: true,
+      applications: [
+        {
+          targetMemoId: "memo",
+          sourcePaymentId: null,
+          sourceAmount: 44,
+          appliedAmount: 40,
+          sourceExchangeRate: 1.1,
+          targetExchangeRate: 1.1,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          fxGainLossAmount: 0
+        }
+      ]
+    })
+  );
+  expect(amountOf(result, "bank")).toBe(-100);
+  expect(amountOf(result, "today-control")).toBe(40);
+  expect(amountOf(result, "prepayment")).toBe(-60);
+  expect(result.signedDebitTotal).toBe(0);
+});
+
+it.each([true, false])(
+  "new unallocated deposit refunds remain strict (isAR=%s)",
+  (isAR) => {
+    expect(() =>
+      buildPaymentJournal(
+        base({
+          isAR,
+          cashIn: !isAR,
+          totalAmount: 10,
+          newOnAccountBase: 10,
+          isDeposit: true,
+          depositAccountId: "prepayment"
+        })
+      )
+    ).toThrow();
+  }
+);
+
+it("does not allow supplier refunds to opt into legacy customer reconstruction", () => {
+  expect(() =>
+    buildPaymentJournal(
+      base({
+        isAR: false,
+        cashIn: true,
+        totalAmount: 10,
+        newOnAccountBase: 10,
+        isDeposit: true,
+        depositAccountId: "prepayment",
+        legacyCustomerDepositRefund: true
+      })
+    )
+  ).toThrow();
 });
