@@ -1,6 +1,6 @@
 # Change a document's values
 
-> Status: implemented, not yet committed
+> Status: implemented on `feat/document-editor-edits`
 > Date: 2026-11-05
 > Builds on: `.ai/specs/2026-11-04-per-document-edits.md`, and the values-as-variables work on `feat/document-editor-edits` (review: `.ai/plans/2026-11-05-document-variables-review.md`)
 > Research: N/A. This extends an internal editor; `.ai/research/2026-11-04-per-document-edits-market.md` covers how other products treat one-document text.
@@ -68,12 +68,12 @@ type ValueEdits = { document: Record<string, string>; rows: Record<string, Recor
 ```
 
 - `MergeField` gains `fixed?: true`, set on quantity tokens and on a packing slip's per-entity serial, which the table fills itself. `isEditableValue(field)` is false for an `amount` or a `fixed` field.
-- `valueEditsSchema` parses the posted changes. `findLockedValues(type, edits)` names any token that cannot change.
+- `valueEditsSchema` parses the posted changes. `validateTemplateText` refuses (`valueLocked`) any token that cannot change.
 - `valueEdits` is part of the document's settings, so `applyDocumentEdit` puts it on the printed template and every driver reads it from `settings`. The editor's draft, preview, save and `isDirty` handle it the way they handle `settings.text`. A company template save drops it.
 - A renderer also takes an optional collector. The driver builds one `documentValues(settings.valueEdits, collector)` and puts it on the data bag.
 - `values.document(vars)` applies the document-level changes over the driver's variables.
 - Each table row calls `data.values.row("line", line.id, buildLineVars(...))`, which reports the row to the collector and applies that row's changes. There are 18 such sites.
-- A row with no record id uses its position.
+- A row with no record id cannot be told from another such row, so it prints the record's values and takes no changes.
 
 ### Reading the current values
 
@@ -86,11 +86,11 @@ The browser needs the values to show them. Only a render holds them, because row
 ### Preview and download
 
 - `api+/document-edit.$type.$id.preview.ts` accepts `valueEdits` next to `blocks` and `settings`.
-- A request carrying `valueEdits` needs update rights on the record's module and refuses a locked record. A preview without them keeps today's view permission and prints the saved values.
-- It refuses a token `findLockedValues` names. A token the document does not offer is ignored by the render.
+- The route needs update rights on the record's module. A locked record prints its saved edits and ignores the draft.
+- It refuses a figure problem (`isFigureProblem`). A token the document does not offer is ignored by the render.
 - `intent=download` also runs `validateTemplateText` on the draft, because a download must not carry a typed figure in place of an amount. On-screen preview stays permissive while the user types.
 - `saveDocumentEdit` applies the same refusals and stores `valueEdits` in the same transaction as the words and notes.
-- The download answers with `Content-Disposition: attachment` and the record's readable id as the file name.
+- The modal saves the response as a file named with the record's readable id.
 
 ### UI Changes: the editor
 
@@ -122,8 +122,8 @@ With the values on hand, `findPrintedValue` can match a value literally. In docu
 | Whether changed values are saved | Save keeps them on `documentEdit` | Owner's answer. Carbon's own send and PDF route then match what the user sees, and the row records who changed it. |
 | Where saved values live | `documentEdit.settings.valueEdits`, no new column | The edit row already has its RLS, lock and copy rules, and `settings` already flows through every renderer. No migration and no change to any render path. |
 | How the browser learns the values | One render with a collector, in a route of its own | Row variables only exist during a render. A header on the PDF response would overflow on long documents. |
-| Where the row hook sits | One `rowValues` call at each of the 18 row sites | The row id is only known there, and `makeText` does not know which row it prints. |
-| Which values change | All but amounts and quantities | Owner's answer. The document always adds up. Invoice numbers and dates can still change. |
+| Where the row hook sits | One `values.row` call at each of the 18 row sites | The row id is only known there, and `makeText` does not know which row it prints. |
+| Which values change | All but amounts, quantities and the `fixed` fields | Owner's answer. The document always adds up. Dates can still change. A `fixed` value has no pencil, but the words holding it can still be retyped; the owner kept this. |
 | Locked records | Read-only | Owner's answer. Saved values keep printing, and a sent document gets no differing copy. |
 | Where values are edited | A small popover from a pencil on the chip | Owner's call after using the first version, a list in the right panel. It keeps the panel to the words, and the value sits next to the chip that prints it. |
 | Download validation | Only on `intent=download` | A preview must render mid-edit; a file leaving the system must not carry a typed amount. |
@@ -144,10 +144,10 @@ N/A: this adds no record type. The words panel (`TextConfig.tsx`) is the pattern
 
 ## Risks
 
-- **A document can differ from its record.** Its PDF can differ in everything but amounts and quantities, including the invoice number and dates. The edit row shows who changed it last, but an unsaved download leaves no trace. The owner accepted this.
+- **A document can differ from its record.** Its PDF can differ in everything but amounts and quantities, including dates. Retyping the words around a `fixed` value can also replace the invoice number, a tax percent or a currency. The edit row shows who changed it last, but an unsaved download leaves no trace. The owner accepted this.
 - **A saved value stops following the record.** If a customer's address changes later, that document keeps the old one until someone puts the record's value back.
 - **Repeating invoices.** A generated rental invoice starts with the record's text each period, so the user retypes changes every time. A stored description on the agreement line is the lasting fix.
-- **Row ids in JSON.** Row values are keyed by line id, and `ID_REF_COLUMNS` rewrites columns, not JSON keys. After a restore that mints new ids, and on a quote revision whose lines get new ids, row values stop matching and those rows print the record's values. Document-level values still apply. A removed line's entry is ignored the same way.
+- **Row ids in JSON.** Row values are keyed by line id. A quote revision and a company restore rewrite the keys. A removed line's entry is ignored.
 - **A template that placed a block between the table and the Summary on purpose** moves it below the Summary. The editor never showed that order, so this reads as the bug it is.
 
 ## Acceptance Criteria

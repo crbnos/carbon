@@ -318,3 +318,29 @@ Fix: when a Save changed the notes, reload the page with `navigate(0)` from `use
 F2 to F4 are still open.
 
 **The `WordInput` field and the Notes and Terms editors** had a gray fill and a heavy focus ring that no other input uses. They now match the standard `Input`: transparent, with a thin border and a soft focus ring. A field with an error keeps its red border while focused.
+
+## Fifth pass
+
+A fifth review read the whole branch after the merge of `main`. **Verdict: Block**, at the time of the review. The findings below are fixed unless the table says otherwise.
+
+| Finding | Outcome | Proof |
+|---|---|---|
+| Words could replace a locked value: a tax text of `0%` or a document number of `INV-TYPED-999` passed validation. | **The owner kept this.** The pencil stays off these values, and the words holding them can be retyped. The spec and rule now say so. | **Ran:** validation returned no problems. |
+| A digit against a figure passed validation: `1{line.quantity}` would print 15 for 5. | Refused as `amountChanged`, in a template and on one document, and a preview refuses it too. Translated into all 12 languages (machine-written). | `validate.test.ts`. A test also finds no default text that breaks the rule. |
+| A revision and its edits saved separately, and pairing lines by their contents lost changed values on identical lines. | `copyDocumentEdit` runs inside the `quoteToQuote` transaction, using the line map built there. `pairCopiedQuoteLines` and the `documentEditsCopied` warning are gone, and `copyQuote` matches `main` again. | `document-edit.test.ts`, on the local database. |
+| Nothing tested the save's lock or the preview's locked branch. | Both are tested. The third pass said the repo could not test this with a real database. That was wrong: `apps/erp/test/database` does. | **Ran:** removing the lock check and removing the locked branch each failed one test. Both were then restored. |
+| `getPrintedTemplate` took `null` to mean "the company template alone". | `getCompanyTemplate`. | Typecheck. |
+| The download rewrote a header the modal never reads. | Removed. | Typecheck. Not run in a browser. |
+| The lock was checked twice, and a missing record reported as locked. | One check, in the transaction. `saveDocumentEditRow` answers `saved`, `locked` or `notFound`. | `document-edit.test.ts`. |
+| A traveler's title and footer words printed blank for most variables. | They read the same variables as the page body. | Typecheck, snapshot unchanged. Not run with such a variable. |
+| `const resolved = templateConfig` aliases, a cast on `draftNotes`, and copies of `jsonb`. | Removed or typed. The document edit functions moved to `settings/document-edit.service.ts`, which also keeps `production.service.ts` from importing `settings.service.ts`. | Typecheck, snapshot unchanged. |
+| A migration created write policies that a later one dropped. | Folded: the table and its cleanup trigger are one migration, and the generated read-only policy is the only policy. The two migrations stay separate because a policy may only ship in a generated migration. | **Ran:** rebuilt the table from the files in a rolled-back transaction: 11 triggers and one SELECT policy. `document-edit-authz.test.sql` passes. |
+
+**Left as they are:**
+
+- `document-edit-authz.test.sql` is not in CI. CI has no database, and none of the 39 SQL tests there run in it. The new database tests also skip without a local database, so only the preview test and the validation tests run in CI.
+- The risks under the third pass's "Still open", and the deploy order between `supabase.yml` and `build-images.yml`.
+
+`main` was then merged. Its supplier part ID on purchase orders now prints from the catalog (`supplierPartCell`, `{line.supplierPartId}`), so it can be edited like any other text. The line description reads the item ID directly, because `getLineDescription` now adds the supplier number for emails. The text snapshot gained only the supplier part line.
+
+F2 from the fourth pass is fixed: the 4 messages it named, and 2 more variable names, now have translations in all 12 languages (machine-written).

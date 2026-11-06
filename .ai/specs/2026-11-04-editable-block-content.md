@@ -1,6 +1,6 @@
 # Editable block content in document templates
 
-- **Status:** In progress — approved 2026-11-04, implemented on `feat/document-editor-edits`
+- **Status:** Implemented on `feat/document-editor-edits` (approved 2026-11-04)
 - **Date:** 2026-11-04
 - **Slice:** 1 of 3 (2 = templates per customer or supplier, 3 = edits to one document)
 - **Research:** `.ai/research/2026-11-04-block-text-inventory.md`
