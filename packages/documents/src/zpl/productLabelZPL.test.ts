@@ -109,6 +109,15 @@ describe("generateProductLabelZPL", () => {
     expect(zpl).not.toContain("^FDAB^CD");
   });
 
+  it("escapes a caret in a barcode's value so it cannot start a command", () => {
+    const zpl = generateProductLabelZPL(
+      { ...item, trackedEntityId: "AB^PQ100" },
+      size("label2x1")
+    );
+    expect(zpl).toContain("^FH^FDMA,AB_5EPQ100^FS");
+    expect(zpl).not.toContain("AB^PQ100");
+  });
+
   it("prints a custom field's value alone when its label is empty", () => {
     const template = resolveTemplate("trackingLabel", null);
     const zpl = generateProductLabelZPL(

@@ -76,6 +76,7 @@ export async function renderStockTransferPdf(
     .from("location")
     .select("*")
     .eq("id", stockTransfer.data.locationId)
+    .eq("companyId", companyId)
     .single();
 
   if (location.error) {

@@ -157,7 +157,10 @@ export const DOCUMENT_TERMS_FIELD: Partial<
   salesOrder: "salesTerms",
   quote: "salesTerms",
   packingSlip: "salesTerms",
-  purchaseOrder: "purchasingTerms"
+  salesReturnOrder: "salesTerms",
+  purchaseOrder: "purchasingTerms",
+  purchaseReturnOrder: "purchasingTerms",
+  purchasingRfq: "purchasingTerms"
 };
 
 /** Editing how a document prints needs the update permission of its record. */

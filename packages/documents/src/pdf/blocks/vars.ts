@@ -31,6 +31,7 @@ export function buildSalesInvoiceVars(
     | "salesOrderIds"
     | "paymentTerms"
     | "shippingMethods"
+    | "shippingTerms"
     | "company"
     | "currencyCode"
     | "locale"
@@ -84,7 +85,10 @@ export function buildSalesInvoiceVars(
         (method) => method.id === shipment?.shippingMethodId
       )?.name
     ),
-    "invoice.shippingTerms": str(shipment?.shippingTermId),
+    "invoice.shippingTerms": str(
+      data.shippingTerms?.find((term) => term.id === shipment?.shippingTermId)
+        ?.name
+    ),
     "invoice.incoterm": incotermText(
       shipment?.incoterm,
       shipment?.incotermLocation

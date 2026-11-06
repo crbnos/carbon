@@ -44,13 +44,14 @@ export function zplLabelHeader({
 }
 
 /**
- * A text field's data, hex-escaped with ^FH so a `^` or `~` in user text
- * cannot end the field or start a command (`_` is the escape character).
+ * A field's data, hex-escaped with ^FH so a `^` or `~` in user text cannot end
+ * the field or start a command (`_` is the escape character). `prefix` is sent
+ * as is: a QR code's mode characters.
  */
-export function zplFieldData(value: string): string {
+export function zplFieldData(value: string, prefix = ""): string {
   const escaped = value.replace(
     /[_^~]/g,
     (c) => `_${c.charCodeAt(0).toString(16).toUpperCase()}`
   );
-  return `^FH^FD${escaped}^FS`;
+  return `^FH^FD${prefix}${escaped}^FS`;
 }

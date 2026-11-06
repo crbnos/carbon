@@ -162,6 +162,7 @@ export async function loadSalesInvoiceDocument(args: {
     terms,
     paymentTerms,
     shippingMethods,
+    shippingTerms,
     templateConfig
   ] = await Promise.all([
     getCompanyWithPublicLogos(client, companyId, storageUrl),
@@ -206,6 +207,12 @@ export async function loadSalesInvoiceDocument(args: {
       .order("name", { ascending: true }),
     client
       .from("shippingMethod")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    client
+      .from("shippingTerm")
       .select("id, name")
       .eq("companyId", companyId)
       .eq("active", true)
@@ -365,6 +372,7 @@ export async function loadSalesInvoiceDocument(args: {
     terms: (terms.data?.salesTerms ?? {}) as SalesInvoicePDFProps["terms"],
     paymentTerms: paymentTerms.data ?? [],
     shippingMethods: shippingMethods.data ?? [],
+    shippingTerms: shippingTerms.data ?? [],
     thumbnails,
     template: templateConfig,
     sections

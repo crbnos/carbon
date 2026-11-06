@@ -248,6 +248,7 @@ import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
+  getShippingTermsList,
   getStockTransfer,
   getStockTransferLines
 } from "~/modules/inventory/inventory.service";
@@ -1944,6 +1945,7 @@ export async function buildPreviewProps(
         terms,
         payment,
         shipping,
+        shippingTerms,
         ar
       ] = await Promise.all([
         getSalesInvoice(client, id),
@@ -1953,6 +1955,7 @@ export async function buildPreviewProps(
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId),
+        getShippingTermsList(client, companyId),
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
@@ -1968,7 +1971,8 @@ export async function buildPreviewProps(
           : null,
         terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
-        shippingMethods: shipping.data ?? []
+        shippingMethods: shipping.data ?? [],
+        shippingTerms: shippingTerms.data ?? []
       };
     }
     case "salesOrder": {

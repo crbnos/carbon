@@ -35,6 +35,7 @@ interface SalesInvoicePDFProps extends PDF {
     | null;
   paymentTerms: { id: string; name: string }[];
   shippingMethods: { id: string; name: string }[];
+  shippingTerms: { id: string; name: string }[];
   terms: JSONContent;
   thumbnails?: Record<string, string | null>;
   /** Stored layout. When omitted, the default Sales Invoice layout is used. */
@@ -59,6 +60,7 @@ const SalesInvoicePDF = ({
   terms,
   paymentTerms,
   shippingMethods,
+  shippingTerms,
   thumbnails,
   locale,
   currencyDecimals,
@@ -84,6 +86,7 @@ const SalesInvoicePDF = ({
       salesOrderIds,
       paymentTerms,
       shippingMethods,
+      shippingTerms,
       company,
       currencyCode,
       locale,
@@ -121,6 +124,7 @@ const SalesInvoicePDF = ({
     accountsReceivableBillingAddress,
     paymentTerms,
     shippingMethods,
+    shippingTerms,
     terms,
     thumbnails,
     theme,

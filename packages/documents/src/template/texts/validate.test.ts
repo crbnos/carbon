@@ -136,6 +136,27 @@ describe("validateTemplateText", () => {
     ).toEqual([]);
   });
 
+  it("refuses a number against a figure in a block's own fields", () => {
+    const rows = (value: string) => ({
+      documentType: "salesOrder" as const,
+      blocks: [
+        {
+          id: "kv",
+          type: "keyValue" as const,
+          visible: true,
+          rows: [{ label: "Total", value }]
+        }
+      ],
+      settings: {}
+    });
+    expect(validateTemplateText(rows("1{order.total}") as never)).toMatchObject(
+      [{ code: "amountChanged", blockId: "kv", field: "rows.0.value" }]
+    );
+    expect(validateTemplateText(rows("Total {order.total}") as never)).toEqual(
+      []
+    );
+  });
+
   it("refuses no default text", () => {
     for (const [documentType, catalog] of Object.entries(TEXT_CATALOG)) {
       for (const [blockType, entries] of Object.entries(catalog)) {

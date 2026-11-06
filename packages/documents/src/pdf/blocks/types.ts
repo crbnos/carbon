@@ -43,6 +43,7 @@ export interface SalesInvoiceData {
   accountsReceivableBillingAddress?: AccountsReceivableBillingAddress | null;
   paymentTerms: { id: string; name: string }[];
   shippingMethods: { id: string; name: string }[];
+  shippingTerms: { id: string; name: string }[];
   terms: JSONContent;
   thumbnails?: Record<string, string | null>;
   /** Customizable color palette for the document. */

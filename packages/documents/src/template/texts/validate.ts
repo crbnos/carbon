@@ -158,7 +158,7 @@ export function validateTemplateText(
     row ? getLineMergeFields(documentType, row).map((f) => f.token) : [];
   const problems: TextProblem[] = [];
 
-  const checkFigures = (
+  const checkFiguresStay = (
     blockId: string,
     label: string,
     entry: TextEntry,
@@ -175,6 +175,14 @@ export function validateTemplateText(
         });
       }
     }
+  };
+
+  const checkFiguresApart = (
+    blockId: string,
+    where: string,
+    field: string,
+    value: string
+  ) => {
     // Words around a figure are fine, but `1{line.quantity}` prints 15 for 5, and
     // `{line.number} {line.quantity}` prints "1 5". What a variable next to it
     // prints counts: a number if it holds one, else nothing, so that a blank
@@ -198,10 +206,10 @@ export function validateTemplateText(
       ) {
         problems.push({
           blockId,
-          field: entry.key,
+          field,
           code: "amountChanged",
           token,
-          message: `${label} › ${entry.default}: a number or sign cannot sit next to the figure {${token}}`
+          message: `${where}: a number or sign cannot sit next to the figure {${token}}`
         });
       }
     }
@@ -253,7 +261,8 @@ export function validateTemplateText(
         value,
         entry.row
       );
-      checkFigures(blockId, label, entry, value);
+      checkFiguresStay(blockId, label, entry, value);
+      checkFiguresApart(blockId, `${label} › ${entry.default}`, key, value);
     }
     for (const key of stored.hidden ?? []) {
       const entry = byKey.get(key);
@@ -278,6 +287,12 @@ export function validateTemplateText(
     );
     for (const authored of authoredTexts(block)) {
       checkVariables(
+        block.id,
+        `${label} › ${authored.name}`,
+        authored.field,
+        authored.text
+      );
+      checkFiguresApart(
         block.id,
         `${label} › ${authored.name}`,
         authored.field,

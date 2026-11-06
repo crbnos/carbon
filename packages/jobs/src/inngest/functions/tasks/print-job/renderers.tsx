@@ -85,6 +85,7 @@ export async function renderItemBuiltIn(
             items={[doc.item]}
             labelSize={mediaSize}
             template={template}
+            company={labelCompany}
             logo={logo}
           />
         );
@@ -170,7 +171,12 @@ async function loadProductLabelContext(
 
   const logo = await resolveLabelLogo(company, template, labelSize);
 
-  return { template, logo, labelCompany: companyRow.data ?? null };
+  return {
+    template,
+    logo,
+    labelCompany:
+      companyRow.data && company ? { ...companyRow.data, ...company } : null
+  };
 }
 
 function requireZplCapable(mediaSize: LabelSize): void {

@@ -81,6 +81,7 @@ export async function renderIssuePdf(
             "id, name, nonConformanceActionId, operationId, jobOperationStepRecord(*)"
           )
           .in("nonConformanceActionId", actionTaskIds)
+          .eq("companyId", companyId)
           .not("nonConformanceActionId", "is", null)
       : { data: [] };
 
@@ -95,6 +96,7 @@ export async function renderIssuePdf(
           .from("jobOperation")
           .select("id, jobId, job(jobId)")
           .in("id", operationIds)
+          .eq("companyId", companyId)
       : { data: [] };
 
   // Create a map of operationId -> jobId
@@ -179,6 +181,10 @@ export async function renderIssuePdf(
     });
   }
 
+  if (reviewers.error) {
+    logger.error("Failed to load reviewers", { error: reviewers.error });
+  }
+
   if (items.error) {
     logger.error("Failed to load items", { error: items.error });
   }
@@ -189,6 +195,7 @@ export async function renderIssuePdf(
     nonConformanceTypes.error ||
     actionTasks.error ||
     approvalTasks.error ||
+    reviewers.error ||
     items.error
   ) {
     throw new Error("Failed to load issue");

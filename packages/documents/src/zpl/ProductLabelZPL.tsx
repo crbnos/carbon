@@ -23,17 +23,17 @@ function zplBarcode(
 ): string {
   switch (symbology) {
     case "code128":
-      return `^BCN,${heightDots},N,N,N^FD${value}^FS`;
+      return `^BCN,${heightDots},N,N,N${zplFieldData(value)}`;
     case "datamatrix":
-      return `^BXN,${Math.max(3, Math.floor(heightDots / 20))},200^FD${value}^FS`;
+      return `^BXN,${Math.max(3, Math.floor(heightDots / 20))},200${zplFieldData(value)}`;
     case "qrcode": {
       // `MA,` field-data prefix = error-correction level M + Automatic input
       // mode. Module scales with the label rather than a fixed step.
       const module = Math.max(2, Math.min(8, Math.round(4 * scale)));
-      return `^BQN,2,${module}^FDMA,${value}^FS`;
+      return `^BQN,2,${module}${zplFieldData(value, "MA,")}`;
     }
     default: // pdf417
-      return `^BY2^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N^FD${value}^FS`;
+      return `^BY2^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N${zplFieldData(value)}`;
   }
 }
 

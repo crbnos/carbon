@@ -625,7 +625,7 @@ export function useLoadPrintedValues(path: string) {
         const response = await fetch(path, { signal: controller.signal });
         if (!response.ok) return;
         const values: { data: CollectedValues } = await response.json();
-        setDocumentValues(values.data);
+        if (!controller.signal.aborted) setDocumentValues(values.data);
       } catch (error) {
         if (!controller.signal.aborted) {
           logger.error("Failed to read the printed values", { error });

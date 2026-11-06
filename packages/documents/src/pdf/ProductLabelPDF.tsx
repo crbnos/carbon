@@ -12,8 +12,11 @@ import type {
   ValueCollector
 } from "../template";
 import { resolveTemplate } from "../template";
-import type { Company } from "../types";
-import type { LabelData, LabelLogo } from "./blocks/trackingLabel";
+import type {
+  LabelData,
+  LabelLogo,
+  LabelPdfCompany
+} from "./blocks/trackingLabel";
 import {
   buildLabelVars,
   trackingLabelBlockRegistry
@@ -25,7 +28,7 @@ interface ProductLabelProps {
   labelSize: LabelSize;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
-  company?: Company | null;
+  company?: LabelPdfCompany | null;
   logo?: LabelLogo | null;
   valueCollector?: ValueCollector;
 }

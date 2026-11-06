@@ -92,10 +92,12 @@ export const SAMPLE_SALES_INVOICE = {
   },
   salesInvoiceShipment: {
     shippingCost: 0,
-    shippingMethodId: "ground"
+    shippingMethodId: "ground",
+    shippingTermId: "fob"
   },
   paymentTerms: [{ id: "net30", name: "Net 30" }],
   shippingMethods: [{ id: "ground", name: "Ground" }],
+  shippingTerms: [{ id: "fob", name: "FOB Origin" }],
   terms: {
     type: "doc",
     content: [

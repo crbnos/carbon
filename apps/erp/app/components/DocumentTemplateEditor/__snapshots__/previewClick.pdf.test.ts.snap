@@ -1418,6 +1418,9 @@ exports[`clicking a real PDF > opens the right text on the salesInvoice sample 1
     "Shipping: Ground": "parties:shipping",
   },
   {
+    "Shipping Terms: FOB Origin": "parties:shippingTerms",
+  },
+  {
     "NOTES": "notes:notes",
   },
   {
