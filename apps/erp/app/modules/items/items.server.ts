@@ -5,6 +5,7 @@
 import { ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import {
   activationRefusalMessage,
   getMethodPartsMissingPullFrom,
@@ -100,6 +101,9 @@ const itemIdsInput = z.array(z.string()).min(1);
  * @mcp
  */
 export const setItemTrackingType = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: itemIdsInput,
     itemTrackingType: z.enum(itemTrackingTypes)
@@ -144,6 +148,9 @@ export const setItemTrackingType = defineServiceFn({
  * @mcp
  */
 export const setItemFields = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: itemIdsInput,
     name: z.string().optional(),
@@ -186,6 +193,9 @@ export const setItemFields = defineServiceFn({
  * @mcp
  */
 export const setItemSourcing = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z
     .object({
       ids: itemIdsInput,
@@ -243,6 +253,9 @@ export const setItemSourcing = defineServiceFn({
  * @mcp
  */
 export const setItemActive = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({ ids: itemIdsInput, active: z.boolean() }),
   permission: { update: "parts" },
 
@@ -291,6 +304,9 @@ export const setItemActive = defineServiceFn({
  * @mcp
  */
 export const setItemPostingGroup = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: itemIdsInput,
     itemPostingGroupId: z.string().nullable()
@@ -429,6 +445,9 @@ const renumberedTable = {
  * @mcp
  */
 export const setItemReadableId = defineServiceFn({
+  output: rows.item
+    .pick({ id: true, readableId: true })
+    .meta({ table: "item" }),
   input: z.object({
     id: z.string(),
     type: z.enum(["Part", "Consumable", "Material", "Tool"]),
@@ -500,6 +519,9 @@ export const setItemReadableId = defineServiceFn({
  * @mcp
  */
 export const renameService = defineServiceFn({
+  output: z.object({
+    readableId: z.string()
+  }),
   input: z.object({ itemId: z.string(), name: z.string() }),
   permission: { update: "parts" },
 
@@ -533,6 +555,9 @@ export const renameService = defineServiceFn({
  * @mcp
  */
 export const setMaterialProperties = defineServiceFn({
+  output: z.object({
+    materialIds: z.array(z.string())
+  }),
   input: z.object({
     ids: itemIdsInput,
     materialSubstanceId: z.string().nullable().optional(),
@@ -600,6 +625,9 @@ const partInput = applyStorageAndShelfLifeRefines(
  * @mcp
  */
 export const createPart = defineServiceFn({
+  output: z.object({
+    id: z.unknown()
+  }),
   input: partInput,
   permission: { create: "parts" },
 
@@ -630,6 +658,7 @@ export const createPart = defineServiceFn({
  * @mcp
  */
 export const updatePart = defineServiceFn({
+  output: rows.part.pick({ id: true }).meta({ table: "part" }),
   input: partInput,
   permission: { update: "parts" },
 
@@ -656,6 +685,7 @@ export const updatePart = defineServiceFn({
  * @mcp
  */
 export const updateTool = defineServiceFn({
+  output: rows.tool.pick({ id: true }).meta({ table: "tool" }),
   input: applyStorageAndShelfLifeRefines(
     toolFields.extend({ customFields: customFieldsInput })
   ),
@@ -686,6 +716,9 @@ export const updateTool = defineServiceFn({
  * @mcp
  */
 export const updateItemManufacturing = defineServiceFn({
+  output: z.object({
+    itemId: z.string()
+  }),
   input: itemManufacturingValidator.safeExtend({
     customFields: customFieldsInput
   }),
@@ -725,6 +758,9 @@ export const updateItemManufacturing = defineServiceFn({
  * @mcp
  */
 export const updateItemPlanning = defineServiceFn({
+  output: rows.itemPlanning
+    .pick({ itemId: true, locationId: true })
+    .meta({ table: "itemPlanning" }),
   input: itemPlanningValidator.safeExtend({ customFields: customFieldsInput }),
   permission: { update: "parts" },
 
@@ -774,6 +810,9 @@ export const updateItemPlanning = defineServiceFn({
  * @mcp destructive
  */
 export const setItemSupersession = defineServiceFn({
+  output: rows.itemSupersession
+    .pick({ itemId: true })
+    .meta({ table: "itemSupersession" }),
   input: itemSupersessionValidator,
   permission: { update: "parts" },
 
@@ -806,6 +845,10 @@ export const setItemSupersession = defineServiceFn({
  * @mcp
  */
 export const addItemPredecessor = defineServiceFn({
+  output: z.object({
+    itemId: z.string(),
+    successorItemId: z.string()
+  }),
   input: predecessorSupersessionValidator.safeExtend({ itemId: z.string() }),
   permission: { update: "parts" },
 
@@ -884,6 +927,7 @@ const supplierPartTaken =
  * @mcp
  */
 export const createSupplierPart = defineServiceFn({
+  output: rows.supplierPart.pick({ id: true }).meta({ table: "supplierPart" }),
   input: supplierPartInput,
   permission: { create: "parts" },
 
@@ -935,6 +979,7 @@ export const createSupplierPart = defineServiceFn({
  * @mcp
  */
 export const updateSupplierPart = defineServiceFn({
+  output: rows.supplierPart.pick({ id: true }).meta({ table: "supplierPart" }),
   input: supplierPartInput.extend({ id: z.string() }),
   permission: { update: "parts" },
 
@@ -994,6 +1039,10 @@ export const updateSupplierPart = defineServiceFn({
  * @mcp destructive
  */
 export const copyMethod = defineServiceFn({
+  output: z.object({
+    targetId: z.string(),
+    notice: z.string().nullable()
+  }),
   input: getMethodValidator,
   permission: { update: "parts" },
 
@@ -1039,6 +1088,18 @@ export const copyMethod = defineServiceFn({
  * @mcp
  */
 export const createMethodVersion = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    itemId: z.string(),
+    type: z.enum([
+      "Consumable",
+      "Fixture",
+      "Material",
+      "Part",
+      "Service",
+      "Tool"
+    ])
+  }),
   input: makeMethodVersionValidator,
   permission: { create: "parts" },
 
@@ -1183,6 +1244,10 @@ export const syncOnshapeMethod = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMethodOperation = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    notice: z.string().nullable()
+  }),
   input: z.object({ id: z.string() }),
   permission: { delete: "parts" },
 
@@ -1278,6 +1343,10 @@ export const deleteMethodOperations = defineServiceFn({
  * @mcp
  */
 export const recalculateItemCost = defineServiceFn({
+  output: z.object({
+    itemId: z.string(),
+    unitCost: z.number()
+  }),
   input: z.object({ itemId: z.string() }),
   permission: { update: "parts" },
 
@@ -1411,6 +1480,10 @@ export const recalculateItemCost = defineServiceFn({
  * @mcp
  */
 export const createChangeNotice = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    warning: z.string().nullable()
+  }),
   input: changeNoticeValidator.omit({ id: true, type: true }).extend({
     openDate: z.string().optional(),
     reasonForChange: optionalTiptapDoc,
@@ -1510,6 +1583,17 @@ export const createChangeNotice = defineServiceFn({
  * @mcp
  */
 export const createChangeNoticeForItem = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      id: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: z.object({
     itemId: z.string(),
     changeType: z.enum(changeNoticeChangeTypes).default("Version"),
@@ -1591,6 +1675,18 @@ export const createChangeNoticeForItem = defineServiceFn({
  * @mcp
  */
 export const setChangeNoticeStatus = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    status: z.enum([
+      "Cancelled",
+      "Done",
+      "Draft",
+      "Engineering Complete",
+      "Implementation",
+      "Start"
+    ]),
+    approvalRequested: z.boolean()
+  }),
   input: changeNoticeStatusValidator,
   permission: { update: "parts" },
 
@@ -1725,6 +1821,10 @@ export const setChangeNoticeStatus = defineServiceFn({
  * @mcp
  */
 export const decideChangeNoticeApproval = defineServiceFn({
+  output: z.object({
+    changeNoticeId: z.string(),
+    decision: z.enum(["Approved", "Rejected"])
+  }),
   input: approvalDecisionValidator.extend({ changeNoticeId: z.string() }),
   permission: { update: "parts" },
 
@@ -1799,6 +1899,17 @@ export const decideChangeNoticeApproval = defineServiceFn({
  * @mcp
  */
 export const activateMethodVersion = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      convertedId: z.null().optional()
+    }),
+    z.object({
+      convertedId: z.string(),
+      id: z.null().optional()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -1828,6 +1939,9 @@ export const activateMethodVersion = defineServiceFn({
  * @mcp
  */
 export const createRevision = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     item: z.looseObject({
       companyId: z.string().nullable(),
@@ -1881,6 +1995,11 @@ export const createRevision = defineServiceFn({
  * @mcp destructive
  */
 export const deleteConfigurationParameter = defineServiceFn({
+  output: z.array(
+    rows.configurationParameter
+      .pick({ id: true })
+      .meta({ table: "configurationParameter" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -1900,6 +2019,7 @@ export const deleteConfigurationParameter = defineServiceFn({
  * @mcp destructive
  */
 export const deleteConfigurationRule = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({ field: z.string(), itemId: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -1920,6 +2040,7 @@ export const deleteConfigurationRule = defineServiceFn({
  * @mcp destructive
  */
 export const deleteItemCustomerPart = defineServiceFn({
+  output: z.array(rows.customer.pick({ id: true }).meta({ table: "customer" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -1940,6 +2061,9 @@ export const deleteItemCustomerPart = defineServiceFn({
  * @mcp destructive
  */
 export const deleteSupplierPart = defineServiceFn({
+  output: z.array(
+    rows.supplierPart.pick({ id: true }).meta({ table: "supplierPart" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -1960,6 +2084,11 @@ export const deleteSupplierPart = defineServiceFn({
  * @mcp destructive
  */
 export const deleteConfigurationParameterGroup = defineServiceFn({
+  output: z.array(
+    rows.configurationParameterGroup
+      .pick({ id: true })
+      .meta({ table: "configurationParameterGroup" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -1979,6 +2108,7 @@ export const deleteConfigurationParameterGroup = defineServiceFn({
  * @mcp destructive
  */
 export const deleteItem = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2000,6 +2130,9 @@ export const deleteItem = defineServiceFn({
  * @mcp destructive
  */
 export const deleteItemPostingGroup = defineServiceFn({
+  output: z.array(
+    rows.itemPostingGroup.pick({ id: true }).meta({ table: "itemPostingGroup" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2019,6 +2152,11 @@ export const deleteItemPostingGroup = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMaterialDimension = defineServiceFn({
+  output: z.array(
+    rows.materialDimension
+      .pick({ id: true })
+      .meta({ table: "materialDimension" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2038,6 +2176,9 @@ export const deleteMaterialDimension = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMaterialFinish = defineServiceFn({
+  output: z.array(
+    rows.materialFinish.pick({ id: true }).meta({ table: "materialFinish" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2057,6 +2198,9 @@ export const deleteMaterialFinish = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMaterialForm = defineServiceFn({
+  output: z.array(
+    rows.materialForm.pick({ id: true }).meta({ table: "materialForm" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2073,6 +2217,9 @@ export const deleteMaterialForm = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMaterialGrade = defineServiceFn({
+  output: z.array(
+    rows.materialGrade.pick({ id: true }).meta({ table: "materialGrade" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2092,6 +2239,11 @@ export const deleteMaterialGrade = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMaterialSubstance = defineServiceFn({
+  output: z.array(
+    rows.materialSubstance
+      .pick({ id: true })
+      .meta({ table: "materialSubstance" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2111,6 +2263,9 @@ export const deleteMaterialSubstance = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMethodMaterial = defineServiceFn({
+  output: z.array(
+    rows.methodMaterial.pick({ id: true }).meta({ table: "methodMaterial" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2197,6 +2352,9 @@ export const deleteMethodMaterials = defineServiceFn({
  * @mcp
  */
 export const assertMethodOperationIsDraft = defineServiceFn({
+  output: z.object({
+    operationId: z.string()
+  }),
   input: z.looseObject({ operationId: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -2221,6 +2379,11 @@ export const assertMethodOperationIsDraft = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMethodOperationStep = defineServiceFn({
+  output: z.array(
+    rows.methodOperationStep
+      .pick({ id: true })
+      .meta({ table: "methodOperationStep" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2252,6 +2415,11 @@ export const deleteMethodOperationStep = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMethodOperationStepSlide = defineServiceFn({
+  output: z.array(
+    rows.methodOperationStepSlide
+      .pick({ id: true })
+      .meta({ table: "methodOperationStepSlide" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2277,6 +2445,11 @@ export const deleteMethodOperationStepSlide = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMethodOperationParameter = defineServiceFn({
+  output: z.array(
+    rows.methodOperationParameter
+      .pick({ id: true })
+      .meta({ table: "methodOperationParameter" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2305,6 +2478,11 @@ export const deleteMethodOperationParameter = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMethodOperationTool = defineServiceFn({
+  output: z.array(
+    rows.methodOperationTool
+      .pick({ id: true })
+      .meta({ table: "methodOperationTool" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2333,6 +2511,9 @@ export const deleteMethodOperationTool = defineServiceFn({
  * @mcp destructive
  */
 export const deleteUnitOfMeasure = defineServiceFn({
+  output: z.array(
+    rows.unitOfMeasure.pick({ id: true }).meta({ table: "unitOfMeasure" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -2352,6 +2533,43 @@ export const deleteUnitOfMeasure = defineServiceFn({
  * @mcp read
  */
 export const getConfigurationParameters = defineServiceFn({
+  output: z.object({
+    groups: z.array(
+      z.object({
+        companyId: z.string(),
+        id: z.string(),
+        isUngrouped: z.boolean(),
+        itemId: z.string(),
+        name: z.string(),
+        sortOrder: z.number()
+      })
+    ),
+    parameters: z.array(
+      z.object({
+        companyId: z.string(),
+        configurationParameterGroupId: z.string().nullable(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        dataType: z.enum([
+          "boolean",
+          "date",
+          "list",
+          "material",
+          "numeric",
+          "text"
+        ]),
+        id: z.string(),
+        itemId: z.string(),
+        key: z.string(),
+        label: z.string(),
+        listOptions: z.array(z.string()).nullable(),
+        materialFormFilterId: z.string().nullable(),
+        sortOrder: z.number(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2369,6 +2587,7 @@ export const getConfigurationParameters = defineServiceFn({
  * @mcp read
  */
 export const getConfigurationRules = defineServiceFn({
+  output: z.array(rows.configurationRule),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2386,6 +2605,205 @@ export const getConfigurationRules = defineServiceFn({
  * @mcp read
  */
 export const getConsumable = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    assignee: z.string(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    defaultMethodType: z.enum([
+      "Make to Order",
+      "Pull from Inventory",
+      "Purchase to Order"
+    ]),
+    description: z.string(),
+    id: z.string(),
+    itemPostingGroupId: z.string(),
+    itemTrackingType: z.enum(["Batch", "Inventory", "Non-Inventory", "Serial"]),
+    modelName: z.string(),
+    modelPath: z.string(),
+    modelSize: z.number(),
+    modelUploadId: z.string(),
+    mpn: z.string(),
+    name: z.string(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    readableId: z.string(),
+    readableIdWithRevision: z.string(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+    revision: z.string(),
+    revisions: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    sourcingType: z.enum(["Drop Ship", "Ship from Inventory", "Specified"]),
+    supplierIds: z.string(),
+    tags: z.array(z.string()),
+    thumbnailPath: z.string(),
+    unitOfMeasure: z.string(),
+    unitOfMeasureCode: z.string(),
+    updatedAt: z.string(),
+    updatedBy: z.string()
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2406,6 +2824,63 @@ export const getConsumable = defineServiceFn({
  * @mcp read
  */
 export const getConsumables = defineServiceFn({
+  output: z
+    .array(
+      rows.consumables
+        .pick({
+          active: true,
+          assignee: true,
+          defaultMethodType: true,
+          description: true,
+          itemTrackingType: true,
+          name: true,
+          replenishmentSystem: true,
+          readableIdWithRevision: true,
+          id: true,
+          companyId: true,
+          thumbnailPath: true,
+          supplierIds: true,
+          tags: true,
+          itemPostingGroupId: true,
+          createdBy: true,
+          createdAt: true,
+          updatedBy: true,
+          updatedAt: true,
+          supersessionMode: true,
+          mpn: true,
+          suppliers: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2435,6 +2910,93 @@ export const getConsumables = defineServiceFn({
  * @mcp read
  */
 export const getItem = defineServiceFn({
+  output: rows.item
+    .pick({
+      active: true,
+      assignee: true,
+      changeOrderId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      defaultMethodType: true,
+      description: true,
+      embedding: true,
+      id: true,
+      itemTrackingType: true,
+      modelUploadId: true,
+      mpn: true,
+      name: true,
+      readableId: true,
+      readableIdWithRevision: true,
+      replenishmentSystem: true,
+      revision: true,
+      revisionStatus: true,
+      sourcingType: true,
+      thumbnailPath: true,
+      trackingMethod: true,
+      type: true,
+      unitOfMeasureCode: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "item" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2451,6 +3013,80 @@ export const getItem = defineServiceFn({
  * @mcp read
  */
 export const getItemCost = defineServiceFn({
+  output: rows.itemCost
+    .pick({
+      companyId: true,
+      costingMethod: true,
+      costIsAdjusted: true,
+      createdAt: true,
+      createdBy: true,
+      itemId: true,
+      itemPostingGroupId: true,
+      standardCost: true,
+      tags: true,
+      unitCost: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      readableIdWithRevision: z.string().nullable()
+    })
+    .meta({ table: "itemCost" }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2471,6 +3107,7 @@ export const getItemCost = defineServiceFn({
  * @mcp read
  */
 export const getItemCostHistory = defineServiceFn({
+  output: z.array(rows.costLedger),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2491,6 +3128,18 @@ export const getItemCostHistory = defineServiceFn({
  * @mcp read
  */
 export const getItemCustomerPart = defineServiceFn({
+  output: z.object({
+    companyId: z.string(),
+    customerId: z.string(),
+    customerPartId: z.string(),
+    customerPartRevision: z.string().nullable(),
+    id: z.string(),
+    itemId: z.string(),
+    customer: z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2511,6 +3160,20 @@ export const getItemCustomerPart = defineServiceFn({
  * @mcp read
  */
 export const getItemCustomerParts = defineServiceFn({
+  output: z.array(
+    z.object({
+      companyId: z.string(),
+      customerId: z.string(),
+      customerPartId: z.string(),
+      customerPartRevision: z.string().nullable(),
+      id: z.string(),
+      itemId: z.string(),
+      customer: z.object({
+        id: z.string(),
+        name: z.string()
+      })
+    })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2531,6 +3194,7 @@ export const getItemCustomerParts = defineServiceFn({
  * @mcp read
  */
 export const getItemDemand = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z.string(),
     locationId: z.string(),
@@ -2554,6 +3218,79 @@ export const getItemDemand = defineServiceFn({
  * @mcp read
  */
 export const getDemandForecastSources = defineServiceFn({
+  output: z.array(
+    rows.demandForecastSource
+      .pick({
+        itemId: true,
+        locationId: true,
+        periodId: true,
+        sourceType: true,
+        quantity: true,
+        jobId: true,
+        salesOrderLineId: true,
+        demandProjectionId: true,
+        parentItemId: true,
+        redirectedFromItemId: true
+      })
+      .extend({
+        parentItem: z.object({
+          id: z.string(),
+          readableId: z.string(),
+          name: z.string()
+        }),
+        redirectedFromItem: z
+          .object({
+            id: z.string(),
+            readableIdWithRevision: z.string().nullable()
+          })
+          .nullable(),
+        job: z
+          .object({
+            id: z.string(),
+            jobId: z.string(),
+            dueDate: z.string().nullable(),
+            status: z.enum([
+              "Cancelled",
+              "Closed",
+              "Completed",
+              "Draft",
+              "Due Today",
+              "In Progress",
+              "Overdue",
+              "Paused",
+              "Planned",
+              "Ready"
+            ])
+          })
+          .nullable(),
+        salesOrderLine: z
+          .object({
+            id: z.string(),
+            salesOrderId: z.string(),
+            promisedDate: z.string().nullable(),
+            salesOrder: z.object({
+              id: z.string(),
+              salesOrderId: z.string()
+            })
+          })
+          .nullable(),
+        demandProjection: z
+          .object({
+            id: z.string(),
+            forecastQuantity: z.number(),
+            forecastMethod: z.string().nullable(),
+            confidence: z.number().nullable(),
+            notes: z.string().nullable(),
+            period: z.object({
+              startDate: z.string()
+            }),
+            createdBy: z.string(),
+            createdAt: z.string()
+          })
+          .nullable()
+      })
+      .meta({ table: "demandForecastSource" })
+  ),
   input: z.looseObject({
     itemId: z.string(),
     locationId: z.string(),
@@ -2577,6 +3314,57 @@ export const getDemandForecastSources = defineServiceFn({
  * @mcp read
  */
 export const getItemFiles = defineServiceFn({
+  output: z.array(
+    z.object({
+      name: z.string(),
+      id: z.string().nullable(),
+      updated_at: z.string().nullable(),
+      created_at: z.string().nullable(),
+      last_accessed_at: z.string().nullable(),
+      metadata: z
+        .object({
+          eTag: z.string(),
+          size: z.number(),
+          mimetype: z.string(),
+          cacheControl: z.string(),
+          lastModified: z.string(),
+          contentLength: z.number(),
+          httpStatusCode: z.number()
+        })
+        .nullable(),
+      bucket_id: z.string().nullable().optional(),
+      owner: z.string().nullable().optional(),
+      buckets: z
+        .object({
+          id: z.string(),
+          type: z
+            .union([
+              z.unknown(),
+              z.literal("STANDARD"),
+              z.literal("ANALYTICS"),
+              z.null()
+            ])
+            .optional(),
+          name: z.string(),
+          owner: z.string(),
+          file_size_limit: z.number().nullable().optional(),
+          allowed_mime_types: z.array(z.string()).nullable().optional(),
+          created_at: z.string(),
+          updated_at: z.string(),
+          public: z.boolean(),
+          versioning_status: z
+            .enum(["DISABLED", "ENABLED", "SUSPENDED"])
+            .nullable()
+            .optional()
+        })
+        .nullable()
+        .optional(),
+      version: z.string().nullable().optional(),
+      archived_at: z.string().nullable().optional(),
+      is_delete_marker: z.boolean().nullable().optional(),
+      is_versioned: z.boolean().nullable().optional()
+    })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2594,6 +3382,77 @@ export const getItemFiles = defineServiceFn({
  * @mcp read
  */
 export const getItemPostingGroup = defineServiceFn({
+  output: rows.itemPostingGroup
+    .pick({
+      active: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "itemPostingGroup" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2613,6 +3472,53 @@ export const getItemPostingGroup = defineServiceFn({
  * @mcp read
  */
 export const getItemPostingGroups = defineServiceFn({
+  output: z
+    .array(
+      rows.itemPostingGroup
+        .pick({
+          active: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "itemPostingGroup" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2641,6 +3547,11 @@ export const getItemPostingGroups = defineServiceFn({
  * @mcp read
  */
 export const getItemPostingGroupsList = defineServiceFn({
+  output: z.array(
+    rows.itemPostingGroup
+      .pick({ id: true, name: true })
+      .meta({ table: "itemPostingGroup" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -2660,6 +3571,79 @@ export const getItemPostingGroupsList = defineServiceFn({
  * @mcp read
  */
 export const getItemManufacturing = defineServiceFn({
+  output: z.object({
+    companyId: z.string(),
+    conversionFactor: z.number(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    itemId: z.string(),
+    leadTime: z.number(),
+    lotSize: z.number().nullable(),
+    manufacturingBlocked: z.boolean(),
+    preferredSupplierId: z.string().nullable(),
+    purchasingBlocked: z.boolean(),
+    purchasingUnitOfMeasureCode: z.string().nullable(),
+    requiresConfiguration: z.boolean(),
+    scrapPercentage: z.number(),
+    tags: z.array(z.string()).nullable(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable()
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2680,6 +3664,90 @@ export const getItemManufacturing = defineServiceFn({
  * @mcp read
  */
 export const getItemPlanning = defineServiceFn({
+  output: rows.itemPlanning
+    .pick({
+      allowCommonSupplyForProjects: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      critical: true,
+      demandAccumulationIncludesInventory: true,
+      demandAccumulationPeriod: true,
+      demandAccumulationSafetyStock: true,
+      itemId: true,
+      locationId: true,
+      maximumInventoryQuantity: true,
+      maximumOrderQuantity: true,
+      minimumOrderQuantity: true,
+      minimumReserveQuantity: true,
+      orderMultiple: true,
+      planningHorizonDays: true,
+      reorderingPolicy: true,
+      reorderPoint: true,
+      reorderQuantity: true,
+      responsibleEmployee: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "itemPlanning" }),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2701,6 +3769,65 @@ export const getItemPlanning = defineServiceFn({
  * @mcp read
  */
 export const getItemQuantities = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    daysRemaining: z.number(),
+    demandAccumulationPeriod: z.number(),
+    demandAccumulationSafetyStock: z.number(),
+    demandForecast: z.number(),
+    dimension: z.string(),
+    dimensionId: z.string(),
+    finish: z.string(),
+    finishId: z.string(),
+    grade: z.string(),
+    gradeId: z.string(),
+    id: z.string(),
+    itemTrackingType: z.enum(["Batch", "Inventory", "Non-Inventory", "Serial"]),
+    leadTime: z.number(),
+    lotSize: z.number(),
+    materialFormId: z.string(),
+    materialSubstanceId: z.string(),
+    materialType: z.string(),
+    materialTypeId: z.string(),
+    maximumInventoryQuantity: z.number(),
+    maximumOrderQuantity: z.number(),
+    minimumOrderQuantity: z.number(),
+    name: z.string(),
+    orderMultiple: z.number(),
+    quantityOnHand: z.number(),
+    quantityOnHold: z.number(),
+    quantityOnProductionDemand: z.number(),
+    quantityOnProductionOrder: z.number(),
+    quantityOnPurchaseOrder: z.number(),
+    quantityOnSalesOrder: z.number(),
+    quantityRejected: z.number(),
+    readableId: z.string(),
+    readableIdWithRevision: z.string(),
+    reorderingPolicy: z.enum([
+      "Demand-Based Reorder",
+      "Fixed Reorder Quantity",
+      "Manual Reorder",
+      "Maximum Quantity"
+    ]),
+    reorderPoint: z.number(),
+    reorderQuantity: z.number(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+    storageTypeIds: z.array(z.string()),
+    storageUnitIds: z.array(z.string()),
+    tags: z.array(z.string()),
+    thumbnailPath: z.string(),
+    type: z.enum([
+      "Consumable",
+      "Fixture",
+      "Material",
+      "Part",
+      "Service",
+      "Tool"
+    ]),
+    unitOfMeasureCode: z.string(),
+    usageLast30Days: z.number(),
+    usageLast90Days: z.number()
+  }),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2722,6 +3849,7 @@ export const getItemQuantities = defineServiceFn({
  * @mcp read
  */
 export const getItemStockQuantitiesByLocation = defineServiceFn({
+  output: z.record(z.string(), z.number()),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2742,6 +3870,83 @@ export const getItemStockQuantitiesByLocation = defineServiceFn({
  * @mcp read
  */
 export const getItemReplenishment = defineServiceFn({
+  output: rows.itemReplenishment
+    .pick({
+      companyId: true,
+      conversionFactor: true,
+      createdAt: true,
+      createdBy: true,
+      itemId: true,
+      leadTime: true,
+      lotSize: true,
+      manufacturingBlocked: true,
+      preferredSupplierId: true,
+      purchasingBlocked: true,
+      purchasingUnitOfMeasureCode: true,
+      requiresConfiguration: true,
+      scrapPercentage: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "itemReplenishment" }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2762,6 +3967,17 @@ export const getItemReplenishment = defineServiceFn({
  * @mcp read
  */
 export const getItemSupersession = defineServiceFn({
+  output: rows.itemSupersession
+    .extend({
+      successor: z
+        .object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string()
+        })
+        .nullable()
+    })
+    .meta({ table: "itemSupersession" }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2782,6 +3998,29 @@ export const getItemSupersession = defineServiceFn({
  * @mcp read
  */
 export const getItemSupersessionsForItems = defineServiceFn({
+  output: z.union([
+    z.array(z.unknown()),
+    z.array(
+      z.object({
+        itemId: z.string(),
+        supersessionMode: z.enum([
+          "Consume First",
+          "No Stock",
+          "Prefer New",
+          "Stock Only"
+        ]),
+        successorItemId: z.string().nullable(),
+        successorEffectivityDate: z.string().nullable(),
+        conversionFactor: z.number(),
+        successor: z
+          .object({
+            readableIdWithRevision: z.string().nullable()
+          })
+          .nullable()
+      })
+    ),
+    z.null()
+  ]),
   input: z.looseObject({ itemIds: z.array(z.string()) }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2802,6 +4041,45 @@ export const getItemSupersessionsForItems = defineServiceFn({
  * @mcp read
  */
 export const getSupersessionChain = defineServiceFn({
+  output: z.object({
+    chain: z.array(
+      z.object({
+        itemId: z.string(),
+        supersessionMode: z.enum([
+          "Consume First",
+          "No Stock",
+          "Prefer New",
+          "Stock Only"
+        ]),
+        successorItemId: z.string().nullable(),
+        successorEffectivityDate: z.string().nullable(),
+        successor: z
+          .object({
+            id: z.string(),
+            readableIdWithRevision: z.string().nullable(),
+            name: z.string()
+          })
+          .nullable()
+      })
+    ),
+    supersededBy: z.array(
+      z.object({
+        itemId: z.string(),
+        supersessionMode: z.enum([
+          "Consume First",
+          "No Stock",
+          "Prefer New",
+          "Stock Only"
+        ]),
+        successorEffectivityDate: z.string().nullable(),
+        predecessor: z.object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string()
+        })
+      })
+    )
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2819,6 +4097,17 @@ export const getSupersessionChain = defineServiceFn({
  * @mcp read
  */
 export const getItemStorageUnitQuantities = defineServiceFn({
+  output: z.array(
+    z.object({
+      itemId: z.string(),
+      projectId: z.string(),
+      quantity: z.number(),
+      readableId: z.string(),
+      storageUnitId: z.string(),
+      storageUnitName: z.string(),
+      trackedEntityId: z.string()
+    })
+  ),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2840,6 +4129,82 @@ export const getItemStorageUnitQuantities = defineServiceFn({
  * @mcp read
  */
 export const getItemUnitSalePrice = defineServiceFn({
+  output: rows.itemUnitSalePrice
+    .pick({
+      allowInvoiceDiscount: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      itemId: true,
+      laborWarrantyMonths: true,
+      partsWarrantyMonths: true,
+      priceIncludesTax: true,
+      salesBlocked: true,
+      salesUnitOfMeasureCode: true,
+      tags: true,
+      unitSalePrice: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "itemUnitSalePrice" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2860,6 +4225,64 @@ export const getItemUnitSalePrice = defineServiceFn({
  * @mcp read
  */
 export const getMaterialUsedIn = defineServiceFn({
+  output: z.object({
+    issues: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    jobMaterials: z.array(z.unknown()),
+    maintenanceDispatchItems: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    methodMaterials: z.array(z.unknown()),
+    purchaseOrderLines: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    receiptLines: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    quoteMaterials: z.array(z.unknown()),
+    salesOrderLines: z.array(z.unknown()),
+    shipmentLines: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    supplierQuotes: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    inspections: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    jobMaterialUsage: z.object({
+      byMaterialId: z.record(z.string(), z.number()),
+      byJobId: z.record(z.string(), z.number())
+    })
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2877,6 +4300,52 @@ export const getMaterialUsedIn = defineServiceFn({
  * @mcp read
  */
 export const getMakeMethods = defineServiceFn({
+  output: z.array(
+    rows.makeMethod
+      .pick({
+        changeOrderId: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        id: true,
+        itemId: true,
+        status: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true,
+        version: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "makeMethod" })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2897,6 +4366,78 @@ export const getMakeMethods = defineServiceFn({
  * @mcp read
  */
 export const getMakeMethodById = defineServiceFn({
+  output: rows.makeMethod
+    .pick({
+      changeOrderId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      itemId: true,
+      status: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      version: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "makeMethod" }),
   input: z.looseObject({ makeMethodId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2917,6 +4458,217 @@ export const getMakeMethodById = defineServiceFn({
  * @mcp read
  */
 export const getMaterial = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    assignee: z.string(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    defaultMethodType: z.enum([
+      "Make to Order",
+      "Pull from Inventory",
+      "Purchase to Order"
+    ]),
+    description: z.string(),
+    dimensionId: z.string(),
+    dimensions: z.string(),
+    finish: z.string(),
+    finishId: z.string(),
+    grade: z.string(),
+    gradeId: z.string(),
+    id: z.string(),
+    itemPostingGroupId: z.string(),
+    itemTrackingType: z.enum(["Batch", "Inventory", "Non-Inventory", "Serial"]),
+    materialForm: z.string(),
+    materialFormId: z.string(),
+    materialSubstance: z.string(),
+    materialSubstanceId: z.string(),
+    materialType: z.string(),
+    materialTypeId: z.string(),
+    modelName: z.string(),
+    modelPath: z.string(),
+    modelSize: z.number(),
+    modelUploadId: z.string(),
+    mpn: z.string(),
+    name: z.string(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    readableId: z.string(),
+    readableIdWithRevision: z.string(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+    revision: z.string(),
+    revisions: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    sourcingType: z.enum(["Drop Ship", "Ship from Inventory", "Specified"]),
+    supplierIds: z.string(),
+    tags: z.array(z.string()),
+    thumbnailPath: z.string(),
+    unitOfMeasure: z.string(),
+    unitOfMeasureCode: z.string(),
+    updatedAt: z.string(),
+    updatedBy: z.string()
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2937,6 +4689,100 @@ export const getMaterial = defineServiceFn({
  * @mcp read
  */
 export const getMaterials = defineServiceFn({
+  output: z
+    .array(
+      rows.materials
+        .pick({
+          active: true,
+          defaultMethodType: true,
+          description: true,
+          itemTrackingType: true,
+          name: true,
+          unitOfMeasureCode: true,
+          revision: true,
+          readableId: true,
+          readableIdWithRevision: true,
+          id: true,
+          companyId: true,
+          thumbnailPath: true,
+          supplierIds: true,
+          unitOfMeasure: true,
+          materialForm: true,
+          materialSubstance: true,
+          dimensions: true,
+          finish: true,
+          grade: true,
+          materialType: true,
+          materialSubstanceId: true,
+          materialFormId: true,
+          tags: true,
+          itemPostingGroupId: true,
+          createdBy: true,
+          createdAt: true,
+          updatedBy: true,
+          updatedAt: true,
+          supersessionMode: true,
+          mpn: true,
+          suppliers: true
+        })
+        .extend({
+          revisions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2966,6 +4812,7 @@ export const getMaterials = defineServiceFn({
  * @mcp read
  */
 export const getMaterialDimension = defineServiceFn({
+  output: rows.materialDimension,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -2985,6 +4832,7 @@ export const getMaterialDimension = defineServiceFn({
  * @mcp read
  */
 export const getMaterialDimensions = defineServiceFn({
+  output: z.array(rows.materialDimensions).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3014,6 +4862,7 @@ export const getMaterialDimensions = defineServiceFn({
  * @mcp read
  */
 export const getMaterialDimensionList = defineServiceFn({
+  output: z.array(rows.materialDimension),
   input: z.looseObject({ materialFormId: z.string(), isMetric: z.boolean() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3035,6 +4884,7 @@ export const getMaterialDimensionList = defineServiceFn({
  * @mcp read
  */
 export const getMaterialFinish = defineServiceFn({
+  output: rows.materialFinish,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3051,6 +4901,7 @@ export const getMaterialFinish = defineServiceFn({
  * @mcp read
  */
 export const getMaterialFinishes = defineServiceFn({
+  output: z.array(rows.materialFinishes).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3079,6 +4930,7 @@ export const getMaterialFinishes = defineServiceFn({
  * @mcp read
  */
 export const getMaterialFinishList = defineServiceFn({
+  output: z.array(rows.materialFinish),
   input: z.looseObject({ materialSubstanceId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3099,6 +4951,76 @@ export const getMaterialFinishList = defineServiceFn({
  * @mcp read
  */
 export const getMaterialForm = defineServiceFn({
+  output: rows.materialForm
+    .pick({
+      code: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "materialForm" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3115,6 +5037,52 @@ export const getMaterialForm = defineServiceFn({
  * @mcp read
  */
 export const getMaterialForms = defineServiceFn({
+  output: z
+    .array(
+      rows.materialForm
+        .pick({
+          code: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "materialForm" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3143,6 +5111,11 @@ export const getMaterialForms = defineServiceFn({
  * @mcp read
  */
 export const getMaterialFormsList = defineServiceFn({
+  output: z.array(
+    rows.materialForm
+      .pick({ id: true, name: true, code: true, companyId: true })
+      .meta({ table: "materialForm" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -3159,6 +5132,7 @@ export const getMaterialFormsList = defineServiceFn({
  * @mcp read
  */
 export const getMaterialGrades = defineServiceFn({
+  output: z.array(rows.materialGrades).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3187,6 +5161,7 @@ export const getMaterialGrades = defineServiceFn({
  * @mcp read
  */
 export const getMaterialGrade = defineServiceFn({
+  output: rows.materialGrade,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3203,6 +5178,7 @@ export const getMaterialGrade = defineServiceFn({
  * @mcp read
  */
 export const getMaterialGradeList = defineServiceFn({
+  output: z.array(rows.materialGrade),
   input: z.looseObject({ materialSubstanceId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3223,6 +5199,76 @@ export const getMaterialGradeList = defineServiceFn({
  * @mcp read
  */
 export const getMaterialSubstance = defineServiceFn({
+  output: rows.materialSubstance
+    .pick({
+      code: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "materialSubstance" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3242,6 +5288,52 @@ export const getMaterialSubstance = defineServiceFn({
  * @mcp read
  */
 export const getMaterialSubstances = defineServiceFn({
+  output: z
+    .array(
+      rows.materialSubstance
+        .pick({
+          code: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "materialSubstance" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3270,6 +5362,11 @@ export const getMaterialSubstances = defineServiceFn({
  * @mcp read
  */
 export const getMaterialSubstancesList = defineServiceFn({
+  output: z.array(
+    rows.materialSubstance
+      .pick({ id: true, name: true, code: true, companyId: true })
+      .meta({ table: "materialSubstance" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -3289,6 +5386,83 @@ export const getMaterialSubstancesList = defineServiceFn({
  * @mcp read
  */
 export const getMethodMaterials = defineServiceFn({
+  output: z
+    .array(
+      rows.methodMaterial
+        .pick({
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          itemId: true,
+          itemType: true,
+          kit: true,
+          makeMethodId: true,
+          materialMakeMethodId: true,
+          methodOperationId: true,
+          methodType: true,
+          order: true,
+          productionQuantity: true,
+          quantity: true,
+          scrapQuantity: true,
+          sourcingType: true,
+          storageUnitIds: true,
+          tags: true,
+          unitOfMeasureCode: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          item: z.object({
+            name: z.string(),
+            readableIdWithRevision: z.string().nullable()
+          }),
+          makeMethod: z.object({
+            item: z.object({
+              id: z.string(),
+              type: z.enum([
+                "Consumable",
+                "Fixture",
+                "Material",
+                "Part",
+                "Service",
+                "Tool"
+              ]),
+              name: z.string(),
+              readableIdWithRevision: z.string().nullable()
+            })
+          })
+        })
+        .meta({ table: "methodMaterial" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3317,6 +5491,86 @@ export const getMethodMaterials = defineServiceFn({
  * @mcp read
  */
 export const getMethodMaterialsByMakeMethod = defineServiceFn({
+  output: z.array(
+    rows.methodMaterial
+      .pick({
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        id: true,
+        itemId: true,
+        itemType: true,
+        kit: true,
+        makeMethodId: true,
+        materialMakeMethodId: true,
+        methodOperationId: true,
+        methodType: true,
+        order: true,
+        productionQuantity: true,
+        quantity: true,
+        scrapQuantity: true,
+        sourcingType: true,
+        storageUnitIds: true,
+        tags: true,
+        unitOfMeasureCode: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        item: z.object({
+          name: z.string(),
+          itemTrackingType: z.enum([
+            "Batch",
+            "Inventory",
+            "Non-Inventory",
+            "Serial"
+          ]),
+          replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+          defaultMethodType: z
+            .enum(["Make to Order", "Pull from Inventory", "Purchase to Order"])
+            .nullable(),
+          sourcingType: z.enum([
+            "Drop Ship",
+            "Ship from Inventory",
+            "Specified"
+          ])
+        }),
+        methodMaterialStep: z.array(
+          z.object({
+            methodOperationStepId: z.string(),
+            quantity: z.number().nullable()
+          })
+        )
+      })
+      .meta({ table: "methodMaterial" })
+  ),
   input: z.looseObject({ makeMethodId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3336,6 +5590,86 @@ export const getMethodMaterialsByMakeMethod = defineServiceFn({
  * @mcp read
  */
 export const getMethodOperations = defineServiceFn({
+  output: z
+    .array(
+      rows.methodOperation
+        .pick({
+          assemblyInstructionId: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          id: true,
+          inspectionDocumentId: true,
+          laborTime: true,
+          laborUnit: true,
+          machineTime: true,
+          machineUnit: true,
+          makeMethodId: true,
+          operationLeadTime: true,
+          operationMinimumCost: true,
+          operationOrder: true,
+          operationSupplierProcessId: true,
+          operationType: true,
+          operationUnitCost: true,
+          order: true,
+          procedureId: true,
+          processId: true,
+          setupTime: true,
+          setupUnit: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true,
+          workCenterId: true,
+          workInstruction: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          makeMethod: z.object({
+            item: z.object({
+              id: z.string(),
+              type: z.enum([
+                "Consumable",
+                "Fixture",
+                "Material",
+                "Part",
+                "Service",
+                "Tool"
+              ]),
+              name: z.string(),
+              readableIdWithRevision: z.string().nullable()
+            })
+          })
+        })
+        .meta({ table: "methodOperation" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3364,6 +5698,156 @@ export const getMethodOperations = defineServiceFn({
  * @mcp read
  */
 export const getMethodOperationsByMakeMethodId = defineServiceFn({
+  output: z.array(
+    rows.methodOperation
+      .pick({
+        assemblyInstructionId: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        id: true,
+        inspectionDocumentId: true,
+        laborTime: true,
+        laborUnit: true,
+        machineTime: true,
+        machineUnit: true,
+        makeMethodId: true,
+        operationLeadTime: true,
+        operationMinimumCost: true,
+        operationOrder: true,
+        operationSupplierProcessId: true,
+        operationType: true,
+        operationUnitCost: true,
+        order: true,
+        procedureId: true,
+        processId: true,
+        setupTime: true,
+        setupUnit: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true,
+        workCenterId: true,
+        workInstruction: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        methodOperationTool: z.array(
+          z.object({
+            companyId: z.string(),
+            createdAt: z.string(),
+            createdBy: z.string(),
+            id: z.string(),
+            operationId: z.string(),
+            quantity: z.number(),
+            toolId: z.string(),
+            updatedAt: z.string(),
+            updatedBy: z.string().nullable(),
+            methodOperationToolStep: z.array(
+              z.object({
+                methodOperationStepId: z.string()
+              })
+            )
+          })
+        ),
+        methodOperationParameter: z.array(
+          z.object({
+            companyId: z.string(),
+            createdAt: z.string(),
+            createdBy: z.string(),
+            id: z.string(),
+            key: z.string(),
+            operationId: z.string(),
+            updatedAt: z.string().nullable(),
+            updatedBy: z.string().nullable(),
+            value: z.string()
+          })
+        ),
+        methodOperationStep: z.array(
+          z.object({
+            assemblyInstructionStepId: z.string().nullable(),
+            companyId: z.string(),
+            createdAt: z.string(),
+            createdBy: z.string(),
+            description: z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ]),
+            fileTypes: z.array(z.string()).nullable(),
+            id: z.string(),
+            listValues: z.array(z.string()).nullable(),
+            maxValue: z.number().nullable(),
+            minValue: z.number().nullable(),
+            name: z.string(),
+            operationId: z.string(),
+            required: z.boolean().nullable(),
+            sortOrder: z.number(),
+            type: z.enum([
+              "Checkbox",
+              "File",
+              "Inspection",
+              "List",
+              "Measurement",
+              "Person",
+              "Task",
+              "Timestamp",
+              "Value"
+            ]),
+            unitOfMeasureCode: z.string().nullable(),
+            updatedAt: z.string().nullable(),
+            updatedBy: z.string().nullable(),
+            methodOperationStepSlide: z.array(
+              z.object({
+                annotations: z.unknown(),
+                caption: z.string().nullable(),
+                companyId: z.string(),
+                createdAt: z.string(),
+                createdBy: z.string(),
+                id: z.string(),
+                imagePath: z.string().nullable(),
+                modelUploadId: z.string().nullable(),
+                size: z.string(),
+                sortOrder: z.number(),
+                stepId: z.string(),
+                updatedAt: z.string().nullable(),
+                updatedBy: z.string().nullable()
+              })
+            )
+          })
+        )
+      })
+      .meta({ table: "methodOperation" })
+  ),
   input: z.looseObject({ makeMethodId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3383,6 +5867,120 @@ export const getMethodOperationsByMakeMethodId = defineServiceFn({
  * @mcp read
  */
 export const getMethodTree = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      data: z.object({
+        description: z.string(),
+        externalId: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        isPickDescendant: z.boolean(),
+        isRoot: z.boolean(),
+        itemId: z.string(),
+        itemReadableId: z.string(),
+        itemTrackingType: z.string(),
+        itemType: z.string(),
+        kit: z.boolean(),
+        makeMethodId: z.string(),
+        materialMakeMethodId: z.string(),
+        methodMaterialId: z.string(),
+        methodOperationStepIds: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        methodType: z.enum([
+          "Make to Order",
+          "Pull from Inventory",
+          "Purchase to Order"
+        ]),
+        operationId: z.string(),
+        order: z.number(),
+        parentMaterialId: z.string(),
+        quantity: z.number(),
+        replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+        revision: z.string(),
+        storageUnitIds: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        unitCost: z.number(),
+        unitOfMeasureCode: z.string(),
+        version: z.number()
+      }),
+      children: z.array(z.record(z.string(), z.unknown()))
+    })
+  ),
   input: z.looseObject({ makeMethodId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3402,6 +6000,7 @@ export const getMethodTree = defineServiceFn({
  * @mcp read
  */
 export const getBomItemAttributes = defineServiceFn({
+  output: z.record(z.string(), z.unknown()),
   input: z.looseObject({ itemIds: z.array(z.string()) }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3422,6 +6021,19 @@ export const getBomItemAttributes = defineServiceFn({
  * @mcp read
  */
 export const getOpenJobMaterials = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string().nullable(),
+      parentMaterialId: z.string().nullable(),
+      jobMakeMethodId: z.string().nullable(),
+      jobId: z.string().nullable(),
+      quantity: z.number().nullable(),
+      quantityPerParent: z.number().nullable(),
+      documentReadableId: z.string().nullable(),
+      documentId: z.string().nullable(),
+      dueDate: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3441,6 +6053,18 @@ export const getOpenJobMaterials = defineServiceFn({
  * @mcp read
  */
 export const getOpenProductionOrders = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      quantity: z.number().nullable(),
+      documentReadableId: z.string().nullable(),
+      documentId: z.string(),
+      dueDate: z.string().nullable(),
+      deadlineType: z
+        .enum(["ASAP", "Hard Deadline", "No Deadline", "Soft Deadline"])
+        .nullable()
+    })
+  ),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3460,6 +6084,22 @@ export const getOpenProductionOrders = defineServiceFn({
  * @mcp read
  */
 export const getOpenPurchaseOrderLines = defineServiceFn({
+  output: z.array(
+    rows.openPurchaseOrderLines
+      .pick({
+        promisedDate: true,
+        dueDate: true,
+        orderDate: true,
+        leadTime: true
+      })
+      .extend({
+        id: z.string(),
+        quantity: z.number().nullable(),
+        documentReadableId: z.string().nullable(),
+        documentId: z.string()
+      })
+      .meta({ table: "purchaseOrderLine" })
+  ),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3479,6 +6119,15 @@ export const getOpenPurchaseOrderLines = defineServiceFn({
  * @mcp read
  */
 export const getOpenSalesOrderLines = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string().nullable(),
+      quantity: z.number().nullable(),
+      dueDate: z.string().nullable(),
+      documentReadableId: z.string().nullable(),
+      documentId: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3498,6 +6147,204 @@ export const getOpenSalesOrderLines = defineServiceFn({
  * @mcp read
  */
 export const getPart = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    assignee: z.string(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    defaultMethodType: z.enum([
+      "Make to Order",
+      "Pull from Inventory",
+      "Purchase to Order"
+    ]),
+    description: z.string(),
+    id: z.string(),
+    itemPostingGroupId: z.string(),
+    itemTrackingType: z.enum(["Batch", "Inventory", "Non-Inventory", "Serial"]),
+    modelId: z.string(),
+    modelName: z.string(),
+    modelPath: z.string(),
+    modelSize: z.number(),
+    mpn: z.string(),
+    name: z.string(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    readableId: z.string(),
+    readableIdWithRevision: z.string(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+    revision: z.string(),
+    revisions: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    sourcingType: z.enum(["Drop Ship", "Ship from Inventory", "Specified"]),
+    tags: z.array(z.string()),
+    thumbnailPath: z.string(),
+    unitOfMeasure: z.string(),
+    unitOfMeasureCode: z.string(),
+    updatedAt: z.string(),
+    updatedBy: z.string()
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3518,6 +6365,92 @@ export const getPart = defineServiceFn({
  * @mcp read
  */
 export const getParts = defineServiceFn({
+  output: z
+    .array(
+      rows.parts
+        .pick({
+          active: true,
+          defaultMethodType: true,
+          description: true,
+          itemTrackingType: true,
+          name: true,
+          replenishmentSystem: true,
+          unitOfMeasureCode: true,
+          revision: true,
+          readableId: true,
+          readableIdWithRevision: true,
+          id: true,
+          companyId: true,
+          thumbnailPath: true,
+          supplierIds: true,
+          tags: true,
+          itemPostingGroupId: true,
+          createdBy: true,
+          createdAt: true,
+          updatedBy: true,
+          updatedAt: true,
+          supersessionMode: true,
+          mpn: true,
+          suppliers: true
+        })
+        .extend({
+          revisions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3547,6 +6480,11 @@ export const getParts = defineServiceFn({
  * @mcp read
  */
 export const getItemMpnsList = defineServiceFn({
+  output: z.array(
+    z.object({
+      mpn: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -3563,6 +6501,13 @@ export const getItemMpnsList = defineServiceFn({
  * @mcp read
  */
 export const getPartsList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      readableIdWithRevision: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -3579,6 +6524,78 @@ export const getPartsList = defineServiceFn({
  * @mcp read
  */
 export const getPartUsedIn = defineServiceFn({
+  output: z.object({
+    issues: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    jobMaterials: z.array(z.unknown()),
+    jobs: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    maintenanceDispatchItems: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    methodMaterials: z.array(z.unknown()),
+    purchaseOrderLines: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    receiptLines: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    quoteLines: z.array(z.unknown()),
+    quoteMaterials: z.array(z.unknown()),
+    salesOrderLines: z.array(z.unknown()),
+    shipmentLines: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    supplierQuotes: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        documentId: z.string()
+      })
+    ),
+    assemblyInstructions: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string(),
+        version: z.number()
+      })
+    ),
+    inspections: z.array(
+      z.object({
+        id: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    jobMaterialUsage: z.object({
+      byMaterialId: z.record(z.string(), z.number()),
+      byJobId: z.record(z.string(), z.number())
+    })
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3596,6 +6613,76 @@ export const getPartUsedIn = defineServiceFn({
  * @mcp read
  */
 export const getPickMethod = defineServiceFn({
+  output: rows.pickMethod
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      defaultStorageUnitId: true,
+      itemId: true,
+      locationId: true,
+      sortMethod: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "pickMethod" }),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3617,6 +6704,50 @@ export const getPickMethod = defineServiceFn({
  * @mcp read
  */
 export const getPickMethods = defineServiceFn({
+  output: z.array(
+    rows.pickMethod
+      .pick({
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        defaultStorageUnitId: true,
+        itemId: true,
+        locationId: true,
+        sortMethod: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "pickMethod" })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3637,6 +6768,87 @@ export const getPickMethods = defineServiceFn({
  * @mcp read
  */
 export const getServices = defineServiceFn({
+  output: z
+    .array(
+      rows.services
+        .pick({
+          active: true,
+          defaultMethodType: true,
+          description: true,
+          name: true,
+          replenishmentSystem: true,
+          revision: true,
+          readableIdWithRevision: true,
+          id: true,
+          companyId: true,
+          thumbnailPath: true,
+          supplierIds: true,
+          tags: true,
+          itemPostingGroupId: true,
+          createdBy: true,
+          createdAt: true,
+          updatedBy: true,
+          updatedAt: true,
+          suppliers: true
+        })
+        .extend({
+          revisions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3667,6 +6879,204 @@ export const getServices = defineServiceFn({
  * @mcp read
  */
 export const getService = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    assignee: z.string(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    defaultMethodType: z.enum([
+      "Make to Order",
+      "Pull from Inventory",
+      "Purchase to Order"
+    ]),
+    description: z.string(),
+    id: z.string(),
+    itemPostingGroupId: z.string(),
+    itemTrackingType: z.enum(["Batch", "Inventory", "Non-Inventory", "Serial"]),
+    modelId: z.string(),
+    modelName: z.string(),
+    modelPath: z.string(),
+    modelSize: z.number(),
+    mpn: z.string(),
+    name: z.string(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    readableId: z.string(),
+    readableIdWithRevision: z.string(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+    revision: z.string(),
+    revisions: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    sourcingType: z.enum(["Drop Ship", "Ship from Inventory", "Specified"]),
+    tags: z.array(z.string()),
+    thumbnailPath: z.string(),
+    unitOfMeasure: z.string(),
+    unitOfMeasureCode: z.string(),
+    updatedAt: z.string(),
+    updatedBy: z.string()
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3687,6 +7097,13 @@ export const getService = defineServiceFn({
  * @mcp read
  */
 export const getServicesList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      readableIdWithRevision: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -3703,6 +7120,58 @@ export const getServicesList = defineServiceFn({
  * @mcp read
  */
 export const getSupplierParts = defineServiceFn({
+  output: z.array(
+    rows.supplierPart
+      .pick({
+        active: true,
+        companyId: true,
+        conversionFactor: true,
+        createdAt: true,
+        createdBy: true,
+        currencyCode: true,
+        id: true,
+        itemId: true,
+        minimumOrderQuantity: true,
+        orderMultiple: true,
+        supplierId: true,
+        supplierPartId: true,
+        supplierUnitOfMeasureCode: true,
+        supplierUnitPrice: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "supplierPart" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3723,6 +7192,73 @@ export const getSupplierParts = defineServiceFn({
  * @mcp read
  */
 export const getSupplierPartsBySupplier = defineServiceFn({
+  output: z.array(
+    rows.supplierPart
+      .pick({
+        active: true,
+        companyId: true,
+        conversionFactor: true,
+        createdAt: true,
+        createdBy: true,
+        currencyCode: true,
+        id: true,
+        itemId: true,
+        minimumOrderQuantity: true,
+        orderMultiple: true,
+        supplierId: true,
+        supplierPartId: true,
+        supplierUnitOfMeasureCode: true,
+        supplierUnitPrice: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        item: z.object({
+          id: z.string(),
+          readableIdWithRevision: z.string().nullable(),
+          name: z.string(),
+          type: z.enum([
+            "Consumable",
+            "Fixture",
+            "Material",
+            "Part",
+            "Service",
+            "Tool"
+          ]),
+          thumbnailPath: z.string().nullable(),
+          unitOfMeasureCode: z.string().nullable()
+        })
+      })
+      .meta({ table: "supplierPart" })
+  ),
   input: z.looseObject({ supplierId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3743,6 +7279,204 @@ export const getSupplierPartsBySupplier = defineServiceFn({
  * @mcp read
  */
 export const getTool = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    assignee: z.string(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    defaultMethodType: z.enum([
+      "Make to Order",
+      "Pull from Inventory",
+      "Purchase to Order"
+    ]),
+    description: z.string(),
+    id: z.string(),
+    itemPostingGroupId: z.string(),
+    itemTrackingType: z.enum(["Batch", "Inventory", "Non-Inventory", "Serial"]),
+    modelId: z.string(),
+    modelName: z.string(),
+    modelPath: z.string(),
+    modelSize: z.number(),
+    mpn: z.string(),
+    name: z.string(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    readableId: z.string(),
+    readableIdWithRevision: z.string(),
+    replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]),
+    revision: z.string(),
+    revisions: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    sourcingType: z.enum(["Drop Ship", "Ship from Inventory", "Specified"]),
+    tags: z.array(z.string()),
+    thumbnailPath: z.string(),
+    unitOfMeasure: z.string(),
+    unitOfMeasureCode: z.string(),
+    updatedAt: z.string(),
+    updatedBy: z.string()
+  }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3763,6 +7497,91 @@ export const getTool = defineServiceFn({
  * @mcp read
  */
 export const getTools = defineServiceFn({
+  output: z
+    .array(
+      rows.tools
+        .pick({
+          active: true,
+          assignee: true,
+          defaultMethodType: true,
+          description: true,
+          itemTrackingType: true,
+          name: true,
+          replenishmentSystem: true,
+          revision: true,
+          readableIdWithRevision: true,
+          id: true,
+          companyId: true,
+          thumbnailPath: true,
+          supplierIds: true,
+          tags: true,
+          itemPostingGroupId: true,
+          createdBy: true,
+          createdAt: true,
+          updatedBy: true,
+          updatedAt: true,
+          supersessionMode: true,
+          mpn: true,
+          suppliers: true
+        })
+        .extend({
+          revisions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3792,6 +7611,77 @@ export const getTools = defineServiceFn({
  * @mcp read
  */
 export const getUnitOfMeasure = defineServiceFn({
+  output: rows.unitOfMeasure
+    .pick({
+      active: true,
+      code: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "unitOfMeasure" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3812,6 +7702,12 @@ export const getUnitOfMeasure = defineServiceFn({
  * @mcp read
  */
 export const getUnitOfMeasureUsage = defineServiceFn({
+  output: z.array(
+    z.object({
+      count: z.number(),
+      tableName: z.string()
+    })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -3831,6 +7727,53 @@ export const getUnitOfMeasureUsage = defineServiceFn({
  * @mcp read
  */
 export const getUnitOfMeasures = defineServiceFn({
+  output: z
+    .array(
+      rows.unitOfMeasure
+        .pick({
+          active: true,
+          code: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "unitOfMeasure" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3859,6 +7802,7 @@ export const getUnitOfMeasures = defineServiceFn({
  * @mcp read
  */
 export const getUnitOfMeasuresList = defineServiceFn({
+  output: z.array(rows.currencyCode),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -3875,6 +7819,11 @@ export const getUnitOfMeasuresList = defineServiceFn({
  * @mcp
  */
 export const updateConfigurationParameterGroupOrder = defineServiceFn({
+  output: z.array(
+    rows.configurationParameterGroup
+      .pick({ id: true })
+      .meta({ table: "configurationParameterGroup" })
+  ),
   input: z.looseObject({ id: z.string().min(1), sortOrder: z.number().min(0) }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -3894,6 +7843,20 @@ export const updateConfigurationParameterGroupOrder = defineServiceFn({
  * @mcp
  */
 export const updateDefaultRevision = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    readableId: z.string(),
+    readableIdWithRevision: z.string().nullable(),
+    type: z.enum([
+      "Consumable",
+      "Fixture",
+      "Material",
+      "Part",
+      "Service",
+      "Tool"
+    ]),
+    companyId: z.string().nullable()
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -3913,6 +7876,11 @@ export const updateDefaultRevision = defineServiceFn({
  * @mcp
  */
 export const updateConfigurationParameterOrder = defineServiceFn({
+  output: z.array(
+    rows.configurationParameter
+      .pick({ id: true })
+      .meta({ table: "configurationParameter" })
+  ),
   input: z.looseObject({
     id: z.string().min(1),
     sortOrder: z.number().min(0),
@@ -3936,6 +7904,7 @@ export const updateConfigurationParameterOrder = defineServiceFn({
  * @mcp
  */
 export const updateItemCost = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z.string(),
     cost: z.looseObject({ unitCost: z.number() })
@@ -3959,6 +7928,10 @@ export const updateItemCost = defineServiceFn({
  * @mcp
  */
 export const updateMaterialOrder = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string()),
+    notice: z.string().nullable()
+  }),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
@@ -3974,6 +7947,10 @@ export const updateMaterialOrder = defineServiceFn({
  * @mcp
  */
 export const updateOperationOrder = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string()),
+    notice: z.string().nullable()
+  }),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
   }),
@@ -3989,6 +7966,11 @@ export const updateOperationOrder = defineServiceFn({
  * @mcp
  */
 export const updateRevision = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ id: z.string(), revision: z.string() }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -4008,6 +7990,11 @@ export const updateRevision = defineServiceFn({
  * @mcp
  */
 export const upsertConfigurationParameter = defineServiceFn({
+  output: z.array(
+    rows.configurationParameter
+      .pick({ id: true })
+      .meta({ table: "configurationParameter" })
+  ),
   input: z.looseObject({
     id: z.string().optional(),
     itemId: z.string().min(1),
@@ -4043,6 +8030,11 @@ export const upsertConfigurationParameter = defineServiceFn({
  * @mcp
  */
 export const upsertConfigurationParameterGroup = defineServiceFn({
+  output: z.array(
+    rows.configurationParameterGroup
+      .pick({ id: true })
+      .meta({ table: "configurationParameterGroup" })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
@@ -4062,6 +8054,7 @@ export const upsertConfigurationParameterGroup = defineServiceFn({
  * @mcp
  */
 export const upsertConfigurationRule = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     field: z.string().min(1),
     code: z.string().min(1),
@@ -4085,6 +8078,7 @@ export const upsertConfigurationRule = defineServiceFn({
  * @mcp read
  */
 export const getRecipeProcessIdsForItem = defineServiceFn({
+  output: z.array(z.string()),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -4104,6 +8098,15 @@ export const getRecipeProcessIdsForItem = defineServiceFn({
  * @mcp read
  */
 export const getItemShelfLife = defineServiceFn({
+  output: rows.itemShelfLife
+    .pick({
+      mode: true,
+      days: true,
+      triggerProcessId: true,
+      triggerTiming: true,
+      calculateFromBom: true
+    })
+    .meta({ table: "itemShelfLife" }),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -4123,6 +8126,7 @@ export const getItemShelfLife = defineServiceFn({
  * @mcp read
  */
 export const getBomHasShelfLifeManagedInput = defineServiceFn({
+  output: z.boolean().nullable(),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -4280,6 +8284,7 @@ export const updateConsumable = defineServiceFn({
  * @mcp
  */
 export const resolveItemIdFromExtractedText = defineServiceFn({
+  output: z.string(),
   input: z.looseObject({
     party: z.union([
       z.looseObject({
@@ -4315,6 +8320,7 @@ export const resolveItemIdFromExtractedText = defineServiceFn({
  * @mcp
  */
 export const updateItem = defineServiceFn({
+  output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.looseObject({
     id: z.string().min(1).max(255),
     readableId: z.string().optional(),
@@ -4366,6 +8372,7 @@ export const updateItem = defineServiceFn({
  * @mcp
  */
 export const upsertItemCost = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
     itemPostingGroupId: z.string().optional(),
@@ -4394,6 +8401,7 @@ export const upsertItemCost = defineServiceFn({
  * @mcp
  */
 export const createPickMethod = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z
       .string()
@@ -4432,6 +8440,7 @@ export const createPickMethod = defineServiceFn({
  * @mcp
  */
 export const updatePickMethod = defineServiceFn({
+  output: z.null(),
   input: z
     .looseObject({
       itemId: z
@@ -4469,6 +8478,7 @@ export const updatePickMethod = defineServiceFn({
  * @mcp
  */
 export const upsertItemPurchasing = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
     preferredSupplierId: z.string().optional(),
@@ -4497,6 +8507,9 @@ export const upsertItemPurchasing = defineServiceFn({
  * @mcp
  */
 export const createItemPostingGroup = defineServiceFn({
+  output: rows.itemPostingGroup
+    .pick({ id: true })
+    .meta({ table: "itemPostingGroup" }),
   input: z.looseObject({
     name: z.string().min(1).max(255),
     description: z.string().optional(),
@@ -4527,6 +8540,9 @@ export const createItemPostingGroup = defineServiceFn({
  * @mcp
  */
 export const updateItemPostingGroup = defineServiceFn({
+  output: rows.itemPostingGroup
+    .pick({ id: true })
+    .meta({ table: "itemPostingGroup" }),
   input: z
     .looseObject({
       name: z.string().min(1).max(255),
@@ -4556,6 +8572,7 @@ export const updateItemPostingGroup = defineServiceFn({
  * @mcp
  */
 export const upsertItemCustomerPart = defineServiceFn({
+  output: rows.customer.pick({ id: true }).meta({ table: "customer" }),
   input: z.looseObject({
     itemId: z.string().min(1),
     customerId: z.string().min(1),
@@ -4586,6 +8603,7 @@ export const upsertItemCustomerPart = defineServiceFn({
  * @mcp
  */
 export const upsertItemUnitSalePrice = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
     unitSalePrice: z.number().min(0),
@@ -4616,6 +8634,9 @@ export const upsertItemUnitSalePrice = defineServiceFn({
  * @mcp
  */
 export const createMethodMaterial = defineServiceFn({
+  output: rows.methodMaterial
+    .pick({ id: true })
+    .meta({ table: "methodMaterial" }),
   input: z.looseObject({
     id: z
       .string()
@@ -4669,6 +8690,9 @@ export const createMethodMaterial = defineServiceFn({
  * @mcp
  */
 export const updateMethodMaterial = defineServiceFn({
+  output: rows.methodMaterial
+    .pick({ id: true })
+    .meta({ table: "methodMaterial" }),
   input: z
     .looseObject({
       id: z
@@ -4728,6 +8752,9 @@ export const updateMethodMaterial = defineServiceFn({
  * @mcp
  */
 export const createMethodOperation = defineServiceFn({
+  output: rows.methodOperation
+    .pick({ id: true })
+    .meta({ table: "methodOperation" }),
   input: z.looseObject({
     makeMethodId: z.string().min(0),
     order: z.number().min(0),
@@ -4834,6 +8861,9 @@ export const createMethodOperation = defineServiceFn({
  * @mcp
  */
 export const updateMethodOperation = defineServiceFn({
+  output: rows.methodOperation
+    .pick({ id: true })
+    .meta({ table: "methodOperation" }),
   input: z
     .looseObject({
       makeMethodId: z.string().min(0),
@@ -4952,6 +8982,9 @@ export const updateMethodOperation = defineServiceFn({
  * @mcp
  */
 export const setMethodOperationWorkInstruction = defineServiceFn({
+  output: rows.methodOperation
+    .pick({ id: true })
+    .meta({ table: "methodOperation" }),
   input: z.object({ id: z.string().min(1), text: z.string() }),
   permission: { update: "parts" },
 
@@ -4984,6 +9017,9 @@ export const setMethodOperationWorkInstruction = defineServiceFn({
  * @mcp
  */
 export const createMethodOperationStep = defineServiceFn({
+  output: rows.methodOperationStep
+    .pick({ id: true })
+    .meta({ table: "methodOperationStep" }),
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
@@ -5046,6 +9082,9 @@ export const createMethodOperationStep = defineServiceFn({
  * @mcp
  */
 export const updateMethodOperationStep = defineServiceFn({
+  output: rows.methodOperationStep
+    .pick({ id: true })
+    .meta({ table: "methodOperationStep" }),
   input: z
     .looseObject({
       operationId: z.string().min(1),
@@ -5115,6 +9154,9 @@ export const updateMethodOperationStep = defineServiceFn({
  * @mcp
  */
 export const duplicateMethodOperationStep = defineServiceFn({
+  output: rows.methodOperationStep
+    .pick({ id: true })
+    .meta({ table: "methodOperationStep" }),
   input: z.looseObject({ id: z.string() }),
   permission: { create: "parts" },
   async run(ctx, input) {
@@ -5143,6 +9185,9 @@ export const duplicateMethodOperationStep = defineServiceFn({
  * @mcp
  */
 export const createMethodOperationStepSlide = defineServiceFn({
+  output: rows.methodOperationStepSlide
+    .pick({ id: true })
+    .meta({ table: "methodOperationStepSlide" }),
   input: z.looseObject({
     stepId: z.string().min(1),
     imagePath: z.string().optional(),
@@ -5196,6 +9241,9 @@ export const createMethodOperationStepSlide = defineServiceFn({
  * @mcp
  */
 export const updateMethodOperationStepSlide = defineServiceFn({
+  output: rows.methodOperationStepSlide
+    .pick({ id: true })
+    .meta({ table: "methodOperationStepSlide" }),
   input: z
     .looseObject({
       stepId: z.string().min(1),
@@ -5253,6 +9301,9 @@ export const updateMethodOperationStepSlide = defineServiceFn({
  * @mcp
  */
 export const createMethodOperationParameter = defineServiceFn({
+  output: rows.methodOperationParameter
+    .pick({ id: true })
+    .meta({ table: "methodOperationParameter" }),
   input: z.looseObject({
     operationId: z.string().min(1),
     key: z.string().min(1),
@@ -5293,6 +9344,9 @@ export const createMethodOperationParameter = defineServiceFn({
  * @mcp
  */
 export const updateMethodOperationParameter = defineServiceFn({
+  output: rows.methodOperationParameter
+    .pick({ id: true })
+    .meta({ table: "methodOperationParameter" }),
   input: z
     .looseObject({
       operationId: z.string().min(1),
@@ -5338,6 +9392,9 @@ export const updateMethodOperationParameter = defineServiceFn({
  * @mcp
  */
 export const createMethodOperationTool = defineServiceFn({
+  output: rows.methodOperationTool
+    .pick({ id: true })
+    .meta({ table: "methodOperationTool" }),
   input: z.looseObject({
     operationId: z.string().min(1),
     toolId: z.string().min(1),
@@ -5378,6 +9435,9 @@ export const createMethodOperationTool = defineServiceFn({
  * @mcp
  */
 export const updateMethodOperationTool = defineServiceFn({
+  output: rows.methodOperationTool
+    .pick({ id: true })
+    .meta({ table: "methodOperationTool" }),
   input: z
     .looseObject({
       operationId: z.string().min(1),
@@ -5420,6 +9480,7 @@ export const updateMethodOperationTool = defineServiceFn({
  * @mcp destructive
  */
 export const setMethodMaterialStepLink = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     methodMaterialId: z.string(),
     methodOperationStepId: z.string(),
@@ -5485,6 +9546,7 @@ export const setMethodMaterialStepLink = defineServiceFn({
  * @mcp destructive
  */
 export const setMethodOperationToolStepLink = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     operationId: z.string(),
     toolId: z.string(),
@@ -5654,6 +9716,9 @@ export const updateMaterial = defineServiceFn({
  * @mcp
  */
 export const upsertMaterialDimension = defineServiceFn({
+  output: rows.materialDimension
+    .pick({ id: true })
+    .meta({ table: "materialDimension" }),
   input: z.looseObject({
     name: z.string().min(1).max(255),
     materialFormId: z.string().min(1),
@@ -5683,6 +9748,9 @@ export const upsertMaterialDimension = defineServiceFn({
  * @mcp
  */
 export const upsertMaterialFinish = defineServiceFn({
+  output: rows.materialFinish
+    .pick({ id: true })
+    .meta({ table: "materialFinish" }),
   input: z.looseObject({
     materialSubstanceId: z.string().min(1),
     name: z.string().min(1).max(255),
@@ -5712,6 +9780,7 @@ export const upsertMaterialFinish = defineServiceFn({
  * @mcp
  */
 export const createMaterialForm = defineServiceFn({
+  output: rows.materialForm.pick({ id: true }).meta({ table: "materialForm" }),
   input: z.looseObject({
     name: z.string().min(1).max(255),
     code: z.string().min(1).max(10),
@@ -5742,6 +9811,7 @@ export const createMaterialForm = defineServiceFn({
  * @mcp
  */
 export const updateMaterialForm = defineServiceFn({
+  output: rows.materialForm.pick({ id: true }).meta({ table: "materialForm" }),
   input: z
     .looseObject({
       name: z.string().min(1).max(255),
@@ -5771,6 +9841,9 @@ export const updateMaterialForm = defineServiceFn({
  * @mcp
  */
 export const upsertMaterialGrade = defineServiceFn({
+  output: rows.materialGrade
+    .pick({ id: true })
+    .meta({ table: "materialGrade" }),
   input: z.looseObject({
     materialSubstanceId: z.string().min(1),
     name: z.string().min(1).max(255),
@@ -5797,6 +9870,9 @@ export const upsertMaterialGrade = defineServiceFn({
  * @mcp destructive
  */
 export const deleteMaterialType = defineServiceFn({
+  output: z.array(
+    rows.materialType.pick({ id: true }).meta({ table: "materialType" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -5813,6 +9889,7 @@ export const deleteMaterialType = defineServiceFn({
  * @mcp read
  */
 export const getMaterialTypes = defineServiceFn({
+  output: z.array(rows.materialTypes).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -5841,6 +9918,7 @@ export const getMaterialTypes = defineServiceFn({
  * @mcp read
  */
 export const getMaterialType = defineServiceFn({
+  output: rows.materialType,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -5857,6 +9935,7 @@ export const getMaterialType = defineServiceFn({
  * @mcp read
  */
 export const getMaterialTypeList = defineServiceFn({
+  output: z.array(rows.materialType),
   input: z.looseObject({
     materialSubstanceId: z.string(),
     materialFormId: z.string()
@@ -5881,6 +9960,7 @@ export const getMaterialTypeList = defineServiceFn({
  * @mcp
  */
 export const upsertMaterialType = defineServiceFn({
+  output: rows.materialType.pick({ id: true }).meta({ table: "materialType" }),
   input: z.looseObject({
     materialSubstanceId: z.string().min(1),
     materialFormId: z.string().min(1),
@@ -5918,6 +9998,9 @@ export const upsertMaterialType = defineServiceFn({
  * @mcp
  */
 export const createMaterialSubstance = defineServiceFn({
+  output: rows.materialSubstance
+    .pick({ id: true })
+    .meta({ table: "materialSubstance" }),
   input: z.looseObject({
     name: z.string().min(1).max(255),
     code: z.string().min(1).max(10),
@@ -5948,6 +10031,9 @@ export const createMaterialSubstance = defineServiceFn({
  * @mcp
  */
 export const updateMaterialSubstance = defineServiceFn({
+  output: rows.materialSubstance
+    .pick({ id: true })
+    .meta({ table: "materialSubstance" }),
   input: z
     .looseObject({
       name: z.string().min(1).max(255),
@@ -5980,6 +10066,150 @@ export const updateMaterialSubstance = defineServiceFn({
  * @mcp
  */
 export const createService = defineServiceFn({
+  output: z.union([
+    z.object({
+      active: z.boolean().nullable(),
+      assignee: z.string().nullable(),
+      companyId: z.string().nullable(),
+      createdAt: z.string().nullable(),
+      createdBy: z.string().nullable(),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      defaultMethodType: z
+        .enum(["Make to Order", "Pull from Inventory", "Purchase to Order"])
+        .nullable(),
+      description: z.string().nullable(),
+      externalId: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      id: z.string().nullable(),
+      itemPostingGroupId: z.string().nullable(),
+      itemTrackingType: z
+        .enum(["Batch", "Inventory", "Non-Inventory", "Serial"])
+        .nullable(),
+      name: z.string().nullable(),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      readableId: z.string().nullable(),
+      readableIdWithRevision: z.string().nullable(),
+      replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]).nullable(),
+      revision: z.string().nullable(),
+      revisions: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      supplierIds: z.string().nullable(),
+      suppliers: z.array(z.string()).nullable(),
+      tags: z.array(z.string()).nullable(),
+      thumbnailPath: z.string().nullable(),
+      unitOfMeasure: z.string().nullable(),
+      unitOfMeasureCode: z.string().nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    }),
+    z.object({
+      id: z.string(),
+      readableId: z.string()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({
     id: z
       .string()
@@ -6035,6 +10265,150 @@ export const createService = defineServiceFn({
  * @mcp
  */
 export const updateService = defineServiceFn({
+  output: z.union([
+    z.object({
+      active: z.boolean().nullable(),
+      assignee: z.string().nullable(),
+      companyId: z.string().nullable(),
+      createdAt: z.string().nullable(),
+      createdBy: z.string().nullable(),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      defaultMethodType: z
+        .enum(["Make to Order", "Pull from Inventory", "Purchase to Order"])
+        .nullable(),
+      description: z.string().nullable(),
+      externalId: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      id: z.string().nullable(),
+      itemPostingGroupId: z.string().nullable(),
+      itemTrackingType: z
+        .enum(["Batch", "Inventory", "Non-Inventory", "Serial"])
+        .nullable(),
+      name: z.string().nullable(),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      readableId: z.string().nullable(),
+      readableIdWithRevision: z.string().nullable(),
+      replenishmentSystem: z.enum(["Buy", "Buy and Make", "Make"]).nullable(),
+      revision: z.string().nullable(),
+      revisions: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      supplierIds: z.string().nullable(),
+      suppliers: z.array(z.string()).nullable(),
+      tags: z.array(z.string()).nullable(),
+      thumbnailPath: z.string().nullable(),
+      unitOfMeasure: z.string().nullable(),
+      unitOfMeasureCode: z.string().nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    }),
+    z.object({
+      id: z.string(),
+      readableId: z.string()
+    }),
+    z.null()
+  ]),
   input: z
     .looseObject({
       id: z
@@ -6092,6 +10466,9 @@ export const updateService = defineServiceFn({
  * @mcp
  */
 export const createUnitOfMeasure = defineServiceFn({
+  output: rows.unitOfMeasure
+    .pick({ id: true })
+    .meta({ table: "unitOfMeasure" }),
   input: z.looseObject({
     code: z.string().min(1).max(10),
     name: z.string().min(1).max(50),
@@ -6122,6 +10499,9 @@ export const createUnitOfMeasure = defineServiceFn({
  * @mcp
  */
 export const updateUnitOfMeasure = defineServiceFn({
+  output: rows.unitOfMeasure
+    .pick({ id: true })
+    .meta({ table: "unitOfMeasure" }),
   input: z
     .looseObject({
       code: z.string().min(1).max(10),
@@ -6204,6 +10584,18 @@ export const createTool = defineServiceFn({
  * @mcp read
  */
 export const getSupplierPriceBreaksForItems = defineServiceFn({
+  output: z.record(
+    z.string(),
+    z.object({
+      priceBreaks: z.array(
+        z.object({
+          quantity: z.number(),
+          unitPrice: z.number()
+        })
+      ),
+      fallbackUnitPrice: z.number().nullable()
+    })
+  ),
   input: z.looseObject({ itemIds: z.array(z.string()) }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6220,6 +10612,201 @@ export const getSupplierPriceBreaksForItems = defineServiceFn({
  * @mcp read
  */
 export const getChangeNotice = defineServiceFn({
+  output: z.object({
+    approvalRequirements: z.array(z.string()).nullable(),
+    assignee: z.string().nullable(),
+    changeOrderId: z.string(),
+    changeOrderTypeId: z.string().nullable(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    description: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    dueDate: z.string().nullable(),
+    id: z.string(),
+    name: z.string(),
+    nonConformanceId: z.string().nullable(),
+    openDate: z.string(),
+    priority: z.enum(["Critical", "High", "Low", "Medium"]).nullable(),
+    reasonForChange: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    requiredActionIds: z.array(z.string()).nullable(),
+    sourceId: z.string().nullable(),
+    sourceType: z.string().nullable(),
+    status: z.enum([
+      "Cancelled",
+      "Done",
+      "Draft",
+      "Engineering Complete",
+      "Implementation",
+      "Start"
+    ]),
+    tags: z.array(z.string()).nullable(),
+    type: z.enum(["Documentation", "Engineering", "Manufacturing"]),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable()
+  }),
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6240,6 +10827,153 @@ export const getChangeNotice = defineServiceFn({
  * @mcp read
  */
 export const getChangeNotices = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        affectedItems: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        approvalRequirements: z.array(z.string()).nullable(),
+        assignee: z.string().nullable(),
+        changeOrderId: z.string().nullable(),
+        changeOrderTypeId: z.string().nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        description: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        dueDate: z.string().nullable(),
+        id: z.string().nullable(),
+        itemIds: z.array(z.string()).nullable(),
+        name: z.string().nullable(),
+        nonConformanceId: z.string().nullable(),
+        openDate: z.string().nullable(),
+        priority: z.enum(["Critical", "High", "Low", "Medium"]).nullable(),
+        reasonForChange: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        requiredActionIds: z.array(z.string()).nullable(),
+        sourceId: z.string().nullable(),
+        sourceType: z.string().nullable(),
+        status: z
+          .enum([
+            "Cancelled",
+            "Done",
+            "Draft",
+            "Engineering Complete",
+            "Implementation",
+            "Start"
+          ])
+          .nullable(),
+        tags: z.array(z.string()).nullable(),
+        type: z
+          .enum(["Documentation", "Engineering", "Manufacturing"])
+          .nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -6268,6 +11002,9 @@ export const getChangeNotices = defineServiceFn({
  * @mcp
  */
 export const updateChangeNotice = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string(),
     changeOrderId: z.string().optional(),
@@ -6313,6 +11050,11 @@ export const updateChangeNotice = defineServiceFn({
  * @mcp destructive
  */
 export const deleteChangeNotice = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -6352,6 +11094,7 @@ export const deleteChangeNotice = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeTypes = defineServiceFn({
+  output: z.array(rows.changeOrderType).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -6380,6 +11123,12 @@ export const getChangeNoticeTypes = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeTypesList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -6399,6 +11148,7 @@ export const getChangeNoticeTypesList = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeType = defineServiceFn({
+  output: rows.changeOrderType,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6422,6 +11172,9 @@ export const getChangeNoticeType = defineServiceFn({
  * @mcp
  */
 export const createChangeNoticeType = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     name: z.string(),
     customFields: z.unknown().optional()
@@ -6447,6 +11200,9 @@ export const createChangeNoticeType = defineServiceFn({
  * @mcp
  */
 export const updateChangeNoticeType = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string(),
     name: z.string(),
@@ -6470,6 +11226,11 @@ export const updateChangeNoticeType = defineServiceFn({
  * @mcp destructive
  */
 export const deleteChangeNoticeType = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -6490,6 +11251,10 @@ export const deleteChangeNoticeType = defineServiceFn({
  * @mcp destructive
  */
 export const addChangeNoticeAffectedItem = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    draftMakeMethodId: z.string().nullable()
+  }),
   input: z.looseObject({
     changeNoticeId: z.string(),
     itemId: z.string().optional(),
@@ -6535,6 +11300,7 @@ export const addChangeNoticeAffectedItem = defineServiceFn({
  * @mcp
  */
 export const updateChangeNoticeAffectedItemChangeType = defineServiceFn({
+  output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.looseObject({
     id: z.string(),
     changeType: z.enum(["Version", "Revision", "Replacement Part", "New Part"])
@@ -6568,6 +11334,7 @@ export const updateChangeNoticeAffectedItemChangeType = defineServiceFn({
  * @mcp
  */
 export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
+  output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.looseObject({
     id: z.string(),
     supersessionMode: z.enum([
@@ -6607,6 +11374,7 @@ export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeAffectedItems = defineServiceFn({
+  output: z.array(z.unknown()),
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6627,6 +11395,7 @@ export const getChangeNoticeAffectedItems = defineServiceFn({
  * @mcp destructive
  */
 export const removeChangeNoticeAffectedItem = defineServiceFn({
+  output: z.array(rows.item.pick({ id: true }).meta({ table: "item" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -6658,6 +11427,21 @@ export const removeChangeNoticeAffectedItem = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticesForNonConformance = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      changeOrderId: z.string(),
+      name: z.string(),
+      status: z.enum([
+        "Cancelled",
+        "Done",
+        "Draft",
+        "Engineering Complete",
+        "Implementation",
+        "Start"
+      ])
+    })
+  ),
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6678,6 +11462,54 @@ export const getChangeNoticesForNonConformance = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeActions = defineServiceFn({
+  output: z.array(
+    z.object({
+      linearIssue: z.record(z.string(), z.unknown()).nullable(),
+      jiraIssue: z.record(z.string(), z.unknown()).nullable(),
+      actionTypeId: z.string().nullable(),
+      assignee: z.string().nullable(),
+      changeOrderId: z.string(),
+      companyId: z.string(),
+      completedDate: z.string().nullable(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      dueDate: z.string().nullable(),
+      id: z.string(),
+      name: z.string().nullable(),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      sortOrder: z.number(),
+      status: z.enum(["Completed", "In Progress", "Pending", "Skipped"]),
+      tags: z.array(z.string()).nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6698,6 +11530,9 @@ export const getChangeNoticeActions = defineServiceFn({
  * @mcp
  */
 export const updateChangeNoticeActionStatus = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string(),
     status: z.enum(["Pending", "In Progress", "Completed", "Skipped"])
@@ -6730,6 +11565,11 @@ export const updateChangeNoticeActionStatus = defineServiceFn({
  * @mcp destructive
  */
 export const deleteChangeNoticeAction = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -6790,6 +11630,47 @@ export const updateChangeNoticeActionOrder = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeRequiredActions = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        active: z.boolean(),
+        companyId: z.string(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        id: z.string(),
+        name: z.string(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -6818,6 +11699,12 @@ export const getChangeNoticeRequiredActions = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeRequiredActionsList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
   async run(ctx) {
@@ -6837,6 +11724,71 @@ export const getChangeNoticeRequiredActionsList = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeRequiredAction = defineServiceFn({
+  output: z.object({
+    active: z.boolean(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    id: z.string(),
+    name: z.string(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable()
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6857,6 +11809,9 @@ export const getChangeNoticeRequiredAction = defineServiceFn({
  * @mcp
  */
 export const upsertChangeNoticeRequiredAction = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -6880,6 +11835,11 @@ export const upsertChangeNoticeRequiredAction = defineServiceFn({
  * @mcp destructive
  */
 export const deleteChangeNoticeRequiredAction = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
   async run(ctx, input) {
@@ -6900,6 +11860,7 @@ export const deleteChangeNoticeRequiredAction = defineServiceFn({
  * @mcp destructive
  */
 export const setChangeNoticeActionTasks = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     changeNoticeId: z.string(),
     requiredActionIds: z.array(z.string())
@@ -6931,6 +11892,66 @@ export const setChangeNoticeActionTasks = defineServiceFn({
  * @mcp read
  */
 export const getChangeNoticeDiff = defineServiceFn({
+  output: z.object({
+    items: z.array(
+      z.object({
+        affectedItemId: z.string(),
+        itemId: z.string(),
+        materials: z.array(
+          z.object({
+            status: z.enum(["added", "modified", "removed", "unchanged"]),
+            before: z.record(z.string(), z.unknown()).nullable(),
+            after: z.record(z.string(), z.unknown()).nullable(),
+            changedFields: z
+              .record(
+                z.string(),
+                z.object({
+                  before: z.unknown(),
+                  after: z.unknown()
+                })
+              )
+              .nullable()
+              .optional()
+          })
+        ),
+        operations: z.array(z.unknown()),
+        attributes: z.array(
+          z.object({
+            status: z.enum(["added", "modified", "removed", "unchanged"]),
+            before: z.record(z.string(), z.unknown()).nullable(),
+            after: z.record(z.string(), z.unknown()).nullable(),
+            changedFields: z
+              .record(
+                z.string(),
+                z.object({
+                  before: z.unknown(),
+                  after: z.unknown()
+                })
+              )
+              .nullable()
+              .optional()
+          })
+        ),
+        supplierParts: z.array(
+          z.object({
+            status: z.enum(["added", "modified", "removed", "unchanged"]),
+            before: z.record(z.string(), z.unknown()).nullable(),
+            after: z.record(z.string(), z.unknown()).nullable(),
+            changedFields: z
+              .record(
+                z.string(),
+                z.object({
+                  before: z.unknown(),
+                  after: z.unknown()
+                })
+              )
+              .nullable()
+              .optional()
+          })
+        )
+      })
+    )
+  }),
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { view: "parts" },
   async run(ctx, input) {
@@ -6951,6 +11972,11 @@ export const getChangeNoticeDiff = defineServiceFn({
  * @mcp
  */
 export const createItemDocumentUploadUrl = defineServiceFn({
+  output: z.object({
+    signedUrl: z.string(),
+    token: z.string(),
+    path: z.string()
+  }),
   input: z.looseObject({ itemId: z.string(), name: z.string() }),
   permission: { create: "parts" },
   async run(ctx, input) {
@@ -6977,6 +12003,12 @@ export const createItemDocumentUploadUrl = defineServiceFn({
  * @mcp
  */
 export const createModelUploadUrl = defineServiceFn({
+  output: z.object({
+    modelId: z.string(),
+    path: z.string(),
+    signedUrl: z.string(),
+    token: z.string()
+  }),
   input: z.object({ name: z.string().min(1) }),
   // A new model row is a parts create (its table's policy); linking it to a
   // record is an update.
@@ -7012,6 +12044,9 @@ export const createModelUploadUrl = defineServiceFn({
  * @mcp
  */
 export const insertModelUpload = defineServiceFn({
+  output: z.object({
+    modelUploadId: z.string()
+  }),
   input: z.object({
     modelId: z.string().min(1),
     path: z.string().min(1),
@@ -7054,6 +12089,11 @@ export const insertModelUpload = defineServiceFn({
  * @mcp
  */
 export const createItemThumbnailUploadUrl = defineServiceFn({
+  output: z.object({
+    path: z.string(),
+    signedUrl: z.string(),
+    token: z.string()
+  }),
   input: z.object({ itemId: z.string().min(1), name: z.string().min(1) }),
   permission: { update: "parts" },
   async run(ctx, input) {
@@ -7080,6 +12120,9 @@ export const createItemThumbnailUploadUrl = defineServiceFn({
  * @mcp
  */
 export const updateItemThumbnail = defineServiceFn({
+  output: rows.item
+    .pick({ id: true, thumbnailPath: true })
+    .meta({ table: "item" }),
   input: z.object({
     itemId: z.string().min(1),
     thumbnailPath: z.string().min(1).nullable()
