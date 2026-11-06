@@ -16873,7 +16873,7 @@ export function netBookValue(
 }
 
 /**
- * A sales order shipment: per costed line, COGS against Finished Goods on
+ * A sales order shipment: per costed line, COGS against inventory on
  * `shipment:<shipmentLineId>`. An item's relieved cost is shared across its
  * lines by quantity, the last line taking the remainder. Then, per fixed
  * asset sold, the accumulated depreciation cleared, the net book value moved
@@ -16928,6 +16928,10 @@ export function buildSalesShipmentJournal({
 
   for (const line of costed) {
     const cost = costByLine.get(line.shipmentLineId) ?? 0;
+    const inventory = resolveInventoryAccount(
+      line.replenishmentSystem,
+      defaults
+    );
     const keys = {
       ...document,
       quantity: line.quantity,
@@ -16952,8 +16956,8 @@ export function buildSalesShipmentJournal({
       },
       {
         ...keys,
-        accountId: defaults.finishedGoodsAccount,
-        description: "Finished Goods Account",
+        accountId: inventory.account,
+        description: inventory.description,
         amount: round(credit("asset", cost))
       }
     );

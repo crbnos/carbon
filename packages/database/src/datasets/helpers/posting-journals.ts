@@ -446,7 +446,7 @@ export function receiptJournal(args: {
   };
 }
 
-/** post-shipment, sales-order branch: DR COGS / CR Finished Goods at the consumed cost. */
+/** post-shipment, sales-order branch: DR COGS / CR inventory at the consumed cost. */
 export function shipmentJournal(args: {
   shipmentReadableId: string;
   lines: {
@@ -459,6 +459,7 @@ export function shipmentJournal(args: {
 }): PostingJournal {
   const lines: PostingLine[] = [];
   args.lines.forEach((line, group) => {
+    const inventory = inventoryRoleFor(line);
     const reference = journalReference.to.shipment(line.shipmentLineId);
     lines.push(
       roleLine("costOfGoodsSoldAccount", {
@@ -469,8 +470,8 @@ export function shipmentJournal(args: {
         documentLineReference: reference,
         group
       }),
-      roleLine("finishedGoodsAccount", {
-        description: "Finished Goods Account",
+      roleLine(inventory.role, {
+        description: inventory.description,
         amount: round(credit("asset", line.cost)),
         quantity: round(line.quantity),
         documentType: "Sales Shipment",
