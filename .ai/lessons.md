@@ -6,16 +6,6 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
-## A deposit refund must consume its original funding source
-
-**Context:** Refunding customer deposits or supplier prepayments held against a document.
-
-**Problem:** Posting an opposite cash leg on the prepayment account leaves the original advance available to pay invoices again. Using today's default account or refund rate also loses the original carrying value.
-
-**Rule:** Persist payment-target consumption in `invoiceSettlement`, cap the refund at effective remaining principal, and release each original source's account and carrying base. Post cash FX separately. Verify refund voids, exhausted sources rebuilt after cutover, and legacy cutover reads as well as the initial journal.
-
-**Applies to:** Payment posting/rebuilding, `allocateDepositRefund`, funding availability, and accounting cutover.
-
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
