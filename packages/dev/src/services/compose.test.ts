@@ -7,6 +7,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -320,6 +321,29 @@ describe("shared edge runtime", () => {
       expect(second).not.toBe(first);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("leaves dotfiles and symlinks out of the name", () => {
+    // crbn's env sync links .env.local into supabase/functions; counted, every
+    // rewrite of it would recreate the shared runtime.
+    const root = mkdtempSync(join(tmpdir(), "crbn-digest-"));
+    const dir = join(root, "functions");
+    const envFile = join(root, ".env.local");
+    try {
+      mkdirSync(dir);
+      writeFileSync(join(dir, "index.ts"), "a");
+      const plain = treeDigest(dir);
+      writeFileSync(envFile, "PORT=1");
+      symlinkSync(envFile, join(dir, ".env.local"));
+      symlinkSync(join(dir, "index.ts"), join(dir, "linked.ts"));
+      mkdirSync(join(dir, ".vscode"));
+      writeFileSync(join(dir, ".vscode/settings.json"), "{}");
+      expect(treeDigest(dir)).toBe(plain);
+      writeFileSync(envFile, "PORT=2");
+      expect(treeDigest(dir)).toBe(plain);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   });
 

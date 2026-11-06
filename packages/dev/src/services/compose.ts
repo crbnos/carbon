@@ -7,6 +7,7 @@ import {
   copyFileSync,
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -493,13 +494,30 @@ const SHARED_DIRS = [
   }
 ];
 
-/** A hash of every file under `dir`, by relative path and content. */
+// What the runtime serves: no dotfiles and no symlinks. crbn's env sync links
+// .env and .env.local into supabase/functions (for `supabase functions
+// serve`); counted, every .env.local rewrite would recreate the shared runtime,
+// and copied, they would point it at one worktree's secrets.
+function servedEntry(path: string): boolean {
+  return !basename(path).startsWith(".") && !lstatSync(path).isSymbolicLink();
+}
+
+/** A hash of every served file under `dir`, by relative path and content. */
 export function treeDigest(dir: string): string {
   const hash = createHash("sha1");
   if (!existsSync(dir)) return hash.digest("hex");
-  const files = (readdirSync(dir, { recursive: true }) as string[])
-    .filter((rel) => statSync(join(dir, rel)).isFile())
-    .sort();
+  const files: string[] = [];
+  const walk = (rel: string) => {
+    for (const name of readdirSync(join(dir, rel))) {
+      const child = rel ? `${rel}/${name}` : name;
+      const path = join(dir, child);
+      if (!servedEntry(path)) continue;
+      if (statSync(path).isDirectory()) walk(child);
+      else files.push(child);
+    }
+  };
+  walk("");
+  files.sort();
   for (const rel of files) {
     hash.update(`${rel}\0`);
     hash.update(readFileSync(join(dir, rel)));
@@ -525,7 +543,10 @@ function syncSharedDirs(): Record<string, string> {
     if (!existsSync(target)) {
       const tmp = `${target}.tmp-${process.pid}`;
       rmSync(tmp, { recursive: true, force: true });
-      cpSync(source, tmp, { recursive: true });
+      cpSync(source, tmp, {
+        recursive: true,
+        filter: (path) => path === source || servedEntry(path)
+      });
       renameSync(tmp, target);
     }
     dirs[env] = dirName;
