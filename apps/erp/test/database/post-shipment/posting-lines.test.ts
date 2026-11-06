@@ -50,6 +50,22 @@ const salesShipment = (
   });
 
 describe("buildSalesShipmentJournal", () => {
+  it.each(["Buy", "Make", "Buy and Make", null] as const)(
+    "credits Finished Goods and debits COGS for stock with replenishment %s",
+    (replenishmentSystem) => {
+      const journal = salesShipment(
+        [line({ shipmentLineId: "sl-1", replenishmentSystem })],
+        new Map([["item-a", 25]])
+      );
+      expect(journal.lines.map(({ accountId, description, amount }) => ({
+        accountId, description, amount
+      }))).toEqual([
+        { accountId: "COGS", description: "Cost of Goods Sold", amount: 25 },
+        { accountId: "FG", description: "Finished Goods Account", amount: -25 }
+      ]);
+    }
+  );
+
   it("shares an item's relieved cost across its lines by quantity, the last line taking the remainder", () => {
     const lines = [
       line({ shipmentLineId: "sl-1", shippedQuantity: 1 }),
@@ -70,9 +86,9 @@ describe("buildSalesShipmentJournal", () => {
       ])
     ).toEqual([
       ["shipment:sl-1", "COGS", 3.33333, 1],
-      ["shipment:sl-1", "RAW", -3.33333, 1],
+      ["shipment:sl-1", "FG", -3.33333, 1],
       ["shipment:sl-2", "COGS", 6.66667, 2],
-      ["shipment:sl-2", "RAW", -6.66667, 2]
+      ["shipment:sl-2", "FG", -6.66667, 2]
     ]);
     // Each pair shares one reference; the pairs do not.
     const [a, b, c, d] = journal.lines;
@@ -144,9 +160,9 @@ describe("buildSalesShipmentJournal", () => {
       ])
     ).toEqual([
       ["shipment:sl-1", "WARRANTY", "Warranty Expense", 5],
-      ["shipment:sl-1", "RAW", "Raw Materials Account", -5],
+      ["shipment:sl-1", "FG", "Finished Goods Account", -5],
       ["shipment:sl-2", "COGS", "Cost of Goods Sold", 5],
-      ["shipment:sl-2", "RAW", "Raw Materials Account", -5]
+      ["shipment:sl-2", "FG", "Finished Goods Account", -5]
     ]);
   });
 
@@ -183,7 +199,7 @@ describe("buildSalesShipmentJournal", () => {
       ])
     ).toEqual([
       ["shipment:sl-1", "COGS", 4, 1],
-      ["shipment:sl-1", "RAW", -4, 1],
+      ["shipment:sl-1", "FG", -4, 1],
       ["shipment:sol-9", "ACCDEP", 400, 1],
       ["shipment:sol-9", "CLEARING", 600, 1],
       ["shipment:sol-9", "ASSET", -1000, 1]
