@@ -13,6 +13,8 @@
 #   scripts/cloud-dev.sh --prepare  # the environment's Setup script: no stack
 #   scripts/cloud-dev.sh --prepare --database   # the same, plus a migrated database
 #
+# Set SESSION_SECRET in the cloud environment’s secret settings before booting.
+#
 # What it does:
 #   1. Puts Node 24 first on PATH when the box has an older default
 #      (/opt/node24 in the Claude container), and persists that for the session.
@@ -21,8 +23,8 @@
 #   2. Installs dependencies when node_modules is missing.
 #   3. Starts `crbn up --no-portless` detached, unless one is running, with
 #      CARBON_DEV_CLOUD=1. That switch turns on the container-only steps of
-#      crbn (a developer's own `pnpm dev` never sets it): start dockerd, write a
-#      SESSION_SECRET so no .env is needed, start the dev servers while the
+#      crbn (a developer's own `pnpm dev` never sets it): start dockerd and
+#      start the dev servers while the
 #      database migrates, warm up Vite and allow any host. It seeds
 #      test@carbon.ms, which the login bypass accepts. `--no-regen` skips the
 #      type and swagger regeneration: a fresh volume applies every migration,

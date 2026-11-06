@@ -10,12 +10,7 @@ import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
 import pc from "picocolors";
 import { APP_CHOICES, type AppId, isCloudDev } from "../constants.js";
-import {
-  dotenvSets,
-  renderEnv,
-  syncAppPortlessConfigs,
-  writeEnv
-} from "../env.js";
+import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
@@ -652,7 +647,6 @@ async function provisionSlot(
             portless,
             branchPrefix,
             includeAssembler,
-            ownSessionSecret: dotenvSets(root, "SESSION_SECRET"),
             ...slot,
             mode: stack.mode,
             database

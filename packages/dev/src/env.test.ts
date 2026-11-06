@@ -2,17 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  dotenvSets,
-  forcedKeys,
-  omitForcedKeys,
-  renderEnv,
-  sessionSecretFor
-} from "./env.js";
+import { forcedKeys, omitForcedKeys, renderEnv } from "./env.js";
 import type { JwtCreds, PortMap } from "./worktree.js";
 
 const ports: PortMap = {
@@ -156,47 +147,6 @@ describe("renderEnv", () => {
     expect(base({ ports: older as PortMap }).split("\n")).toContain(
       "SUPABASE_DB_POOLER_URL="
     );
-  });
-
-  it("writes a derived SESSION_SECRET only in a cloud container whose .env sets none", () => {
-    const prev = { ...process.env };
-    delete process.env.CARBON_DEV_CLOUD;
-    // The previous .env.local is in process.env when the next boot renders;
-    // only the user's own .env decides.
-    process.env.SESSION_SECRET = "from-the-previous-env-local";
-    try {
-      expect(base()).not.toContain("SESSION_SECRET=");
-      process.env.CARBON_DEV_CLOUD = "1";
-      const derived = sessionSecretFor("test-secret");
-      expect(derived).toMatch(/^[0-9a-f]{64}$/);
-      expect(sessionSecretFor("test-secret")).toBe(derived);
-      expect(base()).toContain(`SESSION_SECRET=${derived}`);
-      expect(base({ ownSessionSecret: true })).not.toContain("SESSION_SECRET=");
-    } finally {
-      process.env = prev;
-    }
-  });
-
-  it("reads whether .env sets a key from the file", () => {
-    const dir = mkdtempSync(join(tmpdir(), "crbn-env-"));
-    try {
-      expect(dotenvSets(dir, "SESSION_SECRET")).toBe(false);
-      writeFileSync(
-        join(dir, ".env"),
-        "# SESSION_SECRET=commented\nOTHER=1\nSESSION_SECRET=\n"
-      );
-      expect(dotenvSets(dir, "SESSION_SECRET")).toBe(false);
-      // An inline comment after an empty value is not a value.
-      writeFileSync(
-        join(dir, ".env"),
-        "SESSION_SECRET= # generate with openssl\n"
-      );
-      expect(dotenvSets(dir, "SESSION_SECRET")).toBe(false);
-      writeFileSync(join(dir, ".env"), 'export SESSION_SECRET="mine" # note\n');
-      expect(dotenvSets(dir, "SESSION_SECRET")).toBe(true);
-    } finally {
-      rmSync(dir, { recursive: true, force: true });
-    }
   });
 });
 

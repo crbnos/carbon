@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHash, createHmac } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { parse as parseDotenv } from "dotenv";
 import { join } from "pathe";
-import { APP_CHOICES, isCloudDev } from "./constants.js";
+import { APP_CHOICES } from "./constants.js";
 import {
   type JwtCreds,
   type PortMap,
@@ -33,25 +32,6 @@ const FROM_DOT_ENV: readonly { key: string; fallback?: string }[] = [
   { key: "GOOGLE_OAUTH_REDIRECT_URL" }
 ];
 
-/**
- * The session-cookie secret of a cloud container's stack. `SESSION_SECRET` is
- * required at boot and a fresh container has no `.env`, so crbn supplies one:
- * derived from the slot's JWT secret, which the registry keeps, so it is stable
- * across boots (a changed secret logs every browser out).
- */
-export function sessionSecretFor(jwtSecret: string): string {
-  return createHmac("sha256", jwtSecret).update("session-secret").digest("hex");
-}
-
-/** Whether the root `.env` sets `key` to a non-empty value. */
-export function dotenvSets(root: string, key: string): boolean {
-  const file = join(root, ".env");
-  if (!existsSync(file)) return false;
-  // The same parser the apps load the file with, so `export`, quotes, an
-  // inline comment and CRLF read the same here as there.
-  return (parseDotenv(readFileSync(file, "utf8"))[key] ?? "").trim() !== "";
-}
-
 export function renderEnv(opts: {
   slug: string;
   ports: PortMap;
@@ -74,13 +54,6 @@ export function renderEnv(opts: {
   mode?: StackMode;
   /** The worktree database in shared mode. Omitted → computed from `slug`. */
   database?: string;
-  /**
-   * Whether the user's own `.env` sets `SESSION_SECRET` (`dotenvSets(root,
-   * "SESSION_SECRET")`). Decided from that file, not from `process.env`: the
-   * previous `.env.local` is loaded into `process.env` before this runs, so
-   * its own generated secret would suppress the line every second boot.
-   */
-  ownSessionSecret?: boolean;
 }): string {
   const {
     slug,
@@ -89,8 +62,7 @@ export function renderEnv(opts: {
     portless,
     branchPrefix,
     includeAssembler = true,
-    mode = "isolated",
-    ownSessionSecret = false
+    mode = "isolated"
   } = opts;
   const shared = mode === "shared";
   const database = shared
@@ -233,18 +205,6 @@ export function renderEnv(opts: {
   lines.push("# Dev auth bypass");
   lines.push("DEV_BYPASS_EMAIL=test@carbon.ms");
   lines.push("");
-  // Cloud containers only, and only when `.env` sets none: `.env.local`
-  // overrides `.env`. Read from the file, not process.env: the previous
-  // `.env.local` is loaded into process.env before this runs, so its own
-  // SESSION_SECRET would suppress the line every second boot.
-  if (isCloudDev() && !ownSessionSecret) {
-    lines.push(
-      "# Session cookie secret (cloud container; derived from this slot's"
-    );
-    lines.push("# JWT secret — set SESSION_SECRET in .env to use your own)");
-    lines.push(`SESSION_SECRET=${sessionSecretFor(jwt.secret)}`);
-    lines.push("");
-  }
   return lines.join("\n");
 }
 
