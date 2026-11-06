@@ -9,8 +9,7 @@ import {
   destroyProject,
   ensureDockerRunning,
   flushDb,
-  listCarbonProjects,
-  REDIS_CONTAINER
+  listCarbonProjects
 } from "../services/compose.js";
 import { dropWorktreeData } from "../services/shared-db.js";
 import {
@@ -72,9 +71,7 @@ export async function reset() {
   knownProjects.add(projectName(slug));
 
   const allProjects = await listCarbonProjects();
-  const orphans = allProjects.filter(
-    (p) => !knownProjects.has(p) && p !== REDIS_CONTAINER
-  );
+  const orphans = allProjects.filter((p) => !knownProjects.has(p));
   if (orphans.length > 0) {
     log.warn(
       `cleaning ${orphans.length} orphan project(s): ${orphans.join(", ")}`

@@ -27,13 +27,12 @@ import {
 } from "../services/apps.js";
 import {
   allImagesPresentLocally,
-  bootSharedRedis,
+  bootSharedForIsolated,
   bootSharedServices,
   bootStack,
   type Container,
   devComposeImageRefs,
   ensureDockerRunning,
-  ensureSharedNetwork,
   listComposeServices,
   listContainers,
   listSharedContainers,
@@ -132,7 +131,8 @@ type UpOpts = {
    * hosts where the Supabase dashboard and email testing UI aren't needed.
    */
   minimal?: boolean;
-  /** Also start Studio, Postgres-Meta and the edge runtime. */
+  /** Also start Studio, Postgres-Meta and a private edge runtime, which the
+   *  gateway uses instead of the shared one (for editing functions). */
   full?: boolean;
   /** Stop the containers while ERP/MES get no traffic (default true). */
   hibernate?: boolean;
@@ -610,25 +610,21 @@ async function provisionSlot(
       }
     },
     {
-      title: "Boot shared redis",
-      task: async () => {
-        await bootSharedRedis();
-        return `shared redis on :${SHARED_REDIS_PORT} (index ${ctx.redisDb})`;
-      }
-    },
-    {
       title: shared
         ? "Boot shared containers"
-        : "Create the carbon-shared network",
+        : "Boot shared redis and edge runtime",
       task: async () => {
         if (!shared) {
-          // The dev compose file joins it in both modes.
-          await ensureSharedNetwork();
-          return "network ready (isolated stack)";
+          // An isolated stack has its own Postgres and Storage but uses the
+          // shared redis and edge runtime. Its network is the one the dev
+          // compose file joins.
+          const warning = await bootSharedForIsolated(ctx.jwt);
+          if (warning) log.warn(warning);
+          return `shared redis on :${SHARED_REDIS_PORT} (index ${ctx.redisDb}) and edge runtime, isolated stack`;
         }
         const warning = await bootSharedServices(ctx.jwt);
         if (warning) log.warn(warning);
-        return `crbn-shared up (Postgres :${SHARED_DB_PORT}, pooler :${SHARED_POOLER_PORT}, mail :${SHARED_INBUCKET_PORT})`;
+        return `crbn-shared up (Postgres :${SHARED_DB_PORT}, pooler :${SHARED_POOLER_PORT}, mail :${SHARED_INBUCKET_PORT}, redis :${SHARED_REDIS_PORT} index ${ctx.redisDb}, edge runtime)`;
       }
     },
     ...(shared && !borrowedEntry
@@ -694,7 +690,7 @@ async function bootDockerStack(ctx: Ctx, size: StackSize) {
   const label = size.minimal
     ? "Boot docker compose stack (minimal — no inbucket)"
     : size.full
-      ? "Boot docker compose stack (full — with studio/meta/edge-runtime/imgproxy)"
+      ? "Boot docker compose stack (full — with studio/meta/private edge-runtime/imgproxy)"
       : size.studio
         ? "Boot docker compose stack (with studio/meta)"
         : "Boot docker compose stack";

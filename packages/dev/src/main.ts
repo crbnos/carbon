@@ -82,7 +82,7 @@ const main = defineCommand({
           type: "boolean",
           default: false,
           description:
-            "Also start Studio, Postgres-Meta, the edge runtime and imgproxy (off by default; `crbn reload studio` / `crbn reload imgproxy` starts one on a running stack)"
+            "Also start Studio, Postgres-Meta, a private edge runtime (used instead of the shared one, for editing functions) and imgproxy (off by default; `crbn reload studio` / `crbn reload imgproxy` starts one on a running stack)"
         },
         minimal: {
           type: "boolean",

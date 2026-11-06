@@ -195,6 +195,11 @@ services:
       - "${PORT_STUDIO}:3000"
     environment:
       STUDIO_PG_META_URL: http://meta:8080
+      # Studio sends postgres-meta the database to query, built from these.
+      # Unset, it is db:5432/postgres, a host neither mode has.
+      POSTGRES_HOST: ${DB_HOST}
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_PASSWORD: postgres
       DEFAULT_ORGANIZATION_NAME: Carbon
       DEFAULT_PROJECT_NAME: carbon-${CARBON_WORKTREE}
@@ -208,10 +213,19 @@ services:
       # mounted volume on purpose — snippets are scratch SQL, not project state.
       SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
 
+  # This worktree's own runtime, serving its checkout's functions: for editing
+  # them. Without it (the default) Envoy sends /functions/v1/ to crbn-shared's
+  # carbon-edge-runtime, which serves the functions crbn last copied.
   edge-runtime:
     image: supabase/edge-runtime:v1.77.9
     restart: on-failure
     profiles: ["full"]
+    # Envoy reaches it by this alias: on carbon-shared, the bare name
+    # "edge-runtime" is crbn-shared's service.
+    networks:
+      default:
+        aliases:
+          - local-edge-runtime
     deploy:
       resources:
         limits:
@@ -288,6 +302,8 @@ services:
       STORAGE_PUBLIC_HOST: ${STORAGE_PUBLIC_HOST}
       STORAGE_PUBLIC_PROTO: ${STORAGE_PUBLIC_PROTO}
       STORAGE_PUBLIC_PORT: ${STORAGE_PUBLIC_PORT}
+      # This gateway on carbon-shared, sent to the shared edge runtime.
+      FUNCTIONS_API_URL: http://${CARBON_WORKTREE}-api-gw:8000
     volumes:
       - ./packages/dev/docker/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./packages/dev/docker/envoy/cds.template.yaml:/etc/envoy/cds.template.yaml:ro

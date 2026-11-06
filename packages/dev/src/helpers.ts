@@ -69,6 +69,51 @@ export function readLines(
   return close;
 }
 
+// Most output Node may hold for one sink before lines are dropped.
+export const MAX_PENDING_OUTPUT = 4 * 1024 * 1024;
+
+const lineWriters = new WeakMap<
+  NodeJS.WritableStream,
+  (text: string) => void
+>();
+
+/**
+ * Writes the apps' log lines to `sink` without letting them pile up. A pipe
+ * (Conductor, an agent, `crbn up | tee`) is written asynchronously on macOS,
+ * and a reader that falls behind left everything in crbn's memory: 200 MB of
+ * logs into a reader stalled for 2 s queued 207 MB. Past `max` bytes queued, a
+ * line is dropped and counted; the count is reported once the sink drains.
+ * Waiting for the sink instead would stall the dev servers behind it. A
+ * terminal is written synchronously, so nothing queues there.
+ *
+ * One writer per sink, shared by every app writing to it.
+ */
+export function lineWriter(
+  sink: NodeJS.WritableStream & { writableLength: number },
+  max = MAX_PENDING_OUTPUT
+): (text: string) => void {
+  const existing = lineWriters.get(sink);
+  if (existing) return existing;
+  let dropped = 0;
+  sink.on("drain", () => {
+    if (dropped === 0) return;
+    const count = dropped;
+    dropped = 0;
+    sink.write(
+      `crbn | ${count} log line${count === 1 ? "" : "s"} dropped: the output fell behind\n`
+    );
+  });
+  const write = (text: string) => {
+    if (sink.writableLength > max) {
+      dropped++;
+      return;
+    }
+    sink.write(text);
+  };
+  lineWriters.set(sink, write);
+  return write;
+}
+
 // ---------------------------------------------------------------------------
 // File mtime compare
 // ---------------------------------------------------------------------------
