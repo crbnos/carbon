@@ -1994,6 +1994,9 @@ msgstr "पार्ट निकालें"
 msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"
 
+msgid "Removed"
+msgstr "हटाया गया"
+
 msgid "Removed signature"
 msgstr "हस्ताक्षर हटाया गया"
 

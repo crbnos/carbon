@@ -726,20 +726,26 @@ export function InspectionView({
           ) : null}
 
           <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
-            <span className="truncate text-sm font-semibold">
+            {/* The lot number and status never give way to the actions. */}
+            <span className="shrink-0 text-sm font-semibold">
               {inspection.inspectionId}
             </span>
-            <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
-            <span className="hidden text-muted-foreground md:inline">·</span>
-            <span className="hidden truncate text-sm text-foreground/90 md:inline">
+            <Badge
+              variant={statusBadgeVariant}
+              className="shrink-0 max-lg:hidden"
+            >
+              {inspection.status}
+            </Badge>
+            <span className="hidden text-muted-foreground xl:inline">·</span>
+            <span className="hidden truncate text-sm text-foreground/90 xl:inline">
               {inspection.itemReadableId ?? job?.itemReadableIdWithRevision}
             </span>
             {operation?.description ? (
               <>
-                <span className="hidden text-muted-foreground lg:inline">
+                <span className="hidden text-muted-foreground xl:inline">
                   ·
                 </span>
-                <span className="hidden truncate text-sm text-foreground/90 lg:inline">
+                <span className="hidden truncate text-sm text-foreground/90 xl:inline">
                   {operation.description}
                 </span>
               </>
@@ -771,37 +777,43 @@ export function InspectionView({
             />
           ) : null}
           <button
+            title={t`Reject`}
+            aria-label={t`Reject`}
             type="button"
             onClick={rejectDisclosure.onOpen}
             disabled={!canReject}
             className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-red-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 md:gap-2 md:px-4"
           >
             <LuX className="size-4" />
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               <Trans>Reject</Trans>
             </span>
           </button>
           {canPartial ? (
             <button
+              title={t`Partial`}
+              aria-label={t`Partial`}
               type="button"
               onClick={partialDisclosure.onOpen}
               disabled={gridBusy}
               className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-amber-600 transition-colors hover:bg-accent active:scale-[0.98] dark:text-amber-400 md:gap-2 md:px-4"
             >
               <LuContrast className="size-4" />
-              <span className="hidden sm:inline">
+              <span className="hidden lg:inline">
                 <Trans>Partial</Trans>
               </span>
             </button>
           ) : null}
           <button
+            title={t`Accept`}
+            aria-label={t`Accept`}
             type="button"
             onClick={acceptDisclosure.onOpen}
             disabled={!canAccept}
             className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
           >
             <LuCheck className="size-4" />
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               <Trans>Accept</Trans>
             </span>
           </button>
@@ -837,7 +849,7 @@ export function InspectionView({
       <div className="contents max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:overflow-y-auto">
         {/* ── META BAR ── */}
         <div className="flex h-9 shrink-0 items-center gap-3 overflow-x-auto bg-card border-b border-border px-5 scrollbar-hide max-md:h-auto max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-1 max-md:px-4 max-md:py-1.5">
-          <Badge variant={statusBadgeVariant} className="shrink-0 md:hidden">
+          <Badge variant={statusBadgeVariant} className="shrink-0 lg:hidden">
             {inspection.status}
           </Badge>
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
@@ -1346,6 +1358,7 @@ function CompletePassedButton({
   gridBusy: boolean;
   variant?: "header" | "bar";
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
   const busy = fetcher.state !== "idle" || gridBusy;
 
@@ -1387,12 +1400,15 @@ function CompletePassedButton({
       <button
         type="submit"
         disabled={busy}
+        title={t`Complete passed`}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
       >
         <LuCheckCheck className="size-4" />
-        <span className="hidden tabular-nums sm:inline">
-          <Trans>Complete passed</Trans> {count}
+        {/* The label only where the header has room for it. */}
+        <span className="hidden xl:inline">
+          <Trans>Complete passed</Trans>
         </span>
+        <span className="tabular-nums">{count}</span>
       </button>
     </fetcher.Form>
   );

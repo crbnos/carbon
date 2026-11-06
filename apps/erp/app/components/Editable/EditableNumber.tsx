@@ -82,6 +82,9 @@ const EditableNumber = <T extends object>(
 
     const { locale } = useLocale();
     const latestValue = useRef<number | undefined>(numericValue);
+    // Escape cancels the edit. The table then moves focus back to the cell,
+    // and the blur that follows must not commit what was typed.
+    const cancelled = useRef(false);
     const [liveValue, setLiveValue] = useState<number | null>(
       numericValue ?? null
     );
@@ -151,7 +154,12 @@ const EditableNumber = <T extends object>(
             }
             autoFocus
             onFocus={(e) => e.currentTarget.select()}
-            onBlur={() => commit(latestValue.current)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancelled.current = true;
+            }}
+            onBlur={() => {
+              if (!cancelled.current) commit(latestValue.current);
+            }}
           />
           {adornment && (
             <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center">

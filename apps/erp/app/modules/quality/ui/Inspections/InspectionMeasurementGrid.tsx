@@ -168,6 +168,15 @@ function verdictCellFill(status: string | undefined) {
     : undefined;
 }
 
+// The cell of a deleted serial part: no entry marker, so keyboard entry skips it.
+function FreedCell() {
+  return (
+    <span className="-mx-4 -my-2 flex h-11 items-center justify-center bg-muted/40 text-sm text-muted-foreground/50">
+      —
+    </span>
+  );
+}
+
 // Features × samples measurement grid (1factory "Spreadsheet View"), with a
 // transposed "by part" layout for large batches. Built on the shared Table's
 // inline-editing machinery — the same pattern as InventoryCountGroups.
@@ -323,6 +332,11 @@ const InspectionMeasurementGrid = ({
     (sampleIndex: number) =>
       sampleIdByColumn[sampleIndex] ?? newSampleKey(sampleIndex),
     [sampleIdByColumn]
+  );
+  // A serial position whose part was deleted: shown, but takes no entry.
+  const isFreedPosition = useCallback(
+    (sampleIndex: number) => isSerial && !sampleIdByColumn[sampleIndex],
+    [isSerial, sampleIdByColumn]
   );
 
   const knownSampleCount = Math.max(
@@ -1136,7 +1150,7 @@ const InspectionMeasurementGrid = ({
           characteristicIndex: -1,
           sampleIndex,
           sampleLabel: isSerial
-            ? (sample?.trackedEntity?.readableId ?? `${sampleIndex + 1}`)
+            ? (sample?.trackedEntity?.readableId ?? t`Removed`)
             : `${sampleIndex + 1}`
         };
         characteristics.forEach((characteristic, characteristicIndex) => {
@@ -1168,11 +1182,13 @@ const InspectionMeasurementGrid = ({
     positionKey,
     isSerial,
     characteristics,
-    cellValue
+    cellValue,
+    t
   ]);
 
   const renderReading = useCallback(
     (characteristic: Characteristic, sampleIndex: number) => {
+      if (isFreedPosition(sampleIndex)) return <FreedCell />;
       const value = cellValue(sampleIndex, characteristic.featureId);
       const status = cellStatus(sampleIndex, characteristic.featureId);
       const deviation =
@@ -1207,7 +1223,7 @@ const InspectionMeasurementGrid = ({
         </span>
       );
     },
-    [cellValue, cellStatus, t]
+    [cellValue, cellStatus, isFreedPosition, t]
   );
 
   // Attribute pass/fail: a segmented, color-coded toggle. Each half is a
@@ -1217,6 +1233,7 @@ const InspectionMeasurementGrid = ({
   // the same buttons on screen instead of swapping them for an empty editor.
   const renderPassFail = useCallback(
     (characteristic: Characteristic, sampleIndex: number) => {
+      if (isFreedPosition(sampleIndex)) return <FreedCell />;
       const status = cellStatus(sampleIndex, characteristic.featureId);
       const passed = status === "Passed";
       const failed = status === "Failed";
@@ -1306,7 +1323,7 @@ const InspectionMeasurementGrid = ({
         </div>
       );
     },
-    [cellStatus, isReadOnly, bulkProgress, persistCell, t]
+    [cellStatus, isReadOnly, bulkProgress, persistCell, isFreedPosition, t]
   );
 
   const renderPassAll = useCallback(
@@ -1347,7 +1364,8 @@ const InspectionMeasurementGrid = ({
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="flex shrink-0 items-center gap-1">
+            {/* On phones a cell is capped narrow: wrap rather than clip. */}
+            <span className="flex shrink-0 items-center gap-1 max-md:flex-wrap">
               <Badge
                 variant={complete ? "green" : "secondary"}
                 className="tabular-nums"
@@ -1554,7 +1572,7 @@ const InspectionMeasurementGrid = ({
       cols.push({
         accessorKey: sampleKey(i),
         header: isSerial
-          ? (sample?.trackedEntity?.readableId ?? `${i + 1}`)
+          ? (sample?.trackedEntity?.readableId ?? t`Removed`)
           : `${i + 1}`,
         meta: { headerClassName: "justify-center" },
         cell: ({ row }) => {
@@ -1593,6 +1611,7 @@ const InspectionMeasurementGrid = ({
     characteristics,
     onCellEdit,
     renderPassFail,
+    isFreedPosition,
     aboveLabel: t`Above the upper limit`,
     belowLabel: t`Below the lower limit`
   };
@@ -1657,10 +1676,12 @@ const InspectionMeasurementGrid = ({
         }
       );
       components[key] = (props) => {
-        const { characteristics, renderPassFail } = editorStateRef.current;
+        const { characteristics, renderPassFail, isFreedPosition } =
+          editorStateRef.current;
         const { characteristicIndex, sampleIndex } = cellAt(key, props.row);
         const characteristic = characteristics[characteristicIndex];
         if (!characteristic) return <span />;
+        if (isFreedPosition(sampleIndex)) return <FreedCell />;
         if (!characteristic.isNumeric) {
           return renderPassFail(characteristic, sampleIndex);
         }

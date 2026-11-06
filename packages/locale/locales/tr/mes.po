@@ -1994,6 +1994,9 @@ msgstr "Parçayı kaldır"
 msgid "Remove two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı kaldır"
 
+msgid "Removed"
+msgstr "Kaldırıldı"
+
 msgid "Removed signature"
 msgstr "İmza kaldırıldı"
 

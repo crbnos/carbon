@@ -1994,6 +1994,9 @@ msgstr "Teil entfernen"
 msgid "Remove two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung entfernen"
 
+msgid "Removed"
+msgstr "Entfernt"
+
 msgid "Removed signature"
 msgstr "Entfernte Signatur"
 

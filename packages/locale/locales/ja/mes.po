@@ -1994,6 +1994,9 @@ msgstr "部品を除去"
 msgid "Remove two-factor authentication"
 msgstr "二要素認証を除去"
 
+msgid "Removed"
+msgstr "削除済み"
+
 msgid "Removed signature"
 msgstr "署名を除去"
 

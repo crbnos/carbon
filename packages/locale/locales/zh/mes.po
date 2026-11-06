@@ -1994,6 +1994,9 @@ msgstr "移除零件"
 msgid "Remove two-factor authentication"
 msgstr "移除双因素认证"
 
+msgid "Removed"
+msgstr "已移除"
+
 msgid "Removed signature"
 msgstr "已移除签名"
 

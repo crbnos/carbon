@@ -1045,9 +1045,10 @@ const InspectionMeasurementMatrix = ({
         const entityLabel =
           sample?.trackedEntity?.readableId ??
           sample?.trackedEntityId?.slice(0, 8);
-        return isSerial && entityLabel ? entityLabel : `${index + 1}`;
+        if (!isSerial) return `${index + 1}`;
+        return entityLabel ?? t`Removed`;
       }),
-    [columnCount, sampleAt, isSerial]
+    [columnCount, sampleAt, isSerial, t]
   );
 
   // Spreadsheet-style entry: Enter/Tab move to the next entry cell in
@@ -1194,6 +1195,18 @@ const InspectionMeasurementMatrix = ({
     characteristic: Characteristic,
     sampleIndex: number
   ) => {
+    // A serial position whose part was deleted: shown, but takes no entry,
+    // and keyboard entry skips it (no entry marker).
+    if (isSerial && !sampleIdByColumn[sampleIndex]) {
+      return (
+        <td
+          key={`${characteristic.featureId}-${sampleIndex}`}
+          className="h-px border-b border-r border-border bg-muted/40 p-0 text-center align-middle text-muted-foreground/50 last:border-r-0"
+        >
+          —
+        </td>
+      );
+    }
     const status = cellStatus(sampleIndex, characteristic.featureId);
     return (
       <td

@@ -1994,6 +1994,9 @@ msgstr "품목 제거"
 msgid "Remove two-factor authentication"
 msgstr "2단계 인증 제거"
 
+msgid "Removed"
+msgstr "제거됨"
+
 msgid "Removed signature"
 msgstr "서명 제거됨"
 
