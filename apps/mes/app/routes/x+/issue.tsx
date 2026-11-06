@@ -15,7 +15,6 @@ import { abilityBlockRefusal } from "~/services/operations.service";
 
 const logger = getLogger("mes", "issue");
 
-// Refusals return data: the modal posts through a fetcher, which never shows a flash.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { userId, companyId } = await requirePermissions(request, {});
@@ -126,7 +125,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (issued.error) {
     const context = { companyId, jobOperationId, itemId, error: issued.error };
-    // A 4xx is a refusal the user can act on (e.g. an inspection hold); a 5xx is ours.
     if (issued.error.status < 500) {
       logger.warn("Material issue refused", context);
       return { success: false, message: issued.error.message };

@@ -22,7 +22,6 @@ DECLARE
   v_unit_name TEXT;
   i           INT;
 BEGIN
-  -- Stock leaves only through a new ledger row.
   IF TG_OP <> 'INSERT' THEN
     RETURN NULL;
   END IF;
@@ -31,8 +30,6 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  -- Only an inspection hold: a unit On Hold for another reason (a customer
-  -- return awaiting its RMA disposition) is not this guard's to refuse.
   SELECT b."itemId" INTO v_item_id
   FROM batched_new b
   JOIN "trackedEntity" te ON te."id" = b."trackedEntityId"
@@ -47,8 +44,6 @@ BEGIN
       COALESCE(v_item, v_item_id);
   END IF;
 
-  -- The (item, unit) pairs an untracked move takes stock from where a lot can
-  -- hold stock. A Partial lot stops holding when its NCR closes (inspection_held_quantity).
   SELECT
     array_agg(k.c ORDER BY k.c, k.i, k.u),
     array_agg(k.i ORDER BY k.c, k.i, k.u),
@@ -67,18 +62,13 @@ BEGIN
   END IF;
 
   -- Two moves out of the same held (item, unit) must not both pass on the same
-  -- on-hand: the second waits for the first to commit, then reads its rows.
-  -- One order for every statement, so two statements cannot deadlock.
+  -- on-hand: the second waits for the first to commit, then reads its row.
   FOR i IN 1 .. array_length(v_units, 1) LOOP
     PERFORM pg_advisory_xact_lock(
       hashtextextended('inspection-hold:' || v_companies[i] || ':' || v_items[i] || ':' || v_units[i], 0)
     );
   END LOOP;
 
-  -- Held and on-hand from one snapshot, taken after the locks: read apart, a
-  -- receipt committing between the two reads counts on one side only. On-hand
-  -- already includes this statement's rows. Only untracked rows: serial and
-  -- batch stock is held by its status, above.
   SELECT k.i, k.u INTO v_item_id, v_unit
   FROM unnest(v_companies, v_items, v_units) AS k(c, i, u)
   CROSS JOIN LATERAL (

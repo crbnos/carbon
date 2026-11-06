@@ -24,8 +24,6 @@ export async function action(args: ActionFunctionArgs) {
     receiptId,
     acknowledged: input.data.acknowledged
   });
-  // An error is toasted and a storage rule opens the violation modal
-  // (useRuleViolations), which re-sends a warning with acknowledged.
   if (!result.data) return result;
   if ("violations" in result.data) return result.data;
   return respond(args.request, result).redirect(

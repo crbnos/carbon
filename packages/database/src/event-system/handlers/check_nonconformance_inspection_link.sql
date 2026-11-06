@@ -3,15 +3,6 @@ CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_link(p_table t
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A Partial untracked receipt lot holds its rejected remainder until its
--- linked NCR closes, and closing that NCR (closeIssue) writes the remainder
--- off. A direct link to an NCR that is already Closed would release the
--- remainder with no write-off; re-pointing or deleting the lot's link would
--- leave it held with no NCR to decide it. Only a posting that sets
--- app.inspection_release changes such a link; a company wipe, restore or
--- import sets one of the two flags, and deleting the company is never
--- refused. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_lot TEXT;
 BEGIN
@@ -25,7 +16,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- The lot this change takes the link from (re-point, unlink).
   IF p_operation IN ('UPDATE', 'DELETE') THEN
     SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
     FROM "inspection" i
@@ -42,7 +32,6 @@ BEGIN
     END IF;
   END IF;
 
-  -- The lot this change links to an NCR that is already Closed.
   IF p_operation IN ('INSERT', 'UPDATE') THEN
     SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
     FROM "inspection" i

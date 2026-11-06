@@ -2,10 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Goods-in inspection hold, the worst cases: a receipt lot is decided once,
-// untracked stock that is not in the held unit is never held or written off,
-// project stock keeps its stripe, and Put Away offers only what is there.
-// Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   dispositionInspection,
@@ -122,7 +118,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
 
   afterAll(async () => {
     if (!f) return;
-    // The plan's part link is RESTRICT; clear it before the company cascade.
     await seed(f, async (trx) => {
       await trx
         .deleteFrom("inspection")
@@ -140,8 +135,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     await f.cleanup();
   });
 
-  // The fixture's connection runs with the sync flag on, which the guard and
-  // the interceptors step aside for. Turn it off to reach them.
   const withGuard = async <T>(run: () => Promise<T>): Promise<T> => {
     await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
       f.db
@@ -155,7 +148,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     }
   };
 
-  /** 10 of the part received into its own held unit; returns the lot. */
   const receiveInto = async (key: string) => {
     const receiptId = await draftReceiptFromPurchaseOrder(f, key);
     await seed(f, (trx) =>
@@ -208,7 +200,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         .executeTakeFirstOrThrow()
     ).status;
 
-  /** Untracked on-hand of the part at a unit, per stripe ('' = unassigned). */
   const stripesAt = async (storageUnitId: string) => {
     const rows = await f.db
       .selectFrom("itemLedger")
@@ -291,13 +282,10 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         stripes: [{ projectId: null, quantity: -10 }]
       });
 
-      // Partial would hold phantom units; Accept would pass a lot whose stock
-      // is being written off.
       expect((await decide(lotId, "Partial", 4)).error).not.toBeNull();
       expect((await decide(lotId, "Accept")).error).not.toBeNull();
       expect(await statusOf(lotId)).toBe("Failed");
 
-      // The write-off failed to post the first time: Reject again retries it.
       const retry = await decide(lotId, "Reject");
       expect(retry.error).toBeNull();
       expect(retry.data?.writeOff?.stripes).toEqual([
@@ -307,7 +295,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
       expect((await postWriteOff(lotId, retry.data!.writeOff)).error).toBeNull();
       expect(await stripesAt(unitOf("a"))).toEqual({ "": 0 });
 
-      // Once it posted, a further retry is still allowed and books nothing.
       const again = await decide(lotId, "Reject");
       expect(again.error).toBeNull();
       expect((await postWriteOff(lotId, again.data!.writeOff)).error).toBeNull();
@@ -342,8 +329,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
           })
         );
 
-      // With no account defaults the write-off cannot post: the decision
-      // rolls back with it, so the lot keeps holding its stock.
       const defaults = await f.db
         .selectFrom("accountDefault")
         .selectAll()
@@ -374,7 +359,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     }
   );
 
-  // 4 of the 10 left in the held unit.
   const shortLot = async (key: string) => {
     const lot = await receiveInto(key);
     await seed(f, (trx) =>
@@ -417,7 +401,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
   databaseTest(
     "a short Reject leaves another open lot's stock in the unit",
     async () => {
-      // Two lots of 10 in one unit, 14 there: the first claims only 4.
       const first = await shortLot("c2");
       const secondReceipt = await draftReceiptFromPurchaseOrder(f, "c2-second");
       await seed(f, (trx) =>
@@ -463,7 +446,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
           /Only 4 of the 8 rejected/
         );
         expect(await statusOf(lotId)).toBe("Pending");
-        // Within what is there, the Partial holds its remainder in place.
         expect((await decide(lotId, "Partial", 7)).error).toBeNull();
         expect(await statusOf(lotId)).toBe("Partial");
         expect(await lotMoves(lotId)).toEqual([]);
@@ -476,7 +458,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
   databaseTest(
     "moves and writes off project stock on the stripe it was received on",
     async () => {
-      // 10 received: 6 for the project, 4 unassigned.
       const { receiptId, lotId } = await receiveInto("e");
       await seed(f, async (trx) => {
         await trx
@@ -502,7 +483,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
           .execute();
       });
 
-      // 8 rejected: the project's 6 first (most of the lot), then 2 unassigned.
       const partial = await decide(lotId, "Partial", 2);
       expect(partial.error).toBeNull();
       expect(
@@ -519,7 +499,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         ])
       );
       expect(await stripesAt(unitOf("e"))).toEqual({ "": 2, [projectId]: 0 });
-      // The NCR's scrap later draws the remainder from the same stripes.
       expect(
         await heldStockStripes(f.db, {
           companyId: f.companyId,
@@ -532,7 +511,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         { projectId: null, quantity: 2 }
       ]);
 
-      // A rejected lot of project stock is written off from the project.
       const other = await receiveInto("e2");
       await seed(f, (trx) =>
         trx
@@ -559,7 +537,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     async () => {
       const { receiptId, lotId } = await receiveInto("f");
       expect((await decide(lotId, "Accept")).error).toBeNull();
-      // 4 of the accepted 10 leave by an ordinary move before Put Away.
       expect((await takeOut(unitOf("f"), 4)).error).toBeNull();
       const lines = await getReceiptPutAwayLines(
         f.db,
@@ -576,7 +553,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
       const { lotId } = await receiveInto("g");
       const partial = await decide(lotId, "Partial", 9.7);
       expect(partial.error).toBeNull();
-      // 10 - 9.7 in floating point is 0.3000000000000007.
       expect(partial.data?.rejectedQuantity).toBe(0.3);
       expect(
         (await lotMoves(lotId))
@@ -586,7 +562,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     }
   );
 
-  /** A serial lot of `units` On Hold units on its own line of a receipt. */
   const serialLot = async (
     key: string,
     units: string[],
@@ -704,7 +679,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         { id: passed, status: "On Hold" },
         { id: failed, status: "On Hold" }
       ]);
-      // Still held: a direct edit cannot release a sampled unit either.
       await expect(
         withGuard(() =>
           f.db
@@ -716,8 +690,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         )
       ).rejects.toThrow(/held for inspection/);
 
-      // The decision sets every unit: the passed one Available, the failed
-      // one Rejected.
       expect((await decide(lot, "Accept")).error).toBeNull();
       expect(await statuses()).toEqual([
         { id: passed, status: "Available" },
@@ -726,7 +698,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     }
   );
 
-  // The NCR opens through PostgREST, so this needs the local stack too.
   const client = hasLocalDatabase ? localServiceRoleClient() : null;
   it.skipIf(!client)(
     "a serial Partial whose NCR did not open gets one, once",
@@ -734,7 +705,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
       const [failedUnit, passedUnit] = ["x", "y"].map(
         (k) => `${f.prefix}-sn-${k}`
       );
-      // A Partial already decided: one unit failed (Rejected), one accepted.
       const lot = await serialLot("i", [failedUnit!, passedUnit!], {
         status: "Partial",
         acceptedQuantity: 1
@@ -805,7 +775,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
       expect(links).toEqual([{ trackedEntityId: failedUnit }]);
       expect(await statusOf(lot)).toBe("Partial");
 
-      // With its NCR open, marking it partial again is a second decision.
       const again = await quality.partialInspection(ctx, {
         id: lot,
         createNcr: true
@@ -821,8 +790,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     },
     60_000
   );
-  /** Ships `quantity` of untracked stock out of a unit as a return shipment
-   *  does (under the release flag), then rolls back; the refusal or null. */
   const returnShip = (storageUnitId: string, quantity: number) =>
     withGuard(async () => {
       const rollback = new Error("rollback");
@@ -840,7 +807,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
             createdBy: USER
           };
           await trx.insertInto("itemLedger").values(row).execute();
-          // A supplier return may ship a Partial lot's remainder.
           await refuseShippingOpenLotStock(trx, f.companyId, [row], {
             includePartial: false
           });
@@ -861,8 +827,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         /Decide the inspection lot first/
       );
 
-      // A Partial lot's remainder goes back to the supplier while its NCR is
-      // open; its accepted part is free.
       const partial = await receiveInto("k2");
       expect((await decide(partial.lotId, "Partial", 6)).error).toBeNull();
       expect(await returnShip(rejectedUnit, 4)).toBeNull();

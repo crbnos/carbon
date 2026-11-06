@@ -67,8 +67,6 @@ export function GoodsInStorageCard({
     return map;
   }, [storageUnits]);
 
-  // A save sends only the field that changed, so a stale page never writes
-  // back the other one. The selectors wait for the last save to reload.
   const submit = useCallback(
     (
       locationId: string,
@@ -102,7 +100,6 @@ export function GoodsInStorageCard({
         <div className="flex flex-col">
           {locations.map((location, index) => {
             const options = optionsByLocation.get(location.id) ?? [];
-            // Short enough not to truncate; the full meaning is the select's title.
             const placeholder =
               options.length === 0 ? t`None available` : t`Not set`;
             return (
@@ -179,8 +176,6 @@ function GoodsInStorageSelect({
   const { t } = useLingui();
   const warningId = useId();
   const noneAvailableId = useId();
-  // A stored unit that is no longer offered (made nettable or inactive since)
-  // still shows by name, with why it no longer fits.
   const notOffered = !!value && !options.some((o) => o.value === value);
   const name = storedUnit?.name ?? value ?? "";
   const shownOptions = notOffered

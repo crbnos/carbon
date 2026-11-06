@@ -145,7 +145,6 @@ const qualitySettingsForm = z.discriminatedUnion("intent", [
     .object({
       intent: z.literal("setLocationGoodsInStorage"),
       locationId: z.string().min(1, { message: "Location is required" }),
-      // Absent keeps the stored unit; empty clears it.
       inspectionStorageUnitId: z
         .string()
         .optional()

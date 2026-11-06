@@ -16,7 +16,6 @@ export async function action(args: ActionFunctionArgs) {
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.issueDetails(id),
     {
-      // A Partial lot's Scrap that found less than it held says so.
       message: result.data?.warning
         ? `NCR closed. ${result.data.warning}`
         : "NCR closed"

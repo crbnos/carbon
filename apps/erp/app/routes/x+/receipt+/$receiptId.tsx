@@ -175,11 +175,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isPosted = receipt.data.status === "Posted";
   const [putAwayLines, putAwayTransfers, nonNettableStorageUnits] =
     await Promise.all([
-      // A receipt that is Put Away has nothing left to put away.
       isPosted &&
       !["Not Required", "Put Away"].includes(receipt.data.inspectionStatus)
-        ? // A Kysely read throws: the receipt still opens, with no putaway.
-          getReceiptPutAwayLines(
+        ? getReceiptPutAwayLines(
             getDatabaseClient(),
             companyId,
             receiptId

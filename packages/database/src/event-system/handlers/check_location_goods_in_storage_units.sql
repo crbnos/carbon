@@ -4,11 +4,9 @@ CREATE OR REPLACE FUNCTION public.check_location_goods_in_storage_units(p_table 
  SET search_path TO 'public', 'extensions'
 AS $function$
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A location's inspection and rejected storage units must be its own, active
--- and non-nettable: the foreign keys only check that the unit exists, and held
--- stock in a nettable unit would be offered to MRP and picking. A company
--- restore or import sets one of the two flags. A plain RAISE (P0001), so the
--- API shows the text.
+-- A location's inspection and rejected storage units must be its own: the
+-- foreign keys only check that the unit exists, not that it belongs to this
+-- location and company. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_column TEXT;
   v_unit   TEXT;

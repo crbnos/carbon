@@ -109,8 +109,6 @@ const ReceiptHeader = () => {
   const putAwayTransfers = routeData?.putAwayTransfers ?? [];
   const canPutAway =
     permissions.can("create", "inventory") && permissions.is("employee");
-  // A warn-severity storage rule asks to be acknowledged, as on a stock
-  // transfer made by hand; a blocking one stops the putaway.
   const putAwayRules = useRuleViolations({
     action: path.to.receiptPutAway(receiptId)
   });

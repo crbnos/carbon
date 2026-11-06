@@ -81,10 +81,6 @@ CREATE INDEX IF NOT EXISTS "stockTransferLine_receiptLineId_idx"
 -- remainder until its NCR closes. Serial and batch stock is held by its
 -- trackedEntity status (On Hold), not here.
 
--- Whether a lot holds stock: open, or Partial until its NCR closes. The one
--- rule the hold guard, inspection_held_quantity and the lot and NCR
--- interceptors share. Callers filter on status first, which the partial index
--- inspection_hold_idx serves; no SET clause, so the planner can inline it.
 CREATE OR REPLACE FUNCTION public.inspection_lot_holds(
   p_inspection_id TEXT, p_status "inspectionStatusType", p_accepted_quantity NUMERIC
 ) RETURNS BOOLEAN
@@ -103,9 +99,6 @@ AS $$
     );
 $$;
 
--- Whether a receipt line's lot is still open: its serial and batch units stay
--- held (On Hold) until then. The guard, its interceptors and every pre-check
--- call it; the unique index on sourceDocumentLineId serves it.
 CREATE OR REPLACE FUNCTION public.inspection_line_lot_open(
   p_company_id TEXT, p_receipt_line_id TEXT
 ) RETURNS BOOLEAN
@@ -120,8 +113,6 @@ AS $$
   );
 $$;
 
--- Whether any lot holds untracked stock of an item in a unit (open lots only,
--- with p_open_lots_only). The guard's cheap first test, on inspection_hold_idx.
 CREATE OR REPLACE FUNCTION public.inspection_holds_at(
   p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT,
   p_open_lots_only BOOLEAN DEFAULT false
@@ -139,9 +130,6 @@ AS $$
   );
 $$;
 
--- What lots hold of an untracked item in a unit: an open lot its lot size, a
--- Partial lot its remainder until its NCR closes. With p_open_lots_only, open
--- lots only (a supplier return may ship a Partial lot's remainder).
 CREATE OR REPLACE FUNCTION public.inspection_held_quantity(
   p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT,
   p_open_lots_only BOOLEAN DEFAULT false
@@ -166,9 +154,6 @@ AS $$
     AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
 $$;
 
--- Untracked on-hand of an item in a unit: the one definition the hold guard
--- and every pre-check read (serial and batch stock is held by its status).
--- An index-only scan of itemLedger_untracked_storageUnit_item_idx.
 CREATE OR REPLACE FUNCTION public.inspection_untracked_on_hand(
   p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT
 ) RETURNS NUMERIC
@@ -214,11 +199,9 @@ BEGIN
         ELSE 0
       END AS "passed"
     FROM "inspection" i
-    -- Held stock only: a lot in a nettable unit (or none) never held its stock.
     JOIN "storageUnit" su
       ON su."id" = i."storageUnitId"
      AND su."effectiveNettable" = false
-    -- A voided receipt received nothing, so it has nothing to inspect.
     JOIN "receipt" r
       ON r."id" = i."sourceDocumentId"
      AND r."status" <> 'Voided'
@@ -265,19 +248,13 @@ BEGIN
 END;
 $$;
 
--- A receipt line's tracked units, looked up by the line (receipt putaway,
--- inspection lots). The GIN index on "attributes" serves @>, not ->> =.
 CREATE INDEX IF NOT EXISTS "trackedEntity_companyId_receiptLine_idx"
   ON "trackedEntity" ("companyId", ("attributes" ->> 'Receipt Line'))
   WHERE ("attributes" ->> 'Receipt Line') IS NOT NULL;
 
--- The hold guard's on-hand: untracked rows of one (item, unit), read from the
--- index alone instead of every ledger row of the item.
 CREATE INDEX IF NOT EXISTS "itemLedger_untracked_storageUnit_item_idx"
   ON "itemLedger" ("storageUnitId", "itemId", "companyId") INCLUDE ("quantity")
   WHERE "trackedEntityId" IS NULL;
-
--- Backfill -------------------------------------------------------------------
 
 -- A data fix, not user activity: keep it out of the event queue (audit log,
 -- webhooks, workflows). Transaction-local.
@@ -306,8 +283,6 @@ WHERE i."sourceDocument" = 'Receipt'
   AND r."status" = 'Voided'
   AND i."status" IN ('Pending', 'In Progress');
 
--- A lot from before the hold sits in an ordinary (nettable) bin: its stock was
--- never held, so it holds nothing now either.
 UPDATE "inspection" i
 SET "storageUnitId" = NULL
 FROM "storageUnit" su

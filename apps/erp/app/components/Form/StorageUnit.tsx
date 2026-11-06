@@ -336,7 +336,6 @@ type StorageUnitProps = {
   /** On-hand of `itemId` per storage unit, when the caller has it. */
   quantities?: Map<string, number>;
   onChange?: (storageUnit: ListItem | null) => void;
-  /** Controlled mode: the field's accessible name and description. */
   "aria-label"?: string;
   "aria-describedby"?: string;
 };

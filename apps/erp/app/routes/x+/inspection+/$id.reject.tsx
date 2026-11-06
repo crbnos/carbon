@@ -36,7 +36,6 @@ export async function action(args: ActionFunctionArgs) {
   return respond(args.request, result).redirect(
     path.to.issue(result.data.issueId),
     {
-      // A repeated decision returns the lot's NCR; it opened none.
       message:
         "ncrOpened" in result.data
           ? "Lot rejected — NCR opened"

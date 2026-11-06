@@ -3,17 +3,10 @@ CREATE OR REPLACE FUNCTION public.check_tracked_entity_inspection_hold(p_table t
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A serial or batch unit is held by its On Hold status while its receipt
--- line's lot is open, so a direct edit (PostgREST) could release it without a
--- decision. Only the postings that ARE the release (they set
--- app.inspection_release) change its status or its receipt line then. A plain
--- RAISE (P0001), so the API shows the text.
 DECLARE
   v_line TEXT;
   v_item TEXT;
 BEGIN
-  -- Hot path: most updates are of units that are not On Hold.
   IF p_operation <> 'UPDATE' OR p_old->>'status' IS DISTINCT FROM 'On Hold' THEN
     RETURN;
   END IF;

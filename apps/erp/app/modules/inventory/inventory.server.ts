@@ -352,9 +352,7 @@ export const updateReceipt = defineServiceFn({
  * @remarks
  * In order:
  *   1. A Posted or Voided receipt is refused (`conflict`): posting it again
- *      would duplicate its ledger entries, cost layers and journal lines. A
- *      purchase order line that needs inspection is refused (`rule`) unless
- *      it is in a non-nettable storage unit at the receipt's location.
+ *      would duplicate its ledger entries, cost layers and journal lines.
  *   2. Storage rules run on the `receipt` and `place` surfaces (and
  *      `warehouseTransfer` for an inbound transfer), and a purchase order
  *      receipt is checked for over-receipt against the live order lines. A
@@ -722,9 +720,8 @@ export const splitReceiptLine = defineServiceFn({
  *
  * @remarks
  * `storageUnitId` or `receivedQuantity`, on every line in `ids`. An empty
- * value clears the field. A negative received quantity is refused on a line
- * that needs inspection, unless it is a return line (a negative order
- * quantity). Storage rules run when the receipt is posted, not here.
+ * value clears the field. Storage rules run when the receipt is posted, not
+ * here.
  *
  * @mcp
  */
@@ -774,8 +771,6 @@ export const updateReceiptLines = defineServiceFn({
       if (!Number.isFinite(receivedQuantity)) {
         return ctx.error("validation", "Received quantity must be a number");
       }
-      // A negative quantity on an inspected line would take held stock out
-      // of the inspection unit by a receipt. A return line may still.
       if (
         receivedQuantity < 0 &&
         lines.data.some(
@@ -833,8 +828,6 @@ export const updateReceiptLines = defineServiceFn({
       return { ids };
     }
 
-    // The system client writes the line: the unit must be the company's and
-    // at the location of every line it is set on.
     const storageUnitId = value || null;
     if (storageUnitId) {
       const [unit, lines] = await Promise.all([
@@ -1916,7 +1909,6 @@ export const postShipment = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        // The posting's own refusal (the inspection hold's included) is shown.
         return fromServerFn(ctx, posted.error, "Failed to post shipment");
       }
       splitEntityIds = posted.data?.splitEntityIds ?? [];
@@ -3627,9 +3619,7 @@ export const postInventoryCount = defineServiceFn({
  * `inventoryAdjustment` surface and, when a storage unit is named, on `pick`
  * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
  * returns its `violations` and `ruleNames` and changes nothing; send
- * `acknowledged: true` to adjust past warnings. Stock held for inspection is
- * refused before the rules run: a serial or batch unit under an open receipt
- * lot, and untracked stock below what open lots hold in the unit.
+ * `acknowledged: true` to adjust past warnings.
  *
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
@@ -3673,8 +3663,6 @@ export const adjustInventory = defineServiceFn({
     );
     if (serial) return serial;
 
-    // The hold refuses before a storage rule asks to be acknowledged, as the
-    // receipt post does.
     const held = await service.inspectionHoldAdjustmentRefusal(
       ctx.asSystem.pg,
       ctx.company.id,
@@ -3711,8 +3699,6 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      // A message the posting kept (its own refusal, or a SQL RAISE such as
-      // the inspection hold's) is shown; our own failures stay generic.
       return fromServerFn(
         ctx,
         posted.error,

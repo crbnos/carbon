@@ -2,14 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Goods-in inspection hold, the edges: what a count reports, a putaway pick
-// after the stock left, an adjustment of a held batch, a repeated Reject, the
-// restore of a rejected lot kept as is, a Partial whose NCR fails after the
-// decision, a negative received quantity, and a Partial lot's remainder
-// (void, return to a customer, its NCR closed), an NCR holding two lots, a
-// Set Quantity of one stripe, and a second lot sharing a unit (a void, a
-// Partial, an NCR's Scrap), and an NCR that scraps units of an open lot.
-// Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -157,7 +149,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
 
   afterAll(async () => {
     if (!f) return;
-    // The plan's part link is RESTRICT; clear it before the company cascade.
     await seed(f, async (trx) => {
       await trx
         .deleteFrom("inspection")
@@ -175,8 +166,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     await f.cleanup();
   });
 
-  // The fixture's connection runs with the sync flag on, which the guard and
-  // the interceptors step aside for. Turn it off to reach them.
   const withGuard = async <T>(run: () => Promise<T>): Promise<T> => {
     await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
       f.db
@@ -190,7 +179,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     }
   };
 
-  // Operations that open an NCR or read through PostgREST need the local stack.
   const client = hasLocalDatabase ? localServiceRoleClient() : null;
   const stackContext = () =>
     createServiceContext({
@@ -204,8 +192,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       }
     });
 
-  // An NCR needs an issue type. Added by the tests that open one, after the
-  // test that needs the company to have none.
   const ensureIssueType = () =>
     seed(f, (trx) =>
       trx
@@ -219,7 +205,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         .execute()
     );
 
-  /** 10 of the part received into a held unit; returns the receipt and lot. */
   const receiveInto = async (key: string, unitKey = key) => {
     const receiptId = await draftReceiptFromPurchaseOrder(f, key);
     await seed(f, (trx) =>
@@ -269,7 +254,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         .executeTakeFirstOrThrow()
     ).status;
 
-  /** A serial or batch item with one On Hold unit on a held receipt line. */
   const heldUnit = async (
     key: string,
     trackingType: "Serial" | "Batch",
@@ -383,7 +367,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       const countId = `${f.prefix}-count`;
       const { lotId } = await receiveInto("count");
       const awaiting = await heldUnit("awaiting", "Serial", "open");
-      // On Hold for a customer return: no lot, not held for inspection.
       const returned = await heldUnit("returned", "Serial", "none");
       const moveOut = (
         rows: Array<{
@@ -446,7 +429,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         onHand: null,
         held: null
       });
-      // The lot of 10 holds 10; the count left 7.
       expect(first[unitOf("count")]).toMatchObject({
         awaitingInspection: false,
         countedShort: true,
@@ -454,7 +436,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         held: 10
       });
 
-      // The same count found the 3 on the shelf: stock found elsewhere.
       await moveOut([
         { itemId: f.partId, storageUnitId: shelf, quantity: 3 }
       ]);
@@ -469,7 +450,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "a putaway pick takes no more than is still in its unit; an ordinary pick is unchanged",
     async () => {
       const { receiptId, lotId } = await receiveInto("put");
-      // Accepted (the fixture's writes run as a sync, past the lot check).
       await seed(f, (trx) =>
         trx
           .updateTable("inspection")
@@ -484,7 +464,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         receiptId
       });
       if (!("created" in result)) throw new Error(result.refusal);
-      // An ordinary move takes 9 of the 10 before the putaway is picked.
       expect(
         (
           await withGuard(() =>
@@ -517,7 +496,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       expect(await untrackedAt(unitOf("put"))).toBe(1);
       expect(await untrackedAt(shelf)).toBe(shelfBefore);
 
-      // A transfer line that is not a putaway still picks as before.
       const ordinary = await f.db
         .insertInto("stockTransfer")
         .values({
@@ -587,7 +565,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   it.skipIf(!client)(
     "a serial Partial whose NCR fails to open reports the decision as made",
     async () => {
-      // A serial lot: one unit failed, one passed, sampling complete.
       const units = ["p", "q"].map((k) => `${f.prefix}-sn-${k}`);
       const line = `${f.prefix}-line-serial`;
       const item = `${f.prefix}-item-serial`;
@@ -692,7 +669,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           ])
           .execute();
       });
-      // The company has no issue type yet, so the NCR cannot open.
       const partial = await withGuard(() =>
         quality.partialInspection(stackContext(), { id: lot, createNcr: true })
       );
@@ -786,7 +762,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       await ensureIssueType();
       const { lotId } = await receiveInto("short");
-      // A count found 4 of the lot's 10 missing from its unit.
       await seed(f, (trx) =>
         trx
           .insertInto("itemLedger")
@@ -845,8 +820,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     60_000
   );
 
-  // With no rejected unit, a Partial lot's remainder stays held where it was
-  // received.
   const withoutRejectedUnit = async <T>(run: () => Promise<T>): Promise<T> => {
     const setRejected = (unit: string | null) =>
       seed(f, (trx) =>
@@ -865,7 +838,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     }
   };
 
-  /** A lot of 10 in its own unit, 6 accepted, 4 held under an open NCR. */
   const partialLot = async (key: string, unitKey = key) => {
     await ensureIssueType();
     const received = await receiveInto(key, unitKey);
@@ -905,7 +877,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       await partialLot("rma");
       class Rollback extends Error {}
-      // Ship 7 of the 10: 3 stay, below the 4 the Partial lot holds.
       const outcome = async (includePartial: boolean) => {
         try {
           await f.db.transaction().execute(async (trx) => {
@@ -1065,7 +1036,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           })
           .execute();
       });
-      // The unit holds 10 common (all held by the open lot) and 5 of the project.
       const setTo = (quantity: number, stripe: string | null) =>
         inspectionHoldAdjustmentRefusal(f.db, f.companyId, {
           itemId: f.partId,
@@ -1074,9 +1044,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           quantity,
           projectId: stripe
         });
-      // The project stripe to 3 leaves 13, still above the 10 held.
       expect(await setTo(3, projectId)).toBeNull();
-      // The common stripe to 3 leaves 8.
       expect(await setTo(3, null)).not.toBeNull();
     },
     60_000
@@ -1179,7 +1147,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "a receipt void cannot take stock another receipt's open lot holds in the unit",
     async () => {
       const first = await receiveInto("share");
-      // The first lot is accepted and its stock leaves the unit.
       const accepted = await withGuard(() =>
         dispositionInspection(f.db, {
           id: first.lotId,
@@ -1190,7 +1157,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       );
       expect(accepted.error).toBeNull();
       await moveOut(unitOf("share"), 10, "share-away");
-      // A second receipt's open lot now holds the unit's 10.
       await receiveInto("share-2", "share");
 
       const voided = await withGuard(() =>
@@ -1201,7 +1167,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           postReceipt
         )
       );
-      // Refused as the person's refusal, in the hold's words.
       expect(voided.error?.status).toBe(400);
       expect(voided.error?.message).toMatch(
         /^Cannot void: .* is held for inspection in /
@@ -1217,7 +1182,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       await ensureIssueType();
       const first = await receiveInto("partshare");
       await receiveInto("partshare-2", "partshare");
-      // A count found 6 missing: 14 there, the second lot holds 10.
       await moveOut(unitOf("partshare"), 6, "partshare-count");
       const partial = await withGuard(() =>
         quality.partialInspection(stackContext(), {
@@ -1237,7 +1201,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "an NCR's Scrap of a Partial lot writes off no more than the lot's remainder",
     async () => {
       const { issueId } = await partialLot("cap");
-      // A second open lot holds 10 in the same unit.
       await receiveInto("cap-2", "cap");
       await seed(f, (trx) =>
         trx
@@ -1255,9 +1218,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         })
       );
       expect(closed.error).toBeNull();
-      // 20 received, 4 written off: the 6 accepted and the second lot's 10 stay.
       expect(await untrackedAt(unitOf("cap"))).toBe(16);
-      // 12 set to Scrap, the lot held 4: the close says so.
       expect(closed.data?.warning).toMatch(
         /^4 of 12 set to Scrap written off: the lot holds only 4 rejected\.$/
       );
@@ -1270,7 +1231,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       const first = await partialLot("pa");
       await partialLot("pa-2", "pa");
-      // 20 received, each lot holds 4. A count found 13 missing: 7 there.
       await moveOut(unitOf("pa"), 13, "pa-count");
       await seed(f, (trx) =>
         trx
@@ -1288,7 +1248,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         })
       );
       expect(closed.error).toBeNull();
-      // 3 written off: the second lot's 4 stay, and the close says so.
       expect(await untrackedAt(unitOf("pa"))).toBe(4);
       expect(closed.data?.warning).toMatch(/^3 of 4 set to Scrap written off: 1 is not in /);
     },
@@ -1300,7 +1259,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       const first = await partialLot("dual");
       const second = await partialLot("dual-2", "dual");
-      // 20 received, each lot holds 4. A count found 13 missing: 7 there.
       await moveOut(unitOf("dual"), 13, "dual-count");
       await seed(f, (trx) =>
         trx
@@ -1310,7 +1268,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           .where("companyId", "=", f.companyId)
           .execute()
       );
-      // Each close on its own connection, as two users at once.
       const connect = async () => {
         const db = await connectLocalTestDatabase();
         await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
@@ -1339,7 +1296,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         await left.destroy();
         await right.destroy();
       }
-      // The first close takes 3 (the other lot holds 4), the second the 4.
       expect(await untrackedAt(unitOf("dual"))).toBe(0);
     },
     60_000
@@ -1368,7 +1324,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         )
       );
       expect(partial.error).toBeNull();
-      // The 4 rejected stay held: moving 7 of the 10 out leaves 3.
       await expect(
         withGuard(() =>
           f.db
@@ -1397,7 +1352,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       await ensureIssueType();
       const legacy = await receiveInto("legnet");
-      // Before the hold, a lot recorded no unit, and its bin could be pickable.
       await seed(f, async (trx) => {
         await trx
           .updateTable("inspection")
@@ -1418,7 +1372,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         .where("id", "=", unitOf("legnet"))
         .executeTakeFirstOrThrow();
       expect(unit.effectiveNettable).toBe(true);
-      // 8 of the bin's 10 were picked to a job.
       await moveOut(unitOf("legnet"), 8, "legnet-picked");
 
       const partial = await withoutRejectedUnit(() =>
@@ -1455,7 +1408,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         })
       );
       expect(closed.error).toBeNull();
-      // The Scrap writes off from the receipt line's bin, no more than is there.
       expect(await untrackedAt(unitOf("legnet"))).toBe(0);
     },
     60_000
@@ -1466,7 +1418,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       await ensureIssueType();
       const legacy = await receiveInto("nobin");
-      // A location without bins: the lot, its line and its stock have no unit.
       await seed(f, async (trx) => {
         await trx
           .updateTable("inspection")
@@ -1553,8 +1504,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           .execute();
       });
       await moveOut(unitOf("legmove"), 7, "legmove-picked");
-      // The location has a rejected unit: 8 rejected would be held there,
-      // but only 3 are in the bin.
       const partial = await withGuard(() =>
         quality.partialInspection(stackContext(), {
           id: legacy.lotId,
@@ -1574,7 +1523,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       await ensureIssueType();
       const legacy = await receiveInto("leg");
-      // Lots open before the hold recorded no storage unit.
       await seed(f, (trx) =>
         trx
           .updateTable("inspection")
@@ -1584,9 +1532,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           .execute()
       );
       await receiveInto("leg-2", "leg");
-      // 20 received, the second lot holds 10. A count found 8 missing: 12 there.
       await moveOut(unitOf("leg"), 8, "leg-count");
-      // With no rejected unit nothing moves, so only the check stops it.
       const partial = await withoutRejectedUnit(() =>
         withGuard(() =>
           quality.partialInspection(stackContext(), {
@@ -1602,7 +1548,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     60_000
   );
 
-  // Create Issue from an inspection lot: the units it passes are the row's.
   const createIssueFor = async (item: string, units: string[]) => {
     const type = await f.db
       .selectFrom("nonConformanceType")
@@ -1654,7 +1599,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "an issue created for a serial unit links it to the item's row, so its Scrap writes the unit off",
     async () => {
       await ensureIssueType();
-      // On Hold with no open lot (a customer return): free to scrap.
       const { item, unit } = await heldUnit("ci-free", "Serial", "none");
       const issueId = await createIssueFor(item, [unit]);
       expect(
@@ -1689,7 +1633,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       await ensureIssueType();
       const serial = await heldUnit("ci-two-s", "Serial", "none");
       const batch = await heldUnit("ci-two-b", "Batch", "none");
-      // Only the serial's item is named; the batch's row is made for it.
       const issueId = await createIssueFor(serial.item, [
         serial.unit,
         batch.unit
@@ -1732,13 +1675,11 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       expect(await linkedRows(first)).toEqual([{ trackedEntityId: unit }]);
       expect(await linkedRows(second)).toEqual([{ trackedEntityId: unit }]);
       expect((await scrapAndClose(first)).error).toBeNull();
-      // The unit is gone: the second Scrap books nothing and says why.
       const closedSecond = await scrapAndClose(second);
       expect(closedSecond.error).toBeNull();
       expect(closedSecond.data?.warning).toMatch(
         /^1 tracked unit set to Scrap or Return had less stock than linked: only what was there was written off\./
       );
-      // Written off once.
       const writeOffs = async () =>
         (
           await f.db
@@ -1749,7 +1690,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
             .execute()
         ).map((row) => Number(row.quantity));
       expect(await writeOffs()).toEqual([-1]);
-      // Now out of stock: a third issue takes it as an association only too.
       const third = await createIssueFor(item, [unit]);
       expect(await linkedRows(third)).toEqual([]);
       expect((await scrapAndClose(third)).error).toBeNull();
@@ -1783,7 +1723,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         })
       );
       expect(closed.error).toBeNull();
-      // Written off with no stock left: not made Available again.
       expect(await unitStatus(unit)).toBe("Rejected");
       expect(closed.data?.warning).toMatch(/left as it was: no stock left/);
     },
@@ -1806,7 +1745,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     async () => {
       await ensureIssueType();
       const { item, unit } = await heldUnit("ci-adjusted", "Serial", "none");
-      // As a unit an adjustment or a count brought in: no receipt line.
       await seed(f, (trx) =>
         trx
           .updateTable("trackedEntity")
@@ -1818,7 +1756,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       const first = await createIssueFor(item, [unit]);
       const second = await createIssueFor(item, [unit]);
       expect((await scrapAndClose(first)).error).toBeNull();
-      // Where its stock is, not at the NCR's location with no unit.
       expect(await nonConformanceWriteOffs(unit)).toEqual([
         {
           quantity: -1,
@@ -1842,7 +1779,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       await ensureIssueType();
       const item = `${f.prefix}-item-ci-wip`;
       const unit = `${f.prefix}-unit-ci-wip`;
-      // Job work in progress: a unit with no ledger row.
       await seed(f, async (trx) => {
         await trx
           .insertInto("item")
@@ -1887,7 +1823,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           .where("nonConformanceId", "=", issueId)
           .execute()
       ).toEqual([{ trackedEntityId: unit }]);
-      // Linked to the row as a job operation's lot is.
       await seed(f, async (trx) => {
         const row = await trx
           .selectFrom("nonConformanceItem")

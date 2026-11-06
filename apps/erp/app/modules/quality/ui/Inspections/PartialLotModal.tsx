@@ -71,7 +71,6 @@ const PartialLotModal = ({
   const acceptedValid =
     !isUntracked ||
     (acceptedEntered && acceptedQuantity > 0 && acceptedQuantity < lotSize);
-  // Rounded: the plain difference of two decimals carries float noise.
   const rejectedQuantity = acceptedEntered
     ? formatQuantity(round(lotSize - acceptedQuantity))
     : null;

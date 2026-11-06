@@ -717,7 +717,6 @@ export async function insertManualInventoryAdjustment(
   );
 
   if (result.error) {
-    // The route shows this message (the posting's refusal) to the person.
     return {
       data: null,
       error: {

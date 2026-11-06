@@ -6922,7 +6922,6 @@ export async function refuseUnheldInspectedReceiptLines(
     (assignments.data ?? []).map((row) => row.itemId)
   );
 
-  // A line its project consumes at receipt opens no lot (postReceipt).
   const consumedPoLineIds = await projectConsumedPurchaseOrderLineIds(
     db,
     companyId,
@@ -6938,15 +6937,6 @@ export async function refuseUnheldInspectedReceiptLines(
   });
 }
 
-/**
- * Refuses a return shipment that takes stock a receipt inspection lot holds.
- * The return posting runs under the release flag (it puts back and ships a
- * rejected lot's write-off), so the hold guard steps aside: this is its check.
- * A supplier return checks open lots only: shipping a Partial lot's remainder
- * to the supplier is how its NCR returns it. A return to a customer
- * (`includePartial`) may not ship that remainder either. Call after the
- * shipment's ledger rows are written, before units change status.
- */
 export async function refuseShippingOpenLotStock(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
@@ -6992,8 +6982,6 @@ export async function refuseShippingOpenLotStock(
     `${a.itemId}:${a.unitId}`.localeCompare(`${b.itemId}:${b.unitId}`)
   );
   let short: { itemId: string; unitId: string } | undefined;
-  // Only where a lot holds stock (inspection_hold_idx), as the guard reads
-  // it: a return from any other bin may leave it at or below zero.
   const heldPairs =
     pairs.length > 0
       ? (
@@ -7005,8 +6993,6 @@ export async function refuseShippingOpenLotStock(
         ).rows
       : [];
   if (heldPairs.length > 0) {
-    // The hold guard's lock: a concurrent move out of the same (item, unit)
-    // reads on-hand after this commits.
     await lockHeldUnits(
       trx,
       companyId,
@@ -7052,14 +7038,6 @@ export async function refuseShippingOpenLotStock(
   );
 }
 
-/**
- * Why the inspection hold refuses this adjustment, or null: a serial or batch
- * unit On Hold under its open receipt lot changes only through the lot's
- * decision (an increase would add units the decision then moves), and
- * untracked stock may not go below what open lots hold in the unit. The
- * hold guard refuses the decrease anyway; asking first keeps a storage rule
- * from asking to be acknowledged for an adjustment that cannot post.
- */
 export async function inspectionHoldAdjustmentRefusal(
   db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   companyId: string,
@@ -7069,7 +7047,6 @@ export async function inspectionHoldAdjustmentRefusal(
     trackedEntityId?: string | null;
     adjustmentType: string;
     quantity: number;
-    /** The stripe a Set Quantity sets; unassigned stock when empty. */
     projectId?: string | null;
   }
 ): Promise<string | null> {
@@ -7123,7 +7100,6 @@ export async function inspectionHoldAdjustmentRefusal(
   const hold = row.rows[0];
   if (!hold || Number(hold.held) <= EPSILON) return null;
   const onHand = Number(hold.onHand);
-  // A Set Quantity sets one stripe; the others stay in the unit.
   const after =
     args.adjustmentType === "Set Quantity"
       ? onHand - Number(hold.stripeOnHand) + args.quantity
@@ -7137,10 +7113,6 @@ export async function inspectionHoldAdjustmentRefusal(
   return `${await partName()} is held for inspection in ${hold.name ?? args.storageUnitId}. Quality must decide its inspection lot before it can move.`;
 }
 
-/**
- * Whether a receipt line is consumed by its project at receipt: received and
- * issued at once (a Project Issue row), so no stock stays in its unit.
- */
 export function isConsumedByProjectAtReceipt(line: {
   hasProjectRoute: boolean;
   isOutsideProcessing: boolean;
@@ -7155,11 +7127,6 @@ export function isConsumedByProjectAtReceipt(line: {
   );
 }
 
-/**
- * The purchase order lines of these receipt lines that their project consumes
- * at receipt, as `postReceipt` decides it. Null when a line's project cannot
- * take the charge: the posting refuses that receipt in its own words.
- */
 async function projectConsumedPurchaseOrderLineIds(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -7298,7 +7265,6 @@ export async function unheldInspectedLineRefusal(
   return `${readableId} needs inspection. Choose a non-nettable storage unit at ${location.name}.`;
 }
 
-/** Held stock a posted count found short or outside the unit it was held in. */
 export type HeldStockWarning = {
   part: string;
   unit: string | null;
@@ -7307,22 +7273,15 @@ export type HeldStockWarning = {
    * hold refuses to move it, so Quality decides the lot before it moves back.
    */
   awaitingInspection: boolean;
-  /**
-   * Untracked stock counted short in the unit its lot holds it in, with none
-   * of the part found in another unit by the count: the lot holds more than
-   * is there, and its Reject writes off what is.
-   */
   countedShort: boolean;
-  /** Untracked rows: what is left in the unit, and what its open lots hold. */
   onHand: number | null;
   held: number | null;
 };
 
 /**
- * Stock held for inspection that a posted count took out of its unit: a
- * serial or batch unit On Hold before the count (`heldTrackedEntityIds`)
- * whose receipt lot is still open, or untracked stock taken below what an open
- * lot holds. One row per part and unit.
+ * Stock held for inspection that a posted count moved out of its unit: a
+ * serial or batch unit On Hold before the count (`heldTrackedEntityIds`), or
+ * untracked stock taken below what an open lot holds. One row per part and unit.
  */
 export async function heldStockMovedByCount(
   db: Kysely<KyselyDatabase>,
@@ -7361,8 +7320,6 @@ export async function heldStockMovedByCount(
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
     LEFT JOIN "trackedEntity" te
       ON te."id" = il."trackedEntityId" AND te."companyId" = il."companyId"
-    -- For the rows of units On Hold before the count: whether the unit's
-    -- receipt lot is still open (one lookup per such row).
     LEFT JOIN LATERAL (
       SELECT public.inspection_line_lot_open(il."companyId", te."attributes" ->> 'Receipt Line') AS "open"
       WHERE il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
@@ -7372,13 +7329,9 @@ export async function heldStockMovedByCount(
       AND il."documentId" = ${inventoryCountId}
       AND il."quantity" < 0
       AND (
-        -- On Hold for its open receipt lot: a unit On Hold for another
-        -- reason (a customer return) is not held for inspection.
         (il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
           AND COALESCE(lot."open", false))
         OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
-          -- CASE keeps the two sums behind the indexed test: most counted
-          -- items have no lot at the unit.
           AND CASE WHEN public.inspection_holds_at(il."companyId", il."itemId", il."storageUnitId")
           THEN public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId")
             > public.inspection_untracked_on_hand(il."companyId", il."itemId", il."storageUnitId")
@@ -7411,11 +7364,8 @@ export type ReceiptPutAwayLine = {
 
 /**
  * What a receipt's Put Away would move: per Passed or Partial lot, the passed
- * stock still in its received unit and on no linked transfer. Untracked stock
- * is also capped by what is free in the unit: its untracked on-hand less the
- * quantity open lots still hold and the open linked transfers' unpicked part,
- * shared by the receipt's lines of one item and unit in line order. To is the
- * part's nettable default storage unit at the location, else null (stores choose).
+ * stock still in its received unit and on no linked transfer. To is the part's
+ * nettable default storage unit at the location, else null (stores choose).
  */
 export async function getReceiptPutAwayLines(
   db: Kysely<KyselyDatabase>,
@@ -7520,8 +7470,6 @@ export async function getReceiptPutAwayLines(
   // picked (a transfer completed short leaves the rest to put away). Tracked
   // units are read where they are now, so only what an OPEN linked line has
   // not picked yet is still spoken for.
-  // What is free to put away of each untracked (item, unit): stock moved off
-  // by an ordinary transfer is not there to offer.
   const untrackedLines = lines.filter(
     (line) => line.itemTrackingType === "Inventory"
   );
@@ -7552,7 +7500,6 @@ export async function getReceiptPutAwayLines(
     for (const row of freeRows.rows) {
       free.set(freeKey(row.itemId, row.storageUnitId), Number(row.quantity));
     }
-    // An open linked line's unpicked part is still in the unit, but promised.
     const lineById = new Map(lines.map((line) => [line.receiptLineId, line]));
     for (const row of linked) {
       const line = row.receiptLineId ? lineById.get(row.receiptLineId) : null;
@@ -8387,12 +8334,6 @@ export async function updateStockTransferLineStorageUnits(
   });
 }
 
-/**
- * Why a pick of putaway lines (`receiptLineId` set) takes more untracked
- * stock than is still in their source unit, or null. A putaway moves the
- * receipt's own stock, so it must not drive its unit negative after another
- * move took that stock; an ordinary transfer pick is not checked.
- */
 export async function putAwayPickShortfall(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
@@ -13754,11 +13695,6 @@ export async function lockPostedReceipt(
   }
 }
 
-/**
- * Runs a void's transaction and turns the hold guard's refusal (a RAISE in our
- * SQL, P0001) into the caller's refusal, so the person reads why ("… is held
- * for inspection in …") instead of "Failed to void receipt".
- */
 async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -13774,8 +13710,7 @@ async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
 /**
  * Refuses the void when an inspection of the receipt rejected an untracked
  * lot, or marked one Partial. The reject route writes that lot off; the void
- * would then take the same stock out a second time. A Partial lot's remainder
- * stays under its NCR, which a void cannot close.
+ * would then take the same stock out a second time.
  */
 export async function assertNoRejectedUntrackedLot(
   trx: VoidGuardDb,
@@ -14183,8 +14118,6 @@ export async function postReceipt(
             ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
-        // A sales return opens no lot, so its void runs with the hold guard on:
-        // it cannot take what a purchase receipt's lot holds in the unit.
         await refusingHeldStock(() =>
           db.transaction().execute(async (trx) => {
             await lockPostedReceipt(trx, companyId, receiptId);
@@ -14194,11 +14127,6 @@ export async function postReceipt(
               companyId,
               reversingItemLedger.map(toReversingRow)
             );
-            // Refuse to void when this receipt's cost layers were already
-            // (partially) consumed — the returned stock moved on (dispositioned,
-            // sold, scrapped), so reversing the full receipt would drive stock
-            // negative and double-count COGS. The remainder is a manual
-            // inventory adjustment, not a void.
             const receiptLayers = await trx
               .selectFrom("costLedger")
               .select(["quantity", "remainingQuantity"])
@@ -14218,11 +14146,6 @@ export async function postReceipt(
               );
             }
 
-            // Service and Warranty lines: the jobs this receipt created are
-            // cancelled and their assets go back In Service. The serials stay
-            // Consumed (the entity reset below).
-            // Only the lines THIS receipt received: a line it carried at 0
-            // was received (and its job opened) by another receipt.
             await voidServiceJobsForReturn(trx, {
               companyId,
               userId,
@@ -14718,9 +14641,6 @@ export async function postReceipt(
             companyId,
             reversingItemLedger.map(toReversingRow)
           );
-          // Its open inspection lots close first: a cancelled lot holds nothing,
-          // so the reversal below takes this receipt's stock with the hold guard
-          // on, and cannot take what another receipt's lot holds in the unit.
           await withInspectionRelease(trx, () =>
             trx
               .updateTable("inspection")
@@ -14735,9 +14655,6 @@ export async function postReceipt(
               .where("status", "in", ["Pending", "In Progress"])
               .execute()
           );
-          // The cost layers this receipt wrote. Without this, a voided
-          // receipt's layer stayed open and later issues consumed stock that
-          // was never there.
           const receiptCostLedger = await trx
             .selectFrom("costLedger")
             .select([
@@ -14769,8 +14686,6 @@ export async function postReceipt(
               "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
             );
           }
-          // The receipt's units leave an Average item at the cost they came
-          // in at. Before the reversing item ledger rows: on-hand as it stood.
           await applyAverageCostChanges(trx, {
             companyId,
             changes: receiptCostLedger.flatMap((row) =>
@@ -14830,8 +14745,6 @@ export async function postReceipt(
             }))
           );
 
-          // Only a released order follows its lines: a void never releases an
-          // order that is closed or waiting for approval.
           await trx
             .updateTable("purchaseOrder")
             .set({ status: purchaseOrderStatusVoid })
@@ -14883,8 +14796,6 @@ export async function postReceipt(
             const journalId = journal[0]!.id;
             if (!journalId) throw new Error("Failed to insert journal");
 
-            // Ids allocated first, so each project ledger reversal row can
-            // name the line that negates its original line.
             const reversingLineIds = await allocateJournalLineIds(
               trx,
               reversingJournalLines.length
@@ -14911,8 +14822,6 @@ export async function postReceipt(
               .execute();
           }
 
-          // A grouped PO line's receipt hardened its pegs: the void turns
-          // them Soft again, so the next MRP run can re-peg the open supply.
           if (
             purchaseOrderLinesVoid.data.some((line) => line.planningGroupId)
           ) {
@@ -14923,7 +14832,6 @@ export async function postReceipt(
             });
           }
 
-          // Reverse the project charges of this receipt.
           await reverseProjectLedgerRows(trx, {
             companyId,
             documentType: "Purchase Receipt",
@@ -15213,8 +15121,6 @@ export async function postReceipt(
           string,
           Array<InspectionSamplingPlanInsert>
         >();
-        // A line its project consumes at receipt is received and issued at
-        // once: nothing stays in the unit for a lot to hold, so it opens none.
         const trackingByItemId = new Map(
           items.data.map((item) => [item.id, item.itemTrackingType])
         );
@@ -23703,9 +23609,6 @@ export async function postInventoryAdjustment(
     if (existing && existing.companyId !== companyId) {
       throw new NotFoundError("Tracked entity not found");
     }
-    // A unit held for inspection changes only through its lot's decision:
-    // the guard refuses a decrease, and an increase would add units the
-    // decision then moves.
     const held =
       existing &&
       (await inspectionHoldAdjustmentRefusal(db, companyId, {

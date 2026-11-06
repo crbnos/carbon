@@ -2,9 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// A return shipment checks the inspection hold only where an open lot holds
-// stock: from any other bin it posts, even when it leaves the bin below zero.
-// Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postShipment } from "../../app/modules/inventory/inventory.service";
@@ -93,7 +90,6 @@ databaseTest(
           .execute()
       );
 
-      // The hold guard is on: the fixture's sync flag is turned off.
       await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
         f.db
       );

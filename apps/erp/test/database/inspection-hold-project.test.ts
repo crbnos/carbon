@@ -2,9 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Goods-in inspection hold: a PO line its project consumes at receipt is
-// received and issued at once, so nothing stays for a lot to hold. Runs
-// against the local database (SUPABASE_DB_URL); skipped without one.
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postReceipt as postReceiptBody } from "../../app/modules/inventory/inventory.service";
@@ -26,8 +23,6 @@ databaseTest(
       const charged = await f.addItem("inspected", {
         itemTrackingType: "Inventory"
       });
-      // The part has a Receipt inspection plan; the location has no
-      // inspection storage unit, which would refuse an inspected line.
       await f.db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         const document = await trx

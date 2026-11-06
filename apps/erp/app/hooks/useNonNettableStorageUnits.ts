@@ -10,7 +10,6 @@ import type { loader } from "~/routes/api+/inventory.non-nettable-storage-units"
 import { path } from "~/utils/path";
 
 const EMPTY = new Set<string>();
-// Rows call the hook once each: share one Set per fetched list.
 const sets = new WeakMap<readonly string[], Set<string>>();
 
 function idSet(ids: readonly string[]): Set<string> {

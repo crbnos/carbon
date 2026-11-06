@@ -115,8 +115,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await posting(name, handles, input as never);
   if (result.error) {
     const { status, body: details } = result.error;
-    // A withheld message keeps its reason (a SQL RAISE such as the inspection
-    // hold's), as the ERP's own flash does.
     const reason = result.error.message ? null : describeCause(result.error);
     const message = result.error.message || (reason ? reasonText(reason) : "");
     return Response.json(

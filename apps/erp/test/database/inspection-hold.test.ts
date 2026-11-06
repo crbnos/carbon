@@ -499,7 +499,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
     }
   );
 
-  // The operation reads the lines through PostgREST: needs the local stack.
   const client = hasLocalDatabase ? localServiceRoleClient() : null;
   it.skipIf(!client)(
     "refuses a receipt line storage unit of another location or company",
@@ -576,8 +575,6 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
 
   databaseTest("voiding a receipt cancels its open lot", async () => {
     const voided = await receiveFromPurchaseOrder(f, "voided");
-    // With the guard on: the void is a release posting, which the lot's
-    // interceptor lets cancel it.
     const posted = await withGuard(() =>
       invokePosting(
         handlesOf(f.ctx),
@@ -739,9 +736,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
             .execute()
         );
 
-      // Only a failed sample: that is a Reject, not a Partial.
       expect((await markPartial()).error?.message).toMatch(/no sample passed/);
-      // Two of the three samples the plan asks for.
       await addPassedSample(units[1]!);
       expect((await markPartial()).error?.message).toMatch(
         /sampling is incomplete/

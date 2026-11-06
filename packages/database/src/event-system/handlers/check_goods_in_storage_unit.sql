@@ -3,16 +3,6 @@ CREATE OR REPLACE FUNCTION public.check_goods_in_storage_unit(p_table text, p_op
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A location's inspection and rejected storage units stay active and
--- non-nettable: held stock in a nettable unit would be offered to MRP and
--- picking, and an inactive unit cannot be picked for a receipt line. Every
--- change of effectiveNettable is written by util.refresh_storage_unit_nettable
--- as an UPDATE of the unit, so a change of the unit's own flag, a parent's or a
--- storage type's reaches this check. It stays at the location that names it,
--- where its lots and ledger rows are booked. A unit a location no longer names
--- is held the same way while a lot still holds stock in it. A plain RAISE
--- (P0001), so the API shows the text.
 DECLARE
   v_location TEXT;
   v_lot TEXT;
@@ -56,7 +46,6 @@ BEGIN
   ORDER BY i."inspectionId"
   LIMIT 1;
   IF FOUND THEN
-    -- A company deletion's cascade after the company row is gone.
     IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
       RETURN;
     END IF;

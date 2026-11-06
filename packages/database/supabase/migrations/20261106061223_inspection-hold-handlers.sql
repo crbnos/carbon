@@ -7,16 +7,6 @@ CREATE OR REPLACE FUNCTION public.check_goods_in_storage_unit(p_table text, p_op
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A location's inspection and rejected storage units stay active and
--- non-nettable: held stock in a nettable unit would be offered to MRP and
--- picking, and an inactive unit cannot be picked for a receipt line. Every
--- change of effectiveNettable is written by util.refresh_storage_unit_nettable
--- as an UPDATE of the unit, so a change of the unit's own flag, a parent's or a
--- storage type's reaches this check. It stays at the location that names it,
--- where its lots and ledger rows are booked. A unit a location no longer names
--- is held the same way while a lot still holds stock in it. A plain RAISE
--- (P0001), so the API shows the text.
 DECLARE
   v_location TEXT;
   v_lot TEXT;
@@ -60,7 +50,6 @@ BEGIN
   ORDER BY i."inspectionId"
   LIMIT 1;
   IF FOUND THEN
-    -- A company deletion's cascade after the company row is gone.
     IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
       RETURN;
     END IF;
@@ -94,7 +83,6 @@ DECLARE
   v_unit_name TEXT;
   i           INT;
 BEGIN
-  -- Stock leaves only through a new ledger row.
   IF TG_OP <> 'INSERT' THEN
     RETURN NULL;
   END IF;
@@ -103,8 +91,6 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  -- Only an inspection hold: a unit On Hold for another reason (a customer
-  -- return awaiting its RMA disposition) is not this guard's to refuse.
   SELECT b."itemId" INTO v_item_id
   FROM batched_new b
   JOIN "trackedEntity" te ON te."id" = b."trackedEntityId"
@@ -119,8 +105,6 @@ BEGIN
       COALESCE(v_item, v_item_id);
   END IF;
 
-  -- The (item, unit) pairs an untracked move takes stock from where a lot can
-  -- hold stock. A Partial lot stops holding when its NCR closes (inspection_held_quantity).
   SELECT
     array_agg(k.c ORDER BY k.c, k.i, k.u),
     array_agg(k.i ORDER BY k.c, k.i, k.u),
@@ -139,18 +123,13 @@ BEGIN
   END IF;
 
   -- Two moves out of the same held (item, unit) must not both pass on the same
-  -- on-hand: the second waits for the first to commit, then reads its rows.
-  -- One order for every statement, so two statements cannot deadlock.
+  -- on-hand: the second waits for the first to commit, then reads its row.
   FOR i IN 1 .. array_length(v_units, 1) LOOP
     PERFORM pg_advisory_xact_lock(
       hashtextextended('inspection-hold:' || v_companies[i] || ':' || v_items[i] || ':' || v_units[i], 0)
     );
   END LOOP;
 
-  -- Held and on-hand from one snapshot, taken after the locks: read apart, a
-  -- receipt committing between the two reads counts on one side only. On-hand
-  -- already includes this statement's rows. Only untracked rows: serial and
-  -- batch stock is held by its status, above.
   SELECT k.i, k.u INTO v_item_id, v_unit
   FROM unnest(v_companies, v_items, v_units) AS k(c, i, u)
   CROSS JOIN LATERAL (
@@ -176,13 +155,6 @@ CREATE OR REPLACE FUNCTION public.check_inspection_lot_release(p_table text, p_o
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A receipt lot's columns decide what check_inspection_hold holds, so a direct
--- edit or delete (PostgREST) could release held stock without moving it. Only
--- the postings that ARE the release (they set app.inspection_release) change
--- them; samples move an open lot between Pending and In Progress. A company
--- wipe, restore or import sets one of the two flags, and deleting the company
--- is never refused. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_holds BOOLEAN;
 BEGIN
@@ -195,7 +167,6 @@ BEGIN
   END IF;
 
   IF p_operation = 'DELETE' THEN
-    -- Only a lot that holds stock: open, or Partial until its NCR closes.
     IF p_old->>'status' NOT IN ('Pending', 'In Progress', 'Partial')
        OR NOT public.inspection_lot_holds(
          p_old->>'id',
@@ -208,8 +179,6 @@ BEGIN
        OR current_setting('app.sync_in_progress', true) = 'true' THEN
       RETURN;
     END IF;
-    -- A lot from before the hold (no storage unit) holds untracked stock
-    -- nowhere; it holds serial or batch units only while they are On Hold.
     IF p_old->>'storageUnitId' IS NULL AND NOT (
       p_old->>'status' IN ('Pending', 'In Progress')
       AND EXISTS (
@@ -221,7 +190,6 @@ BEGIN
     ) THEN
       RETURN;
     END IF;
-    -- A company deletion cascades here after the company row is gone.
     IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
       RETURN;
     END IF;
@@ -229,8 +197,6 @@ BEGIN
       COALESCE(p_old->>'inspectionId', p_old->>'id');
   END IF;
 
-  -- What the hold reads while the lot holds stock: open, or Partial until its
-  -- NCR closes (a storage unit's delete may then clear the lot's unit).
   v_holds := p_old->>'status' IN ('Pending', 'In Progress', 'Partial')
     AND public.inspection_lot_holds(
       p_old->>'id',
@@ -249,7 +215,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Samples recompute an open lot's status.
   IF p_old->>'status' IN ('Pending', 'In Progress')
      AND p_new->>'status' IN ('Pending', 'In Progress')
      AND (p_new->'sourceDocument') IS NOT DISTINCT FROM (p_old->'sourceDocument')
@@ -265,8 +230,6 @@ BEGIN
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
     RETURN;
   END IF;
-  -- A company deletion's cascade (a storage unit's SET NULL) after the
-  -- company row is gone.
   IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
     RETURN;
   END IF;
@@ -282,11 +245,9 @@ CREATE OR REPLACE FUNCTION public.check_location_goods_in_storage_units(p_table 
  SET search_path TO 'public', 'extensions'
 AS $function$
 -- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A location's inspection and rejected storage units must be its own, active
--- and non-nettable: the foreign keys only check that the unit exists, and held
--- stock in a nettable unit would be offered to MRP and picking. A company
--- restore or import sets one of the two flags. A plain RAISE (P0001), so the
--- API shows the text.
+-- A location's inspection and rejected storage units must be its own: the
+-- foreign keys only check that the unit exists, not that it belongs to this
+-- location and company. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_column TEXT;
   v_unit   TEXT;
@@ -330,15 +291,6 @@ CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_link(p_table t
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A Partial untracked receipt lot holds its rejected remainder until its
--- linked NCR closes, and closing that NCR (closeIssue) writes the remainder
--- off. A direct link to an NCR that is already Closed would release the
--- remainder with no write-off; re-pointing or deleting the lot's link would
--- leave it held with no NCR to decide it. Only a posting that sets
--- app.inspection_release changes such a link; a company wipe, restore or
--- import sets one of the two flags, and deleting the company is never
--- refused. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_lot TEXT;
 BEGIN
@@ -352,7 +304,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- The lot this change takes the link from (re-point, unlink).
   IF p_operation IN ('UPDATE', 'DELETE') THEN
     SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
     FROM "inspection" i
@@ -369,7 +320,6 @@ BEGIN
     END IF;
   END IF;
 
-  -- The lot this change links to an NCR that is already Closed.
   IF p_operation IN ('INSERT', 'UPDATE') THEN
     SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
     FROM "inspection" i
@@ -395,19 +345,10 @@ CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_release(p_tabl
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A Partial receipt lot holds its rejected remainder until its NCR closes, and
--- closing the NCR (closeIssue) writes that remainder off. A direct status edit
--- (PostgREST) to Closed would release it with no write-off, and deleting the
--- NCR would leave it held with no NCR to decide it. Only closeIssue, which
--- sets app.inspection_release, closes such an NCR; a company wipe, restore or
--- import sets one of the two flags, and deleting the company is never refused.
--- A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_ncr JSONB;
   v_lot TEXT;
 BEGIN
-  -- Hot path: only a change of status to Closed, or a delete.
   IF p_operation = 'UPDATE' THEN
     IF p_new->>'status' IS DISTINCT FROM 'Closed'
        OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
@@ -443,7 +384,6 @@ BEGIN
     RETURN;
   END IF;
   IF p_operation = 'DELETE' THEN
-    -- A company deletion cascades here after the company row is gone.
     IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = v_ncr->>'companyId') THEN
       RETURN;
     END IF;
@@ -460,17 +400,10 @@ CREATE OR REPLACE FUNCTION public.check_tracked_entity_inspection_hold(p_table t
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A serial or batch unit is held by its On Hold status while its receipt
--- line's lot is open, so a direct edit (PostgREST) could release it without a
--- decision. Only the postings that ARE the release (they set
--- app.inspection_release) change its status or its receipt line then. A plain
--- RAISE (P0001), so the API shows the text.
 DECLARE
   v_line TEXT;
   v_item TEXT;
 BEGIN
-  -- Hot path: most updates are of units that are not On Hold.
   IF p_operation <> 'UPDATE' OR p_old->>'status' IS DISTINCT FROM 'On Hold' THEN
     RETURN;
   END IF;

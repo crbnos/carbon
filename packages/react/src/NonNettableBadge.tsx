@@ -15,7 +15,6 @@ export function NonNettableBadge({ className }: { className?: string }) {
   const { t } = useLingui();
   return (
     <Tooltip>
-      {/* Focusable, so a keyboard user can open the explanation too. */}
       <TooltipTrigger asChild>
         <Badge
           variant="orange"

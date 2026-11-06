@@ -728,8 +728,6 @@ function ReceiptLineItem({
   receipt?: Receipt;
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
-  // The line's storage unit is non-nettable and at the receipt's location
-  // (read before posting only).
   inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
@@ -775,8 +773,6 @@ function ReceiptLineItem({
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
-  // What posting refuses: a received, inspected purchase line whose unit is
-  // not a non-nettable unit at the receipt's location.
   const showNettableWarning =
     requiresInspection &&
     !isReadOnly &&
@@ -903,8 +899,6 @@ function ReceiptLineItem({
                 />
               </NumberField>
             </VStack>
-            {/* Fixed widths keep every line's columns aligned, a Surplus
-                line's alert icon included. */}
             <VStack
               spacing={1}
               className="text-center items-center w-16 shrink-0"
@@ -952,9 +946,6 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
 
-          {/* A fixed width, so a long unit name truncates (full name in its
-              tooltip) instead of pushing into the quantities; narrower on a
-              narrow row so the item name keeps its room. */}
           <div className="flex flex-col items-start gap-1 w-48 @5xl:w-60 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
               <Trans>Storage Unit</Trans>

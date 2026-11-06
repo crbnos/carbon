@@ -2726,8 +2726,6 @@ export async function getInspectionDocument(
   };
 }
 
-// The lots a close planned from, and the state it read: a decision or a link
-// since then changes the key.
 function lotStateKey(
   lots: Array<{
     inspectionId: string;
@@ -2739,8 +2737,6 @@ function lotStateKey(
   return lots
     .map(
       (lot) =>
-        // Samples move an open lot between Pending and In Progress, which
-        // changes nothing the close planned.
         `${lot.inspectionId}:${
           lot.status === "Pending" || lot.status === "In Progress"
             ? "open"
@@ -2755,8 +2751,6 @@ function lotStateKey(
     .join(",");
 }
 
-// A rejected lot's write-off rows, per place and stripe: what Use As Is
-// restores.
 async function readRejectWriteOffs(
   handle: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2789,11 +2783,6 @@ async function readRejectWriteOffs(
     );
 }
 
-// Where each tracked unit has stock: every bin with a positive balance,
-// largest first (a tie the same way on every read), so its Scrap is drawn
-// from what is there and never writes off more. `stocked` holds the units
-// with any ledger row: one with none never was in stock (job work in
-// progress) and keeps the close's older rule.
 async function readTrackedEntityBins(
   handle: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2840,15 +2829,11 @@ async function readTrackedEntityBins(
   return { bins, stocked };
 }
 
-// What two reads of readTrackedEntityBins compare by.
 const trackedEntityBinsKey = (read: {
   bins: Map<string, unknown>;
   stocked: Set<string>;
 }) => readKey(read.bins) + readKey([...read.stocked].sort());
 
-// The lots an NCR holds and their state, in link order; with `lock`, each
-// FOR SHARE (shared locks: a decision's FOR UPDATE waits for them). The plan
-// and the close read them the same way.
 async function readLinkedLotStates(
   handle: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2879,7 +2864,6 @@ async function readLinkedLotStates(
   return (options.lock ? query.forShare("i") : query).execute();
 }
 
-// A stable text form of a read, to tell whether it changed.
 const readKey = (value: unknown) =>
   JSON.stringify(
     value instanceof Map
@@ -4353,27 +4337,16 @@ export async function closeIssue(
   // Use As Is / Rework just release it. Other items post at the NCR's location.
   let heldPartial: {
     itemId: string;
-    // Where the remainder is: resolved once, used for the locks, the stripes
-    // and the write-off alike.
     locationId: string | null;
     storageUnitId: string | null;
-    // The lot's rows (its receipt, its rejected move), which its stripes
-    // are drawn from first.
     documentIds: string[];
-    // What the lot holds (lot size less accepted): Scrap writes off no more.
     remainder: number;
-    // What the Scrap rows ask to write off; planned inside the close.
     requested: number;
   } | null = null;
   let fromPartialReceiptLot = false;
-  // The lots the NCR held when the plan was read, with the state the plan
-  // used; a lot linked, unlinked or decided since refuses the close.
   let plannedLots: string | null = null;
-  // The lots and the read Use As Is restores from, checked again in the close.
   let writtenOffLotIds: string[] | null = null;
   let writtenOffKey = "";
-  // A rejected lot's write-off, per place and stripe, drawn down as rows
-  // restore it.
   let writtenOffAtReject: {
     itemId: string;
     locationId: string | null;
@@ -4381,8 +4354,6 @@ export async function closeIssue(
     projectId: string | null;
     quantity: number;
   }[] = [];
-  // A receipt lot's reject wrote off what its unit held: Use As Is / Rework
-  // restores that and no more.
   let restoreCappedAtWriteOff = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
@@ -4407,9 +4378,6 @@ export async function closeIssue(
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    // An NCR can hold several lots. A Partial receipt lot's held remainder
-    // decides how it closes; otherwise every linked lot's write-off counts.
-    // The same read the close repeats under its locks.
     plannedLots = lotStateKey(lotRows);
     const linkedLot =
       lotRows.find(
@@ -4417,9 +4385,6 @@ export async function closeIssue(
       ) ?? null;
     fromPartialReceiptLot = !!linkedLot;
     if (linkedLot) {
-      // The stock sits where it was received, not at the NCR's location. A
-      // lot from before the hold recorded no unit: its remainder is in the
-      // receipt line's unit.
       const receiptLine = await inspectionReceiptLine(
         db,
         companyId,
@@ -4427,10 +4392,6 @@ export async function closeIssue(
       );
       const storageUnitId =
         linkedLot.storageUnitId ?? receiptLine.storageUnitId;
-      // The receipt line's location, else the held unit's. Not the NCR's: it
-      // may be a location the lot never touched. Only a lot with no unit and
-      // a line with no location falls back to it, in the close, where the
-      // user can set it.
       const lotLocationId =
         receiptLine.locationId ??
         receiptLine.unitLocationId ??
@@ -4458,8 +4419,6 @@ export async function closeIssue(
       restoreCappedAtWriteOff = lotRows.every(
         (row) => row.sourceDocument === "Receipt"
       );
-      // The reject wrote the lot off from where it was held: a restore puts
-      // it back there, on the stripe it left.
       writtenOffLotIds = lotRows.map((row) => row.inspectionId);
       writtenOffAtReject = await readRejectWriteOffs(
         db,
@@ -4470,8 +4429,6 @@ export async function closeIssue(
     }
   }
 
-  // A tracked unit is written off where its stock is, not at the NCR's
-  // location, and kept (Use As Is, Rework) only while it has stock.
   const linkedEntityIds = [
     ...new Set(
       plan.flatMap((row) => row.links.map((link) => link.trackedEntityId))
@@ -4483,20 +4440,15 @@ export async function closeIssue(
     linkedEntityIds
   );
   const entityBinsKey = trackedEntityBinsKey(entityStock);
-  // A unit that was in stock and has none left (written off by another
-  // issue, shipped, consumed) is not written off or kept again.
   const hasNoStockLeft = (trackedEntityId: string) =>
     entityStock.stocked.has(trackedEntityId) &&
     !entityStock.bins.has(trackedEntityId);
-  // Drawn down as Scrap and Return rows take stock; `entityStock` stays as read.
   const drawable = new Map(
     [...entityStock.bins].map(([id, list]) => [
       id,
       list.map((bin) => ({ ...bin }))
     ])
   );
-  // Tracked units a Scrap or Return found short of their link, and units a
-  // Use As Is or Rework found with no stock: reported, not booked.
   const writtenOffShort = new Set<string>();
   const keptWithoutStock = new Set<string>();
 
@@ -4534,8 +4486,6 @@ export async function closeIssue(
           ) {
             continue;
           }
-          // Never in stock (job work in progress): the older rule, at the
-          // NCR's location.
           if (!entityStock.stocked.has(link.trackedEntityId)) {
             movements.push({
               itemId: row.itemId,
@@ -4547,8 +4497,6 @@ export async function closeIssue(
             });
             continue;
           }
-          // From the bins it has stock in, never more than is there: a unit
-          // with none left books nothing.
           let left = round(link.quantity);
           for (const bin of drawable.get(link.trackedEntityId) ?? []) {
             if (left <= EPSILON) break;
@@ -4583,7 +4531,6 @@ export async function closeIssue(
       if (writeOff <= EPSILON) continue;
       const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
       if (held) {
-        // Planned inside the close, from what the unit holds then.
         held.requested = round(held.requested + writeOff);
         continue;
       }
@@ -4620,8 +4567,6 @@ export async function closeIssue(
           comment
         });
       }
-      // A job operation lot's reject posts no write-off: restore at the
-      // NCR's location.
       if (remaining > EPSILON && !restoreCappedAtWriteOff) {
         movements.push({
           itemId: row.itemId,
@@ -4635,11 +4580,8 @@ export async function closeIssue(
   }
 
   try {
-    // Set when a Partial lot's Scrap found less in its unit than it held.
     let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
-      // The issue lock every disposition writer takes first: no row, link or
-      // lot changes between the checks below and the close.
       const { status } = await lockIssueDispositions(trx, {
         nonConformanceId,
         companyId
@@ -4748,8 +4690,6 @@ export async function closeIssue(
         links: linksByItem.get(row.id) ?? []
       }));
 
-      // The write-offs and restores were planned from the rows read before
-      // this transaction: a row changed since then refuses the close.
       const plannedRows = new Map(plan.map((row) => [row.id, row]));
       if (freshPlan.length !== plan.length) {
         throw new Error("Disposition changed while closing; please retry.");
@@ -4760,8 +4700,6 @@ export async function closeIssue(
           .sort()
           .join(",");
       if (plannedLots !== null) {
-        // FOR SHARE: a decision on one of these lots (which locks it) waits
-        // for this close, or this close waits for it and sees its result.
         const lots = await readLinkedLotStates(
           trx,
           companyId,
@@ -4774,8 +4712,6 @@ export async function closeIssue(
           throw new Error("Disposition changed while closing; please retry.");
         }
       }
-      // The write-offs Use As Is restores and the bins tracked units are
-      // scrapped from, read again under the locks.
       if (
         writtenOffLotIds &&
         readKey(await readRejectWriteOffs(trx, companyId, writtenOffLotIds)) !==
@@ -4784,8 +4720,6 @@ export async function closeIssue(
         throw new Error("Disposition changed while closing; please retry.");
       }
       if (linkedEntityIds.length > 0) {
-        // A move of a unit (a transfer, an adjustment, a count) locks its
-        // row first: locked here, none moves before this close commits.
         await trx
           .selectFrom("trackedEntity")
           .select("id")
@@ -4834,10 +4768,6 @@ export async function closeIssue(
         }
       }
 
-      // Closing is the release: a Partial receipt lot's remainder stops being
-      // held once its NCR is Closed. Only this update runs with the release
-      // on; the write-off and the unit changes below run with the hold guard
-      // on, so they cannot take stock or units another lot still holds.
       const updated = await withInspectionRelease(trx, () =>
         trx
           .updateTable("nonConformance")
@@ -4853,15 +4783,7 @@ export async function closeIssue(
           .executeTakeFirstOrThrow()
       );
 
-      // A Partial lot's scrapped remainder, planned inside the close under
-      // the hold guard's lock: no more than the remainder, no more than other
-      // lots leave in the unit, drawn from the stripes it is held on.
       if (heldPartial && heldPartial.requested > EPSILON) {
-        // Every item's stock rows first, in one order (the posting below
-        // locks them too), so this close and another ledger write cannot
-        // lock two items in opposite orders.
-        // With no unit and no location on its receipt line, the issue's
-        // location (the one place the user can set) says where it is.
         const remainderLocationId =
           heldPartial.locationId ??
           (heldPartial.storageUnitId ? null : locationId);
@@ -4889,8 +4811,6 @@ export async function closeIssue(
           itemId: heldPartial.itemId,
           storageUnitId: heldPartial.storageUnitId
         };
-        // This NCR was set Closed above, so the lot holds nothing: all of
-        // inspection_held_quantity is other lots'.
         const claimable = unit.storageUnitId
           ? await engine.lotClaimableAtUnit(trx, {
               ...unit,
@@ -4900,8 +4820,6 @@ export async function closeIssue(
               stockRowsLocked: true
             })
           : Number.POSITIVE_INFINITY;
-        // From the stripes it is held on, or (received into no unit, at a
-        // location without bins) the stock in no unit there.
         const stripes = await engine.heldStockStripes(trx, {
           ...unit,
           locationId: remainderLocationId,
@@ -4915,8 +4833,6 @@ export async function closeIssue(
           stripes,
           { overflow: false }
         );
-        // A count may have left the unit short: the close writes off what is
-        // there, and says what was not.
         const writtenOff = round(
           draws.reduce((sum, draw) => sum + draw.quantity, 0)
         );
@@ -4958,7 +4874,6 @@ export async function closeIssue(
         }
       }
 
-      // The inventory value movements post with the close. Idempotent per NCR.
       if (movements.length > 0) {
         const post = await invokePosting(
           { db: trx, companyId, userId },
@@ -4972,8 +4887,6 @@ export async function closeIssue(
           postNonconformance
         );
         if (post.error) {
-          // A refusal (below 500) in its words; a database failure as its
-          // driver error, so a deadlock reads as "try again".
           const cause = (post.error as { cause?: unknown }).cause;
           if (post.error.status >= 500 && engine.isDatabaseError(cause)) {
             throw cause;
@@ -4984,8 +4897,6 @@ export async function closeIssue(
         }
       }
 
-      // Disposition genealogy and tracked-entity statuses; non-tracked rows
-      // have no entities, so they need nothing further.
       for (const row of freshPlan) {
         if (row.links.length === 0) continue;
 
@@ -5021,7 +4932,6 @@ export async function closeIssue(
           .execute();
 
         if (row.disposition === "Use As Is" || row.disposition === "Rework") {
-          // A unit with no stock left stays as it is.
           const idsToFlip = row.links
             .filter((l) => {
               if (l.trackedEntityStatus === "Available") return false;
@@ -5095,8 +5005,6 @@ export async function closeIssue(
     return { data: { ...closed, warning }, error: null };
   } catch (err) {
     logger.error("closeIssue failed", { companyId, nonConformanceId, err });
-    // A deadlock or serialization failure reads as "try again"; a hold
-    // refusal keeps its words; another database error is not shown raw.
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }
@@ -5512,16 +5420,6 @@ export function createIssueTasks(ctx: ServiceContext, issueId: string) {
   );
 }
 
-/**
- * Links tracked units to a new issue: as associations, and onto the
- * disposition row of each unit's item, so a Scrap or a Use As Is acts on the
- * units (a row with no links is untracked, and a serial item's untracked row
- * books nothing). Only a unit still in stock goes on a row, at what it
- * holds; a unit with none (job work in progress) stays an association, as
- * before. A unit on two issues' rows is written off once: the close never
- * takes more than a unit has. One transaction, under the issue lock every disposition writer takes,
- * set-based.
- */
 export async function linkIssueTrackedEntities(
   ctx: ServiceContext,
   args: { nonConformanceId: string; trackedEntityIds: string[] }
@@ -5545,7 +5443,6 @@ export async function linkIssueTrackedEntities(
       )
       .execute();
 
-    // The units still in stock, with what they hold.
     const units = await trx
       .selectFrom("trackedEntity as te")
       .innerJoin(
@@ -5565,24 +5462,19 @@ export async function linkIssueTrackedEntities(
       .select([
         "te.id",
         "te.itemId",
-        // What it has in stock, never more than the unit itself.
         sql<number>`LEAST(b."onHand", te."quantity")`.as("quantity")
       ])
       .where("te.id", "in", trackedEntityIds)
       .where("te.companyId", "=", companyId)
       .where("te.itemId", "is not", null)
-      // A unit with no stock (job work in progress, or gone) stays an
-      // association, as before.
       .where(sql<boolean>`LEAST(b."onHand", te."quantity") > 0`)
       .orderBy("te.id")
       .execute()
-      // A residue that rounds to nothing is not stock.
       .then((rows) =>
         rows.filter((row) => round(Number(row.quantity)) > EPSILON)
       );
     if (units.length === 0) return;
 
-    // One row per item: the oldest the issue has, else a new one.
     const itemIds = [...new Set(units.map((u) => u.itemId as string))];
     const existing = await trx
       .selectFrom("nonConformanceItem")
@@ -5628,7 +5520,6 @@ export async function linkIssueTrackedEntities(
         }))
       )
       .execute();
-    // Each row's quantity is the sum of its links.
     await sql`
       UPDATE "nonConformanceItem" r
       SET "quantity" = s.total, "updatedBy" = ${userId}, "updatedAt" = ${nowIso}
@@ -6354,8 +6245,6 @@ export const postNonConformanceInput = z.object({
         locationId: z.string().optional().nullable(),
         // The bin the stock sits in (an inspection lot's held unit), if any.
         storageUnitId: z.string().optional().nullable(),
-        // The project stripe of untracked stock (a tracked unit's is read
-        // from its ledger rows); null is unassigned stock.
         projectId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
@@ -6525,7 +6414,6 @@ export async function postNonconformance(
     }
   }
 
-  // A Provisional journal has no accounting period.
   const accountingPeriodId =
     postingStatus === "Posted"
       ? await getCurrentAccountingPeriod(companyId, db, postingDate)
@@ -6539,11 +6427,6 @@ export async function postNonconformance(
 
   let journalId: string | null = null;
 
-  // Joins the caller's transaction: the reject posts its write-off inside the
-  // decision, so the stock is never free between the two.
-  // The hold guard stays on: its caller decides the lot or closes the NCR
-  // first, so the guard lets that lot's stock go and keeps what other lots
-  // hold (and units still held by an open lot).
   await withTransaction(db, async (trx) => {
     // Idempotent per (documentType, documentId): a reject posts one write-off
     // per inspection, a disposition close posts once per NCR (reopen is blocked
@@ -6649,11 +6532,6 @@ export async function postNonconformance(
   return { journalId: journalId as string | null };
 }
 
-/**
- * Where a receipt lot's stock was received (location and unit), from its
- * receipt line; nulls for another source. The lot's NCR opens at that
- * location, so the NCR's write-off posts where the stock is.
- */
 export async function inspectionReceiptLine(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -6661,7 +6539,6 @@ export async function inspectionReceiptLine(
 ): Promise<{
   locationId: string | null;
   storageUnitId: string | null;
-  // The location of the lot's unit (else the line's unit).
   unitLocationId: string | null;
 }> {
   const row = await db
@@ -6731,7 +6608,6 @@ class LotHasNcrError extends Error {
   }
 }
 
-/** The NCR a lot is linked to (the first link, when it has several), or undefined. */
 export async function getInspectionNcrLink(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -6763,7 +6639,6 @@ export async function openInspectionNcr(
     outcome: string;
     quantity: number | null;
     trackedEntityIds: string[] | null;
-    /** Refuse when the lot already has an NCR (a Partial lot has one). */
     oncePerLot?: boolean;
   }
 ): Promise<{ issueId: string } | CarbonError> {
@@ -6851,8 +6726,6 @@ export async function openInspectionNcr(
     );
   }
   const { id: issueId, nonConformanceId } = created.data;
-  // Deletes the NCR this call opened. Once linked it holds a Partial lot's
-  // remainder, so the delete runs as the release; the lot then offers Open NCR.
   const removeOpenedIssue = async () => {
     try {
       await ctx.asSystem.pg.transaction().execute(async (trx) => {
@@ -6929,8 +6802,6 @@ export async function openInspectionNcr(
   try {
     await ctx.asSystem.pg.transaction().execute(async (trx) => {
       if (args.oncePerLot) {
-        // The lot row first, as a decision locks it: of two calls at once,
-        // the second waits here and then sees the first one's link.
         await trx
           .selectFrom("inspection")
           .select("id")

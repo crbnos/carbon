@@ -3,13 +3,6 @@ CREATE OR REPLACE FUNCTION public.check_inspection_lot_release(p_table text, p_o
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A receipt lot's columns decide what check_inspection_hold holds, so a direct
--- edit or delete (PostgREST) could release held stock without moving it. Only
--- the postings that ARE the release (they set app.inspection_release) change
--- them; samples move an open lot between Pending and In Progress. A company
--- wipe, restore or import sets one of the two flags, and deleting the company
--- is never refused. A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_holds BOOLEAN;
 BEGIN
@@ -22,7 +15,6 @@ BEGIN
   END IF;
 
   IF p_operation = 'DELETE' THEN
-    -- Only a lot that holds stock: open, or Partial until its NCR closes.
     IF p_old->>'status' NOT IN ('Pending', 'In Progress', 'Partial')
        OR NOT public.inspection_lot_holds(
          p_old->>'id',
@@ -35,8 +27,6 @@ BEGIN
        OR current_setting('app.sync_in_progress', true) = 'true' THEN
       RETURN;
     END IF;
-    -- A lot from before the hold (no storage unit) holds untracked stock
-    -- nowhere; it holds serial or batch units only while they are On Hold.
     IF p_old->>'storageUnitId' IS NULL AND NOT (
       p_old->>'status' IN ('Pending', 'In Progress')
       AND EXISTS (
@@ -48,7 +38,6 @@ BEGIN
     ) THEN
       RETURN;
     END IF;
-    -- A company deletion cascades here after the company row is gone.
     IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
       RETURN;
     END IF;
@@ -56,8 +45,6 @@ BEGIN
       COALESCE(p_old->>'inspectionId', p_old->>'id');
   END IF;
 
-  -- What the hold reads while the lot holds stock: open, or Partial until its
-  -- NCR closes (a storage unit's delete may then clear the lot's unit).
   v_holds := p_old->>'status' IN ('Pending', 'In Progress', 'Partial')
     AND public.inspection_lot_holds(
       p_old->>'id',
@@ -76,7 +63,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Samples recompute an open lot's status.
   IF p_old->>'status' IN ('Pending', 'In Progress')
      AND p_new->>'status' IN ('Pending', 'In Progress')
      AND (p_new->'sourceDocument') IS NOT DISTINCT FROM (p_old->'sourceDocument')
@@ -92,8 +78,6 @@ BEGIN
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
     RETURN;
   END IF;
-  -- A company deletion's cascade (a storage unit's SET NULL) after the
-  -- company row is gone.
   IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
     RETURN;
   END IF;

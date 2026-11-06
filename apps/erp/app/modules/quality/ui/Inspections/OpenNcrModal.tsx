@@ -28,8 +28,6 @@ import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
-// The issue type an inspection NCR opens with, or a warning when the company
-// has none configured.
 export function IssueTypeField({
   issueTypes,
   value,
@@ -80,13 +78,11 @@ export function IssueTypeField({
 type OpenNcrModalProps = {
   action: string;
   issueTypes: IssueTypeListItem[];
-  /** A serial or batch lot, whose NCR is optional: none is missing, only not opened. */
   isTrackedLot: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
 
-// Opens the NCR for a Partial lot that has none; the inspector picks its issue type.
 const OpenNcrModal = ({
   action,
   issueTypes,
@@ -98,7 +94,6 @@ const OpenNcrModal = ({
     onSettled: (data) => {
       if (!submitted.current) return;
       submitted.current = false;
-      // A refusal keeps the dialog open; useAction toasts it.
       if (data === undefined || actionOutcome(data) === "success") {
         onSubmit();
       }

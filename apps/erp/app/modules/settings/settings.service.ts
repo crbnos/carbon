@@ -1476,11 +1476,10 @@ export async function setLocationResponsibleEmployee(
 }
 
 /**
- * Set a location's goods-in storage units: a unit sent replaces the stored one
- * (null clears it), one left undefined keeps it. The Kysely handle bypasses
- * row-level security, so the caller checks `resources` update. Undefined when
- * the location is not the company's; "sameUnit" (nothing written) when the
- * result would use one unit for both.
+ * Set a location's goods-in storage units (null clears one). The Kysely handle
+ * bypasses row-level security, so the caller checks `resources` update.
+ * Undefined when the location is not the company's; "sameUnit" when the two
+ * would be one unit.
  */
 export async function setLocationGoodsInStorage(
   db: Kysely<KyselyDatabase>,
@@ -1493,8 +1492,6 @@ export async function setLocationGoodsInStorage(
   }
 ) {
   return withTransaction(db, async (trx) => {
-    // Locked, so a concurrent save of the other unit cannot slip past the
-    // same-unit check.
     const stored = await trx
       .selectFrom("location")
       .select(["inspectionStorageUnitId", "rejectedStorageUnitId"])

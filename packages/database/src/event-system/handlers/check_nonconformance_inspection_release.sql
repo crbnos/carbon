@@ -3,19 +3,10 @@ CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_release(p_tabl
  LANGUAGE plpgsql
  SET search_path TO 'public', 'extensions'
 AS $function$
--- Goods-in inspection hold (spec .ai/specs/2026-11-03-goods-in-inspection-hold.md).
--- A Partial receipt lot holds its rejected remainder until its NCR closes, and
--- closing the NCR (closeIssue) writes that remainder off. A direct status edit
--- (PostgREST) to Closed would release it with no write-off, and deleting the
--- NCR would leave it held with no NCR to decide it. Only closeIssue, which
--- sets app.inspection_release, closes such an NCR; a company wipe, restore or
--- import sets one of the two flags, and deleting the company is never refused.
--- A plain RAISE (P0001), so the API shows the text.
 DECLARE
   v_ncr JSONB;
   v_lot TEXT;
 BEGIN
-  -- Hot path: only a change of status to Closed, or a delete.
   IF p_operation = 'UPDATE' THEN
     IF p_new->>'status' IS DISTINCT FROM 'Closed'
        OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
@@ -51,7 +42,6 @@ BEGIN
     RETURN;
   END IF;
   IF p_operation = 'DELETE' THEN
-    -- A company deletion cascades here after the company row is gone.
     IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = v_ncr->>'companyId') THEN
       RETURN;
     END IF;

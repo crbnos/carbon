@@ -134,8 +134,6 @@ export async function wipeAndLoad(
     if (replicaMode) {
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
-    // Without replica mode the triggers run: the inspection hold's guard and
-    // interceptors would refuse loading or wiping held stock as it was saved.
     await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
     await onProgress?.({ phase: "wipe", done: 0, total: wipeTables.length });

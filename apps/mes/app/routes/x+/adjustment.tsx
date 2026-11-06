@@ -34,8 +34,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (itemLedger.error) {
-    // The posting's refusal (insufficient quantity, the inspection hold) in
-    // its own words.
     return {
       success: false,
       message:

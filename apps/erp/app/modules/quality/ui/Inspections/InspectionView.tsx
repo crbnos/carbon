@@ -192,7 +192,6 @@ const InspectionView = ({
 
   const isSerial = itemTrackingType === "Serial";
   const isBatch = itemTrackingType === "Batch";
-  // A tracked lot's NCR is optional; an untracked lot's remainder waits on it.
   const isTrackedLot = isSerial || isBatch;
   // Accept/Reject dispositions here carry no physical production posting, so they
   // are Receipt-only. Job Operation lots are verdict-only in the ERP — their
@@ -492,8 +491,6 @@ const InspectionView = ({
     failedStatistically = fails > inspection.acceptanceNumber;
   }
   const canReject = isReceiptSource && !lotClosed;
-  // A serial or batch Partial (as the engine requires): a unit failed, a unit
-  // passed, and sampling is complete. Other lots keep Reject's gate.
   const sampledComplete = hasFeatures
     ? liveFeatures.every(
         (feature) =>
@@ -506,13 +503,10 @@ const InspectionView = ({
       !!sample.trackedEntityId &&
       (sampleStatuses.get(sample.id) ?? sample.status) === "Failed"
   );
-  // A batch lot's samples name no unit, so no part of it can be held back.
   const canPartial =
     canReject &&
     !isBatch &&
     (!isSerial || (hasFailedUnit && passes > 0 && sampledComplete));
-  // A Partial lot whose NCR failed to open: an untracked one still holds its
-  // remainder, a serial or batch one has failed units no NCR decides.
   const ncrMissing =
     isReceiptSource &&
     inspection.status === "Partial" &&
@@ -610,7 +604,6 @@ const InspectionView = ({
     .filter(Boolean)
     .join("  ·  ");
 
-  // What a decided Partial receipt lot did with its stock.
   const acceptedQuantity = Number(inspection.acceptedQuantity);
   const lotSize = Number(inspection.lotSize);
   const partialDecision =
@@ -749,8 +742,6 @@ const InspectionView = ({
                 {isBatch && !lotClosed ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      {/* A disabled button fires no pointer events, so the
-                          span carries the tooltip. */}
                       <span tabIndex={0} className="inline-flex">
                         <Button variant="secondary" isDisabled>
                           <Trans>Partial</Trans>

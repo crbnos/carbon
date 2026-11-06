@@ -11,7 +11,6 @@ import { path } from "~/utils/path";
 // cookie too large to set: name the first few and count the rest.
 const NAMED_PARTS = 5;
 
-// "QC-Inspection: 3 there, 11 held" in place of the unit's name alone.
 function shortfall(row: {
   part: string;
   unit: string | null;

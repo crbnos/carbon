@@ -2,9 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Two decisions on inspection lots at the same moment, each on its own
-// connection with the event triggers on (the receipt roll-up runs).
-// Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { dispositionInspection } from "@carbon/database/quality";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect } from "vitest";
@@ -29,7 +26,6 @@ import {
   hasLocalDatabase
 } from "./fixtures/local-database";
 
-// A connection as the app has it: triggers and handlers run.
 async function connectWithTriggers() {
   const db = await connectLocalTestDatabase();
   await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
@@ -99,7 +95,6 @@ describe.skipIf(!hasLocalDatabase)("concurrent inspection decisions", () => {
 
   afterAll(async () => {
     if (!f) return;
-    // The plan's part link is RESTRICT; clear it before the company cascade.
     await seed(f, async (trx) => {
       await trx
         .deleteFrom("inspection")
@@ -143,7 +138,6 @@ describe.skipIf(!hasLocalDatabase)("concurrent inspection decisions", () => {
   databaseTest(
     "lets one of two Partials on one lot win and refuses the other",
     async () => {
-      // 10 received into the inspection unit, one lot.
       const receiptId = await receiveFromPurchaseOrder(f, "same-lot");
       const [lot] = await lotsOf(receiptId);
       const left = await connectWithTriggers();
@@ -158,13 +152,10 @@ describe.skipIf(!hasLocalDatabase)("concurrent inspection decisions", () => {
         const refused = results.filter((result) => result.error !== null);
         expect(won.length).toBe(1);
         expect(refused.length).toBe(1);
-        // The loser read the winner's Partial, not a database error.
         expect(refused[0]!.error!.message).toMatch(/already partly accepted/);
-        // One caller opens the NCR: only the winner has a rejected remainder.
         const accepted = won[0] === results[0] ? 7 : 4;
         expect(won[0]!.data!.rejectedQuantity).toBe(10 - accepted);
 
-        // One rejected move: one pair out of the inspection unit.
         const moves = await f.db
           .selectFrom("itemLedger")
           .select(["storageUnitId", "quantity"])
@@ -198,7 +189,6 @@ describe.skipIf(!hasLocalDatabase)("concurrent inspection decisions", () => {
   databaseTest(
     "decides two lots of one receipt at once without a deadlock",
     async () => {
-      // One receipt, its line split into 4 and 6: two lots.
       const receiptId = await draftReceiptFromPurchaseOrder(f, "two-lots");
       const line = await f.db
         .selectFrom("receiptLine")
