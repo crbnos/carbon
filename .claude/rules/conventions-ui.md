@@ -282,6 +282,31 @@ pseudo-element if the visual is smaller.
   `ease-[cubic-bezier(...)]`. Motion props take the array form,
   `ease: [0.23, 1, 0.32, 1]`.
 
+- **Motion scale — use these, not new values.** Pick the row for the element;
+  the shared components already follow it, so copy them rather than
+  re-deriving numbers.
+
+  | Element | Enter | Exit | Easing |
+  |---|---|---|---|
+  | Button press, small state toggle | 100–150ms | same | `ease-out` (`active:scale-[0.98]`) |
+  | Tooltip, small popover | 150ms | same | `ease-out` |
+  | Dropdown, select, popover, context menu, hover card | 150ms (the `animate-in` default) | same | `ease-out`, scaling from the trigger (`origin-(--radix-…-transform-origin)`) |
+  | Modal (`Modal`, `ModalDrawer` as modal) | 200ms | 150ms | `ease-out`, `zoom-in-95` + fade; stays centred |
+  | Drawer / bottom sheet (`Drawer`, phone `Modal`) | 300ms | 200ms | `ease-drawer`, slide in and out from the same edge |
+  | Moving something already on screen | 200–300ms | — | `ease-in-out` |
+
+  Rules behind it: exit is faster than enter; never `ease-in` on UI; never
+  `scale(0)` (start at 0.95 with opacity); keep UI motion under 300ms except
+  drawers; don't animate what a keyboard shortcut opens (`data-instant`);
+  reduced motion keeps fades and drops movement (handled in `theme.css`).
+  A Radix dialog's parts must close in the same time: Radix removes the
+  portal when the outer element (the modal backdrop, the drawer's portal div)
+  ends its animation.
+  Put a duration on the state it is for (`data-[state=open]:duration-300
+  data-[state=closed]:duration-200`): `animate-in` / `animate-out` set their
+  own 150ms duration, and a plain `duration-*` loses to them — the drawer's
+  "300ms" open ran at 150ms until it moved onto the state variant.
+
 ```typescript
 // Preferred
 className="transition-transform"
