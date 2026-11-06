@@ -4,13 +4,13 @@
 
 import { spawnSync } from "node:child_process";
 import {
-  closeSync,
-  mkdtempSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync
+    closeSync,
+    mkdtempSync,
+    openSync,
+    readFileSync,
+    renameSync,
+    rmSync,
+    writeFileSync
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
@@ -155,9 +155,7 @@ export function splitConstants(source: string): {
 }
 
 /**
- * The tail of the CLI's stderr, for the error message. The CLI echoes the
- * `--db-url` on some failures, so every PostgreSQL URL is replaced before the
- * text leaves this function; a run log must never carry the password.
+ * Extract the tail of the CLI's stderr for the error message.
  */
 export function describeFailure(
   result: { error?: Error; stderr?: Buffer | string | null },
@@ -203,10 +201,6 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
         ],
         {
           stdio: ["ignore", out, "pipe"],
-          // The CLI runs `postgres-meta` in a container it pulls from AWS ECR
-          // by default, whose blob downloads redirect to CloudFront. A Claude
-          // cloud container's proxy denies CloudFront, so there (only) pull the
-          // same image from Docker Hub.
           env:
             process.env.CARBON_DEV_CLOUD === "1"
               ? { SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io", ...process.env }

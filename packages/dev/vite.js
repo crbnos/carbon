@@ -141,12 +141,12 @@ export function stackActivity() {
           }
         }
         if (fs.existsSync(booting)) {
-          const deadline = Date.now() + 600_000;
+          const deadline = Date.now() + 600_000; // Deadline in 10 min
           while (fs.existsSync(booting) && Date.now() < deadline) {
             await new Promise((resolve) => setTimeout(resolve, 200));
           }
           // Still booting: the schema may be half-built, so the request is
-          // refused in a way the caller retries, never handed to the app.
+          // refused in a way the caller retries.
           if (fs.existsSync(booting)) {
             res.statusCode = 503;
             res.setHeader("Retry-After", "5");

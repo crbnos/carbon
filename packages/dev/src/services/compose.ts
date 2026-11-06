@@ -83,16 +83,11 @@ async function dockerResponds(): Promise<boolean> {
   return r.exitCode === 0;
 }
 
-// Cloud containers only (`CARBON_DEV_CLOUD=1`), as root on Linux with `dockerd`
-// installed and nothing running it: start the daemon ourselves instead of
-// telling a user who is not there to start Docker Desktop. The daemon outlives
-// crbn, so the next `crbn up` finds it running.
+// On Linux, we will start the daemon ourselves instead of telling a user who is
+// not there to start Docker Desktop (this is currently just on for cloud containers).
 async function startDockerDaemon(): Promise<boolean> {
   if (!isCloudDev()) return false;
   if (process.platform !== "linux" || process.getuid?.() !== 0) return false;
-  // The CLI talks to whatever DOCKER_HOST names; a local daemon answers only
-  // on the local socket, so starting one for a remote endpoint waits 30 s for
-  // nothing.
   const host = process.env.DOCKER_HOST;
   if (host && !host.startsWith("unix://")) {
     log.warn(`DOCKER_HOST is ${host}; not starting a local dockerd`);
@@ -105,7 +100,7 @@ async function startDockerDaemon(): Promise<boolean> {
   if (dockerd.exitCode !== 0) return false;
 
   // A container image restored from a snapshot can carry pid files of daemons
-  // that are not running; dockerd refuses to start while they name a live pid,
+  // that are not running. dockerd refuses to start while they name a live pid,
   // and after a container restart that pid belongs to some other process.
   clearStalePidFile("/var/run/docker.pid", ["dockerd"]);
   clearStalePidFile("/var/run/docker/containerd/containerd.pid", [
@@ -117,19 +112,10 @@ async function startDockerDaemon(): Promise<boolean> {
   const logFile = join(logDir, "dockerd.log");
   const fd = openSync(logFile, "a");
   try {
-    // Docker Hub rate-limits anonymous pulls per IP and a container's egress IP
-    // is shared: a cold boot once failed on a 429 for its first image. The
-    // daemon tries a mirror before Docker Hub and falls back to Hub when the
-    // mirror cannot answer. mirror.gcr.io serves Docker Hub's public images and
-    // is reachable through the container proxy, blobs included.
-    // CARBON_DEV_REGISTRY_MIRROR overrides it; set empty for none.
-    const mirror =
-      process.env.CARBON_DEV_REGISTRY_MIRROR ?? "https://mirror.gcr.io";
-    const child = spawn(
-      "dockerd",
-      mirror ? [`--registry-mirror=${mirror}`] : [],
-      { detached: true, stdio: ["ignore", fd, fd] }
-    );
+    const child = spawn("dockerd", [], {
+      detached: true,
+      stdio: ["ignore", fd, fd]
+    });
     child.unref();
   } finally {
     closeSync(fd);
@@ -160,7 +146,7 @@ function clearStalePidFile(file: string, owners: string[]) {
     } catch {
       // not a live process
     }
-    // The process's own name only: a reused pid running `tail -f dockerd.log`
+    // The process's own name. A reused pid running `tail -f dockerd.log`
     // names the daemon in an argument and is not the daemon.
     const [argv0 = ""] = cmdline.split("\0");
     if (owners.includes(argv0.split("/").pop() ?? "")) return;

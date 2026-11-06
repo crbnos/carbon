@@ -317,12 +317,11 @@ Seconds from boot start to the login page being served on a 4-core container, wi
 | The images and the database | 44 | 58 |
 | The images, the database and Vite's cache | 29 | 41 |
 
-The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so `pnpm dev` on a developer machine is unchanged:
+The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so these cloud-specific behaviors do not apply to a developer’s own `pnpm dev`:
 
-- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux), with `mirror.gcr.io` as a registry mirror (`CARBON_DEV_REGISTRY_MIRROR` changes it, empty turns it off) and retried pulls, because Docker Hub rate-limits the shared address of cloud containers.
-- Set `SESSION_SECRET` in the cloud environment’s secret settings; no `.env` file is needed.
+- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux), using Docker Hub directly and retrying failed pulls with exponential backoff and jitter (2.5–5, 7.5–15, then 22.5–45 seconds).
 - The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
-- The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite files that already match, which the Database types workflow checks. Where a regeneration does run in a container, it pulls `postgres-meta` from Docker Hub rather than AWS ECR, and a failure is a warning, not a failed boot.
+- The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite committed generated files. The Database types workflow verifies that committed database types match the migrations. When type generation runs in a cloud container, it pulls `postgres-meta` from Docker Hub rather than AWS ECR; a type-generation failure logs a warning and startup continues with the existing types.
 - `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget.
 - A browser for checking the UI: Chrome is in the container (`/usr/bin/google-chrome`, which adds `--no-sandbox` for root) and the script installs `agent-browser`, the CLI the `/auth`, `/test` and `/smoke-test` skills drive it with (pinned by `AGENT_BROWSER_VERSION`; about 4 s, in the background at boot, or in `--prepare`), and sets `AGENT_BROWSER_EXECUTABLE_PATH`. From a cold browser, opening the login page, signing in as the bypass user and reaching the dashboard takes about 15 s; the next page about 8 s the first time.
 

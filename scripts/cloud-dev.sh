@@ -164,17 +164,13 @@ pull_images() {
     return 0
   fi
   echo "cloud-dev: pulling ${#missing[@]} stack images in parallel"
-  # Each image is retried: Docker Hub rate-limits anonymous pulls per IP, and a
-  # cold container shares its egress IP, so a pull can fail with a 429 that
-  # clears in seconds.
-  printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} sh -c '
-    for wait in 0 5 15 45; do
-      sleep "$wait"
-      docker pull -q "$1" >/dev/null 2>&1 && exit 0
-    done
-    echo "cloud-dev: could not pull $1" >&2
-    exit 1
-  ' _ {} || echo "cloud-dev: some images did not pull; crbn up will retry them" >&2
+  printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} pnpm exec tsx --eval '
+    import { execa } from "execa";
+    import { withExponentialBackoff } from "./packages/dev/src/retry.ts";
+    const image = process.argv[1];
+    withExponentialBackoff(() => execa("docker", ["pull", "-q", image]))
+      .catch(() => { console.error(`cloud-dev: could not pull ${image}`); process.exitCode = 1; });
+  ' {} || echo "cloud-dev: some images did not pull; crbn up will retry them" >&2
   echo "cloud-dev: image pull finished"
 }
 

@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { setTimeout as sleep } from "node:timers/promises";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
@@ -14,6 +13,7 @@ import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, tryConnect } from "../helpers.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
+import { withExponentialBackoff } from "../retry.js";
 import {
   assemblerMissingPrerequisite,
   installDeps,
@@ -164,6 +164,8 @@ type Ctx = {
   freshDatabase?: boolean;
 };
 
+type Prespawned = { stop: AbortController; exited: Promise<void> };
+
 export async function up(opts: UpOpts = {}) {
   const shouldMigrate = opts.migrate ?? true;
   // Type/swagger regen depends on a freshly-migrated schema. If migrations
@@ -201,13 +203,13 @@ export async function up(opts: UpOpts = {}) {
   let stripeChild: ExecaChildProcess | undefined;
   let earlyApps: Prespawned | undefined;
   let interrupted = false;
+  // This marker holds every request to this stack's dev servers. Otherwise,
+  // an interrupted boot left them waiting for ten minutes.
   let bootMarker: string | undefined;
   const detachEarly = onShutdown(() => {
     if (interrupted) return;
     interrupted = true;
     process.stderr.write("\ninterrupted — stopping partial stack…\n");
-    // The marker holds every request to this stack's dev servers; without
-    // this, an interrupted boot left them waiting up to ten minutes.
     if (bootMarker) rmSync(bootMarker, { force: true });
     earlyApps?.stop.abort();
     killStripe(stripeChild);
@@ -298,14 +300,12 @@ export async function up(opts: UpOpts = {}) {
     borrowedEntry
   );
 
-  // Cloud container only (`CARBON_DEV_CLOUD=1`): start the ERP/MES dev servers
-  // now, before the images are pulled and the database is migrated. Vite's
-  // first page takes about two minutes of CPU there (the dependency optimizer,
-  // then the SSR transform of the root and login module graph), and none of it
-  // needs the database. The `booting` marker holds every request until the
-  // database phase below is done.
-  // Not when borrowing: the marker would sit in the owner's state directory
-  // and hold the owner's dev servers too, for a database that is already up.
+  // Currently, we do this in cloud containers only (`CARBON_DEV_CLOUD=1`).
+  // The idea is to start the ERP/MES dev servers before the images are pulled
+  // and the database is migrated. Vite's first page takes about two minutes of
+  // CPU (the dependency optimizer, then the SSR transform of the root and login
+  // module graph), and none of this work needs the database. The `booting`
+  // marker holds every request until the database phase below is done.
   const earlyAppIds =
     isCloudDev() && appsRequested && !borrowSlug
       ? reactRouterApps(selectedApps)
@@ -521,10 +521,6 @@ export async function up(opts: UpOpts = {}) {
   }
 }
 
-// Dev servers `up()` started before the database was ready (cloud containers
-// only); the app loop takes them over instead of spawning its own.
-type Prespawned = { stop: AbortController; exited: Promise<void> };
-
 // Shared between the idle watcher and the app loop. `parked` means the dev
 // servers were stopped on purpose and will be started again.
 type AppParking = {
@@ -734,37 +730,33 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
   );
   const cloud = isCloudDev();
   // A cloud container shares its egress IP and Docker Hub rate-limits
-  // anonymous pulls per IP, so a pull can fail with a 429 that clears in
-  // seconds. The pull resumes where it stopped: retry it a few times, with a
-  // growing wait, before the boot gives up.
+  // anonymous pulls per IP, so a pull can fail with a 429. I add exponential
+  // backoff and then retry a few times.
   const attempts = cloud ? 4 : 1;
   try {
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await pullStack(
+    await withExponentialBackoff(
+      () =>
+        pullStack(
           ctx.root,
           ctx.slug,
           (line) => {
             if (/^[0-9a-f]{12}\b/.test(line)) return;
             const pulled = / Pulled$/.test(line);
-            // A cloud container writes to a log file, where every layer line
-            // would be a frame of its own; one line per image is enough there.
             if (!cloud) bar.message(line.slice(0, 80));
             else if (pulled) log.info(line.slice(0, 80));
             if (pulled) bar.advance(1);
           },
           opts.size
-        );
-        break;
-      } catch (err) {
-        if (attempt >= attempts) throw err;
-        const seconds = 5 * 3 ** (attempt - 1);
-        log.warn(
-          `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${seconds} s`
-        );
-        await sleep(seconds * 1000);
+        ),
+      {
+        attempts,
+        onRetry: (_error, attempt, delayMs) => {
+          log.warn(
+            `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${delayMs / 1000} s`
+          );
+        }
       }
-    }
+    );
     bar.stop("images up to date");
   } catch (err) {
     bar.stop("pull failed");
@@ -891,20 +883,18 @@ async function runDatabaseMigrations(
           {
             title: "Regenerate types & swagger",
             task: async () => {
-              // Only when a migration applied this boot. The committed types
-              // already match the committed migrations: the Database types
-              // workflow (.github/workflows/database-types.yml) fails a pull
-              // request where they differ. Regenerating from a database that
-              // still holds another branch's schema would write that schema
-              // into this branch's types.
+              // If there are no new migrations, we don't need to regenerate
+              // these types. There is a git workflow that will catch mismatches
+              // before they merge.
               if (!migrationsApplied) return "skipped (no new migrations)";
               let typesFailed = false;
               try {
                 await execa("pnpm", ["db:types"], { cwd: ctx.root });
               } catch (err) {
                 if (!isCloudDev()) throw err;
-                // A cloud container's network policy can block the image the
-                // generator pulls; the committed types still work there.
+                // Since a cloud container's network policy can block the image the
+                // generator pulls, we will just continue and assume the committed types
+                // still work there. A discrepency will be caught in ci.
                 const detail =
                   err instanceof Error ? err.message.split("\n").at(-1) : "";
                 log.warn(
@@ -912,8 +902,6 @@ async function runDatabaseMigrations(
                 );
                 typesFailed = true;
               }
-              // The swagger document reads the database, not the types, and
-              // nothing regenerates it until the next applied migration.
               await execa("pnpm", ["generate:swagger"], { cwd: ctx.root });
               return typesFailed
                 ? "types regen failed (kept committed types); swagger refreshed"
