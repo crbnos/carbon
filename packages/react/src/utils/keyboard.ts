@@ -31,3 +31,48 @@ export function isTextEntryTarget(
   if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return true;
   return target.isContentEditable;
 }
+
+// Controls that act on a bare Enter or Space themselves. Text fields are not
+// listed: a shortcut reaches them only when it opts in
+// (`enabledOnInputElements`), which says the field's Enter means the action.
+const ACTIVATABLE_CONTROL = [
+  "button",
+  "a[href]",
+  "select",
+  "summary",
+  'input:is([type="checkbox"], [type="radio"], [type="button"], [type="submit"], [type="reset"], [type="image"], [type="file"])',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  '[role="tab"]',
+  '[role="option"]',
+  '[role="treeitem"]'
+].join(", ");
+
+/**
+ * True when a bare Enter or Space (no Ctrl, Meta or Alt) lands on a control
+ * other than `owner`: that control activates itself, so a shortcut bound to
+ * the bare key must stand down — Enter on a dialog's Cancel must not also
+ * press the page's Enter-bound Record button. Combos (⌘Enter) still fire.
+ */
+export function isBareKeyForAnotherControl(
+  event: Pick<
+    KeyboardEvent,
+    "key" | "ctrlKey" | "metaKey" | "altKey" | "target"
+  >,
+  owner: Element | null
+): boolean {
+  if (event.ctrlKey || event.metaKey || event.altKey) return false;
+  if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") {
+    return false;
+  }
+  const target = event.target;
+  if (!(target instanceof Element)) return false;
+  if (owner && (target === owner || owner.contains(target))) return false;
+  return target.closest(ACTIVATABLE_CONTROL) !== null;
+}

@@ -360,6 +360,7 @@ function PeriodCloseTaskRow({
   const isResolved = status === "Done" || status === "Skipped";
   // The "Lock the period" step is an Action whose button performs the real
   // Open <-> Locked transition (below), not a generic "Mark Done"/"Skip".
+  const taskName = task.name;
   const isLockTask =
     task.taskType === "Action" && task.name === LOCK_PERIOD_TASK_NAME;
   // Auto tasks are evaluated by the system; only Action/Manual tasks are
@@ -669,6 +670,7 @@ function PeriodCloseTaskRow({
               <input type="hidden" name="taskId" value={task.id} />
               <Input
                 name="skippedReason"
+                aria-label={t`Reason for skipping ${taskName}`}
                 placeholder={t`Reason for skipping (required)`}
                 className="flex-1"
               />

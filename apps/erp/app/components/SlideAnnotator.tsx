@@ -138,6 +138,7 @@ export function SlideAnnotator({
         <ModalBody>
           <div className="flex flex-col gap-4 lg:flex-row">
             <div className="flex flex-1 items-center justify-center">
+              {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: drops a pin at the pointer's x/y on the image — inherently positional; placed pins are labelled buttons */}
               <div
                 ref={wrapperRef}
                 className="relative inline-block cursor-crosshair select-none"

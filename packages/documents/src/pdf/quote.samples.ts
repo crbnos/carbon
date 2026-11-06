@@ -20,6 +20,7 @@ export const SAMPLE_QUOTE = {
     registrationNumber: null
   },
   exchangeRate: 1,
+  printDate: "2026-06-01",
   quote: {
     quoteId: "QUO-001042",
     revisionId: 0,

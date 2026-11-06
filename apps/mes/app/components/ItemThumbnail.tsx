@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { cn } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import { useState } from "react";
 import { LuBlocks } from "react-icons/lu";
@@ -14,6 +15,9 @@ interface ItemThumbnailProps {
   size?: "sm" | "md" | "lg" | "xl";
   type?: "Part" | "Material" | "Tool" | "Service" | "Consumable" | "Fixture";
   onClick?: () => void;
+  /** Accessible text. Defaults to empty (decorative — the item's name sits
+   * beside the thumbnail) unless the thumbnail is clickable. */
+  alt?: string;
 }
 
 const itemVariants = cva(
@@ -78,8 +82,10 @@ const ItemThumbnail = ({
   thumbnailPath,
   type,
   size = "md",
-  onClick
+  onClick,
+  alt
 }: ItemThumbnailProps) => {
+  const { t } = useLingui();
   // Keyed by path, not a bare boolean — a virtualized row reused for another
   // item would otherwise stay stuck on the fallback.
   const [failedPath, setFailedPath] = useState<string | null>(null);
@@ -88,7 +94,7 @@ const ItemThumbnail = ({
     <img
       loading="lazy"
       decoding="async"
-      alt="thumbnail"
+      alt={alt ?? (onClick ? t`Open item image` : "")}
       className={cn(
         itemVariants({ size, withPadding: false }),
         thumbnailPath && "cursor-pointer"
@@ -97,9 +103,21 @@ const ItemThumbnail = ({
       onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     />
   ) : (
-    <div className={cn(itemVariants({ size }))}>
+    <div aria-hidden="true" className={cn(itemVariants({ size }))}>
       {type ? (
         <MethodItemTypeIcon className={iconVariants({ size })} type={type} />
       ) : (

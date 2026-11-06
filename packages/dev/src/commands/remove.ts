@@ -27,6 +27,7 @@ import {
   pruneStaleRoutes,
   unregisterAliases
 } from "../services/portless.js";
+import { tryDropWorktreeData } from "../services/shared-db.js";
 import { spinner } from "../ui.js";
 import {
   getSlot,
@@ -173,6 +174,10 @@ export async function removeWorktreeCmd(opts?: {
       if (slotInfo && typeof slotInfo.redisDb === "number") {
         progress(`${label}: flushing redis db ${slotInfo.redisDb}`);
         await flushDb(slotInfo.redisDb);
+      }
+      if (slug) {
+        const dropped = await tryDropWorktreeData(slug);
+        if (dropped) progress(`${label}: ${dropped}`);
       }
 
       try {

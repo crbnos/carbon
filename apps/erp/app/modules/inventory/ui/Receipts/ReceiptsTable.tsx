@@ -267,7 +267,15 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
       {
         accessorKey: "invoiced",
         header: t`Invoiced`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const receiptId = item.row.original.receiptId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Invoiced: ${receiptId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -395,6 +403,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
   return (
     <>
       <Table<(typeof data)[number]>
+        getRowLabel={(row) => row.receiptId ?? undefined}
         data={data}
         infinite={infinite}
         columns={columns}

@@ -1,0 +1,2143 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`clicking a real PDF > opens the right text on the issue sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Issue Report": "document:title",
+  },
+  {
+    "NCR-000241": "document:documentNumber",
+  },
+  {
+    "ISSUE DETAILS": "issueDetails:issueDetails",
+  },
+  {
+    "Surface finish out of spec": "issueDetails:name",
+  },
+  {
+    "Type: Cosmetic Defect": "issueDetails:type",
+  },
+  {
+    "Status: In Progress": "issueDetails:status",
+  },
+  {
+    "Initiated By: Dana Cruz": "issueDetails:initiatedBy",
+  },
+  {
+    "DATES": "issueDetails:dates",
+  },
+  {
+    "Started: Jun 2, 2026": "issueDetails:started",
+  },
+  {
+    "ASSOCIATIONS": "associations:associations",
+  },
+  {
+    "Item:": "associations:item",
+  },
+  {
+    "WIDGET-100": "associations:itemValue",
+  },
+  {
+    "-": "associations:itemValue",
+  },
+  {
+    "Rework": "associations:disposition",
+  },
+  {
+    "-": "associations:itemValue",
+  },
+  {
+    "Qty: 12": "associations:qty",
+  },
+  {
+    "Customer:": "associations:customer",
+  },
+  {
+    "Globex Corporation": "associations:customerValue",
+  },
+  {
+    "Job Operation:": "associations:jobOperation",
+  },
+  {
+    "JOB-002310 / Op 30": "associations:jobOperationValue",
+  },
+  {
+    "Sales Order:": "associations:salesOrder",
+  },
+  {
+    "SO-001188": "associations:salesOrderValue",
+  },
+  {
+    "DESCRIPTION OF ISSUE": "notes:descriptionOfIssue",
+  },
+  {
+    "Anodized surface shows visible streaking on 12 of 100 parts. Suspected rack contact points during the anodize bath.": "notes:descriptionOfIssue (panel)",
+  },
+  {
+    "CORRECTIVE ACTION": "actionTasks:actionName",
+  },
+  {
+    "Completed by:": "actionTasks:completedBy",
+  },
+  {
+    "Dana Cruz": "actionTasks:completedByValue",
+  },
+  {
+    "Completed on:": "actionTasks:completedOn",
+  },
+  {
+    "2026-06-04": "actionTasks:completedOnValue",
+  },
+  {
+    "Re-racked affected parts and re-anodized.": "actionTasks:completedOn (panel)",
+  },
+  {
+    "SUPPLIER": "actionTasks:supplierPrefix",
+  },
+  {
+    "CONTAINMENT": "actionTasks:actionName",
+  },
+  {
+    "Supplier:": "actionTasks:supplier",
+  },
+  {
+    "Apex Anodizing": "actionTasks:supplierValue",
+  },
+  {
+    "MRB": "reviewers:mrb",
+  },
+  {
+    "Quality Manager": "reviewers:titleCell",
+  },
+  {
+    "Approved": "reviewers:statusCell",
+  },
+  {
+    "Disposition: use as-is after rework.": "reviewers:mrb (panel)",
+  },
+  {
+    "Engineering": "reviewers:titleCell",
+  },
+  {
+    "Pending": "reviewers:statusCell",
+  },
+  {
+    "Issue #NCR-000241": "document:issueNumber",
+  },
+  {
+    "Page 1 of 1": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the jobTraveler sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Job Traveler": "document:title",
+  },
+  {
+    "JOB-002310": "document:documentNumber",
+  },
+  {
+    "SO# SO-001188": "document:salesOrderPrefix",
+  },
+  {
+    "Job ID:": "jobDetails:jobId",
+  },
+  {
+    "JOB-002310": "jobDetails:jobIdValue",
+  },
+  {
+    "Part ID:": "jobDetails:partId",
+  },
+  {
+    "WIDGET-100 / A": "jobDetails:partIdValue",
+  },
+  {
+    "Method Revision:": "jobDetails:methodRevision",
+  },
+  {
+    "V2": "jobDetails:methodRevisionValue",
+  },
+  {
+    "Tracking:": "jobDetails:tracking",
+  },
+  {
+    "Batch Number: BATCH-44021": "jobDetails:number",
+  },
+  {
+    "Item:": "jobDetails:item",
+  },
+  {
+    "Precision Widget, anodized": "jobDetails:itemValue",
+  },
+  {
+    "Quantity:": "jobDetails:quantity",
+  },
+  {
+    "100": "jobDetails:quantityValue",
+  },
+  {
+    "EA": "jobDetails:quantityValue",
+  },
+  {
+    "Scrap Qty:": "jobDetails:scrapQty",
+  },
+  {
+    "5": "jobDetails:scrapQtyValue",
+  },
+  {
+    "EA": "jobDetails:scrapQtyValue",
+  },
+  {
+    "Target:": "jobDetails:target",
+  },
+  {
+    "Sales Order: SO-001188": "jobDetails:salesOrder",
+  },
+  {
+    "Customer:": "jobDetails:customer",
+  },
+  {
+    "Globex Corporation": "jobDetails:customerValue",
+  },
+  {
+    "Start Date:": "jobDetails:startDate",
+  },
+  {
+    "Jun 1, 2026": "jobDetails:startDateValue",
+  },
+  {
+    "Due Date:": "jobDetails:dueDate",
+  },
+  {
+    "Jun 18, 2026": "jobDetails:dueDateValue",
+  },
+  {
+    "Deadline Type:": "jobDetails:deadlineType",
+  },
+  {
+    "Hard Deadline": "jobDetails:deadlineTypeValue",
+  },
+  {
+    "SEQ": "operations:seq",
+  },
+  {
+    "OPERATION": "operations:operation",
+  },
+  {
+    "EXPECTED TIMES": "operations:expectedTimes",
+  },
+  {
+    "1": "operations:seqCell",
+  },
+  {
+    "CNC Mill — rough + finish": "operations:operationCell",
+  },
+  {
+    "Setup: 0.5 hr": "operations:expectedSetup",
+  },
+  {
+    "Labor: 2 hr": "operations:expectedLabor",
+  },
+  {
+    "Machine: 1.5 hr": "operations:expectedMachine",
+  },
+  {
+    "ACTIONS": "operations:actions",
+  },
+  {
+    "Setup": "operations:actionSetup",
+  },
+  {
+    "Labor": "operations:actionLabor",
+  },
+  {
+    "Machine": "operations:actionMachine",
+  },
+  {
+    "Complete": "operations:complete",
+  },
+  {
+    "2": "operations:seqCell",
+  },
+  {
+    "Deburr & inspect": "operations:operationCell",
+  },
+  {
+    "Labor: 0.75 hr": "operations:expectedLabor",
+  },
+  {
+    "ACTIONS": "operations:actions",
+  },
+  {
+    "Labor": "operations:actionLabor",
+  },
+  {
+    "Complete": "operations:complete",
+  },
+  {
+    "JOB-002310": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "3": "operations:seqCell",
+  },
+  {
+    "Anodize (outside vendor)": "operations:operationCell",
+  },
+  {
+    "ACTIONS": "operations:actions",
+  },
+  {
+    "Complete": "operations:complete",
+  },
+  {
+    "JOB-002310": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the packingSlip sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "Detroit": "document:title (panel)",
+  },
+  {
+    "Packing Slip": "document:title",
+  },
+  {
+    "SHP-001042": "document:documentNumber",
+  },
+  {
+    "SHIP TO": "parties:shipTo",
+  },
+  {
+    "Globex Corporation": "parties:customerName",
+  },
+  {
+    "500": "parties:customerAddressLine1",
+  },
+  {
+    "Commerce Blvd": "parties:customerAddressLine1",
+  },
+  {
+    "Chicago": "parties:customerCity",
+  },
+  {
+    "IL 60601": "parties:customerStatePostal",
+  },
+  {
+    "US": "parties:customerCountry",
+  },
+  {
+    "SHIPMENT DETAILS": "parties:shipmentDetails",
+  },
+  {
+    "Date: Jun 5, 2026": "parties:date",
+  },
+  {
+    "Sales Order: SO-001042": "parties:sourceDocument",
+  },
+  {
+    "Customer PO #: PO-88421": "parties:customerPoNumber",
+  },
+  {
+    "Tracking: 1Z999AA10123456784": "parties:tracking",
+  },
+  {
+    "SHIPPING": "details:shipping",
+  },
+  {
+    "Method: Ground": "details:method",
+  },
+  {
+    "PAYMENT": "details:payment",
+  },
+  {
+    "Terms: Net 30": "details:terms",
+  },
+  {
+    "Description": "lineItems:description",
+  },
+  {
+    "Qty": "lineItems:qty",
+  },
+  {
+    "WIDGET-100": "lineItems:itemCell",
+  },
+  {
+    "Precision Widget, anodized": "lineItems:descriptionCell",
+  },
+  {
+    "10 / 10": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "BRACKET-22": "lineItems:itemCell",
+  },
+  {
+    "Mounting Bracket": "lineItems:descriptionCell",
+  },
+  {
+    "4 / 4": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Handle with care.": "notes:notes (panel)",
+  },
+  {
+    "STANDARD TERMS & CONDITIONS": "terms:standardTermsAndConditions",
+  },
+  {
+    "Goods received in good condition.": "terms:standardTermsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "SHP-001042": "document:page (panel)",
+  },
+  {
+    "Page 1 of 1": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the purchaseOrder sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Purchase Order": "document:title",
+  },
+  {
+    "PO-001042": "document:documentNumber",
+  },
+  {
+    "SUPPLIER": "parties:supplier",
+  },
+  {
+    "Steelworks Ltd": "parties:supplierName",
+  },
+  {
+    "200": "parties:supplierAddressLine1",
+  },
+  {
+    "Foundry Rd": "parties:supplierAddressLine1",
+  },
+  {
+    "Pittsburgh": "parties:supplierCity",
+  },
+  {
+    "PA 15201": "parties:supplierStatePostal",
+  },
+  {
+    "United States": "parties:supplierCountry",
+  },
+  {
+    "ORDER INFO": "parties:orderInfo",
+  },
+  {
+    "PO Number: PO-001042": "parties:poNumber",
+  },
+  {
+    "Date: Jun 1, 2026": "parties:date",
+  },
+  {
+    "Currency: USD": "parties:currency",
+  },
+  {
+    "Reference: Q-55120": "parties:reference",
+  },
+  {
+    "Payment Terms: Net 30": "parties:paymentTerms",
+  },
+  {
+    "DELIVER TO": "parties:deliverTo",
+  },
+  {
+    "Acme Manufacturing Co.": "parties:deliverToName",
+  },
+  {
+    "1": "parties:deliverToAddressLine1",
+  },
+  {
+    "Industrial Way": "parties:deliverToAddressLine1",
+  },
+  {
+    "Detroit": "parties:deliverToCity",
+  },
+  {
+    "MI 48201": "parties:deliverToStatePostal",
+  },
+  {
+    "United States": "parties:deliverToCountry",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Please confirm lead times.": "notes:notes (panel)",
+  },
+  {
+    "#": "lineItems:number",
+  },
+  {
+    "Description": "lineItems:description",
+  },
+  {
+    "Qty": "lineItems:qty",
+  },
+  {
+    "UOM": "lineItems:uom",
+  },
+  {
+    "Required": "lineItems:required",
+  },
+  {
+    "Unit Price": "lineItems:unitPrice",
+  },
+  {
+    "Net Value": "lineItems:netValue",
+  },
+  {
+    "Tax Value": "lineItems:taxValue",
+  },
+  {
+    "Total": "lineItems:total",
+  },
+  {
+    "1": "lineItems:numberCell",
+  },
+  {
+    "STEEL-BAR-50": "lineItems:descriptionCell",
+  },
+  {
+    "Steel Bar, 50mm": "lineItems:detailsCell",
+  },
+  {
+    "Supplier Part ID: SW-1045-50R": "lineItems:supplierPartCell",
+  },
+  {
+    "Shipping: 5.00": "lineItems:shipping",
+  },
+  {
+    "100": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:uomCell",
+  },
+  {
+    "Jun 20,": "lineItems:requiredCell",
+  },
+  {
+    "2026": "lineItems:requiredCell",
+  },
+  {
+    "5.22": "lineItems:unitPriceCell",
+  },
+  {
+    "522.00": "lineItems:netValueCell",
+  },
+  {
+    "78.30": "lineItems:taxValueCell",
+  },
+  {
+    "15%": "lineItems:taxPercentCell",
+  },
+  {
+    "605.30": "lineItems:totalCell",
+  },
+  {
+    "2": "lineItems:numberCell",
+  },
+  {
+    "BOLT-M8": "lineItems:descriptionCell",
+  },
+  {
+    "M8 Bolt, zinc": "lineItems:detailsCell",
+  },
+  {
+    "500": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:uomCell",
+  },
+  {
+    "Jun 20,": "lineItems:requiredCell",
+  },
+  {
+    "2026": "lineItems:requiredCell",
+  },
+  {
+    "0.12": "lineItems:unitPriceCell",
+  },
+  {
+    "60.00": "lineItems:netValueCell",
+  },
+  {
+    "9.00": "lineItems:taxValueCell",
+  },
+  {
+    "15%": "lineItems:taxPercentCell",
+  },
+  {
+    "69.00": "lineItems:totalCell",
+  },
+  {
+    "Subtotal (USD)": "summary:subtotal",
+  },
+  {
+    "587": "summary:subtotalValue",
+  },
+  {
+    ".00": "summary:subtotalValue",
+  },
+  {
+    "Taxes": "summary:taxValue",
+  },
+  {
+    "(": "summary:taxValue",
+  },
+  {
+    "USD": "summary:taxValue",
+  },
+  {
+    ")": "summary:taxValue",
+  },
+  {
+    "87": "summary:taxValue",
+  },
+  {
+    ".30": "summary:taxValue",
+  },
+  {
+    "Total (USD)": "summary:total",
+  },
+  {
+    "674.30": "summary:totalValue",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "PO-001042": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Purchase Order": "document:title",
+  },
+  {
+    "PO-001042": "document:documentNumber",
+  },
+  {
+    "TERMS & CONDITIONS": "terms:termsAndConditions",
+  },
+  {
+    "Goods remain the property of the buyer until inspection and acceptance.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "APPROVED BY": "approval:label",
+  },
+  {
+    "Jordan Lee": "approval:label (panel)",
+  },
+  {
+    "Jun 2, 2026": "approval:label (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "PO-001042": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the purchaseReturnOrder sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Return to Supplier": "document:title",
+  },
+  {
+    "PRO-000007": "document:documentNumber",
+  },
+  {
+    "Supplier RMA #: SUP-RMA-4471": "document:supplierRmaNumber",
+  },
+  {
+    "RETURN TO": "parties:returnTo",
+  },
+  {
+    "Initech Components Ltd.": "parties:supplierName",
+  },
+  {
+    "42": "parties:supplierAddressLine1",
+  },
+  {
+    "Supplier Park": "parties:supplierAddressLine1",
+  },
+  {
+    "Cleveland": "parties:supplierCity",
+  },
+  {
+    "OH 44101": "parties:supplierStatePostal",
+  },
+  {
+    "United States": "parties:supplierCountry",
+  },
+  {
+    "RETURN DETAILS": "parties:returnDetails",
+  },
+  {
+    "Return Number: PRO-000007": "parties:returnNumber",
+  },
+  {
+    "Supplier RMA #: SUP-RMA-4471": "parties:supplierRmaNumber",
+  },
+  {
+    "Date: Jun 1, 2026": "parties:date",
+  },
+  {
+    "Expires: Jul 1, 2026": "parties:expires",
+  },
+  {
+    "SHIP FROM": "parties:shipFrom",
+  },
+  {
+    "Acme Manufacturing Co. — Main Plant": "parties:shipFromName",
+  },
+  {
+    "1": "parties:shipFromAddressLine1",
+  },
+  {
+    "Industrial Way": "parties:shipFromAddressLine1",
+  },
+  {
+    "Detroit": "parties:shipFromCity",
+  },
+  {
+    "MI 48201": "parties:shipFromStatePostal",
+  },
+  {
+    "United States": "parties:shipFromCountry",
+  },
+  {
+    "#": "lineItems:number",
+  },
+  {
+    "Item": "lineItems:item",
+  },
+  {
+    "Qty Authorized": "lineItems:qtyAuthorized",
+  },
+  {
+    "Unit Price": "lineItems:unitPrice",
+  },
+  {
+    "Reason": "lineItems:reason",
+  },
+  {
+    "1": "lineItems:numberCell",
+  },
+  {
+    "SCREW-M8-40": "lineItems:itemCell",
+  },
+  {
+    "Hex Cap Screw, M8 x 40": "lineItems:itemNameCell",
+  },
+  {
+    "12": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "EA": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "8.75": "lineItems:unitPriceCell",
+  },
+  {
+    "Failed incoming in-": "lineItems:reasonCell",
+  },
+  {
+    "spection": "lineItems:reasonCell",
+  },
+  {
+    "2": "lineItems:numberCell",
+  },
+  {
+    "MOTOR-400W": "lineItems:itemCell",
+  },
+  {
+    "Servo Motor, 400W": "lineItems:itemNameCell",
+  },
+  {
+    "2": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "EA": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "145.00": "lineItems:unitPriceCell",
+  },
+  {
+    "Over-shipment": "lineItems:reasonCell",
+  },
+  {
+    "Total (USD)": "lineItems:total",
+  },
+  {
+    "395.00": "lineItems:totalValue",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Reference the supplier RMA number on all shipping documents.": "notes:notes (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "PRO-000007": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "TERMS & CONDITIONS": "terms:termsAndConditions",
+  },
+  {
+    "Goods are returned per the supplier's return authorization. Credit is expected within 30 days of receipt.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "PRO-000007": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the purchasingRfq sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "(313) 555-0100": "document:title (panel)",
+  },
+  {
+    "purchasing@acme.example": "document:title (panel)",
+  },
+  {
+    "acme.example": "document:title (panel)",
+  },
+  {
+    "Request for Quote": "document:title",
+  },
+  {
+    "Date": "parties:date",
+  },
+  {
+    "Jun 1, 2026": "parties:dateValue",
+  },
+  {
+    "Reference": "parties:reference",
+  },
+  {
+    "PRFQ000012": "parties:referenceValue",
+  },
+  {
+    "Quotation due": "parties:quotationDue",
+  },
+  {
+    "Jun 15, 2026": "parties:quotationDueValue",
+  },
+  {
+    "Dear Supplier,": "parties:dearSupplier",
+  },
+  {
+    "We invite you to quote for the items listed below. Please send your quotation in your usual format by Jun 15,": "parties:invitation",
+  },
+  {
+    "2026, quoting reference PRFQ000012.": "parties:referenceValue",
+  },
+  {
+    "Your quotation should include:": "parties:yourQuotationShouldInclude",
+  },
+  {
+    "•": "parties:yourQuotationShouldInclude (panel)",
+  },
+  {
+    "a unit price for each quantity, in the unit of measure shown": "parties:includes1",
+  },
+  {
+    "•": "parties:yourQuotationShouldInclude (panel)",
+  },
+  {
+    "your lead time from receipt of order": "parties:includes2",
+  },
+  {
+    "•": "parties:yourQuotationShouldInclude (panel)",
+  },
+  {
+    "how long your prices remain valid": "parties:includes3",
+  },
+  {
+    "•": "parties:yourQuotationShouldInclude (panel)",
+  },
+  {
+    "freight and delivery terms to the address below": "parties:includes4",
+  },
+  {
+    "Deliver to": "parties:deliverTo",
+  },
+  {
+    "Acme Manufacturing Co.": "parties:deliverToName",
+  },
+  {
+    "1": "parties:deliverToAddressLine1",
+  },
+  {
+    "Industrial Way": "parties:deliverToAddressLine1",
+  },
+  {
+    "Detroit, MI 48201": "parties:deliverToCity",
+  },
+  {
+    "United States": "parties:deliverToCountry",
+  },
+  {
+    "Send your quotation to": "parties:sendYourQuotationTo",
+  },
+  {
+    "Jane Doe": "parties:sendToName",
+  },
+  {
+    "jane.doe@acme.example": "parties:sendToEmail",
+  },
+  {
+    "#": "lineItems:number",
+  },
+  {
+    "Item": "lineItems:item",
+  },
+  {
+    "Quantity": "lineItems:quantity",
+  },
+  {
+    "Unit": "lineItems:unit",
+  },
+  {
+    "1": "lineItems:numberCell",
+  },
+  {
+    "A500-RECTTUBE-1.5X3X.188": "lineItems:itemCell",
+  },
+  {
+    "A500 Gr B steel rectangular tube, 1.5" x 3" x .188"": "lineItems:descriptionCell",
+  },
+  {
+    "Mill certs required.": "lineItems:itemCell",
+  },
+  {
+    "18,500": "lineItems:quantityCell",
+  },
+  {
+    "73,900": "lineItems:quantityCell",
+  },
+  {
+    "922,800": "lineItems:quantityCell",
+  },
+  {
+    "LB": "lineItems:unitCell",
+  },
+  {
+    "LB": "lineItems:unitCell",
+  },
+  {
+    "LB": "lineItems:unitCell",
+  },
+  {
+    "2": "lineItems:numberCell",
+  },
+  {
+    "SCREW-M8-40": "lineItems:itemCell",
+  },
+  {
+    "Hex Cap Screw, M8 x 40": "lineItems:descriptionCell",
+  },
+  {
+    "500": "lineItems:quantityCell",
+  },
+  {
+    "2,000": "lineItems:quantityCell",
+  },
+  {
+    "EA": "lineItems:unitCell",
+  },
+  {
+    "EA": "lineItems:unitCell",
+  },
+  {
+    "Notes": "notes:notes",
+  },
+  {
+    "Please quote each quantity break and include freight to our dock.": "notes:notes (panel)",
+  },
+  {
+    "Thank you. We look forward to receiving your quotation.": "notes:thankYou",
+  },
+  {
+    "Sincerely,": "notes:sincerely",
+  },
+  {
+    "Jane Doe": "notes:contactName",
+  },
+  {
+    "Acme Manufacturing Co.": "notes:companyName",
+  },
+  {
+    "jane.doe@acme.example": "notes:contactEmail",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "PRFQ000012": "document:page (panel)",
+  },
+  {
+    "Page 1 of 1": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the quote sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Quote": "document:title",
+  },
+  {
+    "QUO-001042": "document:documentNumber",
+  },
+  {
+    "TO": "parties:to",
+  },
+  {
+    "Globex Corporation": "parties:customerName",
+  },
+  {
+    "500": "parties:customerAddressLine1",
+  },
+  {
+    "Commerce Blvd": "parties:customerAddressLine1",
+  },
+  {
+    "Chicago": "parties:customerCity",
+  },
+  {
+    "IL 60601": "parties:customerStatePostal",
+  },
+  {
+    "United States": "parties:customerCountry",
+  },
+  {
+    "QUOTE DETAILS": "parties:quoteDetails",
+  },
+  {
+    "Date: Jun 1, 2026": "parties:date",
+  },
+  {
+    "Expires: Jul 1, 2026": "parties:expires",
+  },
+  {
+    "Reference: RFQ-88421": "parties:reference",
+  },
+  {
+    "Max Lead Time: 21 days": "parties:maxLeadTime",
+  },
+  {
+    "Payment Terms: Net 30": "parties:paymentTerms",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Pricing valid for 30 days.": "notes:notes (panel)",
+  },
+  {
+    "Description": "lineItems:description",
+  },
+  {
+    "Qty": "lineItems:qty",
+  },
+  {
+    "Unit Price": "lineItems:unitPrice",
+  },
+  {
+    "Lead Time": "lineItems:leadTime",
+  },
+  {
+    "Total": "lineItems:total",
+  },
+  {
+    "WIDGET-100": "lineItems:descriptionCell",
+  },
+  {
+    "Precision Widget, anodized": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:lineTaxAndFees",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "14.70": "lineItems:taxValue",
+  },
+  {
+    "10": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "24.50": "lineItems:unitPriceCell",
+  },
+  {
+    "14": "lineItems:leadTimeCell",
+  },
+  {
+    "days": "lineItems:leadTimeCell",
+  },
+  {
+    "245.00": "lineItems:totalCell",
+  },
+  {
+    "BRACKET-22": "lineItems:descriptionCell",
+  },
+  {
+    "Mounting Bracket": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:lineTaxAndFees",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "2.88": "lineItems:taxValue",
+  },
+  {
+    "4": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "12.00": "lineItems:unitPriceCell",
+  },
+  {
+    "7": "lineItems:leadTimeCell",
+  },
+  {
+    "days": "lineItems:leadTimeCell",
+  },
+  {
+    "48.00": "lineItems:totalCell",
+  },
+  {
+    "ASSEMBLY-HOUSING-AN…": "lineItems:descriptionCell",
+  },
+  {
+    "Fully machined precision aluminium hous…": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:lineTaxAndFees",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "14.40": "lineItems:taxValue",
+  },
+  {
+    "2": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "120.00": "lineItems:unitPriceCell",
+  },
+  {
+    "21": "lineItems:leadTimeCell",
+  },
+  {
+    "days": "lineItems:leadTimeCell",
+  },
+  {
+    "240.00": "lineItems:totalCell",
+  },
+  {
+    "Subtotal (USD)": "summary:subtotal",
+  },
+  {
+    "533.00": "summary:subtotalValue",
+  },
+  {
+    "Shipping (USD)": "summary:shipping",
+  },
+  {
+    "0.00": "summary:shippingValue",
+  },
+  {
+    "Taxes": "summary:taxValue",
+  },
+  {
+    "(": "summary:taxValue",
+  },
+  {
+    "USD": "summary:taxValue",
+  },
+  {
+    ")": "summary:taxValue",
+  },
+  {
+    "31.98": "summary:taxValue",
+  },
+  {
+    "Total (USD)": "summary:total",
+  },
+  {
+    "564.98": "summary:totalValue",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "QUO-001042": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "TERMS & CONDITIONS": "terms:termsAndConditions",
+  },
+  {
+    "Prices exclude applicable duties and taxes.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "QUO-001042": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the salesInvoice sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Invoice": "document:title",
+  },
+  {
+    "INV-001042": "document:documentNumber",
+  },
+  {
+    "BILL TO": "parties:billTo",
+  },
+  {
+    "Globex Corporation": "parties:billToName",
+  },
+  {
+    "500": "parties:billToAddressLine1",
+  },
+  {
+    "Commerce Blvd": "parties:billToAddressLine1",
+  },
+  {
+    "Chicago": "parties:billToCity",
+  },
+  {
+    "IL 60601": "parties:billToStatePostal",
+  },
+  {
+    "United States": "parties:billToCountry",
+  },
+  {
+    "Contact: Hank Scorpio": "parties:contact",
+  },
+  {
+    "Email: hank@globex.example": "parties:email",
+  },
+  {
+    "INVOICE DETAILS": "parties:invoiceDetails",
+  },
+  {
+    "Date Issued: Jun 1, 2026": "parties:dateIssued",
+  },
+  {
+    "Due Date: Jul 1, 2026": "parties:dueDate",
+  },
+  {
+    "Customer Ref: PO-88421": "parties:customerRef",
+  },
+  {
+    "Payment Terms: Net 30": "parties:paymentTerms",
+  },
+  {
+    "Shipping: Ground": "parties:shipping",
+  },
+  {
+    "Shipping Terms: FOB Origin": "parties:shippingTerms",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Thank you for your business.": "notes:notes (panel)",
+  },
+  {
+    "#": "lineItems:number",
+  },
+  {
+    "Description": "lineItems:description",
+  },
+  {
+    "Qty": "lineItems:qty",
+  },
+  {
+    "Unit Price": "lineItems:unitPrice",
+  },
+  {
+    "Total": "lineItems:total",
+  },
+  {
+    "1": "lineItems:numberCell",
+  },
+  {
+    "WIDGET-100": "lineItems:descriptionCell",
+  },
+  {
+    "Precision Widget, anodized": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:taxAndFees",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "11.76": "lineItems:taxValue",
+  },
+  {
+    "10": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "24.50": "lineItems:unitPriceCell",
+  },
+  {
+    "-20%": "lineItems:discountCell",
+  },
+  {
+    "207": "lineItems:totalCell",
+  },
+  {
+    ".76": "lineItems:totalCell",
+  },
+  {
+    "2": "lineItems:numberCell",
+  },
+  {
+    "BRACKET-22": "lineItems:descriptionCell",
+  },
+  {
+    "Mounting Bracket": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:taxAndFees",
+  },
+  {
+    "-": "lineItems:addOn",
+  },
+  {
+    "Add-On": "lineItems:addOn",
+  },
+  {
+    "5.00": "lineItems:addOnValue",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "3.18": "lineItems:taxValue",
+  },
+  {
+    "4": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "12.00": "lineItems:unitPriceCell",
+  },
+  {
+    "56.18": "lineItems:totalCell",
+  },
+  {
+    "Subtotal (USD)": "summary:subtotal",
+  },
+  {
+    "293.00": "summary:subtotalValue",
+  },
+  {
+    "Discount (USD)": "summary:discount",
+  },
+  {
+    "-49.00": "summary:discountValue",
+  },
+  {
+    "Add-Ons (USD)": "summary:addOns",
+  },
+  {
+    "5.00": "summary:addOnsValue",
+  },
+  {
+    "Taxes": "summary:taxValue",
+  },
+  {
+    "(": "summary:taxValue",
+  },
+  {
+    "USD": "summary:taxValue",
+  },
+  {
+    ")": "summary:taxValue",
+  },
+  {
+    "14.94": "summary:taxValue",
+  },
+  {
+    "Total (USD)": "summary:total",
+  },
+  {
+    "263.94": "summary:totalValue",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "INV-001042": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "TERMS & CONDITIONS": "terms:termsAndConditions",
+  },
+  {
+    "Payment due within 30 days. Late payments accrue 1.5% monthly interest.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "INV-001042": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the salesOrder sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Sales Order": "document:title",
+  },
+  {
+    "SO-001042": "document:documentNumber",
+  },
+  {
+    "CUSTOMER": "parties:customer",
+  },
+  {
+    "Globex Corporation": "parties:customerName",
+  },
+  {
+    "500": "parties:customerAddressLine1",
+  },
+  {
+    "Commerce Blvd": "parties:customerAddressLine1",
+  },
+  {
+    "Chicago": "parties:customerCity",
+  },
+  {
+    "IL 60601": "parties:customerStatePostal",
+  },
+  {
+    "United States": "parties:customerCountry",
+  },
+  {
+    "ORDER DETAILS": "parties:orderDetails",
+  },
+  {
+    "Date: Jun 1, 2026": "parties:date",
+  },
+  {
+    "Customer Ref: PO-88421": "parties:customerRef",
+  },
+  {
+    "Requested: Jun 20, 2026": "parties:requested",
+  },
+  {
+    "Payment Terms: Net 30": "parties:paymentTerms",
+  },
+  {
+    "Shipping: Ground": "parties:shipping",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Thank you for your business.": "notes:notes (panel)",
+  },
+  {
+    "Description": "lineItems:description",
+  },
+  {
+    "Qty": "lineItems:qty",
+  },
+  {
+    "Unit Price": "lineItems:unitPrice",
+  },
+  {
+    "Total": "lineItems:total",
+  },
+  {
+    "WIDGET-100": "lineItems:descriptionCell",
+  },
+  {
+    "Precision Widget, anodized": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:taxAndFees",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "14.70": "lineItems:taxValue",
+  },
+  {
+    "10": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "24.50": "lineItems:unitPriceCell",
+  },
+  {
+    "259.70": "lineItems:totalCell",
+  },
+  {
+    "BRACKET-22": "lineItems:descriptionCell",
+  },
+  {
+    "Mounting Bracket": "lineItems:detailsCell",
+  },
+  {
+    "Tax & Fees": "lineItems:taxAndFees",
+  },
+  {
+    "-": "lineItems:addOn",
+  },
+  {
+    "Add-On": "lineItems:addOn",
+  },
+  {
+    "5.00": "lineItems:addOnValue",
+  },
+  {
+    "-": "lineItems:tax",
+  },
+  {
+    "Tax (6%)": "lineItems:tax",
+  },
+  {
+    "3.18": "lineItems:taxValue",
+  },
+  {
+    "4": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "12.00": "lineItems:unitPriceCell",
+  },
+  {
+    "56.18": "lineItems:totalCell",
+  },
+  {
+    "Subtotal (USD)": "summary:subtotal",
+  },
+  {
+    "293.00": "summary:subtotalValue",
+  },
+  {
+    "Add-Ons (USD)": "summary:addOns",
+  },
+  {
+    "5.00": "summary:addOnsValue",
+  },
+  {
+    "Taxes": "summary:taxValue",
+  },
+  {
+    "(": "summary:taxValue",
+  },
+  {
+    "USD": "summary:taxValue",
+  },
+  {
+    ")": "summary:taxValue",
+  },
+  {
+    "17": "summary:taxValue",
+  },
+  {
+    ".88": "summary:taxValue",
+  },
+  {
+    "Total (USD)": "summary:total",
+  },
+  {
+    "315.88": "summary:totalValue",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "SO-001042": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "TERMS & CONDITIONS": "terms:termsAndConditions",
+  },
+  {
+    "Payment due within 30 days. Late payments accrue 1.5% monthly interest.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "SO-001042": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the salesReturnOrder sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Return Merchandise Authorization": "document:title",
+  },
+  {
+    "RMA-000012": "document:documentNumber",
+  },
+  {
+    "CUSTOMER": "parties:customer",
+  },
+  {
+    "Globex Corporation": "parties:customerName",
+  },
+  {
+    "500": "parties:customerAddressLine1",
+  },
+  {
+    "Commerce Blvd": "parties:customerAddressLine1",
+  },
+  {
+    "Chicago": "parties:customerCity",
+  },
+  {
+    "IL 60601": "parties:customerStatePostal",
+  },
+  {
+    "United States": "parties:customerCountry",
+  },
+  {
+    "RETURN DETAILS": "parties:returnDetails",
+  },
+  {
+    "RMA Number: RMA-000012": "parties:rmaNumber",
+  },
+  {
+    "Date: Jun 1, 2026": "parties:date",
+  },
+  {
+    "Expires: Jul 1, 2026": "parties:expires",
+  },
+  {
+    "Customer Ref: CR-2201": "parties:customerRef",
+  },
+  {
+    "RETURN TO": "parties:returnTo",
+  },
+  {
+    "Acme Manufacturing Co. — Main Plant": "parties:returnToName",
+  },
+  {
+    "1": "parties:returnToAddressLine1",
+  },
+  {
+    "Industrial Way": "parties:returnToAddressLine1",
+  },
+  {
+    "Detroit": "parties:returnToCity",
+  },
+  {
+    "MI 48201": "parties:returnToStatePostal",
+  },
+  {
+    "United States": "parties:returnToCountry",
+  },
+  {
+    "#": "lineItems:number",
+  },
+  {
+    "Item": "lineItems:item",
+  },
+  {
+    "Qty Authorized": "lineItems:qtyAuthorized",
+  },
+  {
+    "Unit Price": "lineItems:unitPrice",
+  },
+  {
+    "Reason": "lineItems:reason",
+  },
+  {
+    "1": "lineItems:numberCell",
+  },
+  {
+    "WIDGET-100": "lineItems:itemCell",
+  },
+  {
+    "Precision Widget, anodized": "lineItems:itemNameCell",
+  },
+  {
+    "4": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "EA": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "24.50": "lineItems:unitPriceCell",
+  },
+  {
+    "Defective": "lineItems:reasonCell",
+  },
+  {
+    "2": "lineItems:numberCell",
+  },
+  {
+    "BRACKET-22": "lineItems:itemCell",
+  },
+  {
+    "Mounting Bracket": "lineItems:itemNameCell",
+  },
+  {
+    "1": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "EA": "lineItems:qtyAuthorizedCell",
+  },
+  {
+    "12.00": "lineItems:unitPriceCell",
+  },
+  {
+    "Wrong item shipped": "lineItems:reasonCell",
+  },
+  {
+    "Total (USD)": "lineItems:total",
+  },
+  {
+    "110.00": "lineItems:totalValue",
+  },
+  {
+    "NOTES": "notes:notes",
+  },
+  {
+    "Please include this RMA number on all packages.": "notes:notes (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "RMA-000012": "document:page (panel)",
+  },
+  {
+    "Page 1 of 2": "document:page",
+  },
+  {
+    "TERMS & CONDITIONS": "terms:termsAndConditions",
+  },
+  {
+    "Returned goods must be received within 30 days of authorization. Items must be in original packaging.": "terms:termsAndConditions (panel)",
+  },
+  {
+    "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
+  },
+  {
+    "RMA-000012": "document:page (panel)",
+  },
+  {
+    "Page 2 of 2": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the stockTransfer sample 1`] = `
+[
+  {
+    "Acme Manufacturing Co.": "document:title (panel)",
+  },
+  {
+    "1": "document:title (panel)",
+  },
+  {
+    "Industrial Way": "document:title (panel)",
+  },
+  {
+    "Detroit, MI 48201": "document:title (panel)",
+  },
+  {
+    "Stock Transfer": "document:title",
+  },
+  {
+    "ST-001042": "document:documentNumber",
+  },
+  {
+    "Acme Manufacturing Co.": "details:companyName",
+  },
+  {
+    "1": "details:companyAddressLine1",
+  },
+  {
+    "Industrial Way": "details:companyAddressLine1",
+  },
+  {
+    "Detroit": "details:companyCity",
+  },
+  {
+    "MI 48201": "details:companyStatePostal",
+  },
+  {
+    "Date": "details:date",
+  },
+  {
+    ":": "details:dateValue",
+  },
+  {
+    "Jun 5, 2026": "details:dateValue",
+  },
+  {
+    "Stock Transfer": "details:stockTransfer",
+  },
+  {
+    ":": "details:stockTransferValue",
+  },
+  {
+    "ST-001042": "details:stockTransferValue",
+  },
+  {
+    "Location": "details:location",
+  },
+  {
+    ":": "details:locationValue",
+  },
+  {
+    "Main Warehouse": "details:locationValue",
+  },
+  {
+    "Assignee": "details:assignee",
+  },
+  {
+    ":": "details:assigneeValue",
+  },
+  {
+    "Jordan Lee": "details:assigneeValue",
+  },
+  {
+    "Description": "lineItems:description",
+  },
+  {
+    "Transfer": "lineItems:transfer",
+  },
+  {
+    "Qty": "lineItems:qty",
+  },
+  {
+    "Pick": "lineItems:pick",
+  },
+  {
+    "Precision Widget, anodized": "lineItems:descriptionCell",
+  },
+  {
+    "WIDGET-100": "lineItems:itemIdCell",
+  },
+  {
+    "Bin A1": "lineItems:transferCell",
+  },
+  {
+    "’": "lineItems:transferCell",
+  },
+  {
+    "Bin B3": "lineItems:transferCell",
+  },
+  {
+    "50": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "Mounting Bracket": "lineItems:descriptionCell",
+  },
+  {
+    "BRACKET-22": "lineItems:itemIdCell",
+  },
+  {
+    "Bin A2": "lineItems:transferCell",
+  },
+  {
+    "’": "lineItems:transferCell",
+  },
+  {
+    "Bin C1": "lineItems:transferCell",
+  },
+  {
+    "20": "lineItems:qtyCell",
+  },
+  {
+    "EA": "lineItems:qtyCell",
+  },
+  {
+    "ST-001042": "document:page (panel)",
+  },
+  {
+    "Page 1 of 1": "document:page",
+  },
+]
+`;
+
+exports[`clicking a real PDF > opens the right text on the trackingLabel sample 1`] = `
+[
+  {
+    "DEMO-LABEL-01": "labelHeading:value",
+  },
+  {
+    "Rev": "labelRevision:label",
+  },
+  {
+    ":": "labelRevision:value",
+  },
+  {
+    "0": "labelRevision:value",
+  },
+  {
+    "Qty": "labelQuantity:label",
+  },
+  {
+    ":": "labelQuantity:value",
+  },
+  {
+    "1": "labelQuantity:value",
+  },
+  {
+    "S/N": "labelTracking:label",
+  },
+  {
+    ":": "labelTracking:value",
+  },
+  {
+    "04/06/2026": "labelTracking:value",
+  },
+  {
+    "trk_demo_0042": "labelEntityId:value",
+  },
+]
+`;

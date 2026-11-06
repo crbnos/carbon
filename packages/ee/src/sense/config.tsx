@@ -96,6 +96,7 @@ function SetupInstructions() {
 function Logo(props: ComponentProps<"svg">) {
   return (
     <svg
+      aria-hidden="true"
       {...props}
       viewBox="0 0 2737 1118"
       fill="currentColor"

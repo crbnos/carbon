@@ -23,7 +23,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
@@ -52,6 +52,7 @@ import {
 import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -61,6 +62,9 @@ export const handle: Handle = {
   ),
   module: "items"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.toolSummary?.readableIdWithRevision, "Tool");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -211,6 +215,7 @@ export default function ToolRoute() {
                           <LuSearch className="h-4 w-4" />
                         </InputLeftElement>
                         <Input
+                          aria-label={t`Filter manufacturing and used in`}
                           placeholder={t`Search...`}
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}
@@ -412,6 +417,7 @@ export default function ToolRoute() {
                           <LuSearch className="h-4 w-4" />
                         </InputLeftElement>
                         <Input
+                          aria-label={t`Filter where used`}
                           placeholder={t`Search...`}
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}

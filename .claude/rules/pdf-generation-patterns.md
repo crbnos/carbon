@@ -38,7 +38,7 @@ All PDF components are barrel-exported from `pdf/index.ts`.
   `theme`, `showFooter`, `showPageNumbers`, `pageNumberFormat`, `fontFamily`. It
   wraps children in `DocStyleProvider` so blocks read the themed `tw`.
 - Other shared parts (barrel `pdf/components/index.ts`): `Header`, `Footer`,
-  `AddressBlock`, `LogoImage`, `Note`, `Summary`, `Watermark`. Labels use
+  `LogoImage`, `Note`, `Summary`, `Watermark`. Labels use
   `components/labelGeometry.ts` `getLabelPdfGeometry(labelSize)` to size fonts/QR
   to a 203-dpi thermal baseline (geometric parity with the ZPL output).
 

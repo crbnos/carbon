@@ -808,6 +808,7 @@ export default function AssemblyBomTree({
       )}
       <ContextMenu>
         <ContextMenuTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container only; Escape bubbling up from the focused row clears the selection, the rows are the controls */}
           <div
             ref={parentRef}
             className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -1135,6 +1136,7 @@ function UnitListRow({
       )}
       {isExpandable ? (
         <button
+          aria-expanded={isExpanded}
           type="button"
           aria-label={
             isExpanded ? t`Collapse ${unit.name}` : t`Expand ${unit.name}`
@@ -1619,6 +1621,7 @@ function ComponentRow({
       )}
       {expandable ? (
         <button
+          aria-expanded={isExpanded}
           type="button"
           aria-label={
             isExpanded ? t`Collapse ${group.name}` : t`Expand ${group.name}`

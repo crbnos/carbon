@@ -38,10 +38,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       };
     }
 
-    // Filter storageUnits to only include those with quantities > 0
-    const quantitiesMap = new Map(
-      quantitiesResult.data?.map((q) => [q.storageUnitId, q.quantity]) ?? []
-    );
+    // One row per storage unit and batch or serial number: a storage unit
+    // holds the sum of its rows.
+    const quantitiesMap = new Map<string | null, number>();
+    for (const row of quantitiesResult.data ?? []) {
+      quantitiesMap.set(
+        row.storageUnitId,
+        (quantitiesMap.get(row.storageUnitId) ?? 0) + Number(row.quantity ?? 0)
+      );
+    }
 
     const shelvesWithQuantities =
       shelvesResult.data?.filter((storageUnit) => {

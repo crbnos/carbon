@@ -14,13 +14,9 @@ export function HeaderBlock({ data }: { data: JobTravelerData }) {
     <View style={tw("mb-6")}>
       <Header
         company={company}
-        title="Job Traveler"
-        documentId={job.jobId}
-        documentSubId={
-          job.salesOrderReadableId
-            ? `SO# ${job.salesOrderReadableId}`
-            : undefined
-        }
+        title={data.documentTitle}
+        documentId={data.documentNumber}
+        documentSubId={data.documentSubId}
         date={job.startDate}
         locale={locale}
         options={headerOptions}

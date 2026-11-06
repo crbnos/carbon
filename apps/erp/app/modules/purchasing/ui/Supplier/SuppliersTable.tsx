@@ -426,6 +426,7 @@ const SuppliersTable = memo(function SuppliersTable({
   return (
     <>
       <Table<SupplierRow>
+        getRowLabel={(row) => row.name ?? undefined}
         count={count}
         columns={columns}
         data={data}

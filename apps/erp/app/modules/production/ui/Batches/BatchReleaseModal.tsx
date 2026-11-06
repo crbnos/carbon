@@ -24,6 +24,7 @@ import { LuShoppingCart, LuTriangleAlert } from "react-icons/lu";
 import { Link } from "react-router";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
+import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import type { JobReleaseReadiness } from "../../production.service";
 
@@ -47,6 +48,7 @@ export function BatchReleaseModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const [suppliers] = useSuppliers();
   // A whole translated sentence, so "and N more" is translated too.
   const storageUnitReason = (materials: { description: string }[]) => {
     const names = materials
@@ -189,32 +191,38 @@ export function BatchReleaseModal({
                       </Trans>
                     </AlertDescription>
                   </Alert>
-                  {readiness.suppliers.map((supplier) => (
-                    <div
-                      key={supplier.supplierId}
-                      className="flex w-full items-center justify-between rounded-lg border p-4 text-sm"
-                    >
-                      <SupplierAvatar supplierId={supplier.supplierId} />
-                      <Select
-                        size="sm"
-                        value={purchaseOrders[supplier.supplierId] ?? "new"}
-                        isReadOnly={supplier.draftPurchaseOrders.length === 0}
-                        options={[
-                          { value: "new", label: t`Create New` },
-                          ...supplier.draftPurchaseOrders.map((po) => ({
-                            value: po.id,
-                            label: po.purchaseOrderId
-                          }))
-                        ]}
-                        onChange={(value) =>
-                          setPurchaseOrders((prev) => ({
-                            ...prev,
-                            [supplier.supplierId]: value
-                          }))
-                        }
-                      />
-                    </div>
-                  ))}
+                  {readiness.suppliers.map((supplier) => {
+                    const supplierName =
+                      suppliers.find((s) => s.id === supplier.supplierId)
+                        ?.name ?? "";
+                    return (
+                      <div
+                        key={supplier.supplierId}
+                        className="flex w-full items-center justify-between rounded-lg border p-4 text-sm"
+                      >
+                        <SupplierAvatar supplierId={supplier.supplierId} />
+                        <Select
+                          aria-label={t`Purchase order for ${supplierName}`}
+                          size="sm"
+                          value={purchaseOrders[supplier.supplierId] ?? "new"}
+                          isReadOnly={supplier.draftPurchaseOrders.length === 0}
+                          options={[
+                            { value: "new", label: t`Create New` },
+                            ...supplier.draftPurchaseOrders.map((po) => ({
+                              value: po.id,
+                              label: po.purchaseOrderId
+                            }))
+                          ]}
+                          onChange={(value) =>
+                            setPurchaseOrders((prev) => ({
+                              ...prev,
+                              [supplier.supplierId]: value
+                            }))
+                          }
+                        />
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </VStack>

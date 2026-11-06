@@ -1,6 +1,6 @@
 # PO line dates (requested / promised / delivery per line)
 
-Last tested: 2026-10-27
+Last tested: 2026-10-27 (step 5 updated 2026-11-03 for po-approval-enforcement)
 Routes: /x/purchase-order/<id>/details (summary + Shipping card),
 /x/purchase-order/<id>/<lineId>/details (line form)
 
@@ -38,11 +38,14 @@ line's dates alone.
 "Add Line Item" opens a modal; its Dates section starts on the order's Requested
 and Promised dates, and picking an item keeps them. Saved line carries them.
 
-### 5. Released order (To Receive)
-Line form: Requested Date disabled, Promised and Delivery enabled. Server refusal:
+### 5. Released and locked orders
+On a released order that is not complete (To Receive, To Receive and Invoice, To
+Invoice) every line date is editable. On a Needs Approval, Completed or Closed
+order the Requested Date is disabled, and
 `fetch('/x/purchase-order/<id>/<lineId>/date', {method:'POST', body})` with
-`field=requiredDate` answers `Cannot change the requested date of a confirmed
-purchase order.` The pill on a To Invoice order is disabled.
+`field=requiredDate` answers `Cannot change the requested date of a purchase order
+in approval or completed.` The promised date follows its own rule
+(`purchaseOrderPromisedDateRefusal`).
 
 ## Selector Notes
 - Line Dates spinbuttons are named `day, Requested Date` / `day, Promised Date`.

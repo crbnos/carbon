@@ -39,6 +39,10 @@ import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -60,6 +64,7 @@ const SalesInvoiceHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { invoiceId } = useParams();
+  const documentEdit = useDocumentEditModal("salesInvoice", invoiceId);
   const { company } = useUser();
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
@@ -467,6 +472,9 @@ const SalesInvoiceHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -535,6 +543,7 @@ const SalesInvoiceHeader = () => {
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

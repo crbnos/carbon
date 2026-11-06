@@ -1,0 +1,239 @@
+###
+# `crbn up --isolated`: a private Postgres, PgBouncer, Storage, imgproxy and
+# Inbucket inside this worktree's project, as every stack ran before the shared
+# containers. Used together with docker-compose.dev.yml, for a branch that
+# changes one of these images.
+###
+
+services:
+  postgres:
+    image: supabase/postgres:17.6.1.166
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          # Defaults are sized so one stack runs smoothly while a machine can
+          # host several worktree stacks at once (limits are ceilings, not
+          # reservations — idle usage is far below them). Override any of these
+          # per worktree via MEM_*/CPU_* in that worktree's .env.
+          memory: ${MEM_POSTGRES:-1g}
+          cpus: ${CPU_POSTGRES:-2}
+    networks:
+      default:
+        aliases:
+          - db
+          # The worktree's dual-homed services reach it by this name: on
+          # carbon-shared, "postgres" is also the shared Postgres.
+          - local-postgres
+    ports:
+      - "${PORT_DB}:5432"
+    environment:
+      TZ: UTC
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PORT: 5432
+      PGPORT: 5432
+      POSTGRES_DB: postgres
+      PGDATABASE: postgres
+      POSTGRES_PASSWORD: postgres
+      PGPASSWORD: postgres
+      JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - pgconfig:/etc/postgresql-custom
+      - ./packages/dev/docker/init.sql:/docker-entrypoint-initdb.d/zz-carbon-roles.sql:ro
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-128MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-256MB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-4MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-64MB}
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-100}
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - max_wal_size=256MB
+      - -c
+      - jit=off
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Transaction-mode pooler, as Supavisor on port 6543 is for the hosted
+  # database. The apps' Kysely pool connects here (SUPABASE_DB_POOLER_URL), so
+  # session state (SET, session advisory locks, LISTEN) fails locally as it
+  # does in production. Scripts, migrations and tests keep the direct
+  # SUPABASE_DB_URL. PgBouncer rather than Supavisor: the same transaction
+  # semantics in a few MB.
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.25.2-p0
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_PGBOUNCER:-64m}
+          cpus: ${CPU_PGBOUNCER:-0.25}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT_POOLER}:6432"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      LISTEN_PORT: 6432
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      # 0 = off, as Supavisor's transaction mode is by default: a named prepared
+      # statement then fails here as it does in production. Unnamed ones (node-pg's
+      # default) work in both.
+      MAX_PREPARED_STATEMENTS: "0"
+      DEFAULT_POOL_SIZE: 20
+      MAX_CLIENT_CONN: 200
+
+  storage:
+    image: supabase/storage-api:v1.89.12
+    restart: on-failure
+    # "storage" is also the shared Storage on carbon-shared, where Envoy is too.
+    networks:
+      default:
+        aliases:
+          - local-storage
+    deploy:
+      resources:
+        limits:
+          # GB-scale CAD: temp-staging allows 2.5 GB objects. Serving a 1.85 GB
+          # object, storage-api is CPU-bound (reads/hashes the whole file before
+          # streaming) — at the old 0.25-core limit it never produced a byte
+          # before the client timed out. Give it real cores + headroom RAM. Limits
+          # are ceilings (idle ~160 MB / ~0%), only used when serving a big file.
+          # Paired with kong `proxy_buffering off` so the response streams.
+          memory: ${MEM_STORAGE:-2g}
+          cpus: ${CPU_STORAGE:-2}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://postgrest:3000
+      AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      STORAGE_PUBLIC_URL: ${SUPABASE_URL}
+      # Builds resumable-upload URLs from the gateway's X-Forwarded-Prefix.
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      DATABASE_URL: postgres://supabase_storage_admin:postgres@postgres:5432/postgres
+      # 2.5 GB global storage ceiling (must be >= the largest per-bucket limit;
+      # effective per-bucket = min(this, bucket limit)). Per-bucket limits then
+      # differentiate: `private` = 50 MB (served artifacts), `temp-staging` =
+      # 2.5 GB (raw CAD). Keep in sync with config.toml [storage].
+      FILE_SIZE_LIMIT: 2500000000
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
+    volumes:
+      - storage:/var/lib/storage:z
+
+  # Image transformations (resize + HEIC→JPEG decode) for the storage API.
+  # Internal only — never publish a port: direct imgproxy access reads the
+  # storage volume with no RLS.
+  imgproxy:
+    image: darthsim/imgproxy:v4.0.21
+    restart: on-failure
+    profiles: ["full"]
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_IMGPROXY:-512m}
+          cpus: ${CPU_IMGPROXY:-1}
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      # Default is 16.8Mpx, which rejects 48MP iPhone photos.
+      IMGPROXY_MAX_SRC_RESOLUTION: "60"
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - storage:/var/lib/storage:z
+
+  inbucket:
+    image: inbucket/inbucket:3.1.1
+    restart: on-failure
+    # "inbucket" is also the shared Inbucket on carbon-shared, where GoTrue is too.
+    networks:
+      default:
+        aliases:
+          - local-inbucket
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_INBUCKET:-64m}
+          cpus: ${CPU_INBUCKET:-0.25}
+    profiles: ["mail"]
+    ports:
+      - "${PORT_INBUCKET}:9000"
+    # The image declares /config and /storage as volumes; left unmounted, each
+    # `down` strands two anonymous volumes. /config is empty in the image.
+    tmpfs:
+      - /config
+    volumes:
+      - inbucket:/storage
+
+  # The worktree services wait for the private Postgres and Storage. These
+  # depends_on entries live here because the dev file alone has no such
+  # services (shared mode), and compose rejects a dependency it can't find.
+  gotrue:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgrest:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  realtime:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  meta:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  edge-runtime:
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api-gw:
+    depends_on:
+      storage:
+        condition: service_started
+
+volumes:
+  pgdata:
+  pgconfig:
+  storage:
+  inbucket:

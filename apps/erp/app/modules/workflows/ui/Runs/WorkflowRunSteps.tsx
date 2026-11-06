@@ -180,6 +180,7 @@ function StepRow({
   return (
     <div className="border-b border-border/50">
       <button
+        aria-expanded={hasDetail ? expanded : undefined}
         type="button"
         className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left max-md:flex-wrap max-md:gap-y-1"
         onClick={() => hasDetail && setToggled(!expanded)}

@@ -797,7 +797,10 @@ const PlanningTable = memo(
                     t`Blocked`
                   ) : dot ? (
                     <HStack>
-                      <PulsingDot variant={dot} />
+                      <PulsingDot
+                        variant={dot}
+                        label={dot === "red" ? t`Urgent` : t`Action needed`}
+                      />
                       <span>{hasOrders ? t`Order ${quantity}` : t`Order`}</span>
                     </HStack>
                   ) : (
@@ -932,6 +935,7 @@ const PlanningTable = memo(
             <div className="flex items-center gap-2">
               <Combobox
                 asButton
+                aria-label={t`Location`}
                 size="sm"
                 value={locationId}
                 options={locations}

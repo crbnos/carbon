@@ -15,7 +15,7 @@ import {
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -320,6 +320,9 @@ export default function PurchasesReportRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Purchases</Trans>
+      </h1>
       <PurchasesControlBar state={state} onDownload={onDownload} />
       <PivotTree
         pivot={pivot}

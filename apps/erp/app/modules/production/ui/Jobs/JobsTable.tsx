@@ -821,6 +821,7 @@ const JobsTable = memo((props: JobsTableProps) => {
   return (
     <>
       <Table<JobRow>
+        getRowLabel={(row) => row.jobId ?? undefined}
         data={data}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={{

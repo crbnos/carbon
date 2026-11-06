@@ -4,13 +4,13 @@
 
 import {
   Badge,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
-  MenuItem
+  MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -326,13 +326,19 @@ const PricingRulesTable = memo((props: PricingRulesTableProps) => {
                 </Badge>
               )}
               {remainingItems.length > 0 && (
-                <HoverCard>
-                  <HoverCardTrigger>
+                <Popover>
+                  <PopoverTrigger
+                    aria-label={t`More items for ${row.original.name}: ${remainingItems.length}`}
+                    className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     <Badge variant="secondary" className="cursor-pointer">
                       +{remainingItems.length}
                     </Badge>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-[260px]">
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[260px]"
+                    aria-label={t`Items for ${row.original.name}`}
+                  >
                     <div className="flex flex-col items-start gap-1 text-sm">
                       {remainingItems.map((id) => {
                         const item = items?.find((i) => i.id === id);
@@ -343,8 +349,8 @@ const PricingRulesTable = memo((props: PricingRulesTableProps) => {
                         );
                       })}
                     </div>
-                  </HoverCardContent>
-                </HoverCard>
+                  </PopoverContent>
+                </Popover>
               )}
             </HStack>
           );

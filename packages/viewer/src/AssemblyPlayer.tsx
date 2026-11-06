@@ -2463,6 +2463,7 @@ function AssemblyScene({
 
   return (
     <>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: a react-three-fiber scene object, not a DOM element; raycast picks have no keyboard equivalent here */}
       <primitive
         object={scene}
         onClick={handleClick}

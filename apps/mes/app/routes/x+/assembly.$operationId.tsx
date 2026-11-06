@@ -10,7 +10,7 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ComponentProps } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
@@ -37,12 +37,19 @@ import {
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
+import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 const logger = getLogger("mes", "assembly");
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    [data?.operation?.jobReadableId, data?.operation?.description],
+    "Assembly"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});

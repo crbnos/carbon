@@ -589,6 +589,7 @@ function SerialNumberTimingChoice() {
   return (
     <>
       <ChoiceSelect<SerialNumberTiming>
+        aria-label={t`When serial numbers are assigned`}
         value={current}
         onChange={setValue}
         options={[

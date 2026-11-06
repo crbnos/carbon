@@ -99,7 +99,9 @@ const ServiceForm = ({
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle
+                aria-level={type === "card" && !isEditing ? 1 : undefined}
+              >
                 {isEditing ? t`Service Details` : t`New Service`}
               </ModalCardTitle>
               {!isEditing && (

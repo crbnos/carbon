@@ -15,7 +15,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
     {
-      view: "sales"
+      view: "invoicing"
     }
   );
 

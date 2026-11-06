@@ -23,6 +23,12 @@ describe("during server rendering", () => {
     expect(getCompanyId()).toBeNull();
     expect(getClientCache()).toBeUndefined();
   });
+
+  it("schedules no collection timer for a loader query", () => {
+    const client = new QueryClient();
+    const query = client.getQueryCache().build(client, loaderQuery("/x/parts"));
+    expect(query.gcTime).toBe(Number.POSITIVE_INFINITY);
+  });
 });
 
 describe("cachedClientLoader", () => {

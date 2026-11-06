@@ -74,6 +74,11 @@ import {
 import { toJson } from "@carbon/database/json";
 import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
+import {
+  type BinStock,
+  chooseSourceBin,
+  untrackedDrawLockKey
+} from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
@@ -131,11 +136,11 @@ import {
   datetime,
   debit,
   deriveRate,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
-  getRemainingQuantityToInvoice,
   groupBy,
   indexByMapped,
   type LeasePaymentRowInput,
@@ -185,7 +190,10 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
-import { SUPPLIER_CONTACT_EMAIL_REQUIRED } from "~/modules/purchasing/purchasing.models";
+import {
+  purchaseOrderLineRemainingToInvoice,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED
+} from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
@@ -1284,7 +1292,7 @@ export async function sendSalesOrderEmail(args: {
   const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(documentFilePath, 3600);
+    .createSignedUrl(documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
 
   await trigger("send-email", {
     document: true,
@@ -9485,17 +9493,18 @@ export async function convertDocument(
       if (!purchaseOrderDelivery.data)
         throw new NotFoundError("Purchase order delivery not found");
 
-      // Short-closed lines ("Stop Receiving") only bill what was received,
-      // so quantities go through getRemainingQuantityToInvoice rather than
-      // the generated quantityToInvoice column (ordered - invoiced).
+      // Short-closed lines ("Stop Receiving") and every line of a Closed
+      // order only bill what was received, so quantities go through
+      // purchaseOrderLineRemainingToInvoice rather than the generated
+      // quantityToInvoice column (ordered - invoiced).
+      const orderStatus = purchaseOrder.data.status;
+      const remainingToInvoice = (
+        line: NonNullable<(typeof purchaseOrderLines)["data"]>[number]
+      ) => purchaseOrderLineRemainingToInvoice(orderStatus, line);
       const uninvoicedLines = purchaseOrderLines?.data?.reduce<
         (typeof purchaseOrderLines)["data"]
       >((acc, line) => {
-        if (
-          line &&
-          !line.invoicedComplete &&
-          getRemainingQuantityToInvoice(line) > 0
-        ) {
+        if (line && !line.invoicedComplete && remainingToInvoice(line) > 0) {
           acc.push(line);
         }
 
@@ -9510,7 +9519,7 @@ export async function convertDocument(
 
       const uninvoicedSubtotal = uninvoicedLines.reduce((acc, line) => {
         if (line?.unitPrice) {
-          acc += getRemainingQuantityToInvoice(line) * line.unitPrice;
+          acc += remainingToInvoice(line) * line.unitPrice;
         }
 
         return acc;
@@ -9596,7 +9605,7 @@ export async function convertDocument(
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
           uninvoicedLines.map((line) => {
             const lineBilled = billed.lines.get(line.id) ?? {};
-            const quantity = getRemainingQuantityToInvoice(line);
+            const quantity = remainingToInvoice(line);
             const share = (charge: number | null, field: string) =>
               flatChargeShare({
                 charge: charge ?? 0,
@@ -9887,6 +9896,27 @@ export async function convertDocument(
               null
           ])
         );
+        // With no default bin, a line ships from the bin that holds the stock,
+        // as the order line form fills it.
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: pickedLines.filter(
+            (line) => !pickMethodDefaultsByLineId.get(line.id)
+          )
+        });
+        const sourceStorageUnitId = (
+          line: (typeof selectedQuoteLines)[number],
+          quantity: number
+        ) =>
+          pickMethodDefaultsByLineId.get(line.id!) ??
+          (pickMethodDefaultsByLineId.has(line.id!)
+            ? chooseSourceStorageUnit({
+                itemId: line.itemId!,
+                locationId: line.locationId ?? locationId,
+                storageUnitId: null,
+                quantity
+              })
+            : null);
 
         const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
           selectedQuoteLines.map((line) => {
@@ -9913,7 +9943,7 @@ export async function convertDocument(
               itemId: line.itemId,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
-              storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
+              storageUnitId: sourceStorageUnitId(line, price.quantity),
               internalNotes: toJson(line.internalNotes),
               externalNotes: toJson(line.externalNotes),
               saleQuantity: price.quantity,
@@ -14219,6 +14249,26 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
+        const untrackedItemIds = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Inventory")
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: salesOrderLines.data
+            .filter(
+              (line) =>
+                !!line.itemId &&
+                untrackedItemIds.has(line.itemId) &&
+                line.methodType !== "Make to Order"
+            )
+            .map((line) => ({
+              itemId: line.itemId!,
+              locationId: line.locationId
+            }))
+        });
+
         // Process each sales order line
         for await (const salesOrderLine of salesOrderLines.data) {
           if (
@@ -14370,7 +14420,14 @@ export async function createDocument(
                 unitPrice: shippingAndTaxUnitCost,
                 unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
                 locationId: salesOrderLine.locationId,
-                storageUnitId: salesOrderLine.storageUnitId,
+                storageUnitId: untrackedItemIds.has(salesOrderLine.itemId)
+                  ? chooseSourceStorageUnit({
+                      itemId: salesOrderLine.itemId,
+                      locationId: salesOrderLine.locationId,
+                      storageUnitId: salesOrderLine.storageUnitId,
+                      quantity: outstandingQuantity ?? 0
+                    })
+                  : salesOrderLine.storageUnitId,
                 createdBy: userId ?? ""
               })
               .execute();
@@ -14660,6 +14717,26 @@ export async function createDocument(
               (salesOrderLine.data.unitPrice ?? 0)) *
             (1 + salesOrderLine.data.taxPercent);
 
+          const storageUnitId =
+            item.data.itemTrackingType === "Inventory"
+              ? (
+                  await shipmentSourceBinChooser(trx, {
+                    companyId,
+                    lines: [
+                      {
+                        itemId: salesOrderLine.data.itemId!,
+                        locationId: salesOrderLine.data.locationId
+                      }
+                    ]
+                  })
+                )({
+                  itemId: salesOrderLine.data.itemId!,
+                  locationId: salesOrderLine.data.locationId,
+                  storageUnitId: salesOrderLine.data.storageUnitId,
+                  quantity: outstandingQuantity
+                })
+              : salesOrderLine.data.storageUnitId;
+
           await trx
             .insertInto("shipmentLine")
             .values({
@@ -14675,7 +14752,7 @@ export async function createDocument(
               unitPrice: shippingAndTaxUnitCost,
               unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
               locationId: salesOrderLine.data.locationId!,
-              storageUnitId: salesOrderLine.data.storageUnitId!,
+              storageUnitId,
               createdBy: userId ?? ""
             })
             .execute();
@@ -17929,6 +18006,167 @@ export async function getStorageUnitWithHighestQuantity(
     }
   }
   return null;
+}
+
+/**
+ * Locks each (location, item) in key-hash order, as SQL
+ * `backflush_job_materials` does, so two draws cannot plan from the same
+ * on-hand. Read the bins after this.
+ */
+export async function lockUntrackedDraws(
+  db: Kysely<DB>,
+  args: { companyId: string; locationId: string; itemIds: string[] }
+): Promise<void> {
+  const keys = [
+    ...new Set(
+      args.itemIds.map((itemId) =>
+        untrackedDrawLockKey(args.companyId, args.locationId, itemId)
+      )
+    )
+  ];
+  if (keys.length === 0) return;
+  await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+    db
+  );
+}
+
+// Each item's untracked on-hand per bin and stripe at a location. `nettable`:
+// a guess may take from it (active, nettable, not lineside; no storage unit
+// always is).
+export async function getUntrackedBinStock(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<Map<string, BinStock[]>> {
+  const bins = new Map<string, BinStock[]>();
+  if (args.itemIds.length === 0) return bins;
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .leftJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "itemLedger.storageUnitId")
+        .onRef("storageUnit.companyId", "=", "itemLedger.companyId")
+    )
+    .select([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.active",
+      // A child of a lineside unit is lineside too.
+      sql<
+        string | null
+      >`get_effective_work_center_id(${sql.ref("itemLedger.storageUnitId")})`.as(
+        "workCenterId"
+      ),
+      (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+    ])
+    .where("itemLedger.itemId", "in", args.itemIds)
+    .where("itemLedger.locationId", "=", args.locationId)
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.trackedEntityId", "is", null)
+    .where((eb) => itemLedgerInStripes(eb, args.stripes))
+    .groupBy([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.active"
+    ])
+    .execute();
+  for (const row of rows) {
+    const list = bins.get(row.itemId) ?? [];
+    list.push({
+      storageUnitId: row.storageUnitId,
+      projectId: row.projectId ?? null,
+      nettable:
+        row.storageUnitId === null ||
+        (row.effectiveNettable === true &&
+          row.active === true &&
+          !row.workCenterId),
+      quantity: Number(row.quantity ?? 0)
+    });
+    bins.set(row.itemId, list);
+  }
+  return bins;
+}
+
+/**
+ * The bin each untracked shipment line ships from. A bin the order line names
+ * is kept, even when short: posting warns about it (`shipmentStockWarnings`),
+ * so a user's choice never changes silently. A line with no bin takes one that
+ * holds the stock (`chooseSourceBin`). Lines are planned in order, so two lines
+ * of one item do not count the same stock. Shipments draw common stock only.
+ */
+export async function shipmentSourceBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null }[];
+  }
+): Promise<
+  (line: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    quantity: number;
+  }) => string | null
+> {
+  const locationIds = [
+    ...new Set(
+      args.lines
+        .map((line) => line.locationId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const stockByLocation = new Map<string, Map<string, BinStock[]>>();
+  for (const locationId of locationIds) {
+    stockByLocation.set(
+      locationId,
+      await getUntrackedBinStock(db, {
+        companyId: args.companyId,
+        itemIds: [
+          ...new Set(
+            args.lines
+              .filter((line) => line.locationId === locationId)
+              .map((line) => line.itemId)
+          )
+        ],
+        locationId,
+        stripes: [null]
+      })
+    );
+  }
+  const assigned = new Map<string, number>();
+  const key = (itemId: string, locationId: string, bin: string | null) =>
+    `${locationId}\u0000${itemId}\u0000${bin ?? ""}`;
+
+  return (line) => {
+    if (!line.locationId) return line.storageUnitId;
+    const locationId = line.locationId;
+    const chosen =
+      line.storageUnitId ??
+      chooseSourceBin({
+        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
+          (bin) => ({
+            ...bin,
+            quantity:
+              bin.quantity -
+              (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ??
+                0)
+          })
+        ),
+        preferredStorageUnitId: null,
+        quantity: line.quantity
+      });
+    const k = key(line.itemId, locationId, chosen);
+    assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
+    return chosen;
+  };
 }
 
 // Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit

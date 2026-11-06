@@ -129,6 +129,7 @@ import {
   depositAppliedDescription,
   depositDescription,
   distributeRoundingResidual,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   equals,
   type FundingConsumptionRow,
@@ -190,10 +191,13 @@ import {
   insertProjectLedgerRows,
   reverseProjectLedgerRows
 } from "~/modules/projects/project-posting";
+import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
 import {
+  getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
-  insertSupplierInteraction
+  insertSupplierInteraction,
+  purchaseOrderFundsGate
 } from "~/modules/purchasing/purchasing.service";
 import {
   getCustomer,
@@ -443,6 +447,30 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
+  // Invoiced only once approved and released (or since closed), within the
+  // approved amount.
+  const funds = await getPurchaseOrderFundsRefusal(
+    client,
+    companyId,
+    [purchaseOrderId],
+    "invoice"
+  );
+  if (funds.error) {
+    return {
+      data: null,
+      error: new ServerFnError(
+        "Failed to read the purchase order",
+        500,
+        {},
+        {
+          cause: funds.error
+        }
+      )
+    };
+  }
+  if (funds.data) {
+    return { data: null, error: new ServerFnError(funds.data, 400) };
+  }
   return invokePosting(
     { client, db, companyId, userId },
     "convert",
@@ -5792,7 +5820,7 @@ export async function sendPostedSalesInvoice(
       const text = await render(template, { plainText: true });
       const signed = await storage(serviceRole)
         .company(companyId)
-        .createSignedUrl(filed.path, 3600);
+        .createSignedUrl(filed.path, EMAIL_ATTACHMENT_URL_SECONDS);
       if (signed.error) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath: filed.path,
@@ -16254,17 +16282,29 @@ export async function postPurchaseInvoice(
             })
           )
         );
-        await updateRowsById(
-          trx,
-          "purchaseOrder",
-          companyId,
-          Object.entries(purchaseOrderStatusUpdatesVoid).map(
-            ([id, status]) => ({
-              id,
-              data: { status }
-            })
-          )
-        );
+        // Only a released order follows its lines: a void never releases an
+        // order that is closed or waiting for approval. One update per status.
+        const voidOrderIdsByStatus = new Map<
+          (typeof purchaseOrderStatusUpdatesVoid)[string],
+          string[]
+        >();
+        for (const [id, status] of Object.entries(
+          purchaseOrderStatusUpdatesVoid
+        )) {
+          voidOrderIdsByStatus.set(status, [
+            ...(voidOrderIdsByStatus.get(status) ?? []),
+            id
+          ]);
+        }
+        for (const [status, ids] of voidOrderIdsByStatus) {
+          await trx
+            .updateTable("purchaseOrder")
+            .set({ status })
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+            .execute();
+        }
 
         for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
           await trx
@@ -16544,8 +16584,28 @@ export async function postPurchaseInvoice(
       throw new NotFoundError("Purchase invoice not found");
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
+
+    // Funds are released only against approved, released purchase orders
+    // whose totals are within their approved amounts. Here, not in the
+    // service function, so every caller of the posting (the Ramp bill sync
+    // included) is held to it. Posting would otherwise also set an
+    // unapproved order's status to a released one.
+    const fundsRefused = await purchaseOrderFundsGate(
+      ctx,
+      purchaseInvoiceLines.data.map((line) => line.purchaseOrderId),
+      {
+        intent: "invoice",
+        purchaseOrderLineIds: purchaseInvoiceLines.data.map(
+          (line) => line.purchaseOrderLineId
+        )
+      }
+    );
+    // 422: a rule refusal, in the gate's own words, for every caller.
+    if (fundsRefused) throw new ServerFnError(fundsRefused.message, 422);
+
     if (purchaseInvoiceDelivery.error)
       throw new Error("Failed to fetch purchase invoice delivery");
+
     if (dimensions.error) {
       postPurchaseInvoiceLogger.error("Failed to fetch dimensions", {
         error: dimensions.error
@@ -17449,9 +17509,56 @@ export async function postPurchaseInvoice(
         : null;
 
     const createdReceiptIds: string[] = [];
+    const invoicePurchaseOrderIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderId)
+      .filter((id): id is string => Boolean(id));
+    const invoicePurchaseOrderLineIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // The gate above ran before this transaction. Lock the invoice's orders
+      // and check again: an edit that sent one back to approval in between
+      // either committed first (and is refused here) or waits on this lock,
+      // since a re-submit locks the order before it changes the status.
+      if (
+        invoicePurchaseOrderIds.length > 0 ||
+        invoicePurchaseOrderLineIds.length > 0
+      ) {
+        await trx
+          .selectFrom("purchaseOrder")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or([
+              eb("id", "in", [...invoicePurchaseOrderIds, ""]),
+              eb("id", "in", (sub) =>
+                sub
+                  .selectFrom("purchaseOrderLine")
+                  .select("purchaseOrderId")
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", [...invoicePurchaseOrderLineIds, ""])
+              )
+            ])
+          )
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const lockedFundsRefused = await purchaseOrderFundsGate(
+          ctx,
+          invoicePurchaseOrderIds,
+          {
+            intent: "invoice",
+            purchaseOrderLineIds: invoicePurchaseOrderLineIds
+          }
+        );
+        if (lockedFundsRefused) {
+          throw new ServerFnError(lockedFundsRefused.message, 422);
+        }
+      }
+
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
         const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<
@@ -17568,6 +17675,8 @@ export async function postPurchaseInvoice(
           status = "To Invoice";
         }
 
+        // Only a released order follows its lines: a Closed one stays
+        // closed, and one waiting for approval is never released by a post.
         await trx
           .updateTable("purchaseOrder")
           .set({
@@ -17575,6 +17684,7 @@ export async function postPurchaseInvoice(
           })
           .where("id", "=", purchaseOrderId)
           .where("companyId", "=", companyId)
+          .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
           .execute();
       }
 

@@ -2,12 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync
+} from "node:fs";
 import { homedir } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { confirm, isCancel, log } from "@clack/prompts";
 import { execa, execaSync } from "execa";
-import { join } from "pathe";
+import { dirname, join } from "pathe";
 import pc from "picocolors";
 import { PORTLESS_MIN_VERSION, TLD } from "../constants.js";
 import { requireTerminal } from "../prompts.js";
@@ -34,7 +40,10 @@ function sudoPortless(args: string[]): string[] {
 
 export async function ensurePortlessInstalled() {
   const installed = await detectPortlessVersion();
-  if (installed && cmpSemver(installed, PORTLESS_MIN_VERSION) >= 0) return;
+  if (installed && cmpSemver(installed, PORTLESS_MIN_VERSION) >= 0) {
+    await offerPortlessUpdate(installed);
+    return;
+  }
 
   if (!installed) {
     log.warn(
@@ -63,6 +72,10 @@ export async function ensurePortlessInstalled() {
     log.info("auto-installing portless (non-interactive / CARBON_DEV_YES=1)");
   }
 
+  await installPortlessLatest();
+}
+
+async function installPortlessLatest() {
   const s = spinner();
   s.start("installing portless@latest globally (pnpm add -g)");
   const r = await execa("pnpm", ["add", "-g", "portless@latest"], {
@@ -101,6 +114,138 @@ export async function ensurePortlessInstalled() {
   }
   const after = await detectPortlessVersion();
   s.stop(`portless v${after ?? "?"} installed`);
+}
+
+// Once a day, `crbn up` asks npm for the latest portless. The file's mtime is
+// when it last asked; `skipped` is a version the user declined, so it is
+// offered once, not on every boot.
+const UPDATE_CHECK_PATH = join(homedir(), ".carbon", "portless-update.json");
+const UPDATE_CHECK_EVERY_MS = 24 * 60 * 60 * 1000;
+
+type UpdateCheck = { latest: string | null; skipped: string | null };
+
+function readUpdateCheck(): (UpdateCheck & { ageMs: number }) | null {
+  try {
+    const data = JSON.parse(readFileSync(UPDATE_CHECK_PATH, "utf8"));
+    return {
+      latest: typeof data.latest === "string" ? data.latest : null,
+      skipped: typeof data.skipped === "string" ? data.skipped : null,
+      ageMs: Date.now() - statSync(UPDATE_CHECK_PATH).mtimeMs
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeUpdateCheck(check: UpdateCheck) {
+  try {
+    mkdirSync(dirname(UPDATE_CHECK_PATH), { recursive: true });
+    writeFileSync(UPDATE_CHECK_PATH, `${JSON.stringify(check)}\n`);
+  } catch {
+    // A missing cache only means npm is asked again next boot.
+  }
+}
+
+async function fetchLatestPortless(): Promise<string | null> {
+  try {
+    const r = await fetch("https://registry.npmjs.org/portless/latest", {
+      signal: AbortSignal.timeout(2000)
+    });
+    if (!r.ok) return null;
+    const v = ((await r.json()) as { version?: unknown }).version;
+    return typeof v === "string" && /^\d+\.\d+\.\d+$/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** What to do about a newer portless: nothing, a one-line note, or a prompt. */
+export function portlessUpdateAction(
+  installed: string,
+  latest: string | null,
+  skipped: string | null,
+  interactive: boolean
+): "none" | "warn" | "ask" {
+  if (!latest || cmpSemver(latest, installed) <= 0) return "none";
+  return interactive && latest !== skipped ? "ask" : "warn";
+}
+
+// An update is opt-in: scripts and CARBON_DEV_YES=1 get a warning, never an
+// upgrade. Offline or a slow registry never blocks the boot.
+async function offerPortlessUpdate(installed: string) {
+  if (process.env.CARBON_PORTLESS_UPDATE_CHECK === "0") return;
+  const cached = readUpdateCheck();
+  let latest = cached?.latest ?? null;
+  const skipped = cached?.skipped ?? null;
+  if (!cached || cached.ageMs > UPDATE_CHECK_EVERY_MS) {
+    // Cached only on an answer: an offline boot asks again on the next one.
+    const fetched = await fetchLatestPortless();
+    if (fetched) {
+      latest = fetched;
+      writeUpdateCheck({ latest, skipped });
+    }
+  }
+  const interactive =
+    process.stdin.isTTY === true && process.env.CARBON_DEV_YES !== "1";
+  const action = portlessUpdateAction(installed, latest, skipped, interactive);
+  if (action === "none" || !latest) return;
+
+  const managedByPnpm = await portlessInstalledByPnpm();
+  const manual = managedByPnpm
+    ? "pnpm add -g portless@latest"
+    : "npm install -g portless@latest";
+  if (action === "warn") {
+    log.warn(
+      `portless v${latest} is out (you have v${installed}). Update: ${pc.cyan(manual)}`
+    );
+    return;
+  }
+  // Another package manager owns it: a pnpm copy would shadow or be shadowed,
+  // so give its command once for this version instead of offering to run one.
+  if (!managedByPnpm) {
+    writeUpdateCheck({ latest, skipped: latest });
+    log.warn(
+      `portless v${latest} is out (you have v${installed}). It was not installed with pnpm: update with ${pc.cyan(manual)}`
+    );
+    return;
+  }
+  const ok = await confirm({
+    message: `portless v${latest} is out (you have v${installed}). Update now?`,
+    initialValue: true
+  });
+  if (isCancel(ok) || !ok) {
+    writeUpdateCheck({ latest, skipped: latest });
+    log.info(
+      `kept portless v${installed}; update later with ${pc.cyan(manual)}`
+    );
+    return;
+  }
+  try {
+    await installPortlessLatest();
+  } catch (err) {
+    // An optional update: a failure stops crbn up only if portless is gone.
+    const still = await detectPortlessVersion();
+    if (!still || cmpSemver(still, PORTLESS_MIN_VERSION) < 0) throw err;
+    writeUpdateCheck({ latest, skipped: latest });
+    log.warn(
+      `portless update failed (${(err as Error).message}); continuing on v${still}. Update later with ${pc.cyan(manual)}`
+    );
+    return;
+  }
+  // The proxy daemon keeps running the old binary until it restarts.
+  log.info(
+    `the running proxy restarts on the new version after ${pc.cyan("sudo portless proxy stop")} and the next ${pc.cyan("crbn up")}`
+  );
+}
+
+async function portlessInstalledByPnpm(): Promise<boolean> {
+  const [bin, which] = await Promise.all([
+    execa("pnpm", ["bin", "-g"], { reject: false }),
+    execa("sh", ["-c", "command -v portless"], { reject: false })
+  ]);
+  const pnpmBin = bin.stdout?.trim();
+  const portlessBin = which.stdout?.trim();
+  return !!pnpmBin && !!portlessBin && dirname(portlessBin) === pnpmBin;
 }
 
 export function startProxyDaemon(root: string) {

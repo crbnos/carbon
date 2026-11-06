@@ -103,7 +103,9 @@ export function PurchaseOrderLinePromisedDate({
   return (
     // The summary row toggles open on click; picking a date must not. The
     // pill's 1px shadow ring sits outside it, so pad it in from the edge.
+    // biome-ignore lint/a11y/noStaticElementInteractions: only stops clicks from bubbling to the summary row; the date pill inside is the control
     <div
+      role="presentation"
       className="flex shrink-0 items-center gap-2 pr-px text-sm whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >

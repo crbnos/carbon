@@ -51,7 +51,15 @@ const ChangeNoticeRequiredActionsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => <Checkbox checked={row.original.active} />
+          cell: ({ row }) => {
+            const name = row.original.name;
+            return (
+              <Checkbox
+                checked={row.original.active}
+                aria-label={t`Active: ${name}`}
+              />
+            );
+          }
         }
       ];
     }, [t]);

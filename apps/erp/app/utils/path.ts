@@ -152,6 +152,12 @@ export const path = {
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
       docs: `${api}/docs?${build}`,
+      documentEdit: (type: string, id: string) =>
+        generatePath(`${api}/document-edit/${type}/${id}`),
+      documentEditPreview: (type: string, id: string) =>
+        generatePath(`${api}/document-edit/${type}/${id}/preview`),
+      documentEditValues: (type: string, id: string) =>
+        generatePath(`${api}/document-edit/${type}/${id}/values`),
       documentLines: (list: string, id: string) =>
         generatePath(`${api}/document-lines/${list}/${id}`),
       earnedValueAcwpCsv: (periodId: string, projectId?: string) =>
@@ -422,6 +428,10 @@ export const path = {
       stripeConnectOnboard: `${api}/integrations/stripe-connect/connect`,
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
+      supplierFiles: (itemIds: string[]) =>
+        `${api}/purchasing/supplier-files?${new URLSearchParams(
+          itemIds.map((itemId) => ["itemId", itemId])
+        )}`,
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
       supplierProcesses: (id: string) =>
