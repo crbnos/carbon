@@ -48,7 +48,11 @@ type RegistryEntry = {
 type Registry = Record<string, RegistryEntry>;
 
 export const SHARED_REDIS_PORT = 6379;
-const REDIS_DB_MAX = 16;
+// One logical DB per worktree slot on the shared redis, which `bootSharedRedis`
+// starts with this many. Redis's own default (16) filled up: a slot is held
+// until `crbn remove`, `crbn down --purge` or `crbn prune` releases it, and a
+// worktree kept on disk keeps its slot.
+export const REDIS_DB_MAX = 256;
 const SLUG_FILE = ".carbon-worktree";
 const REGISTRY_PATH = join(homedir(), ".carbon", "dev-ports.json");
 
@@ -393,7 +397,7 @@ function pickRedisDb(taken: Set<number>): number {
     if (!taken.has(i)) return i;
   }
   throw new Error(
-    `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot via \`crbn remove\`.`
+    `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot with \`crbn down --purge\` in a worktree you no longer use, \`crbn remove\`, or \`crbn prune\` (worktrees whose folder is gone).`
   );
 }
 

@@ -497,8 +497,6 @@ export function iconImports() {
   };
   /** @type {Map<string, number>} */
   const versions = new Map();
-  /** @type {Map<string, string>} */
-  const setSources = new Map();
   /** @type {string | undefined} */
   let packageDirectory;
   return {
@@ -553,14 +551,12 @@ export function iconImports() {
         if (!packageDirectory) return;
         ensureScanned();
         const set = id.slice(ICON_MODULE_PREFIX.length + 1).split(":")[0];
-        let source = setSources.get(set);
-        if (source === undefined) {
-          source = fs.readFileSync(
-            path.join(packageDirectory, set, "index.mjs"),
-            "utf8"
-          );
-          setSources.set(set, source);
-        }
+        // Read on each load, not kept: a set's source is up to a few MB, and a
+        // set loads again only when a new icon bumps its version.
+        const source = fs.readFileSync(
+          path.join(packageDirectory, set, "index.mjs"),
+          "utf8"
+        );
         // Every name so far: a version only ever grows, so each importer's
         // names are in the module its version names. No sourcemap: the code
         // is copied verbatim, and Vite's generated one quadrupled the module.
@@ -712,12 +708,51 @@ export function datasetAssets() {
 }
 
 /**
+ * Dev-server only: disconnects a page that stopped reading HMR messages. A
+ * page the browser keeps connected but no longer runs (seen with headless
+ * Chrome's earlier pages; a frozen or cached tab can do the same) never reads,
+ * and Vite writes every update to it:
+ * the unsent bytes stay in the dev server's memory, about 2 MB per edit for
+ * each such page in the ERP. A page that wakes up finds the server gone, then
+ * reconnects and reloads (Vite's client does this), as it must after missing
+ * updates. A page that reads but is slow (a tunnel, a busy tab) drains some
+ * of its backlog between two checks, so only a backlog over the limit that has
+ * not shrunk since the last check counts as stalled.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function dropStalledHmrClients() {
+  const LIMIT = 4 * 1024 * 1024;
+  return {
+    name: "carbon:drop-stalled-hmr-clients",
+    apply: "serve",
+    configureServer(server) {
+      /** @type {WeakMap<object, number>} */
+      const previous = new WeakMap();
+      const timer = setInterval(() => {
+        for (const { socket } of server.ws.clients) {
+          const unsent = socket.bufferedAmount;
+          const before = previous.get(socket);
+          previous.set(socket, unsent);
+          if (unsent > LIMIT && before !== undefined && unsent >= before) {
+            socket.terminate();
+          }
+        }
+      }, 5000);
+      timer.unref();
+      server.httpServer?.once("close", () => clearInterval(timer));
+    },
+  };
+}
+
+/**
  * Every Carbon app's own Vite plugins, in one call. React Router and
  * Tailwind stay in the app's config, as the framework and styling plugins.
  *
  * Always on: stack activity (a no-op outside `crbn up`), per-icon react-icons
  * imports in dev (`iconImports`), the demo-asset glob as one module in dev
- * (`datasetAssets`), and Lingui's macro transform with the React
+ * (`datasetAssets`), dropping HMR clients that stopped reading
+ * (`dropStalledHmrClients`), and Lingui's macro transform with the React
  * Router id fix. The rest is opt-in, and a package
  * is imported only when its plugin runs, so a dev server or a small app pays
  * nothing for what it does not use.
@@ -738,6 +773,7 @@ export async function carbon({
     stackActivity(),
     iconImports(),
     datasetAssets(),
+    dropStalledHmrClients(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
     splitServer && splitServerByPackage(),
     precompress && command && mode && precompressedAssets({ command, mode }),
