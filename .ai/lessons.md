@@ -4641,26 +4641,6 @@ regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.jso
 
 **Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.
 
-
-## Module-level state set during render outlives the request and every HMR reload
-
-**Context:** The ERP dev server grew about 66 MB per server edit and died after ~30 edits.
-Heap snapshots showed one whole old app graph (317 MB) kept per reload.
-
-**Problem:** `CarbonProvider` stored its per-request store in a module-level variable
-(`setCarbonHmrStore`) during render, on the server too. That variable held the last request's
-session and, through its closures, the render's route manifest and every route module. A
-server render's query with a 30-minute `gcTime` did the same through a timer. In production the
-first leaks one request's session to the next; the second keeps each render alive 30 minutes.
-
-**Rule:** Code that runs during render never writes module-level or global state on the
-server; guard it with `isBrowser`. A cache timer (`gcTime`, `setTimeout`) created during SSR
-must not outlive the request: on the server use `Infinity` (no timer). To find what keeps an
-old graph alive, take a heap snapshot and read the dominator tree; release every CDP object group
-first, because the inspector's own handles keep objects alive.
-
-**Applies to:** React providers and hooks in `packages/*` and `apps/*`, `@carbon/query`, SSR code.
-
 ## `null` as "no bin chosen" and `null` as "no storage unit" are different things
 
 **Context:** The untracked draw planner (`planStripedUntrackedDraw`) and its SQL twin in
