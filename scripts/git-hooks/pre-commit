@@ -4,7 +4,16 @@ set -e
 pnpm exec lint-staged
 
 # Compile lingui translations if any relevant files were modified
-if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
+# Lingui extract scans every ERP and MES source (about 25 s), so it runs only
+# when a staged change adds or removes a message, or stages a catalog. CI runs
+# lingui:check on every pull request, so anything this misses is caught there.
+needs_lingui() {
+    git diff --cached --name-only | grep -q '\.po$' && return 0
+    git diff --cached -U0 -- '*.ts' '*.tsx' '*.js' '*.jsx' \
+        | grep -E '^[+-][^+-]' \
+        | grep -qE '<Trans[ >]|<Plural[ >]|<Select[ >]|[^A-Za-z0-9_](t|msg)`|[^A-Za-z0-9_](plural|select|selectOrdinal)\(|[^A-Za-z0-9_](t|msg)\( *\{'
+}
+if needs_lingui; then
     echo "Compiling translations..."
     # Not a blocker — a catalog that won't compile is worth knowing about, but it
     # is not a reason to refuse the commit. It DOES stop the staging below, so a
@@ -23,18 +32,11 @@ if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     fi
 fi
 
-# Regenerate MCP tools if a service file, or a module's .server.ts (where the
-# defineServiceFn operations and the router live), was modified
-if git diff --cached --name-only | grep -qE '\.service\.ts$|^apps/erp/app/modules/.*\.server\.ts$'; then
-    if ! npx tsx scripts/generate-mcp.ts; then
-        echo "✗ MCP tool metadata could not be regenerated. Nothing was staged."
-        exit 1
-    fi
-    # The manifest itself is gitignored (see 633f134b0b) — the DIGEST is what is
-    # committed, and `git add` on an ignored path exits 1, which failed this hook
-    # for every commit that touched a *.service.ts.
-    git add apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json
-fi
+# The API manifest digest (tool-manifest.digest.json) is no longer refreshed or
+# checked here: both run the generator, a ts-morph pass over the ERP that takes
+# about 100 s, and a service-file commit ran it twice. CI's lint job generates
+# the manifest for the workflow-catalog check and fails when the committed digest
+# differs. Run `pnpm generate:mcp` and commit the digest when it says so.
 
 # Demo-dataset drift only shows up when the datasets actually run. This dry-runs
 # all four (~3s) — each rolls back, so it writes nothing.
@@ -59,21 +61,6 @@ if [ -z "$CARBON_SKIP_BACKUP_CHECK" ] && git diff --cached --name-only | grep -q
         echo ""
         echo "Commit blocked by the backup compatibility check. The reason is printed above."
         echo "Skip it with: CARBON_SKIP_BACKUP_CHECK=1 git commit ..."
-        exit 1
-    fi
-fi
-# The published operation contract lives in a GITIGNORED manifest, so its committed
-# digest is the only record a reviewer can see. Regenerate and refuse the commit if
-# a change to anything the generator reads did not update it — a stale digest is
-# worse than none, since it reads as "nothing changed". The file set is the
-# //#generate:mcp inputs in turbo.json; keep the two in step.
-# Set CARBON_SKIP_MANIFEST_CHECK=1 to skip.
-if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/(modules|components/TreeView|services|types|utils)/.*|apps/erp/tsconfig\.json|packages/(account|api|auth|database|documents|ee|env|files|form|jobs|kv|lib|locale|logger|notifications|onboarding|planning|printing|react|stripe|utils)/src/.*|packages/database/supabase/migrations/.*|scripts/generate-mcp\.ts|scripts/lib/.*)$'; then
-    echo "Checking the API operation manifest digest..."
-    if ! pnpm --silent check:manifest; then
-        echo ""
-        echo "Run: pnpm generate:mcp   then stage tool-manifest.digest.json"
-        echo "Skip it with: CARBON_SKIP_MANIFEST_CHECK=1 git commit ..."
         exit 1
     fi
 fi
