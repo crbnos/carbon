@@ -45,7 +45,7 @@ import {
   LuTimer,
   LuX
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
@@ -86,6 +86,7 @@ import type {
 } from "~/services/models";
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -93,6 +94,9 @@ export const handle: Handle = {
     { table: "maintenanceDispatch", column: "id", param: "dispatchId" }
   ]
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.dispatch?.maintenanceDispatchId, "Maintenance Dispatch");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -360,9 +364,17 @@ export default function MaintenanceDetailRoute() {
           <Hidden name="eventId" value={myActiveEvent?.id ?? ""} />
           <Hidden name="action" value={isWorking ? "End" : "Start"} />
           {isWorking ? (
-            <PauseButton type="submit" disabled={isBusy} />
+            <PauseButton
+              type="submit"
+              disabled={isBusy}
+              aria-label={t`Pause maintenance`}
+            />
           ) : (
-            <PlayButton type="submit" disabled={isBusy} />
+            <PlayButton
+              type="submit"
+              disabled={isBusy}
+              aria-label={t`Start maintenance`}
+            />
           )}
         </ValidatedForm>
       }

@@ -40,7 +40,7 @@ import {
 } from "@carbon/react/Chart";
 import { formatDate } from "@carbon/utils";
 import { today } from "@internationalized/date";
-import { msg } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
@@ -384,8 +384,19 @@ export default function QualityDashboard() {
   const effectiveTarget =
     (kpiFetcher.data as any)?.meta?.qualityIssueTarget ?? qualityIssueTarget;
 
+  const sumOf = (key: string) =>
+    (chartData as any[]).reduce((s, d) => s + (Number(d[key]) || 0), 0);
+  const openedTotal = sumOf("opened");
+  const closedTotal = sumOf("closed");
+  const statusTotal = sumOf("value");
+  const weeklySummary = t`${openedTotal} opened, ${closedTotal} closed`;
+  const statusSummary = t`${plural(statusTotal, { one: "# issue in total", other: "# issues in total" })}`;
+
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
+      <h1 className="sr-only">
+        <Trans>Quality Dashboard</Trans>
+      </h1>
       {/* KPI Cards */}
       <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
@@ -450,6 +461,7 @@ export default function QualityDashboard() {
               </DropdownMenu>
               <Combobox
                 asButton
+                aria-label={t`Issue type`}
                 value={issueTypeId}
                 onChange={setIssueTypeId}
                 options={typeOptions}
@@ -493,6 +505,8 @@ export default function QualityDashboard() {
             {selectedChart === "weeklyTracking" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`Issues opened and closed by week`}
+                summary={weeklySummary}
                 className="w-full h-full"
               >
                 <ComposedChart data={chartData}>
@@ -555,6 +569,8 @@ export default function QualityDashboard() {
             {selectedChart === "statusDistribution" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`Issues by status`}
+                summary={statusSummary}
                 className="w-full h-full"
               >
                 <PieChart>
@@ -612,6 +628,7 @@ export default function QualityDashboard() {
             {selectedChart === "paretoByType" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`Issues by type, with cumulative percentage`}
                 className="w-full h-full"
               >
                 <ComposedChart data={chartData}>
@@ -652,6 +669,7 @@ export default function QualityDashboard() {
             {selectedChart === "ncrsByType" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`NCRs by type and priority`}
                 className="w-full h-full"
               >
                 <BarChart data={chartData}>
@@ -707,6 +725,7 @@ export default function QualityDashboard() {
             {selectedChart === "sourceAnalysis" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`Issues by priority, internal versus external source`}
                 className="w-full h-full"
               >
                 <BarChart data={chartData} layout="vertical">
@@ -750,6 +769,7 @@ export default function QualityDashboard() {
             {selectedChart === "supplierQuality" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`Issues by supplier`}
                 className="w-full h-full"
               >
                 {(chartData as any[]).length > 0 ? (
@@ -788,6 +808,7 @@ export default function QualityDashboard() {
             {selectedChart === "weeksOpen" && (
               <ChartContainer
                 config={localizedChartConfig}
+                aria-label={t`Open issues by criticality and weeks open`}
                 className="w-full h-full"
               >
                 <BarChart data={chartData}>

@@ -22,6 +22,17 @@ export function isServerSortable<T>(columnDef: ColumnDef<T, unknown>) {
   return !sortKey.includes(".");
 }
 
+// A column's display name: a non-empty string header, else `meta.filterHeader`
+// (the label JSX-header columns carry). The CSV heading and the accessible name
+// of a cell's inline editor both come from here.
+export function getColumnLabel<T>(
+  columnDef: ColumnDef<T, unknown>
+): string | undefined {
+  const header = columnDef.header;
+  if (typeof header === "string" && header.length > 0) return header;
+  return columnDef.meta?.filterHeader;
+}
+
 export interface ColumnMaps<T> {
   // accessorKey (or column id for display columns) -> header label
   accessors: Record<string, string>;
@@ -60,17 +71,13 @@ export function buildColumnMaps<T>(
 
     const stringHeader =
       typeof column.header === "string" ? column.header : undefined;
-    const filterHeader = column.meta?.filterHeader;
     const exportValue = column.meta?.exportValue;
     const exportKey = accessorKey ?? column.id;
 
     // CSV heading: a non-empty string header wins, then filterHeader (covers
     // JSX-header and blank-header columns), then a (possibly empty) string
     // header — never invents a heading for a JSX header that lacks filterHeader.
-    const exportLabel =
-      stringHeader && stringHeader.length > 0
-        ? stringHeader
-        : (filterHeader ?? stringHeader);
+    const exportLabel = getColumnLabel(column) ?? stringHeader;
 
     const includeInExport =
       (!!accessorKey && stringHeader !== undefined) || !!exportValue;
@@ -170,4 +177,35 @@ export function hasUniqueRowIds(
     seen.add(key);
   }
   return true;
+}
+
+/** What one loaded data row draws in the table body. */
+export type BodyRowShape = {
+  /** It starts a group whose header row is drawn above it. */
+  groupHeader: boolean;
+  /** Its group is collapsed, so the row itself is not drawn. */
+  hidden: boolean;
+  /** Its expanded row is drawn below it. */
+  expanded: boolean;
+};
+
+/**
+ * Where each data row's drawn rows sit in the table body, for `aria-rowindex`.
+ * A data row draws up to three rows (its group header, itself, its expanded
+ * row), so the virtual index alone puts every row after an expanded one or a
+ * group header at the wrong number. `starts[i]` is the 0-based body position
+ * of data row i's first drawn row; `total` counts every drawn body row.
+ */
+export function bodyRowPositions(rows: readonly BodyRowShape[]): {
+  starts: number[];
+  total: number;
+} {
+  const starts: number[] = [];
+  let position = 0;
+  for (const row of rows) {
+    starts.push(position);
+    if (row.groupHeader) position += 1;
+    if (!row.hidden) position += row.expanded ? 2 : 1;
+  }
+  return { starts, total: position };
 }

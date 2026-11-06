@@ -125,8 +125,12 @@ const CustomerHeader = () => {
         <Card>
           <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>{routeData?.customer?.name}</span>
+              {/* The title row holds the ⋯ menu and Copy too: only the name is
+                  the page's heading, or its name would include theirs. */}
+              <CardTitle role="none" className="flex items-center gap-2">
+                <span role="heading" aria-level={1}>
+                  {routeData?.customer?.name}
+                </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton

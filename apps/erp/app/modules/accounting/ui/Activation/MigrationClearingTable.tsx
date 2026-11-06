@@ -150,6 +150,7 @@ export default function MigrationClearingTable({
                     <div className="flex items-center gap-1">
                       {accountItems.length > 0 ? (
                         <IconButton
+                          aria-expanded={isOpen}
                           aria-label={
                             isOpen
                               ? t`Hide the items on ${label}`

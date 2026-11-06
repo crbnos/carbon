@@ -181,6 +181,7 @@ const AttributeCategoryDetail = ({
                 className="space-y-2 w-full"
               >
                 {sortOrder.map((sortId) => {
+                  const attributeName = attributeMap[sortId]?.name;
                   return (
                     <Reorder.Item
                       key={sortId}
@@ -210,7 +211,9 @@ const AttributeCategoryDetail = ({
                               t`Unknown`
                           }
                         </Button>
-                        <ActionMenu>{renderContextMenu(sortId)}</ActionMenu>
+                        <ActionMenu label={t`Actions for ${attributeName}`}>
+                          {renderContextMenu(sortId)}
+                        </ActionMenu>
                       </HStack>
                     </Reorder.Item>
                   );

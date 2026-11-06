@@ -502,6 +502,7 @@ function LineItemsConfig({ block }: { block: LineItemsBlock }) {
 }
 
 function RichTextConfig({ block }: { block: RichTextBlock }) {
+  const { t } = useLingui();
   const { updateBlock, documentType } = useDocumentTemplate();
   // Bumped on insert to remount the Editor so the appended token shows (Tiptap
   // only reads `initialValue` on mount).
@@ -529,6 +530,7 @@ function RichTextConfig({ block }: { block: RichTextBlock }) {
           <MergeFieldMenu onInsert={insertField} label="Insert field" />
         </div>
         <Editor
+          label={t`Content`}
           key={`${block.id}-${nonce}`}
           className="min-h-[140px] w-full rounded-md border bg-background p-3"
           initialValue={block.content}
@@ -554,6 +556,7 @@ function hasDocContent(content?: JSONContent | null): boolean {
  * point.
  */
 function TermsConfig({ block }: { block: TermsBlock }) {
+  const { t } = useLingui();
   const { updateBlock, termsSeed, documentType } = useDocumentTemplate();
   const [nonce, setNonce] = useState(0);
   const knownTokens = getMergeFields(documentType).map((f) => f.token);
@@ -581,6 +584,7 @@ function TermsConfig({ block }: { block: TermsBlock }) {
           <MergeFieldMenu onInsert={insertField} label="Insert field" />
         </div>
         <Editor
+          label={t`Content`}
           key={`${block.id}-${nonce}`}
           className="min-h-[160px] w-full rounded-md border bg-background p-3"
           initialValue={initialValue}
@@ -599,6 +603,7 @@ function TermsConfig({ block }: { block: TermsBlock }) {
  * "Approved by … on …" is written here rather than in a separate block.
  */
 function ApprovalConfig({ block }: { block: ApprovalBlock }) {
+  const { t } = useLingui();
   const { updateBlock, documentType } = useDocumentTemplate();
   const [nonce, setNonce] = useState(0);
   const knownTokens = getMergeFields(documentType).map((f) => f.token);
@@ -635,6 +640,7 @@ function ApprovalConfig({ block }: { block: ApprovalBlock }) {
           <MergeFieldMenu onInsert={insertField} label="Insert field" />
         </div>
         <Editor
+          label={t`Caption`}
           key={`${block.id}-${nonce}`}
           className="min-h-[96px] w-full rounded-md border bg-background p-3"
           initialValue={caption}
@@ -648,6 +654,7 @@ function ApprovalConfig({ block }: { block: ApprovalBlock }) {
 }
 
 function KeyValueConfig({ block }: { block: KeyValueBlock }) {
+  const { t } = useLingui();
   const { updateBlock } = useDocumentTemplate();
   const rows = block.rows ?? [];
 
@@ -670,6 +677,7 @@ function KeyValueConfig({ block }: { block: KeyValueBlock }) {
           <div key={index} className="flex items-center gap-2">
             <Input
               placeholder="Label"
+              aria-label={t`Label ${index + 1}`}
               value={row.label}
               onChange={(e) =>
                 setRows(
@@ -681,6 +689,7 @@ function KeyValueConfig({ block }: { block: KeyValueBlock }) {
             />
             <Input
               placeholder="Value"
+              aria-label={t`Value ${index + 1}`}
               value={row.value}
               onChange={(e) =>
                 setRows(

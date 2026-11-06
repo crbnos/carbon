@@ -285,6 +285,7 @@ const RentalAgreementLineForm = ({
 
                 <div className="w-full">
                   <Button
+                    aria-expanded={showClassification}
                     variant="ghost"
                     size="sm"
                     className="-ml-2"

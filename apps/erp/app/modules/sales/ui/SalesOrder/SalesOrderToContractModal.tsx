@@ -274,6 +274,7 @@ const SalesOrderToContractModal = ({
                 <HStack className="w-full justify-between px-1">
                   <HStack>
                     <Checkbox
+                      aria-label={t`Select all service lines`}
                       isChecked={allSelected}
                       isIndeterminate={selectedCount > 0 && !allSelected}
                       onCheckedChange={toggleAll}
@@ -294,6 +295,7 @@ const SalesOrderToContractModal = ({
                       if (!line.id) return null;
                       const lineId = line.id;
                       const choice = selected[lineId];
+                      const itemReadableId = line.itemReadableId;
                       return (
                         <HStack
                           key={lineId}
@@ -301,6 +303,7 @@ const SalesOrderToContractModal = ({
                         >
                           <HStack spacing={3} className="min-w-0">
                             <Checkbox
+                              aria-label={t`Select ${itemReadableId}`}
                               isChecked={!!choice}
                               onCheckedChange={() => toggle(lineId)}
                             />

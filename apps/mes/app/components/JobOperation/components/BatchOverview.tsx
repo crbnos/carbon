@@ -281,6 +281,7 @@ export function BatchOverview({
                                     </Button>
                                     {hasDescription ? (
                                       <IconButton
+                                        aria-expanded={descriptionOpen}
                                         aria-label={
                                           descriptionOpen
                                             ? t`Hide description`
@@ -409,7 +410,7 @@ export function BatchOverview({
               <FaCheck className="h-3 w-3 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <Heading size="h1">
+              <Heading as="p" size="h1">
                 <Trans>
                   {completed} of {quantity}
                 </Trans>
@@ -428,7 +429,7 @@ export function BatchOverview({
               <LuGitBranchPlus className="h-3 w-3 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Heading size="h1">
+              <Heading as="p" size="h1">
                 <Trans>
                   {issuedLines.length} of {trackedLines.length}
                 </Trans>
@@ -447,7 +448,9 @@ export function BatchOverview({
               <FaTrash className="h-3 w-3 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Heading size="h1">{scrapped}</Heading>
+              <Heading as="p" size="h1">
+                {scrapped}
+              </Heading>
               <p className="text-sm text-muted-foreground">
                 <Trans>batch total</Trans>
               </p>
@@ -462,7 +465,7 @@ export function BatchOverview({
               <LuLayers className="h-3 w-3 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <Heading size="h3" className="font-mono truncate">
+              <Heading as="p" size="h3" className="font-mono truncate">
                 {merged ? batch.outputLotNumber : t`Separate lots`}
               </Heading>
               <p className="text-sm text-muted-foreground">
@@ -624,6 +627,24 @@ export function BatchOverview({
       >
         <Panel>
           <Table>
+            {/* No visible header; the header row names the columns for
+                assistive technology. */}
+            <Thead className="sr-only">
+              <Tr>
+                <Th>
+                  <Trans>Item</Trans>
+                </Th>
+                <Th className="hidden md:table-cell">
+                  <Trans>Location</Trans>
+                </Th>
+                <Th>
+                  <Trans>Quantity</Trans>
+                </Th>
+                <Th className="hidden sm:table-cell">
+                  <Trans>Action</Trans>
+                </Th>
+              </Tr>
+            </Thead>
             <Tbody className={rows}>
               {materials.length === 0 ? (
                 <Tr>
@@ -800,6 +821,16 @@ export function BatchOverview({
                   <Section title={t`Files`}>
                     <Panel>
                       <Table>
+                        <Thead className="sr-only">
+                          <Tr>
+                            <Th>
+                              <Trans>File</Trans>
+                            </Th>
+                            <Th>
+                              <Trans>Download</Trans>
+                            </Th>
+                          </Tr>
+                        </Thead>
                         <Tbody className={rows}>
                           {fileGroups(resolved.files).map(
                             ([jobReadableId, files]) => (
@@ -818,6 +849,7 @@ export function BatchOverview({
                                       (file.metadata?.size ?? 0) / 1024
                                     )
                                   );
+                                  const fileName = file.name;
                                   const name = (
                                     <span className="block truncate font-medium">
                                       {file.name}
@@ -849,7 +881,7 @@ export function BatchOverview({
                                       </Td>
                                       <Td className={cn(td, "w-px text-right")}>
                                         <IconButton
-                                          aria-label={t`Download`}
+                                          aria-label={t`Download ${fileName}`}
                                           variant="ghost"
                                           icon={<LuDownload />}
                                           onClick={() => onDownloadFile(file)}

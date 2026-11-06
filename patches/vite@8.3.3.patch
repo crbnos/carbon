@@ -1,0 +1,42 @@
+diff --git a/dist/node/chunks/node.js b/dist/node/chunks/node.js
+index cd5be24..e3e96e2 100644
+--- a/dist/node/chunks/node.js
++++ b/dist/node/chunks/node.js
+@@ -2489,8 +2489,25 @@ function optimizeSafeRealPathSync() {
+ 		else safeRealpathSync = windowsMappedRealpathSync;
+ 	});
+ }
++// Carbon patch (vitejs/vite#23940): add each file outside the root to the
++// watcher once. This ran on every transform, and on macOS the bundled chokidar
++// registers one more FSEvents listener for each add of a watched file, so an
++// app's linked packages gained thousands of listeners on every SSR reload.
++// A file chokidar reports deleted is added again when it is next loaded.
++const ensuredWatchedFiles = /* @__PURE__ */ new WeakMap();
+ function ensureWatchedFile(watcher, file, root) {
+-	if (file && !file.startsWith(withTrailingSlash(root)) && !file.includes("\0") && fs.existsSync(file)) watcher.add(path.resolve(file));
++	if (!file || file.startsWith(withTrailingSlash(root)) || file.includes("\0")) return;
++	let ensured = ensuredWatchedFiles.get(watcher);
++	if (!ensured) {
++		const files = /* @__PURE__ */ new Set();
++		watcher.on("unlink", (unlinked) => files.delete(path.resolve(unlinked)));
++		ensuredWatchedFiles.set(watcher, files);
++		ensured = files;
++	}
++	const resolved = path.resolve(file);
++	if (ensured.has(resolved) || !fs.existsSync(file)) return;
++	ensured.add(resolved);
++	watcher.add(resolved);
+ }
+ function joinSrcset(ret) {
+ 	return ret.map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : "")).join(", ");
+@@ -15847,7 +15864,9 @@ function resolveSourceMapOptions(options) {
+ 		};
+ 		return options.sourcemapInterceptor;
+ 	}
+-	if (typeof process !== "undefined" && "setSourceMapsEnabled" in process) return "node";
++	// Carbon patch: map stack traces on demand. "node" turned on Node's
++	// source-map support, which parses and keeps the inline map of every module
++	// the runner evaluates and the .map of every package it loads.
+ 	return prepareStackTrace;
+ }
+ const createServerModuleRunnerTransport = (options) => {

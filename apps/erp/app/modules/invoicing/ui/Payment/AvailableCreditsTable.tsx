@@ -188,6 +188,7 @@ const AvailableCreditsTable = ({
                   >
                     <div className="flex items-center justify-center">
                       <Checkbox
+                        aria-label={t`Apply ${r.memoId}`}
                         checked={r.checked}
                         onCheckedChange={(checked) =>
                           toggleRow(r.id, Boolean(checked))
@@ -213,7 +214,10 @@ const AvailableCreditsTable = ({
                       value={r.invoiceId}
                       onValueChange={(v) => updateInvoice(r.id, v)}
                     >
-                      <SelectTrigger size="sm">
+                      <SelectTrigger
+                        aria-label={t`Invoice for ${r.memoId}`}
+                        size="sm"
+                      >
                         <SelectValue placeholder={t`Select invoice`} />
                       </SelectTrigger>
                       <SelectContent>

@@ -125,7 +125,7 @@ function PropertyField({
             value={value as string}
             onValueChange={(val) => onChange(val)}
           >
-            <SelectTrigger id={property.id}>
+            <SelectTrigger id={property.id} aria-label={property.label}>
               <SelectValue placeholder={t`Select an option`} />
             </SelectTrigger>
             <SelectContent>
@@ -170,6 +170,7 @@ function PropertyField({
             {property.label}
           </Label>
           <DatePicker
+            aria-label={property.label}
             isDisabled={isReadOnly}
             value={value ? parseDate(value as string) : undefined}
             onChange={(val) => onChange(val?.toString() ?? "")}

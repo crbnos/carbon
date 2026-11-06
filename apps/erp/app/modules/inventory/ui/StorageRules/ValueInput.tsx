@@ -160,6 +160,7 @@ function ValueInputImpl({
 
   return (
     <Input
+      aria-label={multi ? t`Values` : t`Value`}
       size="md"
       type="text"
       placeholder={multi ? t`comma-separated values` : t`Value`}
@@ -207,6 +208,7 @@ function StorageUnitValuePickerImpl({
   value: string | undefined;
   onChange: (next: unknown) => void;
 }) {
+  const { t } = useLingui();
   const locations = useLocations() as LocationOption[];
 
   const [locationId, setLocationId] = useState<string | null>(null);
@@ -318,37 +320,39 @@ function StorageUnitValuePickerImpl({
         if (!o) reset();
       }}
     >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "group flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm text-left",
-            "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-[color,box-shadow]",
-            !selectedRow && "text-muted-foreground"
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate">
-            {selectedRow?.name ?? "Select storage unit"}
-          </span>
-          <span className="flex shrink-0 items-center gap-1">
-            {value ? (
-              <span
-                role="button"
-                tabIndex={-1}
-                aria-label="Clear"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange(undefined);
-                }}
-                className="flex h-4 w-4 items-center justify-center rounded opacity-60 hover:bg-muted hover:opacity-100"
-              >
-                <LuX className="h-3 w-3" />
-              </span>
-            ) : null}
-            <LuChevronDown className="h-4 w-4 opacity-50" />
-          </span>
-        </button>
-      </PopoverTrigger>
+      {/* Clear sits beside the trigger, not inside it: a control inside a
+          button cannot take focus. */}
+      <div className="relative w-full">
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "group flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm text-left",
+              "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-[color,box-shadow]",
+              value && "pr-14",
+              !selectedRow && "text-muted-foreground"
+            )}
+          >
+            <span className="min-w-0 flex-1 truncate">
+              {selectedRow?.name ?? "Select storage unit"}
+            </span>
+            <LuChevronDown
+              aria-hidden
+              className="h-4 w-4 shrink-0 opacity-50"
+            />
+          </button>
+        </PopoverTrigger>
+        {value ? (
+          <button
+            type="button"
+            aria-label={t`Clear`}
+            onClick={() => onChange(undefined)}
+            className="absolute top-1/2 right-8 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded opacity-60 outline-none hover:bg-muted hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LuX aria-hidden className="h-3 w-3" />
+          </button>
+        ) : null}
+      </div>
 
       <PopoverContent
         align="end"
@@ -441,6 +445,7 @@ function StorageUnitValuePickerImpl({
 
         {/* Search — flush, no chrome. */}
         <Input
+          aria-label={t`Search storage units`}
           autoFocus
           value={search}
           onChange={(e) => setSearch(e.target.value)}

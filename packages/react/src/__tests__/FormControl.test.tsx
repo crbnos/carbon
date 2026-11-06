@@ -4,18 +4,46 @@
 
 // @vitest-environment jsdom
 
-import type { ReactElement } from "react";
-import { act } from "react";
+import { getEntry } from "@carbon/content/glossary";
+import type { ReactElement, ReactNode } from "react";
+import { act, useEffect } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CommandTrigger } from "../Command";
-import { FormControl, FormHelperText } from "../Form/FormControl";
+import DatePicker from "../Date/DatePicker";
+import TimePicker from "../Date/TimePicker";
+import {
+  FormControl,
+  FormHelperText,
+  useOptionalFormControlContext
+} from "../Form/FormControl";
 import { FormErrorMessage } from "../Form/FormError";
 import { FormLabel } from "../Form/FormLabel";
 import { Input, InputGroup } from "../Input";
+import { LabelWithHelp } from "../LabelWithHelp";
+import { OperatingSystemContextProvider } from "../OperatingSystem";
+import { RadioGroup, RadioGroupItem } from "../Radio";
 import { Select, SelectTrigger, SelectValue } from "../Select";
+import { Switch } from "../Switch";
 import { Textarea } from "../Textarea";
+
+// The glossary's `msg` descriptors and the Lingui macros are compiled by the
+// app build, not by vitest: stand in a plain entry and plain strings.
+vi.mock("@carbon/content/glossary", () => ({
+  getEntry: () => ({
+    term: "Method type",
+    definition: "How an item is sourced when added to a method or BOM line."
+  })
+}));
+vi.mock("@lingui/react/macro", () => ({
+  Trans: ({ children }: { children: ReactNode }) => children,
+  useLingui: () => ({
+    t: (strings: TemplateStringsArray, ...values: unknown[]) =>
+      String.raw({ raw: strings }, ...values),
+    i18n: { _: (message: unknown) => String(message) }
+  })
+}));
 
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;
@@ -115,6 +143,20 @@ describe("select and combobox triggers", () => {
     expect(trigger.hasAttribute("aria-labelledby")).toBe(false);
   });
 
+  it("outside a FormControl are named by the text they show", () => {
+    const view = render(
+      <>
+        <CommandTrigger role="combobox">All customers</CommandTrigger>
+        <CommandTrigger role="combobox" aria-label="Pick a customer">
+          All customers
+        </CommandTrigger>
+      </>
+    );
+    const [unnamed, named] = view.querySelectorAll('[role="combobox"]');
+    expect(unnamed!.getAttribute("aria-label")).toBe("All customers");
+    expect(named!.getAttribute("aria-label")).toBe("Pick a customer");
+  });
+
   it("are not labelled when the FormControl has no label", () => {
     const view = render(
       <FormControl>
@@ -124,6 +166,207 @@ describe("select and combobox triggers", () => {
     expect(
       view.querySelector('[role="combobox"]')!.hasAttribute("aria-labelledby")
     ).toBe(false);
+  });
+});
+
+describe("the label as text", () => {
+  // An inline field's icon-only trigger names itself after this ("Edit
+  // Customer"), so it must be the label alone, without the help text.
+  function LabelText() {
+    return <output>{useOptionalFormControlContext()?.labelText ?? ""}</output>;
+  }
+
+  it("is the label's words, not its help text", () => {
+    function Help({ children }: { children: string }) {
+      return (
+        <span>
+          {children}
+          <span className="sr-only">Who the order is for.</span>
+        </span>
+      );
+    }
+    const view = render(
+      <FormControl>
+        <FormLabel>
+          <Help>Customer</Help>
+        </FormLabel>
+        <LabelText />
+      </FormControl>
+    );
+    expect(view.querySelector("output")!.textContent).toBe("Customer");
+  });
+
+  it("is the rendered text of a child that holds it outside its props", () => {
+    // Lingui compiles <Trans>Customer</Trans> to an element with no children.
+    function Translated() {
+      return <>Customer</>;
+    }
+    const view = render(
+      <FormControl>
+        <FormLabel>
+          <Translated />
+        </FormLabel>
+        <LabelText />
+      </FormControl>
+    );
+    expect(view.querySelector("output")!.textContent).toBe("Customer");
+  });
+
+  it("is cleared when the label goes away", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel>Customer</FormLabel>
+        <LabelText />
+      </FormControl>
+    );
+    act(() =>
+      root!.render(
+        <FormControl>
+          <LabelText />
+        </FormControl>
+      )
+    );
+    expect(view.querySelector("output")!.textContent).toBe("");
+  });
+});
+
+describe("a glossary definition on the label", () => {
+  // Stands in for LabelWithHelp, which registers its definition this way.
+  function Definition({ children }: { children: string }) {
+    const field = useOptionalFormControlContext()!;
+    const { registerDefinition } = field;
+    useEffect(() => registerDefinition(), [registerDefinition]);
+    return (
+      <span id={field.definitionId} aria-hidden>
+        {children}
+      </span>
+    );
+  }
+
+  it("describes the control instead of naming it", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel htmlFor="deadlineType">
+          Deadline Type
+          <Definition>How the job ranks for capacity.</Definition>
+        </FormLabel>
+        <Input id="deadlineType" />
+      </FormControl>
+    );
+    const definition = view.querySelector("span[aria-hidden]")!;
+    expect(view.querySelector("input")!.getAttribute("aria-describedby")).toBe(
+      definition.id
+    );
+  });
+
+  it("leaves the description when the definition goes away", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel htmlFor="deadlineType">
+          Deadline Type
+          <Definition>How the job ranks for capacity.</Definition>
+        </FormLabel>
+        <Input id="deadlineType" />
+      </FormControl>
+    );
+    act(() =>
+      root!.render(
+        <FormControl>
+          <FormLabel htmlFor="deadlineType">Deadline Type</FormLabel>
+          <Input id="deadlineType" />
+        </FormControl>
+      )
+    );
+    expect(view.querySelector("input")!.hasAttribute("aria-describedby")).toBe(
+      false
+    );
+  });
+});
+
+describe("a LabelWithHelp definition", () => {
+  const definition = String(getEntry("method-type").definition);
+
+  /** The text of the elements the control's aria-describedby names. */
+  function description(control: Element) {
+    return (control.getAttribute("aria-describedby") ?? "")
+      .split(" ")
+      .filter(Boolean)
+      .map((id) => document.getElementById(id)?.textContent)
+      .join(" ");
+  }
+
+  function field(control: ReactNode) {
+    return (
+      <FormControl>
+        <FormLabel htmlFor="methodType">
+          <LabelWithHelp termId="method-type">Method Type</LabelWithHelp>
+        </FormLabel>
+        {control}
+      </FormControl>
+    );
+  }
+
+  it("describes an input and leaves its name", () => {
+    const view = render(field(<Input id="methodType" />));
+    const input = view.querySelector("input")!;
+    expect(description(input)).toBe(definition);
+    // The copy in the label is hidden, so the name stays "Method Type".
+    const copy = document.getElementById(
+      input.getAttribute("aria-describedby")!
+    );
+    expect(copy!.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("describes a radio group", () => {
+    const view = render(
+      field(
+        <RadioGroup aria-label="Method Type">
+          <RadioGroupItem value="Make" aria-label="Make" />
+        </RadioGroup>
+      )
+    );
+    expect(description(view.querySelector('[role="radiogroup"]')!)).toBe(
+      definition
+    );
+  });
+
+  it("describes a switch", () => {
+    const view = render(field(<Switch aria-label="Method Type" />));
+    expect(description(view.querySelector('[role="switch"]')!)).toBe(
+      definition
+    );
+  });
+
+  it("describes a time field and a date field", () => {
+    for (const control of [
+      <TimePicker key="time" aria-label="Start time" />,
+      <DatePicker key="date" aria-label="Due date" />
+    ]) {
+      // The date picker's buttons read the platform for their shortcuts.
+      const view = render(
+        <OperatingSystemContextProvider platform="mac">
+          {field(control)}
+        </OperatingSystemContextProvider>
+      );
+      // A screen reader reads the description on the first segment.
+      expect(description(view.querySelector('[role="spinbutton"]')!)).toBe(
+        definition
+      );
+      act(() => root!.unmount());
+      view.remove();
+    }
+  });
+
+  it("describes a control the caller already describes, after its own", () => {
+    const view = render(
+      <>
+        <p id="note">Set by the item.</p>
+        {field(<Switch aria-label="Method Type" aria-describedby="note" />)}
+      </>
+    );
+    expect(description(view.querySelector('[role="switch"]')!)).toBe(
+      `Set by the item. ${definition}`
+    );
   });
 });
 

@@ -5,6 +5,7 @@
 export function ShowParentIcon({ className }: { className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={className}
       viewBox="0 0 16 16"
       fill="none"
@@ -23,6 +24,7 @@ export function ShowParentIcon({ className }: { className?: string }) {
 export function ShowParentIconSelected({ className }: { className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={className}
       viewBox="0 0 16 16"
       fill="none"

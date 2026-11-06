@@ -242,7 +242,9 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle
+                aria-level={type === "card" && !isEditing ? 1 : undefined}
+              >
                 {isEditing ? (
                   <Trans>Part Details</Trans>
                 ) : (

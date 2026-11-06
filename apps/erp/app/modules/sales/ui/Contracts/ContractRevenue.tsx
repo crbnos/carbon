@@ -221,6 +221,7 @@ const ContractRevenue = ({
                           <Td>
                             {lineMonths.length > 0 && (
                               <IconButton
+                                aria-expanded={isExpanded}
                                 aria-label={
                                   isExpanded
                                     ? t`Hide monthly revenue`

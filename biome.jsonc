@@ -45,7 +45,11 @@
           "options": { "ignoreNonDom": true }
         },
         "useValidAriaValues": "warn",
-        "useValidLang": "warn"
+        "useValidLang": "warn",
+        "useKeyWithClickEvents": "warn",
+        "noStaticElementInteractions": "warn",
+        "useButtonType": "warn",
+        "noSvgWithoutTitle": "warn"
       },
       "complexity": {
         "noCommaOperator": "warn",
@@ -128,6 +132,12 @@
     }
   },
   "overrides": [
+    {
+      // Standalone .svg files load through <img>, which takes its name from
+      // alt; a <title> inside the file never reaches the accessibility tree.
+      "includes": ["**/*.svg"],
+      "linter": { "rules": { "a11y": { "noSvgWithoutTitle": "off" } } }
+    },
     {
       // Keep the typed path helpers alphabetically sorted. Applies on
       // `biome check --write` (pre-commit lint-staged + CI), not plain

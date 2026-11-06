@@ -203,6 +203,7 @@ export default function InventorySettingsRoute() {
                   <Select
                     name="kanbanOutput"
                     label={t`Output`}
+                    aria-label={t`Output`}
                     options={kanbanOutputTypes.map((type) => ({
                       value: type,
                       label: outputLabels[type]
@@ -264,6 +265,7 @@ export default function InventorySettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Start Receipt Quantities at Zero`}
                 checked={receiptQuantitiesStartAtZero}
                 onCheckedChange={handleReceiptQuantitiesStartAtZeroToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -476,6 +478,7 @@ function KanbanLabelSizeField() {
     <Select
       name="kanbanLabelSize"
       label={t`Label Size`}
+      aria-label={t`Label Size`}
       helperText={t`A 4" x 2" or 3" x 2" label prints one card per label, for a thermal printer such as a Zebra.`}
       options={Object.entries(sizeLabels).map(([value, label]) => ({
         value,
@@ -497,6 +500,7 @@ function CalculatedInputScopeChoice() {
   return (
     <>
       <ChoiceSelect<CalculatedInputScope>
+        aria-label={t`Calculated finished-good expiry`}
         value={current}
         onChange={setValue}
         options={[
@@ -530,6 +534,7 @@ function ExpiredEntityPolicyChoice() {
   return (
     <>
       <ChoiceSelect<ExpiredEntityPolicy>
+        aria-label={t`When expired stock is used`}
         value={current}
         onChange={setValue}
         options={[
@@ -570,6 +575,7 @@ function IncompletePickingListPolicyChoice() {
   return (
     <>
       <ChoiceSelect<IncompletePickingListPolicy>
+        aria-label={t`Finishing an incomplete pick`}
         value={current}
         onChange={setValue}
         options={[
@@ -605,6 +611,7 @@ function ReturnPickedMaterialTimingChoice() {
   return (
     <>
       <ChoiceSelect<ReturnPickedMaterialTiming>
+        aria-label={t`Returning unused picked material`}
         value={current}
         onChange={setValue}
         options={[

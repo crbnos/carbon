@@ -40,6 +40,8 @@ import {
   Table,
   Tbody,
   Td,
+  Th,
+  Thead,
   Tr,
   toastError,
   useDisclosure,
@@ -321,6 +323,18 @@ const GaugeCalibrationRecordForm = ({
                 </span>
                 <Card className="flex-grow px-0">
                   <Table>
+                    {/* Each cell's field shows its own label; the header row
+                        names the columns for assistive technology. */}
+                    <Thead className="sr-only">
+                      <Tr>
+                        <Th>
+                          <Trans>Reference</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Actual</Trans>
+                        </Th>
+                      </Tr>
+                    </Thead>
                     <Tbody>
                       {Array.from({ length: numAttempts }).map((_, index) => (
                         <Tr key={index}>
@@ -362,6 +376,7 @@ const GaugeCalibrationRecordForm = ({
                     <Trans>Notes</Trans>
                   </Label>
                   <Editor
+                    label={t`Notes`}
                     initialValue={notes}
                     onUpload={onUploadImage}
                     onChange={(value) => {
@@ -412,6 +427,7 @@ const GaugeCalibrationRecordForm = ({
               <VStack className="w-full">
                 <div className="w-full">
                   <Combobox
+                    aria-label={t`Gauge`}
                     options={gaugeOptions}
                     onChange={(value) => {
                       onGaugeSelected(value);

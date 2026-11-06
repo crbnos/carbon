@@ -27,7 +27,11 @@ import {
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import {
   data,
   Link,
@@ -72,6 +76,7 @@ import type { action as cancelJobAction } from "~/routes/x+/assembly+/$id.jobs.c
 import type { action as convertModelAction } from "~/routes/x+/assembly+/$id.model.convert";
 import type { action as setComponentsAction } from "~/routes/x+/assembly+/$id.steps.components.$stepId";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -81,6 +86,9 @@ export const handle: Handle = {
   ),
   module: "production"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.instruction?.name, "Assembly Instruction");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

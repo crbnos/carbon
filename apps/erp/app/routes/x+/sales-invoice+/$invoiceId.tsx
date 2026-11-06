@@ -13,7 +13,11 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { STRIPE_CONNECT_INTEGRATION } from "@carbon/stripe/send-sales-invoice.server";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
@@ -34,6 +38,7 @@ import {
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
@@ -57,6 +62,9 @@ export const handle: Handle = {
 };
 
 const logger = getLogger("erp", "sales-invoice");
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.salesInvoice?.invoiceId, "Sales Invoice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(

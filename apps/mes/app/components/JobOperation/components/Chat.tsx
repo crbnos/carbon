@@ -205,6 +205,7 @@ export function OperationChat({
           <Input
             className="flex-1"
             placeholder={t`Type a message...`}
+            aria-label={t`Message`}
             name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}

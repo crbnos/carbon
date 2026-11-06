@@ -128,7 +128,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? "Supplier Quote" : "New Supplier Quote"}
           </CardTitle>
           {!isEditing && (

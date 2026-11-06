@@ -234,6 +234,7 @@ function GovernmentSetupInstructions() {
 export function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       width="216"
       height="49"
       viewBox="0 0 216 49"
