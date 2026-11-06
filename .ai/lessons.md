@@ -4580,3 +4580,13 @@ publishes it. After moving any building block, check `git diff` on
 regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
 
 **Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.
+
+## Reference images guide structure within the docs theme
+
+**Context:** A user provided a dark screenshot to illustrate an accounting journal layout.
+
+**Problem:** Copying the screenshot’s colors replaced the established documentation styling.
+
+**Rule:** Carry over the requested information structure, such as numbered events and Account/DR/CR rows, while keeping the existing site theme unless the user explicitly asks to change it.
+
+**Applies to:** Documentation layout revisions based on reference screenshots.
