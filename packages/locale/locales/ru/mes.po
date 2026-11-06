@@ -1827,6 +1827,9 @@ msgstr "Нет заблокированных рабочих центров"
 msgid "No work centers exist"
 msgstr "Рабочие центры отсутствуют"
 
+msgid "Non-nettable"
+msgstr "Не учитывается в MRP"
+
 msgid "None"
 msgstr "Нет"
 
@@ -1835,6 +1838,9 @@ msgstr "Не запланировано"
 
 msgid "Not set"
 msgstr "Не установлено"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Непригодный к использованию запас. MRP и планирование его не учитывают, а комплектация из него не берёт."
 
 msgid "Notes"
 msgstr "Примечания"

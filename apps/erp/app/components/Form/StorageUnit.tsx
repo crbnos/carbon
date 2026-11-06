@@ -21,9 +21,11 @@ import {
   CreatableCombobox as CreatableComboboxBase,
   useDisclosure
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { MouseEventHandler } from "react";
 import { useMemo, useRef, useState } from "react";
 import { useQuantityFormatter } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { getStorageUnitsList } from "~/modules/inventory/inventory.service";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
 import type { ListItem } from "~/types";
@@ -187,6 +189,8 @@ export function useStorageUnitLeafOptions(
   const filterStocked =
     stockedOnly && !!itemId && (!!knownQuantities || !!fetchedQuantities);
   const formatQuantity = useQuantityFormatter();
+  const nonNettable = useNonNettableStorageUnits();
+  const { t } = useLingui();
 
   return useMemo(() => {
     const byId = new Map(rows.map((r) => [r.id, r]));
@@ -208,14 +212,17 @@ export function useStorageUnitLeafOptions(
           .filter(Boolean)
           .join(" / ");
         const quantity = quantities.get(r.id) ?? 0;
+        const detail =
+          itemId && (!stockedFirst || quantity !== 0)
+            ? `Qty: ${formatQuantity(quantity)}`
+            : ancestorPath || undefined;
         return {
           value: r.id,
           label: r.name,
           quantity,
-          helper:
-            itemId && (!stockedFirst || quantity !== 0)
-              ? `Qty: ${formatQuantity(quantity)}`
-              : ancestorPath || undefined
+          helper: nonNettable.has(r.id)
+            ? [t`Non-nettable`, detail].filter(Boolean).join(" · ")
+            : detail
         };
       })
       .sort((a, b) => {
@@ -236,7 +243,9 @@ export function useStorageUnitLeafOptions(
     filterStocked,
     keepId,
     excludeId,
-    formatQuantity
+    formatQuantity,
+    nonNettable,
+    t
   ]);
 }
 
@@ -327,6 +336,8 @@ type StorageUnitProps = {
   /** On-hand of `itemId` per storage unit, when the caller has it. */
   quantities?: Map<string, number>;
   onChange?: (storageUnit: ListItem | null) => void;
+  "aria-label"?: string;
+  "aria-describedby"?: string;
 };
 
 const toListItem = (id: string, options: StorageUnitOption[]): ListItem => ({
@@ -355,7 +366,9 @@ function StorageUnit({
   excludeId,
   storageUnits,
   quantities,
-  onChange
+  onChange,
+  "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy
 }: StorageUnitProps) {
   const options = useStorageUnitLeafOptions(locationId, itemId, {
     stockedFirst,
@@ -412,11 +425,12 @@ function StorageUnit({
     <>
       <CreatableComboboxBase
         ref={triggerRef}
+        aria-label={ariaLabel ?? label}
+        aria-describedby={ariaDescribedBy}
         options={options}
         value={value ?? undefined}
         isReadOnly={readOnly}
         isClearable
-        aria-label={label}
         placeholder={placeholder}
         className={className}
         onClick={onClick}

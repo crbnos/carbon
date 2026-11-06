@@ -273,7 +273,7 @@ applies.
   reversal would take a bin below zero — a serial or batch is checked on its own, so a unit that
   was moved, picked or shipped after posting is caught even when the bin holds other stock — and
   refuses a purchase receipt whose untracked inspection lot was rejected (the reject route already
-  wrote that stock off). `ReceiptVoidModal` shows a refused `voidReceipt` in place and stays
+  wrote that stock off) or marked Partial (its remainder stays under its NCR). `ReceiptVoidModal` shows a refused `voidReceipt` in place and stays
   open. A serial from a voided receipt can be entered on a new receipt: `saveReceiptSerialBox`
   reuses the same tracked entity (`idsWithLiveStockHistory` ignores the ledger rows of voided
   receipts, `onVoidedReceipt` lifts the "taken by another box" refusal), so one unit keeps one

@@ -285,6 +285,7 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
+      nonNettableStorageUnits: `${api}/inventory/non-nettable-storage-units`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
@@ -2453,6 +2454,7 @@ export const path = {
     receiptLinesTracking: (id: string) =>
       generatePath(`${x}/receipt/lines/tracking`),
     receiptPost: (id: string) => generatePath(`${x}/receipt/${id}/post`),
+    receiptPutAway: (id: string) => generatePath(`${x}/receipt/${id}/put-away`),
     receiptRoot: `${x}/receipt`,
     receipts: `${x}/inventory/receipts`,
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),

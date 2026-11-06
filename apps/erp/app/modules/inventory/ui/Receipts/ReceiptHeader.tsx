@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
+  Badge,
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
@@ -14,7 +16,15 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCheckCheck, LuCreditCard, LuTicketX, LuTrash } from "react-icons/lu";
+import {
+  LuArrowRightLeft,
+  LuCheckCheck,
+  LuClipboardCheck,
+  LuCreditCard,
+  LuPackageCheck,
+  LuTicketX,
+  LuTrash
+} from "react-icons/lu";
 import { Link, useNavigation, useParams } from "react-router";
 import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
@@ -26,6 +36,7 @@ import type {
   ReceiptLine
 } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
+import ReceiptInspectionStatus from "./ReceiptInspectionStatus";
 import ReceiptPostModal from "./ReceiptPostModal";
 import ReceiptStatus from "./ReceiptStatus";
 import ReceiptVoidModal from "./ReceiptVoidModal";
@@ -41,6 +52,9 @@ const ReceiptHeader = () => {
     receiptLineTracking: ItemTracking[];
     fixedAssetLines: { id: string; received: boolean }[];
     rentalLines: { id: string; received: boolean }[];
+    inspectedItemIds: string[];
+    putAwayReadyCount: number;
+    putAwayTransfers: { id: string; stockTransferId: string; status: string }[];
   }>(path.to.receipt(receiptId));
 
   const permissions = usePermissions();
@@ -81,6 +95,24 @@ const ReceiptHeader = () => {
 
   const hasTrackingLabels = (routeData?.receiptLineTracking ?? []).length > 0;
 
+  const inspectedItemIds = routeData?.inspectedItemIds ?? [];
+  const requiresInspection =
+    !isPosted &&
+    !isVoided &&
+    receiptLines.some(
+      (line) =>
+        line.requiresInspection ||
+        (!!line.itemId && inspectedItemIds.includes(line.itemId))
+    );
+  const putAwayReadyCount = routeData?.putAwayReadyCount ?? 0;
+  const putAwayTransfers = routeData?.putAwayTransfers ?? [];
+  const canPutAway =
+    permissions.can("create", "inventory") && permissions.is("employee");
+  const putAwayRules = useRuleViolations({
+    action: path.to.receiptPutAway(receiptId)
+  });
+  const isCreatingPutAway = putAwayRules.fetcher.state !== "idle";
+
   // Only a purchase-order receipt is billed from here; once it is, the
   // invoice is listed under Documents instead.
   const showInvoice =
@@ -98,7 +130,18 @@ const ReceiptHeader = () => {
     <>
       <DocumentPageHeader
         title={receipt.receiptId}
-        status={<ReceiptStatus status={status} />}
+        status={
+          <>
+            <ReceiptStatus status={status} />
+            <ReceiptInspectionStatus status={receipt.inspectionStatus} />
+            {requiresInspection && (
+              <Badge variant="secondary" className="gap-1">
+                <LuClipboardCheck className="size-3" />
+                <Trans>Inspection required</Trans>
+              </Badge>
+            )}
+          </>
+        }
         meta={[
           <Trans key="created">
             Created <DateTime value={receipt.createdAt} variant="relative" /> by{" "}
@@ -119,6 +162,15 @@ const ReceiptHeader = () => {
         ]}
         menuItems={
           <>
+            {putAwayTransfers.map((transfer) => (
+              <DropdownMenuItem key={transfer.id} asChild>
+                <Link to={path.to.stockTransfer(transfer.id)}>
+                  <DropdownMenuIcon icon={<LuArrowRightLeft />} />
+                  <Trans>Putaway {transfer.stockTransferId}</Trans>
+                </Link>
+              </DropdownMenuItem>
+            ))}
+            {putAwayTransfers.length > 0 && <DropdownMenuSeparator />}
             {isPosted && isVoidable && (
               <>
                 <DropdownMenuItem
@@ -150,6 +202,17 @@ const ReceiptHeader = () => {
         }
         actions={
           <>
+            {isPosted && putAwayReadyCount > 0 && (
+              <Button
+                variant="primary"
+                leftIcon={<LuPackageCheck />}
+                isDisabled={!canPutAway || isCreatingPutAway}
+                isLoading={isCreatingPutAway}
+                onClick={() => putAwayRules.submit(new FormData())}
+              >
+                <Trans>Put Away</Trans>
+              </Button>
+            )}
             {hasTrackingLabels && (
               <PrintButton
                 sourceDocument="Receipt"
@@ -224,6 +287,7 @@ const ReceiptHeader = () => {
         }
       />
 
+      <putAwayRules.ViolationModal />
       {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
       {voidModal.isOpen && (
         <ReceiptVoidModal

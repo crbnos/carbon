@@ -67,9 +67,10 @@ receipt lot: with no statistical failure, `RejectLotModal` requires a reason (a 
 counterfeit, the wrong part, transit damage), which `rejectInspection` passes to the engine
 as `reason`. Reject/Partial can auto-create an NCR
 whose description includes the failed features (documentation only — never
-required, and the NCR does not drive the physical outcome). The **ERP receipt
-UI** exposes **Accept** and **Reject** (its `$id.partial.tsx` route exists but
-has no header button). The **MES job-operation UI** exposes **Accept**,
+required, and the NCR does not drive the physical outcome), except an untracked
+receipt Partial, whose NCR is required (see "Goods-in inspection hold"). The
+**ERP receipt UI** exposes **Accept**, **Reject** and **Partial**
+(`PartialLotModal`, the `partialInspection` operation). The **MES job-operation UI** exposes **Accept**,
 **Partial**, and **Reject**, and its dispositions carry their physical
 production outcome (see "Disposition → production outcome" below). All three
 terminal statuses (Passed/Failed/**Partial**) are hard-terminal in the engine
@@ -95,12 +96,16 @@ strings (cosmetic).
   `itemSamplingPlan`** — plans that existed were backfilled onto the item's
   documents via `partId`). NULL default = All (100%).
 - `inspection` (lot level, PK = `id`) — `inspectionId` (human id, `II` seq,
-  unique per company), `receiptLineId` (**unique** — one lot per receipt line), `receiptId`,
-  `itemId`, `itemReadableId`, `supplierId`, `lotSize`, snapshot of the resolved plan
+  unique per company), the generic `sourceDocument*` columns (one lot per
+  `sourceDocumentLineId`; `receiptId` / `receiptLineId` were dropped in
+  `20260722132135`), `itemId`, `supplierId`, `lotSize`, snapshot of the resolved plan
   (`samplingStandard`, `samplingPlanType`, `sampleSize`, `acceptanceNumber`,
   `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`),
-  `status` (`inspectionStatusType`: Pending/In Progress/Passed/Failed/Partial),
-  `dispositionedBy`/`dispositionedAt`. **No `itemTrackingType` column** — joined from `item`.
+  `status` (`inspectionStatusType`: Pending/In Progress/Passed/Failed/Partial/
+  **Cancelled** — the lot of a voided receipt, `20261106020101`),
+  `storageUnitId` (where the held stock sits) and `acceptedQuantity` (a Partial
+  lot's passed part) from `20261106020122`, `dispositionedBy`/`dispositionedAt`.
+  **No `itemTrackingType` column** — joined from `item`.
 - `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
   (`inspectionSampleStatusType`: Pending/Passed/Failed), `inspectedBy`/`inspectedAt`.
@@ -258,8 +263,296 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
    across features (or the snapshot size when featureless), and (after the insert `.returning`s
    the lot ids) batch-inserts the `inspectionSamplingPlan` rows.
 3. **Tracked entities for items with a Receipt-usage assignment are set to `"On Hold"` at
-   receipt** (not Available); everything else flips to `Available`. They are released
-   individually by sample inspection / derived measurement status or en masse by lot disposition.
+   receipt** (not Available); everything else flips to `Available`. They stay On Hold until
+   the lot is decided: a sample verdict records an Inspect activity and leaves the unit
+   On Hold, and the decision sets each unit's status.
+4. Each lot records `storageUnitId` (the line's unit), and the line's
+   `requiresInspection` flag is set for every line that got a lot. Outside
+   processing lines get no lot, and neither does a line its project consumes at
+   receipt (`isConsumedByProjectAtReceipt`: received and issued at once, so no
+   stock stays to hold); the post checks ask such a line for no held unit.
+
+## Goods-in inspection hold (spec `.ai/specs/2026-11-03-goods-in-inspection-hold.md`)
+
+- **Where it lands.** `location.inspectionStorageUnitId` / `rejectedStorageUnitId`
+  (both non-nettable, refused otherwise by `updateQualitySettings`; card
+  `GoodsInStorageCard` on Settings → Quality, saved with the company settings
+  in one transaction; inactive units are refused too, and so is one unit for
+  both. The card sends only the unit that changed; `setLocationGoodsInStorage`
+  keeps an unsent one and checks the pair under the location's row lock). The BEFORE interceptor
+  `check_location_goods_in_storage_units` refuses a unit of another location
+  or company, an inactive unit and a nettable one. `createDocument` sets
+  `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
+  inspection unit; sales return lines default there too (the RMA disposition
+  releases them, no lot). `postReceipt` refuses an inspected Purchase Order line
+  on a nettable unit, on a unit of another location, or at a location with no
+  inspection unit. The check (`unheldInspectedLineRefusal`) runs again inside
+  the posting transaction on the lines it posts, and `updateReceiptLines`
+  locks the Draft receipt (`FOR SHARE`) with its write, so an edit cannot slip
+  between the check and the post. `updateReceiptLines` writes the line's
+  storage unit with the system client, so it first refuses a unit of another
+  company or of another location than the line (or its receipt).
+- **The hold.** `check_inspection_hold` (a statement handler on `itemLedger`:
+  it runs once per INSERT statement, after its rows are in, and does nothing on
+  UPDATE or DELETE) refuses a statement with a negative row of an `On Hold`
+  unit whose receipt line's lot is open
+  (`Pending` / `In Progress`; a unit On Hold for another reason, such as an RMA
+  return, is not its to refuse), or with untracked moves out that leave an
+  (item, unit) below `inspection_held_quantity` (open lots' lot size, plus a
+  Partial lot's `lotSize - acceptedQuantity` until its NCR is Closed). Whether
+  a lot holds stock is one SQL predicate, `inspection_lot_holds(id, status,
+  acceptedQuantity)` (`20261106020122`, no SET clause, so it can inline):
+  the guard's EXISTS (on `inspection_hold_idx`), `inspection_held_quantity` and
+  the lot and NCR interceptors all call it. The
+  statement is judged as a whole: its rows at one (item, unit) net, and one
+  breach refuses every row. For each held (item, unit) it takes
+  `pg_advisory_xact_lock` per (company, item, unit), in one sorted order, then
+  reads held and on-hand in one statement, so two concurrent moves cannot both
+  pass on one on-hand read. It runs after `apply_item_stock_quantities` has locked
+  the statement's stock rows, so two transactions that each move one item out
+  of a held unit for different project stripes, over several statements, can
+  deadlock (40P01); Postgres aborts one, which can be retried. On-hand counts only rows with no tracked entity: a
+  serial or batch unit is held by its own status. It raises a plain
+  `RAISE` (P0001): any other SQLSTATE reads as a server failure and the API
+  withholds its text. It steps aside for `app.inspection_release = 'on'` and
+  for
+  `app.sync_in_progress` (dataset apply, test fixtures). The release flag
+  covers only the write that IS the release (`withInspectionRelease(trx, fn)`,
+  `@carbon/database/quality`, turns it on for one step and restores it): the
+  lot's own update in `dispositionInspection`, the NCR's status change in
+  `closeIssue`, and a purchase receipt void's cancelled lots. Each runs first;
+  the unit flips, rejected moves, write-offs (`post-nonconformance` sets no
+  flag) and the void's reversal follow with the guard on. A decided lot, a
+  Partial lot whose NCR is closed and a cancelled lot hold nothing, so the
+  guard lets their stock go and still refuses what another lot holds, and a
+  unit still On Hold under an open lot (an NCR's Scrap of such a unit is
+  refused). `setInspectionRelease` (the whole transaction) is left only for an
+  inventory count, the return shipments and a company restore or import's
+  load. A sales-return receipt void opens no lot and runs with the guard on.
+  Samples and measurements do not set it: they change no unit's status.
+  Samples, measurements, document swaps and gauge records read the lot's
+  status again under its row lock after the receipt's lock (`lockOpenLot`, which refuses a closed lot),
+  so none acts on a decision's stale "before". The two hold tests have one SQL
+  definition each: `inspection_line_lot_open(company, receipt line)` (a serial
+  or batch unit's lot is open) and `inspection_holds_at(company, item, unit,
+  open_lots_only)` (a lot holds untracked stock there). A return shipment
+  runs under the flag (it puts back and ships a rejected lot's write-off), so
+  `refuseShippingOpenLotStock` (`inventory.service.ts`) checks, after its
+  ledger rows, that no On Hold unit of an open lot left and, only for an
+  (item, unit) where an open lot holds stock (the guard's EXISTS on
+  `inspection_hold_idx`), under the guard's advisory lock, that its untracked
+  on-hand still covers what the open lots hold (`held > 0`, as the guard). A
+  return from any other bin posts even when it leaves the bin below zero; a
+  Partial lot's remainder may ship to the supplier while its NCR is open, but
+  not to a customer: a return-to-customer shipment passes `includePartial`,
+  which counts it (`inspection_held_quantity`'s `p_open_lots_only` is false).
+  Untracked on-hand at an (item, unit) has one definition,
+  `inspection_untracked_on_hand`, which the guard and every pre-check call. A lot
+  holds untracked stock only in a non-nettable unit: lots open before the hold
+  existed were left without a `storageUnitId`, and the roll-up counts only
+  such lots (`20261106020122`). Its on-hand read is served by the partial
+  index `itemLedger_untracked_storageUnit_item_idx` (`storageUnitId, itemId,
+  companyId` INCLUDE `quantity`, untracked rows only), an index-only scan.
+- **No release by a direct edit.** Six BEFORE interceptors (the generated
+  handlers migration, `20261106061223`) refuse, with a plain `RAISE`, what
+  would release held stock without moving it, unless `app.inspection_release`
+  is on or `app.sync_in_progress` is set: `check_inspection_lot_release` on
+  `inspection` (a Receipt lot's `status`, except Pending ↔ In Progress, which
+  samples drive; while it holds stock — open, or Partial until its NCR
+  closes (`inspection_lot_holds`) — its
+  `storageUnitId`, `acceptedQuantity`, `lotSize`, `itemId` and
+  `sourceDocumentLineId`; and a DELETE of a lot that holds stock, per
+  `inspection_lot_holds`: a lot from before the hold, with no `storageUnitId`,
+  holds stock only while units of its line are On Hold, so it is deleted
+  otherwise); `check_nonconformance_inspection_release` on
+  `nonConformance` (a change of `status` to Closed, or a DELETE, while the NCR
+  is linked to a Partial untracked receipt lot with a held remainder; it
+  returns at once for any other update; `closeIssue` sets the release flag in
+  its status-flip transaction, and `openInspectionNcr` in the Kysely delete
+  that removes an NCR it opened when a later step failed);
+  `check_nonconformance_inspection_link` on `nonConformanceInspection` (an
+  INSERT or UPDATE that links such a lot to an NCR that is already Closed, and
+  an UPDATE of its keys or a DELETE that takes the link from such a lot;
+  `openInspectionNcr` and the MES link a new, open NCR, which passes);
+  `check_location_goods_in_storage_units` (above);
+  `check_tracked_entity_inspection_hold` on
+  `trackedEntity` (a status change FROM `On Hold`, or a change of its
+  `Receipt Line` attribute, while that line has a Pending or In Progress lot;
+  it returns at once for a unit that is not On Hold); and
+  `check_goods_in_storage_unit` on `storageUnit` (a change that makes
+  `effectiveNettable` true, `active` false, or moves the unit to another
+  `locationId`, while a location names the unit as `inspectionStorageUnitId`
+  or `rejectedStorageUnitId`, or while a lot still holds stock in it, per
+  `inspection_lot_holds`, so a unit Settings no longer names stays protected
+  until its lots are decided). `effectiveNettable`
+  is only written by `util.refresh_storage_unit_nettable` as an UPDATE of the
+  unit, so a change of the unit's own flag, a parent's or a storage type's all
+  reach that check. A company restore or import sets `app.inspection_release`
+  (not `app.sync_in_progress`, which would also stop the event queue and the
+  other sync handlers) in its load transaction, so without replica mode the
+  guard and these checks step aside for restored and wiped rows. A dataset
+  wipe runs under `app.sync_in_progress`. Deleting a company (or a subsidiary,
+  `deleteSubsidiary`) is never refused: inside its cascade the company row is
+  already gone, and the lot, NCR and link checks return when it is (they read
+  it only just before they would refuse).
+- **Decided once.** A receipt lot takes one decision: `dispositionInspection`
+  refuses any decision on a closed receipt lot (Passed, Failed, Partial,
+  Cancelled) — "This lot is already decided." (a Partial lot and a Cancelled
+  one keep their own messages) — except Reject repeated on a Failed lot, the
+  write-off retry. That retry flips no unit and moves nothing (the lot is not
+  open); it returns the write-off again, which `post-nonconformance` books
+  once per lot. `rejectInspection` keeps the NCR the lot already has: a
+  repeated Reject (double submit, second tab, API) returns that NCR's id and
+  opens none (`oncePerLot`, and a conflict returns the link a concurrent call
+  wrote).
+- **Disposition.** Reject and Partial on an open receipt lot move rejected stock
+  to the rejected unit (`Direct Transfer` rows, `documentId` = lot id); an
+  untracked lot's `storageUnitId` follows its held remainder. An untracked
+  Reject writes off from the held unit, and the ERP `rejectInspection` posts
+  that write-off (`post-nonconformance`, which joins a caller's transaction
+  through `withTransaction`) inside `ctx.transaction` with the decision
+  (`dispositionInspection` joins a transaction it is handed): if the write-off
+  fails, the lot stays open and holds its stock, so a Failed lot never leaves
+  stock free to move before its write-off. Partial on an untracked lot
+  needs `acceptedQuantity` and an NCR (`partialInspection` checks
+  `inspectionNcrPrerequisite` before the lot closes, then `openInspectionNcr`,
+  at the receipt line's location; its links insert in the NCR's transaction).
+  The engine refuses an untracked Partial whose rejected quantity is more than
+  what the lot can claim at the held unit (untracked on-hand less what other
+  lots hold there, as for Reject), whether or not a rejected unit is set (the
+  message says a Reject is possible). The claim has one definition,
+  `lotClaimableAtUnit` (`@carbon/database/quality`), shared by Reject, Partial
+  and an NCR's Scrap of a Partial remainder. It takes the item's stock rows at
+  the unit's location, then the hold guard's lock on the unit (the order every
+  ledger write takes them) before it reads, so two claims in one unit run one
+  after the other. A Reject reads its stripes after that. A lot from before
+  the hold (no `storageUnitId`) holds its Partial remainder where it is only
+  when that unit is non-nettable (the lot then records it); in a pickable bin
+  nothing is held and the claim is not checked. An untracked Reject writes off
+  what the lot can still claim in its held unit: the untracked on-hand less
+  what other lots hold there (`inspection_held_quantity` less its own lot
+  size), at most its lot size and never below zero; nothing to claim posts no
+  write-off. A count records reality under the release flag, so the held unit
+  can be short. A Reject of a lot from before the hold, with no
+  `storageUnitId`, writes off its lot size as before, and a retry whose
+  write-off already posted takes nothing more. An untracked Partial needs an
+  accepted quantity above 0 ("That is the whole lot rejected. Use Reject Lot
+  instead."). Quantities are rounded with `round` and
+  compared with `EPSILON` (`@carbon/database/precision`).
+  **Project stock.** The moves keep the stripe (`itemLedger.projectId`): an
+  untracked move draws per stripe from `heldStockStripes` (the stripes the
+  lot's own rows — its receipt, its rejected move — put in the unit first,
+  then the rest by quantity) with `drawHeldStripes`, writing `projectId` on
+  both rows; a serial or batch unit moves on the stripe its rows hold it in.
+  The Reject write-off comes back as `writeOff.stripes` (one row per stripe,
+  what none covers from unassigned stock), and `closeIssue` draws a Partial
+  lot's scrapped remainder the same way; `post-nonconformance` takes a
+  movement's `projectId` for untracked stock.
+  If a Partial committed but its NCR did not open, `partialInspection` says so
+  ("Lot marked partial, but its NCR did not open. Use Open NCR."), not that the
+  decision failed; a read error is not reported as a missing lot, and a second
+  submit that finds the lot already marked partial by the first returns that
+  decision. Open NCR then opens it: for the recorded remainder (untracked), or for the failed units of a
+  serial or batch lot that has failed units and no linked issue (with
+  `createNcr`), through `openInspectionNcr`'s `oncePerLot` path; this opens an
+  NCR and does not decide the lot again. The inspection page offers it as
+  **Open NCR**, which asks for the issue type (`OpenNcrModal`); for a serial
+  or batch lot, whose NCR is optional, the button is secondary and the dialog
+  offers "an NCR for the failed units" instead of saying it did not open. A
+  serial Partial needs a failed unit (a Failed sample with a tracked entity of
+  the lot), a Passed sample and complete sampling (each feature's
+  `recorded >= sampleSize`; with no features, inspected samples >= the lot's
+  `sampleSize`) — the MES's `passes > 0 && fails > 0`, without its 100% rule,
+  plus Accept's completeness. A batch lot's samples carry no entity, so a batch
+  Partial is refused ("A batch lot is accepted or rejected as a whole.", the
+  disabled button's tooltip too). It accepts every unit that did not fail (as Accept does),
+  sets the failed units Rejected, and records the accepted quantity as
+  `acceptedQuantity`. The ERP Partial button applies the same gate
+  (`canPartial`).
+  `dispositionInspection` locks the receipt
+  (`FOR NO KEY UPDATE`, the order a void takes, and the row the roll-up
+  updates), then the lot (`FOR UPDATE`), before any status check, so of two
+  decisions at once the second reads the first's status; `partialInspection`
+  opens its NCR with `oncePerLot` (the lot row locked, then a check for an
+  existing link), so two calls open one NCR. A database error other than a
+  `RAISE` never reaches the caller in its raw text.
+  `closeIssue` writes a Partial receipt lot's scrapped remainder off from the
+  held unit at the receipt location (only for rows of the lot's own item), and
+  Use As Is books nothing (closing releases the hold). Use As Is or Rework on
+  a rejected lot's NCR restores the write-off where it was taken: from the
+  lot's `Inbound Inspection` write-off rows, per location, storage unit and
+  project stripe. On a receipt lot it restores no more than the write-off, so a
+  lot counted short gets back only what its Reject wrote off; a job operation
+  lot's NCR, which has no write-off, restores at the NCR's location, as
+  before. An NCR can hold several lots: the restore reads every linked lot's
+  write-off, and a Partial receipt lot among them decides how the NCR closes.
+  The close takes the issue lock (`lockIssueDispositions`) first and refuses
+  when a row, a tracked link or a linked lot changed since its plan was read.
+  The NCR closes first (the release), then the write-off posts and the units
+  change with the guard on, in one transaction. A Partial lot's Scrap is
+  planned inside that transaction, under the stock-row and guard locks: no
+  more than its remainder (`lotSize - acceptedQuantity`), no more than other
+  lots leave in the unit (`lotClaimableAtUnit`), drawn from the stripes it is
+  held on, so another lot's stock is never taken. A lot that recorded no unit
+  writes off from its receipt line's unit (`inspectionReceiptLine`), or from
+  the stock in no unit at its location when the line had none. A tracked Scrap posts
+  against each entity's current storage unit. A voided receipt's lot answers
+  "The receipt of this inspection was voided" before "closed".
+- **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by
+  `sync_receipt_inspection_status` → `refresh_receipt_inspection_status`
+  (after-interceptors on `inspection` and `stockTransfer`). Cancelled lots are
+  ignored, and so is every lot of a voided receipt: the void calls the refresh
+  after it sets the receipt `Voided`, so the receipt reads **Not Required** and
+  leaves the queues. Put Away is judged per receipt line: the picked quantity of its
+  completed linked transfer lines must cover its passed quantity.
+- **Put Away.** `createReceiptPutAway` runs the `stockTransfer` storage rules,
+  then `insertReceiptPutAway` locks the receipt, reads `getReceiptPutAwayLines`
+  and inserts one stock transfer (`stockTransfer.receiptId`, line
+  `receiptLineId`) in one Kysely transaction, from the receipt line's own
+  storage unit. A line of
+  a completed transfer counts only what it picked, so a putaway completed short
+  offers the rest again. An untracked line is also capped by what is free in
+  its unit: untracked on-hand less `inspection_held_quantity` less the unpicked
+  part of open linked transfer lines, shared by the receipt's lines of one
+  (item, unit) in line order. Accepted stock moved off by an ordinary transfer
+  is not offered, so such a line never reaches its passed quantity and the
+  receipt never rolls up to **Put Away**; that is accepted. Picking a putaway
+  line (`receiptLineId` set, untracked) beyond the untracked on-hand left at
+  its source unit is refused inside the pick's transaction
+  (`putAwayPickShortfall`, single pick and Pick All); an ordinary transfer
+  pick is not checked.
+- **Void.** A receipt void sets its open lots `Cancelled`. It refuses a receipt
+  with an untracked lot that is Failed (written off) or Partial (its remainder
+  is held under its NCR, which a void cannot close).
+- **Counts.** `postInventoryCount` returns `heldStockWarnings`; a serial or
+  batch unit On Hold before the count whose receipt lot is still open is
+  flagged `awaitingInspection` (an On Hold unit with no open lot, such as an
+  RMA return, is not reported), and the post message sends those to Quality
+  instead of a stock transfer. Untracked stock taken below what an open lot
+  holds is `countedShort` when the count found none of the part in another
+  unit ("counted short in its inspection unit … Reject writes off what is
+  there", with the unit's `onHand` and the lots' `held` quantity), otherwise it
+  was found elsewhere ("Move it back").
+- **Adjustments.** `adjustInventory` asks `inspectionHoldAdjustmentRefusal`
+  before the storage rules (a Set Quantity sets one project stripe, so the
+  other stripes stay in the count), so a warning rule is not acknowledged for an
+  adjustment the hold refuses; `post-inventory-adjustment` refuses any
+  adjustment of a serial or batch unit On Hold under its open receipt lot (an
+  increase would add units the decision then moves).
+- **Receipt lines.** `updateReceiptLines` refuses a negative received quantity
+  on a line with `requiresInspection`, unless it is a return line (negative
+  order quantity). Other lines keep a negative quantity.
+- **Outside processing** receipt lines open no lot, and their tracked units
+  stay Available.
+- **Put Away acknowledgement.** The receipt's Put Away button submits through
+  `useRuleViolations`, so a warn-severity storage rule asks to be
+  acknowledged and the route passes `acknowledged` to `createReceiptPutAway`.
+- Pinned by `supabase/tests/inspection-hold.test.sql` and
+  `apps/erp/test/database/inspection-hold.test.ts`,
+  `inspection-hold-worst-cases.test.ts`, `inspection-hold-concurrency.test.ts`,
+  `inspection-hold-partial-short.test.ts`,
+  `inspection-hold-project.test.ts`, `inspection-hold-edges.test.ts` and
+  `inspection-hold-return-shipment.test.ts`.
 
 ## Job Operation → inspection flow (MES, added 2026-07-26)
 
@@ -296,11 +589,12 @@ Concurrent first-opens are settled by the partial unique index (23505 → resele
   `requirePermissions({ update: "quality" })` → MES validators
   (`~/services/models`) → the shared engine with `getDatabaseClient()`
   (`apps/mes/app/services/database.server.ts`, same singleton as ERP's).
-- **WIP entities are never flipped by sampling or by the quality engine.** The
-  entity flips in `upsertInspectionSample` / `upsertInspectionMeasurement` (and
-  their `applySampleEntityStatus` activity writes) are guarded
-  `sourceDocument === "Receipt"`, matching `dispositionInspection`'s existing
-  guard — job WIP entities keep their job-owned status (Reserved etc.). The
+- **WIP entities are never flipped by sampling or by the quality engine.**
+  Sampling flips no entity at all; the Inspect activity writes of
+  `upsertInspectionSample` / `upsertInspectionMeasurement`
+  (`recordSampleInspectActivity`) are guarded `sourceDocument === "Receipt"`,
+  matching `dispositionInspection`'s guard — job WIP entities keep their
+  job-owned status (Reserved etc.). The
   ONE exception lives in the production-outcome layer, not the engine: the MES
   disposition route flips the **scrap-allocated** serial subset to `Rejected`
   (see below).
@@ -459,11 +753,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
   - **Voided receipt (2026-10-16):** a Receipt lot whose receipt is `Voided` is
     closed too. `assertReceiptNotVoided` (reads the receipt `FOR SHARE`, so it waits
-    for a void in progress) refuses samples, measurements, gauges, document swaps and
+    for a void in progress; samples, measurements and dispositions update the
+    lot and so the receipt's roll-up, and take `FOR NO KEY UPDATE` instead, or
+    two lots of one receipt saved at once deadlock) refuses samples, measurements, gauges, document swaps and
     dispositions with "The receipt of this inspection was voided", and the `$id` loader
     passes `receiptVoided` so `InspectionView` treats the lot as closed and shows a
-    "Receipt voided" badge. The lot keeps its Pending status: there is no cancelled
-    inspection status.
+    "Receipt voided" badge. Since 2026-11-03 the void also sets the open lots
+    `Cancelled`; lots of receipts voided earlier were backfilled.
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
     is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is
@@ -473,9 +769,9 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     verdict; deleting the row in the ERP unlocks it (`assertSampleNotLinked`).
   - `upsertInspectionSample` — upsert precedence: by `trackedEntityId` (serial),
     else by `sampleId` (the "Overall result" row re-toggling an anonymous column
-    in place), else insert a fresh anonymous sample. Entity flip + `trackedActivity`
-    via the shared `applySampleEntityStatus` helper; skipped for `Pending`
-    (identify-only) samples. The `$id.sample.tsx` route returns the `sampleId` and,
+    in place), else insert a fresh anonymous sample. A Receipt lot's sample
+    records a `trackedActivity` (`recordSampleInspectActivity`) and leaves the
+    unit On Hold; skipped for `Pending` (identify-only) samples. The `$id.sample.tsx` route returns the `sampleId` and,
     when `quiet=true` (grid overall-result POST), suppresses the success flash.
   - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
     unparseable nominal / non-Measurement types valuate as attributes.
@@ -484,8 +780,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     reading ⇒ Failed; every plan feature Passed on the sample ⇒ Passed; else Pending.
     A feature's n is the required minimum across ANY samples (per-feature disposition
     gating enforces the counts); extra readings up to the lot size are allowed.
-    Applies entity transitions (revert → On Hold, no activity), recomputes
-    non-terminal lot status.
+    Records the Inspect activity on a verdict (the unit stays On Hold) and
+    recomputes non-terminal lot status.
   - `reconcileInspectionSamplingPlans` — lazy per-lot plan rows for features added post-receipt.
   - `changeInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
     plan rows for re-resolution.
@@ -495,16 +791,17 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     the rule both apps' Reject buttons apply, pinned by `packages/database/src/quality.test.ts`)
     or a `reason`, so a lot can be rejected with nothing failed, e.g. a suspected counterfeit,
     and the reason is stored as the lot's `notes`); Accept releases every non-failed lot entity to Available (un-sampled AND
-    partially-inspected Pending samples included); Reject flips all lot entities to
-    Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
-    negative adjustment); Partial leaves entities; always writes `inspectionHistory`.
+    partially-inspected Pending samples included) and sets the failed ones Rejected; Reject flips all lot entities to
+    Rejected (and for a non-tracked Inventory item returns a `writeOff` descriptor the
+    caller posts through `post-nonconformance`); Partial on a receipt lot sets the
+    same units Accept would; always writes `inspectionHistory`.
     Optional **`requireOpen`** (one-shot mode, MES disposition route only): the
-    status UPDATE gains `WHERE status NOT IN (Passed,Failed,Partial)` and the
+    status UPDATE gains `WHERE status NOT IN (Passed,Failed,Partial,Cancelled)` and the
     call throws "Inspection is already dispositioned" on zero rows — concurrency
     safe because a second transaction blocks on the row lock, re-evaluates the
     predicate against the committed terminal status, and matches nothing. ERP
-    receipt lots do NOT pass it, preserving re-disposition (write-off retry)
-    semantics.
+    receipt lots do NOT pass it: the engine decides a receipt lot once by
+    itself, and lets only Reject repeat on a Failed lot (the write-off retry).
   - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
     called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes the `reason` and a "Failed features" block built from the lot's measurements,
@@ -532,10 +829,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 ## Gotchas
 
 - **Lot-based, not entity-based.** The Phase-1 per-entity `inspection` was dropped; read
-  the `20260419163058` migration (and newer) for the real shape. `receiptLineId` is unique — one
-  inspection lot per received line.
-- **Inspection-required tracked entities post `On Hold`, not Available.** They are not on-hand
-  until released by sampling/disposition.
+  the `20260419163058` migration (and newer) for the real shape. One lot per received line
+  (partial unique index on `sourceDocumentLineId`).
+- **Inspection-required tracked entities post `On Hold`, not Available.** They still count
+  in on-hand (`get_inventory_quantities` reports them as `quantityOnHold`); the inspection
+  storage unit being non-nettable is what keeps them out of MRP and picking, and
+  `check_inspection_hold` (statement handler on `itemLedger`) is what keeps them from moving.
 - **`trackedEntityId` is nullable** on samples; serial uniqueness is enforced by a *partial* index.
 - **Inspection *documents* ("Inspection Plans") are authored in the quality module** (list
   at `/x/quality/inspection-plans`, editor at `/x/inspection-document/{id}`; `inspectionDocument`/
@@ -567,9 +866,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and
   the view mirror statuses locally from the action's returned
   `{sampleId, measurementStatus, sampleStatus}`.
-- **MES dispositions are one-shot; ERP receipt dispositions are not.** Only the
-  MES disposition route passes `requireOpen` — don't add it to ERP receipt
-  routes (their Reject retry re-invokes the idempotent `post-nonconformance`).
+- **MES dispositions are one-shot; ERP receipt lots are decided once too.**
+  Only the MES disposition route passes `requireOpen` — don't add it to ERP
+  receipt routes: the engine already refuses a second decision on a receipt
+  lot, and lets their Reject retry re-invoke the idempotent
+  `post-nonconformance`.
 - **A crash between the one-shot close and the postings** leaves a closed lot
   with missing postings (by design — close-first is what makes rework
   un-repeatable). Recovery is manual: post the missing rows from the ERP

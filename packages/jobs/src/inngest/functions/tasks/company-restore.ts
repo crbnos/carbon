@@ -134,6 +134,7 @@ export async function wipeAndLoad(
     if (replicaMode) {
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
+    await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
     await onProgress?.({ phase: "wipe", done: 0, total: wipeTables.length });
     await wipeScopedData(

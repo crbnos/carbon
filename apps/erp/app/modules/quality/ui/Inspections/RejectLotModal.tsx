@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
+import { actionOutcome, useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -61,10 +61,12 @@ const RejectLotModal = ({
 }: RejectLotModalProps) => {
   const { t } = useLingui();
   const fetcher = useAction<{}>({
-    onSettled: () => {
-      if (submitted.current) {
+    onSettled: (data) => {
+      if (!submitted.current) return;
+      submitted.current = false;
+      // A refusal keeps the dialog open; useAction toasts it.
+      if (data === undefined || actionOutcome(data) === "success") {
         onSubmit();
-        submitted.current = false;
       }
     }
   });

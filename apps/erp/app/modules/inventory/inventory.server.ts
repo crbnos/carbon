@@ -59,6 +59,7 @@ import {
   optionalTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
+  fromServerFn,
   getCompanyTimeZone,
   getLocationTimeZone,
   invokeCreate,
@@ -98,6 +99,8 @@ const customFieldsInput = z
   .optional();
 const RECEIPT_NOT_FOUND = "The receipt could not be found";
 const RECEIPT_LOCKED = "A posted receipt can no longer be changed";
+const RECEIPT_NOT_PUT_AWAY_POSTED = "Only a posted receipt can be put away.";
+const NOTHING_TO_PUT_AWAY = "Nothing is ready for putaway on this receipt.";
 // A read by id runs under RLS, which admits every company the caller belongs
 // to: another company's row reads like a missing one.
 const NOT_FOUND = "No matching record was found.";
@@ -388,7 +391,7 @@ export const postReceipt = defineServiceFn({
       serviceRole
         .from("receiptLine")
         .select(
-          "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
+          "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, requiresInspection, lineId, conversionFactor"
         )
         .eq("receiptId", receiptId)
         .eq("companyId", companyId),
@@ -408,12 +411,21 @@ export const postReceipt = defineServiceFn({
     }
 
     if (receipt.data.sourceDocument === "Purchase Order") {
-      const refused = await purchaseOrderFundsGate(
+      const unapproved = await purchaseOrderFundsGate(
         ctx,
         receipt.data.sourceDocumentId,
         { intent: "receive" }
       );
-      if (refused) return refused;
+      if (unapproved) return unapproved;
+
+      // Before the storage rules: a warning acknowledged for a post the
+      // inspection hold then refuses would be asked for nothing.
+      const refused = await service.refuseUnheldInspectedReceiptLines(ctx, {
+        purchaseOrderId: receipt.data.sourceDocumentId,
+        locationId: receipt.data.locationId,
+        lines: lines.data ?? []
+      });
+      if (refused) return ctx.error("rule", refused);
     }
 
     const isTransfer = receipt.data.sourceDocument === "Inbound Transfer";
@@ -724,7 +736,9 @@ export const updateReceiptLines = defineServiceFn({
   async run(ctx, { ids, field, value }) {
     const lines = await ctx.asCaller.supabase
       .from("receiptLine")
-      .select("id, receipt!receiptLine_receiptId_fkey(status)")
+      .select(
+        "id, receiptId, orderQuantity, requiresInspection, receipt!receiptLine_receiptId_fkey(status)"
+      )
       .in("id", ids)
       .eq("companyId", ctx.company.id);
     if (lines.error) {
@@ -736,70 +750,139 @@ export const updateReceiptLines = defineServiceFn({
     if (lines.data.some((line) => line.receipt?.status !== "Draft")) {
       return ctx.error("rule", RECEIPT_LOCKED);
     }
+    const receiptIds = [...new Set(lines.data.map((line) => line.receiptId))];
+    // Each edit holds its receipts Draft (FOR SHARE) while it writes. A post
+    // sets the receipt Pending before it reads the lines, so an edit either
+    // commits before that read or finds the receipt no longer Draft.
+    const holdDraft = async (trx: typeof ctx.asSystem.pg) => {
+      const draft = await trx
+        .selectFrom("receipt")
+        .select("id")
+        .where("id", "in", receiptIds)
+        .where("companyId", "=", ctx.company.id)
+        .where("status", "=", "Draft")
+        .forShare()
+        .execute();
+      return draft.length === receiptIds.length;
+    };
 
     if (field === "receivedQuantity") {
       const receivedQuantity = Number(value || 0);
       if (!Number.isFinite(receivedQuantity)) {
         return ctx.error("validation", "Received quantity must be a number");
       }
+      if (
+        receivedQuantity < 0 &&
+        lines.data.some(
+          (line) =>
+            line.requiresInspection && Number(line.orderQuantity ?? 0) >= 0
+        )
+      ) {
+        return ctx.error("validation", "Received quantity cannot be negative");
+      }
       // Drop serials beyond the new quantity in the same transaction.
       try {
-        await ctx.asSystem.pg.transaction().execute(async (trx) => {
-          const updated = await trx
-            .updateTable("receiptLine")
-            .set({
-              receivedQuantity,
-              updatedBy: ctx.auditUserId,
-              updatedAt: datetime.timestamp()
-            })
-            .where("id", "in", ids)
-            .where("companyId", "=", ctx.company.id)
-            .returning([
-              "id",
-              "receiptId",
-              "receivedQuantity",
-              "requiresSerialTracking"
-            ])
-            .execute();
-          if (updated.length === 0) return;
+        const held = await ctx.asSystem.pg
+          .transaction()
+          .execute(async (trx) => {
+            if (!(await holdDraft(trx))) return false;
+            const updated = await trx
+              .updateTable("receiptLine")
+              .set({
+                receivedQuantity,
+                updatedBy: ctx.auditUserId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("id", "in", ids)
+              .where("companyId", "=", ctx.company.id)
+              .returning([
+                "id",
+                "receiptId",
+                "receivedQuantity",
+                "requiresSerialTracking"
+              ])
+              .execute();
+            if (updated.length === 0) return true;
 
-          const receipts = await trx
-            .selectFrom("receipt")
-            .select(["id", "sourceDocument"])
-            .where("id", "in", [...new Set(updated.map((l) => l.receiptId))])
-            .where("companyId", "=", ctx.company.id)
-            .where("status", "=", "Draft")
-            .execute();
-          for (const receipt of receipts) {
-            await service.reconcileReceiptSerialsInTransaction(trx, {
-              receiptId: receipt.id,
-              companyId: ctx.company.id,
-              isSalesReturn: receipt.sourceDocument === "Sales Return Order",
-              lines: updated.filter((l) => l.receiptId === receipt.id)
-            });
-          }
-        });
+            const receipts = await trx
+              .selectFrom("receipt")
+              .select(["id", "sourceDocument"])
+              .where("id", "in", [...new Set(updated.map((l) => l.receiptId))])
+              .where("companyId", "=", ctx.company.id)
+              .where("status", "=", "Draft")
+              .execute();
+            for (const receipt of receipts) {
+              await service.reconcileReceiptSerialsInTransaction(trx, {
+                receiptId: receipt.id,
+                companyId: ctx.company.id,
+                isSalesReturn: receipt.sourceDocument === "Sales Return Order",
+                lines: updated.filter((l) => l.receiptId === receipt.id)
+              });
+            }
+            return true;
+          });
+        if (!held) return ctx.error("rule", RECEIPT_LOCKED);
       } catch (error) {
         return ctx.error("internal", "Failed to update receipt lines", error);
       }
       return { ids };
     }
 
-    const update = await ctx.asCaller.supabase
-      .from("receiptLine")
-      .update({
-        storageUnitId: value || null,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .in("id", ids)
-      .eq("companyId", ctx.company.id);
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update receipt lines",
-        update.error
-      );
+    const storageUnitId = value || null;
+    if (storageUnitId) {
+      const [unit, lines] = await Promise.all([
+        ctx.asSystem.pg
+          .selectFrom("storageUnit")
+          .select(["locationId"])
+          .where("id", "=", storageUnitId)
+          .where("companyId", "=", ctx.company.id)
+          .executeTakeFirst(),
+        ctx.asSystem.pg
+          .selectFrom("receiptLine as rl")
+          .innerJoin("receipt as r", (join) =>
+            join
+              .onRef("r.id", "=", "rl.receiptId")
+              .onRef("r.companyId", "=", "rl.companyId")
+          )
+          .select(["rl.locationId", "r.locationId as receiptLocationId"])
+          .where("rl.id", "in", ids)
+          .where("rl.companyId", "=", ctx.company.id)
+          .execute()
+      ]);
+      if (!unit) {
+        return ctx.error("notFound", "The storage unit could not be found");
+      }
+      if (
+        lines.some(
+          (line) =>
+            (line.locationId ?? line.receiptLocationId) !== unit.locationId
+        )
+      ) {
+        return ctx.error(
+          "validation",
+          "Choose a storage unit at the receipt's location"
+        );
+      }
+    }
+
+    try {
+      const held = await ctx.asSystem.pg.transaction().execute(async (trx) => {
+        if (!(await holdDraft(trx))) return false;
+        await trx
+          .updateTable("receiptLine")
+          .set({
+            storageUnitId,
+            updatedBy: ctx.auditUserId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "in", ids)
+          .where("companyId", "=", ctx.company.id)
+          .execute();
+        return true;
+      });
+      if (!held) return ctx.error("rule", RECEIPT_LOCKED);
+    } catch (error) {
+      return ctx.error("internal", "Failed to update receipt lines", error);
     }
     return { ids };
   }
@@ -1826,11 +1909,7 @@ export const postShipment = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.serverFnFailure(
-          ctx,
-          posted.error,
-          "Failed to post shipment"
-        );
+        return fromServerFn(ctx, posted.error, "Failed to post shipment");
       }
       splitEntityIds = posted.data?.splitEntityIds ?? [];
     } catch (thrown) {
@@ -3385,6 +3464,89 @@ export const createInventoryCount = defineServiceFn({
 });
 
 /**
+ * Put away a receipt's inspected stock.
+ *
+ * @remarks
+ * Creates one stock transfer, linked to the receipt, that moves every passed
+ * quantity still in the unit it was received into (the inspection storage
+ * unit) and on no linked transfer: to the part's nettable default storage
+ * unit, or with no To unit for stores to choose. Rejected and On Hold units
+ * are never on it. Stores pick and complete it like any stock transfer; the
+ * receipt's inspection status becomes Put Away once linked transfers cover
+ * all passed quantity. Refuses when nothing is ready. The transfer is created
+ * Released, so storage rules run on the `stockTransfer` surface against each
+ * line's destination first: a blocking rule returns its `violations` and
+ * `ruleNames` and creates nothing; send `acknowledged: true` to create past
+ * warnings.
+ *
+ * @mcp
+ */
+export const createReceiptPutAway = defineServiceFn({
+  input: z.object({
+    receiptId: z.string(),
+    acknowledged: z.boolean().default(false)
+  }),
+  permission: { create: "inventory" },
+
+  async run(ctx, { receiptId, acknowledged }) {
+    const receipt = await ctx.asSystem.supabase
+      .from("receipt")
+      .select("id, locationId, status")
+      .eq("id", receiptId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (!receipt.data) return ctx.error("notFound", RECEIPT_NOT_FOUND);
+    if (receipt.data.status !== "Posted" || !receipt.data.locationId) {
+      return ctx.error("rule", RECEIPT_NOT_PUT_AWAY_POSTED);
+    }
+
+    // The rules are read before the transaction (a REST read inside it would
+    // hold its connection); the insert reads the lines again under the lock.
+    const planned = await service.getReceiptPutAwayLines(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      receiptId
+    );
+    if (planned.length === 0) {
+      return ctx.error("rule", NOTHING_TO_PUT_AWAY);
+    }
+    const locationId = receipt.data.locationId;
+    const rules = await service.storageRuleViolations(
+      ctx,
+      ["stockTransfer"],
+      planned.map((line) => ({
+        lineId: line.receiptLineId,
+        itemId: line.itemId,
+        storageUnitId: line.toStorageUnitId,
+        quantity: line.quantity,
+        locationId
+      }))
+    );
+    if (
+      rules.violations.length > 0 &&
+      isBlocked(rules.violations, acknowledged)
+    ) {
+      return rules satisfies Blocked;
+    }
+
+    const result = await service.insertReceiptPutAway(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      receiptId
+    });
+    if ("refusal" in result) {
+      return ctx.error(
+        "rule",
+        result.refusal === "notPosted"
+          ? RECEIPT_NOT_PUT_AWAY_POSTED
+          : NOTHING_TO_PUT_AWAY
+      );
+    }
+    return result.created;
+  }
+});
+
+/**
  * Post a confirmed inventory count.
  *
  * @remarks
@@ -3393,7 +3555,10 @@ export const createInventoryCount = defineServiceFn({
  * transaction: ledger entries, cost layers and the journal. Posted is
  * final. A count with lines that cannot post (a serial line counted as
  * anything but 0 or 1) is not posted and returns `invalidLineIds` with the
- * reason in `message`.
+ * reason in `message`. A count may move stock held for inspection (it records
+ * where the stock really is); `heldStockWarnings` names each part it found
+ * outside its inspection unit, with `awaitingInspection` set for a serial or
+ * batch unit whose inspection lot Quality has still to decide.
  *
  * @mcp
  */
@@ -3423,7 +3588,23 @@ export const postInventoryCount = defineServiceFn({
     if (posted.error) {
       return service.inventoryCountPostingFailure(ctx, posted.error);
     }
-    return { inventoryCountId };
+    // The count is already posted: a failed read only loses the warning.
+    let heldStockWarnings: service.HeldStockWarning[] = [];
+    try {
+      heldStockWarnings = await service.heldStockMovedByCount(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        inventoryCountId,
+        posted.data?.heldTrackedEntityIds ?? []
+      );
+    } catch (error) {
+      logger.error("Failed to read the held stock a posted count moved", {
+        companyId: ctx.company.id,
+        inventoryCountId,
+        error
+      });
+    }
+    return { inventoryCountId, heldStockWarnings };
   }
 });
 
@@ -3482,6 +3663,13 @@ export const adjustInventory = defineServiceFn({
     );
     if (serial) return serial;
 
+    const held = await service.inspectionHoldAdjustmentRefusal(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      adjustment
+    );
+    if (held) return ctx.error("rule", held);
+
     const line = [
       {
         lineId: adjustment.itemId,
@@ -3511,7 +3699,7 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      return service.postingFailure(
+      return fromServerFn(
         ctx,
         posted.error,
         "Failed to create manual inventory adjustment"

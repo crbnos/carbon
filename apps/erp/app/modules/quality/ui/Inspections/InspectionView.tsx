@@ -29,6 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -81,6 +84,8 @@ import { path } from "~/utils/path";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
 import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";
+import OpenNcrModal from "./OpenNcrModal";
+import PartialLotModal from "./PartialLotModal";
 import type { FailedFeatureSummary } from "./RejectLotModal";
 import RejectLotModal from "./RejectLotModal";
 import ScanInspectionSample from "./ScanInspectionSample";
@@ -186,6 +191,8 @@ const InspectionView = ({
   const [items] = useItems();
 
   const isSerial = itemTrackingType === "Serial";
+  const isBatch = itemTrackingType === "Batch";
+  const isTrackedLot = isSerial || isBatch;
   // Accept/Reject dispositions here carry no physical production posting, so they
   // are Receipt-only. Job Operation lots are verdict-only in the ERP — their
   // complete/scrap/rework outcome is orchestrated by the MES disposition route
@@ -238,6 +245,8 @@ const InspectionView = ({
 
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
+  const partialDisclosure = useDisclosure();
+  const openNcrDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
   const documentSwitchDisclosure = useDisclosure();
 
@@ -425,8 +434,11 @@ const InspectionView = ({
 
   const lotClosed =
     receiptVoided ||
+    inspection.status === "Cancelled" ||
     (inspection.dispositionedAt != null &&
-      (inspection.status === "Passed" || inspection.status === "Failed"));
+      (inspection.status === "Passed" ||
+        inspection.status === "Failed" ||
+        inspection.status === "Partial"));
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -479,6 +491,33 @@ const InspectionView = ({
     failedStatistically = fails > inspection.acceptanceNumber;
   }
   const canReject = isReceiptSource && !lotClosed;
+  const sampledComplete = hasFeatures
+    ? liveFeatures.every(
+        (feature) =>
+          (featureCounts.get(feature.inspectionFeatureId)?.recorded ?? 0) >=
+          feature.sampleSize
+      )
+    : inspected >= inspection.sampleSize;
+  const hasFailedUnit = samples.some(
+    (sample) =>
+      !!sample.trackedEntityId &&
+      (sampleStatuses.get(sample.id) ?? sample.status) === "Failed"
+  );
+  const canPartial =
+    canReject &&
+    !isBatch &&
+    (!isSerial || (hasFailedUnit && passes > 0 && sampledComplete));
+  const ncrMissing =
+    isReceiptSource &&
+    inspection.status === "Partial" &&
+    issues.length === 0 &&
+    ((itemTrackingType === "Inventory" &&
+      inspection.acceptedQuantity !== null &&
+      Number(inspection.acceptedQuantity) < Number(inspection.lotSize)) ||
+      ((itemTrackingType === "Serial" || itemTrackingType === "Batch") &&
+        samples.some(
+          (sample) => sample.status === "Failed" && !!sample.trackedEntityId
+        )));
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -546,7 +585,9 @@ const InspectionView = ({
       ? ("green" as const)
       : inspection.status === "Failed"
         ? ("red" as const)
-        : ("secondary" as const);
+        : inspection.status === "Partial"
+          ? ("yellow" as const)
+          : ("secondary" as const);
 
   const planSummary =
     inspection.samplingPlanType === "AQL"
@@ -563,6 +604,17 @@ const InspectionView = ({
     .filter(Boolean)
     .join("  ·  ");
 
+  const acceptedQuantity = Number(inspection.acceptedQuantity);
+  const lotSize = Number(inspection.lotSize);
+  const partialDecision =
+    isReceiptSource &&
+    inspection.status === "Partial" &&
+    inspection.acceptedQuantity !== null
+      ? itemTrackingType === "Inventory" && acceptedQuantity < lotSize
+        ? t`${acceptedQuantity} of ${lotSize} accepted. The rest stays held until its NCR is closed.`
+        : t`${acceptedQuantity} of ${lotSize} accepted.`
+      : null;
+
   const statusBadge = (
     <HStack spacing={1}>
       <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
@@ -576,7 +628,12 @@ const InspectionView = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <RecordHero subtitle={metaLine} status={statusBadge} />
+      <RecordHero
+        subtitle={
+          partialDecision ? `${metaLine}  ·  ${partialDecision}` : metaLine
+        }
+        status={statusBadge}
+      />
       <RecordPhoneChrome />
       {/* Header bar — mirrors InspectionDocumentEditor's header */}
       <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide max-md:hidden">
@@ -588,6 +645,11 @@ const InspectionView = ({
             {statusBadge}
           </HStack>
           <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
+          {partialDecision && (
+            <p className="truncate text-xs text-muted-foreground">
+              {partialDecision}
+            </p>
+          )}
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
           {issues.length === 1 && (
@@ -654,6 +716,17 @@ const InspectionView = ({
               </Button>
             </RecordAction>
           )}
+          {ncrMissing && (
+            <RecordAction slot={isTrackedLot ? "secondary" : "primary"}>
+              <Button
+                variant={isTrackedLot ? "secondary" : "primary"}
+                onClick={openNcrDisclosure.onOpen}
+                isDisabled={!canUpdate}
+              >
+                <Trans>Open NCR</Trans>
+              </Button>
+            </RecordAction>
+          )}
           {isReceiptSource && (
             <>
               <RecordAction slot="secondary">
@@ -664,6 +737,32 @@ const InspectionView = ({
                 >
                   <Trans>Reject Lot</Trans>
                 </Button>
+              </RecordAction>
+              <RecordAction slot="secondary">
+                {isBatch && !lotClosed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="inline-flex">
+                        <Button variant="secondary" isDisabled>
+                          <Trans>Partial</Trans>
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <Trans>
+                        A batch lot is accepted or rejected as a whole.
+                      </Trans>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={partialDisclosure.onOpen}
+                    isDisabled={!canUpdate || !canPartial}
+                  >
+                    <Trans>Partial</Trans>
+                  </Button>
+                )}
               </RecordAction>
               <RecordAction slot="primary">
                 <Button
@@ -933,6 +1032,27 @@ const InspectionView = ({
           failedFeatureSummary={failedFeatureSummary}
           onCancel={rejectConfirmDisclosure.onClose}
           onSubmit={rejectConfirmDisclosure.onClose}
+        />
+      )}
+
+      {partialDisclosure.isOpen && (
+        <PartialLotModal
+          action={path.to.inspectionPartial(inspection.id)}
+          issueTypes={issueTypes}
+          lotSize={inspection.lotSize}
+          isUntracked={itemTrackingType === "Inventory"}
+          onCancel={partialDisclosure.onClose}
+          onSubmit={partialDisclosure.onClose}
+        />
+      )}
+
+      {openNcrDisclosure.isOpen && (
+        <OpenNcrModal
+          action={path.to.inspectionPartial(inspection.id)}
+          issueTypes={issueTypes}
+          isTrackedLot={isTrackedLot}
+          onCancel={openNcrDisclosure.onClose}
+          onSubmit={openNcrDisclosure.onClose}
         />
       )}
 

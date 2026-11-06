@@ -28,6 +28,31 @@ describe("valuateMeasurement", () => {
     expect(valuateMeasurement(feature, null)).toBe("Pending");
   });
 
+  it("passes a reading exactly on a limit that float subtraction misses", () => {
+    // 1.60 - 0.16 is 1.4400000000000002 in binary floating point.
+    const thickness = {
+      type: "Measurement",
+      nominalValue: "1.60",
+      tolerancePlus: "0.16",
+      toleranceMinus: "0.16"
+    };
+    expect(valuateMeasurement(thickness, 1.44)).toBe("Passed");
+    expect(valuateMeasurement(thickness, 1.76)).toBe("Passed");
+    expect(valuateMeasurement(thickness, 1.4399)).toBe("Failed");
+  });
+
+  it("keeps every digit of a fine spec's limits", () => {
+    const fine = {
+      type: "Measurement",
+      nominalValue: "1.000004",
+      tolerancePlus: "0",
+      toleranceMinus: "0"
+    };
+    expect(valuateMeasurement(fine, 1.000004)).toBe("Passed");
+    expect(valuateMeasurement(fine, 1)).toBe("Failed");
+    expect(valuateMeasurement(fine, 1.000006)).toBe("Failed");
+  });
+
   it("passes a reading on the displayed limit despite float noise", () => {
     // 0.8 - 0.1 is 0.7000000000000001 in IEEE 754; the grid shows 0.7.
     const spec = {

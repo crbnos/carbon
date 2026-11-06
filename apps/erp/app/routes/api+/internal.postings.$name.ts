@@ -14,6 +14,7 @@ import { getCarbon } from "@carbon/auth";
 import { SESSION_SECRET } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { describeCause, reasonText } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -113,7 +114,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = await posting(name, handles, input as never);
   if (result.error) {
-    const { status, message, body: details } = result.error;
+    const { status, body: details } = result.error;
+    const reason = result.error.message ? null : describeCause(result.error);
+    const message = result.error.message || (reason ? reasonText(reason) : "");
     return Response.json(
       { data: null, error: { status, message, body: details } },
       { status }

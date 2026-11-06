@@ -13,6 +13,7 @@ import {
   cn,
   Heading,
   IconButton,
+  NonNettableBadge,
   Progress,
   Separator,
   Table,
@@ -751,6 +752,9 @@ export function BatchOverview({
                                   <LuMapPin className="size-3.5" />
                                   {m.storageUnitName}
                                 </span>
+                              )}
+                              {m.storageUnitEffectiveNettable === false && (
+                                <NonNettableBadge className="ml-1.5" />
                               )}
                             </Td>
                             <Td

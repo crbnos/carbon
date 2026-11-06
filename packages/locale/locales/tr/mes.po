@@ -1827,6 +1827,9 @@ msgstr "Bloke edilmiş iş merkezi yok"
 msgid "No work centers exist"
 msgstr "Çalışma merkezi bulunmamaktadır"
 
+msgid "Non-nettable"
+msgstr "MRP dışı"
+
 msgid "None"
 msgstr "Hiçbiri"
 
@@ -1835,6 +1838,9 @@ msgstr "Planlanmamış"
 
 msgid "Not set"
 msgstr "Ayarlanmamış"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Kullanılabilir stok değil. MRP ve planlama bunu saymaz, toplama da buradan almaz."
 
 msgid "Notes"
 msgstr "Notlar"
