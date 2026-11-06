@@ -3,15 +3,22 @@ set -e
 
 pnpm exec lint-staged
 
-# Compile lingui translations if any relevant files were modified
-# Lingui extract scans every ERP and MES source (about 25 s), so it runs only
-# when a staged change adds or removes a message, or stages a catalog. CI runs
-# lingui:check on every pull request, so anything this misses is caught there.
+# Extract only for catalogs or changed source files that contain messages.
+# Inspect both versions so edits inside multiline messages and removals count.
 needs_lingui() {
     git diff --cached --name-only | grep -q '\.po$' && return 0
-    git diff --cached -U0 -- '*.ts' '*.tsx' '*.js' '*.jsx' \
-        | grep -E '^[+-][^+-]' \
-        | grep -qE '<Trans[ >]|<Plural[ >]|<Select[ >]|[^A-Za-z0-9_](t|msg)`|[^A-Za-z0-9_](plural|select|selectOrdinal)\(|[^A-Za-z0-9_](t|msg)\( *\{'
+    message_markers='<(Trans|Plural|Select)([[:space:]>]|$)|(^|[^A-Za-z0-9_])(t|msg)[[:space:]]*[`(]|(^|[^A-Za-z0-9_])(plural|select|selectOrdinal)[[:space:]]*\(|@lingui/(core|react)/macro'
+    git diff --cached --name-only -- '*.ts' '*.tsx' '*.js' '*.jsx' | (
+        while IFS= read -r file; do
+            if {
+                git show ":$file" 2>/dev/null
+                git show "HEAD:$file" 2>/dev/null
+            } | grep -qE "$message_markers"; then
+                exit 0
+            fi
+        done
+        exit 1
+    )
 }
 if needs_lingui; then
     echo "Compiling translations..."
