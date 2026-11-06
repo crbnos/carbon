@@ -16,12 +16,18 @@ import { REDIS_DB_MAX, writeStackMode } from "../worktree.js";
 import {
   buildDownArgs,
   buildUpArgs,
+  missingSharedServices,
   PG_MAJOR,
+  planSharedFiles,
+  REDIS_CONTAINER,
   redisDatabasesNeeded,
-  redisDatabasesOf,
+  renderSharedEnv,
   SHARED_PROJECT,
   sharedComposeEnv,
-  teardownExitCode
+  sharedDirName,
+  staleSharedDirs,
+  teardownExitCode,
+  treeDigest
 } from "./compose.js";
 
 // The teardown itself talks to Docker and isn't unit-testable. The argv is.
@@ -178,24 +184,165 @@ describe("compose files per mode", () => {
   });
 });
 
-describe("redisDatabasesOf", () => {
-  it("reads --databases from the container command", () => {
-    expect(
-      redisDatabasesOf([
-        "redis-server",
-        "--appendonly",
-        "yes",
-        "--databases",
-        "25"
-      ])
-    ).toBe(25);
+describe("shared redis", () => {
+  const shared = readFileSync(
+    join(__dirname, "../../docker/docker-compose.shared.yml"),
+    "utf8"
+  );
+
+  it("is a crbn-shared service under the name flushDb execs into", () => {
+    expect(missingSharedServices(shared)).toEqual([]);
+    expect(shared).toMatch(
+      new RegExp(`^ {4}container_name: ${REDIS_CONTAINER}$`, "m")
+    );
   });
 
-  it("is redis's default 16 when the command does not set it", () => {
-    // The container every host had before the pool grew: it gets recreated.
-    const old = redisDatabasesOf(["redis-server", "--appendonly", "yes"]);
-    expect(old).toBe(16);
-    expect(old).toBeLessThan(REDIS_DB_MAX);
+  it("keeps the volume the docker-run container wrote, as external", () => {
+    // Not external, compose would warn on every boot about a volume it did
+    // not create; renamed, every worktree's keys would be left behind.
+    expect(shared).toMatch(
+      /^ {2}carbon-redis-data:\n {4}name: carbon-redis-data\n {4}external: true$/m
+    );
+  });
+
+  it("takes its database count from REDIS_DATABASES", () => {
+    expect(shared).toContain(`"$\{REDIS_DATABASES:-25}"`);
+  });
+
+  it("tells a file from before redis and the edge runtime moved in", () => {
+    // That file is replaced even while crbn-shared runs, or they never start.
+    expect(
+      missingSharedServices("services:\n  postgres:\n    image: x\n")
+    ).toEqual(["redis", "edge-runtime"]);
+    expect(
+      missingSharedServices("services:\n  redis:\n    image: x\n")
+    ).toEqual(["edge-runtime"]);
+  });
+
+  it("writes the keys, database count and edge runtime directories into the shared .env", () => {
+    const env = renderSharedEnv(
+      { secret: "s", anonKey: "a", serviceKey: "k" },
+      41,
+      {
+        EDGE_MAIN_DIR: "edge-main-111111111111",
+        FUNCTIONS_DIR: "functions-222222222222"
+      }
+    );
+    expect(env).toBe(
+      "SUPABASE_JWT_SECRET=s\nSUPABASE_ANON_KEY=a\nSUPABASE_SERVICE_ROLE_KEY=k\nREDIS_DATABASES=41\nEDGE_MAIN_DIR=edge-main-111111111111\nFUNCTIONS_DIR=functions-222222222222\n"
+    );
+  });
+});
+
+describe("planSharedFiles", () => {
+  it("keeps a running project's complete files and warns", () => {
+    const plan = planSharedFiles({
+      running: true,
+      changed: ["init.sql"],
+      missing: []
+    });
+    expect(plan.copy).toBe(false);
+    expect(plan.warning).toContain("init.sql");
+  });
+
+  it("replaces a running project's file when it lacks a later service", () => {
+    // Else redis or the edge runtime would never start on that machine.
+    expect(
+      planSharedFiles({
+        running: true,
+        changed: ["docker-compose.shared.yml"],
+        missing: ["edge-runtime"]
+      })
+    ).toEqual({ copy: true, warning: null });
+  });
+
+  it("copies when nothing runs, when nothing changed, or when there is no file", () => {
+    for (const state of [
+      { running: false, changed: ["init.sql"], missing: [] },
+      { running: true, changed: [], missing: [] },
+      { running: true, changed: ["docker-compose.shared.yml"], missing: null }
+    ]) {
+      expect(planSharedFiles(state)).toEqual({ copy: true, warning: null });
+    }
+  });
+});
+
+describe("shared edge runtime", () => {
+  const docker = join(__dirname, "../../docker");
+  const read = (f: string) => readFileSync(join(docker, f), "utf8");
+
+  it("takes the API URL from the gateway's header, with a pool per worktree", () => {
+    const shared = read("docker-compose.shared.yml");
+    expect(shared).toMatch(/^ {4}container_name: carbon-edge-runtime$/m);
+    expect(shared).toContain('API_URL_FROM_HEADER: "true"');
+    // A new copy is a new mount path, which recreates the runtime.
+    expect(shared).toContain(
+      `./$\{FUNCTIONS_DIR:-functions}:/home/deno/functions:ro`
+    );
+    expect(shared).toContain(
+      `./$\{EDGE_MAIN_DIR:-edge-main}:/home/deno/main:ro`
+    );
+    const main = read("edge-main/index.ts");
+    expect(main).toContain('req.headers.get("x-carbon-api")');
+    expect(main).toMatch(/poolKey,/);
+  });
+
+  it("is reached through every worktree's gateway, after a private one by its alias", () => {
+    const cds = read("envoy/cds.template.yaml");
+    // Not the bare "edge-runtime": on carbon-shared it names crbn-shared's.
+    expect(cds).toMatch(
+      /- priority: 0[\s\S]*?address: local-edge-runtime\n[\s\S]*?- priority: 1[\s\S]*?address: carbon-edge-runtime\n/
+    );
+    expect(cds).not.toMatch(/address: edge-runtime\b/);
+    const dev = read("docker-compose.dev.yml");
+    expect(dev).toMatch(
+      /^ {2}edge-runtime:\n[\s\S]*?aliases:\n {10}- local-edge-runtime$/m
+    );
+    // The gateway overwrites the header, so a client can't name another API.
+    expect(read("envoy/lds.template.yaml")).toMatch(
+      /key: x-carbon-api\n\s+value: \$\{FUNCTIONS_API_URL\}\n\s+append_action: OVERWRITE_IF_EXISTS_OR_ADD/
+    );
+    expect(read("envoy/docker-entrypoint.sh")).toContain("FUNCTIONS_API_URL");
+    expect(dev).toMatch(
+      /FUNCTIONS_API_URL: http:\/\/\$\{CARBON_WORKTREE\}-api-gw:8000/
+    );
+  });
+
+  it("names a copy after its content", () => {
+    const dir = mkdtempSync(join(tmpdir(), "crbn-digest-"));
+    try {
+      mkdirSync(join(dir, "fn"));
+      writeFileSync(join(dir, "fn/index.ts"), "a");
+      const first = sharedDirName("functions", treeDigest(dir));
+      writeFileSync(join(dir, "fn/index.ts"), "b");
+      const second = sharedDirName("functions", treeDigest(dir));
+      expect(first).toMatch(/^functions-[0-9a-f]{12}$/);
+      expect(second).not.toBe(first);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("prunes old copies, never a kept one, a live copy in progress or other files", () => {
+    const stale = staleSharedDirs(
+      [
+        "functions-aaaaaaaaaaaa", // this boot's
+        "functions-bbbbbbbbbbbb", // what the runtime mounts
+        "functions-cccccccccccc", // old
+        "functions", // the first layout's copy
+        "edge-main-dddddddddddd.tmp-111", // another crbn copying
+        "edge-main-eeeeeeeeeeee.tmp-222", // left by a crash
+        "docker-compose.shared.yml",
+        ".env"
+      ],
+      new Set(["functions-aaaaaaaaaaaa", "functions-bbbbbbbbbbbb"]),
+      (pid) => pid === 111
+    );
+    expect(stale).toEqual([
+      "functions-cccccccccccc",
+      "functions",
+      "edge-main-eeeeeeeeeeee.tmp-222"
+    ]);
   });
 });
 

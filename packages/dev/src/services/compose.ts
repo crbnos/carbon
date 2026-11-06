@@ -2,18 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHash } from "node:crypto";
 import {
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
   writeFileSync
 } from "node:fs";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
-import { dirname, join } from "pathe";
+import { basename, join } from "pathe";
 import {
   COMPOSE_DEV_FILE,
   COMPOSE_DEV_FILE_LEGACY,
@@ -25,8 +31,7 @@ import {
   listSlugs,
   projectName,
   REDIS_DB_MAX,
-  readStackMode,
-  SHARED_REDIS_PORT
+  readStackMode
 } from "../worktree.js";
 import { ensureTemplate } from "./shared-db.js";
 
@@ -57,8 +62,8 @@ function composeFileArgs(root: string, slug: string, all = false): string[] {
   return args;
 }
 
-// Shared redis runs as a single plain container (not a compose stack) — one per
-// host, reused across worktrees via per-worktree logical DB indexes.
+// Shared redis is crbn-shared's `redis` service, one per host; each worktree
+// slot gets its own logical database (redisDb).
 export const REDIS_CONTAINER = "carbon-redis";
 const REDIS_VOLUME = "carbon-redis-data";
 
@@ -98,9 +103,10 @@ export type Container = {
 const COMPOSE_PROFILES = ["full", "studio", "mail"] as const;
 
 // Which services a boot starts. Default: the stack the apps need plus Inbucket
-// (login emails). `full` adds Studio, Postgres-Meta, the edge runtime and
-// imgproxy — nothing in the apps calls the first three (~40% of a stack's
-// memory) and imgproxy only converts HEIC. `studio` adds just Studio and the
+// (login emails). `full` adds Studio, Postgres-Meta, a private edge runtime
+// (the gateway prefers it to crbn-shared's, for editing functions) and
+// imgproxy — the first three were ~40% of a stack's memory, and imgproxy only
+// converts HEIC. `studio` adds just Studio and the
 // Postgres-Meta it reads through (picked as an app in `crbn up`). `minimal`
 // drops Inbucket too (headless runs sign in by bypass).
 export type StackSize = { minimal?: boolean; full?: boolean; studio?: boolean };
@@ -458,36 +464,252 @@ async function sharedProjectRunning(): Promise<boolean> {
   return r.exitCode === 0 && r.stdout.trim() !== "";
 }
 
+// The services this crbn starts from the shared file, beyond Postgres and the
+// rest it always had. A running project whose file lacks one gets the new file.
+const LATER_SHARED_SERVICES = ["redis", "edge-runtime"];
+
+/** The services in LATER_SHARED_SERVICES a shared compose file lacks. */
+export function missingSharedServices(composeText: string): string[] {
+  return LATER_SHARED_SERVICES.filter(
+    (name) => !new RegExp(`^ {2}${name}:\\s*$`, "m").test(composeText)
+  );
+}
+
+// The shared edge runtime mounts these. Each copy goes into a directory named
+// after its content (`functions-<digest>`), and .env names the one to mount:
+// a running runtime keeps its files until compose has recreated it on the new
+// ones (the mount path changed), and `pruneSharedDirs` removes old copies only
+// after that `up` succeeded.
+const SHARED_DIRS = [
+  {
+    name: "edge-main",
+    env: "EDGE_MAIN_DIR",
+    source: join(SHARED_SOURCE, "edge-main")
+  },
+  {
+    name: "functions",
+    env: "FUNCTIONS_DIR",
+    source: join(SHARED_SOURCE, "../../database/supabase/functions")
+  }
+];
+
+/** A hash of every file under `dir`, by relative path and content. */
+export function treeDigest(dir: string): string {
+  const hash = createHash("sha1");
+  if (!existsSync(dir)) return hash.digest("hex");
+  const files = (readdirSync(dir, { recursive: true }) as string[])
+    .filter((rel) => statSync(join(dir, rel)).isFile())
+    .sort();
+  for (const rel of files) {
+    hash.update(`${rel}\0`);
+    hash.update(readFileSync(join(dir, rel)));
+    hash.update("\0");
+  }
+  return hash.digest("hex");
+}
+
+/** The directory name a copy of `name` with this content gets. */
+export function sharedDirName(name: string, digest: string): string {
+  return `${name}-${digest.slice(0, 12)}`;
+}
+
+/** Copies SHARED_DIRS into ~/.carbon/shared, each under its content's name.
+ *  Returns the env value per directory (`FUNCTIONS_DIR=functions-<digest>`). */
+function syncSharedDirs(): Record<string, string> {
+  const dirs: Record<string, string> = {};
+  for (const { name, env, source } of SHARED_DIRS) {
+    const dirName = sharedDirName(name, treeDigest(source));
+    const target = join(sharedDir(), dirName);
+    // The name is the content, so an existing one is this copy. A temporary
+    // directory renamed into place keeps a half-copied one from passing as it.
+    if (!existsSync(target)) {
+      const tmp = `${target}.tmp-${process.pid}`;
+      rmSync(tmp, { recursive: true, force: true });
+      cpSync(source, tmp, { recursive: true });
+      renameSync(tmp, target);
+    }
+    dirs[env] = dirName;
+  }
+  return dirs;
+}
+
+/** Copies of SHARED_DIRS that `keep` and live temporary copies don't cover. */
+export function staleSharedDirs(
+  entries: string[],
+  keep: Set<string>,
+  isLive: (pid: number) => boolean
+): string[] {
+  const names = SHARED_DIRS.map((d) => d.name).join("|");
+  const pattern = new RegExp(
+    `^(?:${names})(?:-[0-9a-f]{12})?(?:\\.tmp-(\\d+))?$`
+  );
+  return entries.filter((entry) => {
+    const match = pattern.exec(entry);
+    if (!match || keep.has(entry)) return false;
+    // Another crbn may be copying right now.
+    return !(match[1] && isLive(Number(match[1])));
+  });
+}
+
+function pidIsLive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return (err as { code?: string }).code === "EPERM";
+  }
+}
+
+// After a successful `up`: removes the copies no runtime mounts. Kept: this
+// boot's and whatever carbon-edge-runtime mounts now (another worktree's boot
+// may have recreated it on its own copy since).
+async function pruneSharedDirs(current: Record<string, string>) {
+  const keep = new Set(Object.values(current));
+  const mounts = await execa(
+    "docker",
+    [
+      "container",
+      "inspect",
+      "-f",
+      "{{range .Mounts}}{{println .Source}}{{end}}",
+      "carbon-edge-runtime"
+    ],
+    { reject: false }
+  );
+  for (const source of (mounts.stdout ?? "").split("\n")) {
+    if (source.trim()) keep.add(basename(source.trim()));
+  }
+  const stale = staleSharedDirs(readdirSync(sharedDir()), keep, pidIsLive);
+  for (const entry of stale) {
+    rmSync(join(sharedDir(), entry), { recursive: true, force: true });
+  }
+}
+
+/** ~/.carbon/shared/.env: what the shared compose file interpolates. */
+export function renderSharedEnv(
+  jwt: JwtCreds,
+  redisDatabases: number,
+  dirs: Record<string, string>
+): string {
+  return [
+    `SUPABASE_JWT_SECRET=${jwt.secret}`,
+    `SUPABASE_ANON_KEY=${jwt.anonKey}`,
+    `SUPABASE_SERVICE_ROLE_KEY=${jwt.serviceKey}`,
+    `REDIS_DATABASES=${redisDatabases}`,
+    ...Object.entries(dirs).map(([env, dirName]) => `${env}=${dirName}`),
+    ""
+  ].join("\n");
+}
+
+/** Whether to copy this branch's shared files over the ones on disk, and
+ *  the warning to show when not. `missing` is null when there is no file. */
+export function planSharedFiles(state: {
+  running: boolean;
+  changed: string[];
+  missing: string[] | null;
+}): { copy: boolean; warning: string | null } {
+  const complete = state.missing !== null && state.missing.length === 0;
+  if (state.running && state.changed.length > 0 && complete) {
+    return {
+      copy: false,
+      warning: `this branch's shared container files differ (${state.changed.join(", ")}); the running ones stay. To apply them, stop the shared containers with \`docker compose -p ${SHARED_PROJECT} down\` (their volumes stay), then run \`crbn up\` again. \`crbn up --isolated\` tries them in this worktree only.`
+    };
+  }
+  return { copy: true, warning: null };
+}
+
 // The files run from ~/.carbon/shared, not from a worktree, so the containers
 // outlive any one worktree. If they run already and this branch's files
 // differ, keep the running ones: a recreate would restart the shared Postgres
-// under every worktree. Returns a warning for the caller to show, or null.
-export async function bootSharedServices(
+// under every worktree. The exception is a file missing a service added since
+// (redis, the edge runtime): it is replaced, or that service would never
+// start. Compose recreates only the services whose definition changed. The
+// edge runtime's directories are always synced.
+async function prepareShared(
   jwt: JwtCreds
-): Promise<string | null> {
+): Promise<{ warning: string | null; dirs: Record<string, string> }> {
   const dir = sharedDir();
+  mkdirSync(dir, { recursive: true });
   const running = await sharedProjectRunning();
   const changed = SHARED_ASSETS.filter((f) => {
     const target = join(dir, f);
     const source = readFileSync(join(SHARED_SOURCE, f), "utf8");
     return !existsSync(target) || readFileSync(target, "utf8") !== source;
   });
-  let warning: string | null = null;
-  if (running && changed.length > 0) {
-    warning = `this branch's shared container files differ (${changed.join(", ")}); the running ones stay. To apply them, stop the shared containers with \`docker compose -p ${SHARED_PROJECT} down\` (their volumes stay), then run \`crbn up\` again. \`crbn up --isolated\` tries them in this worktree only.`;
-  } else {
-    for (const f of changed) {
-      const target = join(dir, f);
-      mkdirSync(dirname(target), { recursive: true });
-      copyFileSync(join(SHARED_SOURCE, f), target);
-    }
+  const composeTarget = join(dir, "docker-compose.shared.yml");
+  const { copy, warning } = planSharedFiles({
+    running,
+    changed,
+    missing: existsSync(composeTarget)
+      ? missingSharedServices(readFileSync(composeTarget, "utf8"))
+      : null
+  });
+  if (copy) {
+    for (const f of changed) copyFileSync(join(SHARED_SOURCE, f), join(dir, f));
   }
-  writeFileSync(
-    join(dir, ".env"),
-    `SUPABASE_JWT_SECRET=${jwt.secret}\nSUPABASE_SERVICE_ROLE_KEY=${jwt.serviceKey}\n`,
-    { mode: 0o600 }
-  );
+  // A slot keeps its index, and a pool that was larger (#2140 had 256) may
+  // have handed out one past REDIS_DB_MAX: redis must hold it, or the app's
+  // SELECT fails and ioredis falls back to DB 0, another worktree's.
+  const databases = redisDatabasesNeeded(Object.values(listSlugs()));
+  const dirs = syncSharedDirs();
+  writeFileSync(join(dir, ".env"), renderSharedEnv(jwt, databases, dirs), {
+    mode: 0o600
+  });
   await ensureSharedNetwork();
+  await ensureRedisVolume();
+  await removeStandaloneRedis();
+  return { warning, dirs };
+}
+
+// The volume is external in the compose file (it predates it): create it here.
+// `docker volume create` keeps an existing volume and its data.
+async function ensureRedisVolume(): Promise<void> {
+  const r = await execa("docker", ["volume", "create", REDIS_VOLUME], {
+    reject: false
+  });
+  if (r.exitCode !== 0) {
+    throw new Error(`docker volume create ${REDIS_VOLUME}: ${r.stderr}`);
+  }
+}
+
+// Older crbn ran redis with `docker run` under the same name, which compose
+// can't create over. Stop it first (a SIGTERM lets redis flush its AOF buffer;
+// `rm -f` alone would drop acknowledged writes), then remove it. The volume
+// stays, so compose's redis starts with the same keys.
+async function removeStandaloneRedis(): Promise<void> {
+  const r = await execa(
+    "docker",
+    [
+      "container",
+      "inspect",
+      "-f",
+      '{{index .Config.Labels "com.docker.compose.project"}}',
+      REDIS_CONTAINER
+    ],
+    { reject: false }
+  );
+  if (r.exitCode !== 0 || r.stdout.trim() === SHARED_PROJECT) return;
+  log.info(`moving ${REDIS_CONTAINER} into ${SHARED_PROJECT} (data kept)`);
+  const stopped = await execa("docker", ["stop", REDIS_CONTAINER], {
+    reject: false
+  });
+  if (stopped.exitCode !== 0) {
+    throw new Error(
+      `Could not stop ${REDIS_CONTAINER}: ${stopped.stderr.trim()}`
+    );
+  }
+  await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
+    reject: false,
+    stdio: "ignore"
+  });
+}
+
+/** Shared mode: start every crbn-shared container, redis included. */
+export async function bootSharedServices(
+  jwt: JwtCreds
+): Promise<string | null> {
+  const dir = sharedDir();
+  const { warning, dirs } = await prepareShared(jwt);
   await assertPgMajor(
     "carbon-postgres-data",
     `Drop it, and with it every worktree database, with \`docker compose -p ${SHARED_PROJECT} down -v\`, then \`crbn up\` again.`
@@ -498,6 +720,7 @@ export async function bootSharedServices(
     dir,
     sharedExec()
   );
+  await pruneSharedDirs(dirs);
   await ensureTemplate();
   return warning;
 }
@@ -518,107 +741,31 @@ export function redisDatabasesNeeded(slots: { redisDb?: number }[]): number {
   return Math.max(REDIS_DB_MAX, ...slots.map((s) => (s.redisDb ?? -1) + 1));
 }
 
-/** The `--databases` a redis container was started with: redis's default
- *  (16) when its command does not set it. */
-export function redisDatabasesOf(cmd: string[]): number {
-  const at = cmd.indexOf("--databases");
-  return at >= 0 ? Number(cmd[at + 1]) || 16 : 16;
-}
+/** The crbn-shared services an isolated stack uses too. */
+export const ISOLATED_SHARED_SERVICES = ["redis", "edge-runtime"];
 
-// One redis per host, run directly via `docker run` (no compose file).
-// Idempotent: reuse a running container, start a stopped one, otherwise create.
-// A container started with fewer DBs than the slot pool (made before the pool
-// grew) is recreated on the same volume, so its data is kept.
-export async function bootSharedRedis() {
-  const state = await execa(
+/** Isolated mode: start only crbn-shared's redis and edge runtime.
+ *  `--no-deps` and named services leave the shared Postgres and the rest as
+ *  they are (or absent). */
+export async function bootSharedForIsolated(
+  jwt: JwtCreds
+): Promise<string | null> {
+  const { warning, dirs } = await prepareShared(jwt);
+  await execStrict(
     "docker",
     [
-      "container",
-      "inspect",
-      "-f",
-      "{{.State.Running}} {{json .Config.Cmd}}",
-      REDIS_CONTAINER
+      ...sharedComposeArgs(),
+      "up",
+      "-d",
+      "--wait",
+      "--no-deps",
+      ...ISOLATED_SHARED_SERVICES
     ],
-    { reject: false }
+    sharedDir(),
+    sharedExec()
   );
-  const [running = "", cmd = "[]"] = state.stdout.trim().split(/ (.*)/);
-  // A slot keeps its index, and a pool that was larger (#2140 had 256) may
-  // have handed out one past REDIS_DB_MAX: redis must hold it, or the app's
-  // SELECT fails and ioredis falls back to DB 0, another worktree's.
-  const databases = redisDatabasesNeeded(Object.values(listSlugs()));
-  const tooFewDbs =
-    state.exitCode === 0 &&
-    redisDatabasesOf((JSON.parse(cmd) as string[] | null) ?? []) < databases;
-  if (tooFewDbs) {
-    log.info(`recreating shared redis with ${databases} DBs (data kept)`);
-    // Stop first: a SIGTERM lets redis flush its AOF buffer, `rm -f` alone
-    // would kill it with acknowledged writes still unwritten. `docker stop`
-    // succeeds on a stopped container, so a failure means it may still run.
-    const stopped = await execa("docker", ["stop", REDIS_CONTAINER], {
-      reject: false
-    });
-    if (stopped.exitCode !== 0) {
-      throw new Error(
-        `Could not stop ${REDIS_CONTAINER} to resize it: ${stopped.stderr.trim()}`
-      );
-    }
-    await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
-      reject: false,
-      stdio: "ignore"
-    });
-  } else if (state.exitCode === 0) {
-    if (running === "true") return;
-    // Exists but stopped — try to start it; if that fails, recreate below.
-    const started = await execa("docker", ["start", REDIS_CONTAINER], {
-      reject: false,
-      stdio: "ignore"
-    });
-    if (started.exitCode === 0) return;
-    await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
-      reject: false,
-      stdio: "ignore"
-    });
-  }
-
-  const args = [
-    "run",
-    "-d",
-    "--name",
-    REDIS_CONTAINER,
-    "--restart",
-    "unless-stopped",
-    "-p",
-    `${SHARED_REDIS_PORT}:6379`,
-    "-v",
-    `${REDIS_VOLUME}:/data`,
-    "--health-cmd",
-    "redis-cli ping",
-    "--health-interval",
-    "5s",
-    "--health-timeout",
-    "3s",
-    "--health-retries",
-    "5",
-    "redis:7-alpine",
-    "redis-server",
-    "--appendonly",
-    "yes",
-    "--databases",
-    String(databases)
-  ];
-  // Recover from a stale container holding the name.
-  let r = await execa("docker", args, { reject: false });
-  if (r.exitCode !== 0 && /already in use/i.test(r.stderr ?? "")) {
-    await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
-      reject: false,
-      stdio: "ignore"
-    });
-    r = await execa("docker", args, { reject: false });
-  }
-  if (r.exitCode !== 0) {
-    process.stderr.write(r.stderr ?? "");
-    throw new Error(`shared redis up failed (exit ${r.exitCode})`);
-  }
+  await pruneSharedDirs(dirs);
+  return warning;
 }
 
 export async function destroyProjectVolumes(cwd: string, project: string) {
@@ -893,16 +1040,38 @@ export async function listCarbonStacks(): Promise<string[]> {
 // ---------------------------------------------------------------------------
 
 // Wipe one logical DB on shared redis via the container's bundled redis-cli —
-// avoids requiring a host `redis-cli` install.
+// avoids requiring a host `redis-cli` install. Callers release the slot next,
+// and its index goes to another worktree, which would read these keys (same
+// template users, so cached permissions too). Redis is down after a Docker
+// restart (`restart: on-failure`) or `crbn prune --all`, so start it first.
 export async function flushDb(db: number) {
+  const flush = () =>
+    execa(
+      "docker",
+      ["exec", REDIS_CONTAINER, "redis-cli", "-n", String(db), "FLUSHDB"],
+      { reject: false, stdio: "ignore" }
+    );
+  let r = await flush();
+  if (r.exitCode !== 0 && (await startSharedRedis())) r = await flush();
+  if (r.exitCode !== 0) {
+    log.warn(
+      `redis flush of db ${db} failed: its keys stay, and the next worktree given index ${db} reads them. Run \`docker exec ${REDIS_CONTAINER} redis-cli -n ${db} FLUSHDB\` once redis runs.`
+    );
+  }
+}
+
+// crbn-shared's redis alone, from the files the last boot copied. False when
+// there are none (no `crbn up` ran here) or compose fails.
+async function startSharedRedis(): Promise<boolean> {
+  const dir = sharedDir();
+  if (!existsSync(join(dir, "docker-compose.shared.yml"))) return false;
+  if (!existsSync(join(dir, ".env"))) return false;
   const r = await execa(
     "docker",
-    ["exec", REDIS_CONTAINER, "redis-cli", "-n", String(db), "FLUSHDB"],
-    { reject: false, stdio: "ignore" }
+    [...sharedComposeArgs(), "up", "-d", "--wait", "--no-deps", "redis"],
+    { cwd: dir, reject: false, ...sharedExec() }
   );
-  if (r.exitCode !== 0) {
-    log.warn(`redis flush of db ${db} failed (skipped)`);
-  }
+  return r.exitCode === 0;
 }
 
 // ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ sed -e "s|\${ANON_KEY}|${ANON_KEY}|g" \
     -e "s|\${STORAGE_PUBLIC_HOST}|${STORAGE_PUBLIC_HOST}|g" \
     -e "s|\${STORAGE_PUBLIC_PROTO}|${STORAGE_PUBLIC_PROTO}|g" \
     -e "s|\${STORAGE_PUBLIC_PORT}|${STORAGE_PUBLIC_PORT}|g" \
+    -e "s|\${FUNCTIONS_API_URL}|${FUNCTIONS_API_URL}|g" \
     /etc/envoy/lds.template.yaml > /etc/envoy/lds.yaml
 
 # carbon: the Storage upstream is the shared or the private container.
