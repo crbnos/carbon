@@ -1545,6 +1545,7 @@ export const rows = {
       decisionSignaturePath: z.string().nullable(),
       documentId: z.string(),
       documentType: enums.approvalDocumentType,
+      hasPriorVersion: z.boolean(),
       id: z.string(),
       requestedAt: z.string(),
       requestedBy: z.string(),
@@ -7241,6 +7242,47 @@ export const rows = {
       updatedBy: z.string().nullable()
     })
     .meta({ table: "purchaseOrderLine" }),
+  purchaseOrderLineVersion: z
+    .object({
+      accountId: z.string().nullable(),
+      assetId: z.string().nullable(),
+      companyId: z.string(),
+      conversionFactor: z.number().nullable(),
+      costCenterId: z.string().nullable(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      customFields: z.unknown().nullable(),
+      description: z.string().nullable(),
+      exchangeRate: z.number(),
+      externalNotes: z.unknown().nullable(),
+      id: z.string(),
+      internalNotes: z.unknown().nullable(),
+      inventoryUnitOfMeasureCode: z.string().nullable(),
+      itemId: z.string().nullable(),
+      jobId: z.string().nullable(),
+      jobOperationId: z.string().nullable(),
+      locationId: z.string().nullable(),
+      modelUploadId: z.string().nullable(),
+      ownerId: z.string().nullable(),
+      purchaseOrderLineId: z.string().nullable(),
+      purchaseOrderLineType: enums.purchaseOrderLineType,
+      purchaseOrderVersionId: z.string(),
+      purchaseQuantity: z.number().nullable(),
+      purchaseUnitOfMeasureCode: z.string().nullable(),
+      requiredDate: z.string().nullable(),
+      setupPrice: z.number().nullable(),
+      sortOrder: z.number(),
+      storageUnitId: z.string().nullable(),
+      supplierPartId: z.string().nullable(),
+      supplierShippingCost: z.number(),
+      supplierTaxAmount: z.number(),
+      supplierUnitPrice: z.number().nullable(),
+      tags: z.array(z.string()).nullable(),
+      taxPercent: z.number().nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    })
+    .meta({ table: "purchaseOrderLineVersion" }),
   purchaseOrderPayment: z
     .object({
       companyId: z.string(),
@@ -7277,6 +7319,33 @@ export const rows = {
       userId: z.string()
     })
     .meta({ table: "purchaseOrderTransaction" }),
+  purchaseOrderVersion: z
+    .object({
+      approvalRequestId: z.string(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      customerId: z.string().nullable(),
+      customerLocationId: z.string().nullable(),
+      customFields: z.unknown().nullable(),
+      dropShipment: z.boolean().nullable(),
+      exchangeRate: z.number().nullable(),
+      hasDelivery: z.boolean(),
+      id: z.string(),
+      incoterm: enums.incoterm.nullable(),
+      incotermLocation: z.string().nullable(),
+      locationId: z.string().nullable(),
+      notes: z.string().nullable(),
+      purchaseOrderId: z.string(),
+      receiptRequestedDate: z.string().nullable(),
+      shippingMethodId: z.string().nullable(),
+      shippingTermId: z.string().nullable(),
+      supplierShippingCost: z.number().nullable(),
+      trackingNumber: z.string().nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    })
+    .meta({ table: "purchaseOrderVersion" }),
   purchaseReturnOrder: z
     .object({
       assignee: z.string().nullable(),

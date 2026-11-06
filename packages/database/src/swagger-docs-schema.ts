@@ -78562,6 +78562,9 @@ export default {
             $ref: "#/parameters/rowFilter.approvalRequest.decisionSignaturePath"
           },
           {
+            $ref: "#/parameters/rowFilter.approvalRequest.priorVersion"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78669,6 +78672,9 @@ export default {
             $ref: "#/parameters/rowFilter.approvalRequest.decisionSignaturePath"
           },
           {
+            $ref: "#/parameters/rowFilter.approvalRequest.priorVersion"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -78728,6 +78734,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.approvalRequest.decisionSignaturePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.approvalRequest.priorVersion"
           },
           {
             $ref: "#/parameters/body.approvalRequest"
@@ -171813,6 +171822,9 @@ export default {
         decisionSignaturePath: {
           format: "text",
           type: "string"
+        },
+        priorVersion: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -232526,6 +232538,12 @@ export default {
     },
     "rowFilter.approvalRequest.decisionSignaturePath": {
       name: "decisionSignaturePath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.approvalRequest.priorVersion": {
+      name: "priorVersion",
       required: false,
       in: "query",
       type: "string"

@@ -31,7 +31,7 @@ const test = (name: string, fn: () => Promise<void>) =>
   it.skipIf(!client)(name, fn, 60_000);
 
 type Setup = {
-  status?: "Draft" | "Needs Approval" | "To Receive";
+  status?: "Draft" | "Needs Approval" | "To Receive" | "Completed";
   /** The company's approval rule for purchase orders, from 0. */
   approver?: string | null;
   pendingRequest?: boolean;
@@ -409,7 +409,7 @@ test("a planning order skips approval only when the company allows it", async ()
   }
 });
 
-test("a header update writes only header fields, and not on a finalized order", async () => {
+test("a header update writes only header fields, and not on a completed order", async () => {
   const draft = await fixture();
   const header = (f: typeof draft) =>
     f.db
@@ -438,16 +438,16 @@ test("a header update writes only header fields, and not on a finalized order", 
     await draft.cleanup();
   }
 
-  const released = await fixture({ status: "To Receive" });
+  const completed = await fixture({ status: "Completed" });
   try {
     const result = await purchasing.updatePurchaseOrder(
-      released.contextAs("system"),
-      { id: released.ids.order, supplierReference: "REF-2" }
+      completed.contextAs("system"),
+      { id: completed.ids.order, supplierReference: "REF-2" }
     );
     expect(result.error).toMatchObject({ category: "rule" });
-    expect((await header(released))?.supplierReference).toBeNull();
+    expect((await header(completed))?.supplierReference).toBeNull();
   } finally {
-    await released.cleanup();
+    await completed.cleanup();
   }
 });
 

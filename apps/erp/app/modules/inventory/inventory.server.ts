@@ -46,6 +46,7 @@ import {
 import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
 import {
   insertPurchaseOrder,
+  purchaseOrderFundsGate,
   updatePurchasedPrices,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
@@ -155,6 +156,13 @@ receipts returns the oldest one.`,
         );
       }
       if (existing.data) return { id: existing.data.id };
+    }
+
+    if (sourceDocument === "Purchase Order") {
+      const refused = await purchaseOrderFundsGate(ctx, sourceDocumentId, {
+        intent: "receive"
+      });
+      if (refused) return refused;
     }
 
     const created = await (() => {
@@ -279,6 +287,15 @@ changing it is refused.`,
       return { id };
     }
 
+    if (receipt.sourceDocument === "Purchase Order") {
+      const refused = await purchaseOrderFundsGate(
+        ctx,
+        receipt.sourceDocumentId,
+        { intent: "receive" }
+      );
+      if (refused) return refused;
+    }
+
     const created = await (() => {
       switch (receipt.sourceDocument) {
         case "Purchase Order":
@@ -396,6 +413,15 @@ export const postReceipt = defineServiceFn({
     }
     if (receipt.data.status === "Voided") {
       return ctx.error("conflict", "This receipt has been voided");
+    }
+
+    if (receipt.data.sourceDocument === "Purchase Order") {
+      const refused = await purchaseOrderFundsGate(
+        ctx,
+        receipt.data.sourceDocumentId,
+        { intent: "receive" }
+      );
+      if (refused) return refused;
     }
 
     const isTransfer = receipt.data.sourceDocument === "Inbound Transfer";

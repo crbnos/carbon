@@ -824,9 +824,6 @@ msgstr "{complete}개/{quantity}개"
 msgid "{completed} of {0} done"
 msgstr "{completed}개 중 {0}개 완료"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines}/{lines} 라인 완료"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# 구성품} other {# 구성품}}"
 

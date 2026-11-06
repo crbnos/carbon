@@ -824,9 +824,6 @@ msgstr "{quantity} में से {complete}"
 msgid "{completed} of {0} done"
 msgstr "{completed} में से {0} हो गया"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} में से {lines} पंक्तियाँ पूर्ण"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# घटक} other {# घटक}}"
 
