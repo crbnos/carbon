@@ -73,8 +73,7 @@ jobs:
         run: pnpm run check:workflow-catalog
       # The step above ran //#generate:mcp, which rewrites the committed digest
       # of the API manifest. A difference means a service function changed
-      # without `pnpm generate:mcp`. This replaced the pre-commit check, which
-      # cost every commit a second ts-morph pass.
+      # without `pnpm generate:mcp`.
       - name: Manifest digest
         if: ${{ !cancelled() }}
         run: |

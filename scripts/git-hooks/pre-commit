@@ -32,12 +32,6 @@ if needs_lingui; then
     fi
 fi
 
-# The API manifest digest (tool-manifest.digest.json) is no longer refreshed or
-# checked here: both run the generator, a ts-morph pass over the ERP that takes
-# about 100 s, and a service-file commit ran it twice. CI's lint job generates
-# the manifest for the workflow-catalog check and fails when the committed digest
-# differs. Run `pnpm generate:mcp` and commit the digest when it says so.
-
 # Demo-dataset drift only shows up when the datasets actually run. This dry-runs
 # all four (~3s) — each rolls back, so it writes nothing.
 # Set CARBON_SKIP_DATASET_CHECK=1 to skip.
