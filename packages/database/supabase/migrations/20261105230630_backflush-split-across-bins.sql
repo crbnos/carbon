@@ -410,9 +410,11 @@ BEGIN
     -- the historical unclamped behavior.
     v_bin_work_center_id := NULL;
     IF v_material_storage_unit_id IS NOT NULL THEN
-      SELECT su."workCenterId" INTO v_bin_work_center_id
+      -- A child of a lineside unit is lineside too.
+      SELECT get_effective_work_center_id(su.id) INTO v_bin_work_center_id
       FROM "storageUnit" su
-      WHERE su.id = v_material_storage_unit_id;
+      WHERE su.id = v_material_storage_unit_id
+        AND su."companyId" = p_company_id;
 
       IF v_bin_work_center_id IS NOT NULL THEN
         SELECT COALESCE(SUM(quantity), 0) INTO v_bin_on_hand
@@ -471,34 +473,36 @@ BEGIN
 
         CONTINUE WHEN v_plan_left <= 0;
 
+        -- Bins are totalled first, so the storage unit checks run once a bin.
         FOR v_plan_bin IN
-          SELECT il."storageUnitId" AS id, SUM(il.quantity) AS quantity
-          FROM "itemLedger" il
-          LEFT JOIN "storageUnit" su
-            ON su.id = il."storageUnitId"
-            AND su."companyId" = il."companyId"
-          WHERE il."itemId" = v_material."itemId"
-            AND il."locationId" = v_job_location_id
-            AND il."companyId" = p_company_id
-            AND il."trackedEntityId" IS NULL
-            AND il."projectId" IS NOT DISTINCT FROM v_stripe
-            -- With no bin chosen, no storage unit is a candidate too.
-            AND (
-              v_material_storage_unit_id IS NULL
-              OR il."storageUnitId" IS DISTINCT FROM v_material_storage_unit_id
-            )
-            AND (
-              il."storageUnitId" IS NULL
-              OR (
-                su."effectiveNettable"
-                AND su.active
-                -- A child of a lineside unit is lineside too.
-                AND get_effective_work_center_id(su.id) IS NULL
+          SELECT bin.id, bin.quantity
+          FROM (
+            SELECT il."storageUnitId" AS id, SUM(il.quantity) AS quantity
+            FROM "itemLedger" il
+            WHERE il."itemId" = v_material."itemId"
+              AND il."locationId" = v_job_location_id
+              AND il."companyId" = p_company_id
+              AND il."trackedEntityId" IS NULL
+              AND il."projectId" IS NOT DISTINCT FROM v_stripe
+              -- With no bin chosen, no storage unit is a candidate too.
+              AND (
+                v_material_storage_unit_id IS NULL
+                OR il."storageUnitId" IS DISTINCT FROM v_material_storage_unit_id
               )
+            GROUP BY il."storageUnitId"
+            HAVING round(SUM(il.quantity), 5) > 0
+          ) bin
+          LEFT JOIN "storageUnit" su
+            ON su.id = bin.id
+            AND su."companyId" = p_company_id
+          WHERE bin.id IS NULL
+            OR (
+              su."effectiveNettable"
+              AND su.active
+              -- A child of a lineside unit is lineside too.
+              AND get_effective_work_center_id(su.id) IS NULL
             )
-          GROUP BY il."storageUnitId"
-          HAVING round(SUM(il.quantity), 5) > 0
-          ORDER BY SUM(il.quantity) DESC, COALESCE(il."storageUnitId", '')
+          ORDER BY bin.quantity DESC, COALESCE(bin.id, '')
         LOOP
           EXIT WHEN v_plan_left <= 0;
           v_plan_take := round(LEAST(v_plan_left, v_plan_bin.quantity), 5);

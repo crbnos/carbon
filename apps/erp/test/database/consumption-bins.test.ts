@@ -104,7 +104,9 @@ describe.skipIf(!hasLocalDatabase)("consumption bins", () => {
       .where("itemId", "=", itemId)
       .where("documentType", "=", "Job Consumption")
       .where("companyId", "=", f.companyId)
+      // Two rows can share a quantity: the storage unit breaks the tie.
       .orderBy("quantity")
+      .orderBy("storageUnitId")
       .execute();
 
   const manualIssue = (

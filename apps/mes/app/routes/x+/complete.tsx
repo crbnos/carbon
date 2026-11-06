@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, hasPermission, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,12 +11,14 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import { completeQuantityValidator } from "~/services/models";
 import {
   abilityBlockRefusal,
   finishJobOperation,
-  insertProductionQuantity
+  insertProductionQuantity,
+  insertProductionQuantityIfCurrent
 } from "~/services/operations.service";
 import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
@@ -27,7 +29,10 @@ const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, permissions } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(completeQuantityValidator).validate(
@@ -284,22 +289,6 @@ export async function action({ request }: ActionFunctionArgs) {
       ...d
     } = validation.data;
 
-    // The page completed a unit the operation has already recorded since it
-    // loaded: a second tab, or a resent request. Record nothing.
-    if (
-      expectedQuantityComplete !== undefined &&
-      Number(jobOperation.data.quantityComplete ?? 0) !==
-        expectedQuantityComplete
-    ) {
-      log.info("Completion skipped: the unit is already recorded", {
-        companyId,
-        jobOperationId: jobOperation.data.id,
-        expectedQuantityComplete,
-        quantityComplete: jobOperation.data.quantityComplete
-      });
-      return data({ alreadyRecorded: true });
-    }
-
     const check = await checkStrictBackflush({
       jobOperationId: validation.data.jobOperationId,
       quantity: validation.data.quantity,
@@ -317,23 +306,69 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const insertProduction = await insertProductionQuantity(client, {
-      ...d,
-      companyId,
-      createdBy: userId
-    });
+    let recorded: unknown;
+    if (expectedQuantityComplete !== undefined) {
+      // The page sent the completed quantity it showed: record the unit only
+      // if no other request (a second tab, a resend) recorded it meanwhile.
+      if (!hasPermission(permissions, "production", "create", companyId)) {
+        return data(
+          {},
+          await flash(request, {
+            ...error(null, "You do not have permission to record production"),
+            flash: "error"
+          })
+        );
+      }
+      let inserted: { id: string } | null;
+      try {
+        inserted = await insertProductionQuantityIfCurrent(
+          getDatabaseClient(),
+          { ...d, companyId, createdBy: userId },
+          expectedQuantityComplete
+        );
+      } catch (err) {
+        log.error("Failed to record production quantity", {
+          companyId,
+          jobOperationId: jobOperation.data.id,
+          error: err
+        });
+        return data(
+          {},
+          await flash(request, {
+            ...error(err, "Failed to record production quantity"),
+            flash: "error"
+          })
+        );
+      }
+      if (!inserted) {
+        log.info("Completion skipped: the unit is already recorded", {
+          companyId,
+          jobOperationId: jobOperation.data.id,
+          expectedQuantityComplete
+        });
+        return data({ alreadyRecorded: true });
+      }
+      recorded = [inserted];
+    } else {
+      const insertProduction = await insertProductionQuantity(client, {
+        ...d,
+        companyId,
+        createdBy: userId
+      });
 
-    if (insertProduction.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(
-            insertProduction.error,
-            "Failed to record production quantity"
-          ),
-          flash: "error"
-        })
-      );
+      if (insertProduction.error) {
+        return data(
+          {},
+          await flash(request, {
+            ...error(
+              insertProduction.error,
+              "Failed to record production quantity"
+            ),
+            flash: "error"
+          })
+        );
+      }
+      recorded = insertProduction.data;
     }
 
     const issued = await erpPosting(
@@ -386,7 +421,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     return data(
-      insertProduction.data,
+      recorded,
       await flash(request, {
         ...success("Successfully completed part"),
         flash: "success"
