@@ -36,13 +36,9 @@ BEGIN
   SELECT b."itemId" INTO v_item_id
   FROM batched_new b
   JOIN "trackedEntity" te ON te."id" = b."trackedEntityId"
-  JOIN "inspection" ins
-    ON ins."sourceDocument" = 'Receipt'
-   AND ins."sourceDocumentLineId" = te."attributes" ->> 'Receipt Line'
-   AND ins."companyId" = te."companyId"
   WHERE b."quantity" < 0
     AND te."status" = 'On Hold'
-    AND ins."status" IN ('Pending', 'In Progress')
+    AND public.inspection_line_lot_open(te."companyId", te."attributes" ->> 'Receipt Line')
   ORDER BY b."entryNumber"
   LIMIT 1;
   IF FOUND THEN
@@ -64,13 +60,7 @@ BEGIN
     WHERE b."quantity" < 0
       AND b."trackedEntityId" IS NULL
       AND b."storageUnitId" IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM "inspection" h
-        WHERE h."storageUnitId" = b."storageUnitId"
-          AND h."itemId" = b."itemId"
-          AND h."status" IN ('Pending', 'In Progress', 'Partial')
-          AND public.inspection_lot_holds(h."id", h."status", h."acceptedQuantity")
-      )
+      AND public.inspection_holds_at(b."companyId", b."itemId", b."storageUnitId")
   ) k;
   IF v_units IS NULL THEN
     RETURN NULL;

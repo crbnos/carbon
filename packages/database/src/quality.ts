@@ -12,7 +12,7 @@
  * its own `getDatabaseClient()` singleton). Kysely bypasses RLS — the calling
  * route's `requirePermissions` is the auth gate.
  */
-import type { NotNull, Transaction } from "kysely";
+import type { Insertable, NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
@@ -172,6 +172,30 @@ export async function setInspectionRelease(
   );
 }
 
+/**
+ * Runs `fn` with the inspection release on, then puts the flag back as it was.
+ * Use it for the one write that IS the release (a lot's decision, an NCR's
+ * close, a void's cancelled lots): stock moves that follow run with the hold
+ * guard on, so they cannot take what another lot still holds.
+ */
+export async function withInspectionRelease<T>(
+  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  fn: () => Promise<T>
+): Promise<T> {
+  const before = await sql<{
+    value: string | null;
+  }>`SELECT current_setting('app.inspection_release', true) AS value`.execute(
+    trx
+  );
+  const previous = before.rows[0]?.value === "on" ? "on" : "off";
+  await setInspectionRelease(trx);
+  const result = await fn();
+  await sql`SELECT set_config('app.inspection_release', ${previous}, true)`.execute(
+    trx
+  );
+  return result;
+}
+
 // Joins the transaction `db` already is, else opens one (Kysely refuses
 // transaction() on a Transaction). Inline, not client.ts's withTransaction:
 // this module is imported where the pg driver is not.
@@ -181,6 +205,30 @@ function inTransaction<T>(
 ): Promise<T> {
   if (db.isTransaction) return fn(db as Transaction<KyselyDatabase>);
   return db.transaction().execute(fn);
+}
+
+/**
+ * The lot's status, read under its row lock after the receipt's lock (the
+ * order a decision takes). A status read before the receipt lock can be a
+ * decision's stale "before".
+ */
+async function lockedLotStatus(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string,
+  mode: "update" | "share"
+): Promise<string> {
+  const query = trx
+    .selectFrom("inspection")
+    .select("status")
+    .where("id", "=", inspectionId)
+    .where("companyId", "=", companyId);
+  const lot = await (mode === "update"
+    ? query.forUpdate()
+    : query.forShare()
+  ).executeTakeFirst();
+  if (!lot) throw new Error("Inspection not found");
+  return lot.status;
 }
 
 function isInspectionClosed(status: string): boolean {
@@ -326,7 +374,16 @@ export async function upsertInspectionSample(
         inspection,
         "noKeyUpdate"
       );
-      if (isInspectionClosed(inspection.status)) {
+      if (
+        isInspectionClosed(
+          await lockedLotStatus(
+            trx,
+            sample.companyId,
+            sample.inspectionId,
+            "update"
+          )
+        )
+      ) {
         throw new Error("Inspection is closed");
       }
       // Serial parts carry a tracked entity that may only be sampled once, so we
@@ -636,9 +693,6 @@ export async function dispositionInspection(
   try {
     // Joins the caller's transaction: the reject posts its write-off in it.
     const result = await inTransaction(db, async (trx) => {
-      // The rejected move below takes held stock out of the inspection unit.
-      await setInspectionRelease(trx);
-
       // Lock order: the receipt, then the lot — the order a receipt void
       // takes. The lot's source never changes, so a plain read finds it.
       const source = await trx
@@ -904,20 +958,7 @@ export async function dispositionInspection(
           break;
       }
 
-      // A write-off retry changes no unit: the first Reject flipped them, and
-      // some may have left since (returned to the supplier).
       const wasOpen = !isInspectionClosed(inspection.status);
-      if (wasOpen) {
-        for (const flip of flips) {
-          if (flip.ids.length === 0) continue;
-          await trx
-            .updateTable("trackedEntity")
-            .set({ status: flip.status })
-            .where("id", "in", flip.ids)
-            .where("companyId", "=", args.companyId)
-            .execute();
-        }
-      }
 
       const isUntracked = item?.itemTrackingType === "Inventory";
       const heldStorageUnitId =
@@ -955,13 +996,18 @@ export async function dispositionInspection(
       ) {
         // A tracked lot's passed part is its Available units; the receipt's
         // inspection status reads it to tell when putaway is done.
-        const passed = await trx
-          .selectFrom("trackedEntity")
-          .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
-          .where("id", "in", allLotIds)
-          .where("companyId", "=", args.companyId)
-          .where("status", "=", "Available")
-          .executeTakeFirst();
+        const passedIds = allLotIds.filter((id) => !failedEntityIds.has(id));
+        const passed =
+          passedIds.length > 0
+            ? await trx
+                .selectFrom("trackedEntity")
+                .select(
+                  sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity")
+                )
+                .where("id", "in", passedIds)
+                .where("companyId", "=", args.companyId)
+                .executeTakeFirst()
+            : undefined;
         acceptedQuantity = round(Number(passed?.quantity ?? 0));
       }
 
@@ -1005,17 +1051,9 @@ export async function dispositionInspection(
         // and its Reject writes off from the receipt line's unit as before.
         const holdsStock =
           inspection.storageUnitId !== null || args.decision === "Partial";
-        if (
-          args.decision === "Partial" &&
-          !writtenOff &&
-          untrackedTake - onHand > EPSILON
-        ) {
-          throw new Error(
-            `Only ${onHand} of the ${untrackedTake} rejected are in the held storage unit, so the rest cannot stay held. Correct the stock there, or reject the lot: a Reject writes off what is there.`
-          );
-        }
-        if (args.decision === "Reject" && holdsStock && !writtenOff) {
-          // Other open lots in the unit keep what they hold.
+        // Other lots in the unit keep what they hold: this lot claims only
+        // the rest.
+        const otherHeld = async () => {
           const [{ held }] = (
             await sql<{
               held: number;
@@ -1023,11 +1061,22 @@ export async function dispositionInspection(
               trx
             )
           ).rows as [{ held: number }];
-          const otherHeld = round(
-            Number(held) - (wasOpen ? inspection.lotSize : 0)
-          );
+          return round(Number(held) - (wasOpen ? inspection.lotSize : 0));
+        };
+        if (args.decision === "Partial" && !writtenOff) {
+          const claimable = round(Math.max(onHand - (await otherHeld()), 0));
+          if (untrackedTake - claimable > EPSILON) {
+            throw new Error(
+              `Only ${claimable} of the ${untrackedTake} rejected are in the held storage unit, so the rest cannot stay held. Correct the stock there, or reject the lot: a Reject writes off what is there.`
+            );
+          }
+        }
+        if (args.decision === "Reject" && holdsStock && !writtenOff) {
           writeOffQuantity = round(
-            Math.min(inspection.lotSize, Math.max(onHand - otherHeld, 0))
+            Math.min(
+              inspection.lotSize,
+              Math.max(onHand - (await otherHeld()), 0)
+            )
           );
         }
       }
@@ -1036,6 +1085,7 @@ export async function dispositionInspection(
       // no id, so only the decision that closes an open lot moves it: once closed,
       // the held unit's stock may belong to another lot.
       let movedToStorageUnitId: string | null = null;
+      let moveRows: Insertable<KyselyDatabase["itemLedger"]>[] = [];
       if (
         isReceiptSource &&
         wasOpen &&
@@ -1070,6 +1120,9 @@ export async function dispositionInspection(
             documentIds: lotDocumentIds
           });
           if (moves.length > 0) {
+            // The untracked hold follows its stock; a tracked hold is the
+            // unit's status, and Put Away reads each unit's own bin.
+            if (isUntracked) movedToStorageUnitId = rejectedStorageUnitId;
             const [{ today }] = (
               await sql<{
                 today: string;
@@ -1077,42 +1130,34 @@ export async function dispositionInspection(
                 trx
               )
             ).rows as [{ today: string }];
-            await trx
-              .insertInto("itemLedger")
-              .values(
-                moves.flatMap((move) => {
-                  const row = {
-                    postingDate: today,
-                    itemId: inspection.itemId,
-                    locationId: receiptLine.locationId,
-                    trackedEntityId: move.trackedEntityId,
-                    // The stripe it was held on, on both rows of the move.
-                    projectId: move.projectId,
-                    entryType: "Transfer" as const,
-                    documentType: "Direct Transfer" as const,
-                    documentId: inspection.id,
-                    comment: "Rejected at inspection",
-                    companyId: args.companyId,
-                    createdBy: args.dispositionedBy
-                  };
-                  return [
-                    {
-                      ...row,
-                      storageUnitId: heldStorageUnitId,
-                      quantity: -move.quantity
-                    },
-                    {
-                      ...row,
-                      storageUnitId: rejectedStorageUnitId,
-                      quantity: move.quantity
-                    }
-                  ];
-                })
-              )
-              .execute();
-            // The untracked hold follows its stock; a tracked hold is the
-            // unit's status, and Put Away reads each unit's own bin.
-            if (isUntracked) movedToStorageUnitId = rejectedStorageUnitId;
+            moveRows = moves.flatMap((move) => {
+              const row = {
+                postingDate: today,
+                itemId: inspection.itemId,
+                locationId: receiptLine.locationId,
+                trackedEntityId: move.trackedEntityId,
+                // The stripe it was held on, on both rows of the move.
+                projectId: move.projectId,
+                entryType: "Transfer" as const,
+                documentType: "Direct Transfer" as const,
+                documentId: inspection.id,
+                comment: "Rejected at inspection",
+                companyId: args.companyId,
+                createdBy: args.dispositionedBy
+              };
+              return [
+                {
+                  ...row,
+                  storageUnitId: heldStorageUnitId,
+                  quantity: -move.quantity
+                },
+                {
+                  ...row,
+                  storageUnitId: rejectedStorageUnitId,
+                  quantity: move.quantity
+                }
+              ];
+            });
           }
         }
       }
@@ -1148,31 +1193,53 @@ export async function dispositionInspection(
             }
           : null;
 
-      const updated = await trx
-        .updateTable("inspection")
-        .set({
-          status: lotStatus,
-          notes: args.notes || args.reason?.trim() || null,
-          ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
-          ...(movedToStorageUnitId
-            ? { storageUnitId: movedToStorageUnitId }
-            : {}),
-          dispositionedBy: args.dispositionedBy,
-          dispositionedAt: nowIso,
-          updatedBy: args.dispositionedBy,
-          updatedAt: nowIso
-        })
-        .where("id", "=", args.id)
-        .where("companyId", "=", args.companyId)
-        // One-shot: the lot was read FOR UPDATE above, so this predicate is a
-        // second guard on the status that read already checked.
-        .$if(args.requireOpen === true, (qb) =>
-          qb.where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
-        )
-        .returning(["id", "status"])
-        .executeTakeFirst();
+      // The lot's decision is the release: once it is no longer open, the
+      // hold guard lets its units and its stock move, and still protects what
+      // other lots hold. So only this update runs with the release on.
+      const updated = await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("inspection")
+          .set({
+            status: lotStatus,
+            notes: args.notes || args.reason?.trim() || null,
+            ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
+            ...(movedToStorageUnitId
+              ? { storageUnitId: movedToStorageUnitId }
+              : {}),
+            dispositionedBy: args.dispositionedBy,
+            dispositionedAt: nowIso,
+            updatedBy: args.dispositionedBy,
+            updatedAt: nowIso
+          })
+          .where("id", "=", args.id)
+          .where("companyId", "=", args.companyId)
+          // One-shot: the lot was read FOR UPDATE above, so this predicate is a
+          // second guard on the status that read already checked.
+          .$if(args.requireOpen === true, (qb) =>
+            qb.where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
+          )
+          .returning(["id", "status"])
+          .executeTakeFirst()
+      );
       if (!updated) {
         throw new Error("Inspection is already dispositioned");
+      }
+
+      // A write-off retry changes no unit: the first Reject flipped them, and
+      // some may have left since (returned to the supplier).
+      if (wasOpen) {
+        for (const flip of flips) {
+          if (flip.ids.length === 0) continue;
+          await trx
+            .updateTable("trackedEntity")
+            .set({ status: flip.status })
+            .where("id", "in", flip.ids)
+            .where("companyId", "=", args.companyId)
+            .execute();
+        }
+      }
+      if (moveRows.length > 0) {
+        await trx.insertInto("itemLedger").values(moveRows).execute();
       }
 
       await trx
@@ -1251,7 +1318,16 @@ export async function upsertInspectionMeasurement(
         inspection,
         "noKeyUpdate"
       );
-      if (isInspectionClosed(inspection.status)) {
+      if (
+        isInspectionClosed(
+          await lockedLotStatus(
+            trx,
+            args.companyId,
+            args.inspectionId,
+            "update"
+          )
+        )
+      ) {
         throw new Error("Inspection is closed");
       }
       const feature = await trx
@@ -1576,7 +1652,16 @@ export async function changeInspectionDocument(
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       await assertReceiptNotVoided(trx, args.companyId, inspection);
-      if (isInspectionClosed(inspection.status)) {
+      if (
+        isInspectionClosed(
+          await lockedLotStatus(
+            trx,
+            args.companyId,
+            args.inspectionId,
+            "update"
+          )
+        )
+      ) {
         throw new Error("Inspection is closed");
       }
 
@@ -1647,7 +1732,11 @@ export async function recordInspectionGauge(
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       await assertReceiptNotVoided(trx, args.companyId, inspection);
-      if (isInspectionClosed(inspection.status)) {
+      if (
+        isInspectionClosed(
+          await lockedLotStatus(trx, args.companyId, args.inspectionId, "share")
+        )
+      ) {
         throw new Error("Inspection is closed");
       }
 

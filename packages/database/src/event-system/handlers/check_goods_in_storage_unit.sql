@@ -10,10 +10,12 @@ AS $function$
 -- change of effectiveNettable is written by util.refresh_storage_unit_nettable
 -- as an UPDATE of the unit, so a change of the unit's own flag, a parent's or a
 -- storage type's reaches this check. It stays at the location that names it,
--- where its lots and ledger rows are booked. A plain RAISE (P0001), so the API
--- shows the text.
+-- where its lots and ledger rows are booked. A unit a location no longer names
+-- is held the same way while a lot still holds stock in it. A plain RAISE
+-- (P0001), so the API shows the text.
 DECLARE
   v_location TEXT;
+  v_lot TEXT;
   v_becomes_nettable BOOLEAN;
   v_deactivated BOOLEAN;
   v_moved BOOLEAN;
@@ -43,6 +45,23 @@ BEGIN
   IF FOUND THEN
     RAISE EXCEPTION '% is a goods-in storage unit of %. Choose another unit in Settings → Quality first.',
       COALESCE(p_new->>'name', p_new->>'id'), v_location;
+  END IF;
+
+  SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+  FROM "inspection" i
+  WHERE i."storageUnitId" = p_old->>'id'
+    AND i."companyId" = p_old->>'companyId'
+    AND i."status" IN ('Pending', 'In Progress', 'Partial')
+    AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity")
+  ORDER BY i."inspectionId"
+  LIMIT 1;
+  IF FOUND THEN
+    -- A company deletion's cascade after the company row is gone.
+    IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
+      RETURN;
+    END IF;
+    RAISE EXCEPTION '% holds stock of inspection lot %. Quality must decide the lot first.',
+      COALESCE(p_new->>'name', p_new->>'id'), v_lot;
   END IF;
 END;
 $function$;

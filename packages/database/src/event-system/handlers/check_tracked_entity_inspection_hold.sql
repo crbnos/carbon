@@ -30,13 +30,7 @@ BEGIN
     RETURN;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM "inspection" i
-    WHERE i."companyId" = p_old->>'companyId'
-      AND i."sourceDocument" = 'Receipt'
-      AND i."sourceDocumentLineId" = v_line
-      AND i."status" IN ('Pending', 'In Progress')
-  ) THEN
+  IF public.inspection_line_lot_open(p_old->>'companyId', v_line) THEN
     SELECT "readableIdWithRevision" INTO v_item FROM "item" WHERE "id" = p_old->>'itemId';
     RAISE EXCEPTION '% % is held for inspection. Quality must decide its inspection lot before it can be released.',
       COALESCE(v_item, p_old->>'itemId', ''), COALESCE(p_old->>'readableId', p_old->>'id');

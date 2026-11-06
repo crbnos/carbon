@@ -14,10 +14,12 @@ AS $function$
 -- change of effectiveNettable is written by util.refresh_storage_unit_nettable
 -- as an UPDATE of the unit, so a change of the unit's own flag, a parent's or a
 -- storage type's reaches this check. It stays at the location that names it,
--- where its lots and ledger rows are booked. A plain RAISE (P0001), so the API
--- shows the text.
+-- where its lots and ledger rows are booked. A unit a location no longer names
+-- is held the same way while a lot still holds stock in it. A plain RAISE
+-- (P0001), so the API shows the text.
 DECLARE
   v_location TEXT;
+  v_lot TEXT;
   v_becomes_nettable BOOLEAN;
   v_deactivated BOOLEAN;
   v_moved BOOLEAN;
@@ -47,6 +49,23 @@ BEGIN
   IF FOUND THEN
     RAISE EXCEPTION '% is a goods-in storage unit of %. Choose another unit in Settings → Quality first.',
       COALESCE(p_new->>'name', p_new->>'id'), v_location;
+  END IF;
+
+  SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+  FROM "inspection" i
+  WHERE i."storageUnitId" = p_old->>'id'
+    AND i."companyId" = p_old->>'companyId'
+    AND i."status" IN ('Pending', 'In Progress', 'Partial')
+    AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity")
+  ORDER BY i."inspectionId"
+  LIMIT 1;
+  IF FOUND THEN
+    -- A company deletion's cascade after the company row is gone.
+    IF NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
+      RETURN;
+    END IF;
+    RAISE EXCEPTION '% holds stock of inspection lot %. Quality must decide the lot first.',
+      COALESCE(p_new->>'name', p_new->>'id'), v_lot;
   END IF;
 END;
 $function$;
@@ -89,13 +108,9 @@ BEGIN
   SELECT b."itemId" INTO v_item_id
   FROM batched_new b
   JOIN "trackedEntity" te ON te."id" = b."trackedEntityId"
-  JOIN "inspection" ins
-    ON ins."sourceDocument" = 'Receipt'
-   AND ins."sourceDocumentLineId" = te."attributes" ->> 'Receipt Line'
-   AND ins."companyId" = te."companyId"
   WHERE b."quantity" < 0
     AND te."status" = 'On Hold'
-    AND ins."status" IN ('Pending', 'In Progress')
+    AND public.inspection_line_lot_open(te."companyId", te."attributes" ->> 'Receipt Line')
   ORDER BY b."entryNumber"
   LIMIT 1;
   IF FOUND THEN
@@ -117,13 +132,7 @@ BEGIN
     WHERE b."quantity" < 0
       AND b."trackedEntityId" IS NULL
       AND b."storageUnitId" IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM "inspection" h
-        WHERE h."storageUnitId" = b."storageUnitId"
-          AND h."itemId" = b."itemId"
-          AND h."status" IN ('Pending', 'In Progress', 'Partial')
-          AND public.inspection_lot_holds(h."id", h."status", h."acceptedQuantity")
-      )
+      AND public.inspection_holds_at(b."companyId", b."itemId", b."storageUnitId")
   ) k;
   IF v_units IS NULL THEN
     RETURN NULL;
@@ -478,13 +487,7 @@ BEGIN
     RETURN;
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM "inspection" i
-    WHERE i."companyId" = p_old->>'companyId'
-      AND i."sourceDocument" = 'Receipt'
-      AND i."sourceDocumentLineId" = v_line
-      AND i."status" IN ('Pending', 'In Progress')
-  ) THEN
+  IF public.inspection_line_lot_open(p_old->>'companyId', v_line) THEN
     SELECT "readableIdWithRevision" INTO v_item FROM "item" WHERE "id" = p_old->>'itemId';
     RAISE EXCEPTION '% % is held for inspection. Quality must decide its inspection lot before it can be released.',
       COALESCE(v_item, p_old->>'itemId', ''), COALESCE(p_old->>'readableId', p_old->>'id');

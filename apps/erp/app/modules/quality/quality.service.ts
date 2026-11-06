@@ -50,7 +50,8 @@ import {
   errResult,
   lockIssueDispositions,
   type Result,
-  setInspectionRelease
+  setInspectionRelease,
+  withInspectionRelease
 } from "@carbon/database/quality";
 import { inOrder, many, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
@@ -4195,6 +4196,9 @@ export async function closeIssue(
     storageUnitId: string | null;
     // The held stock per project stripe, drawn down as rows write it off.
     stripes: engine.HeldStripe[];
+    // What the lot still holds (lot size less accepted): no row writes off
+    // more, so another lot's stock in the unit is never taken.
+    remaining: number;
   } | null = null;
   let fromPartialReceiptLot = false;
   // A rejected lot's write-off, per place and stripe, drawn down as rows
@@ -4220,7 +4224,7 @@ export async function closeIssue(
       client
         .from("nonConformanceInspection")
         .select(
-          "id, inspectionId, inspection(status, sourceDocument, sourceDocumentId, storageUnitId, itemId)"
+          "id, inspectionId, inspection(status, sourceDocument, sourceDocumentId, storageUnitId, itemId, lotSize, acceptedQuantity)"
         )
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
@@ -4255,6 +4259,13 @@ export async function closeIssue(
         itemId: linkedLot.itemId,
         locationId: lotLocationId,
         storageUnitId: linkedLot.storageUnitId ?? null,
+        remaining: round(
+          Math.max(
+            Number(linkedLot.lotSize ?? 0) -
+              Number(linkedLot.acceptedQuantity ?? 0),
+            0
+          )
+        ),
         stripes: linkedLot.storageUnitId
           ? await engine.heldStockStripes(db, {
               companyId,
@@ -4404,10 +4415,16 @@ export async function closeIssue(
       if (writeOff <= EPSILON) continue;
       const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
       if (held) {
-        // From the stripes the remainder is held on, one row each.
-        const draws = engine.drawHeldStripes(writeOff, held.stripes, {
-          overflow: true
-        });
+        // From the stripes the remainder is held on, one row each: no more
+        // than the lot still holds, and no more than is there.
+        const draws = engine.drawHeldStripes(
+          Math.min(writeOff, held.remaining),
+          held.stripes,
+          { overflow: false }
+        );
+        held.remaining = round(
+          held.remaining - draws.reduce((sum, draw) => sum + draw.quantity, 0)
+        );
         for (const draw of draws) {
           const stripe = held.stripes.find(
             (s) => s.projectId === draw.projectId
@@ -4474,9 +4491,6 @@ export async function closeIssue(
 
   try {
     const result = await db.transaction().execute(async (trx) => {
-      // Closing releases a Partial receipt lot's held remainder, which the
-      // write-off below takes out of its unit in this transaction.
-      await setInspectionRelease(trx);
       const issue = await trx
         .selectFrom("nonConformance")
         .select(["id", "status"])
@@ -4609,9 +4623,26 @@ export async function closeIssue(
         }
       }
 
-      // The inventory value movements post with the close, so a write-off never
-      // commits while the NCR stays open (its lot would still count as held).
-      // Idempotent per NCR.
+      // Closing is the release: a Partial receipt lot's remainder stops being
+      // held once its NCR is Closed. Only this update runs with the release
+      // on; the write-off and the unit changes below run with the hold guard
+      // on, so they cannot take stock or units another lot still holds.
+      const updated = await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("nonConformance")
+          .set({
+            status: "Closed",
+            closeDate: today,
+            updatedBy: userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", nonConformanceId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirstOrThrow()
+      );
+
+      // The inventory value movements post with the close. Idempotent per NCR.
       if (movements.length > 0) {
         const post = await invokePosting(
           { db: trx, companyId, userId },
@@ -4708,19 +4739,6 @@ export async function closeIssue(
           }
         }
       }
-
-      const updated = await trx
-        .updateTable("nonConformance")
-        .set({
-          status: "Closed",
-          closeDate: today,
-          updatedBy: userId,
-          updatedAt: nowIso
-        })
-        .where("id", "=", nonConformanceId)
-        .where("companyId", "=", companyId)
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
 
       return { id: updated.id };
     });
@@ -6041,10 +6059,10 @@ export async function postNonconformance(
 
   // Joins the caller's transaction: the reject posts its write-off inside the
   // decision, so the stock is never free between the two.
+  // The hold guard stays on: its caller decides the lot or closes the NCR
+  // first, so the guard lets that lot's stock go and keeps what other lots
+  // hold (and units still held by an open lot).
   await withTransaction(db, async (trx) => {
-    // This posting releases stock held for inspection: the write-off and the
-    // NCR disposition.
-    await setInspectionRelease(trx);
     // Idempotent per (documentType, documentId): a reject posts one write-off
     // per inspection, a disposition close posts once per NCR (reopen is blocked
     // after posting). A retry after a partial route failure — e.g. the caller's

@@ -314,13 +314,28 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   deadlock (40P01); Postgres aborts one, which can be retried. On-hand counts only rows with no tracked entity: a
   serial or batch unit is held by its own status. It raises a plain
   `RAISE` (P0001): any other SQLSTATE reads as a server failure and the API
-  withholds its text. It steps aside for `app.inspection_release = 'on'` (set
-  by `setInspectionRelease`, `@carbon/database/quality`, in the release
-  postings: disposition's rejected move, `post-nonconformance`, `closeIssue`'s
-  status flip, receipt voids, inventory counts, return shipments, and a
-  company restore or import's load transaction) and for
-  `app.sync_in_progress` (dataset apply, test fixtures). Samples and
-  measurements do not set it: they change no unit's status. A return shipment
+  withholds its text. It steps aside for `app.inspection_release = 'on'` and
+  for
+  `app.sync_in_progress` (dataset apply, test fixtures). The release flag
+  covers only the write that IS the release (`withInspectionRelease(trx, fn)`,
+  `@carbon/database/quality`, turns it on for one step and restores it): the
+  lot's own update in `dispositionInspection`, the NCR's status change in
+  `closeIssue`, and a purchase receipt void's cancelled lots. Each runs first;
+  the unit flips, rejected moves, write-offs (`post-nonconformance` sets no
+  flag) and the void's reversal follow with the guard on. A decided lot, a
+  Partial lot whose NCR is closed and a cancelled lot hold nothing, so the
+  guard lets their stock go and still refuses what another lot holds, and a
+  unit still On Hold under an open lot (an NCR's Scrap of such a unit is
+  refused). `setInspectionRelease` (the whole transaction) is left only for an
+  inventory count, the return shipments and a company restore or import's
+  load. A sales-return receipt void opens no lot and runs with the guard on.
+  Samples and measurements do not set it: they change no unit's status.
+  Samples, measurements, document swaps and gauge records read the lot's
+  status again under its row lock after the receipt's lock (`lockedLotStatus`),
+  so none acts on a decision's stale "before". The two hold tests have one SQL
+  definition each: `inspection_line_lot_open(company, receipt line)` (a serial
+  or batch unit's lot is open) and `inspection_holds_at(company, item, unit,
+  open_lots_only)` (a lot holds untracked stock there). A return shipment
   runs under the flag (it puts back and ships a rejected lot's write-off), so
   `refuseShippingOpenLotStock` (`inventory.service.ts`) checks, after its
   ledger rows, that no On Hold unit of an open lot left and, only for an
@@ -339,7 +354,7 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   index `itemLedger_untracked_storageUnit_item_idx` (`storageUnitId, itemId,
   companyId` INCLUDE `quantity`, untracked rows only), an index-only scan.
 - **No release by a direct edit.** Six BEFORE interceptors (the generated
-  handlers migration, `20261106052823`) refuse, with a plain `RAISE`, what
+  handlers migration, `20261106061223`) refuse, with a plain `RAISE`, what
   would release held stock without moving it, unless `app.inspection_release`
   is on or `app.sync_in_progress` is set: `check_inspection_lot_release` on
   `inspection` (a Receipt lot's `status`, except Pending ↔ In Progress, which
@@ -367,7 +382,9 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `check_goods_in_storage_unit` on `storageUnit` (a change that makes
   `effectiveNettable` true, `active` false, or moves the unit to another
   `locationId`, while a location names the unit as `inspectionStorageUnitId`
-  or `rejectedStorageUnitId`). `effectiveNettable`
+  or `rejectedStorageUnitId`, or while a lot still holds stock in it, per
+  `inspection_lot_holds`, so a unit Settings no longer names stays protected
+  until its lots are decided). `effectiveNettable`
   is only written by `util.refresh_storage_unit_nettable` as an UPDATE of the
   unit, so a change of the unit's own flag, a parent's or a storage type's all
   reach that check. A company restore or import sets `app.inspection_release`
@@ -401,8 +418,9 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `inspectionNcrPrerequisite` before the lot closes, then `openInspectionNcr`,
   at the receipt line's location; its links insert in the NCR's transaction).
   The engine refuses an untracked Partial whose rejected quantity is more than
-  the untracked on-hand at the held unit, whether or not a rejected unit is
-  set (the message says a Reject is possible). An untracked Reject writes off
+  what the lot can claim at the held unit (untracked on-hand less what other
+  lots hold there, as for Reject), whether or not a rejected unit is set (the
+  message says a Reject is possible). An untracked Reject writes off
   what the lot can still claim in its held unit: the untracked on-hand less
   what other lots hold there (`inspection_held_quantity` less its own lot
   size), at most its lot size and never below zero; nothing to claim posts no
@@ -460,8 +478,11 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   lot's NCR, which has no write-off, restores at the NCR's location, as
   before. An NCR can hold several lots: the restore reads every linked lot's
   write-off, and a Partial receipt lot among them decides how the NCR closes.
-  The write-off posts inside the status-flip transaction, so it never commits
-  while the NCR stays open. A tracked Scrap posts
+  The NCR closes first (the release), then the write-off posts and the units
+  change with the guard on, in one transaction. A Partial lot's Scrap writes
+  off no more than its remainder (`lotSize - acceptedQuantity`) and no more
+  than its stripes hold there, so another lot's stock in the unit is never
+  taken. A tracked Scrap posts
   against each entity's current storage unit. A voided receipt's lot answers
   "The receipt of this inspection was voided" before "closed".
 - **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by

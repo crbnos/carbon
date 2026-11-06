@@ -497,6 +497,7 @@ BEGIN
   DECLARE
     held_type text;
     typed_unit text;
+    free_unit text;
   BEGIN
     PERFORM pg_temp.expect('the inspection unit is not made nettable',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', unit),
@@ -513,14 +514,24 @@ BEGIN
     PERFORM pg_temp.expect('the rejected unit''s storage type is not made nettable',
       pg_temp.refused_edit(format('UPDATE "storageType" SET "nettable" = true WHERE "id" = %L', held_type),
         '%goods-in storage unit of%')::text, 'true');
-    PERFORM pg_temp.expect('a unit no location names may be made nettable',
+    -- unit2 is no location's goods-in unit, but an open lot holds stock there.
+    PERFORM pg_temp.expect('a unit a lot holds stock in is not made nettable',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', unit2),
-        '%goods-in storage unit of%')::text, 'false');
+        '%holds stock of inspection lot%')::text, 'true');
     PERFORM pg_temp.expect('the inspection unit is not deactivated',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "active" = false WHERE "id" = %L', unit),
         '%goods-in storage unit of%')::text, 'true');
-    PERFORM pg_temp.expect('a unit no location names may be deactivated',
+    PERFORM pg_temp.expect('a unit a lot holds stock in is not deactivated',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "active" = false WHERE "id" = %L', unit2),
+        '%holds stock of inspection lot%')::text, 'true');
+    INSERT INTO "storageUnit" ("name", "locationId", "nettable", "companyId", "createdBy")
+    VALUES ('FREE-HOLD-TEST-' || substr(md5(random()::text), 1, 8), location, false, company, usr)
+    RETURNING "id" INTO free_unit;
+    PERFORM pg_temp.expect('a unit no location names and no lot holds may be made nettable',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', free_unit),
+        '%goods-in storage unit of%')::text, 'false');
+    PERFORM pg_temp.expect('a unit no location names and no lot holds may be deactivated',
+      pg_temp.refused_edit(format('UPDATE "storageUnit" SET "active" = false WHERE "id" = %L', free_unit),
         '%goods-in storage unit of%')::text, 'false');
   END;
 

@@ -410,14 +410,18 @@ statement handler on `itemLedger`, refuses an INSERT statement with a negative r
 serial or batch unit whose receipt line's inspection lot is open, or with
 untracked moves out that leave an (item, storage unit) below
 `inspection_held_quantity` (under a per-(item, unit) advisory lock). It is the one enforcement point for
-every move path, the SQL backflush included. A posting that IS the release calls
-`setInspectionRelease(trx)` (`@carbon/database/quality`, sets the transaction GUC
-`app.inspection_release`): the disposition's rejected move, `post-nonconformance`,
-`closeIssue`'s status flip, the purchase and sales-return receipt voids,
+every move path, the SQL backflush included. The release flag (GUC
+`app.inspection_release`, `@carbon/database/quality`) covers only the write that
+IS the release: `withInspectionRelease(trx, fn)` turns it on for one step and
+restores it. A lot's decision, an NCR's close and a purchase receipt void's
+cancelled lots run under it; the stock moves, write-offs and unit changes that
+follow run with the guard on, because a decided lot (or a closed NCR, or a
+cancelled lot) no longer holds stock: the guard lets that stock go and keeps
+what other lots hold. A sales-return receipt void opens no lot and needs no
+flag. `setInspectionRelease(trx)` (the whole transaction) stays only for
 `postInventoryCount` (a count records where held stock really is, and
 `heldStockMovedByCount` names what it found elsewhere), the four return-shipment
-transactions and a company restore or import's load transaction. Any new posting
-that must move held stock needs the same call, or the guard refuses it. A return
+transactions and a company restore or import's load transaction. A return
 shipment also calls `refuseShippingOpenLotStock` after its ledger rows, so it
 cannot ship stock an open lot still holds (checked only where an open lot
 holds stock). The guard also steps aside under

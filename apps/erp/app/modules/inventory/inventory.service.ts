@@ -67,7 +67,10 @@ import {
   type SharedTakes,
   splitTakeByBin
 } from "@carbon/database/picked-consumption";
-import { setInspectionRelease } from "@carbon/database/quality";
+import {
+  setInspectionRelease,
+  withInspectionRelease
+} from "@carbon/database/quality";
 import {
   idsWithLiveStockHistory,
   releaseReceiptSerialEntities,
@@ -6960,20 +6963,12 @@ export async function refuseShippingOpenLotStock(
 
   const heldUnit = await trx
     .selectFrom("trackedEntity as te")
-    .innerJoin("inspection as i", (join) =>
-      join
-        .on("i.sourceDocument", "=", "Receipt")
-        .onRef(
-          "i.sourceDocumentLineId",
-          "=",
-          sql<string>`te."attributes" ->> 'Receipt Line'`
-        )
-        .onRef("i.companyId", "=", "te.companyId")
-    )
     .select("te.itemId")
     .where("te.companyId", "=", companyId)
     .where("te.status", "=", "On Hold")
-    .where("i.status", "in", ["Pending", "In Progress"])
+    .where(
+      sql<boolean>`public.inspection_line_lot_open(te."companyId", te."attributes" ->> 'Receipt Line')`
+    )
     .where("te.id", "in", [
       "",
       ...out
@@ -7003,13 +6998,7 @@ export async function refuseShippingOpenLotStock(
           await sql<{ itemId: string; unitId: string }>`
             SELECT k.i AS "itemId", k.u AS "unitId"
             FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
-            WHERE EXISTS (
-              SELECT 1 FROM "inspection" h
-              WHERE h."storageUnitId" = k.u
-                AND h."itemId" = k.i
-                AND h."companyId" = ${companyId}
-                AND h."status" IN ('Pending', 'In Progress', 'Partial')
-            )
+            WHERE public.inspection_holds_at(${companyId}, k.i, k.u, ${!includePartial})
             ORDER BY k.i, k.u`.execute(trx)
         ).rows
       : [];
@@ -7093,21 +7082,13 @@ export async function inspectionHoldAdjustmentRefusal(
   if (args.trackedEntityId) {
     const held = await db
       .selectFrom("trackedEntity as te")
-      .innerJoin("inspection as i", (join) =>
-        join
-          .on("i.sourceDocument", "=", "Receipt")
-          .onRef(
-            "i.sourceDocumentLineId",
-            "=",
-            sql<string>`te."attributes" ->> 'Receipt Line'`
-          )
-          .onRef("i.companyId", "=", "te.companyId")
-      )
       .select("te.readableId")
       .where("te.id", "=", args.trackedEntityId)
       .where("te.companyId", "=", companyId)
       .where("te.status", "=", "On Hold")
-      .where("i.status", "in", ["Pending", "In Progress"])
+      .where(
+        sql<boolean>`public.inspection_line_lot_open(te."companyId", te."attributes" ->> 'Receipt Line')`
+      )
       .executeTakeFirst();
     if (!held) return null;
     const unit = held.readableId ? ` ${held.readableId}` : "";
@@ -7133,13 +7114,7 @@ export async function inspectionHoldAdjustmentRefusal(
           AND il."projectId" IS NOT DISTINCT FROM ${args.projectId || null}
       ), 0) AS "stripeOnHand",
       (SELECT su."name" FROM "storageUnit" su WHERE su."id" = ${args.storageUnitId}) AS "name"
-    WHERE EXISTS (
-      SELECT 1 FROM "inspection" h
-      WHERE h."storageUnitId" = ${args.storageUnitId}
-        AND h."itemId" = ${args.itemId}
-        AND h."companyId" = ${companyId}
-        AND h."status" IN ('Pending', 'In Progress', 'Partial')
-    )
+    WHERE public.inspection_holds_at(${companyId}, ${args.itemId}, ${args.storageUnitId})
   `.execute(db);
   const hold = row.rows[0];
   if (!hold || Number(hold.held) <= EPSILON) return null;
@@ -7360,7 +7335,9 @@ export async function heldStockMovedByCount(
     SELECT DISTINCT
       COALESCE(i."readableIdWithRevision", i."id") AS "part",
       su."name" AS "unit",
-      (lot."id" IS NOT NULL) AS "awaitingInspection",
+      (te."id" IS NOT NULL
+        AND public.inspection_line_lot_open(il."companyId", te."attributes" ->> 'Receipt Line')
+      ) AS "awaitingInspection",
       (il."trackedEntityId" IS NULL AND NOT EXISTS (
         SELECT 1 FROM "itemLedger" found
         WHERE found."companyId" = il."companyId"
@@ -7382,14 +7359,6 @@ export async function heldStockMovedByCount(
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
     LEFT JOIN "trackedEntity" te
       ON te."id" = il."trackedEntityId" AND te."companyId" = il."companyId"
-    LEFT JOIN LATERAL (
-      SELECT ins."id" FROM "inspection" ins
-      WHERE ins."companyId" = il."companyId"
-        AND ins."sourceDocument" = 'Receipt'
-        AND ins."sourceDocumentLineId" = te."attributes" ->> 'Receipt Line'
-        AND ins."status" IN ('Pending', 'In Progress')
-      LIMIT 1
-    ) lot ON true
     WHERE il."companyId" = ${companyId}
       AND il."documentType" = 'Inventory Count'
       AND il."documentId" = ${inventoryCountId}
@@ -7398,16 +7367,12 @@ export async function heldStockMovedByCount(
         -- On Hold for its open receipt lot: a unit On Hold for another
         -- reason (a customer return) is not held for inspection.
         (il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
-          AND lot."id" IS NOT NULL)
+          AND public.inspection_line_lot_open(il."companyId", te."attributes" ->> 'Receipt Line'))
         OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
-          -- CASE keeps the two sums behind the indexed EXISTS: most counted
+          -- CASE keeps the two sums behind the indexed test: most counted
           -- items have no lot at the unit.
-          AND CASE WHEN EXISTS (
-            SELECT 1 FROM "inspection" h
-            WHERE h."storageUnitId" = il."storageUnitId"
-              AND h."itemId" = il."itemId"
-              AND h."status" IN ('Pending', 'In Progress', 'Partial')
-          ) THEN public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId")
+          AND CASE WHEN public.inspection_holds_at(il."companyId", il."itemId", il."storageUnitId")
+          THEN public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId")
             > public.inspection_untracked_on_hand(il."companyId", il."itemId", il."storageUnitId")
           ELSE false END)
       )
@@ -14193,8 +14158,9 @@ export async function postReceipt(
             ? await getCurrentAccountingPeriod(companyId, db, today)
             : null;
 
+        // A sales return opens no lot, so its void runs with the hold guard on:
+        // it cannot take what a purchase receipt's lot holds in the unit.
         await db.transaction().execute(async (trx) => {
-          await setInspectionRelease(trx);
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           await assertReceivedStockOnHand(
@@ -14714,7 +14680,6 @@ export async function postReceipt(
           : null;
 
       await db.transaction().execute(async (trx) => {
-        await setInspectionRelease(trx);
         await lockPostedReceipt(trx, companyId, receiptId);
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
         await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
@@ -14722,6 +14687,23 @@ export async function postReceipt(
           trx,
           companyId,
           reversingItemLedger.map(toReversingRow)
+        );
+        // Its open inspection lots close first: a cancelled lot holds nothing,
+        // so the reversal below takes this receipt's stock with the hold guard
+        // on, and cannot take what another receipt's lot holds in the unit.
+        await withInspectionRelease(trx, () =>
+          trx
+            .updateTable("inspection")
+            .set({
+              status: "Cancelled",
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("companyId", "=", companyId)
+            .where("sourceDocument", "=", "Receipt")
+            .where("sourceDocumentId", "=", receiptId)
+            .where("status", "in", ["Pending", "In Progress"])
+            .execute()
         );
         // The cost layers this receipt wrote. Without this, a voided
         // receipt's layer stayed open and later issues consumed stock that
@@ -14975,20 +14957,6 @@ export async function postReceipt(
           }
         }
 
-        // Its open inspection lots close with it; a cancelled lot holds nothing.
-        await trx
-          .updateTable("inspection")
-          .set({
-            status: "Cancelled",
-            updatedBy: userId,
-            updatedAt: datetime.timestamp()
-          })
-          .where("companyId", "=", companyId)
-          .where("sourceDocument", "=", "Receipt")
-          .where("sourceDocumentId", "=", receiptId)
-          .where("status", "in", ["Pending", "In Progress"])
-          .execute();
-
         await trx
           .updateTable("receipt")
           .set({
@@ -15214,6 +15182,12 @@ export async function postReceipt(
         >();
         // A line its project consumes at receipt is received and issued at
         // once: nothing stays in the unit for a lot to hold, so it opens none.
+        const trackingByItemId = new Map(
+          items.data.map((item) => [item.id, item.itemTrackingType])
+        );
+        const projectByPoLineId = new Map(
+          purchaseOrderLines.data.map((pol) => [pol.id, pol.projectId])
+        );
         const projectConsumedLineIds = new Set(
           receiptLines.data
             .filter((line) =>
@@ -15222,11 +15196,9 @@ export async function postReceipt(
                   !!line.lineId && projectRouteByPoLineId.has(line.lineId),
                 isOutsideProcessing,
                 itemTrackingType:
-                  items.data.find((item) => item.id === line.itemId)
-                    ?.itemTrackingType ?? "Inventory",
+                  trackingByItemId.get(line.itemId ?? "") ?? "Inventory",
                 hasProjectStock: projectStockByProjectId.has(
-                  purchaseOrderLines.data.find((pol) => pol.id === line.lineId)
-                    ?.projectId ?? ""
+                  projectByPoLineId.get(line.lineId ?? "") ?? ""
                 )
               })
             )

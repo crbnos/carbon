@@ -103,6 +103,42 @@ AS $$
     );
 $$;
 
+-- Whether a receipt line's lot is still open: its serial and batch units stay
+-- held (On Hold) until then. The guard, its interceptors and every pre-check
+-- call it; the unique index on sourceDocumentLineId serves it.
+CREATE OR REPLACE FUNCTION public.inspection_line_lot_open(
+  p_company_id TEXT, p_receipt_line_id TEXT
+) RETURNS BOOLEAN
+LANGUAGE sql STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public."inspection" i
+    WHERE i."sourceDocumentLineId" = p_receipt_line_id
+      AND i."companyId" = p_company_id
+      AND i."sourceDocument" = 'Receipt'
+      AND i."status" IN ('Pending', 'In Progress')
+  );
+$$;
+
+-- Whether any lot holds untracked stock of an item in a unit (open lots only,
+-- with p_open_lots_only). The guard's cheap first test, on inspection_hold_idx.
+CREATE OR REPLACE FUNCTION public.inspection_holds_at(
+  p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT,
+  p_open_lots_only BOOLEAN DEFAULT false
+) RETURNS BOOLEAN
+LANGUAGE sql STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public."inspection" h
+    WHERE h."storageUnitId" = p_storage_unit_id
+      AND h."itemId" = p_item_id
+      AND h."companyId" = p_company_id
+      AND h."status" IN ('Pending', 'In Progress', 'Partial')
+      AND (NOT p_open_lots_only OR h."status" IN ('Pending', 'In Progress'))
+      AND public.inspection_lot_holds(h."id", h."status", h."acceptedQuantity")
+  );
+$$;
+
 -- What lots hold of an untracked item in a unit: an open lot its lot size, a
 -- Partial lot its remainder until its NCR closes. With p_open_lots_only, open
 -- lots only (a supplier return may ship a Partial lot's remainder).

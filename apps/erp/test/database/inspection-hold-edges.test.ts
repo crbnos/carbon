@@ -6,8 +6,9 @@
 // after the stock left, an adjustment of a held batch, a repeated Reject, the
 // restore of a rejected lot kept as is, a Partial whose NCR fails after the
 // decision, a negative received quantity, and a Partial lot's remainder
-// (void, return to a customer, its NCR closed), an NCR holding two lots and a
-// Set Quantity of one stripe.
+// (void, return to a customer, its NCR closed), an NCR holding two lots, a
+// Set Quantity of one stripe, and a second lot sharing a unit (a void, a
+// Partial, an NCR's Scrap), and an NCR that scraps units of an open lot.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
@@ -24,7 +25,10 @@ import {
   StockTransferPickRefusal
 } from "../../app/modules/inventory/inventory.service";
 import * as quality from "../../app/modules/quality/quality.server";
-import { closeIssue } from "../../app/modules/quality/quality.service";
+import {
+  closeIssue,
+  dispositionInspection
+} from "../../app/modules/quality/quality.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -55,7 +59,10 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "two-b",
     "rma",
     "stripe",
-    "closed"
+    "closed",
+    "share",
+    "partshare",
+    "cap"
   ];
 
   beforeAll(async () => {
@@ -202,12 +209,12 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     );
 
   /** 10 of the part received into a held unit; returns the receipt and lot. */
-  const receiveInto = async (key: string) => {
+  const receiveInto = async (key: string, unitKey = key) => {
     const receiptId = await draftReceiptFromPurchaseOrder(f, key);
     await seed(f, (trx) =>
       trx
         .updateTable("receiptLine")
-        .set({ storageUnitId: unitOf(key) })
+        .set({ storageUnitId: unitOf(unitKey) })
         .where("receiptId", "=", receiptId)
         .where("companyId", "=", f.companyId)
         .execute()
@@ -1060,6 +1067,181 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       expect(await setTo(3, projectId)).toBeNull();
       // The common stripe to 3 leaves 8.
       expect(await setTo(3, null)).not.toBeNull();
+    },
+    60_000
+  );
+
+  const moveOut = (storageUnitId: string, quantity: number, key: string) =>
+    seed(f, (trx) =>
+      trx
+        .insertInto("itemLedger")
+        .values({
+          entryType: "Negative Adjmt.",
+          documentType: "Inventory Count",
+          documentId: `${f.prefix}-${key}`,
+          locationId: f.locationId,
+          itemId: f.partId,
+          storageUnitId,
+          quantity: -quantity,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute()
+    );
+
+  it.skipIf(!client)(
+    "closing an NCR does not scrap a unit its open lot still holds",
+    async () => {
+      await ensureIssueType();
+      const { item, unit } = await heldUnit("ncr-open", "Serial", "open");
+      const issueId = `${f.prefix}-ncr-open`;
+      await seed(f, async (trx) => {
+        const type = await trx
+          .selectFrom("nonConformanceType")
+          .select("id")
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("nonConformance")
+          .values({
+            id: issueId,
+            nonConformanceId: `${f.prefix}-NCR-OPEN`,
+            name: "Scrap before the decision",
+            source: "Internal",
+            locationId: f.locationId,
+            nonConformanceTypeId: type.id,
+            openDate: f.today,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        const row = await trx
+          .insertInto("nonConformanceItem")
+          .values({
+            nonConformanceId: issueId,
+            itemId: item,
+            disposition: "Scrap",
+            quantity: 1,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values({
+            nonConformanceId: issueId,
+            nonConformanceItemId: row.id,
+            trackedEntityId: unit,
+            quantity: 1,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).not.toBeNull();
+      const after = await f.db
+        .selectFrom("trackedEntity")
+        .select("status")
+        .where("id", "=", unit)
+        .executeTakeFirstOrThrow();
+      expect(after.status).toBe("On Hold");
+      const issue = await f.db
+        .selectFrom("nonConformance")
+        .select("status")
+        .where("id", "=", issueId)
+        .executeTakeFirstOrThrow();
+      expect(issue.status).not.toBe("Closed");
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a receipt void cannot take stock another receipt's open lot holds in the unit",
+    async () => {
+      const first = await receiveInto("share");
+      // The first lot is accepted and its stock leaves the unit.
+      const accepted = await withGuard(() =>
+        dispositionInspection(f.db, {
+          id: first.lotId,
+          decision: "Accept",
+          companyId: f.companyId,
+          dispositionedBy: USER
+        })
+      );
+      expect(accepted.error).toBeNull();
+      await moveOut(unitOf("share"), 10, "share-away");
+      // A second receipt's open lot now holds the unit's 10.
+      await receiveInto("share-2", "share");
+
+      const voided = await withGuard(() =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-receipt",
+          { type: "void", receiptId: first.receiptId },
+          postReceipt
+        )
+      );
+      expect(voided.error).not.toBeNull();
+      expect(await untrackedAt(unitOf("share"))).toBe(10);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an untracked Partial cannot keep another lot's stock as its remainder",
+    async () => {
+      await ensureIssueType();
+      const first = await receiveInto("partshare");
+      await receiveInto("partshare-2", "partshare");
+      // A count found 6 missing: 14 there, the second lot holds 10.
+      await moveOut(unitOf("partshare"), 6, "partshare-count");
+      const partial = await withGuard(() =>
+        quality.partialInspection(stackContext(), {
+          id: first.lotId,
+          acceptedQuantity: 2,
+          createNcr: true
+        })
+      );
+      expect(partial.error).not.toBeNull();
+      expect(await statusOf(first.lotId)).toBe("Pending");
+      expect(await untrackedAt(unitOf("partshare"))).toBe(14);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an NCR's Scrap of a Partial lot writes off no more than the lot's remainder",
+    async () => {
+      const { issueId } = await partialLot("cap");
+      // A second open lot holds 10 in the same unit.
+      await receiveInto("cap-2", "cap");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Scrap", quantity: 12 })
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      // 20 received, 4 written off: the 6 accepted and the second lot's 10 stay.
+      expect(await untrackedAt(unitOf("cap"))).toBe(16);
     },
     60_000
   );

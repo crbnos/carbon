@@ -680,7 +680,7 @@ These came out of the research and are not part of this spec:
     and every MES Remove Inventory. A tracked lot's Open NCR is a secondary
     action with neutral wording. The picking list marks a non-nettable source
     unit.
-  - The handler migration was generated again as `20261106052823`. The PR
+  - The handler migration was generated again as `20261106061223`. The PR
     still has three migrations.
 - 2026-11-06: Browser round 2 fixes:
   - Use As Is or Rework on a receipt lot's NCR restores no more than the
@@ -702,3 +702,17 @@ These came out of the research and are not part of this spec:
     unit, such as the unit's delete.
   - `inspection_untracked_on_hand` is the one untracked on-hand read.
     `inspection_held_quantity` takes `p_open_lots_only`.
+- 2026-11-06: Second code review fixes:
+  - The release flag covers only the write that IS the release
+    (`withInspectionRelease`): a lot's decision, an NCR's close, a void's
+    cancelled lots. Stock moves and unit changes after it run with the guard
+    on. An NCR close can no longer scrap units of an open lot. A void can no
+    longer take what another receipt's lot holds.
+  - An untracked Partial claims only what other lots do not hold in the unit.
+  - A Partial lot's Scrap writes off no more than its remainder.
+  - A unit stays protected while a lot holds stock in it, even when Settings
+    no longer names it.
+  - Sample, measurement, document and gauge saves read the lot's status again
+    under its lock.
+  - `inspection_line_lot_open` and `inspection_holds_at` are the one
+    definition of each hold test.
