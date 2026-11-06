@@ -26,7 +26,7 @@ Node 24.22.1) grows to 4 GB, what holds the memory, and what changed.
 
 ## Before and after
 
-`bench.mjs`, same stack and same demo company each run. Heap is `heapUsed` after
+A local bench (its own ERP dev server against the same stack and demo company each run, driven by a headless browser). Heap is `heapUsed` after
 two forced full GCs. fp is the macOS physical footprint (`footprint`). The HMR
 phase edits 4 files in rotation (a service, two components and
 `packages/react/src/Button.tsx`), 1 edit about every 8 s, and reloads one of the
@@ -114,7 +114,7 @@ stack is formatted. (First done as a `carbon()` plugin that set the private
 pages the gain is small (−22 MB), because React 19's dev build formats owner
 stacks and Vite then caches decoded maps itself (`mod.map`). After reloads it
 is large: 1,630 → 1,374 MB at 15 edits. Stack traces from the app and
-`packages/*` still point at the source line (`stack-probe.mjs`:
+`packages/*` still point at the source line (a module that throws from a known line reports
 `__stack_probe__.ts:8:9`). Two things are no longer mapped: frames inside an
 externalized package (Node used its `.map` file; now its `dist` line shows),
 and code from a module graph a reload just dropped (Vite maps only modules
@@ -155,7 +155,7 @@ messages held in a TCP socket's write buffer (`Socket._writableState` →
 connected but does not run any more (earlier pages in the back/forward cache,
 or a tab frozen in the background). Vite writes every update to each such
 socket; after 5 edits three of them held 18 MB, 9.6 MB and 9.6 MB unsent
-(`sockets.mjs`). This was reproduced with agent-browser's headless Chrome
+(open sockets listed by unsent bytes). This was reproduced with agent-browser's headless Chrome
 (earlier pages of the same tab). Whether desktop Chrome keeps such sockets open
 for back/forward-cached or frozen tabs was not checked, so part of the "zero
 growth per edit" result may come from the test browser.
@@ -180,7 +180,7 @@ server and reloads, which a page that missed updates needs anyway. With it,
 
 ### What the 1.3 GB base is (after the fixes)
 
-From the heap snapshots and the Vite census (`census.mjs`):
+From the heap snapshots and a live count of Vite's module graphs:
 
 | Holder | Size |
 |---|---|
@@ -206,7 +206,7 @@ which is why `lazyRoutes` is the next big step.
   rolldown 1.2, `MIMALLOC_ARENA_PURGE_MULT=0` workaround) and
   [#11233](https://github.com/rolldown/rolldown/issues/11233) (optimizer memory
   scales with worker threads), all open. Measured after a forced re-bundle
-  (`mimalloc-ab.sh`, 14-core Mac):
+  (forced re-bundle, 14-core Mac):
 
   | Env | rolldown region | idle after |
   |---|---|---|
@@ -236,25 +236,20 @@ which is why `lazyRoutes` is the next big step.
 
 ## Method
 
-Scripts in `.ai/runs/2026-11-06-dev-server-memory/`:
+- Memory: `heapUsed` after two forced GCs over the inspector, macOS
+  `footprint`, and `vmmap --summary` for native regions.
+- What Vite holds: `Runtime.queryObjects` on Vite's `DevEnvironment` and
+  `ModuleRunner` classes (module counts, transform code and map sizes, and
+  `EvaluatedModuleNode` objects still alive).
+- What keeps memory alive: heap snapshots (580 to 750 MB, too big for DevTools
+  or `JSON.parse`) read with a small streaming reader that prints the shortest
+  retainer path, a dominator tree with retained sizes (Cooper–Harvey–Kennedy),
+  the bytes only one edge name keeps alive, and constructor diffs between two
+  snapshots. Old module nodes were tagged first so the reader could find them.
+- Sampling heap profiles (by package and frame), live timers by duration, and
+  open sockets by unsent bytes.
 
-- `bench.mjs <label> [--hmr-minutes N] [--sampling] [--census]`: starts its own
-  ERP dev server on port 54690 with `--inspect` against the stack in
-  `.env.local` (`DOMAIN=localhost` so the session cookie works on
-  `127.0.0.1`), logs in through agent-browser with `DEV_BYPASS_EMAIL`, loads 8
-  pages, then edits files for N minutes. It restores the edited files on any exit.
-- `census.mjs <port>`: every Vite `DevEnvironment` (modules, transform code,
-  map sizes) and SSR `ModuleRunner` (evaluated modules), plus the number of
-  `EvaluatedModuleNode` objects alive, through `Runtime.queryObjects`.
-- `mark-old-modules.mjs`, `heap-retainers.mjs`, `heap-diff.mjs`: tag orphaned
-  module nodes, then read snapshots too big for DevTools or `JSON.parse` (580 to
-  750 MB, 6–7 M nodes). The reader prints shortest retainer paths, a dominator
-  tree with retained sizes (Cooper–Harvey–Kennedy), what an edge name retains
-  (`CUT=`), and constructor diffs between two snapshots.
-- `sockets.mjs` (open sockets by unsent bytes), `timers.mjs`, `stack-probe.mjs`,
-  `hmr-probe.mjs` (heap, census and watcher closers per edit), `mimalloc-ab.sh`,
-  `summarize.mjs` (sampling heap profile by package and frame).
-- `out/*.json`: the rows of each run in the table.
+The scripts are not in the repo.
 
 Lesson from this work: a CDP client that holds `queryObjects` results keeps
 those objects alive. An early probe that kept its arrays across edits showed a

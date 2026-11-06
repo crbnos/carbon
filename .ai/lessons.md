@@ -4656,8 +4656,7 @@ first leaks one request's session to the next; the second keeps each render aliv
 **Rule:** Code that runs during render never writes module-level or global state on the
 server; guard it with `isBrowser`. A cache timer (`gcTime`, `setTimeout`) created during SSR
 must not outlive the request: on the server use `Infinity` (no timer). To find what keeps an
-old graph alive, take a heap snapshot and read the dominator tree
-(`.ai/runs/2026-11-06-dev-server-memory/heap-retainers.mjs`); release every CDP object group
+old graph alive, take a heap snapshot and read the dominator tree; release every CDP object group
 first, because the inspector's own handles keep objects alive.
 
 **Applies to:** React providers and hooks in `packages/*` and `apps/*`, `@carbon/query`, SSR code.
