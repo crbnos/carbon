@@ -4479,6 +4479,13 @@ that exports `config` gets its own bundle and keeps its routes, and each one sti
 **Applies to:** `apps/erp/react-router.config.ts`, and MES or another app if it nears 1016
 dynamic routes.
 
+## A grid position must name a sample id, not `samples[index]` of a reloaded list
+
+- **Context:** Inspection grids (ERP `InspectionMeasurementGrid`, MES `InspectionMeasurementMatrix`) map each column or row to an `inspectionSample`.
+- **Problem:** The loader embedded `inspectionSample(*)` with no order, and an UPDATE moves a row. Each save broadcasts `inspectionSample`, so the page reloaded and `samples[index]` named another sample: the next reading was saved on the wrong part. A stubbed harness never showed it; only the running stack (realtime + Postgres) did.
+- **Rule:** Order embedded children explicitly (`.order(col, { referencedTable })`). Bind a UI position to the record's id once (`placeSamples`), key per-cell state by that id, and never re-derive a position from a reloaded array's index. Test write paths on `crbn up`, not only against a stub.
+- **Applies to:** any grid or list that writes through positions over data a realtime reload can reorder.
+
 ## A cookie-only save must not re-run every loader on the page
 
 **Context:** The Appearance pane posts each choice to the host app's root action (`/`), which
@@ -4558,6 +4565,35 @@ answer that the class did not reach the animation.
 
 **Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
 compiled Tailwind output.
+
+## An inline editor built in a memo with changing dependencies drops keystrokes
+
+**Context:** The inspection grid (`InspectionMeasurementGrid.tsx`) moves to the next
+cell on Enter. Typing "0.139" straight after Enter saved "39".
+
+**Problem:** `editableComponents` was a `useMemo` that called `EditableNumber(...)`
+per column, with the grid's cell status among its dependencies. The previous cell's
+save landed while the inspector typed: its status changed, the memo made new editor
+component types, and React remounted the open input. The new input started from the
+saved value, so the characters typed before the remount were lost. A slow, step-by-step
+test passed because the save had landed before the first key.
+
+A browser stress run found two more remounts of the same kind. The By part rows were
+keyed by sample id, so the first save of a part (which creates the sample) re-keyed the
+row; and the editors were rebuilt whenever a spare sample column was added. A first fix
+also passed Lingui's `t` through the ref and crashed: `t` is a macro bound to
+`useLingui()`, not a function value. Typecheck passed; only the browser showed it.
+
+**Rule:** The components in a Table's `editableComponents` keep one identity while a
+cell is open: make each column's editor once (cache it by column key) and read changing
+state (statuses, callbacks) through a ref. Translate strings before they go into the
+ref; never pass `t` itself. A row's `getRowId` never changes while the row is on
+screen — key a row by something that exists before its first save. To test an inline
+editor, hold the save (wrap `fetch` with a delay), type half a value, let the save land,
+then type the rest.
+
+**Applies to:** every `<Table editableComponents>` whose editors are made inside
+`useMemo`/`useCallback` (`EditableNumber`, `EditableText`, `EditableList`, …).
 
 ## react-pdf: `wrap={false}` loses text when the node is taller than the page
 

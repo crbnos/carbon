@@ -395,6 +395,10 @@ msgstr "{0} 张凭证待过账 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 项不合格"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} 于 {finish} 完成"
@@ -514,12 +518,12 @@ msgstr "{0} 移动中"
 msgid "{0} needed for jobs"
 msgstr "工单需用 {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
@@ -955,6 +959,9 @@ msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 个打印任务中有 {failed} 个失败"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 项不合格"
 
 msgid "{foundHere} found here"
 msgstr "在此找到 {foundHere}"
@@ -2391,6 +2398,9 @@ msgstr "关于（通知）"
 msgid "About this field"
 msgstr "关于此字段"
 
+msgid "Above the upper limit"
+msgstr "高于上限"
+
 msgid "Absence"
 msgstr "缺勤"
 
@@ -2971,6 +2981,9 @@ msgstr "从发货中添加"
 
 msgid "Add Funding"
 msgstr "添加资金"
+
+msgid "Add gauge"
+msgstr "添加量具"
 
 msgid "Add Group"
 msgstr "添加组"
@@ -5375,6 +5388,9 @@ msgstr "低于水位线"
 msgid "Below safety stock"
 msgstr "低于安全库存"
 
+msgid "Below the lower limit"
+msgstr "低于下限"
+
 msgid "Best case"
 msgstr "最佳情况"
 
@@ -5847,6 +5863,9 @@ msgstr "作者 <0>{0}</0>，许可证 <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "通过接受邀请，您同意<0>服务条款</0>和<1>隐私政策</1>。"
 
+msgid "By characteristic"
+msgstr "按特性"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "默认情况下，它将在开始时间后30分钟"
 
@@ -5870,6 +5889,9 @@ msgstr "按物品"
 
 msgid "By Location"
 msgstr "按位置"
+
+msgid "By part"
+msgstr "按零件"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -13735,6 +13757,9 @@ msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有
 msgid "Grants Ability"
 msgstr "授予能力"
 
+msgid "Grid layout"
+msgstr "表格布局"
+
 msgid "Gross Profit"
 msgstr "毛利润"
 
@@ -13842,6 +13867,9 @@ msgstr "隐藏计算"
 
 msgid "Hide documents and activity"
 msgstr "隐藏文档和活动"
+
+msgid "Hide drawing"
+msgstr "隐藏图纸"
 
 msgid "Hide lines"
 msgstr "隐藏行"
@@ -18273,6 +18301,9 @@ msgstr "未找到校准记录"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "无限额。按计费费率计费。"
 
+msgid "No cell could take the pasted values"
+msgstr "没有单元格可以接收粘贴的值"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
@@ -19730,11 +19761,17 @@ msgstr "期限内每年一笔付款。"
 msgid "One payment for every three months."
 msgstr "每三个月一笔付款。"
 
+msgid "One row per characteristic"
+msgstr "每个特性一行"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "每张发票一行，每行一列。更改日期或金额，添加或删除一张发票。"
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "每月一行，每行一列。每行确认其发票所开票的确切金额。"
+
+msgid "One row per part"
+msgstr "每个零件一行"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon单独跟踪的一个编号件或一个生产批次，具有自己的状态和属性，例如有效期。"
@@ -20705,6 +20742,13 @@ msgstr "零件、原材料及其分类方式"
 
 msgid "Pass"
 msgstr "合格"
+
+msgid "Pass all empty cells"
+msgstr "将所有空单元格标记为合格"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "将 {0} 的所有空单元格标记为合格"
 
 msgid "Passed"
 msgstr "已通过"
@@ -24035,6 +24079,12 @@ msgstr "结果"
 msgid "Results"
 msgstr "结果"
 
+msgid "Results recorded: {done}"
+msgstr "已记录结果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "已记录结果: {done}。已跳过的值: {skipped}。"
+
 msgid "Resume"
 msgstr "恢复"
 
@@ -24792,6 +24842,12 @@ msgstr "样本"
 msgid "Sample Size"
 msgstr "样本量"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "样本量 {0} · 不合格不超过 {1} 时接收 · 达到 {2} 时拒收"
+
 msgid "Sampling"
 msgstr "抽样"
 
@@ -24898,6 +24954,11 @@ msgstr "已保存的视图"
 
 msgid "Saved Views"
 msgstr "已保存的视图"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "正在保存 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "正在保存您当前数据的副本"
@@ -25395,9 +25456,6 @@ msgstr "选择事件类型"
 
 msgid "Select field"
 msgstr "选择字段"
-
-msgid "Select gauge"
-msgstr "选择量具"
 
 msgid "Select Gauge"
 msgstr "选择量具"
@@ -26245,6 +26303,9 @@ msgstr "显示详情"
 msgid "Show documents and activity"
 msgstr "显示文档和活动"
 
+msgid "Show drawing"
+msgstr "显示图纸"
+
 msgid "Show Durations"
 msgstr "显示时长"
 
@@ -26644,9 +26705,6 @@ msgstr "备件消耗"
 
 msgid "Spare Part Cost"
 msgstr "备件成本"
-
-msgid "Spec"
-msgstr "规范"
 
 msgid "Specialized"
 msgstr "专用"
@@ -29708,6 +29766,9 @@ msgstr "这是受控环境，因此需要身份验证器应用。"
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "这是受控环境，因此每个人都需要双因素认证，无法关闭。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
 
@@ -29882,6 +29943,9 @@ msgstr "这个销售订单有关联的工单。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
+
+msgid "This sample was removed"
+msgstr "此样本已被删除"
 
 msgid "This serial"
 msgstr "此序列号"

@@ -35,6 +35,10 @@ msgstr "{0} fa"
 msgid "{0} customers"
 msgstr "{0} clienti"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} non conformi"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} articoli"
 msgid "{0} jobs"
 msgstr "{0} ordini di produzione"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} di {1}"
 
@@ -108,6 +112,9 @@ msgstr "{completed} di {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} unità superate verranno completate."
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} non conformi"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} errore(i) campionato(i) registrato(i) e NON sarà(sarranno) completato(i) — risolvere(li) dal menu azioni."
@@ -162,6 +169,9 @@ msgstr "Informazioni"
 
 msgid "About this field"
 msgstr "Informazioni su questo campo"
+
+msgid "Above the upper limit"
+msgstr "Sopra il limite superiore"
 
 msgid "Accept"
 msgstr "Accetta"
@@ -370,6 +380,9 @@ msgstr "totale Lotto di produzione"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "In ritardo rispetto al target di {daysBehindTarget} giorno(i)"
 
+msgid "Below the lower limit"
+msgstr "Sotto il limite inferiore"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Testo più grande o più piccolo. Il layout rimane al suo posto."
 
@@ -396,6 +409,12 @@ msgstr "Ma non preoccuparti. Puoi utilizzare il flusso password dimenticata per 
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Di <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Per caratteristica"
+
+msgid "By part"
+msgstr "Per componente"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Effettuando l'accesso, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy.</1>"
@@ -859,6 +878,9 @@ msgstr "Volto"
 msgid "Face {0}"
 msgstr "Volto {0}"
 
+msgid "Fail"
+msgstr "Non conforme"
+
 msgid "Failed"
 msgstr "Non riuscito"
 
@@ -983,11 +1005,17 @@ msgstr "Vai all'onboarding"
 msgid "Gradient"
 msgstr "Sfumatura"
 
+msgid "Grid layout"
+msgstr "Layout della griglia"
+
 msgid "Heading {level}"
 msgstr "Intestazione {level}"
 
 msgid "Hide description"
 msgstr "Nascondi descrizione"
+
+msgid "Hide drawing"
+msgstr "Nascondi disegno"
 
 msgid "Hours"
 msgstr "Ore"
@@ -1400,6 +1428,9 @@ msgstr "Nessun numero di serie disponibile trovato"
 msgid "No available tracked entities found"
 msgstr "Nessuna entità tracciata disponibile trovata"
 
+msgid "No cell could take the pasted values"
+msgstr "Nessuna cella può accettare i valori incollati"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Tempo."
 
@@ -1698,6 +1729,13 @@ msgstr "Disposizione Parziale"
 msgid "Parts"
 msgstr "Componenti"
 
+msgid "Pass"
+msgstr "Conforme"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Segna come conformi tutte le celle vuote di {0}"
+
 msgid "Passed inspection"
 msgstr "Superato il controllo"
 
@@ -1962,6 +2000,9 @@ msgstr "Rimuovi componente"
 msgid "Remove two-factor authentication"
 msgstr "Rimuovi autenticazione a due fattori"
 
+msgid "Removed"
+msgstr "Rimosso"
+
 msgid "Removed signature"
 msgstr "Firma rimossa"
 
@@ -1985,6 +2026,12 @@ msgstr "Risoluzione"
 
 msgid "Result"
 msgstr "Risultato"
+
+msgid "Results recorded: {done}"
+msgstr "Risultati registrati: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Risultati registrati: {done}. Valori saltati: {skipped}."
 
 msgid "Retry Completion"
 msgstr "Ritenta Completamento"
@@ -2017,6 +2064,9 @@ msgstr "Ordine di Vendita"
 msgid "Same for every job"
 msgstr "Uguale per ogni ordine di produzione"
 
+msgid "Sample"
+msgstr "Campione"
+
 msgid "Save"
 msgstr "Salva"
 
@@ -2028,6 +2078,11 @@ msgstr "Salva il modulo che stai modificando"
 
 msgid "Saved signature"
 msgstr "Firma salvata"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Salvataggio {0}/{1}"
 
 msgid "Scan"
 msgstr "Scansiona"
@@ -2247,6 +2302,9 @@ msgstr "Prelievo breve {itemName}"
 
 msgid "Show description"
 msgstr "Mostra descrizione"
+
+msgid "Show drawing"
+msgstr "Mostra disegno"
 
 msgid "Show keyboard shortcuts"
 msgstr "Mostra i tasti di scelta rapida"
@@ -2510,6 +2568,9 @@ msgstr "Questo lotto di produzione non ha istruzioni di lavoro."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Questa informazione sarà visibile a tutti gli utenti, quindi fai attenzione a quello che condividi."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Questo è un controllo passa / non passa. Premi P o F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Questo ordine di produzione non ha una tariffa di fatturazione. Chiedi all'ufficio di impostarla prima che il tempo sia fatturato."
 
@@ -2527,6 +2588,9 @@ msgstr "Questo componente sarà scartato dal magazzino. Il suo requisito rimane 
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Questo registra il tempo dell'ordine di produzione. L'ordine non può più cambiare."
+
+msgid "This sample was removed"
+msgstr "Questo campione è stato rimosso"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Questo ferma il tuo orologio e registra il tempo dell'ordine di produzione. L'ordine non può più cambiare."

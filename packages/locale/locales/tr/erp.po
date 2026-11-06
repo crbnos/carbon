@@ -395,6 +395,10 @@ msgstr "{0} muhasebe fişi muhasebeleştirilecek · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} muhasebeleştirilecek kayıt · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} başarısız"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} {finish} tarihinde tamamlanır"
@@ -514,12 +518,12 @@ msgstr "{0} taşınıyor"
 msgid "{0} needed for jobs"
 msgstr "İş emirleri için {0} gerekli"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -955,6 +959,9 @@ msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç 
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} yazdırma işinden {failed} tanesi başarısız oldu"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} başarısız"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} burada bulundu"
@@ -2391,6 +2398,9 @@ msgstr "Hakkında (bildirim)"
 msgid "About this field"
 msgstr "Bu alan hakkında"
 
+msgid "Above the upper limit"
+msgstr "Üst sınırın üzerinde"
+
 msgid "Absence"
 msgstr "Yokluk"
 
@@ -2971,6 +2981,9 @@ msgstr "Sevkiyattan ekle"
 
 msgid "Add Funding"
 msgstr "Finansman Ekle"
+
+msgid "Add gauge"
+msgstr "Ölçü aleti ekle"
 
 msgid "Add Group"
 msgstr "Grup Ekle"
@@ -5375,6 +5388,9 @@ msgstr "Seviyenin altında"
 msgid "Below safety stock"
 msgstr "Emniyet stokunun altında"
 
+msgid "Below the lower limit"
+msgstr "Alt sınırın altında"
+
 msgid "Best case"
 msgstr "En iyi durum"
 
@@ -5847,6 +5863,9 @@ msgstr "Tarafından <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Davetiyeyi kabul ederek, <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılırsınız."
 
+msgid "By characteristic"
+msgstr "Özelliğe göre"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "Varsayılan olarak başlangıç saatinden 30 dakika sonra olacak"
 
@@ -5870,6 +5889,9 @@ msgstr "Ürüne Göre"
 
 msgid "By Location"
 msgstr "Konuma Göre"
+
+msgid "By part"
+msgstr "Parçaya göre"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
@@ -13735,6 +13757,9 @@ msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes içi
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
 
+msgid "Grid layout"
+msgstr "Tablo düzeni"
+
 msgid "Gross Profit"
 msgstr "Brüt Kar"
 
@@ -13842,6 +13867,9 @@ msgstr "Hesaplamayı Gizle"
 
 msgid "Hide documents and activity"
 msgstr "Belgeler ve aktiviteyi gizle"
+
+msgid "Hide drawing"
+msgstr "Teknik resmi gizle"
 
 msgid "Hide lines"
 msgstr "Satırları Gizle"
@@ -18273,6 +18301,9 @@ msgstr "Kalibrasyon kaydı bulunamadı"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Tavan yok. Yük faturalandırma oranlarında faturalan."
 
+msgid "No cell could take the pasted values"
+msgstr "Yapıştırılan değerleri hiçbir hücre alamadı"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
@@ -19730,11 +19761,17 @@ msgstr "Dönemin her yılı için bir ödeme."
 msgid "One payment for every three months."
 msgstr "Her üç ay için bir ödeme."
 
+msgid "One row per characteristic"
+msgstr "Özellik başına bir satır"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Her fatura için bir satır, her satır için bir sütun. Bir tarihi veya tutarı değiştirin, bir fatura ekleyin veya silin."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "Her ay için bir satır, her satır için bir sütun. Her satır, faturalarının faturalandırdığını tam olarak tanır."
+
+msgid "One row per part"
+msgstr "Parça başına bir satır"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon tarafından bireysel takip edilen bir seri adet veya bir parti, son kullanma tarihi gibi kendi durumu ve öznitelikleri taşıyan."
@@ -20705,6 +20742,13 @@ msgstr "Parçalar, malzemeler ve bunları nasıl sınıflandırdığınız."
 
 msgid "Pass"
 msgstr "Geçerli"
+
+msgid "Pass all empty cells"
+msgstr "Tüm boş hücreleri uygun olarak işaretle"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} için tüm boş hücreleri uygun olarak işaretle"
 
 msgid "Passed"
 msgstr "Geçti"
@@ -24035,6 +24079,12 @@ msgstr "Sonuç"
 msgid "Results"
 msgstr "Sonuçlar"
 
+msgid "Results recorded: {done}"
+msgstr "Kaydedilen sonuçlar: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Kaydedilen sonuçlar: {done}. Atlanan değerler: {skipped}."
+
 msgid "Resume"
 msgstr "Devam et"
 
@@ -24792,6 +24842,12 @@ msgstr "Örnek"
 msgid "Sample Size"
 msgstr "Örneklem büyüklüğü"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Örnek boyutu {0} · {1} başarısıza kadar kabul · {2} ile ret"
+
 msgid "Sampling"
 msgstr "Örnekleme"
 
@@ -24898,6 +24954,11 @@ msgstr "Kaydedilmiş görünümler"
 
 msgid "Saved Views"
 msgstr "Kaydedilen Görünümler"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Kaydediliyor {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
@@ -25395,9 +25456,6 @@ msgstr "Olay türlerini seçin"
 
 msgid "Select field"
 msgstr "Alan seçin"
-
-msgid "Select gauge"
-msgstr "Ölçüm aleti seçin"
 
 msgid "Select Gauge"
 msgstr "Ölçüm Aleti Seç"
@@ -26245,6 +26303,9 @@ msgstr "Ayrıntıları göster"
 msgid "Show documents and activity"
 msgstr "Belgeler ve etkinliği göster"
 
+msgid "Show drawing"
+msgstr "Teknik resmi göster"
+
 msgid "Show Durations"
 msgstr "Süreleri Göster"
 
@@ -26644,9 +26705,6 @@ msgstr "Yedek Parça Tüketimi"
 
 msgid "Spare Part Cost"
 msgstr "Yedek Parça Maliyeti"
-
-msgid "Spec"
-msgstr "Spesifikasyon"
 
 msgid "Specialized"
 msgstr "Özel Amaçlı"
@@ -29708,6 +29766,9 @@ msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gerek
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle iki faktörlü kimlik doğrulaması herkese gereklidir ve kapatılamaz."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
 
@@ -29882,6 +29943,9 @@ msgstr "Bu satış siparişinin ilişkili iş emirleri var. Bunlarla ne yapacağ
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Bu satış siparişi, oluşturulması gereken iş emirlerini gerektiren satırlar içerir"
+
+msgid "This sample was removed"
+msgstr "Bu numune kaldırıldı"
 
 msgid "This serial"
 msgstr "Bu seri numarası"
