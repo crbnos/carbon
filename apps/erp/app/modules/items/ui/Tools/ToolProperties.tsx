@@ -18,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { Await, Link, useParams } from "react-router";
 import { z } from "zod";
@@ -158,9 +158,13 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
   //     ? optimisticAssignment
   //     : routeData?.toolSummary?.assignee;
 
+  // A refused update leaves a select showing the value that was refused; a
+  // new key remounts the tracking type field on the stored value.
+  const [refusals, setRefusals] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
+      setRefusals((count) => count + 1);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -430,6 +434,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
       </ValidatedForm>
 
       <ValidatedForm
+        key={`itemTrackingType-${refusals}`}
         defaultValues={{
           itemTrackingType:
             routeData?.toolSummary?.itemTrackingType ?? undefined

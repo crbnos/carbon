@@ -14,19 +14,26 @@ BEGIN
   END IF;
 
   -- Stock held in a form the new tracking type cannot use. Untracked draws read
-  -- only rows with no tracked entity, and tracked draws only rows with one, so
-  -- that stock would be stranded: Inventory cannot see batch or serial stock,
-  -- and Batch or Serial cannot see untracked stock (or the other's lots).
+  -- only rows with no tracked entity, and tracked draws only rows with one:
+  -- - Inventory cannot use batch or serial stock.
+  -- - Serial cannot use untracked stock, nor a lot of more than one unit.
+  -- - Non-Inventory holds no stock at all.
+  -- Batch takes any stock: untracked stock becomes stock with no batch number,
+  -- which assignBatchToUnnumberedStock numbers in place, and lots left from an
+  -- earlier change are batches again.
   SELECT o."readableIdWithRevision" AS "item", n."itemTrackingType" AS "newType",
          tracked.lots, tracked.quantity AS "trackedQuantity",
-         untracked.quantity AS "untrackedQuantity"
+         tracked."multiUnitLot", tracked."multiUnitQuantity",
+         untracked.bins, untracked.quantity AS "untrackedQuantity"
   INTO v_problem
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
   CROSS JOIN LATERAL (
-    SELECT count(*) AS lots, sum(net) AS quantity
+    SELECT count(*) AS lots, sum(per_lot.net) AS quantity,
+           min(te."readableId") FILTER (WHERE round(per_lot.net, 5) <> 1) AS "multiUnitLot",
+           max(per_lot.net) FILTER (WHERE round(per_lot.net, 5) <> 1) AS "multiUnitQuantity"
     FROM (
-      SELECT sum(il.quantity) AS net
+      SELECT il."trackedEntityId", sum(il.quantity) AS net
       FROM "itemLedger" il
       WHERE il."itemId" = n.id
         AND il."companyId" = n."companyId"
@@ -34,6 +41,8 @@ BEGIN
       GROUP BY il."trackedEntityId"
       HAVING round(sum(il.quantity), 5) <> 0
     ) per_lot
+    LEFT JOIN "trackedEntity" te
+      ON te.id = per_lot."trackedEntityId" AND te."companyId" = n."companyId"
   ) tracked
   CROSS JOIN LATERAL (
     SELECT count(*) AS bins, sum(net) AS quantity
@@ -48,24 +57,40 @@ BEGIN
     ) per_bin
   ) untracked
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
-    AND (
-      tracked.lots > 0
-      OR (n."itemTrackingType" <> 'Inventory' AND untracked.bins > 0)
-    )
+    AND CASE n."itemTrackingType"
+      WHEN 'Inventory' THEN tracked.lots > 0
+      WHEN 'Serial' THEN untracked.bins > 0 OR tracked."multiUnitQuantity" IS NOT NULL
+      WHEN 'Non-Inventory' THEN tracked.lots > 0 OR untracked.bins > 0
+      ELSE false
+    END
   LIMIT 1;
 
   IF FOUND THEN
-    IF v_problem.lots > 0 THEN
+    IF v_problem."newType" = 'Inventory' THEN
       RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
-        '%s still has %s on hand in %s batch or serial numbers. Adjust that stock to zero before you change the tracking type to %s.',
-        v_problem."item", trim_scale(round(v_problem."trackedQuantity", 5)),
-        v_problem.lots, v_problem."newType"
+        '%s still has stock in %s batch or serial numbers (%s in total). Adjust each to zero before you change the tracking type to Inventory.',
+        v_problem."item", v_problem.lots,
+        trim_scale(round(v_problem."trackedQuantity", 5))
+      );
+    END IF;
+    IF v_problem."newType" = 'Serial' AND v_problem.bins > 0 THEN
+      RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
+        '%s still has stock with no serial number in %s storage units (%s in total). Adjust each to zero before you change the tracking type to Serial.',
+        v_problem."item", v_problem.bins,
+        trim_scale(round(v_problem."untrackedQuantity", 5))
+      );
+    END IF;
+    IF v_problem."newType" = 'Serial' THEN
+      RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
+        '%s has %s on hand in batch %s. A serial number holds one unit: adjust that stock before you change the tracking type to Serial.',
+        v_problem."item", trim_scale(round(v_problem."multiUnitQuantity", 5)),
+        coalesce(v_problem."multiUnitLot", 'with no number')
       );
     END IF;
     RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
-      '%s still has %s on hand without a batch or serial number. Adjust that stock to zero before you change the tracking type to %s.',
-      v_problem."item", trim_scale(round(v_problem."untrackedQuantity", 5)),
-      v_problem."newType"
+      '%s still has stock in %s storage units or batch or serial numbers (%s in total). Adjust each to zero before you change the tracking type to Non-Inventory.',
+      v_problem."item", v_problem.lots + v_problem.bins,
+      trim_scale(round(coalesce(v_problem."trackedQuantity", 0) + coalesce(v_problem."untrackedQuantity", 0), 5))
     );
   END IF;
 

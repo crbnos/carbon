@@ -173,9 +173,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   //     ? optimisticAssignment
   //     : routeData?.materialSummary?.assignee;
 
+  // A refused update leaves a select showing the value that was refused; a
+  // new key remounts the tracking type field on the stored value.
+  const [refusals, setRefusals] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
+      setRefusals((count) => count + 1);
     }
   });
   const confirmDisclosure = useDisclosure();
@@ -483,6 +487,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         </ValidatedForm>
 
         <ValidatedForm
+          key={`itemTrackingType-${refusals}`}
           defaultValues={{
             itemTrackingType:
               routeData?.materialSummary?.itemTrackingType ?? undefined
