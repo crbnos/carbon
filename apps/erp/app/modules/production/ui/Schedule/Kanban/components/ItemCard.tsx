@@ -241,7 +241,15 @@ const OperationCardBody = memo(function OperationCardBody({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="inline-flex">
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                    <LuTriangleAlert
+                      aria-hidden
+                      className="h-4 w-4 text-red-500 flex-shrink-0"
+                    />
+                    {/* The tooltip is pointer-only; this reads the warning
+                        as part of the card for keyboard and screen readers. */}
+                    <span className="sr-only">
+                      {item.conflictReason ?? t`Scheduling conflict`}
+                    </span>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>

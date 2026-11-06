@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", отстает от плана на {daysBehindTarget} дн."
-
 msgid ", not running"
 msgstr ", не запущен"
 
@@ -139,6 +136,9 @@ msgstr "{completed} из {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} пройденных единиц будут завершены."
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {Отставание на # день} few {Отставание на # дня} many {Отставание на # дней} other {Отставание на # дня}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
@@ -477,9 +477,6 @@ msgstr "Серия для отмены списания {0}"
 
 msgid "batch total"
 msgstr "итого серии"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Отставание на {daysBehindTarget} дн."
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Больший или меньший размер текста. Макет остается на месте."
@@ -2236,6 +2233,9 @@ msgstr "Только записать"
 
 msgid "Record Partial"
 msgstr "Записать частичный результат"
+
+msgid "Record sections"
+msgstr "Разделы записи"
 
 msgid "Recorded"
 msgstr "Записано"

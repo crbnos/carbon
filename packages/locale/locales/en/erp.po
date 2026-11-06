@@ -10676,6 +10676,9 @@ msgstr "Draft Request"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Drafts a credit memo for the time already invoiced after the end date."
 
+msgid "Drag {fileName} to a line"
+msgstr "Drag {fileName} to a line"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "Drag & drop files, or click to browse"
 
@@ -25560,6 +25563,9 @@ msgstr "Schedule jobs against work-center capacity"
 msgid "Schedule Name"
 msgstr "Schedule Name"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "Schedule outdated — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "Schedule outdated at"
 
@@ -25598,6 +25604,9 @@ msgstr "Scheduling"
 
 msgid "Scheduling conflict"
 msgstr "Scheduling conflict"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "Scheduling conflict: operations cannot meet due date"
 
 msgid "Scope"
 msgstr "Scope"

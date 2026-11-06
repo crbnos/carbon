@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", {daysBehindTarget} Tag(e) hinter dem Ziel"
-
 msgid ", not running"
 msgstr ", läuft nicht"
 
@@ -139,6 +136,9 @@ msgstr "{completed} von {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} bestandene Einheit(en) werden abgeschlossen."
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {Hinter dem Ziel um # Tag} other {Hinter dem Ziel um # Tage}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} erfasste Fehler werden NICHT abgeschlossen – beheben Sie diese über das Aktionsmenü."
@@ -477,9 +477,6 @@ msgstr "Los zur Rückbuchung {0}"
 
 msgid "batch total"
 msgstr "Los-Gesamtbetrag"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Hinter dem Ziel um {daysBehindTarget} Tag(e)"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Größerer oder kleinerer Text. Das Layout bleibt erhalten."
@@ -2236,6 +2233,9 @@ msgstr "Nur aufzeichnen"
 
 msgid "Record Partial"
 msgstr "Teilweise aufzeichnen"
+
+msgid "Record sections"
+msgstr "Abschnitte des Datensatzes"
 
 msgid "Recorded"
 msgstr "Aufgezeichnet"

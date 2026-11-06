@@ -29,6 +29,8 @@ import { useInlineField } from "../internal/inlineField";
 type DateTimePickerProps = {
   name: string;
   label?: string;
+  /** The field's name for assistive tech when no visible `label` is drawn. */
+  "aria-label"?: string;
   termId?: TermId;
   size?: "sm" | "md" | "lg";
   isDisabled?: boolean;
@@ -49,6 +51,7 @@ type DateTimePickerProps = {
 const DateTimePicker = ({
   name,
   label,
+  "aria-label": ariaLabel,
   termId,
   size,
   isDisabled: isDisabledProp = false,
@@ -119,6 +122,7 @@ const DateTimePicker = ({
       <input type="hidden" name={name} value={utcValue} />
       <DateTimePickerBase
         label={label}
+        aria-label={ariaLabel}
         value={date}
         onChange={handleChange as any}
         isDisabled={isDisabled}

@@ -278,7 +278,7 @@ in), `sourceDocument='Job Operation'`, `sourceDocumentId=job.id`,
 Concurrent first-opens are settled by the partial unique index (23505 → reselect).
 
 - **MES UI**: `apps/mes/app/components/Inspection/` — `InspectionView` (AssemblyView
-  shell: header segments for Add Sample / Complete passed (n) / Reject / Partial /
+  shell: header segments for Add Sample / Complete (n passed) / Reject / Partial /
   Accept, TimerControl → `/x/event` — the labor clock **auto-starts on open
   whenever no clock is running**, always on for inspections, independent of the
   company `autoStartOperationTimer` setting; action sheet for Scrap/Rework/Finish/Quality
@@ -326,7 +326,7 @@ inspection link is written with the disposition row under the issue lock).
 | **Accept** | Completes the open remainder (serial: per-entity `issue` `jobOperationSerialComplete`, Pending-sampled and un-sampled units included, failed-sample units EXCLUDED; non-serial: one bulk posting of the op-column remaining via `jobOperationBatchComplete` or `insertProductionQuantity`+backflush) |
 | **Reject** | The operator allocates the open remainder in `DispositionModal`: serial per-unit Scrap/Rework toggles, non-serial scrap+rework quantity fields; the rest is record-only. Scrap subset → one `insertScrapQuantity` (+reason, + backflush) and the serial subset flips → `Rejected`. Rework subset → ONE `trigger-rework` invoke (targets from `rework-targets`; the routing clone includes the inspection op → fresh lot → automatic re-inspection) + `recalculate jobRequirements`; reworked entities are NOT flipped. |
 | **Partial** | Terminal mixed close, gated `inspected >= lotSize && passes > 0 && fails > 0`. Passed units complete; the failed set is allocated exactly like Reject (allocation restricted to failed units). |
-| **Complete passed (n)** header chip | Progressive completion of passed-but-unposted units any time the lot is open (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
+| **Complete (n passed)** header chip | Progressive completion of passed-but-unposted units any time the lot is open (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
 
 Mechanics (in order, per POST):
 1. Buckets recomputed server-side and validated (allocation ids must be open

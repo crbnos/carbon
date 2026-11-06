@@ -115,8 +115,15 @@ export default function ProjectCostsTree({
         <span className={FIGURE_CELL}>{money(figures.committed)}</span>
         {burden !== 0 ? (
           <Tooltip>
+            {/* relative z-10: above the row's stretched name link, or the
+                link covers it and the tooltip never opens. */}
             <TooltipTrigger asChild>
-              <span className={cn(FIGURE_CELL, "underline decoration-dotted")}>
+              <span
+                className={cn(
+                  FIGURE_CELL,
+                  "relative z-10 underline decoration-dotted"
+                )}
+              >
                 {money(actual)}
               </span>
             </TooltipTrigger>

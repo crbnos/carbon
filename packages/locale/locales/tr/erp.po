@@ -301,7 +301,7 @@ msgstr "{0} (tür)"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0} (kullanılamıyor)"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -542,7 +542,7 @@ msgstr "{0} / {1} h"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{1} dosyanın {0} tanesi dahil"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5062,7 +5062,7 @@ msgid "Attach Job"
 msgstr "İş Emrini Bağla"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "Parça Dosyalarını Otomatik Ekle"
 
 msgid "Attach to line"
 msgstr "Satıra ekle"
@@ -8355,7 +8355,7 @@ msgid "Couldn't load the choices for this field."
 msgstr "Bu alan için seçenekler yüklenemedi."
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "Parça dosyaları yüklenemedi, bu nedenle hiçbiri gönderilmeyecek."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
@@ -10676,6 +10676,9 @@ msgstr "Taslak İstek"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Bitiş Tarihinden Sonra Zaten Faturalandırılan Zaman İçin Bir Alacak Dekontu Taslağı Oluşturur."
 
+msgid "Drag {fileName} to a line"
+msgstr "{fileName} dosyasını bir satıra sürükleyin"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "Dosyaları sürükleyip bırakın veya göz atmak için tıklayın"
 
@@ -12177,10 +12180,10 @@ msgid "Every match"
 msgstr "Her eşleşme"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "Her parça dosyası baştan seçili gelir; göndermek istemediklerinizin işaretini kaldırın."
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "Her parça dosyası baştan seçili değil; göndermek istediklerinizi işaretleyin."
 
 msgid "Every posted journal line in a period"
 msgstr "Bir dönemdeki tüm kayıtlı yevmiye satırları"
@@ -16604,7 +16607,7 @@ msgid "Loading more rows"
 msgstr "Daha fazla satır yükleniyor"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "Parça dosyaları yükleniyor"
 
 msgid "Loading related items..."
 msgstr "İlgili öğeler yükleniyor..."
@@ -21109,19 +21112,19 @@ msgid "Part field"
 msgstr "Parça Alanı"
 
 msgid "Part files"
-msgstr ""
+msgstr "Parça dosyaları"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "Parça dosyaları otomatik olarak eklenir"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "Parça dosyaları yalnızca toplandığında eklenir"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "Parça dosyaları otomatik eklenir"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "Parça dosyaları yalnızca toplandığında eklenir"
 
 msgid "Part ID"
 msgstr "Parça Kimliği"
@@ -25560,6 +25563,9 @@ msgstr "İş emirlerini iş merkezi kapasitesine karşı çizelgele"
 msgid "Schedule Name"
 msgstr "Planlama Adı"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "Çizelge güncel değil — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "Çizelge süresi dolmuş saat"
 
@@ -25598,6 +25604,9 @@ msgstr "Planlama"
 
 msgid "Scheduling conflict"
 msgstr "Zamanlama Çakışması"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "Çizelgeleme çakışması: operasyonlar son tarihe yetişemiyor"
 
 msgid "Scope"
 msgstr "Kapsam"
@@ -26271,7 +26280,7 @@ msgid "Sender Name"
 msgstr "Gönderici Adı"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "Teklif talebi ya da tedarikçi teklifi gönderildiğinde, her satırın modeli ile Dosyalar sekmesindeki dosyalar (ör. teknik resimler) listelenir. Yalnızca burada işaretlenen dosyalar e-postaya eklenir ve tedarikçinin teklif sayfasında gösterilir."
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."

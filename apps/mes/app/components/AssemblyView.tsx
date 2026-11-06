@@ -28,6 +28,7 @@ import {
   hasOpenDialog,
   IconButton,
   ImageZoomViewer,
+  isBareKeyForAnotherControl,
   Modal,
   ModalBody,
   ModalContent,
@@ -1016,6 +1017,9 @@ export function AssemblyView({
   // the step is done, gated, or submitting — the key is inert exactly when the
   // button is.
   const primaryStepActionRef = useRef<(() => void) | null>(null);
+  // Wraps the primary action button: Space/Enter on it is the shortcut's own
+  // key (so a clicker press still arms the RecordModal swallow below).
+  const primaryStepActionContainerRef = useRef<HTMLDivElement>(null);
 
   // Open production events per work type (to pass to the complete flow so it
   // can close them on completion).
@@ -1354,7 +1358,9 @@ export function AssemblyView({
   // preventDefault in the action stops a focused button's native click (Space
   // clicks on keyup only if keydown wasn't prevented; Enter's click is the
   // keydown's default action) — otherwise one press could both record and
-  // re-trigger the focused button.
+  // re-trigger the focused button. It cannot stop a control that handles the
+  // key in its own keydown handler (a role="button" element, a tab), so those
+  // keep the key.
   const ARMED_SWALLOW_MS = 750;
   const shortcutArmedAtRef = useRef<number | null>(null);
 
@@ -1369,6 +1375,17 @@ export function AssemblyView({
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
       // key semantics — the armed-clicker swallow below is the one exception.
       !hasOpenDialog() &&
+      // A control that handles the key in its own keydown (a role="button"
+      // part, a tab) keeps it. A native button or link does not: the clicker
+      // records even with Skip focused, and preventDefault stops its click.
+      !(
+        isBareKeyForAnotherControl(
+          event,
+          primaryStepActionContainerRef.current
+        ) &&
+        event.target instanceof Element &&
+        !event.target.closest("button, a[href]")
+      ) &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
@@ -2658,7 +2675,10 @@ export function AssemblyView({
             )}
             <div className="flex w-full items-stretch gap-2">
               {step && (
-                <div className="min-w-0 flex-1">
+                <div
+                  ref={primaryStepActionContainerRef}
+                  className="min-w-0 flex-1"
+                >
                   <StepCompleteAction
                     step={step}
                     activeIndex={activeIndex}

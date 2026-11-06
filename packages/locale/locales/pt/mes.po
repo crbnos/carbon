@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", atrasado em relação à meta em {daysBehindTarget} dia(s)"
-
 msgid ", not running"
 msgstr ", não em execução"
 
@@ -139,6 +136,9 @@ msgstr "{completed} de {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} unidade(s) aprovada(s) será(ão) concluída(s)."
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {Atraso de # dia} other {Atraso de # dias}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} falha(s) amostrada(s) registrada(s) e NÃO será(ão) concluída(s) — resolva-as no menu de ações."
@@ -477,9 +477,6 @@ msgstr "Lote de produção para estorno de consumo {0}"
 
 msgid "batch total"
 msgstr "total do lote de produção"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Atraso de {daysBehindTarget} dia(s)"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Texto maior ou menor. O layout permanece no lugar."
@@ -2236,6 +2233,9 @@ msgstr "Apenas registrar"
 
 msgid "Record Partial"
 msgstr "Registrar Parcial"
+
+msgid "Record sections"
+msgstr "Seções do registro"
 
 msgid "Recorded"
 msgstr "Registrado"

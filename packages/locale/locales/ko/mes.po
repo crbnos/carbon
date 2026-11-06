@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", 목표보다 {daysBehindTarget}일 지연"
-
 msgid ", not running"
 msgstr ", 실행 중지됨"
 
@@ -139,6 +136,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, other {목표에서 #일 뒤짐}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
@@ -477,9 +477,6 @@ msgstr "소비 취소할 배치 {0}"
 
 msgid "batch total"
 msgstr "배치 총계"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "더 크거나 작은 텍스트. 레이아웃은 고정됩니다."
@@ -2236,6 +2233,9 @@ msgstr "기록만"
 
 msgid "Record Partial"
 msgstr "부분 기록"
+
+msgid "Record sections"
+msgstr "레코드 구간"
 
 msgid "Recorded"
 msgstr "기록됨"

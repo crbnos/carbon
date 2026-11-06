@@ -164,6 +164,9 @@ const JobCardBody = memo(function JobCardBody({
   // Forecast slack: calendar days between projected completion and the due date.
   // Positive = late (+2d, red), negative = early (-3d, muted).
   const projectedCompletionOnly = getDateOnly(item.projectedCompletionAt);
+  const conflictMessage = t`Scheduling conflict: operations cannot meet due date`;
+  const scheduleOutdatedReason = item.scheduleOutdatedReason;
+  const outdatedMessage = t`Schedule outdated — ${scheduleOutdatedReason}`;
   const slackDays =
     projectedCompletionOnly && dueDateValue
       ? parseDate(projectedCompletionOnly).compare(parseDate(dueDateValue))
@@ -236,24 +239,30 @@ const JobCardBody = memo(function JobCardBody({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="inline-flex">
-                      <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-red-500 flex-shrink-0"
+                      />
+                      {/* The tooltip is pointer-only; this reads the warning
+                          as part of the card for keyboard and screen readers. */}
+                      <span className="sr-only">{conflictMessage}</span>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    Scheduling conflict: operations cannot meet due date
-                  </TooltipContent>
+                  <TooltipContent>{conflictMessage}</TooltipContent>
                 </Tooltip>
               )}
               {item.scheduleOutdatedReason && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="inline-flex">
-                      <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-amber-500 flex-shrink-0"
+                      />
+                      <span className="sr-only">{outdatedMessage}</span>
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    Schedule outdated — {item.scheduleOutdatedReason}
-                  </TooltipContent>
+                  <TooltipContent>{outdatedMessage}</TooltipContent>
                 </Tooltip>
               )}
               {slack && (
@@ -267,6 +276,14 @@ const JobCardBody = memo(function JobCardBody({
                         )}
                       >
                         {slack.label}
+                      </span>
+                      <span className="sr-only">
+                        {" "}
+                        {t`Projected`}{" "}
+                        <DateTime
+                          value={projectedCompletionOnly!}
+                          variant="date"
+                        />
                       </span>
                     </span>
                   </TooltipTrigger>

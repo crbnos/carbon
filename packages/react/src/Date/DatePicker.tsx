@@ -12,7 +12,7 @@ import { useId, useRef } from "react";
 import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
-import { useClearLabel } from "../Form/useFormControl";
+import { useClearLabel, useFormControl } from "../Form/useFormControl";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
 import { InlineTrigger } from "../InlineTrigger";
@@ -54,14 +54,26 @@ const DatePicker = (
   // The form variant opens from an anchor, not a Radix trigger, so Radix has
   // no trigger to return focus to on close: this holds the calendar button.
   const anchorRef = useRef<HTMLDivElement>(null);
+  // Set when the popover closes from a click or focus outside it: focus then
+  // stays where the user put it, as Radix does for a trigger. A click on
+  // nothing focusable (a sheet's overlay) still returns it to the button.
+  const closedFromOutside = useRef(false);
   // The label is drawn by the form field, not here, so name the group with it
   // directly; a label react-aria points at but nothing renders names nothing.
   const fieldName =
     props["aria-label"] ??
     (typeof props.label === "string" ? props.label : undefined);
+  // Inside a FormControl the field's error, helper text and glossary
+  // definition describe it.
+  const { ariaProps } = useFormControl(props);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
     useDatePicker(
-      { ...props, label: undefined, "aria-label": fieldName },
+      {
+        ...props,
+        label: undefined,
+        "aria-label": fieldName,
+        "aria-describedby": ariaProps["aria-describedby"]
+      },
       state,
       ref
     );
@@ -180,10 +192,19 @@ const DatePicker = (
         <PopoverContent
           align="end"
           {...dialogProps}
+          onInteractOutside={() => {
+            closedFromOutside.current = true;
+          }}
           onCloseAutoFocus={
             props.inline
               ? undefined
               : (event) => {
+                  const fromOutside = closedFromOutside.current;
+                  closedFromOutside.current = false;
+                  const focused = document.activeElement;
+                  if (fromOutside && focused && focused !== document.body) {
+                    return;
+                  }
                   const button = anchorRef.current?.querySelector("button");
                   if (!button) return;
                   event.preventDefault();

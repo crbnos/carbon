@@ -18,6 +18,8 @@ import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { usePermissions } from "~/hooks";
+import { isSalesRfqLocked } from "~/modules/sales/sales.models";
 import {
   getOpportunity,
   getOpportunityDocuments,
@@ -143,7 +145,14 @@ export default function SalesRFQRoute() {
   const submit = useSubmit();
 
   const pendingItems = useOptimisticDocumentDrag();
-  const { lines } = useLoaderData<typeof loader>();
+  const { lines, rfqSummary } = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
+  // A file adds or changes a line, so it takes what the explorer's own
+  // add-line controls take: an unlocked RFQ and sales edit rights.
+  const canDropDocuments =
+    !isSalesRfqLocked(rfqSummary?.status) &&
+    permissions.can("update", "sales") &&
+    permissions.can("create", "sales");
 
   const handleDrop = (
     document: FileObject & { path: string },
@@ -183,6 +192,7 @@ export default function SalesRFQRoute() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event;
+    if (!canDropDocuments) return;
     if (over) {
       handleDrop(
         active.data.current as unknown as FileObject & { path: string },
@@ -194,14 +204,18 @@ export default function SalesRFQRoute() {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <DocumentDropTargetsProvider
-        value={{
-          listTargetId: "sales-rfq-explorer",
-          lines: lines.map((line) => ({
-            targetId: `sales-rfq-line-${line.id}`,
-            label: line.customerPartId || line.itemReadableId || line.id
-          })),
-          onDrop: handleDrop
-        }}
+        value={
+          canDropDocuments
+            ? {
+                listTargetId: "sales-rfq-explorer",
+                lines: lines.map((line) => ({
+                  targetId: `sales-rfq-line-${line.id}`,
+                  label: line.customerPartId || line.itemReadableId || line.id
+                })),
+                onDrop: handleDrop
+              }
+            : null
+        }
       >
         <PanelProvider>
           <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">

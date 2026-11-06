@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", behind target by {daysBehindTarget} day(s)"
-
 msgid ", not running"
 msgstr ", not running"
 
@@ -139,6 +136,9 @@ msgstr "{completed} of {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} passed unit(s) will be completed."
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
@@ -477,9 +477,6 @@ msgstr "Batch to unconsume {0}"
 
 msgid "batch total"
 msgstr "batch total"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Behind target by {daysBehindTarget} day(s)"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Bigger or smaller text. The layout stays put."
@@ -2236,6 +2233,9 @@ msgstr "Record only"
 
 msgid "Record Partial"
 msgstr "Record Partial"
+
+msgid "Record sections"
+msgstr "Record sections"
 
 msgid "Recorded"
 msgstr "Recorded"

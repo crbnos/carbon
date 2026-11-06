@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", 落后目标{daysBehindTarget}天"
-
 msgid ", not running"
 msgstr ", 未运行"
 
@@ -139,6 +136,9 @@ msgstr "{completed} 的 {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} 个已通过的件将被完成。"
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, other {落后于目标 # 天}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
@@ -477,9 +477,6 @@ msgstr "需取消领料的生产批次 {0}"
 
 msgid "batch total"
 msgstr "生产批次总计"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "落后于目标 {daysBehindTarget} 天"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "更大或更小的文本。布局保持不变。"
@@ -2236,6 +2233,9 @@ msgstr "仅记录"
 
 msgid "Record Partial"
 msgstr "记录部分"
+
+msgid "Record sections"
+msgstr "记录分区"
 
 msgid "Recorded"
 msgstr "已记录"

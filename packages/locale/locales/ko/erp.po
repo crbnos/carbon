@@ -301,7 +301,7 @@ msgstr "{0} (유형)"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0} (사용 불가)"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -542,7 +542,7 @@ msgstr "{0}/{1} h"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{1}개 중 {0}개 포함됨"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5062,7 +5062,7 @@ msgid "Attach Job"
 msgstr "작업 지시 첨부"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "부품 파일 자동 첨부"
 
 msgid "Attach to line"
 msgstr "라인에 첨부"
@@ -8355,7 +8355,7 @@ msgid "Couldn't load the choices for this field."
 msgstr "이 필드의 선택 항목을 로드할 수 없습니다."
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "부품 파일을 불러오지 못해 아무 파일도 전송되지 않습니다."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
@@ -10676,6 +10676,9 @@ msgstr "초안 요청"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "종료일 이후 이미 청구된 시간에 대해 대변전표를 작성합니다."
 
+msgid "Drag {fileName} to a line"
+msgstr "{fileName}을(를) 라인으로 드래그"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "파일을 드래그 앤 드롭하거나 클릭하여 찾아보세요"
 
@@ -12177,10 +12180,10 @@ msgid "Every match"
 msgstr "모든 일치"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "모든 부품 파일은 체크된 상태로 시작합니다. 보내지 않을 파일은 체크를 해제하세요."
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "모든 부품 파일은 체크되지 않은 상태로 시작합니다. 보낼 파일에 체크하세요."
 
 msgid "Every posted journal line in a period"
 msgstr "기간 내 전기된 모든 분개 라인"
@@ -16604,7 +16607,7 @@ msgid "Loading more rows"
 msgstr "행을 더 불러오는 중"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "부품 파일 불러오는 중"
 
 msgid "Loading related items..."
 msgstr "관련 항목을 불러오는 중..."
@@ -21109,19 +21112,19 @@ msgid "Part field"
 msgstr "부품 필드"
 
 msgid "Part files"
-msgstr ""
+msgstr "부품 파일"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "부품 파일이 자동으로 첨부됩니다"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "부품 파일은 피킹 완료 시에만 첨부됩니다"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "부품 파일 자동 첨부"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "피킹 완료 시에만 부품 파일 첨부"
 
 msgid "Part ID"
 msgstr "품목 ID"
@@ -25560,6 +25563,9 @@ msgstr "작업 센터 용량에 따라 작업 지시 일정 계획"
 msgid "Schedule Name"
 msgstr "일정 이름"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "일정이 최신이 아님 — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "일정 업데이트 시간"
 
@@ -25598,6 +25604,9 @@ msgstr "일정"
 
 msgid "Scheduling conflict"
 msgstr "스케줄링 충돌"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "일정 충돌: 공정으로는 마감일을 맞출 수 없음"
 
 msgid "Scope"
 msgstr "범위"
@@ -26271,7 +26280,7 @@ msgid "Sender Name"
 msgstr "보낸이 이름"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "견적 요청이나 공급업체 견적을 보내면 각 라인 품목의 모델과 파일 탭에 있는 파일(예: 도면)이 목록으로 표시됩니다. 여기에서 체크된 파일만 이메일에 첨부되고 공급업체의 견적 페이지에 표시됩니다."
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."

@@ -301,7 +301,7 @@ msgstr "{0} (प्रकार)"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0} (उपलब्ध नहीं)"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -542,7 +542,7 @@ msgstr "{0} में से {1} h"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{1} में से {0} शामिल"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5062,7 +5062,7 @@ msgid "Attach Job"
 msgstr "जॉब संलग्न करें"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "पार्ट फ़ाइलें अपने-आप अटैच करें"
 
 msgid "Attach to line"
 msgstr "पंक्ति से जोड़ें"
@@ -8355,7 +8355,7 @@ msgid "Couldn't load the choices for this field."
 msgstr "इस फ़ील्ड के लिए विकल्प लोड नहीं किए जा सके।"
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "पार्ट फ़ाइलें लोड नहीं हो सकीं, इसलिए कोई भी नहीं भेजी जाएगी।"
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
@@ -10676,6 +10676,9 @@ msgstr "ड्राफ्ट अनुरोध"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "अंतिम तिथि के बाद पहले से चालानित समय के लिए एक क्रेडिट नोट ड्राफ्ट करता है।"
 
+msgid "Drag {fileName} to a line"
+msgstr "{fileName} को किसी पंक्ति पर खींचें"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "फ़ाइलों को ड्रैग और ड्रॉप करें, या ब्राउज़ करने के लिए क्लिक करें"
 
@@ -12177,10 +12180,10 @@ msgid "Every match"
 msgstr "हर मेल"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "हर पार्ट फ़ाइल पहले से टिक की हुई होती है; जो नहीं भेजनी हो उसका टिक हटा दें।"
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "हर पार्ट फ़ाइल पहले से बिना टिक के होती है; जो भेजनी हो उस पर टिक करें।"
 
 msgid "Every posted journal line in a period"
 msgstr "किसी अवधि की प्रत्येक पोस्ट की गई जर्नल पंक्ति"
@@ -16604,7 +16607,7 @@ msgid "Loading more rows"
 msgstr "और पंक्तियाँ लोड हो रही हैं"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "पार्ट फ़ाइलें लोड हो रही हैं"
 
 msgid "Loading related items..."
 msgstr "संबंधित आइटम लोड हो रहे हैं..."
@@ -21109,19 +21112,19 @@ msgid "Part field"
 msgstr "पार्ट फील्ड"
 
 msgid "Part files"
-msgstr ""
+msgstr "पार्ट फ़ाइलें"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "पार्ट फ़ाइलें अपने-आप अटैच होती हैं"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "पार्ट फ़ाइलें केवल पिक किए जाने पर अटैच होती हैं"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "अपने-आप अटैच की गई पार्ट फ़ाइलें"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "केवल पिक किए जाने पर अटैच की गई पार्ट फ़ाइलें"
 
 msgid "Part ID"
 msgstr "पार्ट आईडी"
@@ -25560,6 +25563,9 @@ msgstr "वर्क सेंटर क्षमता के विरुद�
 msgid "Schedule Name"
 msgstr "शेड्यूल नाम"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "शेड्यूल पुराना हो गया है — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "शेड्यूल पुराना हुआ"
 
@@ -25598,6 +25604,9 @@ msgstr "शेड्यूलिंग"
 
 msgid "Scheduling conflict"
 msgstr "शेड्यूलिंग संघर्ष"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "शेड्यूलिंग संघर्ष: ऑपरेशन नियत तिथि तक पूरे नहीं हो सकते"
 
 msgid "Scope"
 msgstr "दायरा"
@@ -26271,7 +26280,7 @@ msgid "Sender Name"
 msgstr "भेजने वाले का नाम"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "RFQ या आपूर्तिकर्ता कोटेशन भेजने पर हर पंक्ति के आइटम का मॉडल और उसके फ़ाइलें टैब की फ़ाइलें, जैसे ड्रॉइंग, सूचीबद्ध होती हैं। केवल वहाँ टिक की गई फ़ाइलें ईमेल में अटैच की जाती हैं और आपूर्तिकर्ता के कोटेशन पेज पर दिखाई जाती हैं।"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"

@@ -6,6 +6,7 @@ import { Hidden, ValidatedForm } from "@carbon/form";
 import {
   cn,
   hasOpenDialog,
+  isBareKeyForAnotherControl,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -304,7 +305,10 @@ export function StartStopButton({
   }[eventType];
 
   // Space = Start/Pause, the most-pressed button in MES. Inert in inputs
-  // (hook default) and under any open dialog. AssemblyView owns its own Space
+  // (hook default), under any open dialog, and while focus is on another
+  // control that acts on Space itself (a button, a switch, a role="button"
+  // file name or thumbnail) — otherwise one press would both activate that
+  // control and start/pause the timer. AssemblyView owns its own Space
   // handling on a separate route (assembly.$operationId) — the two never
   // co-mount. Ref-click so a disabled button stays a native no-op.
   const startStopRef = useRef<HTMLButtonElement>(null);
@@ -314,7 +318,9 @@ export function StartStopButton({
       event.preventDefault();
       startStopRef.current?.click();
     },
-    guard: () => !hasOpenDialog(),
+    guard: (event) =>
+      !hasOpenDialog() &&
+      !isBareKeyForAnotherControl(event, startStopRef.current),
     disabled: fetcher.state !== "idle"
   });
 

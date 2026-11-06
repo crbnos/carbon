@@ -23,7 +23,7 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -161,6 +161,7 @@ const LineItems = ({
   lines: PurchasingRFQLine[];
   thumbnails: Record<string, string | null>;
 }) => {
+  const { t } = useLingui();
   // @ts-expect-error TS2345 - TODO: fix type
   const [openItems, setOpenItems] = useState<string[]>(() =>
     lines.map((line) => line.id).filter(Boolean)
@@ -176,6 +177,8 @@ const LineItems = ({
     <VStack spacing={8} className="w-full">
       {lines.map((line) => {
         if (!line.id) return null;
+
+        const lineName = line.itemReadableId ?? t`Item`;
 
         return (
           <div key={line.id} className="border-b border-input py-6 w-full">
@@ -197,19 +200,12 @@ const LineItems = ({
                   thumbnail beside it, pushing the description past the card
                   edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={openItems.includes(line.id)}
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  // @ts-expect-error TS2345 - TODO: fix type
-                  onClick={() => toggleOpen(line.id)}
-                  onKeyDown={(e) => {
-                    if (e.target !== e.currentTarget) return;
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      toggleOpen(line.id!);
-                    }
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
                   }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
@@ -222,16 +218,24 @@ const LineItems = ({
                       <motion.button
                         type="button"
                         aria-expanded={openItems.includes(line.id)}
+                        aria-controls={
+                          openItems.includes(line.id)
+                            ? `rfq-line-details-${line.id}`
+                            : undefined
+                        }
+                        aria-label={
+                          openItems.includes(line.id)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
                         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
                         }}
                         transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                        <span className="sr-only">
-                          <Trans>Details</Trans>
-                        </span>
+                        <LuChevronRight size={24} aria-hidden />
                       </motion.button>
                     </HStack>
                   </div>
@@ -248,6 +252,7 @@ const LineItems = ({
             <AnimatePresence initial={false}>
               {openItems.includes(line.id) ? (
                 <motion.div
+                  id={`rfq-line-details-${line.id}`}
                   key="panel"
                   initial={{ opacity: 0, height: 0, marginTop: 0 }}
                   animate={{ opacity: 1, height: "auto", marginTop: 16 }}

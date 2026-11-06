@@ -301,7 +301,7 @@ msgstr "{0} (Typ)"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0} (nicht verfügbar)"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -542,7 +542,7 @@ msgstr "{0} von {1} h"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{0} von {1} enthalten"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5062,7 +5062,7 @@ msgid "Attach Job"
 msgstr "Fertigungsauftrag anhängen"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "Teildateien automatisch anhängen"
 
 msgid "Attach to line"
 msgstr "An Position anhängen"
@@ -8355,7 +8355,7 @@ msgid "Couldn't load the choices for this field."
 msgstr "Die Auswahlmöglichkeiten für dieses Feld konnten nicht geladen werden."
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "Die Teildateien konnten nicht geladen werden, daher wird keine davon gesendet."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Die Dimensionsziele des Providers konnten nicht geladen werden — überprüfen Sie die Verbindung und laden Sie neu."
@@ -10676,6 +10676,9 @@ msgstr "Anfrage im Entwurf"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Entwirft eine Gutschrift für die bereits fakturierte Zeit nach dem Enddatum."
 
+msgid "Drag {fileName} to a line"
+msgstr "{fileName} auf eine Position ziehen"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "Dateien ziehen und ablegen oder zum Durchsuchen klicken"
 
@@ -12177,10 +12180,10 @@ msgid "Every match"
 msgstr "Jede Übereinstimmung"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "Jede Teildatei ist anfangs angehakt; entfernen Sie den Haken bei allen, die nicht gesendet werden sollen."
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "Jede Teildatei ist anfangs nicht angehakt; haken Sie die zu sendenden an."
 
 msgid "Every posted journal line in a period"
 msgstr "Jede gebuchte Journalzeile in einem Zeitraum"
@@ -16604,7 +16607,7 @@ msgid "Loading more rows"
 msgstr "Weitere Zeilen werden geladen"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "Teildateien werden geladen"
 
 msgid "Loading related items..."
 msgstr "Zugehörige Elemente werden geladen..."
@@ -21109,19 +21112,19 @@ msgid "Part field"
 msgstr "Teil-Feld"
 
 msgid "Part files"
-msgstr ""
+msgstr "Teildateien"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "Teildateien werden automatisch angehängt"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "Teildateien werden nur angehängt, wenn kommissioniert wird"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "Teildateien automatisch angehängt"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "Teildateien nur angehängt, wenn kommissioniert"
 
 msgid "Part ID"
 msgstr "Teile-ID"
@@ -25560,6 +25563,9 @@ msgstr "Fertigungsaufträge gegen Arbeitszellenkapazität terminieren"
 msgid "Schedule Name"
 msgstr "Zeitplanname"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "Terminplan veraltet — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "Terminplan veraltet um"
 
@@ -25598,6 +25604,9 @@ msgstr "Planung"
 
 msgid "Scheduling conflict"
 msgstr "Planungskonflikt"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "Terminplankonflikt: Arbeitsgänge können das Fälligkeitsdatum nicht einhalten"
 
 msgid "Scope"
 msgstr "Umfang"
@@ -26271,7 +26280,7 @@ msgid "Sender Name"
 msgstr "Absendername"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "Beim Versenden einer Anfrage oder eines Lieferantenangebots werden für jede Position das Modell und die Dateien aus deren Reiter „Dateien“ aufgelistet, etwa Zeichnungen. Nur die dort angehakten Dateien werden der E-Mail angehängt und auf der Angebotsseite des Lieferanten angezeigt."
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Defekte Einheiten zur Korrektur an einen früheren Arbeitsschritt zurückschicken, anstatt sie zu verschrotten."

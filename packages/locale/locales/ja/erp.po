@@ -301,7 +301,7 @@ msgstr "{0}（タイプ）"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0}（利用不可）"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -542,7 +542,7 @@ msgstr "{0} / {1} h"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{1} 件中 {0} 件が含まれています"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5062,7 +5062,7 @@ msgid "Attach Job"
 msgstr "製造指図を添付"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "部品ファイルを自動で添付"
 
 msgid "Attach to line"
 msgstr "明細に添付"
@@ -8355,7 +8355,7 @@ msgid "Couldn't load the choices for this field."
 msgstr "このフィールドの選択肢を読み込めませんでした。"
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "部品ファイルを読み込めなかったため、送信されるファイルはありません。"
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "プロバイダーのディメンションターゲットを読み込めませんでした。接続を確認して再度読み込んでください。"
@@ -10676,6 +10676,9 @@ msgstr "下書きリクエスト"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "終了日後に既に請求された時間のクレジットメモを下書きします。"
 
+msgid "Drag {fileName} to a line"
+msgstr "{fileName} を明細にドラッグ"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "ファイルをドラッグ&ドロップするか、クリックして参照"
 
@@ -12177,10 +12180,10 @@ msgid "Every match"
 msgstr "すべてのマッチ"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "部品ファイルはすべて初期状態でチェックが入っています。送信しないファイルはチェックを外してください。"
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "部品ファイルはすべて初期状態でチェックが外れています。送信するファイルにチェックを入れてください。"
 
 msgid "Every posted journal line in a period"
 msgstr "期間内のすべての転記済み仕訳明細"
@@ -16604,7 +16607,7 @@ msgid "Loading more rows"
 msgstr "さらに行を読み込み中"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "部品ファイルを読み込んでいます"
 
 msgid "Loading related items..."
 msgstr "関連項目を読み込み中..."
@@ -21109,19 +21112,19 @@ msgid "Part field"
 msgstr "部品フィールド"
 
 msgid "Part files"
-msgstr ""
+msgstr "部品ファイル"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "部品ファイルは自動で添付されます"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "部品ファイルは、ピッキング済の場合のみ添付されます"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "部品ファイルを自動で添付"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "部品ファイルはピッキング済の場合のみ添付"
 
 msgid "Part ID"
 msgstr "部品ID"
@@ -25560,6 +25563,9 @@ msgstr "ワークセンタ容量に対して製造指図をスケジュール"
 msgid "Schedule Name"
 msgstr "スケジュール名"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "スケジュールが古くなっています — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "スケジュール時代遅れ時刻"
 
@@ -25598,6 +25604,9 @@ msgstr "スケジューリング"
 
 msgid "Scheduling conflict"
 msgstr "スケジュール競合"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "スケジュールの競合：工程では期日に間に合わせられません"
 
 msgid "Scope"
 msgstr "スコープ"
@@ -26271,7 +26280,7 @@ msgid "Sender Name"
 msgstr "送信者名"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "見積依頼または仕入先見積を送信すると、各明細の機種と、その「ファイル」タブにある図面などのファイルが一覧に含まれます。そこでチェックしたファイルのみがメールに添付され、仕入先の見積ページに表示されます。"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "不良ユニットをスクラップするのではなく、以前の操作に戻して修正する。"

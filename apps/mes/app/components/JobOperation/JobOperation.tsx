@@ -79,6 +79,7 @@ import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import {
@@ -496,6 +497,7 @@ export const JobOperation = ({
         )
       : 0;
   const isBehindTarget = daysBehindTarget > 0;
+  const behindTargetLabel = useBehindTargetLabel(daysBehindTarget);
 
   // The status bar's quantity meter counts the whole run when batched.
   const quantityProgress = useMemo(() => {
@@ -1542,12 +1544,13 @@ export const JobOperation = ({
                                     </span>
                                     {formatDate(projectedCompletionDate)}
                                     <span className="sr-only">
-                                      {t`, behind target by ${daysBehindTarget} day(s)`}
+                                      {", "}
+                                      {behindTargetLabel}
                                     </span>
                                   </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                                  {behindTargetLabel}
                                 </TooltipContent>
                               </Tooltip>
                             ) : (
@@ -1648,7 +1651,7 @@ export const JobOperation = ({
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    {t`Behind target by ${daysBehindTarget} day(s)`}
+                                    {behindTargetLabel}
                                   </TooltipContent>
                                 </Tooltip>
                               ) : (
@@ -3136,6 +3139,16 @@ export const JobOperation = ({
     </>
   );
 };
+
+// A function declaration, so Lingui folds `plural()` into the `t` message
+// (see .claude/rules/i18n-lingui-system.md → Plurals).
+function useBehindTargetLabel(days: number) {
+  const { t } = useLingui();
+  return t`${plural(days, {
+    one: "Behind target by # day",
+    other: "Behind target by # days"
+  })}`;
+}
 
 function recordSetIsStarted(
   attributes: JobOperationStep[],

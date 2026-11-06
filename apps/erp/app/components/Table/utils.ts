@@ -178,3 +178,34 @@ export function hasUniqueRowIds(
   }
   return true;
 }
+
+/** What one loaded data row draws in the table body. */
+export type BodyRowShape = {
+  /** It starts a group whose header row is drawn above it. */
+  groupHeader: boolean;
+  /** Its group is collapsed, so the row itself is not drawn. */
+  hidden: boolean;
+  /** Its expanded row is drawn below it. */
+  expanded: boolean;
+};
+
+/**
+ * Where each data row's drawn rows sit in the table body, for `aria-rowindex`.
+ * A data row draws up to three rows (its group header, itself, its expanded
+ * row), so the virtual index alone puts every row after an expanded one or a
+ * group header at the wrong number. `starts[i]` is the 0-based body position
+ * of data row i's first drawn row; `total` counts every drawn body row.
+ */
+export function bodyRowPositions(rows: readonly BodyRowShape[]): {
+  starts: number[];
+  total: number;
+} {
+  const starts: number[] = [];
+  let position = 0;
+  for (const row of rows) {
+    starts.push(position);
+    if (row.groupHeader) position += 1;
+    if (!row.hidden) position += row.expanded ? 2 : 1;
+  }
+  return { starts, total: position };
+}

@@ -96,11 +96,15 @@ export function pageFocusReturnTarget(): HTMLElement | null {
   }
   // A route dialog (delete confirm) closing re-renders the list and replaces
   // the row's button: find the control with the same name instead.
+  // Only a name no other control shares: a generic one ("Action Menu" on
+  // every row) would send focus to another row, where Enter acts on the
+  // wrong record.
   const label = element.getAttribute("aria-label");
   if (label) {
-    return document.querySelector<HTMLElement>(
+    const matches = document.querySelectorAll<HTMLElement>(
       `${element.tagName.toLowerCase()}[aria-label="${CSS.escape(label)}"]`
     );
+    return matches.length === 1 ? (matches[0] ?? null) : null;
   }
   return null;
 }

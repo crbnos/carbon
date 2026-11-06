@@ -52,6 +52,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
@@ -602,6 +603,17 @@ export function RecordModal({
     record?.booleanValue ?? false
   );
 
+  // Enter on a value switch records the step (Space still toggles it). Record's
+  // own Enter shortcut stands down while focus is on another control, so the
+  // switch presses Record itself; a disabled Record ignores the click.
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const recordOnEnter = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "Enter" || event.ctrlKey || event.metaKey || event.altKey)
+      return;
+    event.preventDefault();
+    submitRef.current?.click();
+  };
+
   return (
     <Modal
       open
@@ -706,6 +718,7 @@ export function RecordModal({
                   aria-label={attribute.name}
                   checked={booleanControlled}
                   onCheckedChange={(checked) => setBooleanControlled(!!checked)}
+                  onKeyDown={recordOnEnter}
                 />
               )}
               {attribute.type === "Person" && (
@@ -770,6 +783,7 @@ export function RecordModal({
                       onCheckedChange={(checked) =>
                         setBooleanControlled(!!checked)
                       }
+                      onKeyDown={recordOnEnter}
                     />
                   </div>
                 </>
@@ -781,6 +795,7 @@ export function RecordModal({
               <Trans>Cancel</Trans>
             </Button>
             <Submit
+              ref={submitRef}
               size="lg"
               isLoading={fetcher.state !== "idle"}
               isDisabled={
@@ -791,17 +806,9 @@ export function RecordModal({
               // Focus in a field submits natively on Enter; this covers focus
               // elsewhere in the modal and renders the ↵ badge.
               shortcut="enter"
-              // A focused action button or link (Cancel, Remove) keeps Enter:
-              // without this, Enter on Cancel recorded the step. Value
-              // controls (switch, combobox) still submit, as before.
-              shortcutGuard={(event) =>
-                !(
-                  event.target instanceof Element &&
-                  event.target.closest(
-                    "button:not([role]), a[href], [role='button']"
-                  )
-                )
-              }
+              // Enter on a focused control (Cancel, Remove, the dropzone, a
+              // combobox) stays that control's: Button's own guard stands
+              // down. The switches record through `recordOnEnter`.
               type="submit"
             >
               <Trans>Record</Trans>

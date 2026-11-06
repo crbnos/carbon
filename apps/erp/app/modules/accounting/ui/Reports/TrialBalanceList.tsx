@@ -9,7 +9,12 @@ import { useLocale } from "@react-aria/i18n";
 import { memo, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import type { FlatTree } from "~/components/TreeView";
-import { TreeView, useTree } from "~/components/TreeView";
+import {
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import {
   getTrialBalanceRows,
@@ -110,7 +115,7 @@ const TrialBalanceList = memo(
       [rows]
     );
 
-    const { nodes, getTreeProps, selectNode, virtualizer } = useTree<
+    const { nodes, selected, getTreeProps, selectNode, virtualizer } = useTree<
       TrialBalanceRow,
       undefined
     >({
@@ -118,6 +123,13 @@ const TrialBalanceList = memo(
       parentRef,
       estimatedRowHeight,
       isEager: true
+    });
+    const rovingFocus = useRovingTreeFocus({
+      selected,
+      selectNode,
+      getTreeProps,
+      parentRef,
+      virtualizer
     });
 
     // Same order as the header; the translated cell only when shown.
@@ -199,7 +211,7 @@ const TrialBalanceList = memo(
         <TreeView<TrialBalanceRow>
           tree={tree}
           nodes={nodes}
-          getTreeProps={treegridBodyProps(getTreeProps)}
+          getTreeProps={treegridBodyProps(rovingFocus.getTreeProps)}
           getNodeProps={treegridNodeWrapperProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
@@ -222,9 +234,10 @@ const TrialBalanceList = memo(
                   rowIndex: index + 2
                 })}
                 aria-selected={state.selected}
-                tabIndex={0}
+                {...rovingFocus.getRowProps(node.id)}
                 className={cn(
                   "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm text-muted-foreground group/row max-md:h-11",
+                  treeRowFocusClassName,
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent"

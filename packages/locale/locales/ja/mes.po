@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", 目標より{daysBehindTarget}日遅れ"
-
 msgid ", not running"
 msgstr ", 停止中"
 
@@ -139,6 +136,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}個の合格ユニットが完了します。"
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, other {目標より#日遅れ}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
@@ -477,9 +477,6 @@ msgstr "消費を取り消すバッチ {0}"
 
 msgid "batch total"
 msgstr "バッチ合計"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "目標より{daysBehindTarget}日遅れ"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "大きいまたは小さいテキスト。レイアウトは変わりません。"
@@ -2236,6 +2233,9 @@ msgstr "記録のみ"
 
 msgid "Record Partial"
 msgstr "一部を記録"
+
+msgid "Record sections"
+msgstr "レコードのセクション"
 
 msgid "Recorded"
 msgstr "記録済"

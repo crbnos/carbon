@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", लक्ष्य से {daysBehindTarget} दिन पीछे"
-
 msgid ", not running"
 msgstr ", चल नहीं रहा"
 
@@ -139,6 +136,9 @@ msgstr "{quantity} में से {completed}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} उत्तीर्ण इकाई(यों) को पूर्ण किया जाएगा।"
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {लक्ष्य से # दिन पीछे} other {लक्ष्य से # दिन पीछे}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
@@ -477,9 +477,6 @@ msgstr "उपभोग वापस लेने के लिए बैच {0}
 
 msgid "batch total"
 msgstr "बैच कुल"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "बड़ा या छोटा पाठ। लेआउट जगह में रहता है।"
@@ -2236,6 +2233,9 @@ msgstr "केवल रिकॉर्ड करें"
 
 msgid "Record Partial"
 msgstr "आंशिक रिकॉर्ड करें"
+
+msgid "Record sections"
+msgstr "रिकॉर्ड खंड"
 
 msgid "Recorded"
 msgstr "रिकॉर्ड किया गया"

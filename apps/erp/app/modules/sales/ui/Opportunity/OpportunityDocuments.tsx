@@ -40,10 +40,14 @@ import {
   toast,
   toastError
 } from "@carbon/react";
-import { useDndContext, useDraggable } from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type { ChangeEvent } from "react";
+import type {
+  ChangeEvent,
+  KeyboardEventHandler,
+  PointerEventHandler
+} from "react";
 import { createContext, useCallback, useContext } from "react";
 import {
   LuEllipsisVertical,
@@ -173,6 +177,7 @@ const OpportunityDocuments = ({
                   <Tr key={attachment.id}>
                     <DraggableCell
                       attachment={attachment}
+                      canDrag={!!dropTargets}
                       opportunity={opportunity}
                       download={download}
                       getPath={getPath}
@@ -289,18 +294,23 @@ const OpportunityDocuments = ({
 
 const DraggableCell = ({
   attachment,
+  canDrag,
   opportunity,
   download,
   getPath
 }: {
   attachment: FileObject;
+  /** The page offers drop targets the user may drop on. */
+  canDrag: boolean;
   opportunity: Opportunity;
   download: (attachment: FileObject) => void;
   getPath: (attachment: FileObject) => string;
 }) => {
-  const context = useDndContext();
+  const { t } = useLingui();
+  const fileName = attachment.name;
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: attachment.id ?? attachment.name,
+    disabled: !canDrag,
     data: {
       id: attachment.id,
       name: attachment.name,
@@ -332,23 +342,39 @@ const DraggableCell = ({
     }
   };
   return (
-    <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    // The pointer drags from anywhere in the cell; the keyboard drags from
+    // the grip, which is the one control that carries the drag role, so the
+    // file name stays a button of its own.
+    <Td
+      ref={setNodeRef}
+      style={style}
+      onPointerDown={
+        listeners?.onPointerDown as
+          | PointerEventHandler<HTMLTableCellElement>
+          | undefined
+      }
+    >
       <HStack>
-        {context.droppableContainers.size > 0 && (
-          <LuGripVertical className="w-4 h-4 flex-shrink-0" />
+        {canDrag && (
+          <button
+            type="button"
+            {...attributes}
+            onKeyDown={
+              listeners?.onKeyDown as
+                | KeyboardEventHandler<HTMLButtonElement>
+                | undefined
+            }
+            aria-label={t`Drag ${fileName} to a line`}
+            className="flex-shrink-0 rounded-sm cursor-grab outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LuGripVertical aria-hidden className="w-4 h-4" />
+          </button>
         )}
         <DocumentIcon type={getDocumentType(attachment.name)} />
-        <span
-          className="font-medium cursor-pointer"
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
+          className="font-medium cursor-pointer text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={openFile}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openFile();
-            }
-          }}
         >
           {isPreviewable ? (
             <DocumentPreview
@@ -362,7 +388,7 @@ const DraggableCell = ({
           ) : (
             attachment.name
           )}
-        </span>
+        </button>
         {opportunity?.purchaseOrderDocumentPath === getPath(attachment) && (
           <Badge variant="secondary">
             <LuShoppingCart />

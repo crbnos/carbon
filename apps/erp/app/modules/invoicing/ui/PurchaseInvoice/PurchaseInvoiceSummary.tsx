@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -60,6 +60,7 @@ const LineItems = ({
   purchaseInvoiceLines: PurchaseInvoiceLine[];
   shouldConvertCurrency: boolean;
 }) => {
+  const { t } = useLingui();
   const { isPhone } = useViewport();
   const [items] = useItems();
   const accounts = useAccounts();
@@ -96,6 +97,7 @@ const LineItems = ({
       : isFixedAsset || isLease
         ? line.description || itemReadableId
         : distinctItemText(itemReadableId, line.description);
+    const lineName = itemReadableId ?? "";
     const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
     const supplierLineTotal =
       (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0);
@@ -145,18 +147,12 @@ const LineItems = ({
           )}
 
           <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
             <div
-              role="button"
-              tabIndex={0}
-              aria-expanded={openItems.includes(line.id!)}
               className="flex flex-col cursor-pointer w-full"
-              onClick={() => toggleOpen(line.id!)}
-              onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-                if (e.target !== e.currentTarget) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  toggleOpen(line.id!);
-                }
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
               }}
             >
               {/* The text column must shrink (flex-1 min-w-0) or a long
@@ -205,16 +201,24 @@ const LineItems = ({
                     <motion.button
                       type="button"
                       aria-expanded={openItems.includes(line.id)}
+                      aria-controls={
+                        openItems.includes(line.id)
+                          ? `purchase-invoice-line-details-${line.id}`
+                          : undefined
+                      }
+                      aria-label={
+                        openItems.includes(line.id)
+                          ? t`Hide details for ${lineName}`
+                          : t`Show details for ${lineName}`
+                      }
                       className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => toggleOpen(line.id!)}
                       animate={{
                         rotate: openItems.includes(line.id) ? 90 : 0
                       }}
                       transition={{ duration: 0.2 }}
                     >
-                      <LuChevronRight size={24} />
-                      <span className="sr-only">
-                        <Trans>Details</Trans>
-                      </span>
+                      <LuChevronRight size={24} aria-hidden />
                     </motion.button>
                   </HStack>
                   <div className="flex items-center gap-2">
@@ -253,6 +257,7 @@ const LineItems = ({
         <AnimatePresence initial={false}>
           {openItems.includes(line.id) ? (
             <motion.div
+              id={`purchase-invoice-line-details-${line.id}`}
               key="panel"
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
               animate={{ opacity: 1, height: "auto", marginTop: 16 }}

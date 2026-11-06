@@ -301,7 +301,7 @@ msgstr "{0} (тип)"
 
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
-msgstr ""
+msgstr "{0} (недоступно)"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -542,7 +542,7 @@ msgstr "{0} из {1} ч"
 #. placeholder {0}: ticked.length
 #. placeholder {1}: files.length
 msgid "{0} of {1} included"
-msgstr ""
+msgstr "{0} из {1} включено"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -5062,7 +5062,7 @@ msgid "Attach Job"
 msgstr "Прикрепить производственный заказ"
 
 msgid "Attach Part Files Automatically"
-msgstr ""
+msgstr "Автоматически прикреплять файлы деталей"
 
 msgid "Attach to line"
 msgstr "Прикрепить к строке"
@@ -8355,7 +8355,7 @@ msgid "Couldn't load the choices for this field."
 msgstr "Не удалось загрузить варианты для этого поля."
 
 msgid "Couldn't load the part files, so none will be sent."
-msgstr ""
+msgstr "Не удалось загрузить файлы деталей, поэтому ни один из них не будет отправлен."
 
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Не удалось загрузить целевые значения измерений поставщика — проверьте соединение и перезагрузите."
@@ -10676,6 +10676,9 @@ msgstr "Черновик запроса"
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Создает черновик кредит-ноты за время, уже выставленное счетом после даты окончания."
 
+msgid "Drag {fileName} to a line"
+msgstr "Перетащите {fileName} в строку"
+
 msgid "Drag & drop files, or click to browse"
 msgstr "Перетащите файлы или нажмите для обзора"
 
@@ -12177,10 +12180,10 @@ msgid "Every match"
 msgstr "Каждое совпадение"
 
 msgid "Every part file starts ticked; untick any you don't want to send."
-msgstr ""
+msgstr "Все файлы деталей изначально отмечены; снимите отметку с тех, которые не нужно отправлять."
 
 msgid "Every part file starts unticked; tick the ones to send."
-msgstr ""
+msgstr "Все файлы деталей изначально не отмечены; отметьте те, которые нужно отправить."
 
 msgid "Every posted journal line in a period"
 msgstr "Все проведённые строки журнала за период"
@@ -16604,7 +16607,7 @@ msgid "Loading more rows"
 msgstr "Загружаем больше строк"
 
 msgid "Loading part files"
-msgstr ""
+msgstr "Загрузка файлов деталей"
 
 msgid "Loading related items..."
 msgstr "Загрузка связанных элементов..."
@@ -21109,19 +21112,19 @@ msgid "Part field"
 msgstr "Поле детали"
 
 msgid "Part files"
-msgstr ""
+msgstr "Файлы деталей"
 
 msgid "Part files are attached automatically"
-msgstr ""
+msgstr "Файлы деталей прикрепляются автоматически"
 
 msgid "Part files are attached only when picked"
-msgstr ""
+msgstr "Файлы деталей прикрепляются только к отобранным деталям"
 
 msgid "Part files attached automatically"
-msgstr ""
+msgstr "Файлы деталей прикреплены автоматически"
 
 msgid "Part files attached only when picked"
-msgstr ""
+msgstr "Файлы деталей прикреплены только к отобранным деталям"
 
 msgid "Part ID"
 msgstr "ID детали"
@@ -25560,6 +25563,9 @@ msgstr "Составьте график производственных зак�
 msgid "Schedule Name"
 msgstr "Имя расписания"
 
+msgid "Schedule outdated — {scheduleOutdatedReason}"
+msgstr "График устарел — {scheduleOutdatedReason}"
+
 msgid "Schedule outdated at"
 msgstr "График устарел в"
 
@@ -25598,6 +25604,9 @@ msgstr "Составление графика"
 
 msgid "Scheduling conflict"
 msgstr "Конфликт расписания"
+
+msgid "Scheduling conflict: operations cannot meet due date"
+msgstr "Конфликт планирования: операции не могут уложиться в срок выполнения"
 
 msgid "Scope"
 msgstr "Область действия"
@@ -26271,7 +26280,7 @@ msgid "Sender Name"
 msgstr "Имя отправителя"
 
 msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
-msgstr ""
+msgstr "При отправке запроса цен или предложения поставщика в каждой строке указываются модель и файлы со вкладки «Файлы», например чертежи. В письмо прикрепляются, а на странице предложения поставщика показываются только файлы, отмеченные на этой вкладке."
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."

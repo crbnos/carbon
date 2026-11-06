@@ -25,7 +25,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuChevronLeft, LuEllipsisVertical } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { Controls } from "~/components/JobOperation/components/Controls";
 import { MesAppBar } from "~/components/MesAppBar";
 
@@ -65,7 +65,6 @@ export function WorkRecordShell({
   children: ReactNode;
 }) {
   const { t } = useLingui();
-  const navigate = useNavigate();
   const renderMenu = ({
     className,
     size,
@@ -108,16 +107,19 @@ export function WorkRecordShell({
             <div className="flex items-center gap-0 max-md:hidden">
               <SidebarTrigger />
               <Button
+                asChild
                 variant="ghost"
                 leftIcon={<LuChevronLeft />}
-                onClick={() => navigate(back.to)}
                 className="pl-2"
               >
-                {back.label}
+                <Link to={back.to}>{back.label}</Link>
               </Button>
             </div>
             <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x max-md:w-full">
-              <TabsList className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1">
+              <TabsList
+                aria-label={t`Record sections`}
+                className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1"
+              >
                 {tabs.map((item) => (
                   <TabsTrigger
                     key={item.value}

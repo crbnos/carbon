@@ -12,6 +12,7 @@ import {
   InputOTPSlot
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { RefObject } from "react";
 import {
   useCallback,
   useEffect,
@@ -52,6 +53,31 @@ function addRecentOperator(companyId: string, userId: string) {
 
 type Person = { id: string; name: string; avatarUrl: string | null };
 
+// While the overlay is up, everything outside it is inert: Tab stays inside
+// the dialog and assistive tech reads only the dialog (`aria-modal` alone
+// does neither reliably). Every sibling along the path to <body> is marked,
+// and only the ones this marked are released. Barcode scans still arrive:
+// the keyboard wedge listens on `window`, which inert does not affect.
+function useInertOutside(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const marked: Element[] = [];
+    let node = ref.current;
+    while (node && node !== document.body) {
+      const parent: HTMLElement | null = node.parentElement;
+      if (!parent) break;
+      for (const sibling of Array.from(parent.children)) {
+        if (sibling === node || sibling.hasAttribute("inert")) continue;
+        sibling.setAttribute("inert", "");
+        marked.push(sibling);
+      }
+      node = parent;
+    }
+    return () => {
+      for (const element of marked) element.removeAttribute("inert");
+    };
+  }, [ref]);
+}
+
 export function PinInOverlay({
   companyId,
   locationEmployeeIds,
@@ -76,6 +102,8 @@ export function PinInOverlay({
   const pinLabelId = useId();
   const pinErrorId = useId();
   const searchRef = useRef<HTMLInputElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  useInertOutside(overlayRef);
 
   const pinInFetcher = useFetcher<{ error?: string }>();
   const pinOutFetcher = useFetcher();
@@ -193,6 +221,7 @@ export function PinInOverlay({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss; Escape and the labelled close button do the same
     <div
+      ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
@@ -201,6 +230,9 @@ export function PinInOverlay({
         role="dialog"
         aria-modal="true"
         aria-label={t`Operator`}
+        // Radix's open-dialog marker: `hasOpenDialog()` reads it, so page
+        // shortcuts (Space = Start/Pause) stay quiet under the overlay.
+        data-state="open"
         className="w-full max-w-sm mx-4 rounded-lg border bg-card shadow-lg overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >

@@ -60,6 +60,13 @@ const DateRangePicker = ({
     shouldCloseOnSelect: false
   });
   const ref = useRef<HTMLDivElement>(null);
+  // Opened from an anchor, not a Radix trigger, so Radix has no trigger to
+  // return focus to on close: this holds the calendar button.
+  const anchorRef = useRef<HTMLDivElement>(null);
+  // Set when the popover closes from a click or focus outside it: focus then
+  // stays where the user put it, as Radix does for a trigger. A click on
+  // nothing focusable (a sheet's overlay) still returns it to the button.
+  const closedFromOutside = useRef(false);
   const {
     groupProps,
     startFieldProps,
@@ -110,7 +117,7 @@ const DateRangePicker = ({
           {/* Anchor (not Trigger) so the calendar button isn't wrapped in a
               second <button>; react-aria's buttonProps open the popover. */}
           <PopoverAnchor asChild>
-            <div className="flex-shrink-0">
+            <div ref={anchorRef} className="flex-shrink-0">
               <FieldButton
                 {...buttonProps}
                 isPressed={state.isOpen}
@@ -119,7 +126,23 @@ const DateRangePicker = ({
             </div>
           </PopoverAnchor>
         </HStack>
-        <PopoverContent align="end" {...dialogProps}>
+        <PopoverContent
+          align="end"
+          {...dialogProps}
+          onInteractOutside={() => {
+            closedFromOutside.current = true;
+          }}
+          onCloseAutoFocus={(event) => {
+            const fromOutside = closedFromOutside.current;
+            closedFromOutside.current = false;
+            const focused = document.activeElement;
+            if (fromOutside && focused && focused !== document.body) return;
+            const button = anchorRef.current?.querySelector("button");
+            if (!button) return;
+            event.preventDefault();
+            button.focus();
+          }}
+        >
           <RangeCalendar {...calendarProps} isDateMarked={isDateMarked} />
         </PopoverContent>
       </div>

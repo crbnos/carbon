@@ -19,9 +19,9 @@ import {
   inlineEditorClassName,
   LabelWithHelp,
   reactNodeToString,
+  useInlineTriggerLabel,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { useControlField, useField } from "../hooks";
@@ -76,7 +76,6 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     },
     ref
   ) => {
-    const { t } = useLingui();
     const formState = useFormStateContext();
     const isDisabled = formState.isDisabled || isDisabledProp;
     const isReadOnly = formState.isReadOnly || isReadOnlyProp;
@@ -115,14 +114,10 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     };
     // "Edit Due Date", not a bare "Edit": the label is a sibling span, so it
     // does not name the button.
-    const fieldLabel = reactNodeToString(label).trim();
-    const inlineTriggerLabel = value
-      ? fieldLabel
-        ? t`Edit ${fieldLabel}`
-        : t`Edit`
-      : fieldLabel
-        ? t`Add ${fieldLabel}`
-        : t`Add`;
+    const inlineTriggerLabel = useInlineTriggerLabel(
+      !!value,
+      reactNodeToString(label).trim()
+    );
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
     const inlineField = useInlineField({

@@ -10,16 +10,21 @@ import { forwardRef } from "react";
 import { LuCircle } from "react-icons/lu";
 
 import { buttonVariants } from "./Button";
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 
 const RadioGroup = forwardRef<
   ElementRef<typeof RadioGroupPrimitive.Root>,
   ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
 >(({ className, ...props }, ref) => {
+  // Inside a FormControl the field's error, helper text and glossary
+  // definition describe the group.
+  const { ariaProps } = useFormControl(props);
   return (
     <RadioGroupPrimitive.Root
       className={cn("grid gap-2", className)}
       {...props}
+      aria-describedby={ariaProps["aria-describedby"]}
       ref={ref}
     />
   );

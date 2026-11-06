@@ -60,6 +60,9 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
     // The button in place when the popover closes: its trigger, or "Clear
     // Filters" once a filter is set, which replaces the trigger.
     const buttonRef = useRef<HTMLButtonElement | null>(null);
+    // Set when the popover closes from a click or focus outside it: focus then
+    // stays where the user put it.
+    const closedFromOutside = useRef(false);
     const setButtonRef = useCallback(
       (node: HTMLButtonElement | null) => {
         buttonRef.current = node;
@@ -207,7 +210,14 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
         <PopoverContent
           align="start"
           className="min-w-[var(--radix-popover-trigger-width)] p-0"
+          onInteractOutside={() => {
+            closedFromOutside.current = true;
+          }}
           onCloseAutoFocus={(event) => {
+            const fromOutside = closedFromOutside.current;
+            closedFromOutside.current = false;
+            const focused = document.activeElement;
+            if (fromOutside && focused && focused !== document.body) return;
             // Radix returns focus to the trigger it opened from, which may
             // have been replaced by "Clear Filters" meanwhile.
             event.preventDefault();

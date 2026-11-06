@@ -26,7 +26,13 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
-import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import {
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "~/components/TreeView";
 import { useRealtime, useSettings, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { hasAccountingCutover } from "../../accounting.utils";
@@ -142,6 +148,7 @@ const ChartOfAccountsTree = memo(
 
     const {
       nodes,
+      selected,
       getTreeProps,
       getNodeProps,
       selectNode,
@@ -153,6 +160,30 @@ const ChartOfAccountsTree = memo(
       estimatedRowHeight: () => 36,
       isEager: true
     });
+    // The role="treeitem" wrappers take the focus, one at a time, so the
+    // tree's arrow keys (Right/Left expand and collapse) work from the
+    // keyboard.
+    const rovingFocus = useRovingTreeFocus({
+      selected,
+      selectNode,
+      getTreeProps,
+      parentRef,
+      virtualizer
+    });
+
+    // A group expands or collapses; an account opens its ledger.
+    const activateAccount = (node: FlatTreeItem<Chart>) => {
+      selectNode(node.id, false);
+      if (node.data.isGroup) {
+        toggleExpandNode(node.id);
+      } else {
+        openLedger(node.data.id as string);
+      }
+    };
+    const nodesById = useMemo(
+      () => new Map(tree.map((node) => [node.id, node])),
+      [tree]
+    );
 
     return (
       <ScrollArea className="h-[calc(100dvh-var(--header-height)-61px)] w-full">
@@ -169,8 +200,20 @@ const ChartOfAccountsTree = memo(
         <TreeView<Chart>
           tree={tree}
           nodes={nodes}
-          getTreeProps={getTreeProps}
-          getNodeProps={getNodeProps}
+          getTreeProps={rovingFocus.getTreeProps}
+          getNodeProps={(id) => ({
+            ...getNodeProps(id),
+            ...rovingFocus.getRowProps(id),
+            className: treeRowFocusClassName,
+            onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key !== "Enter" && e.key !== " ") return;
+              const node = nodesById.get(id);
+              if (!node) return;
+              e.preventDefault();
+              activateAccount(node);
+            }
+          })}
           virtualizer={virtualizer}
           parentRef={parentRef}
           parentClassName="h-full"
@@ -184,7 +227,7 @@ const ChartOfAccountsTree = memo(
             const balance = account.netChange ?? 0;
 
             return (
-              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container, and the ledger/actions are real buttons in the row
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer surface of the role="treeitem" wrapper (TreeView getNodeProps), which takes the focus and handles Enter/Space; the arrow keys live on the role="tree" container, and the ledger/actions are real buttons in the row
               <div
                 className={cn(
                   "flex h-8 cursor-pointer items-center overflow-hidden pr-4 text-sm group/row max-md:h-11",
@@ -198,12 +241,7 @@ const ChartOfAccountsTree = memo(
                     suppressRowClickRef.current = false;
                     return;
                   }
-                  selectNode(node.id, false);
-                  if (isGroup) {
-                    toggleExpandNode(node.id);
-                  } else {
-                    openLedger(account.id as string);
-                  }
+                  activateAccount(node);
                 }}
               >
                 {/* Indentation lines */}
@@ -212,7 +250,9 @@ const ChartOfAccountsTree = memo(
                     <LevelLine key={index} isSelected={state.selected} />
                   ))}
 
-                  {/* Expand/collapse chevron */}
+                  {/* Expand/collapse chevron: a pointer shortcut. From the
+                      keyboard, Right/Left on the focused row expand and
+                      collapse it. */}
                   <button
                     type="button"
                     tabIndex={-1}

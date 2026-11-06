@@ -12,9 +12,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid ", behind target by {daysBehindTarget} day(s)"
-msgstr ", hedefin {daysBehindTarget} gün gerisinde"
-
 msgid ", not running"
 msgstr ", çalışmıyor"
 
@@ -139,6 +136,9 @@ msgstr "{completed} / {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} geçti birim(ler) tamamlanacak."
+
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
@@ -477,9 +477,6 @@ msgstr "Tüketimi geri alınacak parti {0}"
 
 msgid "batch total"
 msgstr "parti toplamı"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Hedeften {daysBehindTarget} gün geride"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Daha büyük veya küçük metin. Yerleşim yerinde kalır."
@@ -2236,6 +2233,9 @@ msgstr "Yalnızca kaydet"
 
 msgid "Record Partial"
 msgstr "Kısmi Kaydı"
+
+msgid "Record sections"
+msgstr "Kayıt bölümleri"
 
 msgid "Recorded"
 msgstr "Kaydedildi"

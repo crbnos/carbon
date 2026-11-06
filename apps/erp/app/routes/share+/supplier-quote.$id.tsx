@@ -450,6 +450,7 @@ const LineItems = ({
   quoteLinePrices: SupplierQuoteLinePrice[];
   onSaveNotes: (lineId: string, content: JSONContent) => void;
 }) => {
+  const { t } = useLingui();
   const { quoteLines, thumbnails, files } =
     useLoaderData<typeof loader>().data!;
   const [openItems, setOpenItems] = useState<string[]>(() =>
@@ -476,6 +477,7 @@ const LineItems = ({
         const lineDescription = isGlAccount
           ? "Indirect Expense"
           : line.description;
+        const lineName = lineHeading ?? "";
 
         return (
           <div key={line.id} className="border-b border-input py-6 w-full">
@@ -497,18 +499,12 @@ const LineItems = ({
                   thumbnail beside it, pushing the description past the card
                   edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={openItems.includes(line.id!)}
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  onClick={() => toggleOpen(line.id!)}
-                  onKeyDown={(e) => {
-                    if (e.target !== e.currentTarget) return;
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      toggleOpen(line.id!);
-                    }
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
                   }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
@@ -519,16 +515,20 @@ const LineItems = ({
                       <motion.button
                         type="button"
                         aria-expanded={openItems.includes(line.id!)}
+                        aria-controls={`supplier-quote-line-details-${line.id}`}
+                        aria-label={
+                          openItems.includes(line.id!)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
                         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id!) ? 90 : 0
                         }}
                         transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                        <span className="sr-only">
-                          <Trans>Details</Trans>
-                        </span>
+                        <LuChevronRight size={24} aria-hidden />
                       </motion.button>
                     </HStack>
                   </div>
@@ -545,6 +545,7 @@ const LineItems = ({
             {/* Stays mounted: LinePricing holds the supplier's unsaved prices.
                 `display: none` once collapsed takes it out of the tab order. */}
             <motion.div
+              id={`supplier-quote-line-details-${line.id}`}
               initial={false}
               animate={openItems.includes(line.id) ? "open" : "collapsed"}
               variants={{

@@ -14,7 +14,13 @@ import {
   LuChevronsUpDown,
   LuChevronUp
 } from "react-icons/lu";
-import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import {
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { PivotMeasure, PivotState } from "../../accounting.models";
 import type { DimensionPivot } from "../../types";
@@ -30,6 +36,7 @@ import {
 } from "./pivotData";
 import {
   treegridBodyProps,
+  treegridCellTarget,
   treegridNodeWrapperProps,
   treegridRowProps
 } from "./treegrid";
@@ -93,6 +100,58 @@ function onActivateKey(action: () => void) {
       e.preventDefault();
       action();
     }
+  };
+}
+
+// The value cells of a row: out of the tab order, reached with the arrow keys
+// from their row (ARIA treegrid).
+const CELL_SELECTOR = "[data-treegrid-cell]";
+
+/**
+ * A row's keys: Enter/Space activate it, and Right on a row that shows no more
+ * children (a leaf, or an expanded parent) moves into its first cell. Every
+ * other key goes to the tree (Right on a collapsed parent expands it).
+ */
+function onRowKey(action: () => void, canEnterCells: boolean) {
+  const activate = onActivateKey(action);
+  return (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "ArrowRight" && canEnterCells) {
+      const cell = e.currentTarget.querySelector<HTMLElement>(CELL_SELECTOR);
+      if (cell) {
+        e.preventDefault();
+        cell.focus();
+      }
+      return;
+    }
+    activate(e);
+  };
+}
+
+/**
+ * A cell's keys: Enter/Space open it, Left/Right move between the row's cells
+ * and from the first cell back to the row. Up/Down go to the tree, which moves
+ * to the next row.
+ */
+function onCellKey(action: () => void) {
+  const activate = onActivateKey(action);
+  return (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const row = e.currentTarget.closest<HTMLElement>('[role="row"]');
+    const cells = row
+      ? Array.from(row.querySelectorAll<HTMLElement>(CELL_SELECTOR))
+      : [];
+    const target = treegridCellTarget(
+      e.key,
+      cells.indexOf(e.currentTarget),
+      cells.length
+    );
+    if (target === null || !row) {
+      activate(e);
+      return;
+    }
+    e.preventDefault();
+    (target === "row" ? row : cells[target])?.focus();
   };
 }
 
@@ -216,13 +275,26 @@ const PivotTree = memo(
       isRowTotal
     });
 
-    const { nodes, getTreeProps, selectNode, toggleExpandNode, virtualizer } =
-      useTree<PivotRowNode, undefined>({
-        tree: flatTree,
-        parentRef,
-        estimatedRowHeight,
-        isEager: true
-      });
+    const {
+      nodes,
+      selected,
+      getTreeProps,
+      selectNode,
+      toggleExpandNode,
+      virtualizer
+    } = useTree<PivotRowNode, undefined>({
+      tree: flatTree,
+      parentRef,
+      estimatedRowHeight,
+      isEager: true
+    });
+    const rovingFocus = useRovingTreeFocus({
+      selected,
+      selectNode,
+      getTreeProps,
+      parentRef,
+      virtualizer
+    });
 
     const totalColumnsWidth = columnKeys.length * VALUE_COLUMN_WIDTH;
     const rowWidth =
@@ -411,7 +483,7 @@ const PivotTree = memo(
         <TreeView<PivotRowNode>
           tree={flatTree}
           nodes={nodes}
-          getTreeProps={treegridBodyProps(getTreeProps)}
+          getTreeProps={treegridBodyProps(rovingFocus.getTreeProps)}
           getNodeProps={treegridNodeWrapperProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
@@ -423,6 +495,9 @@ const PivotTree = memo(
             const percents = state.percentOfTotal
               ? applyPercentOfTotal(row.cells, columnTotals, state.measure)
               : undefined;
+
+            // Right enters the cells once a row shows no more children.
+            const canEnterCells = !node.hasChildren || nodeState.expanded;
 
             if (isPhone) {
               const isTotal = phoneColumnKey === null;
@@ -443,14 +518,15 @@ const PivotTree = memo(
                     expanded: nodeState.expanded
                   })}
                   aria-selected={nodeState.selected}
-                  tabIndex={0}
+                  {...rovingFocus.getRowProps(node.id)}
                   className={cn(
                     "flex h-11 cursor-pointer items-center pr-2 text-sm",
+                    treeRowFocusClassName,
                     nodeState.selected ? "bg-muted" : "bg-transparent",
                     node.hasChildren && "font-semibold"
                   )}
                   onClick={activateRow}
-                  onKeyDown={onActivateKey(activateRow)}
+                  onKeyDown={onRowKey(activateRow, canEnterCells)}
                 >
                   <div
                     role="rowheader"
@@ -489,7 +565,8 @@ const PivotTree = memo(
                   >
                     <span
                       role="button"
-                      tabIndex={0}
+                      tabIndex={-1}
+                      data-treegrid-cell
                       className={cn(
                         "block px-2 text-right tabular-nums text-muted-foreground",
                         isTotal && "font-medium"
@@ -498,7 +575,7 @@ const PivotTree = memo(
                         e.stopPropagation();
                         openPhoneCell();
                       }}
-                      onKeyDown={onActivateKey(openPhoneCell)}
+                      onKeyDown={onCellKey(openPhoneCell)}
                     >
                       {phoneColumnKey === null
                         ? formatRowTotal(row.total)
@@ -528,9 +605,10 @@ const PivotTree = memo(
                   expanded: nodeState.expanded
                 })}
                 aria-selected={nodeState.selected}
-                tabIndex={0}
+                {...rovingFocus.getRowProps(node.id)}
                 className={cn(
                   "relative flex h-8 cursor-pointer items-center text-sm group/row",
+                  treeRowFocusClassName,
                   nodeState.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",
@@ -538,7 +616,7 @@ const PivotTree = memo(
                 )}
                 style={{ minWidth: rowWidth }}
                 onClick={activateRow}
-                onKeyDown={onActivateKey(activateRow)}
+                onKeyDown={onRowKey(activateRow, canEnterCells)}
               >
                 {/* Pinned row cell: indentation + chevron + label */}
                 <div
@@ -615,13 +693,16 @@ const PivotTree = memo(
                     >
                       <span
                         role="button"
-                        tabIndex={0}
+                        tabIndex={-1}
+                        data-treegrid-cell
                         className="flex h-full w-full cursor-pointer items-center justify-end px-2 text-right tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                        // Scrolled into view clear of the pinned row column.
+                        style={{ scrollMarginLeft: rowColumnWidth }}
                         onClick={(e) => {
                           e.stopPropagation();
                           openCell();
                         }}
-                        onKeyDown={onActivateKey(openCell)}
+                        onKeyDown={onCellKey(openCell)}
                       >
                         {formatCell(
                           row.cells[columnKey],
@@ -644,13 +725,15 @@ const PivotTree = memo(
                 >
                   <span
                     role="button"
-                    tabIndex={0}
+                    tabIndex={-1}
+                    data-treegrid-cell
                     className="flex h-full w-full cursor-pointer items-center justify-end px-2 text-right font-medium tabular-nums text-muted-foreground hover:text-foreground hover:underline underline-offset-2 decoration-border"
+                    style={{ scrollMarginLeft: rowColumnWidth }}
                     onClick={(e) => {
                       e.stopPropagation();
                       onCellClick(cellCoordinates(row, node.level, null, true));
                     }}
-                    onKeyDown={onActivateKey(() =>
+                    onKeyDown={onCellKey(() =>
                       onCellClick(cellCoordinates(row, node.level, null, true))
                     )}
                   >

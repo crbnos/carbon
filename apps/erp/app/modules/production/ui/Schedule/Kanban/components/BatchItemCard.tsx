@@ -215,7 +215,20 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="inline-flex">
-                      <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-red-500 flex-shrink-0"
+                      />
+                      {/* The tooltip is pointer-only; this reads the warning
+                          as part of the card for keyboard and screen readers. */}
+                      <span className="sr-only">
+                        {conflictedMembers
+                          .map(
+                            (m) =>
+                              `${m.jobReadableId}: ${m.conflictReason ?? t`Scheduling conflict`}`
+                          )
+                          .join("; ")}
+                      </span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>

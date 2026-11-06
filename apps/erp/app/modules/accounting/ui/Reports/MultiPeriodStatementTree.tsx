@@ -19,7 +19,13 @@ import {
   LuFolderOpen
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import {
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
 import { NET_INCOME_ACCOUNT_ID } from "../../types";
@@ -154,13 +160,26 @@ const MultiPeriodStatementTree = memo(
     );
     const tree = useMemo(() => accountsToFlatTree(filtered), [filtered]);
 
-    const { nodes, getTreeProps, selectNode, toggleExpandNode, virtualizer } =
-      useTree<ChartPeriodSeries, undefined>({
-        tree,
-        parentRef,
-        estimatedRowHeight,
-        isEager: true
-      });
+    const {
+      nodes,
+      selected,
+      getTreeProps,
+      selectNode,
+      toggleExpandNode,
+      virtualizer
+    } = useTree<ChartPeriodSeries, undefined>({
+      tree,
+      parentRef,
+      estimatedRowHeight,
+      isEager: true
+    });
+    const rovingFocus = useRovingTreeFocus({
+      selected,
+      selectNode,
+      getTreeProps,
+      parentRef,
+      virtualizer
+    });
 
     const rowWidth = isPhone
       ? undefined
@@ -219,7 +238,7 @@ const MultiPeriodStatementTree = memo(
         <TreeView<ChartPeriodSeries>
           tree={tree}
           nodes={nodes}
-          getTreeProps={treegridBodyProps(getTreeProps)}
+          getTreeProps={treegridBodyProps(rovingFocus.getTreeProps)}
           getNodeProps={treegridNodeWrapperProps}
           virtualizer={virtualizer}
           parentRef={parentRef}
@@ -250,9 +269,10 @@ const MultiPeriodStatementTree = memo(
                   expanded: isExpanded
                 })}
                 aria-selected={state.selected}
-                tabIndex={0}
+                {...rovingFocus.getRowProps(node.id)}
                 className={cn(
                   "flex h-8 cursor-pointer items-center pr-4 text-sm group/row max-md:h-11",
+                  treeRowFocusClassName,
                   state.selected
                     ? "bg-muted hover:bg-accent"
                     : "bg-transparent hover:bg-accent",

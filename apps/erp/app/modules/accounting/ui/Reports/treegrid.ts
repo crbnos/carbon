@@ -44,3 +44,19 @@ export const treegridRowProps = ({
   "aria-expanded": hasChildren ? expanded : undefined,
   "aria-rowindex": rowIndex
 });
+
+/**
+ * Where an arrow key moves the focus from a row's cell (ARIA treegrid): Right
+ * to the next cell (staying on the last), Left to the previous cell, or back
+ * to the row from the first. `null` for a key the cell leaves to the tree
+ * (Up/Down move between rows).
+ */
+export function treegridCellTarget(
+  key: string,
+  index: number,
+  count: number
+): number | "row" | null {
+  if (key === "ArrowRight") return Math.min(index + 1, count - 1);
+  if (key === "ArrowLeft") return index > 0 ? index - 1 : "row";
+  return null;
+}

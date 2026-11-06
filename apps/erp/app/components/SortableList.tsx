@@ -37,7 +37,14 @@ import {
   useDragControls
 } from "motion/react";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState
+} from "react";
 import { flushSync } from "react-dom";
 import {
   LuArrowDown,
@@ -139,6 +146,7 @@ function SortableListItem<T>({
   const itemRef = useRef<HTMLDivElement>(null);
   const moveUpRef = useRef<HTMLButtonElement>(null);
   const moveDownRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
   const reorder = useContext(ReorderContext);
   const index = reorder?.items.findIndex((i) => i.id === item.id) ?? -1;
   const canReorder = !!reorder && index >= 0 && !isReadOnly;
@@ -238,7 +246,14 @@ function SortableListItem<T>({
                 canReorder ? "Alt+ArrowUp Alt+ArrowDown" : undefined
               }
               onKeyDown={(event) => {
-                if (event.key === "Enter") onSelectItem(item.id);
+                // Enter on a link or button in the title or footer is
+                // that control's own, not the row's.
+                if (
+                  event.key === "Enter" &&
+                  event.target === event.currentTarget
+                ) {
+                  onSelectItem(item.id);
+                }
                 handleMoveKeyDown(event);
               }}
             >
@@ -446,32 +461,39 @@ function SortableListItem<T>({
                             {item.title}
                           </button>
                         ) : (
+                          // A rich title can hold its own link (a BOM row's
+                          // item link), which a button must not contain. So
+                          // the select button is stretched under the title,
+                          // named by it, and the title's own links and
+                          // buttons sit above it.
                           <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              if (!isDragging) {
-                                onSelectItem(item.id);
-                              }
-                            }}
-                            aria-keyshortcuts={
-                              canReorder
-                                ? "Alt+ArrowUp Alt+ArrowDown"
-                                : undefined
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                onSelectItem(item.id);
-                              }
-                              handleMoveKeyDown(e);
-                            }}
                             className={cn(
-                              "min-w-0 flex-1",
+                              "relative min-w-0 flex-1",
                               item.checked && "text-red-400"
                             )}
                           >
-                            {item.title}
+                            <button
+                              type="button"
+                              aria-labelledby={titleId}
+                              aria-keyshortcuts={
+                                canReorder
+                                  ? "Alt+ArrowUp Alt+ArrowDown"
+                                  : undefined
+                              }
+                              onKeyDown={handleMoveKeyDown}
+                              onClick={() => {
+                                if (!isDragging) {
+                                  onSelectItem(item.id);
+                                }
+                              }}
+                              className="absolute inset-0 cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            <div
+                              id={titleId}
+                              className="[&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10"
+                            >
+                              {item.title}
+                            </div>
                           </div>
                         )}
 
