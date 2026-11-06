@@ -580,6 +580,7 @@ const BillOfMaterial = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          label={t`Bill of Materials`}
           emptyState={
             isPhone ? (
               <CompactEmpty
@@ -982,6 +983,7 @@ function MaterialForm({
                 {itemData.sourcingType}
               </Badge>
               <IconButton
+                aria-expanded={sourcingDisclosure.isOpen}
                 icon={<LuChevronRight />}
                 aria-label={
                   sourcingDisclosure.isOpen
@@ -1090,6 +1092,7 @@ function MaterialForm({
               </Badge>
             )}
             <IconButton
+              aria-expanded={sourceDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 sourceDisclosure.isOpen ? "Collapse Source" : "Expand Source"
@@ -1186,6 +1189,7 @@ function MaterialForm({
                 : "First Operation"}
             </Badge>
             <IconButton
+              aria-expanded={backflushDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen

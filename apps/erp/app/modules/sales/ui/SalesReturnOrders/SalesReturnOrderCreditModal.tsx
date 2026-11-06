@@ -19,7 +19,7 @@ import {
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import {
@@ -39,6 +39,7 @@ const SalesReturnOrderCreditModal = ({
   currencyCode,
   onClose
 }: SalesReturnOrderCreditModalProps) => {
+  const { t } = useLingui();
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -152,6 +153,7 @@ const SalesReturnOrderCreditModal = ({
                 <VStack spacing={2} className="w-full">
                   {lines.map((line) => {
                     const quantity = selected[line.salesReturnOrderLineId] ?? 0;
+                    const lineNumber = line.lineNumber;
                     return (
                       <HStack
                         key={line.salesReturnOrderLineId}
@@ -183,6 +185,7 @@ const SalesReturnOrderCreditModal = ({
                         </VStack>
                         <HStack spacing={4}>
                           <NumberField
+                            aria-label={t`Quantity to credit for line ${lineNumber}`}
                             formatOptions={INPUT_FORMAT.quantity}
                             step={INPUT_STEP.quantity}
                             value={quantity}

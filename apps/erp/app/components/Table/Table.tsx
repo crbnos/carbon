@@ -97,8 +97,10 @@ import { useInfiniteRows } from "./useInfiniteRows";
 import { useInfiniteScroll } from "./useInfiniteScroll";
 import { useVirtualRows } from "./useVirtualRows";
 import {
+  bodyRowPositions,
   buildColumnMaps,
   getAccessorKey,
+  getColumnLabel,
   hasUniqueRowIds,
   isServerSortable
 } from "./utils";
@@ -192,6 +194,9 @@ interface TableProps<T extends object> {
   // list past 1,000 rows (only `selectedRows` are loaded then).
   renderActions?: (selectedRows: T[], scope?: BulkActionScope) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
+  /** Names a row in its select and action controls ("Actions for
+   *  PO-000123"). Defaults to the first visible text column's value. */
+  getRowLabel?: (row: T) => string | undefined;
   renderExpandedRow?: (row: T) => ReactNode;
   // Pin an expanded row's content (`sticky left-0`) to the scroll container's
   // visible width, so on a table several viewports wide (the 48-week planning
@@ -301,6 +306,7 @@ function aggregateForCol<TData extends RowData>(
 
 interface AggregateSelectorProps {
   value: number;
+  columnLabel?: string;
   aggregateFunction: AggregateFunction;
   onAggregateFunctionChange: (fn: AggregateFunction) => void;
   formatter?: (
@@ -310,10 +316,12 @@ interface AggregateSelectorProps {
 
 const AggregateSelector = ({
   value,
+  columnLabel,
   aggregateFunction,
   onAggregateFunctionChange,
   formatter
 }: AggregateSelectorProps) => {
+  const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
   const currentFunction = aggregateFunctions.find(
     (fn) => fn.value === aggregateFunction
@@ -324,13 +332,26 @@ const AggregateSelector = ({
       ? numberFormatter.format(value)
       : formatter(value);
 
+  const functionLabel = currentFunction?.label ?? "";
+  // The trigger shows only an icon and a number: name the total by its
+  // column and function so the menu button is identifiable on its own.
+  const triggerLabel = columnLabel
+    ? t`${columnLabel} ${functionLabel}: ${formattedValue}`
+    : t`${functionLabel}: ${formattedValue}`;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex justify-start items-center gap-2 cursor-pointer">
-          <span className="text-muted-foreground">{currentFunction?.icon}</span>
+        <button
+          type="button"
+          aria-label={triggerLabel}
+          className="flex justify-start items-center gap-2 cursor-pointer bg-transparent border-0 p-0 text-inherit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span aria-hidden="true" className="text-muted-foreground">
+            {currentFunction?.icon}
+          </span>
           <span className="font-medium">{formattedValue}</span>
-        </div>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup value={aggregateFunction}>
@@ -389,6 +410,7 @@ const Table = <T extends object>({
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
+  getRowLabel,
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
@@ -622,7 +644,13 @@ const Table = <T extends object>({
     }
     result.push(...columns);
     if (renderContextMenu) {
-      result.push(...getActionColumn<T>(renderContextMenu, t`Actions`));
+      result.push(
+        ...getActionColumn<T>(
+          renderContextMenu,
+          t`Actions`,
+          (rowLabel) => t`Actions for ${rowLabel}`
+        )
+      );
     }
     return result;
   }, [
@@ -655,6 +683,7 @@ const Table = <T extends object>({
     meta: {
       // These are not part of the standard API, but are accessible via table.options.meta
       editableComponents,
+      getRowLabel,
       updateData: (rowIndex, updates) => {
         const row = tableData[rowIndex];
         if (!row) return;
@@ -1039,6 +1068,62 @@ const Table = <T extends object>({
     Record<string, boolean>
   >({});
 
+  // Each drawn group header, by the row that starts its group (a header that
+  // returns null draws none). Built for every group, not only the ones in
+  // view, so the row numbers below count them.
+  const groupHeaders = useMemo(() => {
+    const headers = new Map<string, ReactNode>();
+    if (!groupRowsBy) return headers;
+    for (const [rowId, groupRows] of groupStarts) {
+      const groupKey = groupKeyByRowId.get(rowId);
+      if (!groupKey) continue;
+      const header = groupRowsBy.header(groupRows, {
+        collapsed: !!collapsedGroups[groupKey],
+        toggle: () =>
+          setCollapsedGroups((current) => ({
+            ...current,
+            [groupKey]: !current[groupKey]
+          }))
+      });
+      if (header !== null && header !== undefined) headers.set(rowId, header);
+    }
+    return headers;
+  }, [groupStarts, groupKeyByRowId, groupRowsBy, collapsedGroups]);
+
+  const isGroupCollapsed = (rowId: string) => {
+    const groupKey = groupKeyByRowId.get(rowId);
+    return groupKey ? !!collapsedGroups[groupKey] : false;
+  };
+  const isRowExpandable = (row: T) =>
+    !!renderExpandedRow && (!canExpandRow || canExpandRow(row));
+
+  // Where each data row's group header, row and expanded row sit among the
+  // drawn body rows, so every one of them gets its own `aria-rowindex`.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: isGroupCollapsed and isRowExpandable read only the listed values
+  const bodyRows = useMemo(
+    () =>
+      bodyRowPositions(
+        rows.map((row) => {
+          const hidden = isGroupCollapsed(row.id);
+          return {
+            groupHeader: groupHeaders.has(row.id),
+            hidden,
+            expanded:
+              !hidden && isRowExpandable(row.original) && isRowExpanded(row.id)
+          };
+        })
+      ),
+    [
+      rows,
+      groupHeaders,
+      groupKeyByRowId,
+      collapsedGroups,
+      renderExpandedRow,
+      canExpandRow,
+      isRowExpanded
+    ]
+  );
+
   /* Row virtualization: only the rows in view (plus overscan) are in the DOM.
      One virtual item is one data row, with its group header and expanded row
      in the same `<tbody>`, so one measurement covers all three. */
@@ -1396,6 +1481,22 @@ const Table = <T extends object>({
       ? undefined
       : primaryAction;
 
+  // Only the rows in view are rendered, and an infinite list loads the rest
+  // on scroll, so the table says how many rows it has (-1: not known) and
+  // each rendered row says where it sits. Without it the accessibility tree
+  // shows the rows in view as the whole table. Group headers and expanded
+  // rows count as rows; the rows not loaded yet count one each.
+  const headerRowCount = table.getHeaderGroups().length;
+  const bodyRowCount = !hasMore
+    ? bodyRows.total
+    : countIsExact
+      ? bodyRows.total + Math.max(count - rows.length, 0)
+      : -1;
+  const ariaRowCount =
+    bodyRowCount < 0
+      ? -1
+      : headerRowCount + bodyRowCount + table.getFooterGroups().length;
+
   // The rows in view are each in their own `<tbody>`; an empty one stands in
   // for each run of rows that is not rendered.
   const spacerRow = (key: string, height: number) => (
@@ -1547,6 +1648,11 @@ const Table = <T extends object>({
             <TableBase
               ref={tableRef}
               full
+              // In edit mode the table is a spreadsheet-like grid with its own
+              // keyboard model; each cell says whether it is selected and
+              // whether it can be edited (Cell.tsx). Read-only, a plain table.
+              role={editMode ? "grid" : undefined}
+              aria-rowcount={ariaRowCount}
               className="relative border-collapse border-spacing-0"
             >
               <Thead ref={theadRef} className="sticky top-0 z-10">
@@ -1563,6 +1669,9 @@ const Table = <T extends object>({
                       const sortKey =
                         header.column.columnDef.meta?.sortBy ?? accessorKey;
                       const sorted = isSorted(sortKey ?? "");
+                      const columnLabel = getColumnLabel(
+                        header.column.columnDef
+                      );
 
                       return (
                         <Th
@@ -1599,9 +1708,15 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div
+                                  <button
+                                    type="button"
+                                    aria-label={
+                                      columnLabel
+                                        ? t`${columnLabel} sort options`
+                                        : undefined
+                                    }
                                     className={cn(
-                                      "group flex items-center gap-2",
+                                      "group flex w-full items-center gap-2 bg-transparent border-0 p-0 text-inherit cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                       header.column.columnDef.meta
                                         ?.headerClassName ?? "justify-start"
                                     )}
@@ -1630,11 +1745,11 @@ const Table = <T extends object>({
                                       ) : (
                                         <LuArrowUpDown
                                           aria-hidden="true"
-                                          className="text-muted-foreground/50 md:opacity-0 transition-opacity group-hover:opacity-100"
+                                          className="text-muted-foreground/50 md:opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                                         />
                                       )}
                                     </span>
-                                  </div>
+                                  </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start">
                                   <DropdownMenuRadioGroup
@@ -1689,10 +1804,17 @@ const Table = <T extends object>({
               </Thead>
               {renderVirtualRows((virtualIndex) => {
                 const row = rows[virtualIndex]!;
-                const rowExpandable =
-                  !!renderExpandedRow &&
-                  (!canExpandRow || canExpandRow(row.original));
+                const rowExpandable = isRowExpandable(row.original);
                 const rowIsExpanded = rowExpandable && isRowExpanded(row.id);
+                const groupHeader = groupHeaders.get(row.id);
+                const groupCollapsed = isGroupCollapsed(row.id);
+                // 1-based, after the header rows: this data row's first drawn
+                // row (its group header when it has one), then the row, then
+                // its expanded row.
+                const firstRowIndex =
+                  headerRowCount + (bodyRows.starts[virtualIndex] ?? 0) + 1;
+                const rowIndex =
+                  groupHeader !== undefined ? firstRowIndex + 1 : firstRowIndex;
                 const handleRowClick = rowExpandable
                   ? () => toggleRowExpanded(row.id)
                   : undefined;
@@ -1714,6 +1836,7 @@ const Table = <T extends object>({
                           onCellClick={onCellClick}
                           onCellUpdate={onCellUpdate}
                           onClick={handleRowClick}
+                          aria-rowindex={rowIndex}
                           className={cn(
                             rowExpandable && "cursor-pointer",
                             getRowClassName?.(row.original)
@@ -1741,6 +1864,7 @@ const Table = <T extends object>({
                     onCellClick={onCellClick}
                     onCellUpdate={onCellUpdate}
                     onClick={handleRowClick}
+                    aria-rowindex={rowIndex}
                     className={cn(
                       rowExpandable && "cursor-pointer",
                       getRowClassName?.(row.original)
@@ -1748,31 +1872,14 @@ const Table = <T extends object>({
                   />
                 );
 
-                const groupRows = groupStarts.get(row.id);
-                const groupKey = groupKeyByRowId.get(row.id);
-                const groupCollapsed = groupKey
-                  ? !!collapsedGroups[groupKey]
-                  : false;
-                const groupHeader =
-                  groupRows && groupRowsBy && groupKey
-                    ? groupRowsBy.header(groupRows, {
-                        collapsed: groupCollapsed,
-                        toggle: () =>
-                          setCollapsedGroups((current) => ({
-                            ...current,
-                            [groupKey]: !current[groupKey]
-                          }))
-                      })
-                    : null;
-
                 return (
                   <Tbody
                     key={row.id}
                     ref={rowVirtualizer.measureElement}
                     data-index={virtualIndex}
                   >
-                    {groupHeader !== null && groupHeader !== undefined && (
-                      <Tr>
+                    {groupHeader !== undefined && (
+                      <Tr aria-rowindex={firstRowIndex}>
                         <Td
                           colSpan={visibleColumns.length}
                           className="p-0 bg-muted/40 border-b border-border"
@@ -1796,8 +1903,8 @@ const Table = <T extends object>({
                       </Tr>
                     )}
                     {!groupCollapsed && rowContent}
-                    {!groupCollapsed && rowIsExpanded && (
-                      <Tr>
+                    {!groupCollapsed && rowIsExpanded && renderExpandedRow && (
+                      <Tr aria-rowindex={rowIndex + 1}>
                         <Td
                           colSpan={visibleColumns.length}
                           className="p-0 bg-muted/20 border-b border-border"
@@ -1883,6 +1990,9 @@ const Table = <T extends object>({
                               (footer.column.columnDef.meta?.renderTotal ? (
                                 <AggregateSelector
                                   value={total}
+                                  columnLabel={getColumnLabel(
+                                    footer.column.columnDef
+                                  )}
                                   aggregateFunction={aggregateFn}
                                   onAggregateFunctionChange={(fn) => {
                                     setColumnAggregates((prev) => ({

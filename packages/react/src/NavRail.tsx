@@ -102,6 +102,7 @@ export function NavRail({
   /** Ignore hover, e.g. while a modal owns the pointer. */
   disableHover?: boolean;
 }) {
+  const { t } = useLingui();
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
   // Desktop rail only: the mobile drawer keeps the normal colors.
@@ -236,7 +237,9 @@ export function NavRail({
             <Trans>Navigation</Trans>
           </DrawerTitle>
           <NavRailHoldContext.Provider value={hold}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
             <nav
+              aria-label={t`Main`}
               data-state="expanded"
               onClick={closeOnLink}
               className="group min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -253,6 +256,7 @@ export function NavRail({
               />
             </nav>
             {footer ? (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
               <div
                 data-state="expanded"
                 onClick={closeOnLink}
@@ -284,6 +288,7 @@ export function NavRail({
     >
       <nav
         ref={navRef}
+        aria-label={t`Main`}
         data-state={state}
         data-sliding-hover=""
         style={themeStyle?.rail[railMode] as CSSProperties | undefined}

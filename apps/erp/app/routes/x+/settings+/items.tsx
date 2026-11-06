@@ -254,6 +254,7 @@ export default function ItemsSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Generated material IDs`}
                 checked={companySettings.materialGeneratedIds ?? false}
                 onCheckedChange={handleMaterialIdsToggle}
                 disabled={isToggling}
@@ -295,6 +296,7 @@ export default function ItemsSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Allow lowercase item IDs`}
                 checked={companySettings.allowLowercaseItemIds ?? false}
                 onCheckedChange={handleLowercaseItemIdsToggle}
                 disabled={isToggling}
@@ -341,6 +343,7 @@ export default function ItemsSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show item IDs on BoM Explorer lines`}
                 checked={companySettings.showBomExplorerReadableId ?? false}
                 onCheckedChange={handleBomExplorerReadableIdToggle}
                 disabled={isToggling}
@@ -387,6 +390,7 @@ export default function ItemsSettingsRoute() {
                   </span>
                 </VStack>
                 <Switch
+                  aria-label={t`Strict backflush`}
                   checked={companySettings.requireBackflushStorageUnit ?? false}
                   onCheckedChange={handleStrictBackflushToggle}
                   disabled={isToggling}
@@ -414,6 +418,7 @@ export default function ItemsSettingsRoute() {
                   </span>
                 </VStack>
                 <Switch
+                  aria-label={t`Prevent negative stock`}
                   checked={companySettings.preventNegativeBackflush}
                   onCheckedChange={handlePreventNegativeBackflushToggle}
                   disabled={
@@ -502,6 +507,7 @@ export default function ItemsSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Metric units`}
                 checked={(companySettings as any).useMetric ?? false}
                 onCheckedChange={handleMetricToggle}
                 disabled={isToggling}

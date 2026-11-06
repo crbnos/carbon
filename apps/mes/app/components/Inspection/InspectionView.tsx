@@ -36,6 +36,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState
@@ -727,9 +728,9 @@ export function InspectionView({
 
           <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
             {/* The lot number and status never give way to the actions. */}
-            <span className="shrink-0 text-sm font-semibold">
+            <h1 className="shrink-0 text-sm font-semibold">
               {inspection.inspectionId}
-            </span>
+            </h1>
             <Badge
               variant={statusBadgeVariant}
               className="shrink-0 max-lg:hidden"
@@ -1361,6 +1362,7 @@ function CompletePassedButton({
   const { t } = useLingui();
   const fetcher = useFetcher();
   const busy = fetcher.state !== "idle" || gridBusy;
+  const label = t`Complete (${count} passed)`;
 
   if (variant === "bar") {
     return (
@@ -1380,9 +1382,7 @@ function CompletePassedButton({
           leftIcon={<LuCheckCheck />}
           className="h-12 w-full text-emerald-600 dark:text-emerald-400"
         >
-          <span className="truncate">
-            <Trans>Complete passed</Trans> {count}
-          </span>
+          <span className="truncate">{label}</span>
         </Button>
       </fetcher.Form>
     );
@@ -1400,15 +1400,15 @@ function CompletePassedButton({
       <button
         type="submit"
         disabled={busy}
-        title={t`Complete passed`}
+        aria-label={label}
+        title={label}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
       >
         <LuCheckCheck className="size-4" />
-        {/* The label only where the header has room for it. */}
-        <span className="hidden xl:inline">
-          <Trans>Complete passed</Trans>
-        </span>
-        <span className="tabular-nums">{count}</span>
+        {/* The label only where the header has room for it; the count
+            always. */}
+        <span className="hidden tabular-nums xl:inline">{label}</span>
+        <span className="tabular-nums xl:hidden">{count}</span>
       </button>
     </fetcher.Form>
   );
@@ -1536,11 +1536,22 @@ function AutoTimer({
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
   const startedRef = useRef(false);
+  // "submitted" once the auto-start is sent, "announced" once it landed;
+  // "done" after the first pause, so a later manual start isn't re-announced.
+  const [phase, setPhase] = useState<
+    "idle" | "submitted" | "announced" | "done"
+  >("idle");
 
   const busy = fetcher.state !== "idle";
   const running = !!openEvent;
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[workType];
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
@@ -1554,9 +1565,21 @@ function AutoTimer({
     fd.set("exclusive", "true");
     if (workCenterId) fd.set("workCenterId", workCenterId);
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
+    setPhase("submitted");
   }, []);
 
-  return null;
+  useEffect(() => {
+    if (phase === "submitted" && !busy && running) setPhase("announced");
+    if (phase === "announced" && !running) setPhase("done");
+  }, [phase, busy, running]);
+
+  // The start happens without a press, so say so once it has landed. The
+  // region is mounted empty first: a live region announces changes only.
+  return (
+    <div role="status" className="sr-only">
+      {phase === "announced" ? t`${workTypeLabel} timer started` : ""}
+    </div>
+  );
 }
 
 function formatElapsed(s: number) {
@@ -1603,6 +1626,12 @@ function TimerControl({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[workType];
+  const elapsedId = useId();
 
   // Optimistic state: flip the moment Start/End is submitted instead of
   // waiting for the post-production-event round-trip.
@@ -1613,6 +1642,19 @@ function TimerControl({
       : pendingAction === "End"
         ? false
         : !!openEvent;
+
+  // A disabled button drops focus to the page: when the press settles, put
+  // focus back on the button the user pressed.
+  const timerButtonRef = useRef<HTMLButtonElement>(null);
+  const refocusTimer = useRef(false);
+  const isTimerBusy = fetcher.state !== "idle";
+  useEffect(() => {
+    if (isTimerBusy || !refocusTimer.current) return;
+    refocusTimer.current = false;
+    if (!document.activeElement || document.activeElement === document.body) {
+      timerButtonRef.current?.focus();
+    }
+  }, [isTimerBusy]);
 
   const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
   const elapsed = pendingAction === "End" ? 0 : liveElapsed;
@@ -1634,21 +1676,38 @@ function TimerControl({
         <input type="hidden" name="id" value={openEvent.id} />
       ) : null}
       <button
-        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
+        ref={timerButtonRef}
+        // Disabled while the press is in flight, so a second press can't post
+        // again; the effect above gives focus back once it settles.
+        disabled={isTimerBusy || (startDisabled && !openEvent)}
+        onClick={() => {
+          refocusTimer.current =
+            document.activeElement === timerButtonRef.current;
+        }}
         type="submit"
-        aria-label={active ? t`Pause timer` : t`Start timer`}
+        aria-label={
+          active
+            ? t`Pause ${workTypeLabel} timer`
+            : t`Start ${workTypeLabel} timer`
+        }
+        // The elapsed time, which the label above replaces as the name.
+        aria-describedby={elapsedId}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:border-l-0 md:gap-2 md:px-4"
       >
         <span className="flex flex-col items-end leading-none">
-          <span className="text-sm font-medium tabular-nums">
+          <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
             <ClientOnly fallback={formatElapsed(0)}>
               {() => formatElapsed(elapsed)}
             </ClientOnly>
+            {/* The running state, read with the elapsed time. */}
+            <span className="sr-only">
+              {active ? t`, running` : t`, not running`}
+            </span>
           </span>
           <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
-            {workType}
+            {workTypeLabel}
           </span>
         </span>
         {active ? (

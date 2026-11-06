@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuMapPin, LuX } from "react-icons/lu";
 import { useLocations } from "~/components/Form/Location";
@@ -75,6 +76,7 @@ function DrillSelect({
   placeholder = "Select",
   excludeDescendantsOf
 }: DrillSelectProps) {
+  const { t } = useLingui();
   const allRows = useStorageUnitsTree(locationId);
   const excludedIds = useExcludedDescendantIds(excludeDescendantsOf);
   const rows = useMemo(
@@ -177,40 +179,42 @@ function DrillSelect({
         if (!o) reset();
       }}
     >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          disabled={isReadOnly}
-          className={cn(
-            "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm text-left shadow-xs transition-[color,box-shadow]",
-            "max-md:h-11 max-md:text-base",
-            "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-            isReadOnly && "opacity-60 cursor-not-allowed",
-            !triggerLabel && "text-muted-foreground"
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate">
-            {triggerLabel || placeholder}
-          </span>
-          <span className="flex shrink-0 items-center gap-1">
-            {value && !isReadOnly ? (
-              <span
-                role="button"
-                tabIndex={-1}
-                aria-label="Clear"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange("");
-                }}
-                className="flex h-4 w-4 items-center justify-center rounded opacity-60 hover:bg-muted hover:opacity-100 max-md:hit-area"
-              >
-                <LuX className="h-3 w-3" />
-              </span>
-            ) : null}
-            <LuChevronDown className="h-4 w-4 opacity-50" />
-          </span>
-        </button>
-      </PopoverTrigger>
+      {/* Clear sits beside the trigger, not inside it: a control inside a
+          button cannot take focus. */}
+      <div className="relative w-full">
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={isReadOnly}
+            className={cn(
+              "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm text-left shadow-xs transition-[color,box-shadow]",
+              "max-md:h-11 max-md:text-base",
+              "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              isReadOnly && "opacity-60 cursor-not-allowed",
+              value && !isReadOnly && "pr-14",
+              !triggerLabel && "text-muted-foreground"
+            )}
+          >
+            <span className="min-w-0 flex-1 truncate">
+              {triggerLabel || placeholder}
+            </span>
+            <LuChevronDown
+              aria-hidden
+              className="h-4 w-4 shrink-0 opacity-50"
+            />
+          </button>
+        </PopoverTrigger>
+        {value && !isReadOnly ? (
+          <button
+            type="button"
+            aria-label={t`Clear`}
+            onClick={() => onChange("")}
+            className="absolute top-1/2 right-8 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded opacity-60 outline-none hover:bg-muted hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring max-md:hit-area"
+          >
+            <LuX aria-hidden className="h-3 w-3" />
+          </button>
+        ) : null}
+      </div>
       <PopoverContent
         align="start"
         sideOffset={4}
@@ -255,6 +259,7 @@ function DrillSelect({
 
         {/* Search — flush, borderless. */}
         <Input
+          aria-label={t`Search storage units`}
           autoFocus
           borderless
           value={search}

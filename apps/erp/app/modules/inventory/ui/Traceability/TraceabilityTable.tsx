@@ -389,6 +389,7 @@ function ToggleOrLeaf({
   if (hasChildren) {
     return (
       <button
+        aria-expanded={!isCollapsed}
         type="button"
         onClick={(e) => {
           e.stopPropagation();

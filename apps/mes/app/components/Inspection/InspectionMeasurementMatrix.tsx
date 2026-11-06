@@ -36,7 +36,14 @@ import {
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { MutableRefObject, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuCheck,
   LuCheckCheck,
@@ -1192,6 +1199,10 @@ const InspectionMeasurementMatrix = ({
     />
   );
 
+  // An entry cell's name: the characteristic and the sample it is for.
+  const entryCellLabel = (characteristic: string, sample: string) =>
+    t`${characteristic}, sample ${sample}`;
+
   const renderEntryCell = (
     characteristic: Characteristic,
     sampleIndex: number
@@ -1209,6 +1220,12 @@ const InspectionMeasurementMatrix = ({
       );
     }
     const status = cellStatus(sampleIndex, characteristic.featureId);
+    const characteristicName =
+      characteristic.featureId !== OVERALL_ROW_ID && characteristic.description
+        ? `#${characteristic.label} ${characteristic.description}`
+        : characteristic.label;
+    const sampleName = sampleLabels[sampleIndex] ?? "";
+    const cellLabel = entryCellLabel(characteristicName, sampleName);
     return (
       <td
         key={`${characteristic.featureId}-${sampleIndex}`}
@@ -1223,18 +1240,22 @@ const InspectionMeasurementMatrix = ({
       >
         {characteristic.isNumeric ? (
           <NumericCell
+            ariaLabel={cellLabel}
             disabled={isReadOnly}
             status={status}
             spec={characteristic.spec}
             value={cellValue(sampleIndex, characteristic.featureId)}
             aboveLabel={t`Above the upper limit`}
             belowLabel={t`Below the lower limit`}
+            passLabel={t`Pass`}
+            failLabel={t`Fail (out of tolerance)`}
             onCommit={(value) =>
               persistCell(characteristic, sampleIndex, { value })
             }
           />
         ) : (
           <PassFailCell
+            label={cellLabel}
             disabled={isReadOnly || bulkProgress !== null}
             status={status}
             passLabel={t`Pass`}
@@ -1371,10 +1392,28 @@ const InspectionMeasurementMatrix = ({
                           isActive ? null : characteristic.featureId
                         )
                       }
+                      // Keyboard twin of the click. Not role="button": the
+                      // cell also holds the gauge picker, which a button
+                      // would hide from assistive tech.
+                      tabIndex={hasFeatures ? 0 : undefined}
+                      aria-current={isActive ? "true" : undefined}
+                      onKeyDown={(event) => {
+                        if (
+                          hasFeatures &&
+                          event.target === event.currentTarget &&
+                          (event.key === "Enter" || event.key === " ")
+                        ) {
+                          event.preventDefault();
+                          onActiveFeatureChange(
+                            isActive ? null : characteristic.featureId
+                          );
+                        }
+                      }}
                     >
                       {characteristicHeader(characteristic)}
                       {hasFeatures ? (
                         // The click must not toggle the active column.
+                        // biome-ignore lint/a11y/noStaticElementInteractions: only stops the gauge picker's clicks from toggling the column; the picker inside is the control
                         <div
                           className="-mx-3 -mb-2 mt-2 min-w-0 border-t border-border [&>*]:min-w-0"
                           onClick={(event) => event.stopPropagation()}
@@ -1476,11 +1515,29 @@ const InspectionMeasurementMatrix = ({
                             )
                           : undefined
                       }
+                      // Keyboard twin of the click. Not role="button": the
+                      // cell also holds the phone gauge picker, which a button
+                      // would hide from assistive tech.
+                      tabIndex={hasFeatures ? 0 : undefined}
+                      aria-current={isActive ? "true" : undefined}
+                      onKeyDown={(event) => {
+                        if (
+                          hasFeatures &&
+                          event.target === event.currentTarget &&
+                          (event.key === "Enter" || event.key === " ")
+                        ) {
+                          event.preventDefault();
+                          onActiveFeatureChange(
+                            isActive ? null : characteristic.featureId
+                          );
+                        }
+                      }}
                     >
                       {characteristicHeader(characteristic)}
                       {hasFeatures ? (
                         // Phones: the gauge sits under the characteristic.
                         // The click must not toggle the active row.
+                        // biome-ignore lint/a11y/noStaticElementInteractions: only stops the gauge picker's clicks from toggling the row; the picker inside is the control
                         <div
                           className="-mx-2 -mb-2 mt-2 hidden min-w-0 border-t border-border max-md:block [&>*]:min-w-0"
                           onClick={(event) => event.stopPropagation()}
@@ -1524,22 +1581,29 @@ function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
 }
 
 function NumericCell({
+  ariaLabel,
   disabled,
   status,
   spec,
   value,
   aboveLabel,
   belowLabel,
+  passLabel,
+  failLabel,
   onCommit
 }: {
+  ariaLabel: string;
   disabled: boolean;
   status: string | undefined;
   spec: MeasurementFeatureSpec | null;
   value: number | null;
   aboveLabel: string;
   belowLabel: string;
+  passLabel: string;
+  failLabel: string;
   onCommit: (value: string) => void;
 }) {
+  const statusId = useId();
   const [draft, setDraft] = useState(value == null ? "" : formatReading(value));
 
   // Re-sync when the persisted value changes underneath (e.g. save response).
@@ -1564,6 +1628,17 @@ function NumericCell({
       ? measurementDeviation(spec, shownValue)
       : null;
 
+  // The verdict is otherwise only the cell's colour: say it as text too.
+  const statusText = deviation
+    ? deviation === "above"
+      ? aboveLabel
+      : belowLabel
+    : shownStatus === "Failed"
+      ? failLabel
+      : shownStatus === "Passed"
+        ? passLabel
+        : null;
+
   const commit = () => {
     if (!isDirty) return;
     const trimmed = draft.trim();
@@ -1582,6 +1657,9 @@ function NumericCell({
   return (
     <>
       <input
+        aria-label={ariaLabel}
+        aria-invalid={shownStatus === "Failed" || undefined}
+        aria-describedby={statusText ? statusId : undefined}
         type="text"
         inputMode="decimal"
         disabled={disabled}
@@ -1598,24 +1676,31 @@ function NumericCell({
         )}
       />
       {deviation && (
-        <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-red-600 dark:text-red-400">
-          <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
-          <span className="sr-only">
-            {deviation === "above" ? aboveLabel : belowLabel}
-          </span>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-red-600 dark:text-red-400"
+        >
+          {deviation === "above" ? "↑" : "↓"}
         </span>
       )}
+      {statusText ? (
+        <span id={statusId} className="sr-only">
+          {statusText}
+        </span>
+      ) : null}
     </>
   );
 }
 
 function PassFailCell({
+  label,
   disabled,
   status,
   passLabel,
   failLabel,
   onToggle
 }: {
+  label: string;
   disabled: boolean;
   status: string | undefined;
   passLabel: string;
@@ -1653,7 +1738,11 @@ function PassFailCell({
     );
   }
   return (
-    <div className="flex h-full min-h-12 items-stretch">
+    <div
+      role="group"
+      aria-label={label}
+      className="flex h-full min-h-12 items-stretch"
+    >
       <button
         type="button"
         disabled={disabled}

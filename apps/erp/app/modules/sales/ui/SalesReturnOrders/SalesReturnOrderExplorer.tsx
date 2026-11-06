@@ -23,6 +23,7 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
+  PrefetchLink,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -44,7 +45,6 @@ import {
 import {
   Link,
   useFetcher,
-  useNavigate,
   useNavigation,
   useParams,
   useSubmit
@@ -309,13 +309,13 @@ function SalesReturnOrderLineItem({
   onDelete
 }: SalesReturnOrderLineItemProps) {
   const { t } = useLingui();
+  const lineName = line.item?.readableIdWithRevision;
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
   const submit = useSubmit();
   const navigation = useNavigation();
   const dispositionFetcher = useFetcher<{ success: boolean }>();
@@ -407,12 +407,6 @@ function SalesReturnOrderLineItem({
       ? getLinkToItemDetails(lineItemType as ItemType, line.itemId)
       : null;
 
-  const onLineClick = () => {
-    if (!isSelected) {
-      navigate(path.to.salesReturnOrderLine(orderId, line.id!));
-    }
-  };
-
   return (
     <VStack spacing={0} className="border-b">
       <HStack
@@ -420,35 +414,48 @@ function SalesReturnOrderLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={onLineClick}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
-          <VStack spacing={0} className="min-w-0">
-            <span className="font-semibold line-clamp-1">
-              {line.item?.readableIdWithRevision}
-            </span>
-            {distinctItemText(
-              line.item?.readableIdWithRevision,
-              line.item?.name
-            ) && (
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.item?.name}
+        {/* The link is stretched over the row; the buttons sit beside it. */}
+        <PrefetchLink
+          to={path.to.salesReturnOrderLine(orderId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.item?.thumbnailPath}
+              type="Part"
+            />
+            <VStack spacing={0} className="min-w-0">
+              <span className="font-semibold line-clamp-1">
+                {line.item?.readableIdWithRevision}
               </span>
-            )}
-            {isServiceLine && (
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {returnTypeLabels[line.returnType]}
-              </span>
-            )}
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+              {distinctItemText(
+                line.item?.readableIdWithRevision,
+                line.item?.name
+              ) && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {line.item?.name}
+                </span>
+              )}
+              {isServiceLine && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {returnTypeLabels[line.returnType]}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             <IconButton
-              aria-label={disclosure.isOpen ? t`Hide` : t`Show`}
+              aria-label={
+                disclosure.isOpen
+                  ? t`Hide details for ${lineName}`
+                  : t`Show details for ${lineName}`
+              }
+              aria-expanded={disclosure.isOpen}
               className={cn(
-                "animate md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                 disclosure.isOpen && "-rotate-180"
               )}
               icon={<LuChevronDown />}
@@ -462,8 +469,8 @@ function SalesReturnOrderLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"

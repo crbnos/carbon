@@ -166,6 +166,7 @@ const CompanySwitcher = () => {
                               size="xs"
                               name={c.name ?? undefined}
                               src={companyLogo ?? undefined}
+                              decorative
                             />
                             <span>{c.name}</span>
                           </HStack>

@@ -406,7 +406,15 @@ function ServiceJobFilesContent({
                   <HStack>
                     <DocumentIcon type={type} />
                     <span
+                      role="button"
+                      tabIndex={0}
                       className="font-medium cursor-pointer"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
+                      }}
                       onClick={() => {
                         if (isPreviewableDocumentType(type)) {
                           window.open(

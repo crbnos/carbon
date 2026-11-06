@@ -67,6 +67,7 @@ const EditableNumber = <T extends object>(
     value,
     row,
     accessorKey,
+    label,
     onError,
     onUpdate
   }: EditableTableCellComponentProps<T>) => {
@@ -130,6 +131,7 @@ const EditableNumber = <T extends object>(
     return (
       <NumberField
         {...resolvedProps}
+        aria-label={resolvedProps?.["aria-label"] ?? label}
         defaultValue={numericValue}
         onChange={(next) => {
           latestValue.current = Number.isNaN(next) ? undefined : next;

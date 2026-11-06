@@ -13,12 +13,13 @@ import type {
   HTMLAttributes,
   KeyboardEvent
 } from "react";
-import { createContext, forwardRef, useContext } from "react";
+import { createContext, forwardRef, useContext, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { cn } from "./utils/cn";
+import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 // A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
@@ -82,7 +83,7 @@ function getFooterActions(footer: Element) {
 }
 
 // When nothing before the footer can take focus (a plain confirm modal), start
-// on the primary action instead of Cancel.
+// on the primary action instead of Cancel — unless the primary is destructive.
 function focusPrimaryAction(event: Event) {
   const content = event.currentTarget as HTMLElement;
   const first = Array.from(
@@ -90,11 +91,14 @@ function focusPrimaryAction(event: Event) {
   ).find((el) => el.offsetParent !== null);
   const footer = first?.closest("[data-modal-footer]");
   if (!footer) return;
-  const actions = getFooterActions(footer);
-  const primary = actions[actions.length - 1];
-  if (!primary) return;
+  // Never a destructive action: one Enter must not confirm a delete. Take the
+  // last action that is not destructive (Cancel, beside a lone Delete).
+  const primary = getFooterActions(footer)
+    .filter((el) => el.dataset.variant !== "destructive")
+    .pop();
   event.preventDefault();
-  primary.focus();
+  // Only a destructive action: start on the dialog itself.
+  (primary ?? content).focus();
 }
 
 function moveBetweenFooterActions(event: KeyboardEvent<HTMLDivElement>) {
@@ -156,10 +160,12 @@ const ModalContent = forwardRef<
       size,
       withCloseButton = true,
       onOpenAutoFocus,
+      onCloseAutoFocus,
       ...props
     },
     ref
   ) => {
+    useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
     const phoneOpenAutoFocus = usePhoneOpenAutoFocus(onOpenAutoFocus);
@@ -176,6 +182,7 @@ const ModalContent = forwardRef<
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}
+                onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
               >
                 {/* Phones: the same grabber as a drawer sheet. */}
                 {isPhone && (
@@ -251,6 +258,7 @@ const ModalFooter = ({
   onKeyDown,
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
+  // biome-ignore lint/a11y/noStaticElementInteractions: onKeyDown moves focus between the footer's buttons with arrow keys; the row itself is not a control
   <div
     data-modal-footer=""
     onKeyDown={(event) => {

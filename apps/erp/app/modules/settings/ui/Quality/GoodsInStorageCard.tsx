@@ -127,7 +127,6 @@ export function GoodsInStorageCard({
                   <GoodsInStorageSelect
                     label={t`Inspection`}
                     ariaLabel={t`${location.name} inspection storage unit`}
-                    clearLabel={t`Clear the ${location.name} inspection storage unit`}
                     value={location.inspectionStorageUnitId}
                     storedUnit={location.inspectionStorageUnit}
                     options={options}
@@ -140,7 +139,6 @@ export function GoodsInStorageCard({
                   <GoodsInStorageSelect
                     label={t`Rejected`}
                     ariaLabel={t`${location.name} rejected storage unit`}
-                    clearLabel={t`Clear the ${location.name} rejected storage unit`}
                     value={location.rejectedStorageUnitId}
                     storedUnit={location.rejectedStorageUnit}
                     options={options}
@@ -163,7 +161,6 @@ export function GoodsInStorageCard({
 function GoodsInStorageSelect({
   label,
   ariaLabel,
-  clearLabel,
   value,
   storedUnit,
   options,
@@ -173,7 +170,6 @@ function GoodsInStorageSelect({
 }: {
   label: string;
   ariaLabel: string;
-  clearLabel: string;
   value: string | null;
   storedUnit: StoredStorageUnit | null;
   options: Option[];
@@ -207,7 +203,6 @@ function GoodsInStorageSelect({
         options={shownOptions}
         onChange={(selected) => onChange(selected || null)}
         isClearable
-        clearLabel={clearLabel}
         aria-label={ariaLabel}
         aria-describedby={warning ? warningId : undefined}
         aria-invalid={warning ? true : undefined}

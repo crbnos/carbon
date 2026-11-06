@@ -700,6 +700,7 @@ export function JobStartModal({
   release: JobRelease;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const { carbon } = useCarbon();
   const [suppliers] = useSuppliers();
   const companySettings = useCompanySettings();
@@ -1083,6 +1084,7 @@ export function JobStartModal({
                               {operation.description}
                             </span>
                             <Select
+                              aria-label={t`Supplier process for ${operation.description}`}
                               size="sm"
                               value={
                                 selectedSupplierProcessByOperationId[
@@ -1113,6 +1115,9 @@ export function JobStartModal({
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
                           existingPurchaseOrdersBySupplierId[supplierId] ?? [];
+                        const supplierName =
+                          suppliers.find((s) => s.id === supplierId)?.name ??
+                          "";
                         return (
                           <div
                             key={supplierId}
@@ -1121,6 +1126,7 @@ export function JobStartModal({
                             <SupplierAvatar supplierId={supplierId} />
 
                             <Select
+                              aria-label={t`Purchase order for ${supplierName}`}
                               size="sm"
                               value={purchaseOrderId}
                               isReadOnly={

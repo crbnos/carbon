@@ -426,7 +426,7 @@ function StorageUnit({
     <>
       <CreatableComboboxBase
         ref={triggerRef}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel ?? label}
         aria-describedby={ariaDescribedBy}
         options={options}
         value={value ?? undefined}

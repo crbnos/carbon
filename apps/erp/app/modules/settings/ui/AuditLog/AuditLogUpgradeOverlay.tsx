@@ -12,7 +12,7 @@ import {
   Switch,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { LuHistory } from "react-icons/lu";
 import {
   UpgradeOverlay,
@@ -27,6 +27,7 @@ import {
 } from "~/components/UpgradeOverlay";
 
 export default function AuditLogUpgradeOverlay() {
+  const { t } = useLingui();
   return (
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
@@ -47,7 +48,11 @@ export default function AuditLogUpgradeOverlay() {
                     Enable to start tracking changes to your data.
                   </span>
                 </VStack>
-                <Switch checked={false} disabled />
+                <Switch
+                  aria-label={t`Audit logging`}
+                  checked={false}
+                  disabled
+                />
               </HStack>
             </CardContent>
           </Card>

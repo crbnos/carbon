@@ -48,6 +48,7 @@ function SetupInstructions({ companyId }: { companyId: string }) {
 export function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
       version="1.1"

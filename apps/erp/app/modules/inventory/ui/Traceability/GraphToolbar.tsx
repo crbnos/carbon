@@ -255,6 +255,7 @@ function GraphControlsChip({
             <HoverCard openDelay={150} closeDelay={50}>
               <HoverCardTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => onDirectionChange("TB")}
                   className={cn(
                     "h-6 w-6 rounded flex items-center justify-center transition-colors",
@@ -276,6 +277,7 @@ function GraphControlsChip({
             <HoverCard openDelay={150} closeDelay={50}>
               <HoverCardTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => onDirectionChange("LR")}
                   className={cn(
                     "h-6 w-6 rounded flex items-center justify-center transition-colors",
@@ -336,6 +338,7 @@ function GraphControlsChip({
           <HoverCard openDelay={150} closeDelay={50}>
             <HoverCardTrigger asChild>
               <button
+                type="button"
                 onClick={() =>
                   fitView({
                     duration: 300,
@@ -480,6 +483,7 @@ function SegmentButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-pressed={active}
       aria-label={ariaLabel}

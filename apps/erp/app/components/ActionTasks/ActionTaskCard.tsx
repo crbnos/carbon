@@ -110,14 +110,16 @@ export function ActionTaskCard({
           {showDragHandle && !isDisabled && dragControls && (
             <button
               type="button"
+              aria-label={t`Reorder`}
               className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <LuGripVertical size={16} />
+              <LuGripVertical size={16} aria-hidden />
             </button>
           )}
           {headerExtras}
           <IconButton
+            aria-expanded={disclosure.isOpen}
             icon={<LuChevronRight />}
             variant="ghost"
             onClick={disclosure.onToggle}
@@ -131,6 +133,7 @@ export function ActionTaskCard({
         <div className="px-4 py-2 rounded">
           {canEditNotes ? (
             <Editor
+              label={t`Notes for ${title}`}
               className="w-full min-h-[100px]"
               initialValue={notes}
               onUpload={onUploadImage}

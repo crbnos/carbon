@@ -55,6 +55,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
                 asChild
                 leftIcon={route.icon}
                 variant={active ? "active" : "ghost"}
+                aria-current={active ? "page" : undefined}
                 data-nav-item=""
                 onClick={(event) => pulseNavIcon(event)}
                 className={cn(

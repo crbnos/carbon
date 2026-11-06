@@ -393,6 +393,7 @@ const PurchaseInvoicesTable = memo(
     return (
       <>
         <Table<PurchaseInvoiceListItem>
+          getRowLabel={(row) => row.invoiceId ?? undefined}
           count={count}
           columns={columns}
           data={data}

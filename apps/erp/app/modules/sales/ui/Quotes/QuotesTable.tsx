@@ -332,6 +332,7 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
   return (
     <>
       <Table<QuotationListItem>
+        getRowLabel={(row) => row.quoteId ?? undefined}
         count={count}
         infinite={infinite}
         columns={columns}

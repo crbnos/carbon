@@ -18,6 +18,7 @@ import {
   convertDateStringToIsoString,
   formatDurationMilliseconds
 } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
   LuBlocks,
@@ -129,7 +130,9 @@ export function PickingItemCard({
   onToggle,
   displaySettings
 }: PickingItemCardProps) {
+  const { t } = useLingui();
   const { formatDate, formatRelativeTime } = useDateFormatter();
+  const jobReadableId = item.jobReadableId;
 
   const isOverdue =
     item.deadlineType && item.deadlineType !== "No Deadline" && item.dueDate
@@ -139,6 +142,8 @@ export function PickingItemCard({
   const status = item.operationStatus ?? "Todo";
 
   return (
+    // Clicking the card is a pointer shortcut for its checkbox, which is the
+    // keyboard and assistive-technology control for the same toggle.
     <Card
       onClick={() => onToggle(item.jobOperationId)}
       className={cn(
@@ -174,7 +179,7 @@ export function PickingItemCard({
             isChecked={isSelected}
             onCheckedChange={() => onToggle(item.jobOperationId)}
             onClick={(e) => e.stopPropagation()}
-            aria-label={`Select ${item.jobReadableId}`}
+            aria-label={t`Select ${jobReadableId}`}
             className="mt-0.5 flex-shrink-0"
           />
         </div>

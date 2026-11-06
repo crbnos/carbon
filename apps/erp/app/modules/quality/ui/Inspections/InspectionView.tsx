@@ -1102,7 +1102,7 @@ function DocumentSwitchModal({
               </Trans>
             </p>
             <Select value={documentId} onValueChange={setDocumentId}>
-              <SelectTrigger>
+              <SelectTrigger aria-label={t`Inspection document`}>
                 <SelectValue placeholder={t`Select a document`} />
               </SelectTrigger>
               <SelectContent>
