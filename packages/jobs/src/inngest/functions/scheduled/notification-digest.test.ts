@@ -37,6 +37,13 @@ describe("isCronDigest", () => {
   it("claims a digest whose payload is missing", () => {
     expect(isCronDigest(null)).toBe(true);
   });
+
+  it("leaves alone any marker the SQL gate counts as set", () => {
+    // `util.notification_digest_has_work` tests `->> 'sourceEvent' IS NULL`,
+    // so an empty string is a marker there; the two must agree.
+    expect(isCronDigest({ sourceEvent: "" })).toBe(false);
+    expect(isCronDigest({ sourceEvent: null })).toBe(true);
+  });
 });
 
 const keeper = (id: string, count: number | null) => ({
