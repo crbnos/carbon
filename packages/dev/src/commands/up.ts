@@ -675,6 +675,9 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
       ctx.root,
       ctx.slug,
       (line) => {
+        // Layer lines ("98daf4da4175 Downloading 67.37MB") arrive many times
+        // a second for layers of different images; show the service lines only.
+        if (/^[0-9a-f]{12}\b/.test(line)) return;
         bar.message(line.slice(0, 80));
         if (/ Pulled$/.test(line)) bar.advance(1);
       },
