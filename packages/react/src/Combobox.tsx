@@ -219,7 +219,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                 value={value}
                 itemHeight={itemHeight}
                 getItemValue={getComboboxItemValue}
-                isChecked={(_, itemValue) => itemValue === value}
+                isChecked={(item) => item.value === value}
                 emptyMessage={t`No option found.`}
                 onSelect={(item, { setSearch }) => {
                   onChange?.(item.value);
