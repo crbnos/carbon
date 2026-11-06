@@ -9,6 +9,7 @@
 # CodeRabbit reads by default (knowledge_base.code_guidelines). Do not copy them
 # here: a second copy drifts and the reviews start to disagree.
 language: en-US
+tone_instructions: "Be brief. Skip style, naming, formatting, lint-level nits and praise. Flag only correctness, missing companyId scoping, security and data loss."
 
 reviews:
   profile: quiet
@@ -37,6 +38,15 @@ reviews:
     docstrings:
       enabled: false
     unit_tests:
+      enabled: false
+
+  # Biome already runs in the pre-commit hook; prose and markdown linting is noise.
+  tools:
+    biome:
+      enabled: false
+    languagetool:
+      enabled: false
+    markdownlint:
       enabled: false
 
   path_filters:
