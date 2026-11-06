@@ -295,6 +295,10 @@ msgstr "{0} (template)"
 msgid "{0} (type)"
 msgstr "{0} (type)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr "{0} (unavailable)"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -534,6 +538,11 @@ msgstr "{0} of {1} complete"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} of {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr "{0} of {1} included"
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -828,9 +837,6 @@ msgstr "{complete} of {quantity}"
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} of {0} done"
-
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} of {lines} lines complete"
 
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# component} other {# components}}"
@@ -1580,6 +1586,9 @@ msgstr "A clock is still running on this job."
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
@@ -4932,6 +4941,9 @@ msgstr "Attach File"
 msgid "Attach Job"
 msgstr "Attach Job"
 
+msgid "Attach Part Files Automatically"
+msgstr "Attach Part Files Automatically"
+
 msgid "Attachment"
 msgstr "Attachment"
 
@@ -5527,6 +5539,9 @@ msgstr "Blank = computed from the ability's recertification period"
 
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "Blank uses the estimate at completion of the contract's projects"
+
+msgid "Blend the background into the selected items color."
+msgstr "Blend the background into the selected items color."
 
 msgid "Blind"
 msgstr "Blind"
@@ -8171,6 +8186,9 @@ msgstr "Couldn't load related documents. Refresh before creating a new one to av
 msgid "Couldn't load the choices for this field."
 msgstr "Couldn't load the choices for this field."
 
+msgid "Couldn't load the part files, so none will be sent."
+msgstr "Couldn't load the part files, so none will be sent."
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Couldn't load the provider's dimension targets — check the connection and reload."
 
@@ -8746,6 +8764,9 @@ msgstr "Custom path"
 
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · we manage"
+
+msgid "Custom theme"
+msgstr "Custom theme"
 
 msgid "Custom…"
 msgstr "Custom…"
@@ -11884,6 +11905,12 @@ msgstr "Every line recognizes what it bills."
 msgid "Every match"
 msgstr "Every match"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr "Every part file starts ticked; untick any you don't want to send."
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr "Every part file starts unticked; tick the ones to send."
+
 msgid "Every posted journal line in a period"
 msgstr "Every posted journal line in a period"
 
@@ -12164,6 +12191,9 @@ msgstr "Expires At (optional)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "Expires in {0}d"
+
+msgid "Expires On"
+msgstr "Expires On"
 
 msgid "Expiring first"
 msgstr "Expiring first"
@@ -13695,6 +13725,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Gradient"
+msgstr "Gradient"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
@@ -16195,6 +16228,9 @@ msgstr "Loading item details..."
 
 msgid "Loading more rows"
 msgstr "Loading more rows"
+
+msgid "Loading part files"
+msgstr "Loading part files"
 
 msgid "Loading related items..."
 msgstr "Loading related items..."
@@ -20579,6 +20615,21 @@ msgstr "Part Details"
 
 msgid "Part field"
 msgstr "Part field"
+
+msgid "Part files"
+msgstr "Part files"
+
+msgid "Part files are attached automatically"
+msgstr "Part files are attached automatically"
+
+msgid "Part files are attached only when picked"
+msgstr "Part files are attached only when picked"
+
+msgid "Part files attached automatically"
+msgstr "Part files attached automatically"
+
+msgid "Part files attached only when picked"
+msgstr "Part files attached only when picked"
 
 msgid "Part ID"
 msgstr "Part ID"
@@ -25451,6 +25502,9 @@ msgstr "Select…"
 msgid "Selected"
 msgstr "Selected"
 
+msgid "Selected items"
+msgstr "Selected items"
+
 msgid "Selected Operation"
 msgstr "Selected Operation"
 
@@ -25526,6 +25580,9 @@ msgstr "Sender Email"
 
 msgid "Sender Name"
 msgstr "Sender Name"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
@@ -26218,6 +26275,9 @@ msgstr "Show summary"
 msgid "Show Supplier IDs"
 msgstr "Show Supplier IDs"
 
+msgid "Show Supplier Part ID"
+msgstr "Show Supplier Part ID"
+
 msgid "Show sync options"
 msgstr "Show sync options"
 
@@ -26455,6 +26515,9 @@ msgstr "Software type"
 
 msgid "Sold"
 msgstr "Sold"
+
+msgid "Solid"
+msgstr "Solid"
 
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
@@ -27525,6 +27588,9 @@ msgstr "Surfaces"
 msgid "Surplus"
 msgstr "Surplus"
 
+msgid "Surprise me"
+msgstr "Surprise me"
+
 msgid "Suspected Failure Mode"
 msgstr "Suspected Failure Mode"
 
@@ -28256,8 +28322,8 @@ msgstr "The customer record this portal account links to; only contacts already 
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
@@ -28665,6 +28731,9 @@ msgstr "The lines could not be loaded."
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "The link stops working on this day. Leave blank to keep it open."
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "The list changed while the export loaded. Try again."
@@ -29401,11 +29470,8 @@ msgstr "Their next backflush will be refused until each material has a storage u
 msgid "Theme"
 msgstr "Theme"
 
-msgid "Theme color"
-msgstr "Theme color"
-
-msgid "Theme Color"
-msgstr "Theme Color"
+msgid "Themes"
+msgstr "Themes"
 
 msgid "then"
 msgstr "then"
@@ -29847,9 +29913,6 @@ msgstr "This tool is activated when change notice {activationLockId} is released
 
 msgid "This unit has no cost in inventory"
 msgstr "This unit has no cost in inventory"
-
-msgid "This updates the theme for all users of the application"
-msgstr "This updates the theme for all users of the application"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "This user does not have two-factor authentication enabled."

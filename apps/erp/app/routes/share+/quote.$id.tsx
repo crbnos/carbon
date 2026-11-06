@@ -53,7 +53,7 @@ import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -501,13 +501,7 @@ const LineItems = ({
         }
 
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id!] ? (
                 <img
@@ -572,14 +566,20 @@ const LineItems = ({
                         currency={currencyCode}
                         decimalPlaces={currencyDecimals}
                       />
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id)}
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
                         }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                       >
                         <LuChevronRight size={24} />
-                      </motion.div>
+                        <span className="sr-only">
+                          <Trans>Details</Trans>
+                        </span>
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText
@@ -599,29 +599,31 @@ const LineItems = ({
               </VStack>
             </HStack>
 
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
-            >
-              <LinePricingOptions
-                formatter={formatter}
-                line={line}
-                options={pricingByLine[line.id!]}
-                quoteCurrency={quote.currencyCode ?? "USD"}
-                quoteExchangeRate={quote.exchangeRate ?? 1}
-                shouldConvertCurrency={shouldConvertCurrency}
-                locale={locale}
-                selectedLine={selectedLines[line.id!]}
-                setSelectedLines={setSelectedLines}
-              />
-            </motion.div>
-          </motion.div>
+            <AnimatePresence initial={false}>
+              {openItems.includes(line.id) ? (
+                <motion.div
+                  key="panel"
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full overflow-hidden"
+                >
+                  <LinePricingOptions
+                    formatter={formatter}
+                    line={line}
+                    options={pricingByLine[line.id!]}
+                    quoteCurrency={quote.currencyCode ?? "USD"}
+                    quoteExchangeRate={quote.exchangeRate ?? 1}
+                    shouldConvertCurrency={shouldConvertCurrency}
+                    locale={locale}
+                    selectedLine={selectedLines[line.id!]}
+                    setSelectedLines={setSelectedLines}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         );
       })}
     </VStack>

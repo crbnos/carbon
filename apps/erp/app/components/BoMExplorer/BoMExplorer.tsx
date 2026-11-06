@@ -121,6 +121,8 @@ type BoMExplorerProviderProps<T extends BoMExplorerNodeData> = {
   ) => string | number | null | undefined;
   /** Controlled filter text (e.g. from an external search input). */
   filterText?: string;
+  /** Nodes collapsed on the first render (default: every node expanded). */
+  collapsedIds?: string[];
   children: ReactNode;
 };
 
@@ -129,6 +131,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
   getNodePath: getNodePathProp,
   getRootVersion: getRootVersionProp,
   filterText: filterTextProp,
+  collapsedIds,
   children
 }: BoMExplorerProviderProps<T>) {
   const tree = treeProp as FlatTree<BoMExplorerNodeData>;
@@ -160,6 +163,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
     virtualizer
   } = useTree({
     tree,
+    collapsedIds,
     // biome-ignore lint/suspicious/noEmptyBlockStatements: selection is URL-driven
     onSelectedIdChanged: () => {},
     estimatedRowHeight: () => (isPhone ? 48 : 32),

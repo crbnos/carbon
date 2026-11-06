@@ -278,7 +278,8 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
-  navRailItemClasses
+  navRailItemClasses,
+  pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
 import { NonNettableBadge } from "./NonNettableBadge";
@@ -702,6 +703,7 @@ export {
   PrefetchLink,
   Progress,
   PulsingDot,
+  pulseNavIcon,
   RadioGroup,
   RadioGroupButton,
   RadioGroupItem,

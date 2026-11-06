@@ -295,6 +295,10 @@ msgstr "{0} (टेम्पलेट)"
 msgid "{0} (type)"
 msgstr "{0} (प्रकार)"
 
+#. placeholder {0}: file.filename
+msgid "{0} (unavailable)"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -534,6 +538,11 @@ msgstr "{1} में से {0} पूर्ण"
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
 msgstr "{0} में से {1} h"
+
+#. placeholder {0}: ticked.length
+#. placeholder {1}: files.length
+msgid "{0} of {1} included"
+msgstr ""
 
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
@@ -828,9 +837,6 @@ msgstr "{quantity} में से {complete}"
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} में से {0} हो गया"
-
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} में से {lines} पंक्तियाँ पूर्ण"
 
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# घटक} other {# घटक}}"
@@ -1580,6 +1586,9 @@ msgstr "इस जॉब पर एक घड़ी अभी भी चल र�
 
 msgid "A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done."
 msgstr "एक बंद परियोजना अब कोई और शुल्क नहीं लेती है और इसे फिर से नहीं खोला जा सकता है। इसे केवल बंद करें जब उस पर हर क्रय आदेश पंक्ति और जॉब हो गया हो।"
+
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "एक रंग एक्सेंट तय करता है। ग्रेडिएंट और ठोस थीम नेविगेशन, साइडबार और पेज को भी रंगती हैं।"
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape Government को अनइंस्टॉल करें, फिर Onshape को कनेक्ट करें।"
@@ -4932,6 +4941,9 @@ msgstr "फ़ाइल संलग्न करें"
 msgid "Attach Job"
 msgstr "जॉब संलग्न करें"
 
+msgid "Attach Part Files Automatically"
+msgstr ""
+
 msgid "Attachment"
 msgstr "अनुलग्नक"
 
@@ -5527,6 +5539,9 @@ msgstr "खाली = कौशल की पुनः प्रमाणन �
 
 msgid "Blank uses the estimate at completion of the contract's projects"
 msgstr "खाली अनुबंध की परियोजनाओं के पूर्ण होने पर अनुमान का उपयोग करता है"
+
+msgid "Blend the background into the selected items color."
+msgstr "पृष्ठभूमि को चयनित आइटम के रंग में मिलाएँ।"
 
 msgid "Blind"
 msgstr "ब्लाइंड"
@@ -8171,6 +8186,9 @@ msgstr "संबंधित दस्तावेज़ लोड नहीं
 msgid "Couldn't load the choices for this field."
 msgstr "इस फ़ील्ड के लिए विकल्प लोड नहीं किए जा सके।"
 
+msgid "Couldn't load the part files, so none will be sent."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
 
@@ -8746,6 +8764,9 @@ msgstr "कस्टम मार्ग"
 
 msgid "Custom SOW · we manage"
 msgstr "कस्टम SOW · हम प्रबंधित करते हैं"
+
+msgid "Custom theme"
+msgstr "कस्टम थीम"
 
 msgid "Custom…"
 msgstr "कस्टम…"
@@ -11884,6 +11905,12 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every part file starts ticked; untick any you don't want to send."
+msgstr ""
+
+msgid "Every part file starts unticked; tick the ones to send."
+msgstr ""
+
 msgid "Every posted journal line in a period"
 msgstr "किसी अवधि की प्रत्येक पोस्ट की गई जर्नल पंक्ति"
 
@@ -12164,6 +12191,9 @@ msgstr "समाप्त होता है (वैकल्पिक)"
 #. placeholder {0}: status.daysLeft
 msgid "Expires in {0}d"
 msgstr "{0}d में समाप्त होता है"
+
+msgid "Expires On"
+msgstr "समाप्ति तिथि"
 
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाला"
@@ -13695,6 +13725,9 @@ msgstr "ग्रेड"
 
 msgid "Grades"
 msgstr "ग्रेड"
+
+msgid "Gradient"
+msgstr "ग्रेडिएंट"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 msgstr "सभी को पूर्ण पहुंच देने के बजाय प्रत्येक उपयोगकर्ता को बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियां प्रदान करें।"
@@ -16195,6 +16228,9 @@ msgstr "आइटम विवरण लोड हो रहे हैं..."
 
 msgid "Loading more rows"
 msgstr "और पंक्तियाँ लोड हो रही हैं"
+
+msgid "Loading part files"
+msgstr ""
 
 msgid "Loading related items..."
 msgstr "संबंधित आइटम लोड हो रहे हैं..."
@@ -20579,6 +20615,21 @@ msgstr "भाग विवरण"
 
 msgid "Part field"
 msgstr "पार्ट फील्ड"
+
+msgid "Part files"
+msgstr ""
+
+msgid "Part files are attached automatically"
+msgstr ""
+
+msgid "Part files are attached only when picked"
+msgstr ""
+
+msgid "Part files attached automatically"
+msgstr ""
+
+msgid "Part files attached only when picked"
+msgstr ""
 
 msgid "Part ID"
 msgstr "पार्ट आईडी"
@@ -25451,6 +25502,9 @@ msgstr "चुनें…"
 msgid "Selected"
 msgstr "चयनित"
 
+msgid "Selected items"
+msgstr "चयनित आइटम"
+
 msgid "Selected Operation"
 msgstr "चयनित ऑपरेशन"
 
@@ -25526,6 +25580,9 @@ msgstr "भेजने वाले का ईमेल"
 
 msgid "Sender Name"
 msgstr "भेजने वाले का नाम"
+
+msgid "Sending an RFQ or a supplier quote lists each line item's model and the files on its Files tab, such as drawings. Only the files ticked there are attached to the email and shown on the supplier's quote page."
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"
@@ -26218,6 +26275,9 @@ msgstr "सारांश दिखाएं"
 msgid "Show Supplier IDs"
 msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 
+msgid "Show Supplier Part ID"
+msgstr "आपूर्तिकर्ता पार्ट ID दिखाएं"
+
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 
@@ -26455,6 +26515,9 @@ msgstr "सॉफ्टवेयर प्रकार"
 
 msgid "Sold"
 msgstr "बेचा गया"
+
+msgid "Solid"
+msgstr "ठोस"
 
 msgid "Solutions Engineer"
 msgstr "समाधान इंजीनियर"
@@ -27525,6 +27588,9 @@ msgstr "सतहें"
 msgid "Surplus"
 msgstr "अतिरिक्त"
 
+msgid "Surprise me"
+msgstr "मुझे सरप्राइज़ करें"
+
 msgid "Suspected Failure Mode"
 msgstr "संदिग्ध विफलता मोड"
 
@@ -28256,8 +28322,8 @@ msgstr "ग्राहक रिकॉर्ड जिससे यह पो�
 msgid "The customer that goods are delivered to, when different from the customer being invoiced (e.g. invoice to HQ, ship to branch)."
 msgstr "वह ग्राहक जिसे माल सरबराह किया जाता है, जब चालान किए जाने वाले ग्राहक से अलग हो (उदाहरण के लिए मुख्यालय को चालान करें, शाखा को शिप करें)।"
 
-msgid "The customer this portal link is provisioned for; only contacts on this customer can sign in through the link."
-msgstr "वह ग्राहक जिसके लिए यह पोर्टल लिंक प्रदान किया जाता है; केवल इस ग्राहक के संपर्क लिंक के माध्यम से साइन इन कर सकते हैं।"
+msgid "The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them."
+msgstr "वह ग्राहक जिसके ऑर्डर यह पोर्टल लिंक दिखाता है। लिंक में साइन-इन नहीं है, इसलिए जिसके पास भी यह है वह उन्हें देख सकता है।"
 
 msgid "The customer's own reference for this document — typically their RFQ or PO number on their system; surfaced on the printable output and carried forward into any document this one converts into."
 msgstr "इस दस्तावेज़ के लिए ग्राहक का अपना संदर्भ — आमतौर पर उनके सिस्टम पर उनका RFQ या PO नंबर; प्रिंट करने योग्य आउटपुट पर सामने आया और किसी भी दस्तावेज़ में जिसमें यह परिवर्तित होता है।"
@@ -28665,6 +28731,9 @@ msgstr "पंक्तियाँ लोड नहीं हो सकीं�
 
 msgid "The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason."
 msgstr "एक योजना समूह के आदेश के एक टुकड़े से एक सदस्य की मांग के लिए लिंक: नरम जबकि आदेश खुला है (MRP इसे स्थानांतरित कर सकता है), कठोर एक बार प्राप्त या पूर्ण होने के बाद (कभी नहीं स्थानांतरित), या Manual जब एक योजनाकार इसे एक कारण के साथ सेट करता है।"
+
+msgid "The link stops working on this day. Leave blank to keep it open."
+msgstr "इस दिन से लिंक काम करना बंद कर देगा। इसे खुला रखने के लिए खाली छोड़ें।"
 
 msgid "The list changed while the export loaded. Try again."
 msgstr "निर्यात लोड होने के दौरान सूची बदल गई। फिर से कोशिश करें।"
@@ -29401,11 +29470,8 @@ msgstr "प्रत्येक सामग्री के पास भं�
 msgid "Theme"
 msgstr "थीम"
 
-msgid "Theme color"
-msgstr "थीम रंग"
-
-msgid "Theme Color"
-msgstr "थीम रंग"
+msgid "Themes"
+msgstr "थीम"
 
 msgid "then"
 msgstr "फिर"
@@ -29847,9 +29913,6 @@ msgstr "यह उपकरण तब सक्रिय होता है ज
 
 msgid "This unit has no cost in inventory"
 msgstr "इस इकाई की इन्वेंटरी में कोई लागत नहीं है"
-
-msgid "This updates the theme for all users of the application"
-msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम अपडेट करता है"
 
 msgid "This user does not have two-factor authentication enabled."
 msgstr "इस उपयोगकर्ता के पास दो-कारक प्रमाणीकरण सक्षम नहीं है।"

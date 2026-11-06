@@ -136,6 +136,9 @@ msgstr "+{overflow} daha fazla"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 Dikkat: {0} tarihinde hesabınız erp.try.carbon.ms adresine taşınacak"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "Renk vurguyu belirler. Gradyan ve düz temalar gezinmeyi, kenar çubuğunu ve sayfayı da renklendirir."
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 
@@ -373,6 +376,9 @@ msgstr "Daha büyük veya küçük metin. Yerleşim yerinde kalır."
 msgid "Billable"
 msgstr "Faturalanabilir"
 
+msgid "Blend the background into the selected items color."
+msgstr "Arka planı seçili öğelerin rengine karıştırır."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Engelli edildi: {0}"
@@ -508,6 +514,9 @@ msgstr "Gezinmeyi daralt"
 msgid "Collapse panel"
 msgstr "Paneli daralt"
 
+msgid "Color"
+msgstr "Renk"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -621,6 +630,9 @@ msgstr "Mevcut iş"
 
 msgid "Custom color"
 msgstr "Özel renk"
+
+msgid "Custom theme"
+msgstr "Özel tema"
 
 msgid "Customer"
 msgstr "Müşteri"
@@ -967,6 +979,9 @@ msgstr "İşleme geri dön"
 
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
+
+msgid "Gradient"
+msgstr "Gradyan"
 
 msgid "Heading {level}"
 msgstr "Başlık {level}"
@@ -2154,6 +2169,9 @@ msgstr "Geri dönülecek operasyonu seçin. O noktadan geçerli operasyona kadar
 msgid "Selected"
 msgstr "Seçildi"
 
+msgid "Selected items"
+msgstr "Seçili öğeler"
+
 msgid "Send"
 msgstr "Gönder"
 
@@ -2296,6 +2314,9 @@ msgstr "Küçük"
 msgid "Smaller"
 msgstr "Daha küçük"
 
+msgid "Solid"
+msgstr "Düz"
+
 msgid "Source"
 msgstr "Kaynak"
 
@@ -2394,6 +2415,9 @@ msgstr "Öneriler"
 msgid "Support Required"
 msgstr "Destek Gerekli"
 
+msgid "Surprise me"
+msgstr "Beni şaşırt"
+
 msgid "Switch Operator"
 msgstr "Operatörü Değiştir"
 
@@ -2459,8 +2483,11 @@ msgstr "Değerler bu kayıt üzerinde bir kuralı ihlal ediyor."
 msgid "The values break the rule \"{constraint}\"."
 msgstr "Değerler \"{constraint}\" kuralını ihlal ediyor."
 
-msgid "Theme color"
-msgstr "Tema rengi"
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Themes"
+msgstr "Temalar"
 
 msgid "then"
 msgstr "sonra"

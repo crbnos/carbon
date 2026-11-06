@@ -411,6 +411,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Gauge Block",
     description:
       "Grade 0 steel gauge block set, 47 pc — inspection bench master",
+    manufacturer: "Mitutoyo",
     modelNumber: "GBS-47-0",
     serialNumber: "GB-21-0388",
     role: "Master",
@@ -439,6 +440,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Micrometer - Outside",
     description:
       "0–25 mm outside micrometer — new unit for magnet segment thickness at incoming",
+    manufacturer: "Starrett",
     modelNumber: "OM-25D",
     serialNumber: "M26-11907",
     role: "Standard",
@@ -452,6 +454,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Bore Gauge",
     description:
       "150–200 mm dial bore gauge for stator bore after impregnation — retired after failed calibration",
+    manufacturer: "Mahr",
     modelNumber: "DBG-200",
     serialNumber: "BG18-30271",
     role: "Standard",

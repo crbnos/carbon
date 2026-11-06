@@ -45,6 +45,7 @@ import {
 import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
 import {
   insertPurchaseOrder,
+  purchaseOrderFundsGate,
   updatePurchasedPrices,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing/purchasing.service";
@@ -161,6 +162,13 @@ export const createReceipt = defineServiceFn({
         );
       }
       if (existing.data) return { id: existing.data.id };
+    }
+
+    if (sourceDocument === "Purchase Order") {
+      const refused = await purchaseOrderFundsGate(ctx, sourceDocumentId, {
+        intent: "receive"
+      });
+      if (refused) return refused;
     }
 
     const created = await (() => {
@@ -289,6 +297,15 @@ export const updateReceipt = defineServiceFn({
       return { id };
     }
 
+    if (receipt.sourceDocument === "Purchase Order") {
+      const refused = await purchaseOrderFundsGate(
+        ctx,
+        receipt.sourceDocumentId,
+        { intent: "receive" }
+      );
+      if (refused) return refused;
+    }
+
     const created = await (() => {
       switch (receipt.sourceDocument) {
         case "Purchase Order":
@@ -395,9 +412,16 @@ export const postReceipt = defineServiceFn({
       return ctx.error("conflict", "This receipt has been voided");
     }
 
-    // Before the storage rules: a warning acknowledged for a post the
-    // inspection hold then refuses would be asked for nothing.
     if (receipt.data.sourceDocument === "Purchase Order") {
+      const unapproved = await purchaseOrderFundsGate(
+        ctx,
+        receipt.data.sourceDocumentId,
+        { intent: "receive" }
+      );
+      if (unapproved) return unapproved;
+
+      // Before the storage rules: a warning acknowledged for a post the
+      // inspection hold then refuses would be asked for nothing.
       const refused = await service.refuseUnheldInspectedReceiptLines(ctx, {
         purchaseOrderId: receipt.data.sourceDocumentId,
         locationId: receipt.data.locationId,

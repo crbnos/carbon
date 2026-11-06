@@ -1740,7 +1740,7 @@ export type GaugeSpec = {
   description: string;
   modelNumber?: string;
   serialNumber?: string;
-  supplier?: string;
+  manufacturer?: string;
   role: "Master" | "Standard";
   status: "Active" | "Inactive";
   calibrationIntervalInMonths: number;

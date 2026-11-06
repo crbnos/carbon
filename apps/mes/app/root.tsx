@@ -23,6 +23,7 @@ import {
   Toaster,
   TooltipProvider,
   useMode,
+  useThemeContent,
   useUiScale,
   ViewportProvider
 } from "@carbon/react";
@@ -34,9 +35,9 @@ import {
   densityValidator,
   getPreferenceHeaders,
   getViewportHint,
-  isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
+  rootShouldRevalidate,
   TEXT_SIZE_COOKIE,
   textSizeValidator,
   themeByName,
@@ -97,7 +98,8 @@ export const clientMiddleware = [
   flashClientMiddleware,
   createInvalidationMiddleware({
     getCache: () => window.clientCache,
-    skipPaths: [path.to.refreshSession]
+    // The root action only writes appearance cookies: no cached data changed.
+    skipPaths: [path.to.refreshSession, path.to.root]
   })
 ];
 
@@ -120,8 +122,7 @@ export const meta: MetaFunction = () => {
 // Root data is cookies + env + the flash result. A same-pathname GET (table
 // filter, sort, page, useRevalidator from realtime hooks) can change none of
 // it; actions still revalidate so the flash toast is surfaced.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
+export const shouldRevalidate: ShouldRevalidateFunction = rootShouldRevalidate;
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
@@ -272,6 +273,7 @@ function Document({
   mode = "light",
   theme = "zinc",
   uiScale,
+  themeContent,
   env
 }: {
   children: React.ReactNode;
@@ -280,6 +282,7 @@ function Document({
   mode?: "light" | "dark";
   theme?: string;
   uiScale?: UiScale;
+  themeContent?: Record<string, string>;
   env?: Record<string, unknown>;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
@@ -299,6 +302,7 @@ function Document({
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "dark" ? darkVars : lightVars),
+    ...themeContent,
     "--radius": "0.4375rem",
     ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
@@ -364,6 +368,7 @@ export default function App() {
   /* Dark/Light Mode */
   const mode = useMode();
   const uiScale = useUiScale();
+  const themeContent = useThemeContent(mode);
 
   // One client for hook-based useQuery and for code outside React (the live
   // lists, the invalidation middleware), which reaches it as window.clientCache.
@@ -394,6 +399,7 @@ export default function App() {
                     mode={mode}
                     theme={theme}
                     uiScale={uiScale}
+                    themeContent={themeContent}
                     lang={appLanguage}
                     env={env}
                   >

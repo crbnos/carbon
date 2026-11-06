@@ -27,7 +27,7 @@ import {
   useRouteData,
   useSidebar
 } from "@carbon/react";
-import { modeValidator } from "@carbon/utils";
+import { modeValidator, ROOT_ACTION_SAVE } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import {
   LuChevronDown,
@@ -94,7 +94,7 @@ export function useUserNav({
     document.body.removeAttribute("style");
     const formData = new FormData();
     formData.append("mode", parsed.data);
-    fetcher.submit(formData, { method: "post", action: path.to.root });
+    fetcher.submit(formData, ROOT_ACTION_SAVE);
   };
 
   const updateLocation = (value: string) => {
@@ -131,7 +131,7 @@ export function useUserNav({
       sessionUserId &&
       pinnedInUser.userId !== sessionUserId
   );
-  const showingOperator = consoleMode && pinnedInUser ? pinnedInUser : null;
+  const showingOperator = isOperatorPinnedIn ? pinnedInUser : null;
   const displayName = showingOperator ? showingOperator.name : stationName;
   const displayAvatar = showingOperator
     ? showingOperator.avatarUrl
@@ -256,42 +256,53 @@ export function UserNav({
               ) : null}
             </>
           )}
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
+          {/* The account settings modal is the station's account, which a
+              pinned-in operator never opens: they keep the mode picker. */}
+          {showingOperator ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <DropdownMenuIcon
+                  icon={mode === "dark" ? <LuMoon /> : <LuSun />}
+                />
+                <Trans>Appearance</Trans>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={modePreference}
+                  onValueChange={onModeChange}
+                >
+                  <DropdownMenuRadioItem
+                    value="light"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuSun />} />
+                    <Trans>Light</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="dark"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuMoon />} />
+                    <Trans>Dark</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="system"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuLaptop />} />
+                    <Trans>System</Trans>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem onClick={() => openAccountSettings("appearance")}>
               <DropdownMenuIcon
                 icon={mode === "dark" ? <LuMoon /> : <LuSun />}
               />
               <Trans>Appearance</Trans>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={modePreference}
-                onValueChange={onModeChange}
-              >
-                <DropdownMenuRadioItem
-                  value="light"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuSun />} />
-                  <Trans>Light</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="dark"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuMoon />} />
-                  <Trans>Dark</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="system"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuLaptop />} />
-                  <Trans>System</Trans>
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+            </DropdownMenuItem>
+          )}
           {!isOperatorPinnedIn && (
             <>
               {consoleEnabled && (

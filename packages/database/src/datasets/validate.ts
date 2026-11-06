@@ -5508,7 +5508,6 @@ export function quality(ctx: ValidationCtx): void {
         `${where}: gaugeType "${gauge.gaugeType}" is not a bootstrap gauge type`
       );
     }
-    if (gauge.supplier !== undefined) need("supplier", where, gauge.supplier);
     if (gauge.shelf !== undefined) need("shelf", where, gauge.shelf);
     if (gauge.calibrationIntervalInMonths <= 0) {
       fail(`${where}: calibrationIntervalInMonths must be positive`);

@@ -136,6 +136,9 @@ msgstr "还有 +{overflow} 个"
 msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
 
+msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
+msgstr "颜色决定强调色。渐变和纯色主题还会为导航栏、侧边栏和页面着色。"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 
@@ -373,6 +376,9 @@ msgstr "更大或更小的文本。布局保持不变。"
 msgid "Billable"
 msgstr "可计费"
 
+msgid "Blend the background into the selected items color."
+msgstr "将背景渐变融入所选项目的颜色。"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
@@ -508,6 +514,9 @@ msgstr "收起导航"
 msgid "Collapse panel"
 msgstr "折叠面板"
 
+msgid "Color"
+msgstr "颜色"
+
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
@@ -621,6 +630,9 @@ msgstr "当前工作"
 
 msgid "Custom color"
 msgstr "自定义颜色"
+
+msgid "Custom theme"
+msgstr "自定义主题"
 
 msgid "Customer"
 msgstr "客户"
@@ -967,6 +979,9 @@ msgstr "返回操作"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
+
+msgid "Gradient"
+msgstr "渐变"
 
 msgid "Heading {level}"
 msgstr "标题 {level}"
@@ -2154,6 +2169,9 @@ msgstr "选择要回到的工序。从该点到当前工序的所有工序都将
 msgid "Selected"
 msgstr "已选择"
 
+msgid "Selected items"
+msgstr "所选项目"
+
 msgid "Send"
 msgstr "发送"
 
@@ -2296,6 +2314,9 @@ msgstr "小"
 msgid "Smaller"
 msgstr "更小"
 
+msgid "Solid"
+msgstr "纯色"
+
 msgid "Source"
 msgstr "来源"
 
@@ -2394,6 +2415,9 @@ msgstr "建议"
 msgid "Support Required"
 msgstr "需要支持"
 
+msgid "Surprise me"
+msgstr "随机生成"
+
 msgid "Switch Operator"
 msgstr "切换操作员"
 
@@ -2459,8 +2483,11 @@ msgstr "这些值违反了此记录上的规则。"
 msgid "The values break the rule \"{constraint}\"."
 msgstr "这些值违反了规则「{constraint}」。"
 
-msgid "Theme color"
-msgstr "主题颜色"
+msgid "Theme"
+msgstr "主题"
+
+msgid "Themes"
+msgstr "主题"
 
 msgid "then"
 msgstr "然后"

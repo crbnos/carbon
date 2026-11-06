@@ -14,6 +14,7 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
+  pulseNavIcon,
   Subheading,
   useDebounce,
   VStack
@@ -174,8 +175,9 @@ const GroupedContentSidebar = ({
             asChild
             leftIcon={route.icon}
             variant={active ? "active" : "ghost"}
+            onClick={(event) => pulseNavIcon(event)}
             className={cn(
-              "justify-start flex-grow truncate",
+              "justify-start flex-grow truncate active:scale-100",
               active
                 ? "shadow-none dark:shadow-button-base"
                 : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"

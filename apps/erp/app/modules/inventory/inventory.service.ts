@@ -157,6 +157,7 @@ import {
   reverseProjectLedgerRows,
   splitReceiptChargedDrafts
 } from "~/modules/projects/project-posting";
+import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
 import {
   futureDeliveryError,
   futureReturnError,
@@ -14440,11 +14441,14 @@ export async function postReceipt(
           }))
         );
 
+        // Only a released order follows its lines: a void never releases an
+        // order that is closed or waiting for approval.
         await trx
           .updateTable("purchaseOrder")
           .set({ status: purchaseOrderStatusVoid })
           .where("id", "=", receiptHeader.sourceDocumentId!)
           .where("companyId", "=", companyId)
+          .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
           .execute();
 
         for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
@@ -16117,6 +16121,8 @@ export async function postReceipt(
             status = "To Invoice";
           }
 
+          // Only a released order follows its lines: a post never releases
+          // an order that is closed or waiting for approval.
           await trx
             .updateTable("purchaseOrder")
             .set({
@@ -16124,6 +16130,7 @@ export async function postReceipt(
             })
             .where("id", "=", purchaseOrder.data.id)
             .where("companyId", "=", companyId)
+            .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
             .execute();
 
           await trx
