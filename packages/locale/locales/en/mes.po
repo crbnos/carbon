@@ -45,6 +45,10 @@ msgstr "{0} current work display"
 msgid "{0} customers"
 msgstr "{0} customers"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} failed"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -71,12 +75,12 @@ msgstr "{0} jobs"
 msgid "{0} maintenance display"
 msgstr "{0} maintenance display"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
@@ -139,6 +143,9 @@ msgstr "{completions} passed unit(s) will be completed."
 
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} failed"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
@@ -215,6 +222,9 @@ msgstr "About"
 
 msgid "About this field"
 msgstr "About this field"
+
+msgid "Above the upper limit"
+msgstr "Above the upper limit"
 
 msgid "Accept"
 msgstr "Accept"
@@ -478,6 +488,9 @@ msgstr "Batch to unconsume {0}"
 msgid "batch total"
 msgstr "batch total"
 
+msgid "Below the lower limit"
+msgstr "Below the lower limit"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Bigger or smaller text. The layout stays put."
 
@@ -507,6 +520,12 @@ msgstr "But don't worry. You can use the forgot password flow to request a new m
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "By <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "By characteristic"
+
+msgid "By part"
+msgstr "By part"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
@@ -1170,6 +1189,9 @@ msgstr "Go to step {0}: {1} (done)"
 msgid "Gradient"
 msgstr "Gradient"
 
+msgid "Grid layout"
+msgstr "Grid layout"
+
 msgid "Hard deadline"
 msgstr "Hard deadline"
 
@@ -1181,6 +1203,9 @@ msgstr "Hex value"
 
 msgid "Hide description"
 msgstr "Hide description"
+
+msgid "Hide drawing"
+msgstr "Hide drawing"
 
 msgid "Hours"
 msgstr "Hours"
@@ -1645,6 +1670,9 @@ msgstr "No available serial numbers found"
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
 
+msgid "No cell could take the pasted values"
+msgstr "No cell could take the pasted values"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 
@@ -1960,6 +1988,10 @@ msgstr "Parts"
 
 msgid "Pass"
 msgstr "Pass"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Pass all empty cells of {0}"
 
 msgid "Passed inspection"
 msgstr "Passed inspection"
@@ -2281,6 +2313,9 @@ msgstr "Remove part"
 msgid "Remove two-factor authentication"
 msgstr "Remove two-factor authentication"
 
+msgid "Removed"
+msgstr "Removed"
+
 msgid "Removed signature"
 msgstr "Removed signature"
 
@@ -2310,6 +2345,12 @@ msgstr "Resolution"
 
 msgid "Result"
 msgstr "Result"
+
+msgid "Results recorded: {done}"
+msgstr "Results recorded: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Results recorded: {done}. Values skipped: {skipped}."
 
 msgid "Retry Completion"
 msgstr "Retry Completion"
@@ -2345,6 +2386,9 @@ msgstr "Sales Order"
 msgid "Same for every job"
 msgstr "Same for every job"
 
+msgid "Sample"
+msgstr "Sample"
+
 msgid "Save"
 msgstr "Save"
 
@@ -2356,6 +2400,11 @@ msgstr "Save the form you're editing"
 
 msgid "Saved signature"
 msgstr "Saved signature"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Saving {0}/{1}"
 
 msgid "Scan"
 msgstr "Scan"
@@ -2618,6 +2667,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Show description"
 msgstr "Show description"
+
+msgid "Show drawing"
+msgstr "Show drawing"
 
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
@@ -2906,6 +2958,9 @@ msgstr "This batch has no work instructions."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "This information will be visible to all users, so be careful what you share."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "This is a pass / fail check. Press P or F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "This job has no bill rate. Ask the office to set it before the time is billed."
 
@@ -2923,6 +2978,9 @@ msgstr "This part will be scrapped from stock. Its requirement stays open so you
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "This posts the job's time. The job can no longer change."
+
+msgid "This sample was removed"
+msgstr "This sample was removed"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "This stops your clock and posts the job's time. The job can no longer change."

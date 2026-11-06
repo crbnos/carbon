@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-05T23:47:42.955Z",
+  "exportedAt": "2026-11-05T23:43:03.277Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -496,12 +496,6 @@
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
-        "requirePurchaseOrderApprovalSignature",
-        "serialNumberTiming",
-        "useCalendarWeeks",
-        "kanbanLabelSize",
-        "requireSupplierContactEmail",
-        "requireCustomerContactEmail",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -512,8 +506,14 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
         "serviceLaborCostRate",
         "serviceLaborBillRate",
+        "requireSupplierContactEmail",
+        "requireCustomerContactEmail",
         "includeSupplierPartFiles"
       ]
     },
@@ -1233,8 +1233,8 @@
         "companyId",
         "locationId",
         "quantityOnHand",
-        "quantityNonNettable",
-        "projectId"
+        "projectId",
+        "quantityNonNettable"
       ]
     },
     {
@@ -5436,9 +5436,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
+        "projectId",
         "foundDuringCount",
-        "assignedReadableId",
-        "projectId"
+        "assignedReadableId"
       ]
     },
     {

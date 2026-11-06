@@ -45,6 +45,10 @@ msgstr "Affichage du travail en cours de {0}"
 msgid "{0} customers"
 msgstr "{0} clients"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} en échec"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -71,12 +75,12 @@ msgstr "{0} ordres de fabrication"
 msgid "{0} maintenance display"
 msgstr "Affichage de la maintenance de {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} sur {1}"
 
@@ -139,6 +143,9 @@ msgstr "{completions} unité(s) réussie(s) seront terminées."
 
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {En retard de # jour} other {En retard de # jours}}"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} en échec"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS complété(s) — résolvez-les à partir du menu des actions."
@@ -215,6 +222,9 @@ msgstr "À propos"
 
 msgid "About this field"
 msgstr "À propos de ce champ"
+
+msgid "Above the upper limit"
+msgstr "Au-dessus de la limite supérieure"
 
 msgid "Accept"
 msgstr "Accepter"
@@ -478,6 +488,9 @@ msgstr "Lot de production à annuler la consommation {0}"
 msgid "batch total"
 msgstr "total du lot de production"
 
+msgid "Below the lower limit"
+msgstr "En dessous de la limite inférieure"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Texte plus grand ou plus petit. La mise en page reste inchangée."
 
@@ -507,6 +520,12 @@ msgstr "Mais ne vous inquiétez pas. Vous pouvez utiliser la procédure de réin
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Par <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Par caractéristique"
+
+msgid "By part"
+msgstr "Par pièce"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
@@ -1170,6 +1189,9 @@ msgstr "Aller à l'étape {0} : {1} (fait)"
 msgid "Gradient"
 msgstr "Dégradé"
 
+msgid "Grid layout"
+msgstr "Disposition de la grille"
+
 msgid "Hard deadline"
 msgstr "Échéance ferme"
 
@@ -1181,6 +1203,9 @@ msgstr "Valeur hexadécimale"
 
 msgid "Hide description"
 msgstr "Masquer la description"
+
+msgid "Hide drawing"
+msgstr "Masquer le plan"
 
 msgid "Hours"
 msgstr "Heures"
@@ -1645,6 +1670,9 @@ msgstr "Aucun numéro de série disponible trouvé"
 msgid "No available tracked entities found"
 msgstr "Aucune entité suivie disponible trouvée"
 
+msgid "No cell could take the pasted values"
+msgstr "Aucune cellule ne peut recevoir les valeurs collées"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Aucun texte de certification n'est défini pour vous. Demandez à un administrateur de le définir dans Paramètres → Temps."
 
@@ -1960,6 +1988,10 @@ msgstr "Pièces"
 
 msgid "Pass"
 msgstr "Conforme"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Marquer toutes les cellules vides de {0} comme conformes"
 
 msgid "Passed inspection"
 msgstr "Contrôle réussi"
@@ -2281,6 +2313,9 @@ msgstr "Retirer la pièce"
 msgid "Remove two-factor authentication"
 msgstr "Retirer l'authentification à deux facteurs"
 
+msgid "Removed"
+msgstr "Supprimé"
+
 msgid "Removed signature"
 msgstr "Signature retirée"
 
@@ -2310,6 +2345,12 @@ msgstr "Résolution"
 
 msgid "Result"
 msgstr "Résultat"
+
+msgid "Results recorded: {done}"
+msgstr "Résultats enregistrés : {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Résultats enregistrés : {done}. Valeurs ignorées : {skipped}."
 
 msgid "Retry Completion"
 msgstr "Recommencer le traitement"
@@ -2345,6 +2386,9 @@ msgstr "Commande client"
 msgid "Same for every job"
 msgstr "Pareil pour chaque ordre de fabrication"
 
+msgid "Sample"
+msgstr "Échantillon"
+
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -2356,6 +2400,11 @@ msgstr "Enregistrer le formulaire que vous modifiez"
 
 msgid "Saved signature"
 msgstr "Signature enregistrée"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Enregistrement {0}/{1}"
 
 msgid "Scan"
 msgstr "Scanner"
@@ -2618,6 +2667,9 @@ msgstr "Prélèvement court {itemName}"
 
 msgid "Show description"
 msgstr "Afficher la description"
+
+msgid "Show drawing"
+msgstr "Afficher le plan"
 
 msgid "Show keyboard shortcuts"
 msgstr "Afficher les raccourcis clavier"
@@ -2906,6 +2958,9 @@ msgstr "Ce lot de production n'a pas de modes opératoires."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Ces informations seront visibles par tous les utilisateurs, soyez prudent quant à ce que vous partagez."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Cet ordre de fabrication n'a pas de taux horaire. Demandez au bureau de le définir avant que le temps soit facturé."
 
@@ -2923,6 +2978,9 @@ msgstr "Cette pièce sera mise au rebut du stock. Son exigence reste ouverte pou
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Cela comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."
+
+msgid "This sample was removed"
+msgstr "Cet échantillon a été supprimé"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Cela arrête votre chronomètre et comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."

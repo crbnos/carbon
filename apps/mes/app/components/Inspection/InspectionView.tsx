@@ -26,6 +26,10 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
+import {
+  formatSpecLabel,
+  INSPECTION_DRAWING_HIDDEN_STORAGE_KEY
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -44,6 +48,8 @@ import {
   LuChevronUp,
   LuContrast,
   LuEllipsisVertical,
+  LuEye,
+  LuEyeOff,
   LuFlag,
   LuGitPullRequest,
   LuPause,
@@ -205,7 +211,40 @@ export function InspectionView({
     [features]
   );
   const hasFeatures = liveFeatures.length > 0;
-  const showDrawing = pdfUrl != null || model != null;
+  const hasDrawing = pdfUrl != null || model != null;
+  // "Hide drawing" gives the matrix the whole body (a large batch needs the
+  // rows); the choice persists per browser.
+  const [drawingHidden, setDrawingHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setDrawingHidden(
+        window.localStorage.getItem(INSPECTION_DRAWING_HIDDEN_STORAGE_KEY) ===
+          "true"
+      );
+    } catch {
+      // Storage unavailable: keep the drawing shown.
+    }
+  }, []);
+  const toggleDrawing = useCallback(() => {
+    setDrawingHidden((hidden) => {
+      try {
+        window.localStorage.setItem(
+          INSPECTION_DRAWING_HIDDEN_STORAGE_KEY,
+          String(!hidden)
+        );
+      } catch {
+        // Storage unavailable: the choice lasts for this page only.
+      }
+      return !hidden;
+    });
+  }, []);
+  const showDrawing = hasDrawing && !drawingHidden;
+  // Matrix position -> sample id, kept here so it survives the matrix
+  // remount when the drawing is hidden or shown.
+  const placementRef = useRef<Record<number, string>>({});
+  // A save or bulk run in flight: the disposition buttons wait until every
+  // reading has landed, and the drawing toggle waits so no save is cut off.
+  const [gridBusy, setGridBusy] = useState(false);
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -233,6 +272,7 @@ export function InspectionView({
   const hasUserResizedRef = useRef(false);
   const stackRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
   useEffect(() => {
     if (!stackRef.current) return;
     const el = stackRef.current;
@@ -249,7 +289,7 @@ export function InspectionView({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [gridExpanded]);
+  }, [gridExpanded, showDrawing]);
 
   useEffect(() => {
     if (!isResizingSplit) return;
@@ -536,7 +576,10 @@ export function InspectionView({
       fails <= inspection.acceptanceNumber;
     failedStatistically = fails > inspection.acceptanceNumber;
   }
-  const canReject = !isLocked;
+  // No disposition while a reading is still saving: the lot would close
+  // before it lands.
+  if (gridBusy) canAccept = false;
+  const canReject = !isLocked && !gridBusy;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -549,16 +592,11 @@ export function InspectionView({
           failedValues.push(m.value == null ? "F" : String(m.value));
         }
         if (failedValues.length === 0) return null;
-        const spec = [
-          feature.nominalValue,
-          feature.tolerancePlus != null || feature.toleranceMinus != null
-            ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
-            : null,
-          feature.unit
-        ]
-          .filter(Boolean)
-          .join(" ");
-        return { label: feature.label, spec, failedValues };
+        return {
+          label: feature.label,
+          spec: formatSpecLabel(feature),
+          failedValues
+        };
       })
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
@@ -689,20 +727,26 @@ export function InspectionView({
           ) : null}
 
           <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
-            <h1 className="truncate text-sm font-semibold">
+            {/* The lot number and status never give way to the actions. */}
+            <h1 className="shrink-0 text-sm font-semibold">
               {inspection.inspectionId}
             </h1>
-            <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
-            <span className="hidden text-muted-foreground md:inline">·</span>
-            <span className="hidden truncate text-sm text-foreground/90 md:inline">
+            <Badge
+              variant={statusBadgeVariant}
+              className="shrink-0 max-lg:hidden"
+            >
+              {inspection.status}
+            </Badge>
+            <span className="hidden text-muted-foreground xl:inline">·</span>
+            <span className="hidden truncate text-sm text-foreground/90 xl:inline">
               {inspection.itemReadableId ?? job?.itemReadableIdWithRevision}
             </span>
             {operation?.description ? (
               <>
-                <span className="hidden text-muted-foreground lg:inline">
+                <span className="hidden text-muted-foreground xl:inline">
                   ·
                 </span>
-                <span className="hidden truncate text-sm text-foreground/90 lg:inline">
+                <span className="hidden truncate text-sm text-foreground/90 xl:inline">
                   {operation.description}
                 </span>
               </>
@@ -730,39 +774,47 @@ export function InspectionView({
               operationId={operationId}
               count={completablePassed}
               eventIds={eventIds}
+              gridBusy={gridBusy}
             />
           ) : null}
           <button
+            title={t`Reject`}
+            aria-label={t`Reject`}
             type="button"
             onClick={rejectDisclosure.onOpen}
             disabled={!canReject}
             className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-red-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 md:gap-2 md:px-4"
           >
             <LuX className="size-4" />
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               <Trans>Reject</Trans>
             </span>
           </button>
           {canPartial ? (
             <button
+              title={t`Partial`}
+              aria-label={t`Partial`}
               type="button"
               onClick={partialDisclosure.onOpen}
+              disabled={gridBusy}
               className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-amber-600 transition-colors hover:bg-accent active:scale-[0.98] dark:text-amber-400 md:gap-2 md:px-4"
             >
               <LuContrast className="size-4" />
-              <span className="hidden sm:inline">
+              <span className="hidden lg:inline">
                 <Trans>Partial</Trans>
               </span>
             </button>
           ) : null}
           <button
+            title={t`Accept`}
+            aria-label={t`Accept`}
             type="button"
             onClick={acceptDisclosure.onOpen}
             disabled={!canAccept}
             className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
           >
             <LuCheck className="size-4" />
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               <Trans>Accept</Trans>
             </span>
           </button>
@@ -798,7 +850,7 @@ export function InspectionView({
       <div className="contents max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:overflow-y-auto">
         {/* ── META BAR ── */}
         <div className="flex h-9 shrink-0 items-center gap-3 overflow-x-auto bg-card border-b border-border px-5 scrollbar-hide max-md:h-auto max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-1 max-md:px-4 max-md:py-1.5">
-          <Badge variant={statusBadgeVariant} className="shrink-0 md:hidden">
+          <Badge variant={statusBadgeVariant} className="shrink-0 lg:hidden">
             {inspection.status}
           </Badge>
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
@@ -909,29 +961,6 @@ export function InspectionView({
                     : undefined
                 }
               >
-                <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {t`Characteristics`}
-                  </span>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    aria-expanded={gridExpanded}
-                    aria-label={
-                      gridExpanded
-                        ? t`Collapse characteristics table`
-                        : t`Expand characteristics table`
-                    }
-                    icon={
-                      gridExpanded ? (
-                        <LuChevronDown className="h-4 w-4" />
-                      ) : (
-                        <LuChevronUp className="h-4 w-4" />
-                      )
-                    }
-                    onClick={() => setGridExpanded((v) => !v)}
-                  />
-                </div>
                 <InspectionMeasurementMatrix
                   inspectionId={inspection.id}
                   isReadOnly={isLocked}
@@ -948,6 +977,39 @@ export function InspectionView({
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
                   onMeasurementSaved={onMeasurementSaved}
+                  placementRef={placementRef}
+                  onBusyChange={setGridBusy}
+                  toolbarActions={
+                    <>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        aria-label={t`Hide drawing`}
+                        title={t`Hide drawing`}
+                        icon={<LuEyeOff className="h-4 w-4" />}
+                        isDisabled={gridBusy}
+                        onClick={toggleDrawing}
+                      />
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        aria-expanded={gridExpanded}
+                        aria-label={
+                          gridExpanded
+                            ? t`Collapse characteristics table`
+                            : t`Expand characteristics table`
+                        }
+                        icon={
+                          gridExpanded ? (
+                            <LuChevronDown className="h-4 w-4" />
+                          ) : (
+                            <LuChevronUp className="h-4 w-4" />
+                          )
+                        }
+                        onClick={() => setGridExpanded((v) => !v)}
+                      />
+                    </>
+                  }
                 />
               </div>
             </div>
@@ -971,6 +1033,21 @@ export function InspectionView({
                 activeFeatureId={activeFeatureId}
                 onActiveFeatureChange={setActiveFeatureId}
                 onMeasurementSaved={onMeasurementSaved}
+                placementRef={placementRef}
+                onBusyChange={setGridBusy}
+                toolbarActions={
+                  hasDrawing ? (
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      aria-label={t`Show drawing`}
+                      title={t`Show drawing`}
+                      icon={<LuEye className="h-4 w-4" />}
+                      isDisabled={gridBusy}
+                      onClick={toggleDrawing}
+                    />
+                  ) : undefined
+                }
               />
             </div>
           </div>
@@ -992,6 +1069,7 @@ export function InspectionView({
                 operationId={operationId}
                 count={completablePassed}
                 eventIds={eventIds}
+                gridBusy={gridBusy}
                 variant="bar"
               />
             </div>
@@ -1014,6 +1092,7 @@ export function InspectionView({
               variant="secondary"
               leftIcon={<LuContrast />}
               onClick={partialDisclosure.onOpen}
+              isDisabled={gridBusy}
               className="h-12 text-amber-600 dark:text-amber-400"
             >
               <span className="truncate">
@@ -1269,17 +1348,20 @@ function CompletePassedButton({
   operationId,
   count,
   eventIds,
+  gridBusy,
   variant = "header"
 }: {
   inspectionId: string;
   operationId: string;
   count: number;
   eventIds: ProductionEventIdFields;
+  // A reading still saving could turn a passed unit into a failed one.
+  gridBusy: boolean;
   variant?: "header" | "bar";
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
-  const busy = fetcher.state !== "idle";
+  const busy = fetcher.state !== "idle" || gridBusy;
   const label = t`Complete (${count} passed)`;
 
   if (variant === "bar") {
@@ -1319,10 +1401,14 @@ function CompletePassedButton({
         type="submit"
         disabled={busy}
         aria-label={label}
+        title={label}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
       >
         <LuCheckCheck className="size-4" />
-        <span className="hidden tabular-nums sm:inline">{label}</span>
+        {/* The label only where the header has room for it; the count
+            always. */}
+        <span className="hidden tabular-nums xl:inline">{label}</span>
+        <span className="tabular-nums xl:hidden">{count}</span>
       </button>
     </fetcher.Form>
   );

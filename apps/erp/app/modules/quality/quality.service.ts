@@ -2328,13 +2328,19 @@ export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return (client as any)
-    .from("inspection")
-    .select(
-      "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
-    )
-    .eq("id", id)
-    .single();
+  return (
+    (client as any)
+      .from("inspection")
+      .select(
+        "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      )
+      .eq("id", id)
+      // Samples in the order they were made: an embed has no order of its own,
+      // and an UPDATE moves a row, so the grids' positions would shift.
+      .order("createdAt", { referencedTable: "inspectionSample" })
+      .order("id", { referencedTable: "inspectionSample" })
+      .single()
+  );
 }
 
 // All inspection lots created for a receipt (one per inspected receipt line),

@@ -1694,10 +1694,14 @@ const Table = <T extends object>({
                           )}
                           style={{
                             ...getPinnedStyles(header.column),
-                            width: header.getSize(),
-                            minWidth: minWidthStyle(
-                              columnMinWidths.get(header.column.id)
-                            )
+                            ...(header.column.columnDef.meta?.shrinkToFit
+                              ? { width: "1%" }
+                              : {
+                                  width: header.getSize(),
+                                  minWidth: minWidthStyle(
+                                    columnMinWidths.get(header.column.id)
+                                  )
+                                })
                           }}
                         >
                           {!header.isPlaceholder &&
@@ -1977,7 +1981,9 @@ const Table = <T extends object>({
                             )}
                             style={{
                               ...getPinnedStyles(footer.column),
-                              width: footer.getSize()
+                              ...(footer.column.columnDef.meta?.shrinkToFit
+                                ? { width: "1%" }
+                                : { width: footer.getSize() })
                             }}
                           >
                             {!footer.isPlaceholder &&

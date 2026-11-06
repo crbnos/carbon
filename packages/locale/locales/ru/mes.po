@@ -45,6 +45,10 @@ msgstr "Экран текущей работы — {0}"
 msgid "{0} customers"
 msgstr "{0} покупателей"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} не прошли"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -71,12 +75,12 @@ msgstr "{0} производственные заказы"
 msgid "{0} maintenance display"
 msgstr "Экран техобслуживания — {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
@@ -139,6 +143,9 @@ msgstr "{completions} пройденных единиц будут заверш�
 
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Отставание на # день} few {Отставание на # дня} many {Отставание на # дней} other {Отставание на # дня}}"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} не прошли"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
@@ -215,6 +222,9 @@ msgstr "О системе"
 
 msgid "About this field"
 msgstr "О данном поле"
+
+msgid "Above the upper limit"
+msgstr "Выше верхнего предела"
 
 msgid "Accept"
 msgstr "Принять"
@@ -478,6 +488,9 @@ msgstr "Серия для отмены списания {0}"
 msgid "batch total"
 msgstr "итого серии"
 
+msgid "Below the lower limit"
+msgstr "Ниже нижнего предела"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Больший или меньший размер текста. Макет остается на месте."
 
@@ -507,6 +520,12 @@ msgstr "Но не волнуйтесь. Вы можете использоват
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "От <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "По характеристикам"
+
+msgid "By part"
+msgstr "По деталям"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Выполняя вход, вы соглашаетесь с <0>Условиями использования</0> и <1>Политикой конфиденциальности.</1>"
@@ -1170,6 +1189,9 @@ msgstr "Перейти к шагу {0}: {1} (готово)"
 msgid "Gradient"
 msgstr "Градиент"
 
+msgid "Grid layout"
+msgstr "Вид таблицы"
+
 msgid "Hard deadline"
 msgstr "Жесткий срок"
 
@@ -1181,6 +1203,9 @@ msgstr "Шестнадцатеричное значение"
 
 msgid "Hide description"
 msgstr "Скрыть описание"
+
+msgid "Hide drawing"
+msgstr "Скрыть чертёж"
 
 msgid "Hours"
 msgstr "Часы"
@@ -1645,6 +1670,9 @@ msgstr "Доступные серийные номера не найдены"
 msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
+msgid "No cell could take the pasted values"
+msgstr "Ни одна ячейка не может принять вставленные значения"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
@@ -1960,6 +1988,10 @@ msgstr "Детали"
 
 msgid "Pass"
 msgstr "Годен"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Отметить все пустые ячейки {0} как годные"
 
 msgid "Passed inspection"
 msgstr "Прошла контроль"
@@ -2281,6 +2313,9 @@ msgstr "Убрать деталь"
 msgid "Remove two-factor authentication"
 msgstr "Убрать двухфакторную аутентификацию"
 
+msgid "Removed"
+msgstr "Удалено"
+
 msgid "Removed signature"
 msgstr "Подпись удалена"
 
@@ -2310,6 +2345,12 @@ msgstr "Решение"
 
 msgid "Result"
 msgstr "Результат"
+
+msgid "Results recorded: {done}"
+msgstr "Записано результатов: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Записано результатов: {done}. Пропущено значений: {skipped}."
 
 msgid "Retry Completion"
 msgstr "Повторить выполнение"
@@ -2345,6 +2386,9 @@ msgstr "Заказ покупателя"
 msgid "Same for every job"
 msgstr "То же самое для всех производственных заказов"
 
+msgid "Sample"
+msgstr "Образец"
+
 msgid "Save"
 msgstr "Сохранить"
 
@@ -2356,6 +2400,11 @@ msgstr "Сохранить редактируемую форму"
 
 msgid "Saved signature"
 msgstr "Подпись сохранена"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Сохранение {0}/{1}"
 
 msgid "Scan"
 msgstr "Сканировать"
@@ -2618,6 +2667,9 @@ msgstr "Короткий отбор {itemName}"
 
 msgid "Show description"
 msgstr "Показать описание"
+
+msgid "Show drawing"
+msgstr "Показать чертёж"
 
 msgid "Show keyboard shortcuts"
 msgstr "Показать горячие клавиши"
@@ -2906,6 +2958,9 @@ msgstr "Эта серия не имеет рабочих инструкций."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Это проверка «годен / не годен». Нажмите P или F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
 
@@ -2923,6 +2978,9 @@ msgstr "Эта часть будет списана со склада. Её тр
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Это проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
+
+msgid "This sample was removed"
+msgstr "Этот образец был удалён"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."

@@ -45,6 +45,10 @@ msgstr "Painel de trabalho atual de {0}"
 msgid "{0} customers"
 msgstr "{0} clientes"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} reprovados"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -71,12 +75,12 @@ msgstr "{0} ordens de produção"
 msgid "{0} maintenance display"
 msgstr "Painel de manutenção de {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -139,6 +143,9 @@ msgstr "{completions} unidade(s) aprovada(s) será(ão) concluída(s)."
 
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Atraso de # dia} other {Atraso de # dias}}"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} reprovados"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} falha(s) amostrada(s) registrada(s) e NÃO será(ão) concluída(s) — resolva-as no menu de ações."
@@ -215,6 +222,9 @@ msgstr "Sobre"
 
 msgid "About this field"
 msgstr "Sobre este campo"
+
+msgid "Above the upper limit"
+msgstr "Acima do limite superior"
 
 msgid "Accept"
 msgstr "Aceitar"
@@ -478,6 +488,9 @@ msgstr "Lote de produção para estorno de consumo {0}"
 msgid "batch total"
 msgstr "total do lote de produção"
 
+msgid "Below the lower limit"
+msgstr "Abaixo do limite inferior"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Texto maior ou menor. O layout permanece no lugar."
 
@@ -507,6 +520,12 @@ msgstr "Mas não se preocupe. Você pode usar o fluxo de senha esquecida para so
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "Por <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Por característica"
+
+msgid "By part"
+msgstr "Por peça"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Ao entrar, você concorda com os <0>Termos de Serviço</0> e a <1>Política de Privacidade.</1>"
@@ -1170,6 +1189,9 @@ msgstr "Ir para a etapa {0}: {1} (feito)"
 msgid "Gradient"
 msgstr "Gradiente"
 
+msgid "Grid layout"
+msgstr "Layout da grade"
+
 msgid "Hard deadline"
 msgstr "Prazo fixo"
 
@@ -1181,6 +1203,9 @@ msgstr "Valor hexadecimal"
 
 msgid "Hide description"
 msgstr "Ocultar descrição"
+
+msgid "Hide drawing"
+msgstr "Ocultar desenho"
 
 msgid "Hours"
 msgstr "Horas"
@@ -1645,6 +1670,9 @@ msgstr "Nenhum número de série disponível encontrado"
 msgid "No available tracked entities found"
 msgstr "Nenhuma entidade rastreada disponível encontrada"
 
+msgid "No cell could take the pasted values"
+msgstr "Nenhuma célula pôde receber os valores colados"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Nenhum texto de certificação está definido para você. Peça a um administrador que o defina em Configurações → Tempo."
 
@@ -1960,6 +1988,10 @@ msgstr "Peças"
 
 msgid "Pass"
 msgstr "Aprovado"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Marcar todas as células vazias de {0} como aprovadas"
 
 msgid "Passed inspection"
 msgstr "Aprovado na inspeção"
@@ -2281,6 +2313,9 @@ msgstr "Remover peça"
 msgid "Remove two-factor authentication"
 msgstr "Remover autenticação de dois fatores"
 
+msgid "Removed"
+msgstr "Removido"
+
 msgid "Removed signature"
 msgstr "Assinatura removida"
 
@@ -2310,6 +2345,12 @@ msgstr "Resolução"
 
 msgid "Result"
 msgstr "Resultado"
+
+msgid "Results recorded: {done}"
+msgstr "Resultados registrados: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Resultados registrados: {done}. Valores ignorados: {skipped}."
 
 msgid "Retry Completion"
 msgstr "Tentar Conclusão Novamente"
@@ -2345,6 +2386,9 @@ msgstr "Pedido de Venda"
 msgid "Same for every job"
 msgstr "Igual para cada ordem de produção"
 
+msgid "Sample"
+msgstr "Amostra"
+
 msgid "Save"
 msgstr "Salvar"
 
@@ -2356,6 +2400,11 @@ msgstr "Salvar o formulário que você está editando"
 
 msgid "Saved signature"
 msgstr "Assinatura salva"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Salvando {0}/{1}"
 
 msgid "Scan"
 msgstr "Escanear"
@@ -2618,6 +2667,9 @@ msgstr "Colheita curta {itemName}"
 
 msgid "Show description"
 msgstr "Mostrar descrição"
+
+msgid "Show drawing"
+msgstr "Mostrar desenho"
 
 msgid "Show keyboard shortcuts"
 msgstr "Mostrar atalhos de teclado"
@@ -2906,6 +2958,9 @@ msgstr "Este lote de produção não possui instruções de trabalho."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Essas informações serão visíveis para todos os usuários, portanto, tenha cuidado com o que você compartilha."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Esta é uma verificação de aprovado / reprovado. Pressione P ou F."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Esta ordem de produção não tem taxa de faturamento. Peça ao escritório que a defina antes que o tempo seja faturado."
 
@@ -2923,6 +2978,9 @@ msgstr "Esta peça será descartada do estoque. Seu requisito permanece aberto p
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Isto contabiliza o tempo da ordem de produção. A ordem de produção não pode mais mudar."
+
+msgid "This sample was removed"
+msgstr "Esta amostra foi removida"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Isto interrompe seu relógio e contabiliza o tempo da ordem de produção. A ordem de produção não pode mais mudar."

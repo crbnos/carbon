@@ -399,6 +399,10 @@ msgstr "{0} записей к проведению · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} записей к признанию · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} не прошли"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} завершается {finish}"
@@ -514,12 +518,12 @@ msgstr "{0} в перемещении"
 msgid "{0} needed for jobs"
 msgstr "{0} нужно для производственных заказов"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} из {1}"
 
@@ -954,6 +958,9 @@ msgstr "{excluded, plural, one {# строка исключена} other {# ст
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "Не удалось выполнить {failed} из {0} заданий печати"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} не прошли"
 
 msgid "{fieldLabel} country code"
 msgstr "Код страны для поля {fieldLabel}"
@@ -2417,6 +2424,9 @@ msgstr "О (уведомление)"
 msgid "About this field"
 msgstr "Об этом поле"
 
+msgid "Above the upper limit"
+msgstr "Выше верхнего предела"
+
 msgid "Absence"
 msgstr "Отсутствие"
 
@@ -3051,6 +3061,9 @@ msgstr "Добавить из отгрузки"
 
 msgid "Add Funding"
 msgstr "Добавить финансирование"
+
+msgid "Add gauge"
+msgstr "Добавить средство измерения"
 
 msgid "Add Group"
 msgstr "Добавить группу"
@@ -5514,6 +5527,9 @@ msgstr "Ниже уровня"
 msgid "Below safety stock"
 msgstr "Ниже страховой запас"
 
+msgid "Below the lower limit"
+msgstr "Ниже нижнего предела"
+
 msgid "Best case"
 msgstr "Лучший случай"
 
@@ -5989,6 +6005,9 @@ msgstr "От <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
 
+msgid "By characteristic"
+msgstr "По характеристикам"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "По умолчанию это будет через 30 минут после начала"
 
@@ -6012,6 +6031,9 @@ msgstr "По товару"
 
 msgid "By Location"
 msgstr "По местоположению"
+
+msgid "By part"
+msgstr "По деталям"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Подписываясь, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности.</1>"
@@ -14015,6 +14037,9 @@ msgstr "Предоставить каждому пользователю дет�
 msgid "Grants Ability"
 msgstr "Предоставляет Навык"
 
+msgid "Grid layout"
+msgstr "Вид таблицы"
+
 msgid "Gross Profit"
 msgstr "Валовая прибыль"
 
@@ -14132,6 +14157,9 @@ msgstr "Скрыть подробности для {lineName}"
 
 msgid "Hide documents and activity"
 msgstr "Скрыть документы и деятельность"
+
+msgid "Hide drawing"
+msgstr "Скрыть чертёж"
 
 msgid "Hide lines"
 msgstr "Скрыть строки"
@@ -18715,6 +18743,9 @@ msgstr "Записи о калибровке не найдены"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Нет лимитов. Косвенные расходы выставляются по ставкам выставления счетов."
 
+msgid "No cell could take the pasted values"
+msgstr "Ни одна ячейка не может принять вставленные значения"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
@@ -20190,11 +20221,17 @@ msgstr "Один платеж за каждый год периода."
 msgid "One payment for every three months."
 msgstr "Один платеж за каждые три месяца."
 
+msgid "One row per characteristic"
+msgstr "Одна строка на характеристику"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Одна строка на счет-фактуру, один столбец на строку. Измените дату или сумму, добавьте счет-фактуру или удалите его."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "Одна строка на месяц, один столбец на строку. Каждая строка признает ровно то, что выставляют счетом её счета-фактуры."
+
+msgid "One row per part"
+msgstr "Одна строка на деталь"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Одна серийная единица или одна серия, которую Carbon отслеживает отдельно, со своим статусом и атрибутами, такими как срок годности."
@@ -21191,6 +21228,13 @@ msgstr "Детали, материалы и способы их классифи
 
 msgid "Pass"
 msgstr "Пройти"
+
+msgid "Pass all empty cells"
+msgstr "Отметить все пустые ячейки как годные"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Отметить все пустые ячейки {0} как годные"
 
 msgid "Passed"
 msgstr "Пройдено"
@@ -24605,6 +24649,12 @@ msgstr "Результат"
 msgid "Results"
 msgstr "Результаты"
 
+msgid "Results recorded: {done}"
+msgstr "Записано результатов: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Записано результатов: {done}. Пропущено значений: {skipped}."
+
 msgid "Resume"
 msgstr "Возобновить"
 
@@ -25375,6 +25425,12 @@ msgstr "Образец"
 msgid "Sample Size"
 msgstr "Объем выборки"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Объём выборки {0} · принять до {1} не прошедших · отклонить при {2}"
+
 msgid "Sampling"
 msgstr "Выборочный контроль"
 
@@ -25487,6 +25543,11 @@ msgstr "Сохранённые представления"
 
 msgid "Saved Views"
 msgstr "Сохраненные представления"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Сохранение {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Сохранение копии текущих данных"
@@ -26081,9 +26142,6 @@ msgstr "Выберите типы событий"
 
 msgid "Select field"
 msgstr "Выберите поле"
-
-msgid "Select gauge"
-msgstr "Выберите средство измерения"
 
 msgid "Select Gauge"
 msgstr "Выбрать средство измерения"
@@ -26970,6 +27028,9 @@ msgstr "Показать подробности для {lineName}"
 msgid "Show documents and activity"
 msgstr "Показать документы и активность"
 
+msgid "Show drawing"
+msgstr "Показать чертёж"
+
 msgid "Show Durations"
 msgstr "Показать длительность"
 
@@ -27378,9 +27439,6 @@ msgstr "Потребление запасных частей"
 
 msgid "Spare Part Cost"
 msgstr "Себестоимость запасной части"
-
-msgid "Spec"
-msgstr "Тех. условия"
 
 msgid "Specialized"
 msgstr "Специализированный"
@@ -30482,6 +30540,9 @@ msgstr "Это контролируемая среда, поэтому треб�
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "Это контролируемая среда, поэтому двухфакторная аутентификация требуется для всех и не может быть отключена."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Это проверка «годен / не годен». Нажмите P или F."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Это купленный элемент — у него нет BoM/BoP; могут изменяться только его атрибуты и документы."
 
@@ -30653,6 +30714,9 @@ msgstr "Этот заказ покупателя имеет связанные �
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ покупателя имеет строки, требующие создания производственных заказов"
+
+msgid "This sample was removed"
+msgstr "Этот образец был удалён"
 
 msgid "This serial"
 msgstr "Этот серийный номер"

@@ -45,6 +45,10 @@ msgstr "{0} mevcut iş ekranı"
 msgid "{0} customers"
 msgstr "{0} müşteri"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} başarısız"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -71,12 +75,12 @@ msgstr "{0} iş emri"
 msgid "{0} maintenance display"
 msgstr "{0} bakım ekranı"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} adet {1}"
 
@@ -139,6 +143,9 @@ msgstr "{completions} geçti birim(ler) tamamlanacak."
 
 msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{days, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} başarısız"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
@@ -215,6 +222,9 @@ msgstr "Hakkında"
 
 msgid "About this field"
 msgstr "Bu alan hakkında"
+
+msgid "Above the upper limit"
+msgstr "Üst sınırın üzerinde"
 
 msgid "Accept"
 msgstr "Kabul Et"
@@ -478,6 +488,9 @@ msgstr "Tüketimi geri alınacak parti {0}"
 msgid "batch total"
 msgstr "parti toplamı"
 
+msgid "Below the lower limit"
+msgstr "Alt sınırın altında"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "Daha büyük veya küçük metin. Yerleşim yerinde kalır."
 
@@ -507,6 +520,12 @@ msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifr
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "<0>{0}</0> tarafından, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "Özelliğe göre"
+
+msgid "By part"
+msgstr "Parçaya göre"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
@@ -1170,6 +1189,9 @@ msgstr "{0}. adıma git: {1} (bitti)"
 msgid "Gradient"
 msgstr "Gradyan"
 
+msgid "Grid layout"
+msgstr "Tablo düzeni"
+
 msgid "Hard deadline"
 msgstr "Kesin son tarih"
 
@@ -1181,6 +1203,9 @@ msgstr "Onaltılık değer"
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
+
+msgid "Hide drawing"
+msgstr "Teknik resmi gizle"
 
 msgid "Hours"
 msgstr "Saat"
@@ -1645,6 +1670,9 @@ msgstr "Kullanılabilir seri numarası bulunamadı"
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
+msgid "No cell could take the pasted values"
+msgstr "Yapıştırılan değerleri hiçbir hücre alamadı"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
@@ -1960,6 +1988,10 @@ msgstr "Parçalar"
 
 msgid "Pass"
 msgstr "Uygun"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} için tüm boş hücreleri uygun olarak işaretle"
 
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
@@ -2281,6 +2313,9 @@ msgstr "Parçayı kaldır"
 msgid "Remove two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı kaldır"
 
+msgid "Removed"
+msgstr "Kaldırıldı"
+
 msgid "Removed signature"
 msgstr "İmza kaldırıldı"
 
@@ -2310,6 +2345,12 @@ msgstr "Çözüm"
 
 msgid "Result"
 msgstr "Sonuç"
+
+msgid "Results recorded: {done}"
+msgstr "Kaydedilen sonuçlar: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Kaydedilen sonuçlar: {done}. Atlanan değerler: {skipped}."
 
 msgid "Retry Completion"
 msgstr "Tamamlanmayı Yeniden Dene"
@@ -2345,6 +2386,9 @@ msgstr "Satış Siparişi"
 msgid "Same for every job"
 msgstr "Her iş emri için aynı"
 
+msgid "Sample"
+msgstr "Örnek"
+
 msgid "Save"
 msgstr "Kaydet"
 
@@ -2356,6 +2400,11 @@ msgstr "Düzenlediğiniz formu kaydetin"
 
 msgid "Saved signature"
 msgstr "İmza kaydedildi"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Kaydediliyor {0}/{1}"
 
 msgid "Scan"
 msgstr "Tarama"
@@ -2618,6 +2667,9 @@ msgstr "Kısmi toplama {itemName}"
 
 msgid "Show description"
 msgstr "Açıklamayı göster"
+
+msgid "Show drawing"
+msgstr "Teknik resmi göster"
 
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
@@ -2906,6 +2958,9 @@ msgstr "Bu partinin iş talimatı yok."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce ofis tarafından ayarlanmasını isteyin."
 
@@ -2923,6 +2978,9 @@ msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böyl
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "Bu, iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
+
+msgid "This sample was removed"
+msgstr "Bu numune kaldırıldı"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
