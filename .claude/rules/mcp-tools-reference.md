@@ -27,47 +27,13 @@ manifest stay in the app, because they derive from `~/modules/*`. The route
 Don't list individual tools in docs: they go stale. `search_tools` and
 `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` are the live list.
 
-## The runtime catalog
-
-The API and the MCP run from the service-function registry, never from a
-generated file. `OPERATIONS` (`apps/erp/app/routes/api+/v1+/lib/operations.server.ts`)
-is `buildOperationCatalog(router)` (`@carbon/api/catalog.server`) over
-`apps/erp/app/modules/router.server.ts`: every `defineServiceFn` const with
-`publish` set, named `<module>_<constName>`, with its classification and
-published permission from the permission literal, `title` and `description`
-from the definition, its input JSON Schema from its own zod validator (lazily,
-`z.toJSONSchema(input, { io: "input" })`, so `.describe()` texts come with it)
-`paginates` from an input that declares both `limit` and `offset`, its
-response JSON Schema from the definition's `output` (lazily, `io: "output"`;
-an operation with none publishes no `responseSchema`), and its id `lookups`
-from the outputs of the other operations (below). The
-oRPC router validates each request with the function's own validator
-(`zodInput`, `@carbon/api/schema`). The HTTP body shape is decided from the
-result: a `paged()` result is marked (`isPaged`, `@carbon/api/service-tools.server`)
-and goes out as `{ results, count }`, any other array too, everything else
-bare. `COMPANY_TABLES` comes from the committed
-`packages/database/src/company-tables.ts`, written by `pnpm generate:types`.
-A boot fails on a definition that cannot be published (no `title`, a
-`"system"` or keyed permission, a `"read"` that writes). A service-function
-change is live on the API and the MCP when the dev server reloads.
-
-## The manifest (docs and SDKs)
+## The manifest
 
 `tool-metadata.json` is **gitignored build output**, written by
 `pnpm generate:mcp` (`scripts/generate-mcp.ts`, the turbo root task
-`//#generate:mcp`). Nothing at runtime reads it: it feeds the docs site
-(`docs/scripts/generate-api-docs.mjs`), SDK generation and the committed digest.
-Its `responseSchema` is REFLECTED from each `run`'s return type with the type
-checker, which is what makes it the check on the declared `output`:
-`apps/erp/test/mcp-declared-outputs.test.ts` compares the two for every
-operation (CI's lint job, "Declared outputs match the reflected return types",
-right after the digest; locally after a generate, skipped without the file). A
-declared output that drifts from what `run` returns fails there. Its `lookups`
-are the generator's own (foreign keys and the SQL each operation reads) and feed
-the docs only. Only the `docs` tasks depend on it (`docs/turbo.json`); the
-ERP's tests read the runtime catalog, and `postinstall` no longer runs it. The
-docs script fails with a message naming `pnpm generate:mcp` when the file is
-missing. The task is cached on the inputs in `turbo.json`: the
+`//#generate:mcp`). `postinstall` runs it for local development (skipped under
+`CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
+`docs` depend on it. The task is cached on the inputs in `turbo.json`: the
 module sources, the app's `types`, `utils` and `services`, the generated DB
 types, the migrations (the id lookups read view SQL), `scripts/lib` and the
 package sources the modules' types reach (`@carbon/ee` included: published
@@ -78,12 +44,9 @@ module's `<module>.server.ts` imports something those inputs do not cover.
 The committed record is `tool-manifest.digest.json`: one line per operation
 with its classification, permission, `paginates` and a hash of each schema, so
 a contract change is one visible line in review. `pnpm check:manifest`
-regenerates without the cache and fails when the digest is stale. CI's lint job
-(`.github/workflows/check.yml`, "Manifest digest") runs the generator for the
-workflow-catalog check and fails the pull request when the committed digest
-differs; run `pnpm generate:mcp` and commit the digest. Pre-commit no longer
-runs the generator: it cost every commit a 100 s ts-morph pass, twice for a
-service-file commit.
+regenerates without the cache and fails when the digest is stale. Pre-commit
+(`scripts/git-hooks/pre-commit`) runs that check when a staged file falls under
+the same inputs; its path pattern mirrors the turbo list, so change both.
 
 Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
 title, description, permission, paginates, schema, responseSchema?, lookups?,
@@ -92,33 +55,13 @@ serviceFn }`.
 (`["production", "cancelJob"]`). The file also carries `companyTables`, read from
 the generated DB types (generation fails if it comes back short).
 
-## Declared outputs (`output`)
-
-Every published definition whose `run` returns a value declares `output`, a
-zod schema of that value, from the generated row schemas (`@carbon/database/row-schemas`:
-`rows.<table|view>`, a `z.object` per relation carrying
-`.meta({ table, view? })`, and `enums.*`; written by `pnpm generate:types`
-beside `types.ts`). A row as is (`rows.account`), a selection of its columns
-(`rows.customer.pick({ id: true, name: true }).meta({ table: "customer" })` —
-`.pick()` drops the meta, so it is set again), a row plus computed fields
-(`.extend({…})`), wrapped in `z.array()` / `.nullable()` as the result is; a
-shape that is no row is a plain inline `z.object`. The catalog publishes it as
-`responseSchema` (`outputJsonSchema`, `catalog.server.ts`: the meta is stripped
-from the JSON Schema) and reads the table from the meta for the lookups.
-
 ## Id lookups
 
-`lookups` maps an id input to the READ operation that lists its ids
+`lookups` maps an id input to the READ operations that list its ids
 (`nonConformanceTypeId` → `["quality_getIssueTypesList"]`), and the field's
-description gets "See …" so `describe_tool` and the API docs say where a valid
-value comes from. The runtime catalog derives it from the declared outputs
-(`linkLookups`, `catalog.server.ts`): a list is a READ whose `output` is an
-array of one table's rows with an `id` and that is general (paged, a `…List`,
-or needing nothing but ids), ranked named-after-the-table, fewest required
-inputs, `…List`, paged, shortest name; an input `fooId` / `fooIds` points at
-table `foo`'s list, `id` / `ids` at the operation's own row table. The
-generator's `lookups` (docs only) are decided another way, by
-`linkIdLookups` (`scripts/lib/id-lookups.ts`), after the entries are built:
+description gets "See …" so `describe_tool` and the API docs say
+where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
+decides it after the entries are built:
 
 - **The field's table.** `id`/`ids`: the only table the operation reads, when
   all its reads are known. Otherwise a foreign key of that column on a table the
@@ -163,25 +106,24 @@ A field it cannot place gets no lookup. Pinned by
 import of its server file, and each exported `defineServiceFn` const is a leaf;
 any other value export in a server file fails generation.
 
-- **Published**: only a leaf whose definition has `publish` (`leafPublication`).
-  A leftover `@mcp` or `@param` tag fails generation. A building block in
+- **Published**: only a leaf whose TSDoc has `@mcp`. A building block in
   `.service.ts` is never a tool.
 - **Name**: `<module>_<constName>`; HTTP path `POST /api/v1/<module>/<constName>`.
   Renaming the const renames the public tool.
-- **Title and description**: the `title` and `description` literals, composed
-  by `operationDescription` (`@carbon/api/catalog.server`), the same rule the
-  runtime catalog applies: the title as a sentence, then the prose. A title
-  that looks cut off fails generation.
+- **Title and description**: the summary (the doc's first paragraph) is the
+  title (required), taken whole.
+  The description is the summary sentence, then `@remarks`, then `@returns`.
+  `@param name - text` becomes that input field's `description`, and naming a
+  field the input does not have fails generation.
 - **Permission**: read off the literal `permission` and published in the
   manifest. One module → `{ module, actions }`; several modules, or `{}`
   (company membership) → `{ module: null, actions: [] }`. The function's own
   gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
   cannot be published.
-- **Classification**: `classify` from `@carbon/api/catalog.server`, the rule
-  the runtime applies: only `view` → READ; any `delete` → DESTRUCTIVE; else
-  WRITE. `publish: "read"` forces READ, for a read gated on membership alone
-  (`{}`); on a permission that names `create`, `update` or `delete` it fails,
-  since a READ is offered as safe to run unasked. `publish: "destructive"`
+- **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
+  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
+  on a permission that names `create`, `update` or `delete` it fails
+  generation, since a READ is offered as safe to run unasked. `@mcp destructive`
   forces DESTRUCTIVE.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
@@ -189,7 +131,7 @@ any other value export in a server file fails generation.
   move with the checker's type ids. The type carries no descriptions, so
   `inputFieldDescriptions` (`scripts/lib/input-docs.ts`) reads each top-level
   field's `.describe("…")` from the source, following the validator an input
-  extends or names through a namespace import. A loose input whose `run` calls a building
+  extends; `@param` overrides it. A loose input whose `run` calls a building
   block of its module that runs `setGenericQueryFilters`
   (`appliesGenericFilters`) also publishes `filters` and `sorts`.
 - **Response schema**: `run`'s return type, with `Promise` and `{ data, error }`

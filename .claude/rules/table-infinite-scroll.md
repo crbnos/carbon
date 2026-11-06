@@ -172,6 +172,7 @@ export const SALES_ORDERS_PAGING: Paging = {
   // idColumn: "…"   // when `id` is not unique
 };
 
+/** @mcp read */
 export async function getSalesOrders(client, companyId, args: GenericQueryFilters & { … }) {
   let query = client
     .from("salesOrders")
@@ -187,9 +188,13 @@ One `X_PAGING` per list. The service passes it to `setGenericQueryFilters`, a
 loader without a registry entry to `toPage(rows, { limit, sorts }, X_PAGING)`,
 and the registry entry spreads it.
 
-🛑 Never put `cursor` in a published service function's input. Type the args
-as `GenericQueryFilters & { … }` (the API publishes `limit` + `offset`), or
-give the loader a function without `publish` (`getAccountLedgerLines`).
+🛑 Put the `*_PAGING` constant ABOVE the doc block. A constant between
+`/** @mcp read */` and its function takes the doc block, and the function stops
+being an MCP tool with no error (see `.ai/lessons.md`).
+
+🛑 Never put `cursor` in an `@mcp` function's own args type. Type the args as
+`GenericQueryFilters & { … }` (the generator publishes `limit` + `offset`), or
+give the loader a function with no `@mcp` tag (`getAccountLedgerLines`).
 
 Rules for the query:
 

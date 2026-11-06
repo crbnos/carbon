@@ -32,12 +32,16 @@ exactly what the button does. Plan:
 `.ai/plans/2026-10-15-service-function-migration.md`.
 
 ```ts
+/**
+ * Cancel a job.                      ← the title (API, MCP)
+ *
+ * @remarks
+ * What it does, in order.            ← the description
+ *
+ * @mcp destructive                   ← published, labelled destructive
+ */
 export const cancelJob = defineServiceFn({
-  publish: "destructive",             // published, labelled destructive
-  title: "Cancel a job",              // the title (API, MCP)
-  description: "What it does, in order.", // the prose for the agent and the docs
-  output: z.object({ jobId: z.string() }),  // what run returns (rows.* for a row)
-  input: z.object({ jobId: z.string().describe("The job to cancel") }),
+  input: z.object({ jobId: z.string() }),
   permission: { update: "production" },
   async run(ctx, { jobId }) {
     // ...
@@ -73,25 +77,13 @@ export const cancelJob = defineServiceFn({
   stream) builds the context with `serviceContext(auth)`
   (`modules/service-context.server.ts`); a caller with no session (a public
   share link) uses `systemContext({ companyId, companyGroupId, onBehalfOf })`.
-- **Published**: `publish` on the definition publishes the const as the MCP
-  tool `{module}_{name}` and `POST /api/v1/{module}/{name}`, and then `title`
-  is required. The permission decides the classification (only `view` → READ,
-  any `delete` → DESTRUCTIVE, else WRITE); `publish: "read"` publishes a read
-  gated on membership alone (`{}`) as READ and is refused on a permission that
-  writes; `publish: "destructive"` forces DESTRUCTIVE. `description` is the
-  prose an agent reads; a field's description is `.describe()` on the zod
-  field. `output` is the zod schema of what `run` returns, built from the
-  generated row schemas (`rows.<table>` from `@carbon/database/row-schemas`,
-  `.pick()` + `.meta({ table })` for a selection, `.extend()` for computed
-  fields, `z.array()` / `.nullable()` as the result is; an inline `z.object`
-  when it is no row): the catalog publishes it as the response schema and
-  derives the id lookups (`See sales_getCustomersList.`) from the row tables.
-  `apps/erp/test/mcp-declared-outputs.test.ts` fails when it drifts from the
-  return type the generator reflects. The runtime catalog reads all of it
-  from the registry (`buildOperationCatalog`, `@carbon/api/catalog.server`):
-  nothing is generated for the API or the MCP to run. Publish an operation only when it
-  is safe with nothing but its input: the API runs the gate and `run`, nothing
-  the route does around the call.
+- **Published**: `@mcp` in the TSDoc publishes the const as the MCP tool
+  `{module}_{name}` and `POST /api/v1/{module}/{name}`. The permission decides
+  the classification (only `view` → READ, any `delete` → DESTRUCTIVE, else
+  WRITE); `@mcp read` forces READ (a read gated on `update`), `@mcp destructive`
+  forces DESTRUCTIVE. `@param name - text` describes an input field. Publish
+  an operation only when it is safe with nothing but its input: the API runs
+  the gate and `run`, nothing the route does around the call.
 - **Enforced**: `route-action-shape` (`@carbon/checks`) fails a new client,
   Kysely or `invokePosting` write in an ERP route; `service-fn-file` fails
   anything but service functions in `{module}.server.ts`.

@@ -43,16 +43,8 @@ From the snapshot, find the email input ref and the sign-in button ref:
 
 ```bash
 agent-browser fill @eN "test@carbon.ms"
-agent-browser click @eM && agent-browser wait --url "**/x" && agent-browser wait --text "Modules"
+agent-browser click @eM && agent-browser wait --load networkidle
 ```
-
-Wait for the dashboard, not for network idle. The server answers the sign-in in
-well under a second, but the browser then loads the dev server's modules one by
-one, so the dashboard takes 5 to 10 s to appear on a cold dev server. The URL
-changes before the page has rendered (a snapshot taken as soon as
-`wait --url` returned still showed the login form with its buttons disabled),
-so also wait for the dashboard's "Modules" heading. `--load networkidle` can
-time out because the dev server keeps an HMR socket open.
 
 ### 4. Verify — do not assume
 
