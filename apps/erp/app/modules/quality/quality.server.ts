@@ -7,6 +7,7 @@ import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import * as engine from "@carbon/database/quality";
 import { lockIssueDispositions } from "@carbon/database/quality";
+import { rows } from "@carbon/database/row-schemas";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   cancelPendingApprovals,
@@ -97,6 +98,11 @@ const customFieldValues = z.record(
  * @mcp
  */
 export const createIssue = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    nonConformanceId: z.string(),
+    warning: z.string().nullable()
+  }),
   input: issueValidator.extend({
     customFields: customFieldValues.optional(),
     trackedEntityIds: z.array(z.string()).optional(),
@@ -266,6 +272,9 @@ const issueArrayFields = ["requiredActionIds", "approvalRequirements"] as const;
  * @mcp
  */
 export const updateIssueField = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum([
@@ -356,6 +365,10 @@ export const updateIssueField = defineServiceFn({
  * @mcp
  */
 export const setIssueStatus = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    status: z.enum(["In Progress", "Registered"])
+  }),
   input: z.object({
     id: z.string(),
     status: z.enum(nonConformanceStatus).exclude(["Closed"])
@@ -459,6 +472,9 @@ export const setIssueStatus = defineServiceFn({
  * @mcp
  */
 export const completeIssue = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({ id: z.string() }),
   permission: { update: "quality" },
 
@@ -514,6 +530,10 @@ const issueTaskType = z.enum(["investigation", "action", "approval", "review"]);
  * @mcp
  */
 export const setIssueTaskStatus = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    status: z.enum(["Completed", "In Progress", "Pending", "Skipped"])
+  }),
   input: z.object({
     id: z.string(),
     status: z.enum(nonConformanceTaskStatus),
@@ -567,6 +587,7 @@ export const setIssueTaskStatus = defineServiceFn({
  * @mcp
  */
 export const setIssueTaskSupplier = defineServiceFn({
+  output: rows.supplier.pick({ id: true }).meta({ table: "supplier" }),
   input: z.object({ id: z.string(), supplierId: z.string().nullish() }),
   permission: { update: "quality" },
 
@@ -602,6 +623,9 @@ export const setIssueTaskSupplier = defineServiceFn({
  * @mcp
  */
 export const setIssueActionDueDate = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({ id: z.string(), dueDate: z.string().nullish() }),
   permission: { update: "quality" },
 
@@ -626,6 +650,9 @@ export const setIssueActionDueDate = defineServiceFn({
  * @mcp
  */
 export const reorderIssueActionTasks = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({ updates: z.record(z.string(), z.number()) }),
   permission: { update: "quality" },
 
@@ -680,6 +707,7 @@ export const reorderIssueActionTasks = defineServiceFn({
  * @mcp
  */
 export const updateIssueItemField = defineServiceFn({
+  output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.discriminatedUnion("field", [
     z.object({
       id: z.string(),
@@ -765,6 +793,24 @@ const associatedRecordTable = {
  * @mcp
  */
 export const createIssueAssociation = defineServiceFn({
+  output: z.object({
+    nonConformanceId: z.string(),
+    type: z.enum([
+      "customers",
+      "inspections",
+      "items",
+      "jobOperations",
+      "purchaseOrderLines",
+      "purchaseReturnOrderLines",
+      "receiptLines",
+      "salesOrderLines",
+      "salesReturnOrderLines",
+      "shipmentLines",
+      "suppliers",
+      "trackedEntities"
+    ]),
+    id: z.string()
+  }),
   input: issueAssociationValidator.safeExtend({ nonConformanceId: z.string() }),
   permission: { update: "quality" },
 
@@ -891,6 +937,10 @@ export const createIssueAssociation = defineServiceFn({
  * @mcp
  */
 export const draftIssueSupplierReturn = defineServiceFn({
+  output: z.object({
+    created: z.boolean(),
+    purchaseReturnOrderId: z.string().nullable()
+  }),
   input: z.object({
     nonConformanceId: z.string(),
     supplierId: z.string().nullish()
@@ -1320,6 +1370,17 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * @mcp
  */
 export const rejectInspection = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      issueId: z.null()
+    }),
+    z.object({
+      id: z.string(),
+      issueId: z.string()
+    }),
+    z.null()
+  ]),
   input: z.object({
     id: z.string(),
     nonConformanceTypeId: z.string().nullish(),
@@ -1636,6 +1697,14 @@ const emptyInspectionSave = { create: [], update: [], delete: [] };
  * @mcp
  */
 export const saveInspectionDocument = defineServiceFn({
+  output: z.object({
+    success: z.boolean(),
+    featureIdMap: z.record(z.string(), z.string()),
+    balloonAnchorIdMap: z.record(z.string(), z.string()),
+    features: z.array(z.record(z.string(), z.unknown())),
+    anchors: z.array(z.record(z.string(), z.unknown())),
+    balloons: z.array(z.record(z.string(), z.unknown()))
+  }),
   input: z.object({
     inspectionDocumentId: z.string(),
     pdfUrl: z.string().optional(),
@@ -1765,6 +1834,9 @@ export const saveInspectionDocument = defineServiceFn({
  * @mcp
  */
 export const setInspectionDocumentDrawingNumber = defineServiceFn({
+  output: rows.inspectionDocument
+    .pick({ id: true })
+    .meta({ table: "inspectionDocument" }),
   input: z.object({ id: z.string(), drawingNumber: z.string().nullish() }),
   permission: { update: "quality" },
 
@@ -1809,6 +1881,9 @@ export const setInspectionDocumentDrawingNumber = defineServiceFn({
  * @mcp
  */
 export const updateQualityDocumentField = defineServiceFn({
+  output: z.object({
+    ids: z.array(z.string())
+  }),
   input: z.object({
     ids: zfd.repeatableOfType(z.string().min(1)),
     field: z.enum(["name", "content", "status", "tags"]),
@@ -1908,6 +1983,10 @@ export const updateQualityDocumentField = defineServiceFn({
  * @mcp
  */
 export const decideQualityDocumentApproval = defineServiceFn({
+  output: z.object({
+    qualityDocumentId: z.string(),
+    decision: z.enum(["Approved", "Rejected"])
+  }),
   input: approvalDecisionValidator.extend({ qualityDocumentId: z.string() }),
   permission: { update: "quality" },
 
@@ -1975,6 +2054,9 @@ export const decideQualityDocumentApproval = defineServiceFn({
  * @mcp
  */
 export const seedQualityDocuments = defineServiceFn({
+  output: z.object({
+    count: z.number()
+  }),
   input: z.object({}),
   permission: { create: "quality" },
 
@@ -2098,6 +2180,9 @@ export const createRisk = defineServiceFn({
  * @mcp
  */
 export const updateRisk = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: riskInput.extend({ id: z.string() }),
   permission: { update: "quality" },
 
@@ -2186,6 +2271,7 @@ export const updateScarTaskNotes = defineServiceFn({
  * @mcp
  */
 export const activateGauge = defineServiceFn({
+  output: z.array(rows.gauges.pick({ id: true }).meta({ table: "gauge" })),
   input: z.looseObject({ gaugeId: z.string() }),
   // The route gated on delete; the write runs under the update policy.
   permission: { update: "quality", delete: "quality" },
@@ -2203,6 +2289,7 @@ export const activateGauge = defineServiceFn({
  * @mcp
  */
 export const deactivateGauge = defineServiceFn({
+  output: z.array(rows.gauges.pick({ id: true }).meta({ table: "gauge" })),
   input: z.looseObject({ gaugeId: z.string() }),
   // The route gated on delete; the write runs under the update policy.
   permission: { update: "quality", delete: "quality" },
@@ -2223,6 +2310,7 @@ export const deactivateGauge = defineServiceFn({
  * @mcp destructive
  */
 export const deleteGauge = defineServiceFn({
+  output: z.array(rows.gauges.pick({ id: true }).meta({ table: "gauge" })),
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2239,6 +2327,11 @@ export const deleteGauge = defineServiceFn({
  * @mcp destructive
  */
 export const deleteGaugeCalibrationRecord = defineServiceFn({
+  output: z.array(
+    rows.gaugeCalibrationRecord
+      .pick({ id: true })
+      .meta({ table: "gaugeCalibrationRecord" })
+  ),
   input: z.looseObject({ gaugeCalibrationRecordId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2258,6 +2351,9 @@ export const deleteGaugeCalibrationRecord = defineServiceFn({
  * @mcp destructive
  */
 export const deleteGaugeType = defineServiceFn({
+  output: z.array(
+    rows.gaugeType.pick({ id: true }).meta({ table: "gaugeType" })
+  ),
   input: z.looseObject({ gaugeTypeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2277,6 +2373,11 @@ export const deleteGaugeType = defineServiceFn({
  * @mcp destructive
  */
 export const deleteIssue = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2313,6 +2414,11 @@ export const deleteIssueAssociation = defineServiceFn({
  * @mcp destructive
  */
 export const deleteIssueType = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ nonConformanceTypeId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2332,6 +2438,11 @@ export const deleteIssueType = defineServiceFn({
  * @mcp destructive
  */
 export const deleteIssueWorkflow = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2351,6 +2462,11 @@ export const deleteIssueWorkflow = defineServiceFn({
  * @mcp destructive
  */
 export const deleteRequiredAction = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ requiredActionId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2370,6 +2486,9 @@ export const deleteRequiredAction = defineServiceFn({
  * @mcp destructive
  */
 export const deleteQualityDocument = defineServiceFn({
+  output: z.array(
+    rows.qualityDocument.pick({ id: true }).meta({ table: "qualityDocument" })
+  ),
   input: z.looseObject({ qualityDocumentId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2389,6 +2508,11 @@ export const deleteQualityDocument = defineServiceFn({
  * @mcp destructive
  */
 export const deleteRisk = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ riskId: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -2405,6 +2529,96 @@ export const deleteRisk = defineServiceFn({
  * @mcp read
  */
 export const getIssueFromExternalLink = defineServiceFn({
+  output: z.object({
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    externalLinkId: z.string().nullable(),
+    id: z.string(),
+    nonConformanceId: z.string(),
+    supplierId: z.string(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable(),
+    nonConformance: z.object({
+      approvalRequirements: z.array(z.literal("MRB")).nullable(),
+      assignee: z.string().nullable(),
+      closeDate: z.string().nullable(),
+      companyId: z.string().nullable(),
+      content: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      description: z.string().nullable(),
+      dueDate: z.string().nullable(),
+      id: z.string(),
+      locationId: z.string(),
+      name: z.string(),
+      nonConformanceId: z.string(),
+      nonConformanceTypeId: z.string(),
+      nonConformanceWorkflowId: z.string().nullable(),
+      openDate: z.string(),
+      priority: z.enum(["Critical", "High", "Low", "Medium"]).nullable(),
+      quantity: z.number(),
+      requiredActionIds: z.array(z.string()).nullable(),
+      source: z.enum(["External", "Internal"]),
+      status: z.enum(["Closed", "In Progress", "Registered"]),
+      tags: z.array(z.string()).nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable()
+    })
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2424,6 +2638,90 @@ export const getIssueFromExternalLink = defineServiceFn({
  * @mcp read
  */
 export const getGauge = defineServiceFn({
+  output: rows.gauges
+    .pick({
+      calibrationIntervalInMonths: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      dateAcquired: true,
+      description: true,
+      gaugeCalibrationStatus: true,
+      gaugeCalibrationStatusWithDueDate: true,
+      gaugeId: true,
+      gaugeRole: true,
+      gaugeStatus: true,
+      gaugeTypeId: true,
+      id: true,
+      lastCalibrationDate: true,
+      lastCalibrationStatus: true,
+      locationId: true,
+      manufacturer: true,
+      modelNumber: true,
+      nextCalibrationDate: true,
+      serialNumber: true,
+      storageUnitId: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "gauge" }),
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2440,6 +2738,66 @@ export const getGauge = defineServiceFn({
  * @mcp read
  */
 export const getGauges = defineServiceFn({
+  output: z
+    .array(
+      rows.gauges
+        .pick({
+          calibrationIntervalInMonths: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          dateAcquired: true,
+          description: true,
+          gaugeCalibrationStatus: true,
+          gaugeCalibrationStatusWithDueDate: true,
+          gaugeId: true,
+          gaugeRole: true,
+          gaugeStatus: true,
+          gaugeTypeId: true,
+          id: true,
+          lastCalibrationDate: true,
+          lastCalibrationStatus: true,
+          locationId: true,
+          manufacturer: true,
+          modelNumber: true,
+          nextCalibrationDate: true,
+          serialNumber: true,
+          storageUnitId: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "gauge" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2468,6 +2826,14 @@ export const getGauges = defineServiceFn({
  * @mcp read
  */
 export const getGaugesList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      gaugeId: z.string(),
+      description: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2484,6 +2850,197 @@ export const getGaugesList = defineServiceFn({
  * @mcp read
  */
 export const getGaugeCalibrationRecord = defineServiceFn({
+  output: rows.gaugeCalibrationRecords
+    .pick({
+      approvedBy: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      dateCalibrated: true,
+      description: true,
+      gaugeId: true,
+      gaugeReadableId: true,
+      gaugeTypeId: true,
+      humidity: true,
+      id: true,
+      inspectionStatus: true,
+      measurementStandard: true,
+      requiresAction: true,
+      requiresAdjustment: true,
+      requiresRepair: true,
+      supplierId: true,
+      temperature: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      calibrationAttempts: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "gaugeCalibrationRecord" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2503,6 +3060,117 @@ export const getGaugeCalibrationRecord = defineServiceFn({
  * @mcp read
  */
 export const getGaugeCalibrationRecords = defineServiceFn({
+  output: z
+    .array(
+      rows.gaugeCalibrationRecords
+        .pick({
+          approvedBy: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          dateCalibrated: true,
+          description: true,
+          gaugeId: true,
+          gaugeReadableId: true,
+          gaugeTypeId: true,
+          humidity: true,
+          id: true,
+          inspectionStatus: true,
+          measurementStandard: true,
+          requiresAction: true,
+          requiresAdjustment: true,
+          requiresRepair: true,
+          supplierId: true,
+          temperature: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          calibrationAttempts: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          notes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "gaugeCalibrationRecord" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2531,6 +3199,115 @@ export const getGaugeCalibrationRecords = defineServiceFn({
  * @mcp read
  */
 export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
+  output: z.array(
+    rows.gaugeCalibrationRecords
+      .pick({
+        approvedBy: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        dateCalibrated: true,
+        description: true,
+        gaugeId: true,
+        gaugeReadableId: true,
+        gaugeTypeId: true,
+        humidity: true,
+        id: true,
+        inspectionStatus: true,
+        measurementStandard: true,
+        requiresAction: true,
+        requiresAdjustment: true,
+        requiresRepair: true,
+        supplierId: true,
+        temperature: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        calibrationAttempts: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        notes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "gaugeCalibrationRecord" })
+  ),
   input: z.looseObject({ gaugeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2550,6 +3327,9 @@ export const getGaugeCalibrationRecordsByGaugeId = defineServiceFn({
  * @mcp read
  */
 export const getGaugeTypesList = defineServiceFn({
+  output: z.array(
+    rows.gaugeType.pick({ id: true, name: true }).meta({ table: "gaugeType" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2566,6 +3346,7 @@ export const getGaugeTypesList = defineServiceFn({
  * @mcp read
  */
 export const getGaugeType = defineServiceFn({
+  output: rows.gaugeType,
   input: z.looseObject({ gaugeTypeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2585,6 +3366,7 @@ export const getGaugeType = defineServiceFn({
  * @mcp read
  */
 export const getGaugeTypes = defineServiceFn({
+  output: z.array(rows.gaugeType).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2613,6 +3395,141 @@ export const getGaugeTypes = defineServiceFn({
  * @mcp read
  */
 export const getIssue = defineServiceFn({
+  output: z.object({
+    approvalRequirements: z.array(z.literal("MRB")).nullable(),
+    assignee: z.string().nullable(),
+    closeDate: z.string().nullable(),
+    companyId: z.string().nullable(),
+    content: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    customFields: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    description: z.string().nullable(),
+    dueDate: z.string().nullable(),
+    id: z.string(),
+    locationId: z.string(),
+    name: z.string(),
+    nonConformanceId: z.string(),
+    nonConformanceTypeId: z.string(),
+    nonConformanceWorkflowId: z.string().nullable(),
+    openDate: z.string(),
+    priority: z.enum(["Critical", "High", "Low", "Medium"]).nullable(),
+    quantity: z.number(),
+    requiredActionIds: z.array(z.string()).nullable(),
+    source: z.enum(["External", "Internal"]),
+    status: z.enum(["Closed", "In Progress", "Registered"]),
+    tags: z.array(z.string()).nullable(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable()
+  }),
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2632,6 +3549,95 @@ export const getIssue = defineServiceFn({
  * @mcp read
  */
 export const getIssues = defineServiceFn({
+  output: z
+    .array(
+      rows.issues
+        .pick({
+          approvalRequirements: true,
+          assignee: true,
+          closeDate: true,
+          companyId: true,
+          containmentStatus: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          dueDate: true,
+          id: true,
+          items: true,
+          locationId: true,
+          name: true,
+          nonConformanceId: true,
+          nonConformanceTypeId: true,
+          nonConformanceWorkflowId: true,
+          openDate: true,
+          priority: true,
+          quantity: true,
+          requiredActionIds: true,
+          source: true,
+          status: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          content: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "nonConformance" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2660,6 +3666,7 @@ export const getIssues = defineServiceFn({
  * @mcp read
  */
 export const getIssueWorkflow = defineServiceFn({
+  output: rows.nonConformanceWorkflow,
   input: z.looseObject({ nonConformanceWorkflowId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2679,6 +3686,66 @@ export const getIssueWorkflow = defineServiceFn({
  * @mcp read
  */
 export const getIssueActionTasks = defineServiceFn({
+  output: z.array(
+    z.object({
+      linearIssue: z.record(z.string(), z.unknown()).nullable(),
+      jiraIssue: z.record(z.string(), z.unknown()).nullable(),
+      actionTypeId: z.string().nullable(),
+      assignee: z.string().nullable(),
+      companyId: z.string(),
+      completedDate: z.string().nullable(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      dueDate: z.string().nullable(),
+      id: z.string(),
+      nonConformanceId: z.string(),
+      notes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(z.unknown()),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      sortOrder: z.number(),
+      status: z.enum(["Completed", "In Progress", "Pending", "Skipped"]),
+      supplierId: z.string().nullable(),
+      tags: z.array(z.string()).nullable(),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      name: z.string().nullable(),
+      nonConformanceActionProcess: z.array(
+        z.object({
+          processId: z.string(),
+          name: z.string()
+        })
+      ),
+      supplier: z
+        .object({
+          name: z.string()
+        })
+        .nullable()
+    })
+  ),
   input: z.looseObject({ id: z.string(), supplierId: z.string().optional() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2700,6 +3767,7 @@ export const getIssueActionTasks = defineServiceFn({
  * @mcp read
  */
 export const getIssueApprovalTasks = defineServiceFn({
+  output: z.array(rows.nonConformanceApprovalTask),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2720,6 +3788,40 @@ export const getIssueApprovalTasks = defineServiceFn({
  * @mcp read
  */
 export const getIssueItems = defineServiceFn({
+  output: z.array(
+    rows.item
+      .pick({
+        createdAt: true,
+        createdBy: true,
+        id: true,
+        updatedAt: true,
+        updatedBy: true,
+        name: true
+      })
+      .extend({
+        companyId: z.string(),
+        disposition: z
+          .enum([
+            "Conditional Acceptance",
+            "Deviation Accepted",
+            "Hold",
+            "No Action Required",
+            "Pending",
+            "Quarantine",
+            "Repair",
+            "Return to Customer",
+            "Return to Supplier",
+            "Rework",
+            "Scrap",
+            "Use As Is"
+          ])
+          .nullable(),
+        itemId: z.string(),
+        nonConformanceId: z.string(),
+        quantity: z.number()
+      })
+      .meta({ table: "item" })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2740,6 +3842,100 @@ export const getIssueItems = defineServiceFn({
  * @mcp read
  */
 export const getIssueAssociations = defineServiceFn({
+  output: z.object({
+    items: z.unknown(),
+    jobOperations: z.array(
+      z.object({
+        type: z.string(),
+        id: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    purchaseOrderLines: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    salesOrderLines: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    shipmentLines: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    receiptLines: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    salesReturnOrderLines: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    purchaseReturnOrderLines: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    trackedEntities: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    customers: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    suppliers: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        documentId: z.string(),
+        documentLineId: z.string(),
+        documentReadableId: z.string()
+      })
+    ),
+    inspections: z.unknown()
+  }),
   input: z.looseObject({ nonConformanceId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2757,6 +3953,7 @@ export const getIssueAssociations = defineServiceFn({
  * @mcp read
  */
 export const getIssueReviewers = defineServiceFn({
+  output: z.array(rows.nonConformanceReviewer),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2777,6 +3974,12 @@ export const getIssueReviewers = defineServiceFn({
  * @mcp read
  */
 export const getIssueSuppliers = defineServiceFn({
+  output: z.array(
+    z.object({
+      supplierId: z.string(),
+      externalLinkId: z.string().nullable()
+    })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2797,6 +4000,7 @@ export const getIssueSuppliers = defineServiceFn({
  * @mcp read
  */
 export const getIssueType = defineServiceFn({
+  output: rows.gaugeType,
   input: z.looseObject({ nonConformanceTypeId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2816,6 +4020,9 @@ export const getIssueType = defineServiceFn({
  * @mcp read
  */
 export const getIssueTypeByName = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({ name: z.string(), excludeId: z.string().optional() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2837,6 +4044,7 @@ export const getIssueTypeByName = defineServiceFn({
  * @mcp read
  */
 export const getIssueTypes = defineServiceFn({
+  output: z.array(rows.gaugeType).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2865,6 +4073,7 @@ export const getIssueTypes = defineServiceFn({
  * @mcp read
  */
 export const getIssueWorkflows = defineServiceFn({
+  output: z.array(rows.nonConformanceWorkflow).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2893,6 +4102,7 @@ export const getIssueWorkflows = defineServiceFn({
  * @mcp read
  */
 export const getIssueWorkflowsList = defineServiceFn({
+  output: z.array(rows.nonConformanceWorkflow),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2909,6 +4119,12 @@ export const getIssueWorkflowsList = defineServiceFn({
  * @mcp read
  */
 export const getIssueTypesList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -2925,6 +4141,66 @@ export const getIssueTypesList = defineServiceFn({
  * @mcp read
  */
 export const getQualityActions = defineServiceFn({
+  output: z
+    .array(
+      rows.qualityActions
+        .pick({
+          actionType: true,
+          actionTypeId: true,
+          assignee: true,
+          companyId: true,
+          completedDate: true,
+          createdAt: true,
+          createdBy: true,
+          dueDate: true,
+          id: true,
+          items: true,
+          nonConformanceCloseDate: true,
+          nonConformanceDueDate: true,
+          nonConformanceId: true,
+          nonConformanceName: true,
+          nonConformanceOpenDate: true,
+          nonConformanceStatus: true,
+          nonConformanceTypeName: true,
+          readableNonConformanceId: true,
+          sortOrder: true,
+          status: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          notes: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "nonConformanceActionTask" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2953,6 +4229,110 @@ export const getQualityActions = defineServiceFn({
  * @mcp read
  */
 export const getQualityDocument = defineServiceFn({
+  output: rows.qualityDocument
+    .pick({
+      assignee: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      id: true,
+      name: true,
+      status: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      version: true
+    })
+    .extend({
+      content: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      qualityDocumentStep: z.array(
+        z.object({
+          companyId: z.string().nullable(),
+          createdAt: z.string(),
+          createdBy: z.string(),
+          description: z.string().nullable(),
+          fileTypes: z.array(z.string()).nullable(),
+          id: z.string(),
+          listValues: z.array(z.string()).nullable(),
+          maxValue: z.number().nullable(),
+          minValue: z.number().nullable(),
+          name: z.string(),
+          qualityDocumentId: z.string(),
+          required: z.boolean().nullable(),
+          sortOrder: z.number(),
+          type: z.enum([
+            "Checkbox",
+            "File",
+            "Inspection",
+            "List",
+            "Measurement",
+            "Person",
+            "Task",
+            "Timestamp",
+            "Value"
+          ]),
+          unitOfMeasureCode: z.string().nullable(),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable()
+        })
+      )
+    })
+    .meta({ table: "qualityDocument" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2969,6 +4349,53 @@ export const getQualityDocument = defineServiceFn({
  * @mcp read
  */
 export const getQualityDocumentVersions = defineServiceFn({
+  output: z.array(
+    rows.qualityDocument
+      .pick({
+        assignee: true,
+        companyId: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        id: true,
+        name: true,
+        status: true,
+        tags: true,
+        updatedAt: true,
+        updatedBy: true,
+        version: true
+      })
+      .extend({
+        content: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "qualityDocument" })
+  ),
   input: z.looseObject({ name: z.string(), version: z.number() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -2989,6 +4416,50 @@ export const getQualityDocumentVersions = defineServiceFn({
  * @mcp read
  */
 export const getQualityDocuments = defineServiceFn({
+  output: z
+    .array(
+      rows.qualityDocuments
+        .pick({
+          assignee: true,
+          companyId: true,
+          id: true,
+          name: true,
+          status: true,
+          tags: true,
+          version: true
+        })
+        .extend({
+          versions: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "qualityDocument" })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -3017,6 +4488,57 @@ export const getQualityDocuments = defineServiceFn({
  * @mcp read
  */
 export const getQualityFiles = defineServiceFn({
+  output: z.array(
+    z.object({
+      name: z.string(),
+      id: z.string().nullable(),
+      updated_at: z.string().nullable(),
+      created_at: z.string().nullable(),
+      last_accessed_at: z.string().nullable(),
+      metadata: z
+        .object({
+          eTag: z.string(),
+          size: z.number(),
+          mimetype: z.string(),
+          cacheControl: z.string(),
+          lastModified: z.string(),
+          contentLength: z.number(),
+          httpStatusCode: z.number()
+        })
+        .nullable(),
+      bucket_id: z.string().nullable().optional(),
+      owner: z.string().nullable().optional(),
+      buckets: z
+        .object({
+          id: z.string(),
+          type: z
+            .union([
+              z.unknown(),
+              z.literal("STANDARD"),
+              z.literal("ANALYTICS"),
+              z.null()
+            ])
+            .optional(),
+          name: z.string(),
+          owner: z.string(),
+          file_size_limit: z.number().nullable().optional(),
+          allowed_mime_types: z.array(z.string()).nullable().optional(),
+          created_at: z.string(),
+          updated_at: z.string(),
+          public: z.boolean(),
+          versioning_status: z
+            .enum(["DISABLED", "ENABLED", "SUSPENDED"])
+            .nullable()
+            .optional()
+        })
+        .nullable()
+        .optional(),
+      version: z.string().nullable().optional(),
+      archived_at: z.string().nullable().optional(),
+      is_delete_marker: z.boolean().nullable().optional(),
+      is_versioned: z.boolean().nullable().optional()
+    })
+  ),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3034,6 +4556,12 @@ export const getQualityFiles = defineServiceFn({
  * @mcp read
  */
 export const getRequiredActionsList = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "quality" },
   async run(ctx) {
@@ -3053,6 +4581,7 @@ export const getRequiredActionsList = defineServiceFn({
  * @mcp read
  */
 export const getRequiredActions = defineServiceFn({
+  output: z.array(rows.nonConformanceRequiredAction).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3081,6 +4610,7 @@ export const getRequiredActions = defineServiceFn({
  * @mcp read
  */
 export const getRequiredAction = defineServiceFn({
+  output: rows.nonConformanceRequiredAction,
   input: z.looseObject({ requiredActionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3100,6 +4630,87 @@ export const getRequiredAction = defineServiceFn({
  * @mcp read
  */
 export const getRisk = defineServiceFn({
+  output: z.object({
+    assignee: z.string().nullable(),
+    companyId: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string().nullable(),
+    description: z.string().nullable(),
+    id: z.string(),
+    itemId: z.string().nullable(),
+    likelihood: z.number().nullable(),
+    notes: z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.record(
+        z.string(),
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(z.string(), z.unknown()),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.array(
+        z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      ),
+      z.null()
+    ]),
+    severity: z.number().nullable(),
+    source: z.enum([
+      "Customer",
+      "General",
+      "Item",
+      "Job",
+      "Quote Line",
+      "Supplier",
+      "Work Center"
+    ]),
+    sourceId: z.string().nullable(),
+    status: z.enum(["Accepted", "Closed", "In Review", "Mitigating", "Open"]),
+    title: z.string(),
+    type: z.enum(["Opportunity", "Risk"]),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable()
+  }),
   input: z.looseObject({ riskId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3116,6 +4727,68 @@ export const getRisk = defineServiceFn({
  * @mcp read
  */
 export const getRisks = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        assignee: z.string().nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        description: z.string().nullable(),
+        id: z.string().nullable(),
+        itemId: z.string().nullable(),
+        likelihood: z.number().nullable(),
+        notes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        severity: z.number().nullable(),
+        source: z
+          .enum([
+            "Customer",
+            "General",
+            "Item",
+            "Job",
+            "Quote Line",
+            "Supplier",
+            "Work Center"
+          ])
+          .nullable(),
+        sourceId: z.string().nullable(),
+        status: z
+          .enum(["Accepted", "Closed", "In Review", "Mitigating", "Open"])
+          .nullable(),
+        title: z.string().nullable(),
+        type: z.enum(["Opportunity", "Risk"]).nullable(),
+        updatedAt: z.string().nullable(),
+        workCenterId: z.string().nullable(),
+        workCenterName: z.string().nullable()
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3163,6 +4836,7 @@ export const getRisks = defineServiceFn({
  * @mcp
  */
 export const insertIssueReviewer = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     title: z.string().min(1),
     nonConformanceId: z.string()
@@ -3185,6 +4859,7 @@ export const insertIssueReviewer = defineServiceFn({
  * @mcp destructive
  */
 export const updateIssueActionProcesses = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     actionTaskId: z.string(),
     processIds: z.array(z.string())
@@ -3207,6 +4882,7 @@ export const updateIssueActionProcesses = defineServiceFn({
  * @mcp
  */
 export const insertGauge = defineServiceFn({
+  output: rows.gauge.pick({ id: true, gaugeId: true }).meta({ table: "gauge" }),
   input: z.looseObject({
     gaugeId: z.string().optional(),
     gaugeTypeId: z.string(),
@@ -3246,6 +4922,7 @@ export const insertGauge = defineServiceFn({
  * @mcp
  */
 export const updateGauge = defineServiceFn({
+  output: rows.gauge.pick({ id: true }).meta({ table: "gauge" }),
   input: z.looseObject({
     id: z.string(),
     gaugeId: z.string().optional(),
@@ -3287,6 +4964,9 @@ export const updateGauge = defineServiceFn({
  * @mcp
  */
 export const createGaugeCalibrationRecord = defineServiceFn({
+  output: rows.gaugeCalibrationRecord
+    .pick({ id: true })
+    .meta({ table: "gaugeCalibrationRecord" }),
   input: z.looseObject({
     gaugeId: z.string().min(1),
     supplierId: z.string().optional(),
@@ -3330,6 +5010,9 @@ export const createGaugeCalibrationRecord = defineServiceFn({
  * @mcp
  */
 export const updateGaugeCalibrationRecord = defineServiceFn({
+  output: rows.gaugeCalibrationRecord
+    .pick({ id: true })
+    .meta({ table: "gaugeCalibrationRecord" }),
   input: z
     .looseObject({
       gaugeId: z.string().min(1),
@@ -3376,6 +5059,9 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
  * @mcp
  */
 export const createGaugeType = defineServiceFn({
+  output: z.array(
+    rows.gaugeType.pick({ id: true }).meta({ table: "gaugeType" })
+  ),
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -3405,6 +5091,9 @@ export const createGaugeType = defineServiceFn({
  * @mcp
  */
 export const updateGaugeType = defineServiceFn({
+  output: z.array(
+    rows.gaugeType.pick({ id: true }).meta({ table: "gaugeType" })
+  ),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3433,6 +5122,10 @@ export const updateGaugeType = defineServiceFn({
  * @mcp
  */
 export const insertIssue = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    nonConformanceId: z.string()
+  }),
   input: z.looseObject({
     nonConformanceId: z.string().optional(),
     name: z.string(),
@@ -3473,6 +5166,9 @@ export const insertIssue = defineServiceFn({
  * @mcp
  */
 export const updateIssue = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string(),
     nonConformanceId: z.string().optional(),
@@ -3525,6 +5221,9 @@ export const updateIssue = defineServiceFn({
  * @mcp
  */
 export const createIssueWorkflow = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     name: z.string().min(1),
     content: z.string().min(1),
@@ -3558,6 +5257,9 @@ export const createIssueWorkflow = defineServiceFn({
  * @mcp
  */
 export const updateIssueWorkflow = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3594,6 +5296,11 @@ export const updateIssueWorkflow = defineServiceFn({
  * @mcp
  */
 export const createIssueType = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     name: z.string().min(1),
     customFields: z.unknown().optional(),
@@ -3623,6 +5330,11 @@ export const createIssueType = defineServiceFn({
  * @mcp
  */
 export const updateIssueType = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3654,6 +5366,11 @@ export const updateIssueType = defineServiceFn({
  * @mcp
  */
 export const createRequiredAction = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     name: z.string().min(1),
     active: z.boolean().optional(),
@@ -3683,6 +5400,11 @@ export const createRequiredAction = defineServiceFn({
  * @mcp
  */
 export const updateRequiredAction = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3714,6 +5436,9 @@ export const updateRequiredAction = defineServiceFn({
  * @mcp
  */
 export const createQualityDocument = defineServiceFn({
+  output: rows.qualityDocument
+    .pick({ id: true })
+    .meta({ table: "qualityDocument" }),
   input: z.looseObject({
     name: z.string().min(1),
     version: z.number().min(0),
@@ -3752,6 +5477,9 @@ export const createQualityDocument = defineServiceFn({
  * @mcp
  */
 export const updateQualityDocument = defineServiceFn({
+  output: rows.qualityDocument
+    .pick({ id: true })
+    .meta({ table: "qualityDocument" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -3786,6 +5514,28 @@ export const updateQualityDocument = defineServiceFn({
  * @mcp read
  */
 export const getInspections = defineServiceFn({
+  output: z
+    .array(
+      rows.inspection
+        .extend({
+          item: z.object({
+            readableId: z.string(),
+            name: z.string()
+          }),
+          supplier: z
+            .object({
+              name: z.string()
+            })
+            .nullable(),
+          inspectionSample: z.array(
+            z.object({
+              status: z.enum(["Failed", "Passed", "Pending"])
+            })
+          )
+        })
+        .meta({ table: "inspection" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3832,6 +5582,18 @@ export const getInspection = defineServiceFn({
  * @mcp read
  */
 export const getReceiptInspections = defineServiceFn({
+  output: z.array(
+    rows.inspection
+      .pick({
+        id: true,
+        inspectionId: true,
+        itemId: true,
+        itemReadableId: true,
+        sourceDocumentLineId: true,
+        status: true
+      })
+      .meta({ table: "inspection" })
+  ),
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3852,6 +5614,7 @@ export const getReceiptInspections = defineServiceFn({
  * @mcp read
  */
 export const getInspectionTrackedEntities = defineServiceFn({
+  output: z.array(rows.trackedEntity),
   input: z.looseObject({ receiptLineId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3872,6 +5635,40 @@ export const getInspectionTrackedEntities = defineServiceFn({
  * @mcp read
  */
 export const getInspectionSamplingPlans = defineServiceFn({
+  output: z.array(
+    rows.inspectionSamplingPlan
+      .extend({
+        inspectionFeature: z.object({
+          id: z.string(),
+          label: z.string(),
+          description: z.string().nullable(),
+          pageNumber: z.number(),
+          type: z.enum([
+            "Checkbox",
+            "File",
+            "Inspection",
+            "List",
+            "Measurement",
+            "Person",
+            "Task",
+            "Timestamp",
+            "Value"
+          ]),
+          nominalValue: z.string().nullable(),
+          tolerancePlus: z.string().nullable(),
+          toleranceMinus: z.string().nullable(),
+          unit: z.string().nullable(),
+          gaugeTypeId: z.string().nullable(),
+          pmiItemId: z.string().nullable(),
+          gaugeType: z
+            .object({
+              name: z.string()
+            })
+            .nullable()
+        })
+      })
+      .meta({ table: "inspectionSamplingPlan" })
+  ),
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3892,6 +5689,19 @@ export const getInspectionSamplingPlans = defineServiceFn({
  * @mcp read
  */
 export const getInspectionGauges = defineServiceFn({
+  output: z.array(
+    rows.gauges
+      .pick({
+        id: true,
+        gaugeId: true,
+        description: true,
+        gaugeTypeId: true,
+        gaugeStatus: true,
+        gaugeCalibrationStatusWithDueDate: true,
+        nextCalibrationDate: true
+      })
+      .meta({ table: "gauge" })
+  ),
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3912,6 +5722,7 @@ export const getInspectionGauges = defineServiceFn({
  * @mcp read
  */
 export const getInspectionMeasurements = defineServiceFn({
+  output: z.array(rows.inspectionMeasurement),
   input: z.looseObject({ inspectionId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3932,6 +5743,7 @@ export const getInspectionMeasurements = defineServiceFn({
  * @mcp read
  */
 export const getItemInspectionDocumentAssignments = defineServiceFn({
+  output: z.array(rows.itemInspectionDocumentAssignment),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -3952,6 +5764,7 @@ export const getItemInspectionDocumentAssignments = defineServiceFn({
  * @mcp destructive
  */
 export const upsertItemInspectionDocumentAssignment = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
     usage: z.literal("Receipt"),
@@ -3975,6 +5788,43 @@ export const upsertItemInspectionDocumentAssignment = defineServiceFn({
  * @mcp read
  */
 export const getInspectionDocuments = defineServiceFn({
+  output: z.array(
+    rows.inspectionDocument
+      .pick({
+        drawingNumber: true,
+        id: true,
+        companyId: true,
+        createdBy: true,
+        updatedBy: true,
+        createdAt: true,
+        updatedAt: true
+      })
+      .extend({
+        name: z.string(),
+        partId: z.string().nullable(),
+        content: z.object({
+          drawingNumber: z.string().nullable(),
+          pdfUrl: z.string().nullable(),
+          annotations: z.array(z.unknown()),
+          features: z.array(z.unknown())
+        }),
+        model: z
+          .object({
+            modelUploadId: z.string(),
+            modelPath: z.string().nullable()
+          })
+          .nullable(),
+        sampling: z.object({
+          samplingPlanType: z.string().nullable(),
+          samplingSampleSize: z.number().nullable(),
+          samplingPercentage: z.number().nullable(),
+          samplingAql: z.number().nullable(),
+          samplingInspectionLevel: z.string().nullable(),
+          samplingSeverity: z.string().nullable()
+        })
+      })
+      .meta({ table: "inspectionDocument" })
+  ),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -4003,6 +5853,11 @@ export const getInspectionDocuments = defineServiceFn({
  * @mcp read
  */
 export const getInspectionDocumentsForItem = defineServiceFn({
+  output: z.array(
+    rows.inspectionDocument
+      .pick({ id: true, fileName: true, drawingNumber: true, version: true })
+      .meta({ table: "inspectionDocument" })
+  ),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4023,6 +5878,40 @@ export const getInspectionDocumentsForItem = defineServiceFn({
  * @mcp read
  */
 export const getInspectionDocument = defineServiceFn({
+  output: rows.inspectionDocument
+    .pick({
+      id: true,
+      companyId: true,
+      createdBy: true,
+      updatedBy: true,
+      createdAt: true,
+      updatedAt: true
+    })
+    .extend({
+      name: z.string(),
+      partId: z.string().nullable(),
+      content: z.object({
+        drawingNumber: z.string().nullable(),
+        pdfUrl: z.string().nullable(),
+        annotations: z.array(z.unknown()),
+        features: z.array(z.unknown())
+      }),
+      model: z
+        .object({
+          modelUploadId: z.string(),
+          modelPath: z.string().nullable()
+        })
+        .nullable(),
+      sampling: z.object({
+        samplingPlanType: z.string().nullable(),
+        samplingSampleSize: z.number().nullable(),
+        samplingPercentage: z.number().nullable(),
+        samplingAql: z.number().nullable(),
+        samplingInspectionLevel: z.string().nullable(),
+        samplingSeverity: z.string().nullable()
+      })
+    })
+    .meta({ table: "inspectionDocument" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4043,6 +5932,9 @@ export const getInspectionDocument = defineServiceFn({
  * @mcp
  */
 export const upsertInspectionDocument = defineServiceFn({
+  output: rows.inspectionDocument
+    .pick({ id: true })
+    .meta({ table: "inspectionDocument" }),
   input: z.looseObject({
     name: z.string().optional(),
     partId: z.string().min(1),
@@ -4073,6 +5965,9 @@ export const upsertInspectionDocument = defineServiceFn({
  * @mcp destructive
  */
 export const deleteInspectionDocument = defineServiceFn({
+  output: rows.inspectionDocument
+    .pick({ storagePath: true })
+    .meta({ table: "inspectionDocument" }),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
@@ -4093,6 +5988,38 @@ export const deleteInspectionDocument = defineServiceFn({
  * @mcp read
  */
 export const getInspectionFeatures = defineServiceFn({
+  output: z.array(
+    rows.inspectionFeature
+      .pick({
+        id: true,
+        inspectionDocumentId: true,
+        companyId: true,
+        pageNumber: true,
+        label: true,
+        description: true,
+        nominalValue: true,
+        tolerancePlus: true,
+        toleranceMinus: true,
+        unit: true,
+        samplingSampleSize: true,
+        samplingPercentage: true,
+        samplingAql: true,
+        gaugeTypeId: true,
+        pmiItemId: true,
+        createdBy: true,
+        updatedBy: true,
+        createdAt: true,
+        updatedAt: true
+      })
+      .extend({
+        type: z.string(),
+        samplingPlanType: z.string().nullable(),
+        samplingInspectionLevel: z.string().nullable(),
+        samplingSeverity: z.string().nullable(),
+        balloonId: z.string().nullable()
+      })
+      .meta({ table: "inspectionFeature" })
+  ),
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4112,6 +6039,13 @@ export const getInspectionFeatures = defineServiceFn({
  * @mcp read
  */
 export const getBalloons = defineServiceFn({
+  output: z.array(
+    rows.balloon
+      .extend({
+        balloonAnchorId: z.string()
+      })
+      .meta({ table: "balloon" })
+  ),
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4131,6 +6065,27 @@ export const getBalloons = defineServiceFn({
  * @mcp read
  */
 export const getInspectionPlan = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      featureId: z.string(),
+      balloonId: z.string().nullable(),
+      inspectionDocumentId: z.string(),
+      pageNumber: z.number(),
+      label: z.string(),
+      description: z.string().nullable(),
+      nominalValue: z.string().nullable(),
+      tolerancePlus: z.string().nullable(),
+      toleranceMinus: z.string().nullable(),
+      unit: z.string().nullable(),
+      regionX: z.number().nullable(),
+      regionY: z.number().nullable(),
+      regionWidth: z.number().nullable(),
+      regionHeight: z.number().nullable(),
+      xCoordinate: z.number().nullable(),
+      yCoordinate: z.number().nullable()
+    })
+  ),
   input: z.looseObject({ inspectionDocumentId: z.string() }),
   permission: { view: "quality" },
   async run(ctx, input) {
@@ -4150,6 +6105,11 @@ export const getInspectionPlan = defineServiceFn({
  * @mcp
  */
 export const updateInspectionDocumentSampling = defineServiceFn({
+  output: z.array(
+    rows.inspectionDocument
+      .pick({ id: true })
+      .meta({ table: "inspectionDocument" })
+  ),
   input: z.looseObject({
     samplingPlanType: z.enum(["All", "First", "Percentage", "AQL"]).nullable(),
     samplingSampleSize: z.number().int().gt(0).nullable(),

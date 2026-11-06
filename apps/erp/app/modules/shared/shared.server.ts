@@ -6,6 +6,7 @@ import { NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import {
   type SyncedEntityType,
   syncedEntities,
@@ -85,6 +86,9 @@ const logger = getLogger("erp", "shared");
  * @mcp
  */
 export const assignRecord = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.object({
     table: z.enum(assignableTables),
     id: z.string().min(1),
@@ -173,6 +177,7 @@ export const assignRecord = defineServiceFn({
  * @mcp
  */
 export const setNotes = defineServiceFn({
+  output: rows.note.pick({ id: true }).meta({ table: "note" }),
   input: z.object({
     table: z.enum(noteTables),
     id: z.string().min(1),
@@ -400,6 +405,9 @@ export const createImportLookups = defineServiceFn({
  * @mcp
  */
 export const enrollImplementationHub = defineServiceFn({
+  output: z.object({
+    enrolled: z.boolean()
+  }),
   input: z.object({}),
   permission: { update: "settings" },
 
@@ -1007,6 +1015,11 @@ export const unlinkLinearIssue = defineServiceFn({
  * @mcp destructive
  */
 export const deleteSavedView = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ viewId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1026,6 +1039,7 @@ export const deleteSavedView = defineServiceFn({
  * @mcp read
  */
 export const getBase64ImageFromSupabase = defineServiceFn({
+  output: z.string(),
   input: z.looseObject({ path: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1042,6 +1056,7 @@ export const getBase64ImageFromSupabase = defineServiceFn({
  * @mcp read
  */
 export const getCountries = defineServiceFn({
+  output: z.array(rows.country),
   input: z.record(z.string(), z.unknown()),
   permission: {},
   async run(ctx) {
@@ -1071,6 +1086,18 @@ export const getModelByItemId = defineServiceFn({
  * @mcp read
  */
 export const getNotes = defineServiceFn({
+  output: z.array(
+    rows.note
+      .pick({ id: true, note: true, createdAt: true })
+      .extend({
+        user: z.object({
+          id: z.string(),
+          fullName: z.string().nullable(),
+          avatarUrl: z.string().nullable()
+        })
+      })
+      .meta({ table: "note" })
+  ),
   input: z.looseObject({ documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1087,6 +1114,11 @@ export const getNotes = defineServiceFn({
  * @mcp read
  */
 export const getTagsList = defineServiceFn({
+  output: z.array(
+    z.object({
+      name: z.string()
+    })
+  ),
   input: z.looseObject({ table: z.string().nullable().optional() }),
   permission: {},
   async run(ctx, input) {
@@ -1107,6 +1139,7 @@ export const getTagsList = defineServiceFn({
  * @mcp
  */
 export const insertNote = defineServiceFn({
+  output: rows.note,
   input: z.looseObject({ note: z.string(), documentId: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1126,6 +1159,7 @@ export const insertNote = defineServiceFn({
  * @mcp
  */
 export const insertTag = defineServiceFn({
+  output: rows.tag,
   input: z.looseObject({
     createdAt: z.string().optional(),
     name: z.string(),
@@ -1149,6 +1183,7 @@ export const insertTag = defineServiceFn({
  * @mcp read
  */
 export const getExternalLink = defineServiceFn({
+  output: rows.externalLink,
   input: z.looseObject({ id: z.string() }),
   permission: {},
   async run(ctx, input) {
@@ -1165,6 +1200,28 @@ export const getExternalLink = defineServiceFn({
  * @mcp read
  */
 export const getCustomerPortals = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        companyId: z.string(),
+        createdAt: z.string(),
+        customerId: z.string().nullable(),
+        documentId: z.string(),
+        documentType: z.enum([
+          "Customer",
+          "Non-Conformance Supplier",
+          "Quote",
+          "SupplierQuote"
+        ]),
+        expiresAt: z.string().nullable(),
+        id: z.string(),
+        supplierId: z.string().nullable(),
+        customer: z.object({
+          id: z.string()
+        })
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1213,6 +1270,9 @@ export const getCustomerPortal = defineServiceFn({
  * @mcp
  */
 export const upsertSavedView = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -1250,6 +1310,9 @@ export const upsertSavedView = defineServiceFn({
  * @mcp
  */
 export const updateSavedViewOrder = defineServiceFn({
+  output: z.object({
+    updated: z.number()
+  }),
   input: z.looseObject({
     updates: z.array(
       z.looseObject({ id: z.string(), sortOrder: z.number().int() })
@@ -1279,6 +1342,62 @@ export const updateSavedViewOrder = defineServiceFn({
  * @mcp read
  */
 export const getEnforcementRules = defineServiceFn({
+  output: z
+    .array(
+      rows.enforcementRule
+        .pick({
+          active: true,
+          appliesToAll: true,
+          companyId: true,
+          conditionAst: true,
+          createdAt: true,
+          createdBy: true,
+          description: true,
+          family: true,
+          filteredItemGroupIds: true,
+          filteredItemMatchAll: true,
+          filteredItemTypes: true,
+          id: true,
+          message: true,
+          name: true,
+          severity: true,
+          surfaces: true,
+          targetType: true,
+          updatedAt: true,
+          updatedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "enforcementRule" })
+    )
+    .nullable(),
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
     limit: z
@@ -1310,6 +1429,86 @@ export const getEnforcementRules = defineServiceFn({
  * @mcp read
  */
 export const getEnforcementRule = defineServiceFn({
+  output: rows.enforcementRule
+    .pick({
+      active: true,
+      appliesToAll: true,
+      companyId: true,
+      conditionAst: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      family: true,
+      filteredItemGroupIds: true,
+      filteredItemMatchAll: true,
+      filteredItemTypes: true,
+      id: true,
+      message: true,
+      name: true,
+      severity: true,
+      surfaces: true,
+      targetType: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "enforcementRule" }),
   input: z.looseObject({
     family: z.enum(["storage", "sales"]),
     id: z.string()
@@ -1334,6 +1533,11 @@ export const getEnforcementRule = defineServiceFn({
  * @mcp read
  */
 export const getEnforcementRuleAssignmentCounts = defineServiceFn({
+  output: z.union([
+    z.record(z.string(), z.number()),
+    z.record(z.string(), z.unknown()),
+    z.null()
+  ]),
   input: z.looseObject({ ruleIds: z.array(z.string()) }),
   permission: {},
   async run(ctx, input) {

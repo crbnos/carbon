@@ -4,6 +4,7 @@
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import {
   linkFinancingPayment,
   markFinancingRequestsPaid
@@ -226,6 +227,23 @@ const salesInvoiceLineInput = salesInvoiceLineValidator.safeExtend({
  * @mcp
  */
 export const createSalesInvoiceLine = defineServiceFn({
+  output: z.union([
+    z.object({
+      violations: z.array(
+        z.object({
+          ruleId: z.string(),
+          severity: z.enum(["error", "warn"]),
+          message: z.string(),
+          lineId: z.string().nullable().optional()
+        })
+      ),
+      ruleNames: z.record(z.string(), z.string())
+    }),
+    z.object({
+      salesInvoiceLineId: z.string()
+    }),
+    z.null()
+  ]),
   input: salesInvoiceLineInput,
   permission: { create: "invoicing" },
 
@@ -307,6 +325,23 @@ export const createSalesInvoiceLine = defineServiceFn({
  * @mcp
  */
 export const updateSalesInvoiceLine = defineServiceFn({
+  output: z.union([
+    z.object({
+      violations: z.array(
+        z.object({
+          ruleId: z.string(),
+          severity: z.enum(["error", "warn"]),
+          message: z.string(),
+          lineId: z.string().nullable().optional()
+        })
+      ),
+      ruleNames: z.record(z.string(), z.string())
+    }),
+    z.object({
+      salesInvoiceLineId: z.string()
+    }),
+    z.null()
+  ]),
   input: salesInvoiceLineInput.safeExtend({ id: z.string() }),
   permission: { create: "invoicing" },
 
@@ -426,6 +461,10 @@ export const updateSalesInvoiceLine = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDraftSalesInvoiceLine = defineServiceFn({
+  output: z.object({
+    invoiceId: z.string(),
+    lineId: z.string()
+  }),
   input: z.object({ invoiceId: z.string(), lineId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -461,6 +500,9 @@ export const deleteDraftSalesInvoiceLine = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDraftSalesInvoice = defineServiceFn({
+  output: rows.salesInvoice
+    .pick({ invoiceId: true })
+    .meta({ table: "salesInvoice" }),
   input: z.object({ invoiceId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -495,6 +537,9 @@ export const deleteDraftSalesInvoice = defineServiceFn({
  * @mcp destructive
  */
 export const voidSalesInvoice = defineServiceFn({
+  output: rows.salesInvoice
+    .pick({ invoiceId: true })
+    .meta({ table: "salesInvoice" }),
   input: z.object({ invoiceId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -544,6 +589,9 @@ export const voidSalesInvoice = defineServiceFn({
  * @mcp
  */
 export const sendSalesInvoice = defineServiceFn({
+  output: rows.salesInvoice
+    .pick({ invoiceId: true })
+    .meta({ table: "salesInvoice" }),
   input: z.object({ invoiceId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -600,6 +648,25 @@ export const sendSalesInvoice = defineServiceFn({
  * @mcp
  */
 export const postSalesInvoice = defineServiceFn({
+  output: z.union([
+    z.object({
+      violations: z.array(
+        z.object({
+          ruleId: z.string(),
+          severity: z.enum(["error", "warn"]),
+          message: z.string(),
+          lineId: z.string().nullable().optional()
+        })
+      ),
+      ruleNames: z.record(z.string(), z.string())
+    }),
+    z.object({
+      invoiceId: z.string(),
+      sentVia: z.enum(["Email", "Stripe"]).nullable(),
+      warning: z.string().nullable()
+    }),
+    z.null()
+  ]),
   input: salesInvoicePostValidator.safeExtend({
     invoiceId: z.string(),
     acknowledged: z.boolean().default(false),
@@ -831,6 +898,9 @@ export const postSalesInvoice = defineServiceFn({
  * @mcp
  */
 export const createPurchaseInvoice = defineServiceFn({
+  output: rows.purchaseInvoice
+    .pick({ id: true, invoiceId: true })
+    .meta({ table: "purchaseInvoice" }),
   input: purchaseInvoiceValidator.safeExtend({
     customFields: customFieldValues.optional(),
     lines: z
@@ -1036,6 +1106,10 @@ export const updatePurchaseInvoiceField = defineServiceFn({
  * @mcp
  */
 export const postPurchaseInvoice = defineServiceFn({
+  output: z.object({
+    invoiceId: z.string(),
+    receiptId: z.string().nullable()
+  }),
   input: z.object({
     invoiceId: z.string(),
     skipReceiptPost: z.boolean().default(false)
@@ -1196,6 +1270,9 @@ export const postPurchaseInvoice = defineServiceFn({
  * @mcp destructive
  */
 export const voidPurchaseInvoice = defineServiceFn({
+  output: rows.purchaseInvoice
+    .pick({ invoiceId: true })
+    .meta({ table: "purchaseInvoice" }),
   input: z.object({ invoiceId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1257,6 +1334,9 @@ export const voidPurchaseInvoice = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDraftPurchaseInvoice = defineServiceFn({
+  output: rows.purchaseInvoice
+    .pick({ invoiceId: true })
+    .meta({ table: "purchaseInvoice" }),
   input: z.object({ invoiceId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -1290,6 +1370,10 @@ export const deleteDraftPurchaseInvoice = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
+  output: z.object({
+    invoiceId: z.string(),
+    lineId: z.string()
+  }),
   input: z.object({ invoiceId: z.string(), lineId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -1331,6 +1415,9 @@ export const deleteDraftPurchaseInvoiceLine = defineServiceFn({
  * @mcp
  */
 export const mapPurchaseInvoiceLines = defineServiceFn({
+  output: z.object({
+    failed: z.number()
+  }),
   input: z.object({
     invoiceId: z.string(),
     mappings: z.array(
@@ -1503,6 +1590,11 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
  * @mcp
  */
 export const createPayment = defineServiceFn({
+  output: z.object({
+    id: z.string(),
+    paymentId: z.string(),
+    warning: z.string().nullable()
+  }),
   input: paymentValidator.safeExtend({
     customFields: customFieldValues.optional(),
     seedInvoiceIds: z.array(z.string()).default([]),
@@ -1617,6 +1709,7 @@ export const createPayment = defineServiceFn({
  * @mcp
  */
 export const postPayment = defineServiceFn({
+  output: rows.payment.pick({ paymentId: true }).meta({ table: "payment" }),
   input: z.object({ paymentId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1663,6 +1756,7 @@ export const postPayment = defineServiceFn({
  * @mcp destructive
  */
 export const voidPayment = defineServiceFn({
+  output: rows.payment.pick({ paymentId: true }).meta({ table: "payment" }),
   input: z.object({ paymentId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1697,6 +1791,7 @@ export const voidPayment = defineServiceFn({
  * @mcp
  */
 export const postMemo = defineServiceFn({
+  output: rows.memo.pick({ memoId: true }).meta({ table: "memo" }),
   input: z.object({ memoId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1729,6 +1824,7 @@ export const postMemo = defineServiceFn({
  * @mcp destructive
  */
 export const voidMemo = defineServiceFn({
+  output: rows.memo.pick({ memoId: true }).meta({ table: "memo" }),
   input: z.object({ memoId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1762,6 +1858,10 @@ export const voidMemo = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDraftMemo = defineServiceFn({
+  output: z.object({
+    memoId: z.string(),
+    party: z.string()
+  }),
   input: z.object({ memoId: z.string() }),
   permission: { delete: "invoicing" },
 
@@ -1813,6 +1913,7 @@ export const deleteDraftMemo = defineServiceFn({
  * @mcp destructive
  */
 export const voidCharge = defineServiceFn({
+  output: rows.charge.pick({ chargeId: true }).meta({ table: "charge" }),
   input: z.object({ chargeId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -1851,6 +1952,17 @@ const adjustInput = z.object({ asOfDate: z.string().optional() });
  * @mcp
  */
 export const adjustReceivables = defineServiceFn({
+  output: z.union([
+    z.object({
+      journalId: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      journalId: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: adjustInput,
   permission: { create: "accounting" },
   run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "receivables", asOfDate)
@@ -1869,6 +1981,17 @@ export const adjustReceivables = defineServiceFn({
  * @mcp
  */
 export const adjustPayables = defineServiceFn({
+  output: z.union([
+    z.object({
+      journalId: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      journalId: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: adjustInput,
   permission: { create: "accounting" },
   run: (ctx, { asOfDate }) => service.adjustTieOut(ctx, "payables", asOfDate)
@@ -1895,6 +2018,9 @@ const reimbursementInput = reimbursementUpdateValidator.safeExtend({
  * @mcp
  */
 export const saveReimbursement = defineServiceFn({
+  output: rows.reimbursement
+    .pick({ reimbursementId: true })
+    .meta({ table: "reimbursement" }),
   input: reimbursementInput,
   permission: { update: "invoicing" },
 
@@ -1959,6 +2085,9 @@ export const saveReimbursement = defineServiceFn({
  * @mcp
  */
 export const saveAndPostReimbursement = defineServiceFn({
+  output: rows.reimbursement
+    .pick({ reimbursementId: true })
+    .meta({ table: "reimbursement" }),
   input: reimbursementInput,
   permission: { update: "invoicing" },
 
@@ -1990,6 +2119,9 @@ export const saveAndPostReimbursement = defineServiceFn({
  * @mcp
  */
 export const postReimbursement = defineServiceFn({
+  output: rows.reimbursement
+    .pick({ reimbursementId: true })
+    .meta({ table: "reimbursement" }),
   input: z.object({ reimbursementId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -2036,6 +2168,9 @@ export const postReimbursement = defineServiceFn({
  * @mcp destructive
  */
 export const voidReimbursement = defineServiceFn({
+  output: rows.reimbursement
+    .pick({ reimbursementId: true })
+    .meta({ table: "reimbursement" }),
   input: z.object({ reimbursementId: z.string() }),
   permission: { update: "invoicing" },
 
@@ -2074,6 +2209,17 @@ export const voidReimbursement = defineServiceFn({
  * @mcp
  */
 export const payReimbursement = defineServiceFn({
+  output: z.union([
+    z.object({
+      paymentId: z.string(),
+      warning: z.string()
+    }),
+    z.object({
+      paymentId: z.string(),
+      warning: z.null()
+    }),
+    z.null()
+  ]),
   input: reimbursementPaymentValidator.safeExtend({
     reimbursementId: z.string()
   }),
@@ -2220,6 +2366,17 @@ export const payReimbursement = defineServiceFn({
  * @mcp
  */
 export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      convertedId: z.null().optional()
+    }),
+    z.object({
+      convertedId: z.string(),
+      id: z.null().optional()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
@@ -2249,6 +2406,17 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
  * @mcp
  */
 export const createSalesInvoiceFromSalesOrder = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      convertedId: z.null().optional()
+    }),
+    z.object({
+      convertedId: z.string(),
+      id: z.null().optional()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({ salesOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
@@ -2271,6 +2439,17 @@ export const createSalesInvoiceFromSalesOrder = defineServiceFn({
  * @mcp
  */
 export const createSalesInvoiceFromShipment = defineServiceFn({
+  output: z.union([
+    z.object({
+      id: z.string(),
+      convertedId: z.null().optional()
+    }),
+    z.object({
+      convertedId: z.string(),
+      id: z.null().optional()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
@@ -2293,6 +2472,158 @@ export const createSalesInvoiceFromShipment = defineServiceFn({
  * @mcp read
  */
 export const getPurchaseInvoice = defineServiceFn({
+  output: rows.purchaseInvoices
+    .pick({
+      assignee: true,
+      balance: true,
+      baseStatus: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      dateDue: true,
+      dateIssued: true,
+      datePaid: true,
+      exchangeRate: true,
+      exchangeRateUpdatedAt: true,
+      id: true,
+      invoiceId: true,
+      invoiceSupplierContactId: true,
+      invoiceSupplierId: true,
+      invoiceSupplierLocationId: true,
+      itemType: true,
+      locationId: true,
+      orderTotal: true,
+      paymentTermId: true,
+      paymentTermName: true,
+      postingDate: true,
+      purchaseOrderIds: true,
+      purchaseOrderReadableIds: true,
+      status: true,
+      subtotal: true,
+      supplierId: true,
+      supplierInteractionId: true,
+      supplierReference: true,
+      thumbnailPath: true,
+      totalAmount: true,
+      totalDiscount: true,
+      totalTax: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseInvoice" }),
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2312,6 +2643,66 @@ export const getPurchaseInvoice = defineServiceFn({
  * @mcp read
  */
 export const getPurchaseInvoices = defineServiceFn({
+  output: z
+    .array(
+      rows.purchaseInvoices
+        .pick({
+          id: true,
+          invoiceId: true,
+          supplierId: true,
+          invoiceSupplierId: true,
+          supplierReference: true,
+          purchaseOrderIds: true,
+          purchaseOrderReadableIds: true,
+          postingDate: true,
+          dateIssued: true,
+          dateDue: true,
+          datePaid: true,
+          balance: true,
+          assignee: true,
+          createdBy: true,
+          createdAt: true,
+          updatedBy: true,
+          updatedAt: true,
+          companyId: true,
+          thumbnailPath: true,
+          itemType: true,
+          orderTotal: true,
+          status: true,
+          paymentTermName: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "purchaseInvoice" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2341,6 +2732,77 @@ export const getPurchaseInvoices = defineServiceFn({
  * @mcp read
  */
 export const getPurchaseInvoiceDelivery = defineServiceFn({
+  output: rows.purchaseInvoiceDelivery
+    .pick({
+      companyId: true,
+      id: true,
+      incoterm: true,
+      incotermLocation: true,
+      locationId: true,
+      shippingMethodId: true,
+      shippingTermId: true,
+      supplierShippingCost: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseInvoiceDelivery" }),
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2360,6 +2822,121 @@ export const getPurchaseInvoiceDelivery = defineServiceFn({
  * @mcp read
  */
 export const getPurchaseInvoiceLines = defineServiceFn({
+  output: z.array(
+    rows.purchaseInvoiceLines
+      .pick({
+        accountId: true,
+        accountName: true,
+        assetId: true,
+        assetName: true,
+        assetReadableId: true,
+        companyId: true,
+        conversionFactor: true,
+        costCenterId: true,
+        createdAt: true,
+        createdBy: true,
+        description: true,
+        exchangeRate: true,
+        extendedPrice: true,
+        id: true,
+        inventoryUnitOfMeasureCode: true,
+        invoiceId: true,
+        invoiceLineType: true,
+        itemDescription: true,
+        itemId: true,
+        itemName: true,
+        itemReadableId: true,
+        jobOperationId: true,
+        leaseId: true,
+        leaseName: true,
+        leasePaymentId: true,
+        leaseReadableId: true,
+        locationId: true,
+        modelUploadId: true,
+        ownerId: true,
+        projectId: true,
+        purchaseOrderId: true,
+        purchaseOrderLineId: true,
+        purchaseUnitOfMeasureCode: true,
+        quantity: true,
+        requiredDate: true,
+        serviceId: true,
+        shippingCost: true,
+        sortOrder: true,
+        storageUnitId: true,
+        supplierExtendedPrice: true,
+        supplierPartId: true,
+        supplierShippingCost: true,
+        supplierTaxAmount: true,
+        supplierUnitPrice: true,
+        tags: true,
+        taxAmount: true,
+        taxPercent: true,
+        thumbnailPath: true,
+        totalAmount: true,
+        unitCost: true,
+        unitPrice: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "purchaseInvoiceLine" })
+  ),
   input: z.looseObject({ purchaseInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2379,6 +2956,175 @@ export const getPurchaseInvoiceLines = defineServiceFn({
  * @mcp read
  */
 export const getPurchaseInvoiceLine = defineServiceFn({
+  output: rows.purchaseInvoiceLines
+    .pick({
+      accountId: true,
+      accountName: true,
+      assetId: true,
+      assetName: true,
+      assetReadableId: true,
+      companyId: true,
+      conversionFactor: true,
+      costCenterId: true,
+      createdAt: true,
+      createdBy: true,
+      description: true,
+      exchangeRate: true,
+      extendedPrice: true,
+      id: true,
+      inventoryUnitOfMeasureCode: true,
+      invoiceId: true,
+      invoiceLineType: true,
+      itemDescription: true,
+      itemId: true,
+      itemName: true,
+      itemReadableId: true,
+      jobOperationId: true,
+      leaseId: true,
+      leaseName: true,
+      leasePaymentId: true,
+      leaseReadableId: true,
+      locationId: true,
+      modelUploadId: true,
+      ownerId: true,
+      projectId: true,
+      purchaseOrderId: true,
+      purchaseOrderLineId: true,
+      purchaseUnitOfMeasureCode: true,
+      quantity: true,
+      requiredDate: true,
+      serviceId: true,
+      shippingCost: true,
+      sortOrder: true,
+      storageUnitId: true,
+      supplierExtendedPrice: true,
+      supplierPartId: true,
+      supplierShippingCost: true,
+      supplierTaxAmount: true,
+      supplierUnitPrice: true,
+      tags: true,
+      taxAmount: true,
+      taxPercent: true,
+      thumbnailPath: true,
+      totalAmount: true,
+      unitCost: true,
+      unitPrice: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "purchaseInvoiceLine" }),
   input: z.looseObject({ purchaseInvoiceLineId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2398,6 +3144,219 @@ export const getPurchaseInvoiceLine = defineServiceFn({
  * @mcp read
  */
 export const getSalesInvoice = defineServiceFn({
+  output: rows.salesInvoices
+    .pick({
+      assignee: true,
+      automationHoldReason: true,
+      balance: true,
+      baseStatus: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      customerId: true,
+      customerReference: true,
+      dateDue: true,
+      dateIssued: true,
+      datePaid: true,
+      exchangeRate: true,
+      exchangeRateUpdatedAt: true,
+      id: true,
+      invoiceCustomerContactId: true,
+      invoiceCustomerId: true,
+      invoiceCustomerLocationId: true,
+      invoiceId: true,
+      invoiceTotal: true,
+      itemType: true,
+      lines: true,
+      locationId: true,
+      needsReview: true,
+      opportunityId: true,
+      paymentTermId: true,
+      paymentTermName: true,
+      postingDate: true,
+      sendError: true,
+      sentAt: true,
+      sentTo: true,
+      shipmentId: true,
+      status: true,
+      subtotal: true,
+      tags: true,
+      thumbnailPath: true,
+      totalAmount: true,
+      totalDiscount: true,
+      totalTax: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      externalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      internalNotes: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "salesInvoice" }),
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2417,6 +3376,68 @@ export const getSalesInvoice = defineServiceFn({
  * @mcp read
  */
 export const getSalesInvoices = defineServiceFn({
+  output: z
+    .array(
+      rows.salesInvoices
+        .pick({
+          id: true,
+          invoiceId: true,
+          status: true,
+          customerId: true,
+          customerReference: true,
+          invoiceCustomerId: true,
+          postingDate: true,
+          dateIssued: true,
+          dateDue: true,
+          datePaid: true,
+          balance: true,
+          assignee: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true,
+          thumbnailPath: true,
+          itemType: true,
+          invoiceTotal: true,
+          paymentTermName: true,
+          needsReview: true,
+          automationHoldReason: true,
+          sendError: true,
+          sentAt: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "salesInvoice" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -2446,6 +3467,7 @@ export const getSalesInvoices = defineServiceFn({
  * @mcp read
  */
 export const getSalesInvoiceShipment = defineServiceFn({
+  output: rows.salesInvoiceShipment,
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2465,6 +3487,151 @@ export const getSalesInvoiceShipment = defineServiceFn({
  * @mcp read
  */
 export const getSalesInvoiceLines = defineServiceFn({
+  output: z.array(
+    rows.salesInvoiceLines
+      .pick({
+        accountId: true,
+        addOnCost: true,
+        assetId: true,
+        assetName: true,
+        assetReadableId: true,
+        companyId: true,
+        convertedAddOnCost: true,
+        convertedNetUnitPrice: true,
+        convertedNonTaxableAddOnCost: true,
+        convertedSetupPrice: true,
+        convertedShippingCost: true,
+        convertedUnitPrice: true,
+        createdAt: true,
+        createdBy: true,
+        customerContractId: true,
+        customerContractInvoiceLineId: true,
+        customerContractLineId: true,
+        customerPartId: true,
+        description: true,
+        discountPercent: true,
+        exchangeRate: true,
+        id: true,
+        invoiceId: true,
+        invoiceLineType: true,
+        itemDescription: true,
+        itemId: true,
+        itemName: true,
+        itemReadableId: true,
+        locationId: true,
+        methodType: true,
+        modelUploadId: true,
+        netUnitPrice: true,
+        nonTaxableAddOnCost: true,
+        opportunityId: true,
+        projectId: true,
+        quantity: true,
+        rentalAgreementChargeId: true,
+        rentalAgreementId: true,
+        rentalAgreementLineId: true,
+        rentalBillingPeriodId: true,
+        rentalLineType: true,
+        salesOrderId: true,
+        salesOrderLineId: true,
+        serviceEndDate: true,
+        serviceStartDate: true,
+        setupPrice: true,
+        shippingCost: true,
+        sortOrder: true,
+        storageUnitId: true,
+        taxPercent: true,
+        thumbnailPath: true,
+        unitCost: true,
+        unitOfMeasureCode: true,
+        unitPrice: true,
+        updatedAt: true,
+        updatedBy: true
+      })
+      .extend({
+        customFields: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        externalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ]),
+        internalNotes: z.union([
+          z.string(),
+          z.number(),
+          z.boolean(),
+          z.record(
+            z.string(),
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.array(
+            z.union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.record(z.string(), z.unknown()),
+              z.array(z.unknown()),
+              z.null()
+            ])
+          ),
+          z.null()
+        ])
+      })
+      .meta({ table: "salesInvoiceLine" })
+  ),
   input: z.looseObject({ salesInvoiceId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2484,6 +3651,7 @@ export const getSalesInvoiceLines = defineServiceFn({
  * @mcp read
  */
 export const getSalesInvoiceLine = defineServiceFn({
+  output: rows.salesInvoiceLine,
   input: z.looseObject({ salesInvoiceLineId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2503,6 +3671,9 @@ export const getSalesInvoiceLine = defineServiceFn({
  * @mcp
  */
 export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
+  output: z.array(
+    rows.purchaseInvoice.pick({ id: true }).meta({ table: "purchaseInvoice" })
+  ),
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
@@ -2522,6 +3693,9 @@ export const updatePurchaseInvoiceExchangeRate = defineServiceFn({
  * @mcp
  */
 export const updateSalesInvoiceExchangeRate = defineServiceFn({
+  output: z.array(
+    rows.exchangeRate.pick({ id: true }).meta({ table: "exchangeRate" })
+  ),
   input: z.looseObject({ id: z.string(), exchangeRate: z.number() }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
@@ -2541,6 +3715,9 @@ export const updateSalesInvoiceExchangeRate = defineServiceFn({
  * @mcp
  */
 export const updatePurchaseInvoice = defineServiceFn({
+  output: rows.purchaseInvoice
+    .pick({ id: true })
+    .meta({ table: "purchaseInvoice" }),
   input: z.looseObject({
     id: z.string(),
     invoiceId: z.string().optional(),
@@ -2576,6 +3753,9 @@ export const updatePurchaseInvoice = defineServiceFn({
  * @mcp
  */
 export const upsertPurchaseInvoiceDelivery = defineServiceFn({
+  output: rows.purchaseInvoiceDelivery
+    .pick({ id: true })
+    .meta({ table: "purchaseInvoiceDelivery" }),
   input: z.looseObject({
     id: z.string(),
     locationId: z.string().optional(),
@@ -2621,6 +3801,9 @@ export const upsertPurchaseInvoiceDelivery = defineServiceFn({
  * @mcp
  */
 export const createPurchaseInvoiceLine = defineServiceFn({
+  output: rows.purchaseInvoiceLine
+    .pick({ id: true })
+    .meta({ table: "purchaseInvoiceLine" }),
   input: z.looseObject({
     invoiceId: z.string().min(1),
     invoiceLineType: z.enum([
@@ -2716,6 +3899,9 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * @mcp
  */
 export const updatePurchaseInvoiceLine = defineServiceFn({
+  output: rows.purchaseInvoiceLine
+    .pick({ id: true })
+    .meta({ table: "purchaseInvoiceLine" }),
   input: z
     .looseObject({
       invoiceId: z.string().min(1),
@@ -2855,6 +4041,9 @@ export const updatePurchaseInvoiceLineOrder = defineServiceFn({
  * @mcp destructive
  */
 export const insertSalesInvoice = defineServiceFn({
+  output: rows.salesInvoice
+    .pick({ id: true, invoiceId: true })
+    .meta({ table: "salesInvoice" }),
   input: z.looseObject({
     customerId: z.string(),
     invoiceId: z.string().optional(),
@@ -2889,6 +4078,9 @@ export const insertSalesInvoice = defineServiceFn({
  * @mcp
  */
 export const upsertSalesInvoiceShipment = defineServiceFn({
+  output: rows.salesInvoiceShipment
+    .pick({ id: true })
+    .meta({ table: "salesInvoiceShipment" }),
   input: z.looseObject({
     id: z.string(),
     locationId: z.string().optional(),
@@ -2954,6 +4146,95 @@ export const updateSalesInvoiceLineOrder = defineServiceFn({
  * @mcp read
  */
 export const getPayment = defineServiceFn({
+  output: rows.payment
+    .pick({
+      bankAccount: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      customerContractId: true,
+      customerId: true,
+      employeeId: true,
+      exchangeRate: true,
+      id: true,
+      journalId: true,
+      memo: true,
+      paymentDate: true,
+      paymentId: true,
+      paymentType: true,
+      postedAt: true,
+      postedBy: true,
+      postingDate: true,
+      reference: true,
+      rentalAgreementId: true,
+      salesOrderId: true,
+      status: true,
+      supplierId: true,
+      totalAmount: true,
+      updatedAt: true,
+      updatedBy: true,
+      voidedAt: true,
+      voidedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "payment" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -2974,6 +4255,71 @@ export const getPayment = defineServiceFn({
  * @mcp read
  */
 export const getPayments = defineServiceFn({
+  output: z
+    .array(
+      rows.payment
+        .pick({
+          bankAccount: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          customerContractId: true,
+          customerId: true,
+          employeeId: true,
+          exchangeRate: true,
+          id: true,
+          journalId: true,
+          memo: true,
+          paymentDate: true,
+          paymentId: true,
+          paymentType: true,
+          postedAt: true,
+          postedBy: true,
+          postingDate: true,
+          reference: true,
+          rentalAgreementId: true,
+          salesOrderId: true,
+          status: true,
+          supplierId: true,
+          totalAmount: true,
+          updatedAt: true,
+          updatedBy: true,
+          voidedAt: true,
+          voidedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "payment" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3007,6 +4353,139 @@ export const getPayments = defineServiceFn({
  * @mcp read
  */
 export const getCharge = defineServiceFn({
+  output: rows.charge
+    .pick({
+      amount: true,
+      cardAccountId: true,
+      cardHolderName: true,
+      cardLast4: true,
+      chargeId: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      exchangeRate: true,
+      id: true,
+      integration: true,
+      journalId: true,
+      memo: true,
+      merchantName: true,
+      offsetAccountId: true,
+      postedAt: true,
+      postedBy: true,
+      postingDate: true,
+      status: true,
+      supplierId: true,
+      transactionDate: true,
+      type: true,
+      updatedAt: true,
+      updatedBy: true,
+      voidedAt: true,
+      voidedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      chargeLine: z.array(
+        z.object({
+          accountId: z.string(),
+          amount: z.number(),
+          chargeId: z.string(),
+          companyId: z.string(),
+          costCenterId: z.string().nullable(),
+          createdAt: z.string(),
+          createdBy: z.string(),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          description: z.string().nullable(),
+          id: z.string(),
+          projectElementId: z.string().nullable(),
+          projectId: z.string().nullable(),
+          sequence: z.number(),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable()
+        })
+      )
+    })
+    .meta({ table: "charge" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3027,6 +4506,70 @@ export const getCharge = defineServiceFn({
  * @mcp read
  */
 export const getCharges = defineServiceFn({
+  output: z
+    .array(
+      rows.charge
+        .pick({
+          amount: true,
+          cardAccountId: true,
+          cardHolderName: true,
+          cardLast4: true,
+          chargeId: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          exchangeRate: true,
+          id: true,
+          integration: true,
+          journalId: true,
+          memo: true,
+          merchantName: true,
+          offsetAccountId: true,
+          postedAt: true,
+          postedBy: true,
+          postingDate: true,
+          status: true,
+          supplierId: true,
+          transactionDate: true,
+          type: true,
+          updatedAt: true,
+          updatedBy: true,
+          voidedAt: true,
+          voidedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "charge" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3060,6 +4603,145 @@ export const getCharges = defineServiceFn({
  * @mcp read
  */
 export const getReimbursement = defineServiceFn({
+  output: rows.reimbursement
+    .pick({
+      amount: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      employeeId: true,
+      exchangeRate: true,
+      id: true,
+      integration: true,
+      journalId: true,
+      notes: true,
+      payableAccountId: true,
+      postedAt: true,
+      postedBy: true,
+      postingDate: true,
+      reference: true,
+      reimbursementDate: true,
+      reimbursementId: true,
+      status: true,
+      updatedAt: true,
+      updatedBy: true,
+      voidedAt: true,
+      voidedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ]),
+      reimbursementLine: z.array(
+        z.object({
+          accountId: z.string(),
+          amount: z.number(),
+          companyId: z.string(),
+          costCenterId: z.string().nullable(),
+          createdAt: z.string(),
+          createdBy: z.string(),
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ]),
+          description: z.string().nullable(),
+          id: z.string(),
+          projectElementId: z.string().nullable(),
+          projectId: z.string().nullable(),
+          reimbursementId: z.string(),
+          sequence: z.number(),
+          updatedAt: z.string().nullable(),
+          updatedBy: z.string().nullable(),
+          reimbursementLineDimension: z.array(
+            z.object({
+              companyId: z.string(),
+              createdAt: z.string(),
+              dimensionId: z.string(),
+              id: z.string(),
+              reimbursementLineId: z.string(),
+              valueId: z.string()
+            })
+          )
+        })
+      )
+    })
+    .meta({ table: "reimbursement" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3080,6 +4762,66 @@ export const getReimbursement = defineServiceFn({
  * @mcp read
  */
 export const getReimbursements = defineServiceFn({
+  output: z
+    .array(
+      rows.reimbursement
+        .pick({
+          amount: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          employeeId: true,
+          exchangeRate: true,
+          id: true,
+          integration: true,
+          journalId: true,
+          notes: true,
+          payableAccountId: true,
+          postedAt: true,
+          postedBy: true,
+          postingDate: true,
+          reference: true,
+          reimbursementDate: true,
+          reimbursementId: true,
+          status: true,
+          updatedAt: true,
+          updatedBy: true,
+          voidedAt: true,
+          voidedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "reimbursement" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3110,6 +4852,16 @@ export const getReimbursements = defineServiceFn({
  * @mcp read
  */
 export const getReimbursementRelatedItems = defineServiceFn({
+  output: z.object({
+    payments: z.array(
+      z.object({
+        id: z.string(),
+        status: z.enum(["Draft", "Posted", "Voided"]),
+        paymentId: z.string(),
+        paymentDate: z.string()
+      })
+    )
+  }),
   input: z.looseObject({ reimbursementId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3127,6 +4879,7 @@ export const getReimbursementRelatedItems = defineServiceFn({
  * @mcp read
  */
 export const getInvoiceSettlements = defineServiceFn({
+  output: z.array(z.unknown()),
   input: z.looseObject({ paymentId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3147,6 +4900,42 @@ export const getInvoiceSettlements = defineServiceFn({
  * @mcp read
  */
 export const getInvoiceSettlementsForInvoice = defineServiceFn({
+  output: z.array(
+    rows.invoiceSettlement
+      .pick({
+        id: true,
+        sourceAmount: true,
+        appliedAmount: true,
+        discountAmount: true,
+        writeOffAmount: true,
+        targetExchangeRate: true,
+        appliedDate: true
+      })
+      .extend({
+        fxGainLossAmount: z.number().nullable(),
+        sourceExchangeRate: z.number().nullable(),
+        source: z.union([
+          z.object({
+            type: z.literal("payment"),
+            id: z.string(),
+            readableId: z.string(),
+            status: z.string().nullable(),
+            date: z.string().nullable(),
+            currencyCode: z.string()
+          }),
+          z.object({
+            type: z.literal("memo"),
+            id: z.string(),
+            readableId: z.string(),
+            status: z.string().nullable(),
+            date: z.string().nullable(),
+            currencyCode: z.string(),
+            direction: z.string()
+          })
+        ])
+      })
+      .meta({ table: "invoiceSettlement" })
+  ),
   input: z.looseObject({
     side: z.enum(["sales", "purchase"]),
     invoiceId: z.string()
@@ -3171,6 +4960,35 @@ export const getInvoiceSettlementsForInvoice = defineServiceFn({
  * @mcp read
  */
 export const getMemoApplications = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      appliedAmount: z.number(),
+      appliedDate: z.string(),
+      target: z.union([
+        z.object({
+          type: z.literal("salesInvoice"),
+          id: z.string(),
+          readableId: z.string()
+        }),
+        z.object({
+          type: z.literal("purchaseInvoice"),
+          id: z.string(),
+          readableId: z.string()
+        }),
+        z.object({
+          type: z.literal("memo"),
+          id: z.string(),
+          readableId: z.string()
+        }),
+        z.object({
+          type: z.literal("reimbursement"),
+          id: z.string(),
+          readableId: z.string()
+        })
+      ])
+    })
+  ),
   input: z.looseObject({ memoId: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3191,6 +5009,28 @@ export const getMemoApplications = defineServiceFn({
  * @mcp read
  */
 export const getOpenSalesInvoicesForCustomer = defineServiceFn({
+  output: z.array(
+    rows.salesInvoices
+      .pick({
+        invoiceId: true,
+        status: true,
+        exchangeRate: true,
+        paymentTermId: true,
+        totalAmount: true,
+        dateDue: true,
+        dateIssued: true
+      })
+      .extend({
+        id: z.string(),
+        currencyCode: z.string(),
+        balance: z.number(),
+        remainingDocument: z.number(),
+        rentalAgreementIds: z.array(z.string()),
+        salesOrderIds: z.array(z.string()),
+        customerContractIds: z.array(z.string())
+      })
+      .meta({ table: "salesInvoice" })
+  ),
   input: z.looseObject({
     customerId: z.string(),
     currencyCode: z.string().optional()
@@ -3215,6 +5055,28 @@ export const getOpenSalesInvoicesForCustomer = defineServiceFn({
  * @mcp read
  */
 export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
+  output: z.array(
+    rows.purchaseInvoices
+      .pick({
+        invoiceId: true,
+        status: true,
+        exchangeRate: true,
+        paymentTermId: true,
+        totalAmount: true,
+        dateDue: true,
+        dateIssued: true
+      })
+      .extend({
+        id: z.string(),
+        currencyCode: z.string(),
+        balance: z.number(),
+        remainingDocument: z.number(),
+        rentalAgreementIds: z.array(z.string()),
+        salesOrderIds: z.array(z.string()),
+        customerContractIds: z.array(z.string())
+      })
+      .meta({ table: "purchaseInvoice" })
+  ),
   input: z.looseObject({
     supplierId: z.string(),
     currencyCode: z.string().optional()
@@ -3244,6 +5106,22 @@ export const getOpenPurchaseInvoicesForSupplier = defineServiceFn({
  * @mcp read
  */
 export const getOpenReimbursementsForEmployee = defineServiceFn({
+  output: z.array(
+    rows.reimbursement
+      .pick({
+        id: true,
+        reimbursementId: true,
+        reimbursementDate: true,
+        currencyCode: true,
+        exchangeRate: true
+      })
+      .extend({
+        totalAmount: z.number(),
+        balance: z.number(),
+        remainingDocument: z.number()
+      })
+      .meta({ table: "reimbursement" })
+  ),
   input: z.looseObject({
     employeeId: z.string(),
     currencyCode: z.string().optional()
@@ -3268,6 +5146,10 @@ export const getOpenReimbursementsForEmployee = defineServiceFn({
  * @mcp read
  */
 export const getPaymentCurrencyConfiguration = defineServiceFn({
+  output: z.object({
+    baseCurrencyCode: z.string(),
+    currencyDecimals: z.number()
+  }),
   input: z.looseObject({ currencyCode: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3285,6 +5167,27 @@ export const getPaymentCurrencyConfiguration = defineServiceFn({
  * @mcp read
  */
 export const getAvailableOnAccountCreditSources = defineServiceFn({
+  output: z.object({
+    sources: z.array(
+      z.object({
+        paymentId: z.string(),
+        postingDate: z.string(),
+        exchangeRate: z.number(),
+        remainingDocument: z.number(),
+        remainingBase: z.number(),
+        scope: z
+          .object({
+            type: z.enum(["customerContract", "rentalAgreement", "salesOrder"]),
+            id: z.string(),
+            readableId: z.string().nullable().optional()
+          })
+          .nullable()
+          .optional()
+      })
+    ),
+    availableDocumentAmount: z.number(),
+    availableBaseAmount: z.number()
+  }),
   input: z.looseObject({
     party: z.union([
       z.looseObject({
@@ -3321,6 +5224,9 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
  * @mcp
  */
 export const updatePayment = defineServiceFn({
+  output: rows.payment
+    .pick({ id: true, paymentId: true })
+    .meta({ table: "payment" }),
   input: z
     .looseObject({
       paymentType: z.enum(["Receipt", "Disbursement"]),
@@ -3368,6 +5274,7 @@ export const updatePayment = defineServiceFn({
  * @mcp destructive
  */
 export const deletePayment = defineServiceFn({
+  output: z.array(rows.payment.pick({ id: true }).meta({ table: "payment" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "invoicing" },
   async run(ctx, input) {
@@ -3422,6 +5329,95 @@ export const replaceInvoiceSettlements = defineServiceFn({
  * @mcp read
  */
 export const getMemo = defineServiceFn({
+  output: rows.memo
+    .pick({
+      amount: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      currencyCode: true,
+      customerContractId: true,
+      customerId: true,
+      direction: true,
+      exchangeRate: true,
+      id: true,
+      journalId: true,
+      memoDate: true,
+      memoId: true,
+      notes: true,
+      postedAt: true,
+      postedBy: true,
+      postingDate: true,
+      purchaseReturnOrderId: true,
+      reasonAccount: true,
+      reference: true,
+      rentalAgreementId: true,
+      salesReturnOrderId: true,
+      status: true,
+      supplierId: true,
+      updatedAt: true,
+      updatedBy: true,
+      voidedAt: true,
+      voidedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "memo" }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3442,6 +5438,71 @@ export const getMemo = defineServiceFn({
  * @mcp read
  */
 export const getMemos = defineServiceFn({
+  output: z
+    .array(
+      rows.memo
+        .pick({
+          amount: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          currencyCode: true,
+          customerContractId: true,
+          customerId: true,
+          direction: true,
+          exchangeRate: true,
+          id: true,
+          journalId: true,
+          memoDate: true,
+          memoId: true,
+          notes: true,
+          postedAt: true,
+          postedBy: true,
+          postingDate: true,
+          purchaseReturnOrderId: true,
+          reasonAccount: true,
+          reference: true,
+          rentalAgreementId: true,
+          salesReturnOrderId: true,
+          status: true,
+          supplierId: true,
+          updatedAt: true,
+          updatedBy: true,
+          voidedAt: true,
+          voidedBy: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "memo" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -3477,6 +5538,7 @@ export const getMemos = defineServiceFn({
  * @mcp
  */
 export const createMemo = defineServiceFn({
+  output: rows.memo.pick({ id: true, memoId: true }).meta({ table: "memo" }),
   input: z.looseObject({
     direction: z.enum(["Credit", "Debit"]),
     customerId: z.string().optional(),
@@ -3521,6 +5583,7 @@ export const createMemo = defineServiceFn({
  * @mcp
  */
 export const updateMemo = defineServiceFn({
+  output: rows.memo.pick({ id: true, memoId: true }).meta({ table: "memo" }),
   input: z
     .looseObject({
       direction: z.enum(["Credit", "Debit"]),
@@ -3564,6 +5627,18 @@ export const updateMemo = defineServiceFn({
  * @mcp read
  */
 export const getAvailableCreditsForParty = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      memoId: z.string(),
+      direction: z.string(),
+      currencyCode: z.string(),
+      exchangeRate: z.number(),
+      amount: z.number(),
+      remaining: z.number(),
+      remainingDocument: z.number()
+    })
+  ),
   input: z.looseObject({
     party: z.union([
       z.looseObject({ side: z.literal("sales"), customerId: z.string() }),
@@ -3593,6 +5668,7 @@ export const getAvailableCreditsForParty = defineServiceFn({
  * @mcp read
  */
 export const getCompanyHasOpenCredits = defineServiceFn({
+  output: z.boolean().nullable(),
   input: z.looseObject({ side: z.enum(["sales", "purchase"]) }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3610,6 +5686,14 @@ export const getCompanyHasOpenCredits = defineServiceFn({
  * @mcp read
  */
 export const getStagedCreditsForPayment = defineServiceFn({
+  output: z.array(
+    z.object({
+      memoId: z.string(),
+      invoiceId: z.string(),
+      amount: z.number(),
+      sourceAmount: z.number().nullable()
+    })
+  ),
   input: z.looseObject({
     paymentId: z.string(),
     side: z.enum(["sales", "purchase"])
@@ -3662,6 +5746,11 @@ export const applyCreditsToInvoices = defineServiceFn({
  * @mcp read
  */
 export const getArTieOut = defineServiceFn({
+  output: z.object({
+    glBalance: z.number(),
+    subledgerBalance: z.number(),
+    variance: z.number()
+  }),
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3682,6 +5771,11 @@ export const getArTieOut = defineServiceFn({
  * @mcp read
  */
 export const getApTieOut = defineServiceFn({
+  output: z.object({
+    glBalance: z.number(),
+    subledgerBalance: z.number(),
+    variance: z.number()
+  }),
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3702,6 +5796,21 @@ export const getApTieOut = defineServiceFn({
  * @mcp read
  */
 export const getArOpenByCustomer = defineServiceFn({
+  output: z.array(
+    z.object({
+      currencyCode: z.string(),
+      customerId: z.string(),
+      dateDue: z.string(),
+      documentId: z.string(),
+      documentNumber: z.string(),
+      documentType: z.string(),
+      exchangeRate: z.number(),
+      openInBase: z.number(),
+      openInCurrency: z.number(),
+      settled: z.number(),
+      totalAmount: z.number()
+    })
+  ),
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3722,6 +5831,21 @@ export const getArOpenByCustomer = defineServiceFn({
  * @mcp read
  */
 export const getApOpenBySupplier = defineServiceFn({
+  output: z.array(
+    z.object({
+      currencyCode: z.string(),
+      dateDue: z.string(),
+      documentId: z.string(),
+      documentNumber: z.string(),
+      documentType: z.string(),
+      exchangeRate: z.number(),
+      openInBase: z.number(),
+      openInCurrency: z.number(),
+      settled: z.number(),
+      supplierId: z.string(),
+      totalAmount: z.number()
+    })
+  ),
   input: z.looseObject({ asOfDate: z.string() }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
@@ -3742,6 +5866,19 @@ export const getApOpenBySupplier = defineServiceFn({
  * @mcp read
  */
 export const getArAging = defineServiceFn({
+  output: z.array(
+    z.object({
+      bucket1: z.number(),
+      bucket2: z.number(),
+      bucket3: z.number(),
+      bucket4: z.number(),
+      current: z.number(),
+      customerId: z.string(),
+      paymentTerm: z.string(),
+      total: z.number(),
+      unapplied: z.number()
+    })
+  ),
   input: z.looseObject({
     asOfDate: z.string(),
     options: z
@@ -3771,6 +5908,19 @@ export const getArAging = defineServiceFn({
  * @mcp read
  */
 export const getApAging = defineServiceFn({
+  output: z.array(
+    z.object({
+      bucket1: z.number(),
+      bucket2: z.number(),
+      bucket3: z.number(),
+      bucket4: z.number(),
+      current: z.number(),
+      paymentTerm: z.string(),
+      supplierId: z.string(),
+      total: z.number(),
+      unapplied: z.number()
+    })
+  ),
   input: z.looseObject({
     asOfDate: z.string(),
     options: z

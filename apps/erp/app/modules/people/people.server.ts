@@ -4,6 +4,7 @@
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { employeeJobValidator } from "./people.models";
@@ -40,6 +41,7 @@ const shiftInput = z.object({
  * @mcp
  */
 export const createShift = defineServiceFn({
+  output: rows.shift.pick({ id: true }).meta({ table: "shift" }),
   input: shiftInput,
   permission: { create: "people" },
   async run(ctx, shift) {
@@ -74,6 +76,7 @@ export const createShift = defineServiceFn({
  * @mcp
  */
 export const updateShift = defineServiceFn({
+  output: rows.shift.pick({ id: true }).meta({ table: "shift" }),
   input: shiftInput.extend({ id: z.string().min(1) }),
   // The route gated on create; the write runs under the update policy.
   permission: { create: "people", update: "people" },
@@ -126,6 +129,9 @@ export const updateShift = defineServiceFn({
  * @mcp
  */
 export const updatePersonJob = defineServiceFn({
+  output: z.object({
+    employeeId: z.string()
+  }),
   input: employeeJobValidator.extend({
     employeeId: z.string().min(1),
     customFields: customFieldValues.optional()
@@ -302,6 +308,11 @@ export const clockOutSelf = defineServiceFn({
  * @mcp destructive
  */
 export const deleteAttribute = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ attributeId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -321,6 +332,11 @@ export const deleteAttribute = defineServiceFn({
  * @mcp destructive
  */
 export const deleteAttributeCategory = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({ attributeCategoryId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -340,6 +356,9 @@ export const deleteAttributeCategory = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDepartment = defineServiceFn({
+  output: z.array(
+    rows.department.pick({ id: true }).meta({ table: "department" })
+  ),
   input: z.looseObject({ departmentId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -359,6 +378,7 @@ export const deleteDepartment = defineServiceFn({
  * @mcp destructive
  */
 export const deleteHoliday = defineServiceFn({
+  output: z.array(rows.holiday.pick({ id: true }).meta({ table: "holiday" })),
   input: z.looseObject({ holidayId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -385,6 +405,7 @@ export const deleteHoliday = defineServiceFn({
  * @mcp destructive
  */
 export const deleteShift = defineServiceFn({
+  output: z.array(rows.shift.pick({ id: true }).meta({ table: "shift" })),
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -409,6 +430,23 @@ export const deleteShift = defineServiceFn({
  * @mcp read
  */
 export const getAttribute = defineServiceFn({
+  output: z.object({
+    active: z.boolean().nullable(),
+    attributeDataTypeId: z.number(),
+    canSelfManage: z.boolean().nullable(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    id: z.string(),
+    listOptions: z.array(z.string()).nullable(),
+    name: z.string(),
+    sortOrder: z.number(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable(),
+    userAttributeCategoryId: z.string(),
+    userAttributeCategory: z.object({
+      name: z.string()
+    })
+  }),
   input: z.looseObject({ attributeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -428,6 +466,32 @@ export const getAttribute = defineServiceFn({
  * @mcp read
  */
 export const getAttributeCategories = defineServiceFn({
+  output: z
+    .array(
+      z.object({
+        active: z.boolean().nullable(),
+        companyId: z.string().nullable(),
+        createdAt: z.string(),
+        createdBy: z.string(),
+        emoji: z.string().nullable(),
+        id: z.string(),
+        name: z.string(),
+        protected: z.boolean().nullable(),
+        public: z.boolean().nullable(),
+        updatedAt: z.string().nullable(),
+        updatedBy: z.string().nullable(),
+        userAttribute: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            attributeDataType: z.object({
+              id: z.number()
+            })
+          })
+        )
+      })
+    )
+    .nullable(),
   input: z.looseObject({
     search: z.string().nullable().optional(),
     limit: z
@@ -456,6 +520,37 @@ export const getAttributeCategories = defineServiceFn({
  * @mcp read
  */
 export const getAttributeCategory = defineServiceFn({
+  output: z.object({
+    active: z.boolean().nullable(),
+    companyId: z.string().nullable(),
+    createdAt: z.string(),
+    createdBy: z.string(),
+    emoji: z.string().nullable(),
+    id: z.string(),
+    name: z.string(),
+    protected: z.boolean().nullable(),
+    public: z.boolean().nullable(),
+    updatedAt: z.string().nullable(),
+    updatedBy: z.string().nullable(),
+    userAttribute: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        sortOrder: z.number(),
+        attributeDataType: z.object({
+          id: z.number(),
+          label: z.string(),
+          isBoolean: z.boolean(),
+          isDate: z.boolean(),
+          isList: z.boolean(),
+          isNumeric: z.boolean(),
+          isText: z.boolean(),
+          isUser: z.boolean(),
+          isFile: z.boolean()
+        })
+      })
+    )
+  }),
   input: z.looseObject({ id: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -475,6 +570,7 @@ export const getAttributeCategory = defineServiceFn({
  * @mcp read
  */
 export const getAttributeDataTypes = defineServiceFn({
+  output: z.array(rows.attributeDataType),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -491,6 +587,76 @@ export const getAttributeDataTypes = defineServiceFn({
  * @mcp read
  */
 export const getDepartment = defineServiceFn({
+  output: rows.department
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      parentDepartmentId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "department" }),
   input: z.looseObject({ departmentId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -510,6 +676,9 @@ export const getDepartment = defineServiceFn({
  * @mcp read
  */
 export const getDepartmentsList = defineServiceFn({
+  output: z.array(
+    rows.department.pick({ id: true, name: true }).meta({ table: "department" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -526,6 +695,11 @@ export const getDepartmentsList = defineServiceFn({
  * @mcp read
  */
 export const getDepartmentsTree = defineServiceFn({
+  output: z.array(
+    rows.department
+      .pick({ id: true, name: true, parentDepartmentId: true })
+      .meta({ table: "department" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -542,6 +716,83 @@ export const getDepartmentsTree = defineServiceFn({
  * @mcp read
  */
 export const getEmployeeJob = defineServiceFn({
+  output: rows.employeeJob
+    .pick({
+      companyId: true,
+      defaultStorageUnitId: true,
+      departmentId: true,
+      flsaStatus: true,
+      id: true,
+      isOfficer: true,
+      laborCategoryId: true,
+      locationId: true,
+      managerId: true,
+      shiftId: true,
+      startDate: true,
+      tags: true,
+      timesheetRequired: true,
+      title: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "employeeJob" }),
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -562,6 +813,7 @@ export const getEmployeeJob = defineServiceFn({
  * @mcp read
  */
 export const getEmployeeSummary = defineServiceFn({
+  output: rows.employeeSummary,
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -582,6 +834,77 @@ export const getEmployeeSummary = defineServiceFn({
  * @mcp read
  */
 export const getHoliday = defineServiceFn({
+  output: rows.holiday
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      date: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      year: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "holiday" }),
   input: z.looseObject({ holidayId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -598,6 +921,53 @@ export const getHoliday = defineServiceFn({
  * @mcp read
  */
 export const getHolidays = defineServiceFn({
+  output: z
+    .array(
+      rows.holiday
+        .pick({
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          date: true,
+          id: true,
+          name: true,
+          tags: true,
+          updatedAt: true,
+          updatedBy: true,
+          year: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "holiday" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -626,6 +996,7 @@ export const getHolidays = defineServiceFn({
  * @mcp read
  */
 export const getHolidayYears = defineServiceFn({
+  output: z.array(rows.holidayYears.pick({ year: true })),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -642,6 +1013,7 @@ export const getHolidayYears = defineServiceFn({
  * @mcp read
  */
 export const getPeople = defineServiceFn({
+  output: z.array(z.unknown()),
   input: z.looseObject({
     limit: z
       .number()
@@ -670,6 +1042,86 @@ export const getPeople = defineServiceFn({
  * @mcp read
  */
 export const getShift = defineServiceFn({
+  output: rows.shifts
+    .pick({
+      active: true,
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      endTime: true,
+      friday: true,
+      id: true,
+      locationId: true,
+      locationName: true,
+      monday: true,
+      name: true,
+      saturday: true,
+      startTime: true,
+      sunday: true,
+      thursday: true,
+      tuesday: true,
+      updatedAt: true,
+      updatedBy: true,
+      wednesday: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "shift" }),
   input: z.looseObject({ shiftId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -686,6 +1138,62 @@ export const getShift = defineServiceFn({
  * @mcp read
  */
 export const getShifts = defineServiceFn({
+  output: z
+    .array(
+      rows.shifts
+        .pick({
+          active: true,
+          companyId: true,
+          createdAt: true,
+          createdBy: true,
+          endTime: true,
+          friday: true,
+          id: true,
+          locationId: true,
+          locationName: true,
+          monday: true,
+          name: true,
+          saturday: true,
+          startTime: true,
+          sunday: true,
+          thursday: true,
+          tuesday: true,
+          updatedAt: true,
+          updatedBy: true,
+          wednesday: true
+        })
+        .extend({
+          customFields: z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        })
+        .meta({ table: "shift" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -714,6 +1222,9 @@ export const getShifts = defineServiceFn({
  * @mcp read
  */
 export const getShiftsList = defineServiceFn({
+  output: z.array(
+    rows.shift.pick({ id: true, name: true }).meta({ table: "shift" })
+  ),
   input: z.looseObject({ locationId: z.string().nullable() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -734,6 +1245,11 @@ export const getShiftsList = defineServiceFn({
  * @mcp read
  */
 export const getEmployeeShifts = defineServiceFn({
+  output: z.array(
+    rows.employeeShift
+      .pick({ employeeId: true, shiftId: true })
+      .meta({ table: "employeeShift" })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -750,6 +1266,12 @@ export const getEmployeeShifts = defineServiceFn({
  * @mcp read
  */
 export const getEmployeeDepartments = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string(),
+      departmentId: z.string().nullable()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
   async run(ctx) {
@@ -769,6 +1291,23 @@ export const getEmployeeDepartments = defineServiceFn({
  * @mcp read
  */
 export const getShiftsWithTimes = defineServiceFn({
+  output: z.array(
+    rows.shift
+      .pick({
+        id: true,
+        name: true,
+        startTime: true,
+        endTime: true,
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: true,
+        sunday: true
+      })
+      .meta({ table: "shift" })
+  ),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -789,6 +1328,9 @@ export const getShiftsWithTimes = defineServiceFn({
  * @mcp
  */
 export const insertAttribute = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     name: z.string(),
     attributeDataTypeId: z.number(),
@@ -814,6 +1356,9 @@ export const insertAttribute = defineServiceFn({
  * @mcp
  */
 export const insertAttributeCategory = defineServiceFn({
+  output: z.object({
+    id: z.string()
+  }),
   input: z.looseObject({
     name: z.string(),
     emoji: z.string().optional(),
@@ -837,6 +1382,83 @@ export const insertAttributeCategory = defineServiceFn({
  * @mcp
  */
 export const insertEmployeeJob = defineServiceFn({
+  output: rows.employeeJob
+    .pick({
+      companyId: true,
+      defaultStorageUnitId: true,
+      departmentId: true,
+      flsaStatus: true,
+      id: true,
+      isOfficer: true,
+      laborCategoryId: true,
+      locationId: true,
+      managerId: true,
+      shiftId: true,
+      startDate: true,
+      tags: true,
+      timesheetRequired: true,
+      title: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "employeeJob" }),
   input: z.looseObject({ id: z.string(), locationId: z.string() }),
   permission: { create: "people" },
   async run(ctx, input) {
@@ -856,6 +1478,11 @@ export const insertEmployeeJob = defineServiceFn({
  * @mcp
  */
 export const updateAttribute = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     id: z.string().optional(),
     name: z.string(),
@@ -880,6 +1507,11 @@ export const updateAttribute = defineServiceFn({
  * @mcp
  */
 export const updateAttributeCategory = defineServiceFn({
+  output: z.array(
+    z.object({
+      id: z.string()
+    })
+  ),
   input: z.looseObject({
     id: z.string(),
     name: z.string(),
@@ -904,6 +1536,7 @@ export const updateAttributeCategory = defineServiceFn({
  * @mcp
  */
 export const updateAttributeSortOrder = defineServiceFn({
+  output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
   }),
@@ -928,6 +1561,76 @@ export const updateAttributeSortOrder = defineServiceFn({
  * @mcp
  */
 export const createDepartment = defineServiceFn({
+  output: rows.department
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      parentDepartmentId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "department" }),
   input: z.looseObject({
     name: z.string().min(1),
     parentDepartmentId: z.string().optional(),
@@ -958,6 +1661,76 @@ export const createDepartment = defineServiceFn({
  * @mcp
  */
 export const updateDepartment = defineServiceFn({
+  output: rows.department
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      id: true,
+      name: true,
+      parentDepartmentId: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "department" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -990,6 +1763,77 @@ export const updateDepartment = defineServiceFn({
  * @mcp
  */
 export const createHoliday = defineServiceFn({
+  output: rows.holiday
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      date: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      year: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "holiday" }),
   input: z.looseObject({
     name: z.string().min(1),
     date: z.string().min(1),
@@ -1027,6 +1871,77 @@ export const createHoliday = defineServiceFn({
  * @mcp
  */
 export const updateHoliday = defineServiceFn({
+  output: rows.holiday
+    .pick({
+      companyId: true,
+      createdAt: true,
+      createdBy: true,
+      date: true,
+      id: true,
+      name: true,
+      tags: true,
+      updatedAt: true,
+      updatedBy: true,
+      year: true
+    })
+    .extend({
+      customFields: z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(z.string(), z.unknown()),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.array(
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.record(
+              z.string(),
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.array(
+              z.union([
+                z.string(),
+                z.number(),
+                z.boolean(),
+                z.record(z.string(), z.unknown()),
+                z.array(z.unknown()),
+                z.null()
+              ])
+            ),
+            z.null()
+          ])
+        ),
+        z.null()
+      ])
+    })
+    .meta({ table: "holiday" }),
   input: z
     .looseObject({
       name: z.string().min(1),
@@ -1063,6 +1978,9 @@ export const updateHoliday = defineServiceFn({
  * @mcp
  */
 export const createTimeCardEntry = defineServiceFn({
+  output: rows.timeCardEntry
+    .pick({ id: true })
+    .meta({ table: "timeCardEntry" }),
   input: z.looseObject({
     employeeId: z.string(),
     clockIn: z.string(),
@@ -1087,6 +2005,9 @@ export const createTimeCardEntry = defineServiceFn({
  * @mcp destructive
  */
 export const deleteTimeCardEntry = defineServiceFn({
+  output: z.array(
+    rows.timeCardEntry.pick({ id: true }).meta({ table: "timeCardEntry" })
+  ),
   input: z.looseObject({ entryId: z.string() }),
   permission: { delete: "people" },
   async run(ctx, input) {
@@ -1106,6 +2027,7 @@ export const deleteTimeCardEntry = defineServiceFn({
  * @mcp read
  */
 export const getOpenClockEntry = defineServiceFn({
+  output: rows.timeCardEntry,
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -1126,6 +2048,7 @@ export const getOpenClockEntry = defineServiceFn({
  * @mcp read
  */
 export const getTimeCardEntry = defineServiceFn({
+  output: rows.timeCardEntry,
   input: z.looseObject({ entryId: z.string() }),
   permission: { view: "people" },
   async run(ctx, input) {
@@ -1145,6 +2068,7 @@ export const getTimeCardEntry = defineServiceFn({
  * @mcp read
  */
 export const getTimeCardEntries = defineServiceFn({
+  output: z.array(rows.timeCardEntry),
   input: z.looseObject({
     employeeId: z.string(),
     from: z.string().optional(),
@@ -1168,6 +2092,7 @@ export const getTimeCardEntries = defineServiceFn({
  * @mcp read
  */
 export const getTimecardEntries = defineServiceFn({
+  output: z.array(rows.timeCardEntries).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1200,6 +2125,21 @@ export const getTimecardEntries = defineServiceFn({
  * @mcp read
  */
 export const getPayrollPeriodTotals = defineServiceFn({
+  output: z
+    .array(
+      rows.payrollPeriodTotal
+        .pick({
+          id: true,
+          employeeId: true,
+          periodStart: true,
+          periodEnd: true,
+          grossWages: true,
+          hoursPaid: true,
+          importedAt: true
+        })
+        .meta({ table: "payrollPeriodTotal" })
+    )
+    .nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -1227,6 +2167,9 @@ export const getPayrollPeriodTotals = defineServiceFn({
  * @mcp
  */
 export const updateTimeCardEntry = defineServiceFn({
+  output: z.array(
+    rows.timeCardEntry.pick({ id: true }).meta({ table: "timeCardEntry" })
+  ),
   input: z.looseObject({
     entryId: z.string(),
     clockIn: z.string().optional(),

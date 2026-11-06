@@ -4,6 +4,7 @@
 
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { rows } from "@carbon/database/row-schemas";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -233,6 +234,7 @@ export const recordDocumentDownload = defineServiceFn({
  * @mcp destructive
  */
 export const deleteDocument = defineServiceFn({
+  output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "documents" },
   async run(ctx, input) {
@@ -249,6 +251,7 @@ export const deleteDocument = defineServiceFn({
  * @mcp read
  */
 export const getDocument = defineServiceFn({
+  output: rows.documents,
   input: z.looseObject({ documentId: z.string() }),
   permission: { view: "documents" },
   async run(ctx, input) {
@@ -268,6 +271,7 @@ export const getDocument = defineServiceFn({
  * @mcp read
  */
 export const getDocuments = defineServiceFn({
+  output: z.array(rows.documents).nullable(),
   input: z.looseObject({
     limit: z
       .number()
@@ -299,6 +303,11 @@ export const getDocuments = defineServiceFn({
  * @mcp read
  */
 export const getDocumentExtensions = defineServiceFn({
+  output: z.array(
+    z.object({
+      extension: z.string()
+    })
+  ),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
   async run(ctx) {
@@ -315,6 +324,7 @@ export const getDocumentExtensions = defineServiceFn({
  * @mcp read
  */
 export const getDocumentLabels = defineServiceFn({
+  output: z.array(rows.documentLabels),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
   async run(ctx) {
@@ -331,6 +341,7 @@ export const getDocumentLabels = defineServiceFn({
  * @mcp
  */
 export const moveDocumentToTrash = defineServiceFn({
+  output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
   async run(ctx, input) {
@@ -351,6 +362,7 @@ export const moveDocumentToTrash = defineServiceFn({
  * @mcp
  */
 export const restoreDocument = defineServiceFn({
+  output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
   async run(ctx, input) {
@@ -375,6 +387,71 @@ export const restoreDocument = defineServiceFn({
  * @mcp
  */
 export const createDocument = defineServiceFn({
+  output: z.union([
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.object({
+      active: z.boolean(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      description: z.string().nullable(),
+      extension: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      path: z.string(),
+      readGroups: z.array(z.string()).nullable(),
+      size: z.number(),
+      sourceDocument: z
+        .enum([
+          "Consumable",
+          "Customer",
+          "Fixture",
+          "Gauge Calibration Record",
+          "Issue",
+          "Job",
+          "Material",
+          "Part",
+          "Purchase Invoice",
+          "Purchase Order",
+          "Purchase Return Order",
+          "Purchasing Request for Quote",
+          "Quote",
+          "Receipt",
+          "Request for Quote",
+          "Sales Invoice",
+          "Sales Order",
+          "Sales Return Order",
+          "Service",
+          "Shipment",
+          "Supplier",
+          "Supplier Quote",
+          "Tool"
+        ])
+        .nullable(),
+      sourceDocumentId: z.string().nullable(),
+      type: z.enum([
+        "Archive",
+        "Audio",
+        "Document",
+        "Image",
+        "Model",
+        "Other",
+        "PDF",
+        "Presentation",
+        "Spreadsheet",
+        "Text",
+        "Video"
+      ]),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      writeGroups: z.array(z.string()).nullable()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({
     name: z.string().min(3).max(50),
     extension: z.string().optional(),
@@ -434,6 +511,71 @@ export const createDocument = defineServiceFn({
  * @mcp
  */
 export const updateDocument = defineServiceFn({
+  output: z.union([
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.object({
+      active: z.boolean(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      description: z.string().nullable(),
+      extension: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      path: z.string(),
+      readGroups: z.array(z.string()).nullable(),
+      size: z.number(),
+      sourceDocument: z
+        .enum([
+          "Consumable",
+          "Customer",
+          "Fixture",
+          "Gauge Calibration Record",
+          "Issue",
+          "Job",
+          "Material",
+          "Part",
+          "Purchase Invoice",
+          "Purchase Order",
+          "Purchase Return Order",
+          "Purchasing Request for Quote",
+          "Quote",
+          "Receipt",
+          "Request for Quote",
+          "Sales Invoice",
+          "Sales Order",
+          "Sales Return Order",
+          "Service",
+          "Shipment",
+          "Supplier",
+          "Supplier Quote",
+          "Tool"
+        ])
+        .nullable(),
+      sourceDocumentId: z.string().nullable(),
+      type: z.enum([
+        "Archive",
+        "Audio",
+        "Document",
+        "Image",
+        "Model",
+        "Other",
+        "PDF",
+        "Presentation",
+        "Spreadsheet",
+        "Text",
+        "Video"
+      ]),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      writeGroups: z.array(z.string()).nullable()
+    }),
+    z.null()
+  ]),
   input: z
     .looseObject({
       name: z.string().min(3).max(50),
@@ -493,6 +635,11 @@ export const updateDocument = defineServiceFn({
  * @mcp
  */
 export const createDocumentUploadUrl = defineServiceFn({
+  output: z.object({
+    signedUrl: z.string(),
+    token: z.string(),
+    path: z.string()
+  }),
   input: z.looseObject({
     folder: z.string(),
     entityId: z.string(),
@@ -516,6 +663,71 @@ export const createDocumentUploadUrl = defineServiceFn({
  * @mcp
  */
 export const insertUploadedDocument = defineServiceFn({
+  output: z.union([
+    z.array(
+      z.object({
+        id: z.string()
+      })
+    ),
+    z.object({
+      active: z.boolean(),
+      companyId: z.string(),
+      createdAt: z.string(),
+      createdBy: z.string(),
+      description: z.string().nullable(),
+      extension: z.string().nullable(),
+      id: z.string(),
+      name: z.string(),
+      path: z.string(),
+      readGroups: z.array(z.string()).nullable(),
+      size: z.number(),
+      sourceDocument: z
+        .enum([
+          "Consumable",
+          "Customer",
+          "Fixture",
+          "Gauge Calibration Record",
+          "Issue",
+          "Job",
+          "Material",
+          "Part",
+          "Purchase Invoice",
+          "Purchase Order",
+          "Purchase Return Order",
+          "Purchasing Request for Quote",
+          "Quote",
+          "Receipt",
+          "Request for Quote",
+          "Sales Invoice",
+          "Sales Order",
+          "Sales Return Order",
+          "Service",
+          "Shipment",
+          "Supplier",
+          "Supplier Quote",
+          "Tool"
+        ])
+        .nullable(),
+      sourceDocumentId: z.string().nullable(),
+      type: z.enum([
+        "Archive",
+        "Audio",
+        "Document",
+        "Image",
+        "Model",
+        "Other",
+        "PDF",
+        "Presentation",
+        "Spreadsheet",
+        "Text",
+        "Video"
+      ]),
+      updatedAt: z.string().nullable(),
+      updatedBy: z.string().nullable(),
+      writeGroups: z.array(z.string()).nullable()
+    }),
+    z.null()
+  ]),
   input: z.looseObject({
     path: z.string(),
     name: z.string(),
@@ -570,6 +782,7 @@ export const insertUploadedDocument = defineServiceFn({
  * @mcp
  */
 export const updateDocumentFavorite = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "documents" },
   async run(ctx, input) {
@@ -589,6 +802,7 @@ export const updateDocumentFavorite = defineServiceFn({
  * @mcp destructive
  */
 export const updateDocumentLabels = defineServiceFn({
+  output: z.null(),
   input: z.looseObject({
     documentId: z.string().min(20),
     labels: z.array(z.string().min(1).max(50)).optional()
@@ -611,6 +825,9 @@ export const updateDocumentLabels = defineServiceFn({
  * @mcp
  */
 export const insertDocumentExtraction = defineServiceFn({
+  output: rows.documentExtraction
+    .pick({ id: true, companyId: true })
+    .meta({ table: "documentExtraction" }),
   input: z.looseObject({
     storagePath: z.string(),
     documentType: z.enum(["purchaseInvoice", "salesRfq"]),
