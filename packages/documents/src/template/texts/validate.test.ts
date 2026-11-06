@@ -93,6 +93,7 @@ describe("validateTemplateText", () => {
       "{line.quantity}{line.quantity}",
       "{line.number}{line.quantity}",
       "{line.quantity} 000",
+      "{line.quantity}.     000",
       "1 {line.quantity}",
       "1.,{line.quantity}",
       "١{line.quantity}",
@@ -121,6 +122,11 @@ describe("validateTemplateText", () => {
     expect(
       validateTemplateText(
         withWords("lineItems", { qtyCell: "x {line.quantity} pcs" })
+      )
+    ).toEqual([]);
+    expect(
+      validateTemplateText(
+        withWords("lineItems", { qtyCell: "{line.quantity} of 5" })
       )
     ).toEqual([]);
     expect(

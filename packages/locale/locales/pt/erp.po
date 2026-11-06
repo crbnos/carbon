@@ -1935,8 +1935,8 @@ msgstr "Uma tarefa de não conformidade que corrige uma causa raiz confirmada �
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Uma tarefa de não conformidade que impede que o problema se repita em outro lugar — distinta da correção corretiva e contenção."
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "Um número não pode ficar logo ao lado de um valor. Adicione um espaço ou uma palavra entre eles."
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "Uma peça"
@@ -22201,6 +22201,9 @@ msgstr "Fábricas, armazéns"
 msgid "Playback"
 msgstr "Reprodução"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Por favor, contacte seu administrador para ativar o registro de auditoria."
 
@@ -31192,7 +31195,7 @@ msgstr "Este PIN não será exibido novamente. Se você o perdeu, redefina-o na 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Este PIN não será exibido novamente. Você precisará dele para sair do modo de console em terminais MES."
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

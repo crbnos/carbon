@@ -1935,8 +1935,8 @@ msgstr "一项不合格任务，用于修复已确认的根本原因——相对
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "一项不合格任务，用于防止问题在其他地方重复出现——不同于纠正修复和围堵。"
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "数字不能紧贴金额。请在两者之间添加空格或文字。"
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "一个零件"
@@ -22201,6 +22201,9 @@ msgstr "工厂、仓库"
 msgid "Playback"
 msgstr "回放"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "请联系您的管理员以启用审计日志。"
 
@@ -31192,7 +31195,7 @@ msgstr "此PIN将不再显示。如果丢失，可从操作员列表中重置。
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

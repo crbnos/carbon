@@ -222,7 +222,7 @@ function WordsSection({
         shown={isShown(entry)}
         isHidden={hidden.includes(entry.key)}
         error={textErrors[`${scope}:${entry.key}`]}
-        focusNonce={target?.fromPage ? target.nonce : undefined}
+        focusNonce={target?.caret ? target.nonce : undefined}
         onText={(value) =>
           onChange({
             text: { ...stored.text, [entry.key]: value },
@@ -271,7 +271,7 @@ function WordEditor({
   /** Hidden itself, rather than with the column it belongs to. */
   isHidden: boolean;
   error?: string;
-  /** Changes when a click on the page lands on this text. */
+  /** Changes when something asks for the caret in this text. */
   focusNonce?: number;
   onText: (value: string) => void;
   onShown: (shown: boolean) => void;

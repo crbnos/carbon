@@ -1935,8 +1935,8 @@ msgstr "確定済の根本原因を修正する不適合タスク — 予防措�
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "数値を金額や数量のすぐ隣に置くことはできません。間にスペースか語句を入れてください。"
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "部品"
@@ -22201,6 +22201,9 @@ msgstr "工場、倉庫"
 msgid "Playback"
 msgstr "再生"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "監査ログを有効にするには、管理者にお問い合わせください。"
 
@@ -31192,7 +31195,7 @@ msgstr "このPINは再度表示されません。紛失した場合は、作業
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

@@ -1935,8 +1935,8 @@ msgstr "एक गैर-अनुरूपता कार्य जो एक 
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "एक गैर-अनुरूपता कार्य जो समस्या को अन्य स्थानों पर फिर से होने से रोकता है — सुधारात्मक सुधार और नियंत्रण से अलग।"
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "कोई संख्या किसी राशि के ठीक बगल में नहीं आ सकती। उनके बीच एक खाली जगह या शब्द जोड़ें।"
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "एक पार्ट"
@@ -22201,6 +22201,9 @@ msgstr "संयंत्र, गोदाम"
 msgid "Playback"
 msgstr "प्लेबैक"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "कृपया ऑडिट लॉगिंग सक्षम करने के लिए अपने प्रशासक से संपर्क करें।"
 
@@ -31192,7 +31195,7 @@ msgstr "यह PIN फिर से नहीं दिखाया जाएग
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "यह PIN फिर से नहीं दिखाया जाएगा। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

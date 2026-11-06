@@ -1935,8 +1935,8 @@ msgstr "Задача несоответствия, которая устраня
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "Число не может стоять вплотную к сумме. Добавьте между ними пробел или слово."
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "Деталь"
@@ -22201,6 +22201,9 @@ msgstr "Заводы, склады"
 msgid "Playback"
 msgstr "Воспроизведение"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Пожалуйста, обратитесь к администратору для включения логирования аудита."
 
@@ -31192,7 +31195,7 @@ msgstr "Этот PIN больше не будет показан. Если он 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

@@ -1935,8 +1935,8 @@ msgstr "확정된 근본 원인을 해결하는 부적합 작업 — 예방 또�
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "부적합 작업으로 다른 곳에서 문제 재발을 방지합니다 — 시정 수정 및 격리와는 구별됩니다."
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "숫자를 금액이나 수량 바로 옆에 둘 수 없습니다. 사이에 공백이나 단어를 넣으세요."
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "부품"
@@ -22201,6 +22201,9 @@ msgstr "공장, 창고"
 msgid "Playback"
 msgstr "재생"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "감사 로깅을 활성화하려면 관리자에게 문의하십시오."
 
@@ -31192,7 +31195,7 @@ msgstr "이 PIN은 다시 표시되지 않습니다. 분실한 경우 작업자 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 모드를 종료할 때 필요합니다."
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

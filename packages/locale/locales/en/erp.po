@@ -1935,8 +1935,8 @@ msgstr "A nonconformance task that fixes a confirmed root cause — as opposed t
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "A number can't sit right next to a figure. Add a space or a word between them."
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr "A number or sign next to a figure changes what it says. Put a word between them."
 
 msgid "A part"
 msgstr "A part"
@@ -22201,6 +22201,9 @@ msgstr "Plants, warehouses"
 msgid "Playback"
 msgstr "Playback"
 
+msgid "Please <0>change it</0>."
+msgstr "Please <0>change it</0>."
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Please contact your administrator to enable audit logging."
 
@@ -31192,8 +31195,8 @@ msgstr "This PIN will not be shown again. If it is lost, reset it from the opera
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
-msgstr "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
+msgstr "This preview is paused because a text changes a figure."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "This price was entered manually, so no pricing rules were applied."

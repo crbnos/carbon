@@ -54,6 +54,14 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notice, setNotice] = useState<"failed" | "figure" | null>(null);
+  // A locked value is no text the panel can show.
+  const textToChange =
+    notice === "figure"
+      ? draftProblems({ documentType, document, blocks, settings }).find(
+          (problem) =>
+            isFigureProblem(problem) && problem.code !== "valueLocked"
+        )
+      : undefined;
   // What each PDF was drawn from: the shown one can be older than the draft.
   const drawnFrom = useRef(
     new Map<string, Pick<DocumentTemplate, "blocks" | "settings">>()
@@ -180,9 +188,34 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
       {notice && !isLoading && (
         <p className="mb-2 shrink-0 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {notice === "figure" ? (
-            <Trans>
-              This preview is paused: a text changes a figure. Save shows which.
-            </Trans>
+            <>
+              <Trans>
+                This preview is paused because a text changes a figure.
+              </Trans>
+              {textToChange && (
+                <>
+                  {" "}
+                  <Trans>
+                    Please{" "}
+                    <button
+                      type="button"
+                      className="font-medium underline underline-offset-2"
+                      onClick={() =>
+                        focusText(
+                          textToChange.blockId,
+                          textToChange.field,
+                          false,
+                          true
+                        )
+                      }
+                    >
+                      change it
+                    </button>
+                    .
+                  </Trans>
+                </>
+              )}
+            </>
           ) : (
             <Trans>
               The preview could not be drawn. It shows the last one that was.

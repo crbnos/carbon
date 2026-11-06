@@ -1935,8 +1935,8 @@ msgstr "Teyit edilmiş bir kök neden düzelten uygunsuzluk görevi — önleyic
 msgid "A nonconformance task that stops the problem recurring elsewhere — distinct from the corrective fix and containment."
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
-msgid "A number can't sit right next to a figure. Add a space or a word between them."
-msgstr "Bir sayı, bir tutarın hemen yanında duramaz. Aralarına boşluk veya sözcük ekleyin."
+msgid "A number or sign next to a figure changes what it says. Put a word between them."
+msgstr ""
 
 msgid "A part"
 msgstr "Bir parça"
@@ -22201,6 +22201,9 @@ msgstr "Fabrikalar, depolar"
 msgid "Playback"
 msgstr "Oynatma"
 
+msgid "Please <0>change it</0>."
+msgstr ""
+
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Denetim günlüğünü etkinleştirmek için lütfen yöneticinizle iletişime geçin."
 
@@ -31192,7 +31195,7 @@ msgstr "Bu PIN bir daha gösterilmeyecek. Kaybolduysa, operatörler listesinden 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
-msgid "This preview is paused: a text changes a figure. Save shows which."
+msgid "This preview is paused because a text changes a figure."
 msgstr ""
 
 msgid "This price was entered manually, so no pricing rules were applied."

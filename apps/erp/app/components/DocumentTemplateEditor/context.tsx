@@ -73,6 +73,7 @@ export interface TextFocus {
   key: string;
   nonce: number;
   fromPage: boolean;
+  caret: boolean;
 }
 
 /** A real record the preview can render against (id + readable label). */
@@ -142,7 +143,7 @@ interface EditorState extends EditorSnapshot {
   labelSizeId: string;
   /**
    * The text the panel shows: `scope` is a block id, or "document" for the
-   * template's own texts. `fromPage` when a click on the page chose it, which
+   * template's own texts. `fromPage` when a click on the page chose it; `caret`
    * puts the caret in it; `nonce` makes a second click on the same text count.
    */
   textFocus: TextFocus | null;
@@ -159,7 +160,12 @@ interface EditorState extends EditorSnapshot {
   refreshPreview: () => void;
   setLabelSizeId: (id: string) => void;
   /** Select the panel that edits this text and show the text in it. */
-  focusText: (scope: string, key: string, fromPage?: boolean) => void;
+  focusText: (
+    scope: string,
+    key: string,
+    fromPage?: boolean,
+    caret?: boolean
+  ) => void;
   setDocumentValues: (values: CollectedValues | null) => void;
   setNotes: (notes: JSONContent | null) => void;
   /** Document mode: drop this document's edits, back to the company template. */
@@ -296,7 +302,7 @@ function useDescribeProblem() {
         return t`This figure must stay. Add it back with Insert value.`;
       }
       if (problem.code === "amountChanged") {
-        return t`A number can't sit right next to a figure. Add a space or a word between them.`;
+        return t`A number or sign next to a figure changes what it says. Put a word between them.`;
       }
       return t`This text is not part of this document`;
     },
@@ -375,13 +381,14 @@ function createEditorStore(props: DocumentTemplateProps) {
             }
           : {}
       ),
-    focusText: (scope, key, fromPage = false) =>
+    focusText: (scope, key, fromPage = false, caret = fromPage) =>
       set((s) => ({
         selectedId: panelFor(s.blocks, scope, key),
         textFocus: {
           scope,
           key,
           fromPage,
+          caret,
           nonce: (s.textFocus?.nonce ?? 0) + 1
         }
       })),
