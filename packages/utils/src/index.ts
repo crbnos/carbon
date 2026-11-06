@@ -41,6 +41,7 @@ export * from "./format";
 export * from "./geo";
 export * from "./hash";
 export * from "./headers";
+export * from "./inspection-entry";
 export * from "./intercompany-capture";
 export * from "./items";
 export * from "./job-status";

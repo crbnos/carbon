@@ -395,6 +395,10 @@ msgstr "{0}件の仕訳を転記 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 件不合格"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0}は{finish}に完了する"
@@ -510,12 +514,12 @@ msgstr "{0} 移動中"
 msgid "{0} needed for jobs"
 msgstr "製造指図に必要な {0}"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
@@ -824,9 +828,6 @@ msgstr "{complete}/{quantity}個"
 msgid "{completed} of {0} done"
 msgstr "{completed}個が{0}個中完了"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines}/{lines}明細完了"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# コンポーネント} other {# コンポーネント}}"
 
@@ -944,6 +945,9 @@ msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{0} 件中 {failed} 件の印刷ジョブが失敗しました"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 件不合格"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
@@ -2371,6 +2375,9 @@ msgstr "について（通知）"
 msgid "About this field"
 msgstr "このフィールドについて"
 
+msgid "Above the upper limit"
+msgstr "上限を超えています"
+
 msgid "Absence"
 msgstr "欠勤"
 
@@ -2948,6 +2955,9 @@ msgstr "出荷から追加"
 
 msgid "Add Funding"
 msgstr "資金を追加"
+
+msgid "Add gauge"
+msgstr "ゲージを追加"
 
 msgid "Add Group"
 msgstr "グループを追加"
@@ -5352,6 +5362,9 @@ msgstr "レベル以下"
 msgid "Below safety stock"
 msgstr "安全在庫以下"
 
+msgid "Below the lower limit"
+msgstr "下限を下回っています"
+
 msgid "Best case"
 msgstr "最良ケース"
 
@@ -5824,6 +5837,9 @@ msgstr "<0>{0}</0> により、<1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "招待を受け入れることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
 
+msgid "By characteristic"
+msgstr "特性別"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "デフォルトでは開始時刻の30分後になります"
 
@@ -5847,6 +5863,9 @@ msgstr "品目別"
 
 msgid "By Location"
 msgstr "場所別"
+
+msgid "By part"
+msgstr "部品別"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "サインインすることで、<0>利用規約</0>および<1>プライバシーポリシー</1>に同意するものとします。"
@@ -13683,6 +13702,9 @@ msgstr "全員にフルアクセスを付与するのではなく、各ユーザ
 msgid "Grants Ability"
 msgstr "スキルを付与"
 
+msgid "Grid layout"
+msgstr "グリッドレイアウト"
+
 msgid "Gross Profit"
 msgstr "総利益"
 
@@ -13790,6 +13812,9 @@ msgstr "計算を隠す"
 
 msgid "Hide documents and activity"
 msgstr "ドキュメントと活動を隠す"
+
+msgid "Hide drawing"
+msgstr "図面を非表示"
 
 msgid "Hide lines"
 msgstr "明細を非表示"
@@ -18195,6 +18220,9 @@ msgstr "校正記録が見つかりません"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "上限なし。請求レートで負担請求されます。"
 
+msgid "No cell could take the pasted values"
+msgstr "貼り付けた値を受け取れるセルがありません"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
 
@@ -19646,11 +19674,17 @@ msgstr "期間中の毎年1回の支払。"
 msgid "One payment for every three months."
 msgstr "3 ヶ月ごとに 1 回の支払。"
 
+msgid "One row per characteristic"
+msgstr "特性ごとに1行"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "1件の請求書に1行、1つの明細に1列。日付または金額を変更し、請求書を追加または削除できます。"
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "1ヶ月1行、1つの明細1列。各明細は、その請求書が請求する正確な金額を認識します。"
+
+msgid "One row per part"
+msgstr "部品ごとに1行"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbonが個別に追跡する1個のシリアルユニットまたは1つのバッチ。使用期限などのステータスと属性を独自に保有しています。"
@@ -20612,6 +20646,13 @@ msgstr "部品、材料、およびそれらの分類方法。"
 
 msgid "Pass"
 msgstr "合格"
+
+msgid "Pass all empty cells"
+msgstr "空のセルをすべて合格にする"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} の空のセルをすべて合格にする"
 
 msgid "Passed"
 msgstr "合格"
@@ -23923,6 +23964,12 @@ msgstr "結果"
 msgid "Results"
 msgstr "結果"
 
+msgid "Results recorded: {done}"
+msgstr "記録した結果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "記録した結果: {done}。スキップした値: {skipped}。"
+
 msgid "Resume"
 msgstr "再開"
 
@@ -24680,6 +24727,12 @@ msgstr "サンプル"
 msgid "Sample Size"
 msgstr "サンプルサイズ"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "サンプルサイズ {0} · 不合格 {1} 件まで合格 · {2} 件で不合格"
+
 msgid "Sampling"
 msgstr "抜取検査"
 
@@ -24786,6 +24839,11 @@ msgstr "保存済みビュー"
 
 msgid "Saved Views"
 msgstr "保存済みビュー"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "保存中 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "現在のデータのコピーを保存中"
@@ -25283,9 +25341,6 @@ msgstr "イベントタイプを選択"
 
 msgid "Select field"
 msgstr "フィールドを選択"
-
-msgid "Select gauge"
-msgstr "測定器を選択"
 
 msgid "Select Gauge"
 msgstr "測定器を選択"
@@ -26133,6 +26188,9 @@ msgstr "詳細を表示"
 msgid "Show documents and activity"
 msgstr "ドキュメントとアクティビティを表示"
 
+msgid "Show drawing"
+msgstr "図面を表示"
+
 msgid "Show Durations"
 msgstr "期間を表示"
 
@@ -26532,9 +26590,6 @@ msgstr "予備品消費"
 
 msgid "Spare Part Cost"
 msgstr "予備品原価"
-
-msgid "Spec"
-msgstr "仕様"
 
 msgid "Specialized"
 msgstr "専門的な"
@@ -29593,6 +29648,9 @@ msgstr "これは管理環境のため、認証アプリが必須です。"
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "これは管理されたリソースのため、二要素認証は全員に必須であり、無効にすることはできません。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "これは合否判定の項目です。P または F を押してください。"
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購買品目です。BOM/BoPはありません。属性とドキュメントのみが変更できます。"
 
@@ -29764,6 +29822,9 @@ msgstr "この受注には関連する製造指図があります。それらで
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この受注には製造指図の作成が必要な明細があります"
+
+msgid "This sample was removed"
+msgstr "このサンプルは削除されました"
 
 msgid "This serial"
 msgstr "このシリアル"

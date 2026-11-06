@@ -395,6 +395,10 @@ msgstr "{0} asientos para contabilizar · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} asientos a reconocer · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} fallidos"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} termina en {finish}"
@@ -510,12 +514,12 @@ msgstr "{0} en movimiento"
 msgid "{0} needed for jobs"
 msgstr "{0} necesarios para órdenes de trabajo"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} de {1}"
 
@@ -824,9 +828,6 @@ msgstr "{complete} de {quantity}"
 msgid "{completed} of {0} done"
 msgstr "{completed} de {0} hecho"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} de {lines} líneas completadas"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# componente} other {# componentes}}"
 
@@ -944,6 +945,9 @@ msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} de {0} trabajos de impresión fallaron"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} fallidos"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} encontrado aquí"
@@ -2371,6 +2375,9 @@ msgstr "Acerca de (notificación)"
 msgid "About this field"
 msgstr "Acerca de este campo"
 
+msgid "Above the upper limit"
+msgstr "Por encima del límite superior"
+
 msgid "Absence"
 msgstr "Ausencia"
 
@@ -2948,6 +2955,9 @@ msgstr "Agregar desde envío"
 
 msgid "Add Funding"
 msgstr "Agregar financiamiento"
+
+msgid "Add gauge"
+msgstr "Añadir calibre"
 
 msgid "Add Group"
 msgstr "Agregar grupo"
@@ -5352,6 +5362,9 @@ msgstr "Por debajo del nivel"
 msgid "Below safety stock"
 msgstr "Por debajo del stock de seguridad"
 
+msgid "Below the lower limit"
+msgstr "Por debajo del límite inferior"
+
 msgid "Best case"
 msgstr "Mejor caso"
 
@@ -5824,6 +5837,9 @@ msgstr "Por <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Al aceptar la invitación, aceptas los <0>Términos de Servicio</0> y la <1>Política de Privacidad</1>."
 
+msgid "By characteristic"
+msgstr "Por característica"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "Por defecto serán 30 min después de la hora de inicio"
 
@@ -5847,6 +5863,9 @@ msgstr "Por Artículo"
 
 msgid "By Location"
 msgstr "Por Ubicación"
+
+msgid "By part"
+msgstr "Por pieza"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Al iniciar sesión, aceptas los <0>Términos de Servicio</0> y la <1>Política de Privacidad.</1>"
@@ -13683,6 +13702,9 @@ msgstr "Otorga a cada usuario permisos granulares por módulo en lugar de dar ac
 msgid "Grants Ability"
 msgstr "Otorga Habilidad"
 
+msgid "Grid layout"
+msgstr "Diseño de la cuadrícula"
+
 msgid "Gross Profit"
 msgstr "Ganancia Bruta"
 
@@ -13790,6 +13812,9 @@ msgstr "Ocultar cálculo"
 
 msgid "Hide documents and activity"
 msgstr "Ocultar documentos y actividad"
+
+msgid "Hide drawing"
+msgstr "Ocultar plano"
 
 msgid "Hide lines"
 msgstr "Ocultar líneas"
@@ -18195,6 +18220,9 @@ msgstr "No se encontraron registros de calibración"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Sin límites. La carga se factura según las tarifas de facturación."
 
+msgid "No cell could take the pasted values"
+msgstr "Ninguna celda pudo recibir los valores pegados"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No se establece ningún texto de certificación para usted. Pídale a un administrador que lo establezca en Configuración → Tiempo."
 
@@ -19646,11 +19674,17 @@ msgstr "Un pago por cada año del término."
 msgid "One payment for every three months."
 msgstr "Un pago por cada tres meses."
 
+msgid "One row per characteristic"
+msgstr "Una fila por característica"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Una fila por factura, una columna por línea. Cambie una fecha o un monto, agregue una factura o elimine una."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "Una fila por mes, una columna por línea. Cada línea reconoce exactamente lo que facturan sus facturas."
+
+msgid "One row per part"
+msgstr "Una fila por pieza"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Una unidad serial o un lote de producción que Carbon sigue individualmente, llevando su propio estado y atributos como una fecha de caducidad."
@@ -20612,6 +20646,13 @@ msgstr "Piezas, materiales y cómo los clasificas."
 
 msgid "Pass"
 msgstr "Aprobar"
+
+msgid "Pass all empty cells"
+msgstr "Marcar como conformes todas las celdas vacías"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Marcar como conformes todas las celdas vacías de {0}"
 
 msgid "Passed"
 msgstr "Superado"
@@ -23923,6 +23964,12 @@ msgstr "Resultado"
 msgid "Results"
 msgstr "Resultados"
 
+msgid "Results recorded: {done}"
+msgstr "Resultados registrados: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Resultados registrados: {done}. Valores omitidos: {skipped}."
+
 msgid "Resume"
 msgstr "Reanudar"
 
@@ -24680,6 +24727,12 @@ msgstr "Muestra"
 msgid "Sample Size"
 msgstr "Tamaño de Muestra"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Tamaño de muestra {0} · aceptar hasta {1} fallidos · rechazar con {2}"
+
 msgid "Sampling"
 msgstr "Muestreo"
 
@@ -24786,6 +24839,11 @@ msgstr "Vistas guardadas"
 
 msgid "Saved Views"
 msgstr "Vistas Guardadas"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Guardando {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Guardando una copia de tus datos actuales"
@@ -25283,9 +25341,6 @@ msgstr "Seleccionar tipos de evento"
 
 msgid "Select field"
 msgstr "Seleccionar campo"
-
-msgid "Select gauge"
-msgstr "Seleccionar instrumento de medición"
 
 msgid "Select Gauge"
 msgstr "Seleccionar instrumento de medición"
@@ -26133,6 +26188,9 @@ msgstr "Mostrar detalles"
 msgid "Show documents and activity"
 msgstr "Mostrar documentos y actividad"
 
+msgid "Show drawing"
+msgstr "Mostrar plano"
+
 msgid "Show Durations"
 msgstr "Mostrar duraciones"
 
@@ -26532,9 +26590,6 @@ msgstr "Consumo de Piezas de Repuesto"
 
 msgid "Spare Part Cost"
 msgstr "Costo de Piezas de Repuesto"
-
-msgid "Spec"
-msgstr "Especificación"
 
 msgid "Specialized"
 msgstr "Especializado"
@@ -29593,6 +29648,9 @@ msgstr "Este es un entorno controlado, por lo que se requiere una aplicación au
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "Este es un entorno controlado, por lo que se requiere autenticación de dos factores para todos y no se puede desactivar."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "Esta es una comprobación de pasa / falla. Pulse P o F."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Este es un artículo comprado — no tiene BoM/BoP; solo sus atributos y documentos pueden cambiar."
 
@@ -29764,6 +29822,9 @@ msgstr "Este pedido de venta tiene órdenes de trabajo asociadas. Elige qué hac
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Este pedido de venta tiene líneas que requieren que se creen órdenes de trabajo"
+
+msgid "This sample was removed"
+msgstr "Esta muestra se eliminó"
 
 msgid "This serial"
 msgstr "Este serial"

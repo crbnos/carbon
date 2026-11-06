@@ -395,6 +395,10 @@ msgstr "{0}개 항목을 전기할 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}개의 인식할 항목 · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0}개 불합격"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0}는 {finish}에 완료됨"
@@ -510,12 +514,12 @@ msgstr "{0} 이동 중"
 msgid "{0} needed for jobs"
 msgstr "작업 지시에 {0} 필요"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0}/{1}"
 
@@ -824,9 +828,6 @@ msgstr "{complete}개/{quantity}개"
 msgid "{completed} of {0} done"
 msgstr "{completed}개 중 {0}개 완료"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines}/{lines} 라인 완료"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# 구성품} other {# 구성품}}"
 
@@ -944,6 +945,9 @@ msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "인쇄 작업 {0}개 중 {failed}개가 실패했습니다"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings}개 불합격"
 
 msgid "{foundHere} found here"
 msgstr "여기에서 {foundHere}를 찾았습니다"
@@ -2371,6 +2375,9 @@ msgstr "정보 (알림)"
 msgid "About this field"
 msgstr "이 필드에 대해"
 
+msgid "Above the upper limit"
+msgstr "상한 초과"
+
 msgid "Absence"
 msgstr "부재"
 
@@ -2948,6 +2955,9 @@ msgstr "출하에서 추가"
 
 msgid "Add Funding"
 msgstr "자금 추가"
+
+msgid "Add gauge"
+msgstr "게이지 추가"
 
 msgid "Add Group"
 msgstr "그룹 추가"
@@ -5352,6 +5362,9 @@ msgstr "레벨 이하"
 msgid "Below safety stock"
 msgstr "안전 재고 아래"
 
+msgid "Below the lower limit"
+msgstr "하한 미만"
+
 msgid "Best case"
 msgstr "최선의 경우"
 
@@ -5824,6 +5837,9 @@ msgstr "By <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
+msgid "By characteristic"
+msgstr "특성별"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "기본적으로 시작 시간 후 30분입니다."
 
@@ -5847,6 +5863,9 @@ msgstr "항목별"
 
 msgid "By Location"
 msgstr "위치별"
+
+msgid "By part"
+msgstr "부품별"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -13683,6 +13702,9 @@ msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 �
 msgid "Grants Ability"
 msgstr "역량 부여"
 
+msgid "Grid layout"
+msgstr "그리드 레이아웃"
+
 msgid "Gross Profit"
 msgstr "매출총이익"
 
@@ -13790,6 +13812,9 @@ msgstr "계산 숨기기"
 
 msgid "Hide documents and activity"
 msgstr "문서 및 활동 숨기기"
+
+msgid "Hide drawing"
+msgstr "도면 숨기기"
 
 msgid "Hide lines"
 msgstr "라인 숨기기"
@@ -18195,6 +18220,9 @@ msgstr "교정 기록이 없습니다"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "상한선이 없습니다. 간접비는 청구 요율로 청구됩니다."
 
+msgid "No cell could take the pasted values"
+msgstr "붙여넣은 값을 받을 수 있는 셀이 없습니다"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
@@ -19646,11 +19674,17 @@ msgstr "기간의 매년마다 1회 지불입니다."
 msgid "One payment for every three months."
 msgstr "3개월마다 1회 지불입니다."
 
+msgid "One row per characteristic"
+msgstr "특성당 한 행"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "송장당 한 행, 라인당 한 열. 날짜 또는 금액을 변경하거나 송장을 추가 또는 삭제하세요."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "월당 한 행, 라인당 한 열. 각 라인은 그 송장이 청구하는 것을 정확히 인식합니다."
+
+msgid "One row per part"
+msgstr "부품당 한 행"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon이 개별적으로 추적하는 하나의 일련 단위 또는 하나의 배치로, 유통기한과 같은 자체 상태와 속성을 가집니다."
@@ -20612,6 +20646,13 @@ msgstr "부품, 자재 및 이를 분류하는 방법."
 
 msgid "Pass"
 msgstr "합격"
+
+msgid "Pass all empty cells"
+msgstr "빈 셀을 모두 합격으로 표시"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0}의 빈 셀을 모두 합격으로 표시"
 
 msgid "Passed"
 msgstr "통과"
@@ -23923,6 +23964,12 @@ msgstr "결과"
 msgid "Results"
 msgstr "결과"
 
+msgid "Results recorded: {done}"
+msgstr "기록된 결과: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "기록된 결과: {done}. 건너뛴 값: {skipped}."
+
 msgid "Resume"
 msgstr "재개"
 
@@ -24680,6 +24727,12 @@ msgstr "샘플"
 msgid "Sample Size"
 msgstr "샘플 크기"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "샘플 크기 {0} · 불합격 {1}개까지 합격 · {2}개에서 불합격"
+
 msgid "Sampling"
 msgstr "샘플링"
 
@@ -24786,6 +24839,11 @@ msgstr "저장된 보기"
 
 msgid "Saved Views"
 msgstr "저장된 보기"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "저장 중 {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "현재 데이터의 사본 저장 중"
@@ -25283,9 +25341,6 @@ msgstr "이벤트 유형 선택"
 
 msgid "Select field"
 msgstr "필드 선택"
-
-msgid "Select gauge"
-msgstr "계측기 선택"
 
 msgid "Select Gauge"
 msgstr "계측기 선택"
@@ -26133,6 +26188,9 @@ msgstr "세부 정보 표시"
 msgid "Show documents and activity"
 msgstr "세부 사항 표시"
 
+msgid "Show drawing"
+msgstr "도면 표시"
+
 msgid "Show Durations"
 msgstr "소요 시간 표시"
 
@@ -26532,9 +26590,6 @@ msgstr "예비 부품 소모"
 
 msgid "Spare Part Cost"
 msgstr "예비 부품 원가"
-
-msgid "Spec"
-msgstr "사양"
 
 msgid "Specialized"
 msgstr "특수한"
@@ -29593,6 +29648,9 @@ msgstr "이것은 제어되는 환경이므로 인증자 앱이 필수입니다.
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "이것은 제어되는 환경이므로 모든 사람에게 2단계 인증이 필수이며 끌 수 없습니다."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속성과 문서만 변경할 수 있습니다."
 
@@ -29764,6 +29822,9 @@ msgstr "이 수주는 관련 작업 지시가 있습니다. 이들을 어떻게 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "이 수주는 작업 지시가 생성되어야 하는 라인이 있습니다."
+
+msgid "This sample was removed"
+msgstr "이 샘플은 삭제되었습니다"
 
 msgid "This serial"
 msgstr "이 일련번호"

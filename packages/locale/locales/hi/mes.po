@@ -35,6 +35,10 @@ msgstr "{0} पहले"
 msgid "{0} customers"
 msgstr "{0} ग्राहक"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} विफल"
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rowTotal(row))
@@ -57,12 +61,12 @@ msgstr "{0} आइटम"
 msgid "{0} jobs"
 msgstr "{0} जॉब"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} में से {1}"
 
@@ -108,6 +112,9 @@ msgstr "{quantity} में से {completed}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} उत्तीर्ण इकाई(यों) को पूर्ण किया जाएगा।"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} विफल"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
@@ -162,6 +169,9 @@ msgstr "के बारे में"
 
 msgid "About this field"
 msgstr "इस फ़ील्ड के बारे में"
+
+msgid "Above the upper limit"
+msgstr "ऊपरी सीमा से अधिक"
 
 msgid "Accept"
 msgstr "स्वीकार करें"
@@ -370,6 +380,9 @@ msgstr "बैच कुल"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 
+msgid "Below the lower limit"
+msgstr "निचली सीमा से कम"
+
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "बड़ा या छोटा पाठ। लेआउट जगह में रहता है।"
 
@@ -396,6 +409,12 @@ msgstr "लेकिन चिंता न करें। आप नया ज
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "द्वारा <0>{0}</0>, <1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "विशेषता के अनुसार"
+
+msgid "By part"
+msgstr "पार्ट के अनुसार"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
@@ -859,6 +878,9 @@ msgstr "फेस"
 msgid "Face {0}"
 msgstr "फेस {0}"
 
+msgid "Fail"
+msgstr "अनुत्तीर्ण"
+
 msgid "Failed"
 msgstr "विफल"
 
@@ -983,11 +1005,17 @@ msgstr "ऑनबोर्डिंग पर जाएं"
 msgid "Gradient"
 msgstr "ग्रेडिएंट"
 
+msgid "Grid layout"
+msgstr "ग्रिड लेआउट"
+
 msgid "Heading {level}"
 msgstr "शीर्षक {level}"
 
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
+
+msgid "Hide drawing"
+msgstr "ड्राइंग छिपाएं"
 
 msgid "Hours"
 msgstr "घंटे"
@@ -1400,6 +1428,9 @@ msgstr "कोई उपलब्ध सीरियल नंबर नही�
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
+msgid "No cell could take the pasted values"
+msgstr "कोई भी सेल चिपकाए गए मान नहीं ले सका"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
 
@@ -1692,6 +1723,13 @@ msgstr "आंशिक निपटान"
 msgid "Parts"
 msgstr "पार्ट्स"
 
+msgid "Pass"
+msgstr "उत्तीर्ण"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "{0} के सभी खाली सेल को उत्तीर्ण चिह्नित करें"
+
 msgid "Passed inspection"
 msgstr "निरीक्षण उत्तीर्ण"
 
@@ -1956,6 +1994,9 @@ msgstr "पार्ट निकालें"
 msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"
 
+msgid "Removed"
+msgstr "हटाया गया"
+
 msgid "Removed signature"
 msgstr "हस्ताक्षर हटाया गया"
 
@@ -1979,6 +2020,12 @@ msgstr "समाधान"
 
 msgid "Result"
 msgstr "परिणाम"
+
+msgid "Results recorded: {done}"
+msgstr "दर्ज परिणाम: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "दर्ज परिणाम: {done}। छोड़े गए मान: {skipped}।"
 
 msgid "Retry Completion"
 msgstr "समापन पुनः प्रयास करें"
@@ -2011,6 +2058,9 @@ msgstr "विक्रय आदेश"
 msgid "Same for every job"
 msgstr "हर जॉब के लिए समान"
 
+msgid "Sample"
+msgstr "नमूना"
+
 msgid "Save"
 msgstr "सहेजें"
 
@@ -2022,6 +2072,11 @@ msgstr "जो फॉर्म आप संपादित कर रहे ह
 
 msgid "Saved signature"
 msgstr "हस्ताक्षर सहेजा गया"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "सहेजा जा रहा है {0}/{1}"
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -2241,6 +2296,9 @@ msgstr "Short pick {itemName}"
 
 msgid "Show description"
 msgstr "विवरण दिखाएं"
+
+msgid "Show drawing"
+msgstr "ड्राइंग दिखाएं"
 
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएं"
@@ -2504,6 +2562,9 @@ msgstr "इस बैच के पास कोई कार्य निर्
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं के लिए दृश्यमान होगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "यह पास / फ़ेल जाँच है। P या F दबाएँ।"
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले कार्यालय से इसे सेट करने के लिए कहें।"
 
@@ -2521,6 +2582,9 @@ msgstr "यह हिस्सा स्टॉक से स्क्रैप �
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "यह जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"
+
+msgid "This sample was removed"
+msgstr "यह नमूना हटा दिया गया था"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "यह आपकी घड़ी को रोकता है और जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"

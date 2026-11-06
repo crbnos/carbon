@@ -395,6 +395,10 @@ msgstr "{0} entries to post · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} entries to recognize · {amount}"
 
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} failed"
+
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
 msgstr "{0} finishes {finish}"
@@ -510,12 +514,12 @@ msgstr "{0} moving"
 msgid "{0} needed for jobs"
 msgstr "{0} needed for jobs"
 
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: currencyFormatter.format(actualTotalCost)
 #. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
-#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
 #. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
-#. placeholder {1}: duration(estimated[key])
 msgid "{0} of {1}"
 msgstr "{0} of {1}"
 
@@ -824,9 +828,6 @@ msgstr "{complete} of {quantity}"
 msgid "{completed} of {0} done"
 msgstr "{completed} of {0} done"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} of {lines} lines complete"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# component} other {# components}}"
 
@@ -944,6 +945,9 @@ msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 #. placeholder {0}: printIds.length
 msgid "{failed} of {0} print jobs failed"
 msgstr "{failed} of {0} print jobs failed"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} failed"
 
 msgid "{foundHere} found here"
 msgstr "{foundHere} found here"
@@ -2371,6 +2375,9 @@ msgstr "About (notification)"
 msgid "About this field"
 msgstr "About this field"
 
+msgid "Above the upper limit"
+msgstr "Above the upper limit"
+
 msgid "Absence"
 msgstr "Absence"
 
@@ -2948,6 +2955,9 @@ msgstr "Add from shipment"
 
 msgid "Add Funding"
 msgstr "Add Funding"
+
+msgid "Add gauge"
+msgstr "Add gauge"
 
 msgid "Add Group"
 msgstr "Add Group"
@@ -5352,6 +5362,9 @@ msgstr "Below level"
 msgid "Below safety stock"
 msgstr "Below safety stock"
 
+msgid "Below the lower limit"
+msgstr "Below the lower limit"
+
 msgid "Best case"
 msgstr "Best case"
 
@@ -5824,6 +5837,9 @@ msgstr "By <0>{0}</0>, <1>{1}</1>"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 
+msgid "By characteristic"
+msgstr "By characteristic"
+
 msgid "By default it'll be 30 min post start time"
 msgstr "By default it'll be 30 min post start time"
 
@@ -5847,6 +5863,9 @@ msgstr "By Item"
 
 msgid "By Location"
 msgstr "By Location"
+
+msgid "By part"
+msgstr "By part"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
@@ -13683,6 +13702,9 @@ msgstr "Grant each user fine-grained, per-module permissions instead of giving e
 msgid "Grants Ability"
 msgstr "Grants Ability"
 
+msgid "Grid layout"
+msgstr "Grid layout"
+
 msgid "Gross Profit"
 msgstr "Gross Profit"
 
@@ -13790,6 +13812,9 @@ msgstr "Hide calculation"
 
 msgid "Hide documents and activity"
 msgstr "Hide documents and activity"
+
+msgid "Hide drawing"
+msgstr "Hide drawing"
 
 msgid "Hide lines"
 msgstr "Hide lines"
@@ -18195,6 +18220,9 @@ msgstr "No calibration records found"
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "No ceilings. Burden bills at the billing rates."
 
+msgid "No cell could take the pasted values"
+msgstr "No cell could take the pasted values"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 
@@ -19646,11 +19674,17 @@ msgstr "One payment for each year of the term."
 msgid "One payment for every three months."
 msgstr "One payment for every three months."
 
+msgid "One row per characteristic"
+msgstr "One row per characteristic"
+
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 
 msgid "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
 msgstr "One row per month, one column per line. Each line recognizes exactly what its invoices bill."
+
+msgid "One row per part"
+msgstr "One row per part"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
@@ -20612,6 +20646,13 @@ msgstr "Parts, materials, and how you classify them."
 
 msgid "Pass"
 msgstr "Pass"
+
+msgid "Pass all empty cells"
+msgstr "Pass all empty cells"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "Pass all empty cells of {0}"
 
 msgid "Passed"
 msgstr "Passed"
@@ -23923,6 +23964,12 @@ msgstr "Result"
 msgid "Results"
 msgstr "Results"
 
+msgid "Results recorded: {done}"
+msgstr "Results recorded: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "Results recorded: {done}. Values skipped: {skipped}."
+
 msgid "Resume"
 msgstr "Resume"
 
@@ -24680,6 +24727,12 @@ msgstr "Sample"
 msgid "Sample Size"
 msgstr "Sample Size"
 
+#. placeholder {0}: characteristic.sampleSize
+#. placeholder {1}: characteristic.acceptanceNumber
+#. placeholder {2}: characteristic.rejectionNumber
+msgid "Sample size {0} · accept up to {1} failed · reject at {2}"
+msgstr "Sample size {0} · accept up to {1} failed · reject at {2}"
+
 msgid "Sampling"
 msgstr "Sampling"
 
@@ -24786,6 +24839,11 @@ msgstr "Saved views"
 
 msgid "Saved Views"
 msgstr "Saved Views"
+
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "Saving {0}/{1}"
 
 msgid "Saving a copy of your current data"
 msgstr "Saving a copy of your current data"
@@ -25283,9 +25341,6 @@ msgstr "Select event types"
 
 msgid "Select field"
 msgstr "Select field"
-
-msgid "Select gauge"
-msgstr "Select gauge"
 
 msgid "Select Gauge"
 msgstr "Select Gauge"
@@ -26133,6 +26188,9 @@ msgstr "Show Details"
 msgid "Show documents and activity"
 msgstr "Show documents and activity"
 
+msgid "Show drawing"
+msgstr "Show drawing"
+
 msgid "Show Durations"
 msgstr "Show Durations"
 
@@ -26532,9 +26590,6 @@ msgstr "Spare Part Consumption"
 
 msgid "Spare Part Cost"
 msgstr "Spare Part Cost"
-
-msgid "Spec"
-msgstr "Spec"
 
 msgid "Specialized"
 msgstr "Specialized"
@@ -29593,6 +29648,9 @@ msgstr "This is a controlled environment, so an authenticator app is required."
 msgid "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 msgstr "This is a controlled environment, so two-factor authentication is required for everyone and cannot be turned off."
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "This is a pass / fail check. Press P or F."
+
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 
@@ -29764,6 +29822,9 @@ msgstr "This sales order has associated jobs. Choose what to do with them."
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "This sales order has lines that require jobs to be created"
+
+msgid "This sample was removed"
+msgstr "This sample was removed"
 
 msgid "This serial"
 msgstr "This serial"
