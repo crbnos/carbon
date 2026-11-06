@@ -3610,17 +3610,13 @@ export async function closeAccountingPeriod(
   // would leave the checklist inconsistent with the period. supabase-js has no
   // multi-statement transaction, so the writes go through the Kysely client;
   // the DB close trigger remains the backstop for the invariant.
+
   // Run previews synthesize schedules in their own rolled-back transactions.
   // Finish those before holding the period lock to avoid inverted lock order.
   const runPreview = await previewRuns(period.data.endDate);
   const now = datetime.timestamp();
-  // periodCloseTask and accountingPeriod.closeStatus are added by the
-  // period-close-lifecycle migration; the generated Kysely types don't include
-  // them yet, so the write builder is cast until types are regenerated (this
-  // mirrors the `as any` casts the read path already uses).
   try {
     await db.transaction().execute(async (trx) => {
-      const tx = trx as any;
       // Match posting's FOR SHARE before reading the checklist. NO KEY UPDATE
       // still permits its separate client's task inserts to check their FK.
       const lockedPeriod = await trx
@@ -3653,7 +3649,7 @@ export async function closeAccountingPeriod(
       }
 
       for (const state of checklist.data.autoTaskStates) {
-        await tx
+        await trx
           .updateTable("periodCloseTask")
           .set({
             status: state.status,
@@ -3666,7 +3662,7 @@ export async function closeAccountingPeriod(
           .execute();
       }
 
-      await tx
+      await trx
         .updateTable("accountingPeriod")
         .set({
           closeStatus: "Closed",
@@ -4225,12 +4221,12 @@ export function burdenComputedCheck({
 }
 
 /**
- * The "Invoice shipped sales orders" decision: a sales shipment posts cost of
- * goods sold and the sales invoice posts the revenue, so a shipment posted in
- * the period whose quantity is not fully invoiced by its end leaves the cost
- * in this period and the revenue in a later one. `shipments` are the
- * offending shipments, already distinct; `count` is their exact number and
- * `documents` the first `UNPOSTED_DOCUMENT_LIMIT` for the checklist's links.
+ * Find shipments that were posted in this period but not fully invoiced by
+ * period end. Their costs are recorded in this period, but the remaining
+ * revenue is not.
+ *
+ * `shipments` contains each shipment once. `count` is the total, and
+ * `documents` contains up to `UNPOSTED_DOCUMENT_LIMIT` for checklist links.
  */
 export function shippedNotInvoicedCheck({
   shipments,
@@ -4256,10 +4252,14 @@ export function shippedNotInvoicedCheck({
 }
 
 /**
- * Invoices name an order line, not a shipment, so their quantity covers the
- * oldest net shipments first (posting date, then id). Uninvoiced goods returned
- * by period end no longer need billing; service returns do not cancel a sale.
- * A failed read keeps the warning open rather than reporting a false pass.
+ * Invoices refer to sales order lines rather than individual shipments, so we
+ * apply invoiced quantities to the oldest shipments first, using the shipment
+ * id to break ties when posting dates match.
+ *
+ * Goods returned by period end before being invoiced no longer need an invoice.
+ * Returns for service or warranty still count as sales that need invoicing.
+ * If the database query fails, keep the warning instead of marking the check
+ * as passed.
  */
 export async function getShippedNotInvoiced(
   db: Kysely<KyselyDatabase>,
@@ -4268,69 +4268,131 @@ export async function getShippedNotInvoiced(
   endDate: string
 ): Promise<ReturnType<typeof shippedNotInvoicedCheck>> {
   try {
-    const { rows } = await sql<{
-      id: string;
-      shipmentId: string | null;
-      status: string;
-    }>`
-      WITH returns AS (
-        SELECT r."shipmentLineId", SUM(rl."receivedQuantity") AS quantity
-        FROM "salesReturnOrderLine" r
-        JOIN "receiptLine" rl
-          ON rl."lineId" = r.id AND rl."companyId" = r."companyId"
-        JOIN receipt receipt
-          ON receipt.id = rl."receiptId" AND receipt."companyId" = rl."companyId"
-        WHERE r."companyId" = ${companyId}
-          AND r."salesInvoiceLineId" IS NULL
-          AND r."returnType" NOT IN ('Return for Service', 'Return for Warranty')
-          AND receipt.status = 'Posted'
-          AND receipt."sourceDocument" = 'Sales Return Order'
-          AND receipt."postingDate" <= ${endDate}::date
-        GROUP BY r."shipmentLineId"
-      ), shipped_lines AS (
-        SELECT l."shipmentId", l."lineId" AS "orderLineId",
-          GREATEST(l."shippedQuantity" - COALESCE(r.quantity, 0), 0) AS quantity
-        FROM "shipmentLine" l
-        LEFT JOIN returns r ON r."shipmentLineId" = l.id
-        WHERE l."companyId" = ${companyId} AND l."lineId" IS NOT NULL
-        UNION ALL
-        SELECT l."shipmentId", l."salesOrderLineId", 1
-        FROM "shipmentFixedAssetLine" l
-        WHERE l."companyId" = ${companyId} AND l.shipped
-          AND l."salesOrderLineId" IS NOT NULL
-      ), shipments AS (
-        SELECT s.id, s."shipmentId", s.status, s."postingDate",
-          l."orderLineId", SUM(l.quantity) AS quantity
-        FROM shipment s
-        JOIN shipped_lines l ON l."shipmentId" = s.id
-        WHERE s."companyId" = ${companyId} AND s.status = 'Posted'
-          AND s."sourceDocument" = 'Sales Order'
-          AND s."postingDate" <= ${endDate}::date
-        GROUP BY s.id, s."shipmentId", s.status, s."postingDate", l."orderLineId"
-      ), coverage AS (
-        SELECT shipments.*,
-          SUM(quantity) OVER (
-            PARTITION BY "orderLineId" ORDER BY "postingDate", id
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-          ) AS "cumulativeQuantity"
-        FROM shipments
-      ), invoiced AS (
-        SELECT il."salesOrderLineId", SUM(il.quantity) AS quantity
-        FROM "salesInvoiceLine" il
-        JOIN "salesInvoice" i
-          ON i.id = il."invoiceId" AND i."companyId" = il."companyId"
-        WHERE il."companyId" = ${companyId}
-          AND i.status NOT IN ('Draft', 'Pending', 'Voided')
-          AND i."postingDate" <= ${endDate}::date
-        GROUP BY il."salesOrderLineId"
+    const rows = await db
+      .with("returns", (db) =>
+        db
+          .selectFrom("salesReturnOrderLine as r")
+          .innerJoin("receiptLine as rl", (join) =>
+            join
+              .onRef("rl.lineId", "=", "r.id")
+              .onRef("rl.companyId", "=", "r.companyId")
+          )
+          .innerJoin("receipt", (join) =>
+            join
+              .onRef("receipt.id", "=", "rl.receiptId")
+              .onRef("receipt.companyId", "=", "rl.companyId")
+          )
+          .select("r.shipmentLineId")
+          .select((eb) =>
+            eb.fn.sum<number>("rl.receivedQuantity").as("quantity")
+          )
+          .where("r.companyId", "=", companyId)
+          .where("r.salesInvoiceLineId", "is", null)
+          .where("r.returnType", "not in", [
+            "Return for Service",
+            "Return for Warranty"
+          ])
+          .where("receipt.status", "=", "Posted")
+          .where("receipt.sourceDocument", "=", "Sales Return Order")
+          .where("receipt.postingDate", "<=", endDate)
+          .groupBy("r.shipmentLineId")
       )
-      SELECT DISTINCT c.id, c."shipmentId", c.status
-      FROM coverage c
-      LEFT JOIN invoiced i ON i."salesOrderLineId" = c."orderLineId"
-      WHERE c."postingDate" >= ${startDate}::date AND c.quantity > 0
-        AND c."cumulativeQuantity" > COALESCE(i.quantity, 0)
-      ORDER BY c."shipmentId", c.id
-    `.execute(db);
+      .with("shipped_lines", (db) =>
+        db
+          .selectFrom("shipmentLine as l")
+          .leftJoin("returns as r", "r.shipmentLineId", "l.id")
+          .select(["l.shipmentId", "l.lineId as orderLineId"])
+          .select((eb) =>
+            eb
+              .fn<number>("greatest", [
+                eb(
+                  "l.shippedQuantity",
+                  "-",
+                  eb.fn.coalesce("r.quantity", eb.val(0))
+                ),
+                eb.val(0)
+              ])
+              .as("quantity")
+          )
+          .where("l.companyId", "=", companyId)
+          .where("l.lineId", "is not", null)
+          .unionAll(
+            db
+              .selectFrom("shipmentFixedAssetLine as l")
+              .select(["l.shipmentId", "l.salesOrderLineId as orderLineId"])
+              .select((eb) => eb.val(1).as("quantity"))
+              .where("l.companyId", "=", companyId)
+              .where("l.shipped", "=", true)
+              .where("l.salesOrderLineId", "is not", null)
+          )
+      )
+      .with("shipments", (db) =>
+        db
+          .selectFrom("shipment as s")
+          .innerJoin("shipped_lines as l", "l.shipmentId", "s.id")
+          .select([
+            "s.id",
+            "s.shipmentId",
+            "s.status",
+            "s.postingDate",
+            "l.orderLineId"
+          ])
+          .select((eb) => eb.fn.sum<number>("l.quantity").as("quantity"))
+          .where("s.companyId", "=", companyId)
+          .where("s.status", "=", "Posted")
+          .where("s.sourceDocument", "=", "Sales Order")
+          .where("s.postingDate", "<=", endDate)
+          .groupBy([
+            "s.id",
+            "s.shipmentId",
+            "s.status",
+            "s.postingDate",
+            "l.orderLineId"
+          ])
+      )
+      .with("coverage", (db) =>
+        db
+          .selectFrom("shipments")
+          .selectAll()
+          .select((eb) =>
+            eb.fn
+              .sum<number>("quantity")
+              .over((ob) =>
+                ob
+                  .partitionBy("orderLineId")
+                  .orderBy("postingDate")
+                  .orderBy("id")
+              )
+              .as("cumulativeQuantity")
+          )
+      )
+      .with("invoiced", (db) =>
+        db
+          .selectFrom("salesInvoiceLine as il")
+          .innerJoin("salesInvoice as i", (join) =>
+            join
+              .onRef("i.id", "=", "il.invoiceId")
+              .onRef("i.companyId", "=", "il.companyId")
+          )
+          .select("il.salesOrderLineId")
+          .select((eb) => eb.fn.sum<number>("il.quantity").as("quantity"))
+          .where("il.companyId", "=", companyId)
+          .where("i.status", "not in", ["Draft", "Pending", "Voided"])
+          .where("i.postingDate", "<=", endDate)
+          .groupBy("il.salesOrderLineId")
+      )
+      .selectFrom("coverage as c")
+      .leftJoin("invoiced as i", "i.salesOrderLineId", "c.orderLineId")
+      .select(["c.id", "c.shipmentId", "c.status"])
+      .distinct()
+      .where("c.postingDate", ">=", startDate)
+      .where("c.quantity", ">", 0)
+      .where((eb) =>
+        eb("c.cumulativeQuantity", ">", eb.fn.coalesce("i.quantity", eb.val(0)))
+      )
+      .orderBy("c.shipmentId")
+      .orderBy("c.id")
+      .execute();
     return shippedNotInvoicedCheck({ shipments: rows, count: rows.length });
   } catch (error) {
     logger.error("Failed to read shipped-not-invoiced close check", {

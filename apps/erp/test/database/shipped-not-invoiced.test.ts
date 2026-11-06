@@ -94,6 +94,13 @@ databaseTest(
         expect(await read()).toEqual({ failing: true, count: 1, documents: [{ documentType: 'Shipment', id: 'asset', readableId: 'SH03', status: 'Posted' }] });
         await sql`INSERT INTO "salesInvoiceLine" VALUES ('asset-billed', 'oct-invoice', 'c', 'asset-order-line', 1)`.execute(trx);
         expect(await read()).toEqual({ failing: false, count: 0, documents: [] });
+        // Shipments on the same date are covered in id order, once per shipment.
+        await sql`INSERT INTO shipment VALUES ('tie-a', 'c', 'SH04', 'Posted', 'Sales Order', '2026-11-15'), ('tie-b', 'c', 'SH05', 'Posted', 'Sales Order', '2026-11-15')`.execute(trx);
+        await sql`INSERT INTO "shipmentLine" VALUES ('tie-a-line', 'tie-a', 'c', 'tie-order-line', 5), ('tie-b-line', 'tie-b', 'c', 'tie-order-line', 5), ('tie-b-extra', 'tie-b', 'c', 'extra-order-line', 1)`.execute(trx);
+        await sql`INSERT INTO "salesInvoiceLine" VALUES ('tie-billed', 'oct-invoice', 'c', 'tie-order-line', 5)`.execute(trx);
+        expect(await read()).toEqual({ failing: true, count: 1, documents: [{ documentType: 'Shipment', id: 'tie-b', readableId: 'SH05', status: 'Posted' }] });
+        await sql`INSERT INTO "salesInvoiceLine" VALUES ('tie-remainder', 'oct-invoice', 'c', 'tie-order-line', 5), ('extra-billed', 'oct-invoice', 'c', 'extra-order-line', 1)`.execute(trx);
+        expect(await read()).toEqual({ failing: false, count: 0, documents: [] });
       });
     } finally {
       await db.destroy();

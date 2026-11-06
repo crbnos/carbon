@@ -5,7 +5,7 @@
 import { ValidatedForm } from "@carbon/form";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { z } from "zod";
 import {
   Account,
@@ -217,15 +217,13 @@ const PaymentForm = ({
     initialDeposit,
     t
   ]);
-  useEffect(() => {
-    if (
-      showDepositPicker &&
-      deposit &&
-      !depositOptions.some((option) => option.value === deposit)
-    ) {
-      setDeposit("");
-    }
-  }, [showDepositPicker, deposit, depositOptions]);
+  if (
+    showDepositPicker &&
+    deposit &&
+    !depositOptions.some((option) => option.value === deposit)
+  ) {
+    setDeposit("");
+  }
   // With no picker the saved link round-trips untouched — a payment keeps its
   // deposit until its party changes.
   const depositIds = parseDepositValue(
