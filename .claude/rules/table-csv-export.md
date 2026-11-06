@@ -28,9 +28,8 @@ once by `buildColumnMaps(columns, translateLabel)` in
 
 - `accessors: Record<string, string>` (passed as `columnAccessors`) — export key →
   translated human header label. The export key is `accessorKey ?? column.id`. A
-  column is included when it has an `accessorKey` and a string header (non-JSX),
-  **or** a `meta.exportValue`. Display columns that have only `id` and `cell`
-  need `meta.exportValue`, even when their header is a string. The label prefers a non-empty string header, then
+  column is included when it has a string header (non-JSX) **or** a
+  `meta.exportValue`. The label prefers a non-empty string header, then
   `meta.filterHeader` (covers JSX/blank-header columns), then the raw string
   header. **Throws** `Invalid accessorKey {key}. Cannot contain '_'` if any
   accessorKey contains an underscore.
@@ -131,7 +130,6 @@ An infinite list holds only the rows loaded so far. `useCsvDownload`
 
 | Case (checked in this order) | Path |
 |---|---|
-| The registry entry sets `exportOnServer` (passed by `listInfinite` as `infinite.exportOnServer`) | The browser POSTs to the export route at once, at any row count. It loads no rows and builds no file. Sales Invoices sets it. |
 | No `infinite`, or `hasMore` is false | The browser exports the table's own `data`. Inline edits stay in the file. |
 | `listKey` is set and `count` is above 1,000 | The browser POSTs to the export route at once. |
 | Else | `loadAll(1000)` loads pages in the browser. If rows remain and `listKey` is set, the browser POSTs to the export route. If rows remain and no `listKey` is set, it downloads the first 1,000 rows and shows "Exported the first 1,000 rows." |
