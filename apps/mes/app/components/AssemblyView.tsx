@@ -1502,6 +1502,13 @@ export function AssemblyView({
     const fd = new FormData();
     fd.set("jobOperationId", operation.id);
     fd.set("quantity", "1");
+    // The route skips the completion if another one recorded this unit. The
+    // stored quantity, not the rounded one shown: a fraction must still match.
+    if (!isTracked)
+      fd.set(
+        "expectedQuantityComplete",
+        String(operation.quantityComplete ?? 0)
+      );
     if (requiresSerialTracking) fd.set("trackingType", "Serial");
     else if (requiresBatchTracking) fd.set("trackingType", "Batch");
     if (isTracked && currentEntity?.id)
