@@ -38,7 +38,11 @@ import {
   USER
 } from "./fixtures/always-post";
 import { handlesOf } from "./fixtures/handles";
-import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import {
+  connectLocalTestDatabase,
+  databaseTest,
+  hasLocalDatabase
+} from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
 describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
@@ -62,7 +66,14 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "closed",
     "share",
     "partshare",
-    "cap"
+    "cap",
+    "pa",
+    "leg",
+    "dual",
+    "legheld",
+    "legnet",
+    "nobin",
+    "legmove"
   ];
 
   beforeAll(async () => {
@@ -855,9 +866,9 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
   };
 
   /** A lot of 10 in its own unit, 6 accepted, 4 held under an open NCR. */
-  const partialLot = async (key: string) => {
+  const partialLot = async (key: string, unitKey = key) => {
     await ensureIssueType();
-    const received = await receiveInto(key);
+    const received = await receiveInto(key, unitKey);
     const partial = await withoutRejectedUnit(() =>
       withGuard(() =>
         quality.partialInspection(stackContext(), {
@@ -1242,6 +1253,342 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       expect(closed.error).toBeNull();
       // 20 received, 4 written off: the 6 accepted and the second lot's 10 stay.
       expect(await untrackedAt(unitOf("cap"))).toBe(16);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an NCR's Scrap of a Partial lot leaves what another Partial lot holds in a short unit",
+    async () => {
+      const first = await partialLot("pa");
+      await partialLot("pa-2", "pa");
+      // 20 received, each lot holds 4. A count found 13 missing: 7 there.
+      await moveOut(unitOf("pa"), 13, "pa-count");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Scrap" })
+          .where("nonConformanceId", "=", first.issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: first.issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      // 3 written off: the second lot's 4 stay.
+      expect(await untrackedAt(unitOf("pa"))).toBe(4);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "two NCR closes at once in one short unit write off what is there, no less",
+    async () => {
+      const first = await partialLot("dual");
+      const second = await partialLot("dual-2", "dual");
+      // 20 received, each lot holds 4. A count found 13 missing: 7 there.
+      await moveOut(unitOf("dual"), 13, "dual-count");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Scrap" })
+          .where("nonConformanceId", "in", [first.issueId, second.issueId])
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      // Each close on its own connection, as two users at once.
+      const connect = async () => {
+        const db = await connectLocalTestDatabase();
+        await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
+          db
+        );
+        return db;
+      };
+      const left = await connect();
+      const right = await connect();
+      try {
+        const [a, b] = await Promise.all([
+          closeIssue(client!, left, {
+            nonConformanceId: first.issueId,
+            companyId: f.companyId,
+            userId: USER
+          }),
+          closeIssue(client!, right, {
+            nonConformanceId: second.issueId,
+            companyId: f.companyId,
+            userId: USER
+          })
+        ]);
+        expect(a.error).toBeNull();
+        expect(b.error).toBeNull();
+      } finally {
+        await left.destroy();
+        await right.destroy();
+      }
+      // The first close takes 3 (the other lot holds 4), the second the 4.
+      expect(await untrackedAt(unitOf("dual"))).toBe(0);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a Partial of a lot from before the hold holds its remainder where it is",
+    async () => {
+      await ensureIssueType();
+      const legacy = await receiveInto("legheld");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("inspection")
+          .set({ storageUnitId: null })
+          .where("id", "=", legacy.lotId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const partial = await withoutRejectedUnit(() =>
+        withGuard(() =>
+          quality.partialInspection(stackContext(), {
+            id: legacy.lotId,
+            acceptedQuantity: 6,
+            createNcr: true
+          })
+        )
+      );
+      expect(partial.error).toBeNull();
+      // The 4 rejected stay held: moving 7 of the 10 out leaves 3.
+      await expect(
+        withGuard(() =>
+          f.db
+            .insertInto("itemLedger")
+            .values({
+              entryType: "Negative Adjmt.",
+              documentType: "Inventory Count",
+              documentId: `${f.prefix}-legheld-out`,
+              locationId: f.locationId,
+              itemId: f.partId,
+              storageUnitId: unitOf("legheld"),
+              quantity: -7,
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .execute()
+        )
+      ).rejects.toThrow(/held for inspection/);
+      expect(await untrackedAt(unitOf("legheld"))).toBe(10);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a lot from before the hold in a pickable bin: its Partial holds nothing there, even when the bin is short, and its NCR's Scrap writes off what is there",
+    async () => {
+      await ensureIssueType();
+      const legacy = await receiveInto("legnet");
+      // Before the hold, a lot recorded no unit, and its bin could be pickable.
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("inspection")
+          .set({ storageUnitId: null })
+          .where("id", "=", legacy.lotId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .updateTable("storageUnit")
+          .set({ nettable: true, effectiveNettable: true })
+          .where("id", "=", unitOf("legnet"))
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const unit = await f.db
+        .selectFrom("storageUnit")
+        .select("effectiveNettable")
+        .where("id", "=", unitOf("legnet"))
+        .executeTakeFirstOrThrow();
+      expect(unit.effectiveNettable).toBe(true);
+      // 8 of the bin's 10 were picked to a job.
+      await moveOut(unitOf("legnet"), 8, "legnet-picked");
+
+      const partial = await withoutRejectedUnit(() =>
+        withGuard(() =>
+          quality.partialInspection(stackContext(), {
+            id: legacy.lotId,
+            acceptedQuantity: 6,
+            createNcr: true
+          })
+        )
+      );
+      expect(partial.error).toBeNull();
+      const lot = await f.db
+        .selectFrom("inspection")
+        .select("storageUnitId")
+        .where("id", "=", legacy.lotId)
+        .executeTakeFirstOrThrow();
+      expect(lot.storageUnitId).toBeNull();
+
+      const issueId = partial.data!.issueId!;
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Scrap" })
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      // The Scrap writes off from the receipt line's bin, no more than is there.
+      expect(await untrackedAt(unitOf("legnet"))).toBe(0);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an NCR's Scrap writes off a Partial lot's remainder received into no storage unit",
+    async () => {
+      await ensureIssueType();
+      const legacy = await receiveInto("nobin");
+      // A location without bins: the lot, its line and its stock have no unit.
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("inspection")
+          .set({ storageUnitId: null })
+          .where("id", "=", legacy.lotId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .updateTable("receiptLine")
+          .set({ storageUnitId: null })
+          .where("receiptId", "=", legacy.receiptId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .updateTable("itemLedger")
+          .set({ storageUnitId: null })
+          .where("documentId", "=", legacy.receiptId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const noUnit = async () =>
+        Number(
+          (
+            await f.db
+              .selectFrom("itemLedger")
+              .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
+              .where("itemId", "=", f.partId)
+              .where("storageUnitId", "is", null)
+              .where("trackedEntityId", "is", null)
+              .where("companyId", "=", f.companyId)
+              .executeTakeFirstOrThrow()
+          ).quantity
+        );
+      const before = await noUnit();
+      const partial = await withoutRejectedUnit(() =>
+        withGuard(() =>
+          quality.partialInspection(stackContext(), {
+            id: legacy.lotId,
+            acceptedQuantity: 6,
+            createNcr: true
+          })
+        )
+      );
+      expect(partial.error).toBeNull();
+      const issueId = partial.data!.issueId!;
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Scrap" })
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      expect(await noUnit()).toBe(before - 4);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a lot from before the hold in a short pickable bin cannot move to the rejected unit more than is there",
+    async () => {
+      await ensureIssueType();
+      const legacy = await receiveInto("legmove");
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("inspection")
+          .set({ storageUnitId: null })
+          .where("id", "=", legacy.lotId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .updateTable("storageUnit")
+          .set({ nettable: true, effectiveNettable: true })
+          .where("id", "=", unitOf("legmove"))
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      await moveOut(unitOf("legmove"), 7, "legmove-picked");
+      // The location has a rejected unit: 8 rejected would be held there,
+      // but only 3 are in the bin.
+      const partial = await withGuard(() =>
+        quality.partialInspection(stackContext(), {
+          id: legacy.lotId,
+          acceptedQuantity: 2,
+          createNcr: true
+        })
+      );
+      expect(partial.error).not.toBeNull();
+      expect(await statusOf(legacy.lotId)).toBe("Pending");
+      expect(await untrackedAt(unitOf("legmove"))).toBe(3);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a Partial of a lot from before the hold cannot keep another lot's stock",
+    async () => {
+      await ensureIssueType();
+      const legacy = await receiveInto("leg");
+      // Lots open before the hold recorded no storage unit.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("inspection")
+          .set({ storageUnitId: null })
+          .where("id", "=", legacy.lotId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      await receiveInto("leg-2", "leg");
+      // 20 received, the second lot holds 10. A count found 8 missing: 12 there.
+      await moveOut(unitOf("leg"), 8, "leg-count");
+      // With no rejected unit nothing moves, so only the check stops it.
+      const partial = await withoutRejectedUnit(() =>
+        withGuard(() =>
+          quality.partialInspection(stackContext(), {
+            id: legacy.lotId,
+            acceptedQuantity: 5,
+            createNcr: true
+          })
+        )
+      );
+      expect(partial.error).not.toBeNull();
+      expect(await untrackedAt(unitOf("leg"))).toBe(12);
     },
     60_000
   );

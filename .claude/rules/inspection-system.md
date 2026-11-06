@@ -331,7 +331,7 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   load. A sales-return receipt void opens no lot and runs with the guard on.
   Samples and measurements do not set it: they change no unit's status.
   Samples, measurements, document swaps and gauge records read the lot's
-  status again under its row lock after the receipt's lock (`lockedLotStatus`),
+  status again under its row lock after the receipt's lock (`lockOpenLot`, which refuses a closed lot),
   so none acts on a decision's stale "before". The two hold tests have one SQL
   definition each: `inspection_line_lot_open(company, receipt line)` (a serial
   or batch unit's lot is open) and `inspection_holds_at(company, item, unit,
@@ -420,7 +420,15 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   The engine refuses an untracked Partial whose rejected quantity is more than
   what the lot can claim at the held unit (untracked on-hand less what other
   lots hold there, as for Reject), whether or not a rejected unit is set (the
-  message says a Reject is possible). An untracked Reject writes off
+  message says a Reject is possible). The claim has one definition,
+  `lotClaimableAtUnit` (`@carbon/database/quality`), shared by Reject, Partial
+  and an NCR's Scrap of a Partial remainder. It takes the item's stock rows at
+  the unit's location, then the hold guard's lock on the unit (the order every
+  ledger write takes them) before it reads, so two claims in one unit run one
+  after the other. A Reject reads its stripes after that. A lot from before
+  the hold (no `storageUnitId`) holds its Partial remainder where it is only
+  when that unit is non-nettable (the lot then records it); in a pickable bin
+  nothing is held and the claim is not checked. An untracked Reject writes off
   what the lot can still claim in its held unit: the untracked on-hand less
   what other lots hold there (`inspection_held_quantity` less its own lot
   size), at most its lot size and never below zero; nothing to claim posts no
@@ -478,11 +486,16 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   lot's NCR, which has no write-off, restores at the NCR's location, as
   before. An NCR can hold several lots: the restore reads every linked lot's
   write-off, and a Partial receipt lot among them decides how the NCR closes.
+  The close takes the issue lock (`lockIssueDispositions`) first and refuses
+  when a row, a tracked link or a linked lot changed since its plan was read.
   The NCR closes first (the release), then the write-off posts and the units
-  change with the guard on, in one transaction. A Partial lot's Scrap writes
-  off no more than its remainder (`lotSize - acceptedQuantity`) and no more
-  than its stripes hold there, so another lot's stock in the unit is never
-  taken. A tracked Scrap posts
+  change with the guard on, in one transaction. A Partial lot's Scrap is
+  planned inside that transaction, under the stock-row and guard locks: no
+  more than its remainder (`lotSize - acceptedQuantity`), no more than other
+  lots leave in the unit (`lotClaimableAtUnit`), drawn from the stripes it is
+  held on, so another lot's stock is never taken. A lot that recorded no unit
+  writes off from its receipt line's unit (`inspectionReceiptLine`), or from
+  the stock in no unit at its location when the line had none. A tracked Scrap posts
   against each entity's current storage unit. A voided receipt's lot answers
   "The receipt of this inspection was voided" before "closed".
 - **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by

@@ -12,7 +12,7 @@
  * its own `getDatabaseClient()` singleton). Kysely bypasses RLS — the calling
  * route's `requirePermissions` is the auth gate.
  */
-import type { Insertable, NotNull, Transaction } from "kysely";
+import type { Insertable, NotNull, Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
@@ -38,21 +38,27 @@ export function errResult(message: string, blockers?: unknown): Err {
   return { data: null, error: { message, ...(blockers ? { blockers } : {}) } };
 }
 
+/** A Postgres error: the driver sets its SQLSTATE `code` and its `severity`. */
+export function isDatabaseError(err: unknown): boolean {
+  const e = err as { code?: unknown; severity?: unknown } | null;
+  return typeof e?.code === "string" && typeof e?.severity === "string";
+}
+
 /**
  * The refusal a caught engine error becomes. An authored `Error` and a SQL
- * `RAISE` (P0001, such as the hold guard's) keep their message; any other
- * database error never reaches a toast in its raw text, and keeps the driver's
- * error as `cause` for the log.
+ * `RAISE` (P0001, such as the hold guard's) keep their message; a deadlock or
+ * serialization failure reads as "try again"; any other database error never
+ * reaches a toast in its raw text, and keeps the driver's error as `cause`
+ * for the log.
  */
-function engineErrResult(err: unknown, fallback: string): Err {
-  const e = err as { code?: unknown; severity?: unknown } | null;
-  const isDatabaseError =
-    typeof e?.code === "string" && typeof e?.severity === "string";
-  if (isDatabaseError && e.code !== "P0001") {
-    // Class 40: a deadlock or serialization failure, which a retry clears.
-    const message = (e.code as string).startsWith("40")
-      ? "Another change to this lot was saved at the same time. Try again."
-      : fallback;
+export function engineErrResult(err: unknown, fallback: string): Err {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (isDatabaseError(err) && code !== "P0001") {
+    // A deadlock or a serialization failure, which a retry clears.
+    const message =
+      code === "40P01" || code === "40001"
+        ? "Another change was saved at the same time. Try again."
+        : fallback;
     return { data: null, error: { message, cause: err } };
   }
   return errResult(err instanceof Error ? err.message : fallback);
@@ -165,7 +171,7 @@ const INSPECTION_CLOSED_STATUSES = [
  * IS the release. Transaction-local.
  */
 export async function setInspectionRelease(
-  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>
+  trx: Transaction<KyselyDatabase>
 ): Promise<void> {
   await sql`SELECT set_config('app.inspection_release', 'on', true)`.execute(
     trx
@@ -179,21 +185,150 @@ export async function setInspectionRelease(
  * guard on, so they cannot take what another lot still holds.
  */
 export async function withInspectionRelease<T>(
-  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  trx: Transaction<KyselyDatabase>,
   fn: () => Promise<T>
 ): Promise<T> {
-  const before = await sql<{
-    value: string | null;
-  }>`SELECT current_setting('app.inspection_release', true) AS value`.execute(
-    trx
-  );
-  const previous = before.rows[0]?.value === "on" ? "on" : "off";
+  const before = await sql<{ previous: string | null }>`
+    SELECT current_setting('app.inspection_release', true) AS previous
+  `.execute(trx);
   await setInspectionRelease(trx);
-  const result = await fn();
-  await sql`SELECT set_config('app.inspection_release', ${previous}, true)`.execute(
-    trx
-  );
+  const previous = before.rows[0]?.previous === "on" ? "on" : "off";
+  const restore = () =>
+    sql`SELECT set_config('app.inspection_release', ${previous}, true)`.execute(
+      trx
+    );
+  let result: T;
+  try {
+    result = await fn();
+  } catch (error) {
+    // Restore whenever the transaction is still usable (fn rolled back a
+    // savepoint, or threw a plain error). A restore that fails leaves the
+    // transaction aborted, so the flag cannot outlive it; the caller gets the
+    // error that stopped `fn` either way.
+    await restore().catch((restoreError: unknown) => {
+      // An aborted transaction (25P02) refuses it as expected.
+      if ((restoreError as { code?: unknown } | null)?.code !== "25P02") {
+        console.error("inspection release: restore failed", restoreError);
+      }
+    });
+    throw error;
+  }
+  await restore();
   return result;
+}
+
+/** A storage unit's location, or null. */
+export async function storageUnitLocationId(
+  handle: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string,
+  storageUnitId: string
+): Promise<string | null> {
+  const unit = await handle
+    .selectFrom("storageUnit")
+    .select("locationId")
+    .where("id", "=", storageUnitId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  return unit?.locationId ?? null;
+}
+
+/**
+ * The locks a claim at a unit reads under: the item's stock rows at the
+ * unit's location, then the hold guard's lock on the unit.
+ */
+export async function lockClaimUnit(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    storageUnitId: string;
+    locationId?: string | null;
+    // The caller already holds the item's stock rows, in the shared order.
+    stockRowsLocked?: boolean;
+  }
+): Promise<void> {
+  if (!args.stockRowsLocked) {
+    const locationId =
+      args.locationId ??
+      (await storageUnitLocationId(trx, args.companyId, args.storageUnitId));
+    // Without it, the stock rows could not be locked before the guard's lock.
+    if (!locationId) throw new Error("The storage unit could not be found");
+    await lockItemStockRows(trx, args.companyId, [
+      { itemId: args.itemId, locationId }
+    ]);
+  }
+  await lockHeldUnits(trx, args.companyId, [args]);
+}
+
+/**
+ * What a lot can still claim of an untracked item in a unit: the untracked
+ * on-hand less what other lots hold there. `ownHeld` is this lot's own part of
+ * `inspection_held_quantity`, which is left out. The one rule for a Reject's
+ * write-off, a Partial's remainder and an NCR's Scrap of that remainder.
+ * It locks first, in the order every ledger write takes the two locks (the
+ * item's stock rows at the unit's location, then the hold guard's lock on
+ * the unit), so two claims in one unit read one after the other.
+ */
+export async function lotClaimableAtUnit(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    itemId: string;
+    storageUnitId: string;
+    ownHeld: number;
+    // The unit's location, when the caller has it.
+    locationId?: string | null;
+    // The caller already holds the item's stock rows, in the shared order.
+    stockRowsLocked?: boolean;
+  }
+): Promise<number> {
+  await lockClaimUnit(trx, args);
+  const [row] = (
+    await sql<{ onHand: number; held: number }>`
+      SELECT
+        public.inspection_untracked_on_hand(${args.companyId}, ${args.itemId}, ${args.storageUnitId}) AS "onHand",
+        public.inspection_held_quantity(${args.companyId}, ${args.itemId}, ${args.storageUnitId}) AS "held"
+    `.execute(trx)
+  ).rows;
+  const otherHeld = Number(row?.held ?? 0) - args.ownHeld;
+  return round(Math.max(Number(row?.onHand ?? 0) - otherHeld, 0));
+}
+
+/**
+ * Locks the stock rows of each (item, location), in the order the ledger's
+ * stock handler takes them (item, location, project). Take it before the hold
+ * guard's lock, as every ledger write does.
+ */
+export async function lockItemStockRows(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  pairs: Array<{ itemId: string; locationId: string }>
+): Promise<void> {
+  if (pairs.length === 0) return;
+  await sql`
+    SELECT 1 FROM "itemStockQuantities" q
+    JOIN unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.locationId)}::text[]) AS k(i, l)
+      ON q."itemId" = k.i AND q."locationId" = k.l
+    WHERE q."companyId" = ${companyId}
+    ORDER BY q."itemId", q."locationId", q."projectId"
+    FOR UPDATE OF q
+  `.execute(trx);
+}
+
+/**
+ * The hold guard's lock on each (item, unit), with the key and the sorted
+ * order check_inspection_hold takes them in, so a claim or a move in one unit
+ * waits for another.
+ */
+export async function lockHeldUnits(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  pairs: Array<{ itemId: string; storageUnitId: string }>
+): Promise<void> {
+  if (pairs.length === 0) return;
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended('inspection-hold:' || ${companyId} || ':' || k.i || ':' || k.u, 0))
+    FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.storageUnitId)}::text[]) AS k(i, u)
+    ORDER BY k.i, k.u`.execute(trx);
 }
 
 // Joins the transaction `db` already is, else opens one (Kysely refuses
@@ -209,15 +344,15 @@ function inTransaction<T>(
 
 /**
  * The lot's status, read under its row lock after the receipt's lock (the
- * order a decision takes). A status read before the receipt lock can be a
- * decision's stale "before".
+ * order a decision takes); refuses a closed lot. A status read before the
+ * receipt lock can be a decision's stale "before".
  */
-async function lockedLotStatus(
+async function lockOpenLot(
   trx: Transaction<KyselyDatabase>,
   companyId: string,
   inspectionId: string,
   mode: "update" | "share"
-): Promise<string> {
+): Promise<Selectable<KyselyDatabase["inspection"]>["status"]> {
   const query = trx
     .selectFrom("inspection")
     .select("status")
@@ -228,6 +363,7 @@ async function lockedLotStatus(
     : query.forShare()
   ).executeTakeFirst();
   if (!lot) throw new Error("Inspection not found");
+  if (isInspectionClosed(lot.status)) throw new Error("Inspection is closed");
   return lot.status;
 }
 
@@ -374,18 +510,13 @@ export async function upsertInspectionSample(
         inspection,
         "noKeyUpdate"
       );
-      if (
-        isInspectionClosed(
-          await lockedLotStatus(
-            trx,
-            sample.companyId,
-            sample.inspectionId,
-            "update"
-          )
-        )
-      ) {
-        throw new Error("Inspection is closed");
-      }
+      // The status after the lock is the one every check below reads.
+      inspection.status = await lockOpenLot(
+        trx,
+        sample.companyId,
+        sample.inspectionId,
+        "update"
+      );
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
       // no entity: the caller passes the column's sampleId to update it in place
@@ -465,28 +596,22 @@ export async function upsertInspectionSample(
         });
       }
 
-      const isTerminal =
-        inspection.status === "Passed" ||
-        inspection.status === "Failed" ||
-        inspection.status === "Partial";
-      if (!isTerminal) {
-        const samples = await trx
-          .selectFrom("inspectionSample")
-          .select(["status"])
-          .where("inspectionId", "=", sample.inspectionId)
+      const samples = await trx
+        .selectFrom("inspectionSample")
+        .select(["status"])
+        .where("inspectionId", "=", sample.inspectionId)
+        .execute();
+      const nextStatus = computeLotStatus(samples);
+      if (nextStatus !== inspection.status) {
+        await trx
+          .updateTable("inspection")
+          .set({
+            status: nextStatus,
+            updatedBy: sample.inspectedBy,
+            updatedAt: nowIso
+          })
+          .where("id", "=", sample.inspectionId)
           .execute();
-        const nextStatus = computeLotStatus(samples);
-        if (nextStatus !== inspection.status) {
-          await trx
-            .updateTable("inspection")
-            .set({
-              status: nextStatus,
-              updatedBy: sample.inspectedBy,
-              updatedAt: nowIso
-            })
-            .where("id", "=", sample.inspectionId)
-            .execute();
-        }
       }
 
       return { id: sampleId };
@@ -535,17 +660,22 @@ export type HeldStripe = { projectId: string | null; quantity: number };
  * Untracked on-hand of an item at a held storage unit, per project stripe,
  * in the order a lot's stock is taken: the stripes the lot's own rows put
  * there first (its receipt, its rejected move), then the rest by quantity.
+ * With no unit (`storageUnitId` null), the stock in no unit at `locationId`.
  */
 export async function heldStockStripes(
   trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   args: {
     companyId: string;
     itemId: string;
-    storageUnitId: string;
+    storageUnitId: string | null;
+    locationId?: string | null;
     // The lot and its receipt: rows they wrote at the unit name the lot's stripes.
     documentIds: string[];
   }
 ): Promise<HeldStripe[]> {
+  if (args.storageUnitId === null && !args.locationId) {
+    throw new Error("Stock in no storage unit is read at a location");
+  }
   const documentIds = args.documentIds.filter(Boolean);
   const rows = await trx
     .selectFrom("itemLedger")
@@ -559,7 +689,14 @@ export async function heldStockStripes(
     ])
     .where("companyId", "=", args.companyId)
     .where("itemId", "=", args.itemId)
-    .where("storageUnitId", "=", args.storageUnitId)
+    .$if(args.storageUnitId !== null, (qb) =>
+      qb.where("storageUnitId", "=", args.storageUnitId)
+    )
+    .$if(args.storageUnitId === null, (qb) =>
+      qb
+        .where("storageUnitId", "is", null)
+        .where("locationId", "=", args.locationId as string)
+    )
     .where("trackedEntityId", "is", null)
     .groupBy("projectId")
     .execute();
@@ -1024,6 +1161,48 @@ export async function dispositionInspection(
               : null
           : null;
       let heldStripes: HeldStripe[] = [];
+      // Where a rejected part goes: the location's rejected unit, unless it
+      // is the held unit itself. The move, with what it needs, or null.
+      const rejectedMove =
+        isReceiptSource &&
+        wasOpen &&
+        heldStorageUnitId &&
+        receiptLine?.locationId &&
+        (args.decision === "Reject" || args.decision === "Partial")
+          ? await trx
+              .selectFrom("location")
+              .select(["rejectedStorageUnitId"])
+              .where("id", "=", receiptLine.locationId)
+              .where("companyId", "=", args.companyId)
+              .executeTakeFirst()
+              .then((location) =>
+                location?.rejectedStorageUnitId &&
+                location.rejectedStorageUnitId !== heldStorageUnitId
+                  ? {
+                      to: location.rejectedStorageUnitId,
+                      from: heldStorageUnitId,
+                      locationId: receiptLine.locationId as string
+                    }
+                  : null
+              )
+          : null;
+      const movesRejected = rejectedMove !== null;
+      // A lot from before the hold recorded no unit: its untracked Partial
+      // remainder stays held where it is only when that unit is non-nettable
+      // (a remainder in a pickable bin is not held there).
+      const legacyHoldsInPlace =
+        args.decision === "Partial" &&
+        isUntracked &&
+        !inspection.storageUnitId &&
+        !!heldStorageUnitId &&
+        !movesRejected &&
+        (await trx
+          .selectFrom("storageUnit")
+          .select("effectiveNettable")
+          .where("id", "=", heldStorageUnitId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst()
+          .then((unit) => !!unit && !unit.effectiveNettable));
       // The untracked quantity a Reject writes off; the lot size unless the
       // held unit is short.
       let writeOffQuantity = inspection.lotSize;
@@ -1038,46 +1217,64 @@ export async function dispositionInspection(
             .where("documentId", "=", inspection.id)
             .limit(1)
             .executeTakeFirst());
-        heldStripes = await heldStockStripes(trx, {
-          companyId: args.companyId,
-          itemId: inspection.itemId,
-          storageUnitId: heldStorageUnitId,
-          documentIds: lotDocumentIds
-        });
-        const onHand = round(
-          heldStripes.reduce((sum, stripe) => sum + stripe.quantity, 0)
-        );
         // A lot from before the hold (no storageUnitId) never held its stock,
         // and its Reject writes off from the receipt line's unit as before.
         const holdsStock =
           inspection.storageUnitId !== null || args.decision === "Partial";
         // Other lots in the unit keep what they hold: this lot claims only
-        // the rest.
-        const otherHeld = async () => {
-          const [{ held }] = (
-            await sql<{
-              held: number;
-            }>`SELECT public.inspection_held_quantity(${args.companyId}, ${inspection.itemId}, ${heldStorageUnitId}) AS held`.execute(
-              trx
-            )
-          ).rows as [{ held: number }];
-          return round(Number(held) - (wasOpen ? inspection.lotSize : 0));
-        };
-        if (args.decision === "Partial" && !writtenOff) {
-          const claimable = round(Math.max(onHand - (await otherHeld()), 0));
-          if (untrackedTake - claimable > EPSILON) {
+        // the rest. It is in that sum only while open and held in that unit;
+        // a lot from before the hold (no storageUnitId) is not.
+        const claimable = () =>
+          lotClaimableAtUnit(trx, {
+            companyId: args.companyId,
+            itemId: inspection.itemId,
+            storageUnitId: heldStorageUnitId,
+            locationId: receiptLine?.locationId,
+            ownHeld:
+              wasOpen && inspection.storageUnitId !== null
+                ? inspection.lotSize
+                : 0
+          });
+        // Only a remainder that stays held must be there (held in place, or
+        // moved to the rejected unit and held there); one left in a pickable
+        // bin holds nothing.
+        if (
+          args.decision === "Partial" &&
+          !writtenOff &&
+          (inspection.storageUnitId !== null ||
+            legacyHoldsInPlace ||
+            movesRejected)
+        ) {
+          const claim = await claimable();
+          if (untrackedTake - claim > EPSILON) {
             throw new Error(
-              `Only ${claimable} of the ${untrackedTake} rejected are in the held storage unit, so the rest cannot stay held. Correct the stock there, or reject the lot: a Reject writes off what is there.`
+              `Only ${claim} of the ${untrackedTake} rejected are in the held storage unit, so the rest cannot stay held. Correct the stock there, or reject the lot: a Reject writes off what is there.`
             );
           }
         }
         if (args.decision === "Reject" && holdsStock && !writtenOff) {
           writeOffQuantity = round(
-            Math.min(
-              inspection.lotSize,
-              Math.max(onHand - (await otherHeld()), 0)
-            )
+            Math.min(inspection.lotSize, await claimable())
           );
+        }
+        // The stripes a Reject's write-off draws from, read under the
+        // claim's locks, taken here when no claim was read (a lot from before
+        // the hold, a retry). A Partial's rejected move reads its own.
+        if (args.decision === "Reject") {
+          if (!holdsStock || writtenOff) {
+            await lockClaimUnit(trx, {
+              companyId: args.companyId,
+              itemId: inspection.itemId,
+              storageUnitId: heldStorageUnitId,
+              locationId: receiptLine?.locationId
+            });
+          }
+          heldStripes = await heldStockStripes(trx, {
+            companyId: args.companyId,
+            itemId: inspection.itemId,
+            storageUnitId: heldStorageUnitId,
+            documentIds: lotDocumentIds
+          });
         }
       }
 
@@ -1086,79 +1283,61 @@ export async function dispositionInspection(
       // the held unit's stock may belong to another lot.
       let movedToStorageUnitId: string | null = null;
       let moveRows: Insertable<KyselyDatabase["itemLedger"]>[] = [];
-      if (
-        isReceiptSource &&
-        wasOpen &&
-        heldStorageUnitId &&
-        receiptLine?.locationId &&
-        (args.decision === "Reject" || args.decision === "Partial")
-      ) {
-        const location = await trx
-          .selectFrom("location")
-          .select(["rejectedStorageUnitId"])
-          .where("id", "=", receiptLine.locationId)
-          .where("companyId", "=", args.companyId)
-          .executeTakeFirst();
-        const rejectedStorageUnitId = location?.rejectedStorageUnitId ?? null;
-        if (
-          rejectedStorageUnitId &&
-          rejectedStorageUnitId !== heldStorageUnitId
-        ) {
-          const moves = await rejectedMoves(trx, {
-            companyId: args.companyId,
-            itemId: inspection.itemId,
-            fromStorageUnitId: heldStorageUnitId,
-            trackedEntityIds: isUntracked
-              ? null
-              : args.decision === "Reject"
-                ? allLotIds
-                : [...failedEntityIds].filter((id): id is string => !!id),
-            untrackedQuantity:
-              isUntracked && args.decision === "Partial"
-                ? rejectedQuantity
-                : null,
-            documentIds: lotDocumentIds
+      if (rejectedMove) {
+        const moves = await rejectedMoves(trx, {
+          companyId: args.companyId,
+          itemId: inspection.itemId,
+          fromStorageUnitId: rejectedMove.from,
+          trackedEntityIds: isUntracked
+            ? null
+            : args.decision === "Reject"
+              ? allLotIds
+              : [...failedEntityIds].filter((id): id is string => !!id),
+          untrackedQuantity:
+            isUntracked && args.decision === "Partial"
+              ? rejectedQuantity
+              : null,
+          documentIds: lotDocumentIds
+        });
+        if (moves.length > 0) {
+          // The untracked hold follows its stock; a tracked hold is the
+          // unit's status, and Put Away reads each unit's own bin.
+          if (isUntracked) movedToStorageUnitId = rejectedMove.to;
+          const [{ today }] = (
+            await sql<{
+              today: string;
+            }>`SELECT company_today(${args.companyId})::text AS today`.execute(
+              trx
+            )
+          ).rows as [{ today: string }];
+          moveRows = moves.flatMap((move) => {
+            const row = {
+              postingDate: today,
+              itemId: inspection.itemId,
+              locationId: rejectedMove.locationId,
+              trackedEntityId: move.trackedEntityId,
+              // The stripe it was held on, on both rows of the move.
+              projectId: move.projectId,
+              entryType: "Transfer" as const,
+              documentType: "Direct Transfer" as const,
+              documentId: inspection.id,
+              comment: "Rejected at inspection",
+              companyId: args.companyId,
+              createdBy: args.dispositionedBy
+            };
+            return [
+              {
+                ...row,
+                storageUnitId: rejectedMove.from,
+                quantity: -move.quantity
+              },
+              {
+                ...row,
+                storageUnitId: rejectedMove.to,
+                quantity: move.quantity
+              }
+            ];
           });
-          if (moves.length > 0) {
-            // The untracked hold follows its stock; a tracked hold is the
-            // unit's status, and Put Away reads each unit's own bin.
-            if (isUntracked) movedToStorageUnitId = rejectedStorageUnitId;
-            const [{ today }] = (
-              await sql<{
-                today: string;
-              }>`SELECT company_today(${args.companyId})::text AS today`.execute(
-                trx
-              )
-            ).rows as [{ today: string }];
-            moveRows = moves.flatMap((move) => {
-              const row = {
-                postingDate: today,
-                itemId: inspection.itemId,
-                locationId: receiptLine.locationId,
-                trackedEntityId: move.trackedEntityId,
-                // The stripe it was held on, on both rows of the move.
-                projectId: move.projectId,
-                entryType: "Transfer" as const,
-                documentType: "Direct Transfer" as const,
-                documentId: inspection.id,
-                comment: "Rejected at inspection",
-                companyId: args.companyId,
-                createdBy: args.dispositionedBy
-              };
-              return [
-                {
-                  ...row,
-                  storageUnitId: heldStorageUnitId,
-                  quantity: -move.quantity
-                },
-                {
-                  ...row,
-                  storageUnitId: rejectedStorageUnitId,
-                  quantity: move.quantity
-                }
-              ];
-            });
-          }
         }
       }
 
@@ -1193,6 +1372,11 @@ export async function dispositionInspection(
             }
           : null;
 
+      const legacyHoldUnitId =
+        acceptedQuantity !== null && !movedToStorageUnitId && legacyHoldsInPlace
+          ? heldStorageUnitId
+          : null;
+
       // The lot's decision is the release: once it is no longer open, the
       // hold guard lets its units and its stock move, and still protects what
       // other lots hold. So only this update runs with the release on.
@@ -1203,8 +1387,8 @@ export async function dispositionInspection(
             status: lotStatus,
             notes: args.notes || args.reason?.trim() || null,
             ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
-            ...(movedToStorageUnitId
-              ? { storageUnitId: movedToStorageUnitId }
+            ...((movedToStorageUnitId ?? legacyHoldUnitId)
+              ? { storageUnitId: movedToStorageUnitId ?? legacyHoldUnitId }
               : {}),
             dispositionedBy: args.dispositionedBy,
             dispositionedAt: nowIso,
@@ -1318,18 +1502,13 @@ export async function upsertInspectionMeasurement(
         inspection,
         "noKeyUpdate"
       );
-      if (
-        isInspectionClosed(
-          await lockedLotStatus(
-            trx,
-            args.companyId,
-            args.inspectionId,
-            "update"
-          )
-        )
-      ) {
-        throw new Error("Inspection is closed");
-      }
+      // The status after the lock is the one every check below reads.
+      inspection.status = await lockOpenLot(
+        trx,
+        args.companyId,
+        args.inspectionId,
+        "update"
+      );
       const feature = await trx
         .selectFrom("inspectionFeature")
         .select([
@@ -1481,27 +1660,22 @@ export async function upsertInspectionMeasurement(
         }
       }
 
-      // Passed/Failed already threw above, so Partial is the only terminal
-      // status left to guard against.
-      const isTerminal = inspection.status === "Partial";
-      if (!isTerminal) {
-        const samples = await trx
-          .selectFrom("inspectionSample")
-          .select(["status"])
-          .where("inspectionId", "=", args.inspectionId)
+      const samples = await trx
+        .selectFrom("inspectionSample")
+        .select(["status"])
+        .where("inspectionId", "=", args.inspectionId)
+        .execute();
+      const nextStatus = computeLotStatus(samples);
+      if (nextStatus !== inspection.status) {
+        await trx
+          .updateTable("inspection")
+          .set({
+            status: nextStatus,
+            updatedBy: args.userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", args.inspectionId)
           .execute();
-        const nextStatus = computeLotStatus(samples);
-        if (nextStatus !== inspection.status) {
-          await trx
-            .updateTable("inspection")
-            .set({
-              status: nextStatus,
-              updatedBy: args.userId,
-              updatedAt: nowIso
-            })
-            .where("id", "=", args.inspectionId)
-            .execute();
-        }
       }
 
       return {
@@ -1652,18 +1826,8 @@ export async function changeInspectionDocument(
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       await assertReceiptNotVoided(trx, args.companyId, inspection);
-      if (
-        isInspectionClosed(
-          await lockedLotStatus(
-            trx,
-            args.companyId,
-            args.inspectionId,
-            "update"
-          )
-        )
-      ) {
-        throw new Error("Inspection is closed");
-      }
+      // Refuses a lot a decision closed while this waited for the lock.
+      await lockOpenLot(trx, args.companyId, args.inspectionId, "update");
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1732,13 +1896,8 @@ export async function recordInspectionGauge(
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       await assertReceiptNotVoided(trx, args.companyId, inspection);
-      if (
-        isInspectionClosed(
-          await lockedLotStatus(trx, args.companyId, args.inspectionId, "share")
-        )
-      ) {
-        throw new Error("Inspection is closed");
-      }
+      // Refuses a lot a decision closed while this waited for the lock.
+      await lockOpenLot(trx, args.companyId, args.inspectionId, "share");
 
       const plan = await trx
         .selectFrom("inspectionSamplingPlan")

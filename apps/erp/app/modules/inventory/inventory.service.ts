@@ -68,6 +68,7 @@ import {
   splitTakeByBin
 } from "@carbon/database/picked-consumption";
 import {
+  lockHeldUnits,
   setInspectionRelease,
   withInspectionRelease
 } from "@carbon/database/quality";
@@ -7005,9 +7006,11 @@ export async function refuseShippingOpenLotStock(
   if (heldPairs.length > 0) {
     // The hold guard's lock: a concurrent move out of the same (item, unit)
     // reads on-hand after this commits.
-    await sql`SELECT pg_advisory_xact_lock(hashtextextended('inspection-hold:' || ${companyId} || ':' || k.i || ':' || k.u, 0))
-      FROM unnest(${heldPairs.map((p) => p.itemId)}::text[], ${heldPairs.map((p) => p.unitId)}::text[]) AS k(i, u)
-      ORDER BY k.i, k.u`.execute(trx);
+    await lockHeldUnits(
+      trx,
+      companyId,
+      heldPairs.map((p) => ({ itemId: p.itemId, storageUnitId: p.unitId }))
+    );
     const result = await sql<{ itemId: string; unitId: string }>`
       SELECT k.i AS "itemId", k.u AS "unitId"
       FROM unnest(${heldPairs.map((p) => p.itemId)}::text[], ${heldPairs.map((p) => p.unitId)}::text[]) AS k(i, u)
@@ -7335,9 +7338,7 @@ export async function heldStockMovedByCount(
     SELECT DISTINCT
       COALESCE(i."readableIdWithRevision", i."id") AS "part",
       su."name" AS "unit",
-      (te."id" IS NOT NULL
-        AND public.inspection_line_lot_open(il."companyId", te."attributes" ->> 'Receipt Line')
-      ) AS "awaitingInspection",
+      COALESCE(lot."open", false) AS "awaitingInspection",
       (il."trackedEntityId" IS NULL AND NOT EXISTS (
         SELECT 1 FROM "itemLedger" found
         WHERE found."companyId" = il."companyId"
@@ -7359,6 +7360,12 @@ export async function heldStockMovedByCount(
     LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
     LEFT JOIN "trackedEntity" te
       ON te."id" = il."trackedEntityId" AND te."companyId" = il."companyId"
+    -- For the rows of units On Hold before the count: whether the unit's
+    -- receipt lot is still open (one lookup per such row).
+    LEFT JOIN LATERAL (
+      SELECT public.inspection_line_lot_open(il."companyId", te."attributes" ->> 'Receipt Line') AS "open"
+      WHERE il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
+    ) lot ON true
     WHERE il."companyId" = ${companyId}
       AND il."documentType" = 'Inventory Count'
       AND il."documentId" = ${inventoryCountId}
@@ -7367,7 +7374,7 @@ export async function heldStockMovedByCount(
         -- On Hold for its open receipt lot: a unit On Hold for another
         -- reason (a customer return) is not held for inspection.
         (il."trackedEntityId" = ANY(${[...heldTrackedEntityIds]}::text[])
-          AND public.inspection_line_lot_open(il."companyId", te."attributes" ->> 'Receipt Line'))
+          AND COALESCE(lot."open", false))
         OR (il."trackedEntityId" IS NULL AND il."storageUnitId" IS NOT NULL
           -- CASE keeps the two sums behind the indexed test: most counted
           -- items have no lot at the unit.
