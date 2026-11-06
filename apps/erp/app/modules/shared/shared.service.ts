@@ -14249,7 +14249,6 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
-        // An untracked line with no bin ships from a bin that holds its stock.
         const untrackedItemIds = new Set(
           items.data
             ?.filter((d) => d.itemTrackingType === "Inventory")
@@ -14718,7 +14717,6 @@ export async function createDocument(
               (salesOrderLine.data.unitPrice ?? 0)) *
             (1 + salesOrderLine.data.taxPercent);
 
-          // An untracked line with no bin ships from a bin that holds its stock.
           const storageUnitId =
             item.data.itemTrackingType === "Inventory"
               ? (

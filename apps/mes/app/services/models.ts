@@ -246,9 +246,7 @@ export const baseQuantityValidator = finishValidator.extend({
 
 export const nonScrapQuantityValidator = baseQuantityValidator;
 
-// A completion may carry the completed quantity its page showed. The route
-// skips it when the operation's quantity has moved on since: a second tab or
-// a resent request already recorded that unit.
+// The completed quantity the page showed; the route skips a stale completion.
 export const completeQuantityValidator = nonScrapQuantityValidator.extend({
   expectedQuantityComplete: zfd.numeric(z.number().min(0).optional())
 });

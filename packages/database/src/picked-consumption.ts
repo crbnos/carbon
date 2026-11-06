@@ -147,8 +147,7 @@ function fullestFirst(
     .sort(([a, qa], [b, qb]) => qb - qa || (a ?? "").localeCompare(b ?? ""));
 }
 
-// The preferred bin, then the other bins with stock, fullest first. With no
-// bin chosen, no storage unit is a candidate like any other.
+// With no bin chosen, no storage unit is a candidate like any other.
 function drawOrder(
   bins: readonly BinStock[],
   preferred: string | null

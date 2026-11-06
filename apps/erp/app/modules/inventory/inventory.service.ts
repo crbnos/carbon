@@ -6844,7 +6844,6 @@ export async function storageRuleViolations(
   return { violations, ruleNames };
 }
 
-/** The rule id of the built-in warning `shipmentStockWarnings` returns. */
 export const SHIPMENT_BIN_STOCK_RULE_ID = "shipment-storage-unit-stock";
 
 /**
@@ -25832,11 +25831,9 @@ async function drawUntrackedAtBin(
 }
 
 /**
- * Issues an operation's untracked materials for `quantity` units: what every
- * unit the operation has made or scrapped needs, less what is already issued.
- * The caller records the production (or scrap) quantity BEFORE it calls this,
- * in its own transaction or this one; a dry run is the only exception. A
- * caller that records after would see too few units and issue too little.
+ * Issues what every unit the operation has made or scrapped needs, less what
+ * is already issued. The caller records the production (or scrap) quantity
+ * before it calls this; a caller that records after would issue too little.
  */
 async function issueJobOperationMaterials(
   trx: Transaction<KyselyDatabase>,
@@ -25878,9 +25875,7 @@ async function issueJobOperationMaterials(
     .where("companyId", "=", companyId);
   if (!dryRun) operationQuery = operationQuery.forUpdate();
   const operation = await operationQuery.executeTakeFirst();
-  // The units this operation has made or scrapped, this call's included: every
-  // caller records the production (or scrap) quantity before it issues, and a
-  // dry run checks a quantity it has not recorded yet.
+  // A dry run checks a quantity it has not recorded yet.
   const unitsAccounted =
     Number(operation?.quantityComplete ?? 0) +
     Number(operation?.quantityScrapped ?? 0) +
@@ -26068,8 +26063,6 @@ async function issueJobOperationMaterials(
     data: { quantityIssued: number };
   }[] = [];
   for await (const material of materialsToIssue) {
-    // What every unit accounted for needs, less what any issue already took,
-    // as backflush_job_materials does, so a unit's material is issued once.
     const quantityToIssue = round(
       Math.max(
         0,
@@ -26169,7 +26162,6 @@ async function issueJobOperationMaterials(
       }
     } else if (remaining > 0 && itemIdIsTracked.get(material.itemId)) {
       const { totals, defaults } = await loadBinReads();
-      // The bin the material names, else the item's nettable default.
       const preferredStorageUnitId =
         material.storageUnitId ??
         (material.defaultStorageUnit
@@ -28498,10 +28490,8 @@ export async function issueMaterial(
         if (!trackedEntity) {
           throw new NotFoundError("Tracked entity not found");
         }
-        // A unit completes once per operation (its `Operation <id>` marker,
-        // which also hides it in the MES). A second production row would raise
-        // quantityComplete and issue the material of a unit never made. No
-        // production row names its unit, so a deleted row cannot reopen one.
+        // A unit completes once per operation; a second production row would
+        // issue the material of a unit never made.
         if (
           `Operation ${row.jobOperationId}` in
           ((trackedEntity.attributes ?? {}) as TrackedEntityAttributes)
@@ -29522,7 +29512,6 @@ export async function issueMaterial(
                   jobReadableId: job?.jobId ?? material.jobId
                 });
               }
-              // A return goes back to the one bin chosen above.
               const rows =
                 !strictSettings?.strict &&
                 adjustmentType !== "Positive Adjmt." &&
@@ -29605,7 +29594,6 @@ export async function issueMaterial(
               job?.locationId!,
               companyId
             );
-            // A return goes to the default, else the fullest bin.
             const rows =
               adjustmentType !== "Positive Adjmt." && Number(quantity) > 0
                 ? await planBinDraws(
@@ -29629,7 +29617,6 @@ export async function issueMaterial(
                       ? Number(quantity)
                       : -Number(quantity)
                   );
-            // The new job material names the bin the part came from.
             storageUnitId = rows[0]?.storageUnitId ?? null;
 
             for (const row of rows) {
