@@ -708,12 +708,41 @@ export function datasetAssets() {
 }
 
 /**
+ * Dev-server only: disconnects a page that stopped reading HMR messages. A tab
+ * the browser froze in the background, or a page it keeps in the back/forward
+ * cache, stays connected without reading, and Vite writes every update to it:
+ * the unsent bytes stay in the dev server's memory, about 2 MB per edit for
+ * each such page in the ERP. A page that wakes up finds the server gone, then
+ * reconnects and reloads (Vite's client does this), as it must after missing
+ * updates. A page that reads keeps nothing buffered for long.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function dropStalledHmrClients() {
+  const LIMIT = 4 * 1024 * 1024;
+  return {
+    name: "carbon:drop-stalled-hmr-clients",
+    apply: "serve",
+    configureServer(server) {
+      const timer = setInterval(() => {
+        for (const client of server.ws.clients) {
+          if (client.socket.bufferedAmount > LIMIT) client.socket.terminate();
+        }
+      }, 5000);
+      timer.unref();
+      server.httpServer?.once("close", () => clearInterval(timer));
+    },
+  };
+}
+
+/**
  * Every Carbon app's own Vite plugins, in one call. React Router and
  * Tailwind stay in the app's config, as the framework and styling plugins.
  *
  * Always on: stack activity (a no-op outside `crbn up`), per-icon react-icons
  * imports in dev (`iconImports`), the demo-asset glob as one module in dev
- * (`datasetAssets`), and Lingui's macro transform with the React
+ * (`datasetAssets`), dropping HMR clients that stopped reading
+ * (`dropStalledHmrClients`), and Lingui's macro transform with the React
  * Router id fix. The rest is opt-in, and a package
  * is imported only when its plugin runs, so a dev server or a small app pays
  * nothing for what it does not use.
@@ -734,6 +763,7 @@ export async function carbon({
     stackActivity(),
     iconImports(),
     datasetAssets(),
+    dropStalledHmrClients(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
     splitServer && splitServerByPackage(),
     precompress && command && mode && precompressedAssets({ command, mode }),
