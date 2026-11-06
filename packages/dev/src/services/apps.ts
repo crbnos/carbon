@@ -27,12 +27,27 @@ function isNoiseLine(line: string): boolean {
   return NOISE_PATTERNS.some((re) => re.test(plain));
 }
 
+// Rolldown pre-bundles dependencies with one worker per core, and its allocator
+// keeps what the workers freed: on a 14-core Mac about 1 GB stayed in each dev
+// server after a re-bundle, 320 MB with these (rolldown/rolldown#10985,
+// #11233). Read when the binding loads, so they must be set before Node starts.
+// The shell or a `.env` file overrides them.
+const ROLLDOWN_MEMORY_ENV = {
+  MIMALLOC_ARENA_PURGE_MULT: "0",
+  ROLLDOWN_WORKER_THREADS: "4",
+  ROLLDOWN_MAX_BLOCKING_THREADS: "4",
+  RAYON_NUM_THREADS: "4"
+};
+
 // `portless` inherits `crbn`'s `process.env`; a stale shell `SUPABASE_URL`
 // (e.g. `http://127.0.0.1:54321`) would otherwise win over `crbn`'s repo-root
 // `.env.local`. Merge the same `.env*` stack as ERP Vite (app then repo, last
 // wins) so spawned dev servers always see worktree URLs.
 function spawnAppEnv(repoRoot: string, appId: string): NodeJS.ProcessEnv {
-  const env: Record<string, string | undefined> = { ...process.env };
+  const env: Record<string, string | undefined> = {
+    ...ROLLDOWN_MEMORY_ENV,
+    ...process.env
+  };
   const appRoot = join(repoRoot, "apps", appId);
   const mergeFile = (abs: string) => {
     if (!existsSync(abs)) return;
