@@ -288,6 +288,38 @@ export function isFigureProblem({ code }: TextProblem): boolean {
 }
 
 /**
+ * The edit a record's preview or download prints, or why it may not print. A
+ * locked record prints its saved edit, whatever was posted. An open record prints
+ * the draft reduced to what differs from the template, as a save would. No draft
+ * prints a figure the record does not say; a download also refuses what a save would.
+ */
+export async function editToPrint(args: {
+  documentType: DocumentEditType;
+  locked: boolean;
+  isDownload: boolean;
+  draft:
+    | (Pick<DocumentTemplate, "blocks" | "settings"> & {
+        notes?: JSONContent | null;
+      })
+    | null;
+  readSaved: () => Promise<DocumentEdit | null>;
+  readTemplate: () => Promise<Pick<DocumentTemplate, "blocks" | "settings">>;
+}): Promise<{ edit: DocumentEdit | null } | { refused: string }> {
+  const { documentType, draft, isDownload } = args;
+  if (args.locked) return { edit: await args.readSaved() };
+  if (!draft) return { refused: "Invalid document" };
+
+  const template = await args.readTemplate();
+  const edit = diffDocumentEdit(documentType, template, draft);
+  const problems = validateDocumentEdit(documentType, template, edit).filter(
+    (problem) => isDownload || isFigureProblem(problem)
+  );
+  return problems.length > 0
+    ? { refused: problems.map((problem) => problem.message).join("\n") }
+    : { edit: { ...edit, notes: draft.notes } };
+}
+
+/**
  * An edit as read from storage, without any value it may not change. The save
  * refuses these, so one here predates a variable being locked.
  */

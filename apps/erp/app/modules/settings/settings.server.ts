@@ -96,10 +96,6 @@ import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
 import { fromServerFn } from "../shared/shared.service";
 import {
-  getDocumentEditRecord,
-  saveDocumentEditRow
-} from "./document-edit.service";
-import {
   accountMappingEntrySchema,
   apiKeyValidator,
   calculatedShelfLifeInputScopes,
@@ -1664,7 +1660,7 @@ export const getDocumentEditor = defineServiceFn({
   permission: { by: "documentType", rules: documentEditPermissions },
   async run(ctx, { documentType, documentId }) {
     const client = ctx.asCaller.supabase;
-    const record = await getDocumentEditRecord(
+    const record = await service.getDocumentEditRecord(
       client,
       ctx.company.id,
       documentType,
@@ -1724,7 +1720,7 @@ export const saveDocumentEdit = defineServiceFn({
   async run(ctx, input) {
     const { documentType, documentId } = input;
     const client = ctx.asCaller.supabase;
-    const record = await getDocumentEditRecord(
+    const record = await service.getDocumentEditRecord(
       client,
       ctx.company.id,
       documentType,
@@ -1753,7 +1749,7 @@ export const saveDocumentEdit = defineServiceFn({
       );
     }
 
-    const saved = await saveDocumentEditRow(ctx.asSystem.pg, {
+    const saved = await service.saveDocumentEditRow(ctx.asSystem.pg, {
       companyId: ctx.company.id,
       documentType,
       documentId,

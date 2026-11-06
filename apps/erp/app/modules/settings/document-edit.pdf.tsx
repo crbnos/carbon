@@ -34,8 +34,11 @@ import {
   renderSalesOrderPdf,
   renderSalesReturnOrderPdf
 } from "~/modules/sales/sales.pdf";
-import { getDocumentEditRecord } from "./document-edit.service";
-import { buildPreviewProps, getCompany } from "./settings.service";
+import {
+  buildPreviewProps,
+  getCompany,
+  getDocumentEditRecord
+} from "./settings.service";
 import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
 
 const logger = getLogger("erp", "document-edit");

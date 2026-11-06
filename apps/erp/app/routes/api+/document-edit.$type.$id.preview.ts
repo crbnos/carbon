@@ -2,13 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { DocumentEdit } from "@carbon/documents/template";
 import {
   blockSchema,
-  diffDocumentEdit,
   documentSettingsSchema,
-  isFigureProblem,
-  validateDocumentEdit
+  editToPrint
 } from "@carbon/documents/template";
 import {
   getCompanyTemplate,
@@ -28,35 +25,24 @@ const logger = getLogger("erp", "document-edit", "preview");
 
 /**
  * The real PDF of one record with the editor's unsaved draft applied, for whoever
- * may edit it. The draft is reduced to what differs from the company template,
- * exactly as a save is. A locked record prints its saved edits, whatever is sent,
- * and no draft prints a figure the record does not say.
+ * may edit it. `editToPrint` decides what prints.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyGroupId, key, record } =
     await requireDocumentEditRecord(request, params);
   const { companyId, documentType, documentId } = key;
   const formData = await request.formData();
-  const isDownload = formData.get("intent") === "download";
 
-  let edit: DocumentEdit | null;
-  if (record.locked) {
-    edit = await getDocumentEdit(client, key);
-  } else {
-    const draft = parseDraft(formData);
-    if (!draft) return new Response("Invalid document", { status: 400 });
-
-    const template = await getCompanyTemplate(client, key);
-    edit = diffDocumentEdit(documentType, template, draft);
-    const problems = validateDocumentEdit(documentType, template, edit).filter(
-      (problem) => isDownload || isFigureProblem(problem)
-    );
-    if (problems.length > 0) {
-      return new Response(problems.map((p) => p.message).join("\n"), {
-        status: 400
-      });
-    }
-    edit.notes = draft.notes;
+  const toPrint = await editToPrint({
+    documentType,
+    locked: record.locked,
+    isDownload: formData.get("intent") === "download",
+    draft: parseDraft(formData),
+    readSaved: () => getDocumentEdit(client, key),
+    readTemplate: () => getCompanyTemplate(client, key)
+  });
+  if ("refused" in toPrint) {
+    return new Response(toPrint.refused, { status: 400 });
   }
 
   try {
@@ -66,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       companyGroupId,
       locale: getPreferenceHeaders(request).locale,
-      edit
+      edit: toPrint.edit
     });
   } catch (error) {
     if (error instanceof Response) throw error;

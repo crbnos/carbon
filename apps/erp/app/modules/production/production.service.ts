@@ -189,7 +189,7 @@ import {
   checkProjectBudget,
   insertTimesheetDraft
 } from "~/modules/projects/projects.service";
-import { copyDocumentEdit } from "~/modules/settings/document-edit.service";
+import { copyDocumentEdit } from "~/modules/settings/settings.service";
 import {
   assertCompanyRecords,
   attributesContain,

@@ -7,6 +7,7 @@ import { resolveTemplate } from "./defaults";
 import {
   applyDocumentEdit,
   diffDocumentEdit,
+  editToPrint,
   isEmptyDocumentEdit,
   isFigureProblem,
   printedNotes,
@@ -241,6 +242,84 @@ describe("validateDocumentEdit", () => {
     const problems = validateDocumentEdit("purchaseOrder", template, edit);
     expect(problems).toMatchObject([{ code: "valueLocked" }]);
     expect(problems.every(isFigureProblem)).toBe(true);
+  });
+});
+
+describe("editToPrint", () => {
+  const template = resolveTemplate("purchaseOrder", null);
+  const saved = { blocks: {}, settings: { text: { title: "Saved words" } } };
+  const print = (args: {
+    locked?: boolean;
+    isDownload?: boolean;
+    draft: Parameters<typeof editToPrint>[0]["draft"];
+  }) =>
+    editToPrint({
+      documentType: "purchaseOrder",
+      locked: false,
+      isDownload: false,
+      readSaved: async () => saved,
+      readTemplate: async () => template,
+      ...args
+    });
+  const typedTotal = {
+    blocks: template.blocks.map((block) =>
+      block.type === "summary"
+        ? { ...block, text: { totalValue: "$1" } }
+        : block
+    ),
+    settings: template.settings
+  };
+  // Not a figure: a save refuses it, a preview shows it.
+  const unknownVariable = {
+    blocks: template.blocks,
+    settings: { ...template.settings, text: { title: "{nope}" } }
+  };
+
+  it("prints a locked record's saved edit, whatever was posted", async () => {
+    expect(await print({ locked: true, draft: typedTotal })).toEqual({
+      edit: saved
+    });
+    expect(await print({ locked: true, draft: null })).toEqual({ edit: saved });
+  });
+
+  it("refuses a draft that takes a figure out, in a preview and a download", async () => {
+    for (const isDownload of [false, true]) {
+      expect(await print({ isDownload, draft: typedTotal })).toMatchObject({
+        refused: expect.stringContaining("must stay")
+      });
+    }
+  });
+
+  it("refuses what a save would only on a download", async () => {
+    expect(await print({ draft: unknownVariable })).toHaveProperty("edit");
+    expect(
+      await print({ isDownload: true, draft: unknownVariable })
+    ).toMatchObject({ refused: expect.stringContaining("{nope}") });
+  });
+
+  it("prints only what the draft changes, with its notes", async () => {
+    const notes = { type: "doc", content: [] };
+    expect(
+      await print({
+        draft: {
+          blocks: template.blocks,
+          settings: { ...template.settings, text: { title: "Typed" } },
+          notes
+        }
+      })
+    ).toEqual({
+      edit: {
+        blocks: {},
+        settings: { text: { title: "Typed" } },
+        notes
+      }
+    });
+  });
+
+  it("refuses a draft it could not read on an open record", async () => {
+    expect(await print({ draft: null })).toEqual({
+      refused: "Invalid document"
+    });
   });
 });
 

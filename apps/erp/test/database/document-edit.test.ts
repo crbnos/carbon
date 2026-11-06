@@ -10,7 +10,7 @@ import {
   type GetMethodResult,
   getMethod
 } from "../../app/modules/production/production.service";
-import { saveDocumentEditRow } from "../../app/modules/settings/document-edit.service";
+import { saveDocumentEditRow } from "../../app/modules/settings/settings.service";
 import {
   alwaysPostFixture,
   jobFixture,
