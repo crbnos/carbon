@@ -50,10 +50,23 @@ describe("patched Vite", () => {
     expect(adds).toBe(1);
   });
 
+  it("adds a file again after the watcher reports it deleted", async () => {
+    const ssr = server.environments.ssr;
+    const url = `/@fs${file}`;
+    const before = adds;
+    server.watcher.emit("unlink", file);
+    const mod = await ssr.moduleGraph.getModuleByUrl(url);
+    if (mod) ssr.moduleGraph.invalidateModule(mod);
+    await ssr.transformRequest(url);
+    expect(adds).toBe(before + 1);
+  });
+
   it("maps SSR stack traces itself, not through Node's source maps", () => {
     const ssr = server.environments.ssr as unknown as {
       runner: { options: { sourcemapInterceptor: unknown } };
     };
-    expect(ssr.runner.options.sourcemapInterceptor).not.toBe("node");
+    expect(ssr.runner.options.sourcemapInterceptor).toEqual({
+      retrieveFile: expect.any(Function)
+    });
   });
 });
