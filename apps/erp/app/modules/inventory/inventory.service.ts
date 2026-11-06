@@ -25950,7 +25950,7 @@ async function issueJobOperationMaterials(
   // The stock stripes this job's demand may draw (Projects Phase 2a).
   const stripes = await loadDemandStripes(trx, companyId, job.projectId);
 
-  const itemIdIsTracked = new Map(
+  const itemIdHoldsStock = new Map(
     items.map((item) => [item.id, item.itemTrackingType === "Inventory"])
   );
 
@@ -25982,7 +25982,7 @@ async function issueJobOperationMaterials(
       trx,
       companyId,
       materialsToIssue
-        .filter((material) => itemIdIsTracked.get(material.itemId))
+        .filter((material) => itemIdHoldsStock.get(material.itemId))
         .map((material) => ({
           storageUnitId: pullFrom.get(material.id),
           itemId: material.itemId
@@ -26119,7 +26119,7 @@ async function issueJobOperationMaterials(
       }
     }
 
-    if (remaining > 0 && strict && itemIdIsTracked.get(material.itemId)) {
+    if (remaining > 0 && strict && itemIdHoldsStock.get(material.itemId)) {
       const storageUnitId = pullFrom.get(material.id) ?? null;
       const problem = await binCoverProblem(trx, {
         companyId,
@@ -26160,7 +26160,7 @@ async function issueJobOperationMaterials(
           createdBy: userId
         });
       }
-    } else if (remaining > 0 && itemIdIsTracked.get(material.itemId)) {
+    } else if (remaining > 0 && itemIdHoldsStock.get(material.itemId)) {
       const { totals, defaults } = await loadBinReads();
       const preferredStorageUnitId =
         material.storageUnitId ??
