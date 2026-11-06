@@ -38,5 +38,7 @@ export function trackDocumentHidden(doc: Document = document) {
  */
 export function DocumentHiddenMotion() {
   useEffect(() => trackDocumentHidden(), []);
-  return <style>{closedLayerMotionCss}</style>;
+  // Not as a child: the server would escape its quotes to `&quot;`, which a
+  // <style> keeps as written, so hydration would fail on every page load.
+  return <style dangerouslySetInnerHTML={{ __html: closedLayerMotionCss }} />;
 }

@@ -11,30 +11,51 @@ import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch } from "../git.js";
 import { onShutdown, requireNumberEnv, tryConnect } from "../helpers.js";
 import {
+  bootSharedServices,
   bootStack,
   ensureDockerRunning,
+  ensureSharedNetwork,
   stopStack
 } from "../services/compose.js";
 import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   applyMigrations,
+  type DbTarget,
   ensureConfigRow,
+  modeOf,
+  serviceSchemasReady,
+  stackHosts,
   syncAuthz,
   waitForPostgres,
-  waitForServiceSchemas
+  waitForServiceSchemas,
+  worktreeDbTarget
 } from "../services/migrations.js";
 import { branchToPrefix } from "../services/portless.js";
+import {
+  createWorktreeDatabase,
+  registerStorageTenant
+} from "../services/shared-db.js";
 import { tasks } from "../ui.js";
 import {
   ensureSlugAvailable,
   getWorktreeRoot,
   persistSlug,
   projectName,
+  readDevJwt,
+  recordedStackMode,
   resolveSlot,
-  resolveSlug
+  resolveSlug,
+  type StackMode,
+  worktreeDatabaseName,
+  writeStackMode
 } from "../worktree.js";
 
-const MIGRATION_SERVICES = ["postgres", "gotrue", "storage", "realtime"];
+// Shared mode runs Postgres and Storage in crbn-shared, so only the 2 services
+// that build their schemas in the worktree database boot here.
+const MIGRATION_SERVICES: Record<StackMode, string[]> = {
+  isolated: ["postgres", "gotrue", "storage", "realtime"],
+  shared: ["gotrue", "realtime"]
+};
 
 // Run database migrations against the worktree's local stack. If postgres is
 // already running (full stack up), migrate against it directly. If not, boot
@@ -66,7 +87,23 @@ export async function migrate(opts: { regen?: boolean } = {}) {
 
   // If postgres is already reachable, migrate against the running DB.
   if (portDb && (await tryConnect("127.0.0.1", portDb, 500))) {
-    return migrateAgainstRunningDb(root, portDb, shouldRegen);
+    const db = worktreeDbTarget(slug, portDb);
+    const mode = modeOf(db);
+    // An older crbn wrote no mode: record the one its .env.local runs, so the
+    // compose files match the stack.
+    if (recordedStackMode(slug) === null) writeStackMode(slug, mode);
+    const running = () =>
+      migrateAgainstRunningDb(root, db, stackHosts(mode, slug), shouldRegen);
+    if (mode === "isolated") return running();
+    // The shared Postgres is up for every worktree. This worktree's stack is
+    // up when its gateway answers: then wait for it, never boot or stop it.
+    const portApi = Number(process.env.PORT_API);
+    if (portApi && (await tryConnect("127.0.0.1", portApi, 500))) {
+      await waitForServiceSchemas(db);
+      return running();
+    }
+    // Stack down, but GoTrue and Realtime built their schemas before.
+    if (await serviceSchemasReady(db).catch(() => false)) return running();
   }
 
   // Standalone mode: boot the migration services, migrate, tear down.
@@ -77,7 +114,8 @@ export async function migrate(opts: { regen?: boolean } = {}) {
 
 async function migrateAgainstRunningDb(
   root: string,
-  portDb: number,
+  db: DbTarget,
+  hosts: { api: string; inngest: string },
   shouldRegen: boolean
 ) {
   let applied = false;
@@ -85,7 +123,7 @@ async function migrateAgainstRunningDb(
     {
       title: "Apply database migrations",
       task: async () => {
-        const r = await applyMigrations(root, portDb);
+        const r = await applyMigrations(root, db);
         applied = r.applied;
         return r.applied ? "migrations applied" : "schema already up to date";
       }
@@ -95,7 +133,7 @@ async function migrateAgainstRunningDb(
       task: async () => {
         const anonKey = process.env.SUPABASE_ANON_KEY;
         if (!anonKey) return "skipped (SUPABASE_ANON_KEY not set)";
-        await ensureConfigRow(portDb, anonKey);
+        await ensureConfigRow(db, anonKey, hosts);
         return "config row upserted";
       }
     },
@@ -125,7 +163,7 @@ async function migrateAgainstRunningDb(
       : []),
     {
       title: "Sync RLS policies with the authz manifest",
-      task: () => syncAuthz(root, portDb)
+      task: () => syncAuthz(root, db)
     }
   ]);
   outro("done");
@@ -152,16 +190,41 @@ async function migrateStandalone(
     const slot = await resolveSlot(slug, root);
     const branch = await currentBranch(root);
     const branchPrefix = branchToPrefix(branch, slug);
-    writeEnv(root, renderEnv({ slug, portless: true, branchPrefix, ...slot }));
+    // No `crbn up` ran here yet: take its default mode.
+    writeStackMode(slug, "shared");
+    writeEnv(
+      root,
+      renderEnv({
+        slug,
+        portless: true,
+        branchPrefix,
+        ...slot,
+        mode: "shared",
+        database: worktreeDatabaseName(slug)
+      })
+    );
     syncAppPortlessConfigs(root);
     loadDotenv({ path: envLocal, override: true });
   }
 
   const portDb = requireNumberEnv("PORT_DB");
   const project = projectName(slug);
+  const db = worktreeDbTarget(slug, portDb);
+  const mode = modeOf(db);
+  if (recordedStackMode(slug) === null) writeStackMode(slug, mode);
 
   log.info(`booting migration services (${project})`);
   await ensureDockerRunning();
+  if (mode === "shared") {
+    const jwt = readDevJwt();
+    const warning = await bootSharedServices(jwt);
+    if (warning) log.warn(warning);
+    await createWorktreeDatabase(db.database);
+    await registerStorageTenant(db.database, jwt);
+  } else {
+    // The dev compose file joins carbon-shared in both modes.
+    await ensureSharedNetwork();
+  }
 
   // Tear down on Ctrl+C so the standalone postgres doesn't orphan.
   let interrupted = false;
@@ -173,15 +236,15 @@ async function migrateStandalone(
   });
 
   try {
-    await bootStack(root, slug, { services: MIGRATION_SERVICES });
-    await waitForPostgres(portDb);
-    await waitForServiceSchemas(portDb);
+    await bootStack(root, slug, { services: MIGRATION_SERVICES[mode] });
+    await waitForPostgres(db);
+    await waitForServiceSchemas(db);
 
     await tasks([
       {
         title: "Apply database migrations",
         task: async () => {
-          const r = await applyMigrations(root, portDb);
+          const r = await applyMigrations(root, db);
           return r.applied ? "migrations applied" : "schema already up to date";
         }
       },
@@ -190,7 +253,7 @@ async function migrateStandalone(
         task: async () => {
           const anonKey = process.env.SUPABASE_ANON_KEY;
           if (!anonKey) return "skipped (SUPABASE_ANON_KEY not set)";
-          await ensureConfigRow(portDb, anonKey);
+          await ensureConfigRow(db, anonKey, stackHosts(mode, slug));
           return "config row upserted";
         }
       },
@@ -211,7 +274,7 @@ async function migrateStandalone(
         : []),
       {
         title: "Sync RLS policies with the authz manifest",
-        task: () => syncAuthz(root, portDb)
+        task: () => syncAuthz(root, db)
       }
     ]);
 

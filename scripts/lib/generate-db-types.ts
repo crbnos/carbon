@@ -46,13 +46,19 @@ export function validateDatabaseUrl(value: string | undefined): string {
 // local DB's seeded companies — committing them makes types.ts
 // machine-dependent. The static `searchIndexRegistry` / `auditLogArchive`
 // tables (no underscore) are unaffected.
+//
+// Also strip Storage's `iceberg_namespaces` / `iceberg_tables`. Storage skips
+// them in a multi-tenant tenant database (crbn's shared mode keeps them in its
+// own registry database), so they would exist in one dev mode and not the
+// other. Carbon does not use them.
 export function stripPerTenantTables(source: string): string {
   const lines: string[] = [];
   let skipping = false;
   for (const line of source.split("\n")) {
     if (
       !skipping &&
-      /^      "?(searchIndex|auditLog)_[A-Za-z0-9-]+"?: \{$/.test(line)
+      (/^      "?(searchIndex|auditLog)_[A-Za-z0-9-]+"?: \{$/.test(line) ||
+        /^      iceberg_(namespaces|tables): \{$/.test(line))
     ) {
       skipping = true;
       continue;

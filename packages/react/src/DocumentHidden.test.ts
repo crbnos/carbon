@@ -4,9 +4,14 @@
 
 // @vitest-environment jsdom
 
+import { act, createElement } from "react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  closedLayerMotionCss,
   DOCUMENT_HIDDEN_ATTRIBUTE,
+  DocumentHiddenMotion,
   trackDocumentHidden
 } from "./DocumentHidden";
 
@@ -46,5 +51,28 @@ describe("trackDocumentHidden", () => {
     stop();
     setVisibility("hidden");
     expect(marked()).toBe(false);
+  });
+});
+
+describe("DocumentHiddenMotion", () => {
+  // A mismatch at the root makes React rebuild the whole document, stylesheet
+  // links included: the page flashes unstyled on every load.
+  it("hydrates the server's markup without a mismatch", async () => {
+    (
+      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(createElement(DocumentHiddenMotion));
+    // The server writes the CSS as it is: no &quot; in place of the quotes.
+    expect(container.querySelector("style")?.textContent).toBe(
+      closedLayerMotionCss
+    );
+    const errors: unknown[] = [];
+    await act(async () => {
+      hydrateRoot(container, createElement(DocumentHiddenMotion), {
+        onRecoverableError: (error) => errors.push(error)
+      });
+    });
+    expect(errors).toEqual([]);
   });
 });

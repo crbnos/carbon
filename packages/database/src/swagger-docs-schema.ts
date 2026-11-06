@@ -120800,7 +120800,7 @@ export default {
       get: {
         parameters: [
           {
-            format: "extensions.vector",
+            format: "vector",
             in: "query",
             name: "query_embedding",
             required: true,
@@ -120861,7 +120861,7 @@ export default {
                   type: "string"
                 },
                 query_embedding: {
-                  format: "extensions.vector",
+                  format: "vector",
                   type: "string"
                 }
               },
@@ -136077,7 +136077,7 @@ export default {
       get: {
         parameters: [
           {
-            format: "extensions.vector",
+            format: "vector",
             in: "query",
             name: "query_embedding",
             required: true,
@@ -136138,7 +136138,7 @@ export default {
                   type: "string"
                 },
                 query_embedding: {
-                  format: "extensions.vector",
+                  format: "vector",
                   type: "string"
                 }
               },
