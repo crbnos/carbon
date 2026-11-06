@@ -88,13 +88,12 @@ export async function renderStockTransferPdf(
     { companyId, documentType: "stockTransfer", documentId: id },
     edit
   );
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Get thumbnails for items
   const thumbnailPaths = stockTransferLines.data?.reduce<

@@ -191,13 +191,12 @@ export async function renderIssuePdf(
     { companyId, documentType: "issue", documentId: id },
     edit
   );
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   const stream = await renderToStream(
     <IssuePDF

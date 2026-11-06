@@ -193,13 +193,12 @@ export async function renderQuotePdf(
     currencyDecimals = currency.data?.decimalPlaces ?? null;
   }
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   const stream = await renderToStream(
     <QuotePDF
@@ -355,13 +354,12 @@ export async function renderSalesOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -544,13 +542,12 @@ export async function renderSalesReturnOrderPdf(
       }
     : null;
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.

@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { JobTravelerMaterial } from "@carbon/documents/pdf";
 import {
+  buildJobTravelerVars,
   ensureFont,
   Footer,
   getSafeFontFamily,
@@ -13,6 +14,7 @@ import {
 import {
   collectSectionIds,
   type DocumentEdit,
+  documentValues,
   interpolateContent,
   jobTravelerTexts,
   makeText,
@@ -263,33 +265,41 @@ export async function renderJobTravelerPdf(
     })
   );
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
-  const footerSectionContent = resolved.footerSectionId
-    ? sections[resolved.footerSectionId]?.content
-    : undefined;
-  const vars = {
-    "job.number": job.data.jobId ?? "",
-    "company.name": company.data.name ?? ""
-  };
-  const footerContent = footerSectionContent
-    ? interpolateContent(footerSectionContent, vars)
+  const footerSectionContent = templateConfig.footerSectionId
+    ? sections[templateConfig.footerSectionId]?.content
     : undefined;
   // The page body reads the template's texts itself (JobTravelerPageContent);
-  // these are the ones outside it.
-  const dt = makeText(jobTravelerTexts.document, resolved.settings, vars);
-  const documentTitle = dt("title");
-  const showFooter = resolved.footerSectionId !== null;
+  // these are the ones outside it. They read the same values as the page's body.
+  const values = documentValues(templateConfig.settings.valueEdits);
+  const varsOf = (data: (typeof makeMethodsWithData)[number]) =>
+    values.document(
+      buildJobTravelerVars({
+        job: job.data,
+        item: data.item,
+        customer: customer.data,
+        company: company.data as any,
+        jobOperations: data.operations,
+        batchNumber: data.batchNumber,
+        methodRevision: data.makeMethod.version?.toString(),
+        locale
+      })
+    );
+  const textsOf = (data: (typeof makeMethodsWithData)[number]) =>
+    makeText(jobTravelerTexts.document, templateConfig.settings, varsOf(data));
+  const [firstPage] = makeMethodsWithData;
+  const documentTitle = firstPage ? textsOf(firstPage)("title") : "";
+  const showFooter = templateConfig.footerSectionId !== null;
 
   const styles = StyleSheet.create({
     body: {
-      fontFamily: getSafeFontFamily(resolved.settings.fontFamily),
+      fontFamily: getSafeFontFamily(templateConfig.settings.fontFamily),
       padding: "20px 40px 50px 40px",
       color: "#000000",
       backgroundColor: "#FFFFFF"
@@ -327,12 +337,18 @@ export async function renderJobTravelerPdf(
           {showFooter && (
             <Footer
               documentId={job.data.jobId}
-              content={footerContent}
-              showPageNumbers={resolved.settings.showPageNumbers}
-              pageNumberFormat={resolved.settings.pageNumberFormat}
-              showRegistrationLine={resolved.settings.showRegistrationLine}
-              pageLabel={dt("page")}
-              ofLabel={dt("of")}
+              content={
+                footerSectionContent
+                  ? interpolateContent(footerSectionContent, varsOf(data))
+                  : undefined
+              }
+              showPageNumbers={templateConfig.settings.showPageNumbers}
+              pageNumberFormat={templateConfig.settings.pageNumberFormat}
+              showRegistrationLine={
+                templateConfig.settings.showRegistrationLine
+              }
+              pageLabel={textsOf(data)("page")}
+              ofLabel={textsOf(data)("of")}
             />
           )}
         </Page>

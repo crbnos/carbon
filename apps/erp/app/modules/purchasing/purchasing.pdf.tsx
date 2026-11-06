@@ -195,13 +195,12 @@ export async function renderPurchaseOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -390,13 +389,12 @@ export async function renderPurchaseReturnOrderPdf(
       }
     : null;
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -545,13 +543,12 @@ export async function renderPurchasingRfqPdf(
       }
     : null;
 
-  const resolved = templateConfig;
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   const body = await collect(
     await renderToStream(

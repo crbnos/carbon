@@ -6,7 +6,10 @@ import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
 import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
-import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import {
+  buildJobTravelerVars,
+  type JobTravelerMaterial
+} from "./blocks/jobTraveler";
 import type { PurchaseOrderApproval } from "./blocks/purchaseOrder";
 import type {
   ContractFinancingEventRow,
@@ -57,6 +60,7 @@ export type {
 };
 export {
   BatchListPDF,
+  buildJobTravelerVars,
   ContractFinancingRequestPDF,
   DOCUMENT_PDFS,
   ensureFont,

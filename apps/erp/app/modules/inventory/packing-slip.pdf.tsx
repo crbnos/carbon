@@ -118,14 +118,13 @@ export async function renderPackingSlip({
     { companyId, documentType: "packingSlip", documentId: id },
     edit
   );
-  const resolvedTemplate = templateConfig;
   const showThumbnails = templateShowsThumbnails(templateConfig, "packingSlip");
   const templateSections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolvedTemplate)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolvedTemplate.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   switch (shipment.data.sourceDocument) {
     case "Sales Order": {

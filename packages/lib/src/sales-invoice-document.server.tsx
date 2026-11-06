@@ -298,14 +298,12 @@ export async function loadSalesInvoiceDocument(args: {
     ).sort();
   }
 
-  // Resolve against the effective template (default when nothing is stored) so
-  // built-in / forked header & footer sections render even before a company
-  // saves a custom layout.
-  const resolved = templateConfig;
+  // The effective template (the default when nothing is stored), so built-in and
+  // forked header and footer sections render before a company saves a layout.
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
 
   // Settlement decimals from the document currency's row (authoritative over
