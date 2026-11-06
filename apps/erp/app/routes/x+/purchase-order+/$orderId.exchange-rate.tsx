@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The operation refuses an order in approval or finished, and sends a
   // released order whose total goes above its approved amount back for
   // approval.
-  const api = carbonFor(auth);
+  const api = await carbonFor(auth);
   const result = await api.purchasing.updatePurchaseOrderExchangeRate({
     id: orderId,
     exchangeRate: exchangeRate.data
