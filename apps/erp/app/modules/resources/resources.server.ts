@@ -34,6 +34,7 @@ import {
   maintenanceDispatchStatus,
   maintenanceDispatchValidator,
   maintenanceScheduleValidator,
+  newTrainingAssignees,
   processValidator,
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
@@ -1688,7 +1689,10 @@ export const createTrainingAssignment = defineServiceFn({
     }
 
     if (!isExternal) {
-      await service.notifyTrainingAssignment(ctx, insert.data.id, groupIds);
+      await service.notifyTrainingAssignment(ctx, insert.data.id, {
+        type: "group",
+        groupIds
+      });
     }
     return { id: insert.data.id };
   }
@@ -1699,8 +1703,8 @@ export const createTrainingAssignment = defineServiceFn({
  *
  * @remarks
  * Internal or external is fixed at creation and read from the stored
- * assignment, never the input. The groups of an internal assignment are
- * notified.
+ * assignment, never the input. For an internal assignment, only the people
+ * the change adds are notified.
  *
  * @mcp
  */
@@ -1733,7 +1737,32 @@ export const updateTrainingAssignment = defineServiceFn({
       return ctx.error("internal", "Failed to update assignment", update.error);
     }
 
-    if (!isExternal) await service.notifyTrainingAssignment(ctx, id, groupIds);
+    if (!isExternal) {
+      // Everyone else was told when they were assigned; telling them again on
+      // every save emailed a whole group for adding one person.
+      const [before, after] = await Promise.all([
+        client.rpc("users_for_groups", { groups: stored.data.groupIds ?? [] }),
+        client.rpc("users_for_groups", { groups: groupIds })
+      ]);
+      if (before.error || after.error) {
+        logger.error("Failed to resolve training assignees", {
+          companyId,
+          trainingAssignmentId: id,
+          error: before.error ?? after.error
+        });
+      } else {
+        const added = newTrainingAssignees(
+          (before.data ?? []) as string[],
+          (after.data ?? []) as string[]
+        );
+        if (added.length > 0) {
+          await service.notifyTrainingAssignment(ctx, id, {
+            type: "users",
+            userIds: added
+          });
+        }
+      }
+    }
     return { id };
   }
 });
