@@ -2,8 +2,9 @@
 #
 # On demand and quiet. CodeRabbit reviews a PR only when asked: comment
 # `@coderabbitai review`, or open the PR with `@coderabbitai` in its
-# description (adding it to an open PR's description triggers nothing). It
-# posts only the important comments and skips the walkthrough extras.
+# description (adding it to an open PR's description, or marking a draft ready,
+# triggers nothing: comment instead). It reviews once, not again on each
+# push. It posts only the important comments and skips the walkthrough extras.
 # /self-review is the default review; this is a second opinion.
 #
 # Repo conventions come from AGENTS.md, CLAUDE.md and .claude/rules/**, which
@@ -30,6 +31,7 @@ reviews:
   auto_review:
     enabled: false
     description_keyword: "@coderabbitai"
+    auto_incremental_review: false
     drafts: false
     # Stacked PRs: any branch may be a base, not only main.
     base_branches:
