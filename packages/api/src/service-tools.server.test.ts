@@ -10,7 +10,7 @@ vi.mock("@carbon/logger", () => ({
 }));
 
 import { CarbonError, createServiceContext } from "./service-fn.server";
-import { paged, payload, run, unwrap } from "./service-tools.server";
+import { isPaged, paged, payload, run, unwrap } from "./service-tools.server";
 
 const ctx = createServiceContext({
   actor: { type: "user", userId: "user-1", permissions: {} },
@@ -117,10 +117,11 @@ describe("unwrap and paged", () => {
 
   it("returns the data, and a paged list with its count", () => {
     expect(unwrap(ctx, { data: [1], error: null })).toEqual([1]);
-    expect(paged(ctx, { data: [1], count: 9, error: null })).toEqual({
-      rows: [1],
-      count: 9
-    });
+    const list = paged(ctx, { data: [1], count: 9, error: null });
+    // Marked, so a dispatcher can tell it from any `{ rows, count }` object.
+    expect(isPaged(list)).toBe(true);
+    expect(list).toMatchObject({ rows: [1], count: 9 });
+    expect(isPaged({ rows: [1], count: 9 })).toBe(false);
   });
 
   it("reads a database error by its code", () => {

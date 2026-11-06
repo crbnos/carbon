@@ -1263,7 +1263,7 @@
     {"name":"quality_updateQualityDocument","classification":"WRITE","schema":"82b15831f5c8","response":"3797626bd17e","permission":"quality:update","paginates":false},
     {"name":"quality_updateQualityDocumentField","classification":"WRITE","schema":"1db064c1bcda","response":"0eb0c2be01ed","permission":"quality:update","paginates":false},
     {"name":"quality_updateRequiredAction","classification":"WRITE","schema":"6174fe489861","response":"8394fbabd845","permission":"quality:update","paginates":false},
-    {"name":"quality_updateRisk","classification":"WRITE","schema":"29f0412589eb","response":"3797626bd17e","permission":"quality:update","paginates":false},
+    {"name":"quality_updateRisk","classification":"WRITE","schema":"aad9b911ed35","response":"3797626bd17e","permission":"quality:update","paginates":false},
     {"name":"quality_upsertInspectionDocument","classification":"WRITE","schema":"11b9bba59419","response":"3797626bd17e","permission":"quality:create+update","paginates":false},
     {"name":"quality_upsertItemInspectionDocumentAssignment","classification":"DESTRUCTIVE","schema":"62a96d078e83","response":"bcde375ebd4c","permission":"quality:create+update","paginates":false},
     {"name":"resources_activateProcess","classification":"WRITE","schema":"0902b09a4cf2","response":"8394fbabd845","permission":"resources:update","paginates":false},

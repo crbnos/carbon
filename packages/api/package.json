@@ -14,7 +14,8 @@
     "./postings.server": "./src/postings.server.ts",
     "./postings": "./src/postings.ts",
     "./internal-call": "./src/internal-call.ts",
-    "./stock-stripes": "./src/stock-stripes.ts"
+    "./stock-stripes": "./src/stock-stripes.ts",
+    "./catalog.server": "./src/catalog.server.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
