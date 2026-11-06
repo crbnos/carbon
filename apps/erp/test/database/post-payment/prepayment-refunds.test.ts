@@ -2,16 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHash } from "node:crypto";
+import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { loadPurchaseInvoiceDocumentIds } from "@carbon/database/deposit-scope";
 import { getCutoverOpenItems } from "@carbon/database/accounting-cutover-reads";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
+  getAvailableOnAccountCreditSources,
+  getDepositDocuments,
   postPaymentTransaction,
+  replaceInvoiceSettlements,
   rebuildPaymentJournals
 } from "../../../app/modules/invoicing/invoicing.service";
 import { databaseTest } from "../fixtures/local-database";
 import { paymentFixture } from "../fixtures/payment";
+import { localApiKeyClient, postgrestTest } from "../fixtures/local-supabase";
 
 async function prepaymentFixture() {
   const f = await paymentFixture();
@@ -418,7 +424,7 @@ async function refundApplication(
 }
 
 async function guarded<T>(
-  f: PrepaymentFixture,
+  f: Pick<PrepaymentFixture, "db">,
   run: (db: typeof f.db) => Promise<T>
 ) {
   return f.db.transaction().execute(async (db) => {
@@ -1014,3 +1020,279 @@ databaseTest(
     }
   }
 );
+
+
+async function customerDepositFixture() {
+  const f = await paymentFixture();
+  const order = await f.db.insertInto("salesOrder").values({
+    salesOrderId: "SO-LEGACY-REFUND", customerId: f.customerId,
+    companyId: f.companyId, createdBy: "system", currencyCode: "EUR", exchangeRate: 1.1
+  }).returning("id").executeTakeFirstOrThrow();
+  const depositAccount = f.account("customer-deposit");
+  await f.db.insertInto("account").values({id: depositAccount, name: "Customer deposits",
+    class: "Liability", incomeBalance: "Balance Sheet", companyGroupId: f.groupId, createdBy: "system"}).execute();
+  await f.db.updateTable("accountDefault").set({prepaymentAccount: depositAccount}).where("companyId", "=", f.companyId).execute();
+  const payment = async (amount: number, refund = false, rate = 1.1) => {
+    const id = await f.payment({amount, rate, noApplication: true});
+    await f.db.updateTable("payment").set({salesOrderId: order.id, paymentType: refund ? "Disbursement" : "Receipt"}).where("id", "=", id).where("companyId", "=", f.companyId).execute();
+    return id;
+  };
+  const post = (paymentId: string, type: "post" | "void" = "post") => postPaymentTransaction(f.db, {...f.args, paymentId, type});
+  const historicalRefund = async (amount: number, rate = 1.1) => {
+    const id = await payment(amount, true, rate);
+    await f.db.transaction().execute(async trx => {
+      // Before advance-consumption applications existed, posting wrote only these journal lines.
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      const journal = await trx.insertInto("journal").values({journalEntryId: id,
+        companyId: f.companyId, sourceType: "Payment", status: "Posted", postingDate: "2026-09-07", createdBy: "system"}).returning("id").executeTakeFirstOrThrow();
+      await trx.insertInto("journalLine").values([
+        {accountId: f.account("bank"), amount: -toBaseAmount(amount, rate), description: "Bank / Cash"},
+        {accountId: depositAccount, amount: -toBaseAmount(amount, rate), description: "Customer Deposit"}
+      ].map(line => ({...line, journalId: journal.id, companyId: f.companyId,
+        documentType: "Payment" as const, documentId: id, quantity: 1, journalLineReference: id}))).execute();
+      await trx.updateTable("payment").set({status: "Posted", journalId: journal.id, postingDate: "2026-09-07"})
+        .where("id", "=", id).where("companyId", "=", f.companyId).execute();
+    });
+    return id;
+  };
+  return {...f, orderId: order.id, depositAccount, payment, post, historicalRefund};
+}
+
+databaseTest("historical customer refunds reserve their original advance before another refund posts", async () => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110);
+    await f.post(advance);
+    await f.historicalRefund(44);
+    const excess = await f.payment(66.01, true);
+    await expect(f.post(excess)).rejects.toThrow(/remaining|historical/i);
+    const remainder = await f.payment(66, true);
+    await f.post(remainder);
+    const empty = await f.payment(0.01, true);
+    await expect(f.post(empty)).rejects.toThrow(/remaining|historical/i);
+  } finally { await f.cleanup(); }
+});
+
+postgrestTest("customer funding availability subtracts historical deposit refunds", async client => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110);
+    await f.post(advance);
+    await f.historicalRefund(44);
+    const available = await getAvailableOnAccountCreditSources(client, f.companyId,
+      {paymentType: "Receipt", customerId: f.customerId}, "EUR");
+    expect(available.error).toBeNull();
+    expect(available.data?.sources.map(source => ({amount: source.remainingDocument, base: source.remainingBase})))
+      .toEqual([{amount: 66, base: 60}]);
+  } finally { await f.cleanup(); }
+});
+
+postgrestTest("the refund picker excludes prepayments fully spent by their own cash applications", async client => {
+  const f = await prepaymentFixture();
+  try {
+    const invoiceId = await supplierInvoice(f);
+    const payment = await f.payment(110);
+    await f.db.insertInto("invoiceSettlement").values({paymentId: payment,
+      targetPurchaseInvoiceId: invoiceId, sourceAmount: 110, appliedAmount: 100,
+      sourceExchangeRate: 1.1, targetExchangeRate: 1.1, companyId: f.companyId,
+      createdBy: "system", appliedDate: "2026-09-07"}).execute();
+    await f.post(payment);
+    const docs = await getDepositDocuments(client, f.companyId);
+    expect(docs.find(doc => doc.id === f.purchaseOrderId)?.refundableCurrencyCodes).toEqual([]);
+  } finally { await f.cleanup(); }
+});
+
+
+databaseTest("historically refunded advances cannot be voided until the historical refund is voided", async () => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110); await f.post(advance);
+    const legacy = await f.historicalRefund(44);
+    await expect(guarded(f, db => db.updateTable("payment").set({status: "Voided"}).where("id", "=", advance).where("companyId", "=", f.companyId).execute())).rejects.toThrow(/historical|refund/i);
+    await expect(f.post(advance, "void")).rejects.toThrow(/historical|refund/i);
+    await f.post(legacy, "void");
+    await f.post(advance, "void");
+  } finally { await f.cleanup(); }
+});
+
+databaseTest("direct refund posting cannot spend cash already returned by a historical refund", async () => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110); await f.post(advance);
+    await f.historicalRefund(44);
+    const refund = await f.payment(110, true);
+    await guarded(f, db => db.insertInto("invoiceSettlement").values({paymentId: refund,
+      targetPaymentId: advance, sourcePaymentId: advance, sourceAmount: 110,
+      appliedAmount: 100, sourceExchangeRate: 1.1, targetExchangeRate: 1.1,
+      appliedDate: "2026-09-07", companyId: f.companyId, createdBy: "system"}).execute());
+    await expect(guarded(f, db => db.updateTable("payment").set({status: "Posted"})
+      .where("id", "=", refund).where("companyId", "=", f.companyId).execute()))
+      .rejects.toThrow(/historical|remaining/i);
+  } finally { await f.cleanup(); }
+});
+
+
+postgrestTest("fully refunded historical deposits have no remaining funding and cutover keeps their net journal balance", async client => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110); await f.post(advance);
+    await f.historicalRefund(110);
+    const available = await getAvailableOnAccountCreditSources(client, f.companyId, {paymentType: "Receipt", customerId: f.customerId}, "EUR");
+    expect(available.error).toBeNull(); expect(available.data?.sources).toEqual([]);
+    await expect(f.post(await f.payment(0.01, true))).rejects.toThrow(/remaining|historical/i);
+    const items = await getCutoverOpenItems(f.db, {companyId: f.companyId, cutoverDate: "2026-09-08"});
+    expect(items.filter(item => item.accountId === f.depositAccount).reduce((sum, item) => sum + item.amount, 0)).toBe(0);
+  } finally { await f.cleanup(); }
+});
+
+postgrestTest("multiple historical advances coexist with modern refunds and voids", async client => {
+  const f = await customerDepositFixture();
+  try {
+    await f.post(await f.payment(55)); await f.post(await f.payment(110));
+    const legacy = await f.historicalRefund(132);
+    const modern = await f.payment(33, true); await f.post(modern);
+    const available = () => getAvailableOnAccountCreditSources(client, f.companyId, {paymentType: "Receipt", customerId: f.customerId}, "EUR");
+    expect((await available()).data?.sources).toEqual([]);
+    await f.post(modern, "void");
+    expect((await available()).data?.sources.reduce((sum, source) => sum + source.remainingDocument, 0)).toBe(33);
+    await f.post(legacy, "void");
+    expect((await available()).data?.sources.reduce((sum, source) => sum + source.remainingDocument, 0)).toBe(165);
+    await f.post(await f.payment(165, true));
+  } finally { await f.cleanup(); }
+});
+
+postgrestTest("incompatible historical carrying values require reconciliation without changing their journal", async client => {
+  const f = await customerDepositFixture();
+  try {
+    await f.post(await f.payment(110));
+    const legacy = await f.historicalRefund(44, 1.25);
+    const before = await f.db.selectFrom("journalLine").select(["accountId", "amount"]).where("documentId", "=", legacy).where("companyId", "=", f.companyId).orderBy("accountId").execute();
+    await expect(f.post(await f.payment(66, true))).rejects.toThrow(/Reconcile historical deposit refund/);
+    expect((await getAvailableOnAccountCreditSources(client, f.companyId, {paymentType: "Receipt", customerId: f.customerId}, "EUR")).error?.message).toMatch(/Reconcile historical deposit refund/);
+    expect(await f.db.selectFrom("journalLine").select(["accountId", "amount"]).where("documentId", "=", legacy).where("companyId", "=", f.companyId).orderBy("accountId").execute()).toEqual(before);
+    const items = await getCutoverOpenItems(f.db, {companyId: f.companyId, cutoverDate: "2026-09-08"});
+    expect(items.filter(item => item.accountId === f.depositAccount).reduce((sum, item) => sum + item.amount, 0)).toBeCloseTo(64.8, 6);
+  } finally { await f.cleanup(); }
+});
+
+databaseTest("invoice application editing and posting cannot reuse historically refunded principal", async () => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110); await f.post(advance); await f.historicalRefund(44);
+    await f.db.updateTable("salesInvoiceLine").set({salesOrderId: f.orderId}).where("invoiceId", "=", f.invoiceId).where("companyId", "=", f.companyId).execute();
+    const paymentId = await f.payment(0);
+    const application = {targetSalesInvoiceId: f.invoiceId, appliedAmount:100, discountAmount:0, writeOffAmount:0,
+      sourceAmount:110, sourcePaymentId:advance, sourceExchangeRate:1.1,targetExchangeRate:1.1,appliedDate:"2026-09-07"};
+    const {sourcePaymentId: _source, ...request} = application;
+    await expect(replaceInvoiceSettlements(f.db, {paymentId,companyId:f.companyId,createdBy:"system",applications:[request]})).rejects.toThrow(/remaining|funding|cash|principal|historical/i);
+    await f.db.insertInto("invoiceSettlement").values({...application,paymentId,companyId:f.companyId,createdBy:"system"}).execute();
+    await expect(f.post(paymentId)).rejects.toThrow();
+    await f.db.deleteFrom("invoiceSettlement").where("paymentId","=",paymentId).where("companyId","=",f.companyId).execute();
+    await replaceInvoiceSettlements(f.db, {paymentId,companyId:f.companyId,createdBy:"system",applications:[{...request,sourceAmount:66,appliedAmount:60}]});
+    await f.post(paymentId);
+  } finally { await f.cleanup(); }
+});
+
+
+databaseTest("direct historical refund guards preserve each original deposit account", async () => {
+  const f = await customerDepositFixture();
+  try {
+    const a = await f.payment(110); await f.post(a);
+    await f.db.insertInto("account").values({id:f.account("second-deposit"),name:"Second deposits",class:"Liability",incomeBalance:"Balance Sheet",companyGroupId:f.groupId,createdBy:"system"}).execute();
+    await f.db.updateTable("accountDefault").set({prepaymentAccount:f.account("second-deposit")}).where("companyId","=",f.companyId).execute();
+    await f.post(await f.payment(110)); await f.historicalRefund(110);
+    const refund = await f.payment(110, true);
+    await guarded(f, db => db.insertInto("invoiceSettlement").values({paymentId:refund,targetPaymentId:a,sourcePaymentId:a,sourceAmount:110,appliedAmount:100,sourceExchangeRate:1.1,targetExchangeRate:1.1,appliedDate:"2026-09-07",companyId:f.companyId,createdBy:"system"}).execute());
+    await expect(guarded(f, db=>db.updateTable("payment").set({status:"Posted"}).where("id","=",refund).where("companyId","=",f.companyId).execute())).rejects.toThrow(/historical|remaining|reconcile/i);
+  }finally{await f.cleanup();}
+});
+
+databaseTest("direct historical refund guards reject ambiguous mixed-rate source reuse", async () => {
+  const f = await customerDepositFixture();
+  try {
+    const a = await f.payment(100, false, 1); await f.post(a);
+    await f.post(await f.payment(100, false, 2)); await f.historicalRefund(100, 1);
+    const refund = await f.payment(50, true, 1);
+    await expect(guarded(f, async db => {
+      await db.insertInto("invoiceSettlement").values({paymentId:refund,targetPaymentId:a,sourcePaymentId:a,sourceAmount:50,appliedAmount:50,sourceExchangeRate:1,targetExchangeRate:1,appliedDate:"2026-09-07",companyId:f.companyId,createdBy:"system"}).execute();
+      await db.updateTable("payment").set({status:"Posted"}).where("id","=",refund).where("companyId","=",f.companyId).execute();
+    })).rejects.toThrow(/historical|remaining|reconcile/i);
+  }finally{await f.cleanup();}
+});
+
+
+postgrestTest("invoicing-only callers can calculate historical funding without journal access", async trusted => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110); await f.post(advance); await f.historicalRefund(44);
+    const rawKey = `crbn_review_${crypto.randomUUID()}`;
+    await f.db.insertInto("apiKey").values({name:"Invoicing only",companyId:f.companyId,createdBy:"system",
+      keyHash:createHash("sha256").update(rawKey).digest("hex"),scopes:JSON.stringify({invoicing_view:[f.companyId]})}).execute();
+    const caller = localApiKeyClient(rawKey)!;
+    expect(caller).not.toBeNull();
+    const visible = await caller.from("payment").select("id").eq("companyId",f.companyId).eq("id",advance);
+    expect(visible.error).toBeNull(); expect(visible.data).toHaveLength(1);
+    const hidden = await caller.from("journalLine").select("id").eq("companyId",f.companyId);
+    expect(hidden.error).toBeNull(); expect(hidden.data).toEqual([]);
+    const available = await getAvailableOnAccountCreditSources(caller,f.companyId,{paymentType:"Receipt",customerId:f.customerId},"EUR",trusted);
+    expect(available.error).toBeNull();
+    expect(available.data?.sources.map(source=>({amount:source.remainingDocument,base:source.remainingBase}))).toEqual([{amount:66,base:60}]);
+  }finally{await f.cleanup();}
+});
+
+databaseTest("voiding a historical refund does not lock a sibling draft deposit", async () => {
+  const f = await customerDepositFixture();
+  const second = await f.connect();
+  try {
+    const advance = await f.payment(110); await f.post(advance);
+    const legacy = await f.historicalRefund(44);
+    const draft = await f.payment(55);
+    let ready = 0;
+    let release!: () => void;
+    const barrier = new Promise<void>(resolve => {release = resolve;});
+    const arrived = async () => {if (++ready === 2) release(); await barrier;};
+    const results = await Promise.allSettled([
+      f.db.transaction().execute(async trx => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'false'`.execute(trx);
+        await sql`SET LOCAL lock_timeout = '5s'`.execute(trx);
+        await trx.selectFrom("payment").select("id").where("companyId","=",f.companyId).where("id","in",[advance,legacy]).orderBy("id").forUpdate().execute();
+        await arrived();
+        await trx.updateTable("payment").set({status:"Voided"}).where("companyId","=",f.companyId).where("id","=",legacy).execute();
+      }),
+      second.transaction().execute(async trx => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'false'`.execute(trx);
+        await sql`SET LOCAL lock_timeout = '5s'`.execute(trx);
+        await trx.selectFrom("payment").select("id").where("companyId","=",f.companyId).where("id","=",draft).forUpdate().execute();
+        await arrived();
+        await trx.updateTable("payment").set({status:"Posted"}).where("companyId","=",f.companyId).where("id","=",draft).execute();
+      })
+    ]);
+    expect(results.map(result => result.status)).toEqual(["fulfilled","fulfilled"]);
+  } finally {await second.destroy(); await f.cleanup();}
+});
+
+postgrestTest("a historical refund fully used for a memo does not reserve a deposit", async client => {
+  const f = await customerDepositFixture();
+  try {
+    const advance = await f.payment(110); await f.post(advance);
+    const refund = await f.historicalRefund(44);
+    await f.db.transaction().execute(async trx => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      const memo = await trx.insertInto("memo").values({memoId:crypto.randomUUID(),companyId:f.companyId,
+        customerId:f.customerId,direction:"Credit",memoDate:"2026-09-07",currencyCode:"EUR",exchangeRate:1.1,amount:44,status:"Posted",createdBy:"system"}).returning("id").executeTakeFirstOrThrow();
+      await trx.updateTable("journalLine").set({accountId:f.account("control"),amount:40,description:"Accounts Receivable"})
+        .where("companyId","=",f.companyId).where("documentId","=",refund).where("description","=","Customer Deposit").execute();
+      await trx.insertInto("invoiceSettlement").values({paymentId:refund,targetMemoId:memo.id,sourceAmount:44,appliedAmount:40,
+        sourceExchangeRate:1.1,targetExchangeRate:1.1,appliedDate:"2026-09-07",companyId:f.companyId,createdBy:"system"}).execute();
+    });
+    const available = await getAvailableOnAccountCreditSources(client,f.companyId,{paymentType:"Receipt",customerId:f.customerId},"EUR");
+    expect(available.error).toBeNull(); expect(available.data?.sources[0]?.remainingDocument).toBe(110);
+    const rollback = new Error("restore source after raw guard proof");
+    await expect(f.db.transaction().execute(async trx => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'false'`.execute(trx);
+      await trx.updateTable("payment").set({status:"Voided"}).where("companyId","=",f.companyId).where("id","=",advance).execute();
+      throw rollback;
+    })).rejects.toBe(rollback);
+    await f.post(advance,"void");
+  }finally{await f.cleanup();}
+});

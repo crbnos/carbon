@@ -8,6 +8,7 @@ DECLARE
   v_id text := p_new->>'id';
   v_sources text[];
   v_order_supplier text;
+  v_has_legacy boolean;
 BEGIN
   IF p_table = 'invoiceSettlement'
     AND (EXISTS (SELECT 1 FROM "company" WHERE "id" = p_old->>'companyId')
@@ -103,7 +104,181 @@ BEGIN
         AND s."paymentId" <> v_id AND applying."status" = 'Posted') THEN
     RAISE EXCEPTION 'Cannot void an advance while posted payments consume it';
   END IF;
+  IF p_table = 'payment' AND p_new->>'customerId' IS NOT NULL AND p_new->>'paymentType' = 'Receipt'
+    AND p_old->>'status' IS DISTINCT FROM p_new->>'status'
+    AND (p_old->>'status' = 'Posted' OR p_new->>'status' = 'Posted')
+    AND num_nonnulls(p_new->>'salesOrderId', p_new->>'rentalAgreementId', p_new->>'customerContractId') > 0 THEN
+    v_sources := array_append(coalesce(v_sources, ARRAY[]::text[]), v_id);
+  END IF;
+  -- Historical customer refunds have no source applications. Lock the whole
+  -- document's advances so their remaining pool cannot be spent concurrently.
+  IF p_table = 'payment' AND p_new->>'customerId' IS NOT NULL
+    AND p_new->>'paymentType' = 'Disbursement'
+    AND p_old->>'status' IS DISTINCT FROM p_new->>'status'
+    AND (p_old->>'status' = 'Posted' OR p_new->>'status' = 'Posted')
+    AND num_nonnulls(p_new->>'salesOrderId', p_new->>'rentalAgreementId', p_new->>'customerContractId') > 0
+    AND NOT EXISTS (SELECT 1 FROM "invoiceSettlement" WHERE "companyId" = v_company
+      AND "paymentId" = v_id AND "targetPaymentId" IS NOT NULL) THEN
+    SELECT array_agg(DISTINCT source."id") INTO v_sources FROM "payment" source
+    WHERE source."companyId" = v_company AND source."customerId" = p_new->>'customerId'
+      AND source."currencyCode" = p_new->>'currencyCode' AND source."paymentType" = 'Receipt'
+      AND source.status = 'Posted'
+      AND (source."salesOrderId", source."rentalAgreementId", source."customerContractId")
+        IS NOT DISTINCT FROM (p_new->>'salesOrderId', p_new->>'rentalAgreementId', p_new->>'customerContractId');
+  END IF;
   IF v_sources IS NULL THEN RETURN; END IF;
+
+  v_has_legacy := false;
+  IF p_table = 'invoiceSettlement' OR p_old->>'status' IS DISTINCT FROM p_new->>'status' THEN
+    SELECT EXISTS (
+      SELECT 1 FROM "payment" wanted JOIN "payment" refund ON
+        (refund."customerId", refund."currencyCode", refund."salesOrderId", refund."rentalAgreementId", refund."customerContractId")
+          IS NOT DISTINCT FROM (wanted."customerId", wanted."currencyCode", wanted."salesOrderId", wanted."rentalAgreementId", wanted."customerContractId")
+      JOIN "company" legacy_company ON legacy_company.id = v_company
+      JOIN "currency" legacy_currency ON legacy_currency."companyGroupId" = legacy_company."companyGroupId" AND legacy_currency.code = refund."currencyCode"
+      WHERE wanted."companyId" = v_company AND wanted."id" = ANY(v_sources)
+        AND refund."companyId" = v_company AND refund."customerId" IS NOT NULL
+        AND refund.status = 'Posted' AND refund."paymentType" = 'Disbursement'
+        AND num_nonnulls(refund."salesOrderId", refund."rentalAgreementId", refund."customerContractId") > 0
+        AND NOT EXISTS (SELECT 1 FROM "invoiceSettlement" s WHERE s."companyId" = v_company
+          AND s."paymentId" = refund.id AND s."targetPaymentId" IS NOT NULL)
+        AND refund."totalAmount" > coalesce((SELECT sum(coalesce(s."sourceAmount",
+          round((s."appliedAmount" - s."fxGainLossAmount") * refund."exchangeRate", legacy_currency."decimalPlaces")))
+          FROM "invoiceSettlement" s WHERE s."companyId" = v_company AND s."paymentId" = refund.id AND s."sourcePaymentId" IS NULL), 0)
+    ) INTO v_has_legacy;
+  END IF;
+  IF v_has_legacy THEN
+  IF p_table = 'payment' AND p_old->>'status' = 'Posted' AND p_new->>'status' = 'Voided'
+    AND p_old->>'paymentType' = 'Receipt' THEN
+    RAISE EXCEPTION 'Void or reconcile historical deposit refunds before voiding this advance';
+  END IF;
+
+  PERFORM 1 FROM "payment" source
+    WHERE source."companyId" = v_company AND source."paymentType" = 'Receipt'
+      AND source.status = 'Posted' AND source."customerId" IS NOT NULL
+      AND EXISTS (SELECT 1 FROM "payment" wanted WHERE wanted."companyId" = v_company
+        AND wanted."id" = ANY(v_sources)
+        AND (source."customerId", source."currencyCode", source."salesOrderId", source."rentalAgreementId", source."customerContractId")
+          IS NOT DISTINCT FROM (wanted."customerId", wanted."currencyCode", wanted."salesOrderId", wanted."rentalAgreementId", wanted."customerContractId"))
+    ORDER BY source."id" FOR UPDATE;
+
+  IF EXISTS (
+    WITH affected AS (
+      SELECT DISTINCT source."customerId", source."currencyCode", source."salesOrderId", source."rentalAgreementId", source."customerContractId"
+      FROM "payment" source WHERE source."companyId" = v_company AND source."id" = ANY(v_sources)
+        AND source."customerId" IS NOT NULL
+        AND num_nonnulls(source."salesOrderId", source."rentalAgreementId", source."customerContractId") > 0
+    ), payments AS (
+      SELECT p.*, jsonb_build_array(p."customerId", p."currencyCode", p."salesOrderId", p."rentalAgreementId", p."customerContractId") AS scope,
+        CASE WHEN p_table = 'payment' AND p."id" = v_id THEN p_new->>'status' ELSE p."status"::text END AS effective_status
+      FROM "payment" p JOIN affected a ON
+        (p."customerId", p."currencyCode", p."salesOrderId", p."rentalAgreementId", p."customerContractId")
+          IS NOT DISTINCT FROM (a."customerId", a."currencyCode", a."salesOrderId", a."rentalAgreementId", a."customerContractId")
+      WHERE p."companyId" = v_company
+    ), settlements AS (
+      SELECT to_jsonb(s) AS data FROM "invoiceSettlement" s
+      WHERE s."companyId" = v_company AND NOT (p_table = 'invoiceSettlement' AND s."id" = v_id)
+        AND (s."paymentId" IN (SELECT id FROM payments) OR s."sourcePaymentId" IN (SELECT id FROM payments))
+      UNION ALL SELECT p_new WHERE p_table = 'invoiceSettlement'
+    ), legacy AS (
+      SELECT p.*, p."totalAmount" - coalesce((SELECT sum(coalesce((s.data->>'sourceAmount')::numeric,
+        round(((s.data->>'appliedAmount')::numeric - coalesce((s.data->>'fxGainLossAmount')::numeric, 0)) * p."exchangeRate", currency."decimalPlaces")))
+        FROM settlements s WHERE s.data->>'paymentId' = p."id" AND s.data->>'sourcePaymentId' IS NULL), 0) AS principal,
+        (SELECT -sum(line."amount") FROM "journalLine" line JOIN "journal" j ON j."id" = line."journalId" AND j."companyId" = line."companyId"
+          WHERE line."companyId" = v_company AND line."documentId" = p."id" AND line."documentType" = 'Payment'
+            AND line.description = 'Customer Deposit' AND j."sourceType" = 'Payment'
+            AND j.status IN ('Posted', 'Provisional', 'Superseded')) AS carrying
+      FROM payments p JOIN "company" company ON company.id = v_company
+      JOIN "currency" currency ON currency."companyGroupId" = company."companyGroupId" AND currency.code = p."currencyCode"
+      WHERE p.effective_status = 'Posted' AND p."paymentType" = 'Disbursement'
+        AND NOT EXISTS (SELECT 1 FROM settlements s WHERE s.data->>'paymentId' = p."id" AND s.data->>'targetPaymentId' IS NOT NULL)
+    ), pools AS (
+      SELECT scope, sum("totalAmount") AS principal, sum(accounting_round_internal("totalAmount" / "exchangeRate")) AS carrying
+      FROM payments WHERE effective_status = 'Posted' AND "paymentType" = 'Receipt' GROUP BY scope
+    ), reserved AS (
+      SELECT scope, sum(principal) AS principal, sum(carrying) AS carrying, count(*) AS refund_count,
+        bool_or(principal < 0 OR (principal > 0 AND (carrying IS NULL OR carrying < 0))) AS invalid
+      FROM legacy WHERE principal <> 0 GROUP BY scope
+    ), consumed AS (
+      SELECT funding.scope,
+        sum(coalesce((s.data->>'sourceAmount')::numeric,
+          round((s.data->>'appliedAmount')::numeric * funding."exchangeRate", currency."decimalPlaces"))) AS principal,
+        sum((s.data->>'appliedAmount')::numeric + coalesce((s.data->>'fxGainLossAmount')::numeric, 0)) AS carrying
+      FROM settlements s JOIN payments funding ON funding."id" = coalesce(s.data->>'sourcePaymentId', s.data->>'paymentId')
+      JOIN "payment" applying ON applying."id" = s.data->>'paymentId' AND applying."companyId" = v_company
+      JOIN "company" company ON company.id = v_company
+      JOIN "currency" currency ON currency."companyGroupId" = company."companyGroupId" AND currency.code = funding."currencyCode"
+      WHERE funding."paymentType" = 'Receipt'
+        AND (CASE WHEN p_table = 'payment' AND applying."id" = v_id THEN p_new->>'status' ELSE applying.status::text END) = 'Posted'
+      GROUP BY funding.scope
+    ), source_lines AS (
+      SELECT source.id, source.scope, line."accountId", line.amount
+      FROM payments source JOIN "journalLine" line ON line."documentId" = source.id AND line."companyId" = v_company
+      JOIN "journal" journal ON journal.id = line."journalId" AND journal."companyId" = v_company
+      WHERE source.effective_status = 'Posted' AND source."paymentType" = 'Receipt'
+        AND line."documentType" = 'Payment' AND line.description = 'Customer Deposit'
+        AND journal."sourceType" = 'Payment' AND journal.status IN ('Posted', 'Provisional', 'Superseded')
+    ), used_by_source AS (
+      SELECT funding.id,
+        sum(coalesce((s.data->>'sourceAmount')::numeric, round((s.data->>'appliedAmount')::numeric * funding."exchangeRate", currency."decimalPlaces"))) AS principal,
+        sum((s.data->>'appliedAmount')::numeric + coalesce((s.data->>'fxGainLossAmount')::numeric, 0)) AS carrying
+      FROM settlements s JOIN payments funding ON funding.id = coalesce(s.data->>'sourcePaymentId', s.data->>'paymentId')
+      JOIN "payment" applying ON applying.id = s.data->>'paymentId' AND applying."companyId" = v_company
+      JOIN "company" company ON company.id = v_company
+      JOIN "currency" currency ON currency."companyGroupId" = company."companyGroupId" AND currency.code = funding."currencyCode"
+      WHERE funding."paymentType" = 'Receipt'
+        AND (CASE WHEN p_table = 'payment' AND applying.id = v_id THEN p_new->>'status' ELSE applying.status::text END) = 'Posted'
+      GROUP BY funding.id
+    ), source_remaining AS (
+      SELECT source.*, source."totalAmount" - coalesce(used.principal, 0) AS principal,
+        accounting_round_internal(source."totalAmount" / source."exchangeRate") - coalesce(used.carrying, 0) AS carrying
+      FROM payments source LEFT JOIN used_by_source used ON used.id = source.id
+      WHERE source.effective_status = 'Posted' AND source."paymentType" = 'Receipt'
+    ), ordered_sources AS (
+      SELECT source.*, coalesce(sum(principal) OVER (PARTITION BY scope ORDER BY coalesce("postingDate", "paymentDate"), id
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0) AS previous_principal
+      FROM source_remaining source WHERE principal > 0
+    ), inferred AS (
+      SELECT source.scope, least(source.principal, greatest(reserved.principal - source.previous_principal, 0)) AS principal,
+        CASE WHEN reserved.principal - source.previous_principal >= source.principal THEN source.carrying
+          ELSE least(accounting_round_internal(greatest(reserved.principal - source.previous_principal, 0) / source."exchangeRate"), source.carrying) END AS carrying
+      FROM ordered_sources source JOIN reserved ON reserved.scope = source.scope
+    ), inferred_totals AS (
+      SELECT scope, sum(carrying) AS carrying FROM inferred WHERE principal > 0 GROUP BY scope
+    ), account_pools AS (
+      SELECT scope, "accountId", sum(amount) AS carrying FROM source_lines GROUP BY scope, "accountId"
+    ), account_reserved AS (
+      SELECT refund.scope, line."accountId", -sum(line.amount) AS carrying
+      FROM legacy refund JOIN "journalLine" line ON line."documentId" = refund.id AND line."companyId" = v_company
+      JOIN "journal" journal ON journal.id = line."journalId" AND journal."companyId" = v_company
+      WHERE refund.principal > 0 AND line."documentType" = 'Payment' AND line.description = 'Customer Deposit'
+        AND journal."sourceType" = 'Payment' AND journal.status IN ('Posted', 'Provisional', 'Superseded')
+      GROUP BY refund.scope, line."accountId"
+    ), account_consumed AS (
+      SELECT source.scope, source."accountId",
+        sum((s.data->>'appliedAmount')::numeric + coalesce((s.data->>'fxGainLossAmount')::numeric, 0)) AS carrying
+      FROM settlements s JOIN source_lines source ON source.id = s.data->>'sourcePaymentId'
+      JOIN "payment" applying ON applying.id = s.data->>'paymentId' AND applying."companyId" = v_company
+      WHERE (CASE WHEN p_table = 'payment' AND applying.id = v_id THEN p_new->>'status' ELSE applying.status::text END) = 'Posted'
+      GROUP BY source.scope, source."accountId"
+    )
+    SELECT 1 FROM reserved r LEFT JOIN pools p ON p.scope = r.scope LEFT JOIN consumed c ON c.scope = r.scope
+    WHERE r.invalid OR r.principal + coalesce(c.principal, 0) > coalesce(p.principal, 0)
+      OR r.carrying + coalesce(c.carrying, 0) > coalesce(p.carrying, 0)
+      OR (r.principal + coalesce(c.principal, 0) = coalesce(p.principal, 0)
+        AND r.carrying + coalesce(c.carrying, 0) <> coalesce(p.carrying, 0))
+    UNION ALL
+    SELECT 1 FROM reserved r LEFT JOIN inferred_totals inferred ON inferred.scope = r.scope
+      -- Each historical partial refund rounded independently at the internal scale.
+      WHERE abs(r.carrying - coalesce(inferred.carrying, 0)) > 0.000001 * r.refund_count
+    UNION ALL
+    SELECT 1 FROM account_reserved r LEFT JOIN account_pools p ON p.scope = r.scope AND p."accountId" = r."accountId"
+      LEFT JOIN account_consumed c ON c.scope = r.scope AND c."accountId" = r."accountId"
+    WHERE r.carrying + coalesce(c.carrying, 0) > coalesce(p.carrying, 0)
+  ) THEN
+    RAISE EXCEPTION 'Historical deposit refunds exceed the remaining advance principal or carrying balance; reconcile this document';
+  END IF;
+  END IF;
 
   PERFORM 1 FROM "payment" WHERE "id" = ANY(v_sources)
     AND "companyId" = v_company ORDER BY "id" FOR UPDATE;

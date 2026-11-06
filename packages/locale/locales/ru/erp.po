@@ -2245,9 +2245,6 @@ msgstr "Запрос цен — это запрос покупателя на ц
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Запрос цен от продаж (покупатель просит расчет) или запрос цен для закупок (вы просите поставщиков); оба подпитывают поток сделок."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "Отгрузка по продаже отражает себестоимость продаж, а выданный счет-фактура — выручку. По отгрузкам заказов покупателей, проведенным в этом периоде, чистое отгруженное количество которых превышает совокупное количество по счетам-фактурам, проведенным к концу периода, часть себестоимости остается в этом периоде, а выручка отражается в более позднем. Выставьте счета-фактуры с датой в этом периоде либо пропустите задачу, указав причину, если условия отгрузки относят выручку к более позднему периоду."
-
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Секретный ключ, отправляемый в заголовке запроса carbon-key, который аутентифицирует программные вызовы к Carbon, несущий свои собственные права доступа и лимит количества запросов вместо сессии пользователя."
 
@@ -30954,8 +30951,8 @@ msgstr "Эти строки связаны с данными вне этой о�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Эти строки ссылаются на данные вне этой организации, поэтому они не могут быть восстановлены. Всё остальное было сохранено в резервной копии."
 
-msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
-msgstr "Эти отгрузки отразили себестоимость проданных товаров в этом периоде, но для некоторых отгруженных количеств нет проведенного счета-фактуры с датой не позднее конца периода. Выставьте счет-фактуру на эти количества в этом периоде или пропустите задачу с указанием причины, если выручка относится к более позднему периоду."
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Себестоимость этих отгрузок отражена в этом периоде, но к его концу счета были выставлены не на все количество. Новые выданные счета-фактуры проводятся текущей датой, поэтому выставление счета после окончания периода не устранит это предупреждение. Проверьте разницу в датах признания и необходимые бухгалтерские корректировки. Если предупреждение останется, пропустите задачу, указав причину, которая описывает принятое решение."
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Эти единицы учитываются как продажи. Активация исключает каждую из них и проводит ее начальную операцию:"

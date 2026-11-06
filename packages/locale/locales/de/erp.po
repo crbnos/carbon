@@ -2245,9 +2245,6 @@ msgstr "Eine Anfrage (RFQ) ist eine Kundenanfrage für Preise für eine Reihe vo
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Ein Verkaufs-Anfrage (ein Kunde bittet Sie um ein Angebot) oder eine Einkaufs-Anfrage (Sie bitten Lieferanten um ein Angebot); beide nähren die Verkaufschance."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "Eine Lieferung aus einem Verkauf bucht die Umsatzkosten; die Ausgangsrechnung bucht die Umsatzerlöse. Bei in dieser Periode gebuchten Lieferungen zu Kundenaufträgen, deren netto gelieferte Menge die kumulierte Menge der bis zum Periodenende gebuchten Rechnungen übersteigt, verbleiben Kosten in dieser Periode, während die Umsatzerlöse erst in einer späteren Periode anfallen. Stellen Sie diese mit einem Datum innerhalb dieser Periode in Rechnung, oder überspringen Sie die Aufgabe mit einer Begründung, wenn die Lieferbedingungen die Umsatzerlöse einer späteren Periode zuordnen."
-
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesendet wird und programmgesteuerte Aufrufe an Carbon authentifiziert, mit eigenen Berechtigungen und Ratenlimit statt einer Benutzersitzung."
 
@@ -30954,8 +30951,8 @@ msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher k
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Diese Zeilen sind mit Daten außerhalb dieses Unternehmens verknüpft, daher könnten sie nie wiederhergestellt werden. Alles andere wurde gesichert."
 
-msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
-msgstr "Diese Lieferungen haben in diesem Zeitraum die Umsatzkosten gebucht, aber für einige gelieferte Mengen fehlt eine gebuchte Rechnung mit Datum bis zum Periodenende. Fakturieren Sie diese Mengen in diesem Zeitraum oder überspringen Sie die Aufgabe mit einer Begründung, wenn die Umsatzerlöse in einen späteren Zeitraum gehören."
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Diese Lieferungen haben in dieser Periode Kosten erfasst, aber einige Mengen waren zum Periodenende noch nicht fakturiert. Neue Ausgangsrechnungen werden mit dem heutigen Datum gebucht; eine Fakturierung nach Periodenende beseitigt diese Warnung daher nicht. Prüfen Sie die zeitliche Differenz und gegebenenfalls erforderliche Korrekturbuchungen. Falls die Warnung bestehen bleibt, überspringen Sie die Aufgabe mit einer Begründung, die die Behandlung dokumentiert."
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Diese Einheiten werden als Verkäufe behandelt. Die Aktivierung hebt die Bilanzierung auf und bucht das Anfangsbuchungssatz:"

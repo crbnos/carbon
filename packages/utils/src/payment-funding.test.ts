@@ -17,7 +17,8 @@ import {
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   reduceInvoiceSettlements,
-  remainingFundingSources
+  remainingFundingSources,
+  reserveLegacyDepositRefunds
 } from "./payment-funding";
 
 const source = (
@@ -1318,4 +1319,88 @@ it("rejects refund principal or source balances whose currency units are unsafe"
       sourceExchangeRate: 1
     }
   ]);
+});
+
+it("reserves historical refunds across original advances without counting them twice", () => {
+  const scope = { type: "salesOrder" as const, id: "order" };
+  const sources = [
+    source("a", 110, 1.1, { scope }),
+    source("b", 55, 1.1, { scope })
+  ];
+  const facts = new Map(
+    sources.map((source) => [
+      source.paymentId,
+      { currencyCode: "EUR", accountId: "deposits" }
+    ])
+  );
+  const remaining = reserveLegacyDepositRefunds({
+    sources,
+    refunds: [
+      {
+        paymentId: "old-refund",
+        postingDate: "2026-09-08",
+        currencyCode: "EUR",
+        scope,
+        principal: 132,
+        carryingBase: 120,
+        accountId: "deposits"
+      }
+    ],
+    sourceFacts: facts,
+    decimals: new Map([["EUR", 2]])
+  });
+  expect(
+    remaining.map((source) => ({
+      id: source.paymentId,
+      principal: source.remainingDocument,
+      base: source.remainingBase
+    }))
+  ).toEqual([{ id: "b", principal: 33, base: 30 }]);
+  expect(sources[0]?.remainingDocument).toBe(110);
+});
+
+it.each([
+  {
+    label: "a different booked account",
+    accountId: "other",
+    carryingBase: 40,
+    postingDate: "2026-09-08",
+    currencyCode: "EUR"
+  },
+  {
+    label: "a different booked carrying value",
+    accountId: "deposits",
+    carryingBase: 35.2,
+    postingDate: "2026-09-08",
+    currencyCode: "EUR"
+  },
+  {
+    label: "a receipt posted after the refund",
+    accountId: "deposits",
+    carryingBase: 40,
+    postingDate: "2026-09-06",
+    currencyCode: "EUR"
+  },
+  {
+    label: "a different currency",
+    accountId: "deposits",
+    carryingBase: 40,
+    postingDate: "2026-09-08",
+    currencyCode: "USD"
+  }
+])("requires reconciliation for historical refunds with $label", (refund) => {
+  const scope = { type: "salesOrder" as const, id: "order" };
+  expect(() =>
+    reserveLegacyDepositRefunds({
+      sources: [source("a", 110, 1.1, { scope })],
+      refunds: [{ ...refund, paymentId: "old", principal: 44, scope }],
+      sourceFacts: new Map([
+        ["a", { currencyCode: "EUR", accountId: "deposits" }]
+      ]),
+      decimals: new Map([
+        ["EUR", 2],
+        ["USD", 2]
+      ])
+    })
+  ).toThrow(/Reconcile historical deposit refund old/);
 });

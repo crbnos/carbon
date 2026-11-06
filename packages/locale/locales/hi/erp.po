@@ -2245,9 +2245,6 @@ msgstr "एक विक्रय कोटेशन अनुरोध (RFQ) �
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "एक बिक्रय RFQ (एक ग्राहक आपको उद्धृत करने के लिए कहता है) या खरीद RFQ (आप आपूर्तिकर्ताओं से पूछते हैं); दोनों अवसर धागे को खिलाते हैं।"
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "विक्रय शिपमेंट बेचे गए माल की लागत को पोस्ट करता है; विक्रय चालान राजस्व को पोस्ट करता है। इस अवधि में पोस्ट किए गए विक्रय आदेशों के उन शिपमेंट की कुछ लागत इस अवधि में और राजस्व बाद की अवधि में रहता है जिनकी शुद्ध शिप की गई मात्रा अवधि के अंत तक पोस्ट किए गए चालानों की संचयी मात्रा से अधिक है। उनके चालान इस अवधि की तारीख से बनाएँ, या यदि शिपिंग की शर्तों के अनुसार राजस्व बाद की अवधि में आता है, तो कारण देकर कार्य छोड़ दें।"
-
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "कार्बन-कुंजी अनुरोध हेडर पर भेजा गया एक स्कोप्ड गोपनीय जो कार्बन के लिए प्रोग्रामेटिक कॉल को प्रमाणित करता है, उपयोगकर्ता सत्र की बजाय अपनी स्वयं की अनुमतियां और दर सीमा ले जाता है।"
 
@@ -30954,8 +30951,8 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"
 
-msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
-msgstr "इन शिपमेंट ने इस अवधि में बेचे गए माल की लागत पोस्ट की है, लेकिन कुछ भेजी गई मात्राओं का अवधि के अंत तक की तारीख वाला कोई पोस्ट किया गया चालान नहीं है। इन मात्राओं का चालान इसी अवधि में बनाएं, या यदि राजस्व बाद की अवधि का है तो कारण देकर कार्य छोड़ें।"
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "इन शिपमेंट की लागत इस अवधि में दर्ज हुई, लेकिन अवधि के अंत तक कुछ मात्राओं का चालान नहीं बना था। नए विक्रय चालान आज की तारीख से पोस्ट होते हैं, इसलिए अवधि समाप्त होने के बाद चालान बनाने से यह चेतावनी नहीं हटेगी। समय के इस अंतर और किसी आवश्यक लेखांकन समायोजन की समीक्षा करें। यदि चेतावनी बनी रहती है, तो किए गए उपचार का विवरण देने वाला कारण लिखकर कार्य छोड़ दें।"
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "इन इकाइयों को बिक्री के रूप में माना जाता है। सक्रिय करने से प्रत्येक को अस्वीकार किया जाता है और इसकी शुरुआती जर्नल पोस्ट की जाती है:"

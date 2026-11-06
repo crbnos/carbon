@@ -198,7 +198,12 @@ guarded by `requireUnlockedBulk`, not validators.
   then funding sources; it rechecks the order reference after locking the payment.
   Activation takes the same settings-first order. Journal, normalized settlements and payment
   status commit together. `rebuildPaymentJournals` alone opts historical customer refunds into
-  legacy reconstruction; new refunds must allocate original advances.
+  legacy reconstruction; new refunds must allocate original advances. Funding readers, draft
+  allocation and posting also reserve historical customer refunds that have no source applications:
+  oldest eligible original advances first, only when their original account and carrying value
+  match the refund's unchanged journal. Incompatible history refuses with a reconciliation message.
+  Voided history is ignored; attributed modern refunds are not counted twice. The database
+  interceptor protects historical document principal and original-account carrying capacity too.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos

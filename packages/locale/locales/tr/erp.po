@@ -2245,9 +2245,6 @@ msgstr "Satış teklif talebi (RFQ), bir dizi parça ve miktar üzerinde fiyatla
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Bir satış RFQ (müşteri sizi alıntı yapmak için ister) veya satın alma RFQ (siz tedarikçileri istersiniz); her ikisi de fırsat ipliğini besler."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "Satış sevkiyatı satılan malın maliyetini, satış faturası ise hasılatı muhasebeleştirir. Bu dönemde muhasebeleştirilen satış siparişi sevkiyatlarında net sevk edilen miktar, dönem sonuna kadar muhasebeleştirilen faturaların kümülatif miktarını aşıyorsa maliyetin bir kısmı bu dönemde, hasılat ise sonraki bir dönemde kalır. Bunları bu döneme ait bir tarihle faturalandırın veya sevkiyat koşulları hasılatı sonraki bir döneme bırakıyorsa gerekçe belirterek görevi atlayın."
-
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığında gönderilen kapsamlı bir gizli anahtar; bir kullanıcı oturumunun yerine kendi izinleri ve hız sınırını taşır."
 
@@ -30954,8 +30951,8 @@ msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcu
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
 
-msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
-msgstr "Bu sevkiyatlar bu dönemde satılan malın maliyetini muhasebeleştirdi, ancak bazı sevk edilen miktarların dönem sonuna kadar tarihli muhasebeleştirilmiş faturası yok. Bu miktarları bu dönemde faturalandırın veya hasılat sonraki döneme aitse gerekçe belirterek atlayın."
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Bu sevkiyatların maliyetleri bu dönemde kaydedildi, ancak bazı miktarlar dönem sonuna kadar faturalanmadı. Yeni satış faturaları bugünün tarihiyle muhasebeleştirilir; bu nedenle dönem sonundan sonra faturalamak bu uyarıyı kaldırmaz. Tarih farkını ve gerekli muhasebe düzeltmelerini inceleyin. Uyarı devam ederse uygulanan işlemi açıklayan bir gerekçe yazarak görevi atlayın."
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayıttan çıkarır ve başlangıç muhasebe fişi'ni muhasebeleştirir:"

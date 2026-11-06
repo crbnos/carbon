@@ -3301,13 +3301,15 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
+    // Invoicing staff can use deposits without access to the underlying journals.
     return unwrap(
       ctx,
       await service.getAvailableOnAccountCreditSources(
         ctx.asCaller.supabase,
         ctx.company.id,
         payload(ctx, input.party).build() as never,
-        input.currencyCode as never
+        input.currencyCode as never,
+        ctx.asSystem.supabase
       )
     );
   }

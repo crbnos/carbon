@@ -9,7 +9,7 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/database/accounting-currency";
-import { round } from "@carbon/database/precision";
+import { EPSILON, round } from "@carbon/database/precision";
 
 /**
  * The document a deposit secures (`payment.rentalAgreementId` /
@@ -863,4 +863,91 @@ export function allocateDepositRefund(input: {
       "Refund exceeds the remaining advances held for this document"
     );
   return applications;
+}
+
+export class HistoricalDepositReconciliationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HistoricalDepositReconciliationError";
+  }
+}
+
+export type LegacyDepositRefund = {
+  paymentId: string;
+  postingDate: string;
+  currencyCode: string;
+  scope: FundingScope;
+  principal: number;
+  carryingBase: number;
+  accountId: string;
+};
+
+/** Reserve refunds posted before source-payment applications existed, without
+ * changing their journals or guessing a different account or carrying value. */
+export function reserveLegacyDepositRefunds(input: {
+  sources: readonly FundingSource[];
+  refunds: readonly LegacyDepositRefund[];
+  sourceFacts: ReadonlyMap<
+    string,
+    { currencyCode: string; accountId: string | null }
+  >;
+  decimals: ReadonlyMap<string, number>;
+}): FundingSource[] {
+  const sources = input.sources.map((source) => ({ ...source }));
+  for (const refund of [...input.refunds].sort(
+    (a, b) =>
+      a.postingDate.localeCompare(b.postingDate) ||
+      a.paymentId.localeCompare(b.paymentId)
+  )) {
+    const error = new HistoricalDepositReconciliationError(
+      `Reconcile historical deposit refund ${refund.paymentId} before applying or refunding this document's remaining deposit`
+    );
+    const decimals = input.decimals.get(refund.currencyCode);
+    if (decimals === undefined) throw error;
+    let applications: DepositRefundApplication[];
+    try {
+      applications = allocateDepositRefund({
+        scope: refund.scope,
+        sources: sources.filter(
+          (source) =>
+            input.sourceFacts.get(source.paymentId)?.currencyCode ===
+              refund.currencyCode && source.postingDate <= refund.postingDate
+        ),
+        requestedDocumentPrincipal: refund.principal,
+        currencyDecimals: decimals
+      });
+    } catch {
+      throw error;
+    }
+    if (
+      applications.some(
+        (application) =>
+          input.sourceFacts.get(application.sourcePaymentId)?.accountId !==
+          refund.accountId
+      ) ||
+      Math.abs(
+        round(
+          applications.reduce(
+            (sum, application) => sum + application.carryingBase,
+            0
+          )
+        ) - refund.carryingBase
+      ) > EPSILON
+    )
+      throw error;
+    for (const application of applications) {
+      const source = sources.find(
+        (source) => source.paymentId === application.sourcePaymentId
+      )!;
+      source.remainingDocument = toDocumentAmount(
+        source.remainingDocument - application.sourceAmount,
+        1,
+        decimals
+      );
+      source.remainingBase = round(
+        source.remainingBase - application.carryingBase
+      );
+    }
+  }
+  return sources.filter((source) => source.remainingDocument > 0);
 }

@@ -22,7 +22,8 @@ import {
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   DOCUMENT_JOURNAL_STATUSES,
-  OPEN_ITEM_JOURNAL_STATUSES
+  OPEN_ITEM_JOURNAL_STATUSES,
+  PRE_CUTOVER_JOURNAL_STATUSES
 } from "@carbon/database/accounting-posting";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
@@ -141,9 +142,11 @@ import {
   fundingScopeOf,
   getBillableQuantity,
   getRemainingQuantityToInvoice,
+  HistoricalDepositReconciliationError,
   invoiceRemainingAmounts,
   isBillableLeaseStatus,
   isEffectiveSettlement,
+  type LegacyDepositRefund,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
   RECEIVABLE_POSTING_DESCRIPTIONS,
@@ -152,6 +155,7 @@ import {
   reduceInvoiceSettlements,
   remainingFundingSources,
   requireAffected,
+  reserveLegacyDepositRefunds,
   round,
   roundSalesPostingAmounts,
   type SalesPostingMetadata,
@@ -242,7 +246,7 @@ import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { searchTerms, withSearchLines } from "~/utils/search";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
 import { OPEN_PURCHASE_ORDER_STATUSES } from "../purchasing/purchasing.models";
@@ -3087,11 +3091,299 @@ async function loadInvoiceDocumentIds(
     : loadPurchaseInvoiceDocumentIds(trx, companyId, invoiceIds);
 }
 
+type LegacyRefundPayment = Pick<
+  PaymentRow,
+  | "id"
+  | "customerId"
+  | "currencyCode"
+  | "totalAmount"
+  | "exchangeRate"
+  | "postingDate"
+  | "paymentDate"
+  | "salesOrderId"
+  | "rentalAgreementId"
+  | "customerContractId"
+>;
+type LegacyRefundSettlement = FundingConsumptionRow & {
+  targetPaymentId: string | null;
+};
+type LegacyRefundLine = {
+  documentId: string | null;
+  accountId: string | null;
+  amount: number;
+};
+
+function legacyDepositRefundFacts(
+  payments: LegacyRefundPayment[],
+  settlements: LegacyRefundSettlement[],
+  lines: LegacyRefundLine[],
+  decimals: ReadonlyMap<string, number>
+) {
+  const accounts = new Map<string, string>();
+  for (const line of lines) {
+    if (!line.documentId || !line.accountId) continue;
+    const previous = accounts.get(line.documentId);
+    if (previous && previous !== line.accountId)
+      throw new HistoricalDepositReconciliationError(
+        "Reconcile historical deposit accounts before using remaining deposits"
+      );
+    accounts.set(line.documentId, line.accountId);
+  }
+  const refunds: LegacyDepositRefund[] = [];
+  for (const payment of payments) {
+    const applications = settlements.filter(
+      (row) => row.paymentId === payment.id
+    );
+    if (applications.some((row) => row.targetPaymentId)) continue;
+    const currencyDecimals = requireCurrencyDecimals(
+      new Map(decimals),
+      payment.currencyCode
+    );
+    const scope = fundingScopeOf(payment);
+    if (!scope) continue;
+    const principal = toDocumentAmount(
+      Number(payment.totalAmount) -
+        applications.reduce(
+          (sum, row) =>
+            sum +
+            (row.sourcePaymentId
+              ? 0
+              : (row.sourceAmount ??
+                toDocumentAmount(
+                  Number(row.appliedAmount) - Number(row.fxGainLossAmount ?? 0),
+                  Number(payment.exchangeRate),
+                  currencyDecimals
+                ))),
+          0
+        ),
+      1,
+      currencyDecimals
+    );
+    if (principal === 0) continue;
+    const carryingBase = round(
+      -lines
+        .filter((line) => line.documentId === payment.id)
+        .reduce((sum, line) => sum + Number(line.amount), 0)
+    );
+    const accountId = accounts.get(payment.id);
+    if (!accountId || principal < 0 || carryingBase < 0)
+      throw new HistoricalDepositReconciliationError(
+        `Reconcile historical deposit refund ${payment.id} before using this document's remaining deposit`
+      );
+    refunds.push({
+      paymentId: payment.id,
+      postingDate: payment.postingDate ?? payment.paymentDate,
+      currencyCode: payment.currencyCode,
+      scope,
+      principal,
+      carryingBase,
+      accountId
+    });
+  }
+  return { refunds, accounts };
+}
+
+// Read only original Payment journals. Their Superseded lines remain the
+// historical evidence after cutover; Opening Balance lines would count twice.
+async function readLegacyDepositRefunds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  customerId: string,
+  currencyCode: string,
+  sourceIds: string[],
+  decimals: ReadonlyMap<string, number>,
+  scope?: FundingScope
+) {
+  if (!sourceIds.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  let query = db
+    .selectFrom("payment")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("customerId", "=", customerId)
+    .where("paymentType", "=", "Disbursement")
+    .where("status", "=", "Posted")
+    .where("currencyCode", "=", currencyCode)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("payment as original")
+          .select("original.id")
+          .where("original.companyId", "=", companyId)
+          .where("original.id", "in", sourceIds)
+          .whereRef(
+            "original.salesOrderId",
+            "is not distinct from",
+            "payment.salesOrderId"
+          )
+          .whereRef(
+            "original.rentalAgreementId",
+            "is not distinct from",
+            "payment.rentalAgreementId"
+          )
+          .whereRef(
+            "original.customerContractId",
+            "is not distinct from",
+            "payment.customerContractId"
+          )
+      )
+    )
+    .where((eb) =>
+      eb.or([
+        eb("salesOrderId", "is not", null),
+        eb("rentalAgreementId", "is not", null),
+        eb("customerContractId", "is not", null)
+      ])
+    );
+  if (scope) query = query.where(`${scope.type}Id`, "=", scope.id);
+  const payments = await query.execute();
+  if (!payments.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  const ids = payments.map((payment) => payment.id);
+  const [settlements, lines] = await Promise.all([
+    db
+      .selectFrom("invoiceSettlement")
+      .select([
+        "paymentId",
+        "sourcePaymentId",
+        "sourceAmount",
+        "appliedAmount",
+        "fxGainLossAmount",
+        "targetPaymentId"
+      ])
+      .where("companyId", "=", companyId)
+      .where("paymentId", "in", ids)
+      .execute(),
+    db
+      .selectFrom("journalLine as line")
+      .innerJoin("journal as j", (join) =>
+        join
+          .onRef("j.id", "=", "line.journalId")
+          .onRef("j.companyId", "=", "line.companyId")
+      )
+      .select(["line.documentId", "line.accountId", "line.amount"])
+      .where("line.companyId", "=", companyId)
+      .where("line.documentId", "in", [...ids, ...sourceIds])
+      .where("line.documentType", "=", "Payment")
+      .where("line.description", "=", CUSTOMER_DEPOSIT_DESCRIPTION)
+      .where("j.sourceType", "=", "Payment")
+      .where("j.status", "in", [
+        ...OPEN_ITEM_JOURNAL_STATUSES,
+        ...PRE_CUTOVER_JOURNAL_STATUSES
+      ])
+      .execute()
+  ]);
+  return legacyDepositRefundFacts(payments, settlements, lines, decimals);
+}
+
+async function readClientLegacyDepositRefunds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerId: string,
+  currencyCode: string | undefined,
+  sourceIds: string[],
+  decimals: ReadonlyMap<string, number>,
+  scopes: readonly FundingScope[],
+  historyClient: SupabaseClient<Database>
+) {
+  if (!scopes.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  const payments = await fetchAllFromTable<LegacyRefundPayment>(
+    client,
+    "payment",
+    "id, customerId, currencyCode, totalAmount, exchangeRate, postingDate, paymentDate, salesOrderId, rentalAgreementId, customerContractId",
+    (query) => {
+      query = query
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .eq("paymentType", "Disbursement")
+        .eq("status", "Posted")
+        .or(
+          "salesOrderId.not.is.null,rentalAgreementId.not.is.null,customerContractId.not.is.null"
+        );
+      if (currencyCode) query = query.eq("currencyCode", currencyCode);
+      return query.order("id");
+    }
+  );
+  if (payments.error) throw new Error(payments.error.message);
+  const scopeIds = new Set(scopes.map((scope) => `${scope.type}:${scope.id}`));
+  const relevantPayments = (payments.data ?? []).filter((payment) => {
+    const scope = fundingScopeOf(payment);
+    return scope && scopeIds.has(`${scope.type}:${scope.id}`);
+  });
+  if (!relevantPayments.length)
+    return { refunds: [], accounts: new Map<string, string>() };
+  const ids = relevantPayments.map((payment) => payment.id);
+  const [settlements, lines] = await Promise.all([
+    fetchAllByIds<LegacyRefundSettlement>(ids, (batch) =>
+      client
+        .from("invoiceSettlement")
+        .select(
+          "paymentId, sourcePaymentId, sourceAmount, appliedAmount, fxGainLossAmount, targetPaymentId"
+        )
+        .eq("companyId", companyId)
+        .in("paymentId", batch)
+        .order("id")
+    ),
+    fetchAllByIds<LegacyRefundLine>([...ids, ...sourceIds], (batch) =>
+      historyClient
+        .from("journalLine")
+        .select(
+          "documentId, accountId, amount, journal:journal!inner(status, sourceType)"
+        )
+        .eq("companyId", companyId)
+        .eq("journal.companyId", companyId)
+        .in("documentId", batch)
+        .eq("documentType", "Payment")
+        .eq("description", CUSTOMER_DEPOSIT_DESCRIPTION)
+        .eq("journal.sourceType", "Payment")
+        .in("journal.status", [
+          ...OPEN_ITEM_JOURNAL_STATUSES,
+          ...PRE_CUTOVER_JOURNAL_STATUSES
+        ])
+        .order("id")
+    )
+  ]);
+  if (settlements.error) throw new Error(settlements.error.message);
+  if (lines.error) throw new Error(lines.error.message);
+  return legacyDepositRefundFacts(
+    relevantPayments,
+    settlements.data ?? [],
+    lines.data ?? [],
+    decimals
+  );
+}
+
+function reserveLegacyRefundFunding(
+  sources: FundingSource[],
+  payments: readonly FundingPaymentRow[],
+  history: { refunds: LegacyDepositRefund[]; accounts: Map<string, string> },
+  decimals: ReadonlyMap<string, number>
+) {
+  if (!history.refunds.length) return sources;
+  return reserveLegacyDepositRefunds({
+    sources,
+    refunds: history.refunds,
+    decimals,
+    sourceFacts: new Map(
+      payments.map((payment) => [
+        payment.id,
+        {
+          currencyCode: payment.currencyCode,
+          accountId: history.accounts.get(payment.id) ?? null
+        }
+      ])
+    )
+  });
+}
+
 async function loadOnAccountSources(
   client: SupabaseClient<Database>,
   companyId: string,
   party: PaymentPartyOf,
-  currencyCode?: string
+  currencyCode?: string,
+  historyClient: SupabaseClient<Database> = client,
+  includeDeposits = true
 ) {
   type OnAccountPaymentRow = FundingPaymentRow & {
     rentalAgreementId: string | null;
@@ -3165,28 +3457,49 @@ async function loadOnAccountSources(
     (a) => a.payment?.status === "Posted"
   );
   const isAR = party.paymentType === "Receipt";
+  const sources = remainingFundingSources(
+    (payments.data ?? []).map((payment) => {
+      const scope = fundingScopeOf(payment);
+      return {
+        ...payment,
+        scope: scope && {
+          ...scope,
+          readableId:
+            (scope.type === "rentalAgreement"
+              ? payment.depositAgreement?.readableId
+              : scope.type === "customerContract"
+                ? payment.depositContract?.readableId
+                : scope.type === "purchaseOrder"
+                  ? payment.prepaymentOrder?.readableId
+                  : payment.depositOrder?.readableId) ?? null
+        }
+      };
+    }),
+    effective,
+    decimals,
+    isAR
+  );
+  if (!includeDeposits) return { sources: onAccountOnly(sources), decimals };
+  const history = isAR
+    ? await readClientLegacyDepositRefunds(
+        client,
+        companyId,
+        party.customerId!,
+        currencyCode,
+        payments.data.map((payment) => payment.id),
+        decimals,
+        payments.data
+          .map((payment) => fundingScopeOf(payment))
+          .filter((scope): scope is FundingScope => scope !== null),
+        historyClient
+      )
+    : { refunds: [], accounts: new Map<string, string>() };
   return {
-    sources: remainingFundingSources(
-      (payments.data ?? []).map((payment) => {
-        const scope = fundingScopeOf(payment);
-        return {
-          ...payment,
-          scope: scope && {
-            ...scope,
-            readableId:
-              (scope.type === "rentalAgreement"
-                ? payment.depositAgreement?.readableId
-                : scope.type === "customerContract"
-                  ? payment.depositContract?.readableId
-                  : scope.type === "purchaseOrder"
-                    ? payment.prepaymentOrder?.readableId
-                    : payment.depositOrder?.readableId) ?? null
-          }
-        };
-      }),
-      effective,
-      decimals,
-      isAR
+    sources: reserveLegacyRefundFunding(
+      sources,
+      payments.data,
+      history,
+      decimals
     ),
     decimals
   };
@@ -3201,21 +3514,23 @@ export async function getAvailableOnAccountCreditSources(
   client: SupabaseClient<Database>,
   companyId: string,
   party: PaymentPartyOf,
-  currencyCode: string
+  currencyCode: string,
+  historyClient: SupabaseClient<Database> = client
 ): Promise<{
   data: {
     sources: FundingSource[];
     availableDocumentAmount: number;
     availableBaseAmount: number;
   } | null;
-  error: { message: string } | null;
+  error: { message: string; code?: string } | null;
 }> {
   try {
     const { sources, decimals } = await loadOnAccountSources(
       client,
       companyId,
       party,
-      currencyCode
+      currencyCode,
+      historyClient
     );
     // `sources` keeps deposits (each carries its `scope`) for the allocator;
     // the totals are on-account credit only, which any invoice can draw on.
@@ -3235,6 +3550,8 @@ export async function getAvailableOnAccountCreditSources(
       error: null
     };
   } catch (error) {
+    if (error instanceof HistoricalDepositReconciliationError)
+      return { data: null, error: ruleError(error.message) };
     return {
       data: null,
       error: {
@@ -3256,7 +3573,14 @@ export async function getAvailableOnAccountCredit(
   party: PaymentPartyOf
 ): Promise<number> {
   try {
-    const { sources } = await loadOnAccountSources(client, companyId, party);
+    const { sources } = await loadOnAccountSources(
+      client,
+      companyId,
+      party,
+      undefined,
+      client,
+      false
+    );
     return round(
       onAccountOnly(sources).reduce((sum, p) => sum + p.remainingBase, 0)
     );
@@ -4271,11 +4595,20 @@ export async function replaceInvoiceSettlements(
         ),
         scope: currentScope
       },
-      priorSources: remainingFundingSources(
+      priorSources: reserveLegacyRefundFunding(
+        remainingFundingSources(priorPayments, consumption, decimals, isAR),
         priorPayments,
-        consumption,
-        decimals,
         isAR
+          ? await readLegacyDepositRefunds(
+              trx,
+              args.companyId,
+              partyId,
+              payment.currencyCode,
+              sourceIds,
+              decimals
+            )
+          : { refunds: [], accounts: new Map<string, string>() },
+        decimals
       ),
       requests: [...requests.values()],
       currencyDecimals,
@@ -5097,7 +5430,9 @@ export async function getDepositDocuments(
           .eq("companyId", companyId)
           .eq("payment.companyId", companyId)
           .eq("payment.status", "Posted")
-          .in("sourcePaymentId", batch)
+          .or(
+            `sourcePaymentId.in.(${batch.join(",")}),and(sourcePaymentId.is.null,paymentId.in.(${batch.join(",")}))`
+          )
           .order("id")
     )
   ]);
@@ -13009,6 +13344,38 @@ export function postPaymentTransaction(
     }
 
     if (type === "void") {
+      const scope = fundingScopeOf(payment);
+      if (payment.customerId && payment.paymentType === "Receipt" && scope) {
+        const currency = await trx
+          .selectFrom("currency")
+          .innerJoin(
+            "company",
+            "company.companyGroupId",
+            "currency.companyGroupId"
+          )
+          .select("currency.decimalPlaces")
+          .where("company.id", "=", companyId)
+          .where("currency.code", "=", payment.currencyCode)
+          .executeTakeFirstOrThrow();
+        const history = await readLegacyDepositRefunds(
+          trx,
+          companyId,
+          payment.customerId,
+          payment.currencyCode,
+          [payment.id],
+          new Map([[payment.currencyCode, currency.decimalPlaces]]),
+          scope
+        );
+        if (
+          history.refunds.some(
+            (refund) =>
+              refund.scope.type === scope.type && refund.scope.id === scope.id
+          )
+        )
+          throw new Error(
+            "Void or reconcile historical deposit refunds before voiding this advance"
+          );
+      }
       const consumers = await settlementQuery(trx, companyId)
         .where("s.sourcePaymentId", "=", paymentId)
         .execute();
@@ -13650,14 +14017,26 @@ export function postPaymentTransaction(
     // contract or purchase order, and a deposit payment applies to nothing
     // else — re-derived here so a crafted Draft cannot spend one document's
     // deposit on another.
-    const priorSources = remainingFundingSources(
-      sources.map((source) => ({
-        ...source,
-        scope: fundingScopeOf(source)
-      })),
-      consumed,
-      new Map([[payment.currencyCode, decimals]]),
+    const sourceDecimals = new Map([[payment.currencyCode, decimals]]);
+    const priorSources = reserveLegacyRefundFunding(
+      remainingFundingSources(
+        sources.map((source) => ({ ...source, scope: fundingScopeOf(source) })),
+        consumed,
+        sourceDecimals,
+        isAR
+      ),
+      sources,
       isAR
+        ? await readLegacyDepositRefunds(
+            trx,
+            companyId,
+            partyId,
+            payment.currencyCode,
+            sourceIds,
+            sourceDecimals
+          )
+        : { refunds: [], accounts: new Map<string, string>() },
+      sourceDecimals
     );
     if (
       payment.purchaseOrderId &&

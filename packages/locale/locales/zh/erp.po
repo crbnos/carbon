@@ -2245,9 +2245,6 @@ msgstr "销售报价请求 (RFQ) 是客户对一组零件和数量的定价询�
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）；两者都为商机线程提供信息。"
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "销售发货时过账销售成本，销售发票过账收入。对于本期已过账的销售订单发货，如果截至期末的净发货数量超过已过账发票的累计数量，就会有部分成本留在本期，而收入计入后续期间。请以本期日期开具发票；如果发货条款规定收入应计入后续期间，可填写原因后跳过此任务。"
-
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对 Carbon 的编程调用，携带自己的权限和速率限制，而不是用户会话的。"
 
@@ -30954,8 +30951,8 @@ msgstr "这些行链接到此公司外的数据，因此无法创建当前数据
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"
 
-msgid "These shipments posted cost of goods sold in this period, but some shipped quantities have no posted invoice dated by the period end. Invoice those quantities in this period, or skip with a reason if revenue belongs in a later period."
-msgstr "这些发货已在本期间过账销售成本，但部分已发货数量没有日期不晚于期末的已过账发票。请在本期间为这些数量开票；如果收入属于后续期间，请填写原因并跳过。"
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "这些发货已在本期间记录成本，但部分数量在期末前尚未开票。新的销售发票使用当天日期过账，因此期末后开票不会消除此警告。请检查入账时间差异以及是否需要会计调整；如果警告仍然存在，请填写说明处理方式的原因后跳过此任务。"
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "这些单位被视为销售。激活时注销每一个单位并过账其开始凭证："

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,7 +24,6 @@ import {
 import {
   checkDepositDocument,
   getAvailableCreditsForParty,
-  getAvailableOnAccountCreditSources,
   getDepositDocuments,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
@@ -173,6 +173,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           purchaseOrderIds: []
         }));
       } else if (!isRefund) {
+        const api = await carbon(request);
         const [invoices, credit, credits, staged] = await Promise.all([
           isAR
             ? getOpenSalesInvoicesForCustomer(
@@ -187,14 +188,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 partyId,
                 payment.data.currencyCode
               ),
-          getAvailableOnAccountCreditSources(
-            client,
-            companyId,
-            isAR
+          api.invoicing.getAvailableOnAccountCreditSources({
+            party: isAR
               ? { paymentType: "Receipt", customerId: partyId }
               : { paymentType: "Disbursement", supplierId: partyId },
-            payment.data.currencyCode
-          ),
+            currencyCode: payment.data.currencyCode
+          }),
           getAvailableCreditsForParty(
             client,
             companyId,
@@ -354,8 +353,8 @@ export default function PaymentDetailRoute() {
   const isRefund =
     !isReimbursement &&
     (side === "sales") !== (payment.paymentType === "Receipt");
-  // A deposit receipt (or a prepayment disbursement) applies only to its own
-  // document's invoices; a REFUND targets memos and is not scoped.
+  // Advances fund their document's invoices. Advance refunds consume the
+  // original payments; other refunds target memos without a document scope.
   const isDepositRefund = isRefund && Boolean(fundingScopeOf(payment));
   const depositScope = !isRefund ? fundingScopeOf(payment) : null;
   const paymentScope = depositScope && {

@@ -343,7 +343,7 @@ function PeriodCloseTaskRow({
       case "timesheets-complete":
         return t`In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known.`;
       case "shipped-not-invoiced":
-        return t`A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later.`;
+        return t`These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains.`;
     }
     switch (task.name) {
       case "Lock the period":
@@ -450,11 +450,13 @@ function PeriodCloseTaskRow({
                       </Trans>
                     ) : task.autoCheckKey === "shipped-not-invoiced" ? (
                       <Trans>
-                        These shipments posted cost of goods sold in this
-                        period, but some shipped quantities have no posted
-                        invoice dated by the period end. Invoice those
-                        quantities in this period, or skip with a reason if
-                        revenue belongs in a later period.
+                        These shipments recorded costs in this period, but some
+                        quantities were not invoiced by period end. New sales
+                        invoices post with today's date, so invoicing after
+                        period end will not clear this warning. Review the
+                        timing difference and any required accounting
+                        adjustment, then skip with a reason documenting the
+                        treatment if the warning remains.
                       </Trans>
                     ) : (
                       <Trans>
