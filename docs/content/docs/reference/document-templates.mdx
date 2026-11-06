@@ -1,0 +1,37 @@
+---
+title: Document Templates
+description: How a company sets the words and layout of the PDFs Carbon prints, and how one record's document can differ.
+---
+
+Carbon prints quotes, sales orders, invoices, return authorizations, purchase orders, requests for quote, packing slips, stock transfers, job travelers, issue reports and tracking labels from templates. Each company has one template per document type. Open them from **Settings → Document Templates**.
+
+## Editing a template
+
+The editor shows a live preview in the middle, the blocks of the page on the left, and the settings of what you selected on the right.
+
+- **Click anything on the page** to edit it. The panel on the right opens at that word or value. Company details open the Header, and the registration line opens the Footer.
+- **Words** can be changed, and **fields and table columns** can be hidden. The list on the right holds every text of the selected block, including ones the current preview does not print.
+- **Values** such as a customer name print from a variable, shown as a chip. Use **Insert value** to add one.
+- **Preview with** shows the template on a real record, for the documents that offer one.
+
+Terms are edited on their own block. A record's notes belong to the record, so a template only sets their heading. The company name and address come from the company record; the Header only chooses whether they print.
+
+## Figures stay what the record says
+
+Money and quantities always print from the record. A template or a document can reword what surrounds a figure or hide its column, but it cannot remove a figure from a text that prints one, and a number or a sign typed next to a figure is refused, because `1{line.quantity}` would print 15 for 5.
+
+## Editing one document
+
+**Edit document**, on a record's page (in its **Preview** or reports menu, or beside the document itself), changes how that one record prints, without changing the company template:
+
+- Words, hidden fields and hidden blocks, and the terms.
+- The notes, which are the record's own notes.
+- A value this document prints differently, using the pencil on its chip. The record itself does not change. Figures, document and line numbers, and units cannot be changed this way.
+
+What you do not change keeps following the template, including words or hidden fields the template changes later. **Reset to template** removes this document's changes. Once a record is locked, its document opens read-only and prints what was saved.
+
+A revision of a quote starts with the same changes as the quote it revises. A record converted to another document starts clean.
+
+<AgentContext>
+Stored in `documentTemplate` (one per document type per company) and `documentEdit` (one per record). See `.claude/rules/document-template-customizer.md`.
+</AgentContext>

@@ -3,22 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
+import {
+  buildLabelVars,
+  type LabelCompany
+} from "../pdf/blocks/trackingLabel/vars";
 import type { DocumentTemplate } from "../template";
 import { interpolateString, resolveTemplate } from "../template";
-import { getZplLabelGeometry, zplLabelHeader } from "./utils";
-
-/** Merge-field values for a label (kept in sync with buildLabelVars). */
-function labelVars(item: ProductLabelItem): Record<string, string> {
-  const str = (v: unknown): string => (v == null ? "" : String(v));
-  return {
-    "item.id": str(item.itemId),
-    "item.revision": str(item.revision),
-    "label.quantity": str(item.quantity),
-    "label.trackingType": str(item.trackingType),
-    "label.number": str(item.number),
-    "label.trackedEntityId": str(item.trackedEntityId)
-  };
-}
+import { getZplLabelGeometry, zplFieldData, zplLabelHeader } from "./utils";
 
 /**
  * Map a barcode symbology to its ZPL command for a given dot height. `scale`
@@ -32,17 +23,17 @@ function zplBarcode(
 ): string {
   switch (symbology) {
     case "code128":
-      return `^BCN,${heightDots},N,N,N^FD${value}^FS`;
+      return `^BCN,${heightDots},N,N,N${zplFieldData(value)}`;
     case "datamatrix":
-      return `^BXN,${Math.max(3, Math.floor(heightDots / 20))},200^FD${value}^FS`;
+      return `^BXN,${Math.max(3, Math.floor(heightDots / 20))},200${zplFieldData(value)}`;
     case "qrcode": {
       // `MA,` field-data prefix = error-correction level M + Automatic input
       // mode. Module scales with the label rather than a fixed step.
       const module = Math.max(2, Math.min(8, Math.round(4 * scale)));
-      return `^BQN,2,${module}^FDMA,${value}^FS`;
+      return `^BQN,2,${module}${zplFieldData(value, "MA,")}`;
     }
     default: // pdf417
-      return `^BY2^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N^FD${value}^FS`;
+      return `^BY2^B7N,${Math.max(2, Math.floor(heightDots / 20))},5,0,0,N${zplFieldData(value)}`;
   }
 }
 
@@ -60,7 +51,9 @@ export function generateProductLabelZPL(
   item: ProductLabelItem,
   labelSize: LabelSize,
   template?: DocumentTemplate | null,
-  logo?: { gfa?: string | null; widthDots?: number } | null
+  logo?: { gfa?: string | null; widthDots?: number } | null,
+  /** Fills the `company.*` variables, as the PDF label's company does. */
+  company?: LabelCompany | null
 ): string {
   const geometry = getZplLabelGeometry(labelSize);
   const { widthDots, heightDots, hScale, scale, margin } = geometry;
@@ -82,14 +75,14 @@ export function generateProductLabelZPL(
 
   const resolved = resolveTemplate("trackingLabel", template ?? null);
   const visibleBlocks = resolved.blocks.filter((block) => block.visible);
-  const vars = labelVars(item);
+  const vars = buildLabelVars(item, company);
 
   let zpl = zplLabelHeader(geometry);
 
   // Text fields stack from the top, following block order.
   let yPosition = Math.round(30 * hScale);
   const textLine = (size: number, text: string) => {
-    zpl += `^FO${margin},${yPosition}^A0N,${size},${size}^FD${text}^FS`;
+    zpl += `^FO${margin},${yPosition}^A0N,${size},${size}${zplFieldData(text)}`;
   };
 
   for (const block of visibleBlocks) {
@@ -124,7 +117,7 @@ export function generateProductLabelZPL(
         const value = interpolateString(block.value ?? "", vars);
         if (value) {
           const idY = heightDots - smallFont - Math.round(10 * hScale);
-          zpl += `^FO${margin},${idY}^A0N,${smallFont},${smallFont}^FD${value}^FS`;
+          zpl += `^FO${margin},${idY}^A0N,${smallFont},${smallFont}${zplFieldData(value)}`;
         }
         break;
       }
@@ -190,7 +183,11 @@ export function generateProductLabelZPL(
       case "customField": {
         const value = item.customFields?.[block.fieldId];
         if (value != null && value !== "") {
-          textLine(descFont, `${block.label}: ${value}`);
+          // An empty label prints the value alone, as the PDF does.
+          textLine(
+            descFont,
+            block.label ? `${block.label}: ${value}` : String(value)
+          );
           yPosition += descGap;
         }
         break;

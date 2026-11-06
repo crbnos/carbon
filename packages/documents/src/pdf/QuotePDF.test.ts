@@ -23,6 +23,7 @@ function render(thumbnails: Record<string, string | null>) {
   return renderToBuffer(
     createElement(QuotePDF, {
       company: { name: "Acme", baseCurrencyCode: "USD" },
+      printDate: "2026-06-01",
       locale: "en-US",
       exchangeRate: 1,
       quote: { id: "quote-1", quoteId: "Q000001", currencyCode: "USD" },
@@ -48,8 +49,7 @@ describe("QuotePDF thumbnails", () => {
 });
 
 describe("QuotePDF No Quote lines", () => {
-  // QuotePDF renders a <Template> whose children are one Fragment per block,
-  // each wrapping the block element — every block receives the same `data`.
+  // QuotePDF renders one page, and hands every block the same `data`.
   function blockData(props: Record<string, unknown>) {
     type Data = {
       quoteLines: { id: string }[];
@@ -57,18 +57,8 @@ describe("QuotePDF No Quote lines", () => {
       maxLeadTime: number;
       totals: { subtotal: number };
     };
-    const template = (QuotePDF as (p: never) => ReactElement)(props as never);
-    const fragments = (template.props as { children: ReactElement[] }).children;
-    const data = fragments
-      .map(
-        (f) =>
-          (f.props as { children?: ReactElement | null }).children?.props as
-            | { data?: Data }
-            | undefined
-      )
-      .find((p) => p?.data)?.data;
-    if (!data) throw new Error("No block received data");
-    return data;
+    const page = (QuotePDF as (p: never) => ReactElement)(props as never);
+    return (page.props as { data: Data }).data;
   }
 
   it("leaves a No Quote line, its prices and its lead time off the document", () => {

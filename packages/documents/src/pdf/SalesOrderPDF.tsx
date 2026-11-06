@@ -4,12 +4,12 @@
 
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import { Fragment } from "react";
 import type { DocumentTemplate, ResolvedSection } from "../template";
 import {
-  DEFAULT_HEADER_OPTIONS,
-  interpolateContent,
-  resolveTemplate
+  documentValues,
+  resolveTemplate,
+  salesOrderTexts,
+  type ValueCollector
 } from "../template";
 import type { AccountsReceivableBillingAddress, PDF } from "../types";
 import {
@@ -17,14 +17,16 @@ import {
   getRateFormatter,
   resolveRegistrationLine
 } from "../utils/shared";
+import { DocumentPage } from "./blocks/DocumentPage";
+import { documentChrome } from "./blocks/documentChrome";
 import type { SalesOrderData, SalesOrderLocations } from "./blocks/salesOrder";
 import {
   buildSalesOrderVars,
   salesOrderBlockRegistry
 } from "./blocks/salesOrder";
-import { Template } from "./components";
 
 interface SalesOrderPDFProps extends PDF {
+  valueCollector?: ValueCollector;
   salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
   salesOrderLines: Database["public"]["Views"]["salesOrderLines"]["Row"][];
   salesOrderLocations: SalesOrderLocations;
@@ -45,6 +47,7 @@ interface SalesOrderPDFProps extends PDF {
 }
 
 const SalesOrderPDF = ({
+  valueCollector,
   accountsReceivableBillingAddress,
   company,
   companySettings,
@@ -59,8 +62,7 @@ const SalesOrderPDF = ({
   locale,
   currencyDecimals,
   template,
-  sections = {},
-  title = "Sales Order"
+  sections = {}
 }: SalesOrderPDFProps) => {
   const currencyCode = salesOrder.currencyCode ?? company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
@@ -68,15 +70,30 @@ const SalesOrderPDF = ({
   // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const { blocks, theme, settings, headerSectionId, footerSectionId } =
-    resolveTemplate("salesOrder", template);
+  const resolved = resolveTemplate("salesOrder", template);
+  const { theme, settings, footerSectionId } = resolved;
 
-  const vars = buildSalesOrderVars({
-    salesOrder,
-    salesOrderLocations,
-    company,
-    currencyCode
+  const values = documentValues(settings.valueEdits, valueCollector);
+  const vars = values.document(
+    buildSalesOrderVars({
+      salesOrder,
+      salesOrderLines,
+      salesOrderLocations,
+      company,
+      currencyCode,
+      locale,
+      paymentTerms,
+      shippingMethods,
+      numberFormatter
+    })
+  );
+  const chrome = documentChrome({
+    texts: salesOrderTexts.document,
+    template: resolved,
+    vars,
+    sections
   });
+  const { documentTitle, documentNumber, headerOptions } = chrome;
 
   const registration = resolveRegistrationLine({
     company,
@@ -85,11 +102,6 @@ const SalesOrderPDF = ({
     settings,
     vars
   });
-
-  const headerOptions = {
-    ...DEFAULT_HEADER_OPTIONS,
-    ...(headerSectionId ? (sections[headerSectionId]?.config ?? {}) : {})
-  };
 
   const data: SalesOrderData = {
     company,
@@ -108,54 +120,25 @@ const SalesOrderPDF = ({
     currencyCode,
     numberFormatter,
     rateFormatter,
+    values,
     vars,
-    headerOptions
+    headerOptions,
+    documentTitle,
+    documentNumber
   };
 
-  const headerSection = headerSectionId
-    ? sections[headerSectionId]?.content
-    : undefined;
-  const footerSection = footerSectionId
-    ? sections[footerSectionId]?.content
-    : undefined;
-  const headerContent = headerSection
-    ? interpolateContent(headerSection, vars)
-    : undefined;
-  const footerContent = footerSection
-    ? interpolateContent(footerSection, vars)
-    : undefined;
-
-  const showHeader = headerSectionId !== null;
-  const showFooter = footerSectionId !== null;
-  const visibleBlocks = blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
-  );
-
   return (
-    <Template
-      theme={theme}
-      title={title}
-      meta={{
-        author: meta?.author ?? "Carbon",
-        keywords: meta?.keywords ?? "sales order",
-        subject: meta?.subject ?? "Sales Order"
-      }}
+    <DocumentPage
+      chrome={chrome}
+      template={resolved}
+      meta={meta}
+      keywords="sales order"
       footerDocumentId={salesOrder?.salesOrderId}
       footerLabel={registration.label}
-      showFooter={showFooter}
-      showPageNumbers={settings.showPageNumbers}
-      pageNumberFormat={settings.pageNumberFormat}
       showRegistrationLine={registration.show}
-      fontFamily={settings.fontFamily}
-      headerContent={headerContent}
-      footerContent={footerContent}
-    >
-      {visibleBlocks.map((block) => {
-        const render = salesOrderBlockRegistry[block.type];
-        if (!render) return null;
-        return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
-      })}
-    </Template>
+      registry={salesOrderBlockRegistry}
+      data={data}
+    />
   );
 };
 
