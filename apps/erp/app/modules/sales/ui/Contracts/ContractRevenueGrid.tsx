@@ -21,7 +21,7 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { LuPlus, LuRotateCcw, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Table } from "~/components";
@@ -40,6 +40,7 @@ import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
@@ -95,8 +96,14 @@ const ContractRevenueGrid = ({
   const { formatDate } = useDateFormatter();
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
+  // The amounts modal seeds its state from props: a new key per open.
   const addMonth = useDisclosure();
-  const [deleting, setDeleting] = useState<MonthRow | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<MonthRow>();
 
   const contractId = contract.id!;
   const { currencyCode } = contract;
@@ -243,13 +250,13 @@ const ContractRevenueGrid = ({
         shortcut={MENU_ITEM_SHORTCUTS.delete}
         destructive
         disabled={!canEdit}
-        onClick={() => setDeleting(row)}
+        onClick={() => openDelete(row)}
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Delete Month</Trans>
       </MenuItem>
     ),
-    [canEdit]
+    [canEdit, openDelete]
   );
 
   const gridColumns = useMemo(
@@ -348,8 +355,10 @@ const ContractRevenueGrid = ({
         </p>
       </div>
 
-      {addMonth.isOpen && (
+      {addMonth.openCount > 0 && (
         <ContractAmountsModal
+          key={addMonth.openCount}
+          open={addMonth.isOpen}
           intent="addMonth"
           action={action}
           title={<Trans>Add Month</Trans>}
@@ -371,12 +380,13 @@ const ContractRevenueGrid = ({
       {deleting && (
         <ConfirmDelete
           action={action}
+          isOpen={isDeleting}
           fields={{ intent: "deleteMonth", periodStart: deleting.periodStart }}
           name={monthLabel(deleting.periodStart)}
           title={t`Delete ${monthLabel(deleting.periodStart)}`}
           text={t`Its revenue goes back to what each line has left to recognize.`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </div>

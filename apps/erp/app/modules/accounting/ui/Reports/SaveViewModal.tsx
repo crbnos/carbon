@@ -32,6 +32,7 @@ type SaveViewModalProps = {
   state: PivotState;
   /** The active saved view, if any. Editable only when owned by the current user. */
   view?: ReportView;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -39,6 +40,7 @@ const SaveViewModal = ({
   reportKey,
   state,
   view,
+  open = true,
   onClose
 }: SaveViewModalProps) => {
   const { t } = useLingui();
@@ -71,7 +73,7 @@ const SaveViewModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

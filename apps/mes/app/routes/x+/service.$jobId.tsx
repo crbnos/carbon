@@ -513,6 +513,7 @@ export default function ServiceJobRoute() {
   const { locale } = useLocale();
   const clockFetcher = useFetcher();
   const returnFetcher = useFetcher();
+  // Keyed by its open count: the add-part modal seeds its state on mount.
   const addPart = useDisclosure();
   const [tab, setTab] = useState("details");
   const [confirmComplete, setConfirmComplete] = useState(false);
@@ -997,58 +998,58 @@ export default function ServiceJobRoute() {
         </WorkRecordPane>
       </WorkRecordShell>
 
-      {addPart.isOpen && (
+      {addPart.openCount > 0 && (
         <ServiceJobAddPartModal
+          key={addPart.openCount}
+          open={addPart.isOpen}
           serviceJobId={job.id}
           itemOptions={itemOptions}
           onClose={addPart.onClose}
         />
       )}
-      {confirmComplete && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setConfirmComplete(false);
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Complete ${job.serviceJobId}?`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              {isRunningHere ? (
-                <Trans>
-                  This stops your clock and posts the job's time. The job can no
-                  longer change.
-                </Trans>
-              ) : (
-                <Trans>
-                  This posts the job's time. The job can no longer change.
-                </Trans>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={() => setConfirmComplete(false)}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                size="lg"
-                isLoading={isBusy}
-                onClick={() => {
-                  submitClock("Complete");
-                  setConfirmComplete(false);
-                }}
-              >
-                <Trans>Complete</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={confirmComplete}
+        onOpenChange={(open) => {
+          if (!open) setConfirmComplete(false);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Complete ${job.serviceJobId}?`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            {isRunningHere ? (
+              <Trans>
+                This stops your clock and posts the job's time. The job can no
+                longer change.
+              </Trans>
+            ) : (
+              <Trans>
+                This posts the job's time. The job can no longer change.
+              </Trans>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => setConfirmComplete(false)}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              size="lg"
+              isLoading={isBusy}
+              onClick={() => {
+                submitClock("Complete");
+                setConfirmComplete(false);
+              }}
+            >
+              <Trans>Complete</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

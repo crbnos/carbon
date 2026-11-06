@@ -28,6 +28,8 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   toast,
+  useDisclosure,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -44,7 +46,7 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { DateTime, EmployeeAvatar, Empty, FileDropzone } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -161,9 +163,11 @@ type StatusFilter =
 
 function CertificateCompleteModal({
   assignment,
+  open = true,
   onClose
 }: {
   assignment: TrainingAssignmentStatusItem;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -190,7 +194,7 @@ function CertificateCompleteModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -265,13 +269,15 @@ function AssignmentListItem({
   const employeeName = assignment.employeeName?.trim() ?? "";
   const canMarkComplete =
     assignment.status !== "Completed" && assignment.status !== "Not Required";
-  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+  // Its openCount keys the modal, so the certificate file starts empty each time.
+  const certificateModal = useDisclosure();
   // Hold the completion id from when the dialog opened: the row loses its
   // completionId as soon as the removal revalidates, and the dialog must stay
   // mounted until its submission settles so it can close itself.
   const [removeCompletionId, setRemoveCompletionId] = useState<number | null>(
     null
   );
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false);
 
   return (
     <div className={cn("p-4", !isLast && "border-b w-full")}>
@@ -324,7 +330,10 @@ function AssignmentListItem({
                 variant="secondary"
                 size="sm"
                 leftIcon={<LuUndo2 />}
-                onClick={() => setRemoveCompletionId(assignment.completionId)}
+                onClick={() => {
+                  setRemoveCompletionId(assignment.completionId);
+                  setIsRemoveOpen(true);
+                }}
               >
                 <Trans>Remove Completion</Trans>
               </Button>
@@ -335,7 +344,7 @@ function AssignmentListItem({
               size="sm"
               isDisabled={disabled}
               leftIcon={<LuCircleCheck />}
-              onClick={() => setIsCertificateOpen(true)}
+              onClick={certificateModal.onOpen}
             >
               <Trans>Mark Complete</Trans>
             </Button>
@@ -366,10 +375,12 @@ function AssignmentListItem({
           )}
         </HStack>
       </div>
-      {isCertificateOpen && (
+      {certificateModal.openCount > 0 && (
         <CertificateCompleteModal
+          key={certificateModal.openCount}
+          open={certificateModal.isOpen}
           assignment={assignment}
-          onClose={() => setIsCertificateOpen(false)}
+          onClose={certificateModal.onClose}
         />
       )}
       {removeCompletionId !== null && (
@@ -379,8 +390,9 @@ function AssignmentListItem({
           text={t`The training goes back to Pending for ${employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed.`}
           confirmText={t`Remove`}
           confirmVariant="destructive"
-          onCancel={() => setRemoveCompletionId(null)}
-          onSubmit={() => setRemoveCompletionId(null)}
+          isOpen={isRemoveOpen}
+          onCancel={() => setIsRemoveOpen(false)}
+          onSubmit={() => setIsRemoveOpen(false)}
         >
           <input type="hidden" name="completionId" value={removeCompletionId} />
         </Confirm>
@@ -393,7 +405,7 @@ export default function TrainingAssignmentDetailRoute() {
   const { t } = useLingui();
   const { name, isExternal, assignments } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.trainingAssignments);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
 
@@ -424,10 +436,8 @@ export default function TrainingAssignmentDetailRoute() {
     );
   }, [assignments]);
 
-  const onClose = () => navigate(path.to.trainingAssignments);
-
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={dialog.open} onOpenChange={(open) => !open && dialog.close()}>
       <DrawerContent size="lg">
         <DrawerHeader>
           <HStack className="justify-between w-full pr-8">

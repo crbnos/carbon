@@ -89,6 +89,7 @@ type DispositionModalProps = {
     laborProductionEventId?: string;
     machineProductionEventId?: string;
   };
+  open?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
@@ -110,6 +111,7 @@ const DispositionModal = ({
   summary,
   failedFeatureSummary,
   eventIds,
+  open = true,
   onCancel,
   onSubmit
 }: DispositionModalProps) => {
@@ -147,10 +149,10 @@ const DispositionModal = ({
   );
 
   useEffect(() => {
-    if (loadedTargetsRef.current) return;
+    if (!open || loadedTargetsRef.current) return;
     loadedTargetsRef.current = true;
     targetsFetcher.load(path.to.reworkTargets(operationId));
-  }, [operationId, targetsFetcher.load]);
+  }, [open, operationId, targetsFetcher.load]);
 
   const targets = targetsFetcher.data?.operations ?? [];
   const hasIssueTypes = issueTypes.length > 0;
@@ -182,7 +184,7 @@ const DispositionModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

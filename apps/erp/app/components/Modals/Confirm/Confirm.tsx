@@ -12,7 +12,8 @@ import {
   ModalOverlay,
   ModalTitle,
   SHORTCUTS,
-  toast
+  toast,
+  useDisclosure
 } from "@carbon/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef } from "react";
@@ -49,15 +50,25 @@ const Confirm = ({
   details
 }: ConfirmProps) => {
   const fetcher = useFetcher<{ success: boolean; message: string }>();
-  const submitted = useRef(false);
+  // The dialog stays mounted between opens, and so does its fetcher: the
+  // request outlives a close, as it did before. Each open has an id, so a
+  // request from an earlier open does not close a later one on settling.
+  const { openCount: opens } = useDisclosure({ isOpen });
+  const submittedIn = useRef<number | null>(null);
 
   useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit?.();
-      submitted.current = false;
-    }
-  }, [fetcher.state, onSubmit]);
+    if (fetcher.state !== "idle" || submittedIn.current === null) return;
+    const from = submittedIn.current;
+    submittedIn.current = null;
+    // A later open is on screen: this request was for an earlier one.
+    if (isOpen && from !== opens) return;
+    // Cancelled while the request ran: act on it only if it went through.
+    if (!isOpen && fetcher.data?.success === false) return;
+    onSubmit?.();
+  }, [fetcher.state, fetcher.data, onSubmit, isOpen, opens]);
 
+  // Keyed on the response, not its message: the fetcher outlives a close, so
+  // a later submit with the same message must toast again.
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
       toast.success(fetcher.data.message);
@@ -66,7 +77,7 @@ const Confirm = ({
     if (fetcher.data?.success === false && fetcher?.data?.message) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.message, fetcher.data?.success]);
+  }, [fetcher.data]);
 
   return (
     <Modal
@@ -91,7 +102,7 @@ const Confirm = ({
           <fetcher.Form
             method="post"
             action={action}
-            onSubmit={() => (submitted.current = true)}
+            onSubmit={() => (submittedIn.current = opens)}
           >
             {children}
             {/* Same z-50 tie-break dependency as ConfirmDelete: this modal

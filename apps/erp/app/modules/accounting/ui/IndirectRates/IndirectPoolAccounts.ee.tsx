@@ -71,7 +71,8 @@ const IndirectPoolAccounts = ({
   isDisabled
 }: IndirectPoolAccountsProps) => {
   const { t } = useLingui();
-  const [adding, setAdding] = useState(false);
+  // Keyed per open, so the modal's state and fetcher start fresh each time.
+  const addModal = useDisclosure();
   const [deleting, setDeleting] = useState<IndirectPoolAccountRow | null>(null);
   const deleteDisclosure = useDisclosure();
 
@@ -93,7 +94,7 @@ const IndirectPoolAccounts = ({
           variant="secondary"
           leftIcon={<LuPlus />}
           isDisabled={isDisabled}
-          onClick={() => setAdding(true)}
+          onClick={addModal.onOpen}
         >
           <Trans>Add</Trans>
         </Button>
@@ -174,30 +175,27 @@ const IndirectPoolAccounts = ({
         </div>
       )}
 
-      {adding && (
+      {addModal.openCount > 0 && (
         <IndirectPoolAccountModal
+          key={addModal.openCount}
+          open={addModal.isOpen}
           poolId={poolId}
           action={action}
           dimensions={dimensions}
-          onClose={() => setAdding(false)}
+          onClose={addModal.onClose}
         />
       )}
 
-      {deleteDisclosure.isOpen && deleting && (
+      {deleting && (
         <Confirm
+          isOpen={deleteDisclosure.isOpen}
           action={action}
           title={t`Remove ${deleting.account?.number ?? ""}`}
           text={t`Remove the account ${deleting.account?.number ?? ""} from this pool? Rates already computed keep it.`}
           confirmText={t`Remove`}
           confirmVariant="destructive"
-          onCancel={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-            setDeleting(null);
-          }}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
         >
           <input type="hidden" name="intent" value="account-delete" />
           <input type="hidden" name="id" value={deleting.id} />
@@ -208,11 +206,13 @@ const IndirectPoolAccounts = ({
 };
 
 function IndirectPoolAccountModal({
+  open = true,
   poolId,
   action,
   dimensions,
   onClose
 }: {
+  open?: boolean;
   poolId: string;
   action: string;
   dimensions: DimensionWithValues[];
@@ -230,7 +230,7 @@ function IndirectPoolAccountModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

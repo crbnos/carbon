@@ -71,6 +71,7 @@ import {
   useQuantityFormatter,
   useUser
 } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { methodType } from "~/modules/shared/shared.models";
 import type { loader as createPurchaseOrderLineLoader } from "~/routes/x+/project+/$projectId.elements.$elementId.create-po-line";
 import { useItems } from "~/stores";
@@ -245,10 +246,10 @@ export function ElementPlanLines({
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<CostTypeFilter>("all");
   const [sort, setSort] = useState<EstimatedSort>("plan");
-  const [deleting, setDeleting] = useState<PlanCard | null>(null);
-  const [editing, setEditing] = useState<PlanRow | null>(null);
-  const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
-  const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
+  const deleting = useDrawerItem<PlanCard>();
+  const editing = useDrawerItem<PlanRow>();
+  const creatingJob = useDrawerItem<MaterialLine>();
+  const creatingLine = useDrawerItem<MaterialLine>();
 
   const itemsById = useMemo(
     () => new Map(items.map((item) => [item.id, item])),
@@ -481,7 +482,7 @@ export function ElementPlanLines({
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem
             disabled={isDisabled}
-            onClick={() => setEditing(card)}
+            onClick={() => editing.open(card)}
           >
             <DropdownMenuIcon icon={<LuPencil />} />
             <Trans>Edit</Trans>
@@ -489,7 +490,7 @@ export function ElementPlanLines({
           {canMakeJob && material && (
             <DropdownMenuItem
               disabled={!canCreateJob}
-              onClick={() => setCreatingJob(material)}
+              onClick={() => creatingJob.open(material)}
             >
               <DropdownMenuIcon icon={<LuFactory />} />
               <Trans>Create Job</Trans>
@@ -498,7 +499,7 @@ export function ElementPlanLines({
           {canMakeLine && material && (
             <DropdownMenuItem
               disabled={!canCreatePurchaseOrderLine}
-              onClick={() => setCreatingLine(material)}
+              onClick={() => creatingLine.open(material)}
             >
               <DropdownMenuIcon icon={<LuShoppingCart />} />
               <Trans>Create PO Line</Trans>
@@ -508,7 +509,7 @@ export function ElementPlanLines({
           <DropdownMenuItem
             destructive
             disabled={isDisabled}
-            onClick={() => setDeleting(card)}
+            onClick={() => deleting.open(card)}
           >
             <DropdownMenuIcon icon={<LuTrash />} />
             <Trans>Delete</Trans>
@@ -618,7 +619,10 @@ export function ElementPlanLines({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {(["material", "labor", "cost"] as const).map((type) => (
-          <DropdownMenuItem key={type} onClick={() => setEditing(newRow(type))}>
+          <DropdownMenuItem
+            key={type}
+            onClick={() => editing.open(newRow(type))}
+          >
             {typeLabels[type]}
           </DropdownMenuItem>
         ))}
@@ -640,7 +644,9 @@ export function ElementPlanLines({
   );
 
   const deletingName =
-    deleting === null ? "" : deleting.title || typeLabels[deleting.type];
+    deleting.item === null
+      ? ""
+      : deleting.item.title || typeLabels[deleting.item.type];
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -674,7 +680,7 @@ export function ElementPlanLines({
                 figures={figures(card)}
                 isOver={isOver}
                 progress={planProgress(card)}
-                onOpen={isDisabled ? undefined : () => setEditing(card)}
+                onOpen={isDisabled ? undefined : () => editing.open(card)}
                 actions={
                   <>
                     {charge}
@@ -692,40 +698,50 @@ export function ElementPlanLines({
         </div>
       )}
 
-      {editing && (
+      {editing.item && (
         <PlanLineModal
-          row={editing}
+          key={`editing-${editing.key}`}
+          open={editing.isOpen}
+          row={editing.item}
           elementId={elementId}
           action={action}
           laborCategories={laborCategories}
-          onClose={() => setEditing(null)}
+          onClose={editing.close}
         />
       )}
-      {creatingJob && (
+      {creatingJob.item && (
         <CreateJobModal
+          key={`creatingJob-${creatingJob.key}`}
+          open={creatingJob.isOpen}
           projectId={projectId}
           elementId={elementId}
-          line={creatingJob}
+          line={creatingJob.item}
           defaultLocationId={defaultLocationId}
-          onClose={() => setCreatingJob(null)}
+          onClose={creatingJob.close}
         />
       )}
-      {creatingLine && (
+      {creatingLine.item && (
         <CreatePurchaseOrderLineModal
+          key={`creatingLine-${creatingLine.key}`}
+          open={creatingLine.isOpen}
           projectId={projectId}
           elementId={elementId}
-          line={creatingLine}
-          onClose={() => setCreatingLine(null)}
+          line={creatingLine.item}
+          onClose={creatingLine.close}
         />
       )}
-      {deleting && (
+      {deleting.item && (
         <ConfirmDelete
           action={action}
+          isOpen={deleting.isOpen}
           name={deletingName}
           text={t`Remove ${deletingName} from the plan?`}
-          fields={{ intent: DELETE_INTENT[deleting.type], id: deleting.id }}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          fields={{
+            intent: DELETE_INTENT[deleting.item.type],
+            id: deleting.item.id
+          }}
+          onCancel={deleting.close}
+          onSubmit={deleting.close}
         />
       )}
     </div>
@@ -751,12 +767,14 @@ function useMethodTypeLabels(): Record<MethodType, string> {
  * plan route.
  */
 function PlanLineModal({
+  open = true,
   row,
   elementId,
   action,
   laborCategories,
   onClose
 }: {
+  open?: boolean;
   row: PlanRow;
   elementId: string;
   action: string;
@@ -930,7 +948,7 @@ function PlanLineModal({
   })();
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm
@@ -970,12 +988,14 @@ function PlanLineModal({
  * redirects to the new job; a refusal shows in the modal.
  */
 function CreateJobModal({
+  open = true,
   projectId,
   elementId,
   line,
   defaultLocationId,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   elementId: string;
   line: MaterialLine;
@@ -989,7 +1009,7 @@ function CreateJobModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm
@@ -1054,11 +1074,13 @@ function CreateJobModal({
  * purchase order; a refusal shows in the modal.
  */
 function CreatePurchaseOrderLineModal({
+  open = true,
   projectId,
   elementId,
   line,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   elementId: string;
   line: MaterialLine;
@@ -1093,7 +1115,7 @@ function CreatePurchaseOrderLineModal({
   ];
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         {options === undefined ? (

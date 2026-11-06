@@ -43,10 +43,12 @@ import { placeInServiceValidator } from "../../projects.models";
  * service stay capitalized.
  */
 export function PlaceInServiceModal({
+  open = true,
   projectId,
   fixedAssetId,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   /** Select only this asset (a final-asset element's page). */
   fixedAssetId?: string | null;
@@ -69,10 +71,11 @@ export function PlaceInServiceModal({
     }
   });
 
+  // Mounted per open (a `key` at the call site), so this loads once per open.
   // biome-ignore lint/correctness/useExhaustiveDependencies: load once on open
   useEffect(() => {
-    loadFetcher.load(path.to.projectPlaceInService(projectId));
-  }, [projectId]);
+    if (open) loadFetcher.load(path.to.projectPlaceInService(projectId));
+  }, [projectId, open]);
 
   const data = loadFetcher.data;
   const assets = data?.assets ?? [];
@@ -98,7 +101,7 @@ export function PlaceInServiceModal({
   };
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         {!data ? (

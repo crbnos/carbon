@@ -45,6 +45,7 @@ type PreviewResponse = {
 type ContractCancelModalProps = {
   contract: Contract;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -54,6 +55,7 @@ type ContractCancelModalProps = {
 const ContractCancelModal = ({
   contract,
   action,
+  open = true,
   onClose
 }: ContractCancelModalProps) => {
   const { t } = useLingui();
@@ -81,8 +83,8 @@ const ContractCancelModal = ({
   }, 300);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the date is the only input; the debounced submitter is a new function each render
   useEffect(() => {
-    if (endDate) submitPreview(endDate);
-  }, [endDate]);
+    if (open && endDate) submitPreview(endDate);
+  }, [open, endDate]);
 
   const isPreviewing =
     previewFetcher.state !== "idle" || submittedDate !== endDate;
@@ -96,7 +98,7 @@ const ContractCancelModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

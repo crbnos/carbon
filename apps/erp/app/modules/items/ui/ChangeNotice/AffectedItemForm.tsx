@@ -61,10 +61,12 @@ function startsWithLetter(value: string) {
 export default function AffectedItemForm({
   changeOrderId,
   blacklist,
+  open = true,
   onClose
 }: {
   changeOrderId: string;
   blacklist: string[];
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -177,7 +179,7 @@ export default function AffectedItemForm({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

@@ -113,7 +113,6 @@ const WorkCentersTable = memo(
     };
 
     const onCancel = () => {
-      setSelectedWorkCenter(null);
       deactivateModal.onClose();
       activateModal.onClose();
     };

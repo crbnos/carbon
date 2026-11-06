@@ -40,6 +40,7 @@ type Props = {
   sampleSize: number;
   fails: number;
   acceptanceNumber: number;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -51,6 +52,7 @@ export default function ScanInspectionSample({
   sampleSize,
   fails,
   acceptanceNumber,
+  open = true,
   onClose
 }: Props) {
   const { t } = useLingui();
@@ -96,7 +98,7 @@ export default function ScanInspectionSample({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

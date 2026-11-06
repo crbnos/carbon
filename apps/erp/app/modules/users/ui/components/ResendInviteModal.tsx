@@ -50,8 +50,8 @@ const ResendInviteModal = ({
   onClose
 }: ResendInviteModalProps) => {
   const { t } = useLingui();
-  // The modal stays open until the action answers: it unmounts when it
-  // closes, and the result is read here.
+  // The modal stays open until the action answers and reads the result
+  // here; the table remounts it on its next open.
   const fetcher = useAction({
     onSuccess: (data) =>
       toast.success(

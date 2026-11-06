@@ -34,6 +34,7 @@ import {
   TabsList,
   TabsTrigger,
   TruncatedTooltipText,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { datetime, formatDate } from "@carbon/utils";
@@ -2651,37 +2652,35 @@ function FieldsSection({
   const header = (
     <HStack className="w-full justify-between">
       <span className="text-sm font-medium">Fields</span>
-      {confirmingRefresh ? (
-        <Modal
-          open
-          onOpenChange={(open) =>
-            open ? undefined : setConfirmingRefresh(false)
-          }
-        >
-          <ModalContent size="small" aria-describedby={undefined}>
-            <ModalHeader>
-              <ModalTitle>Discard unsaved changes?</ModalTitle>
-            </ModalHeader>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmingRefresh(false)}
-              >
-                Keep editing
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  setConfirmingRefresh(false);
-                  onRefresh();
-                }}
-              >
-                Discard and refresh
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      ) : null}
+      <Modal
+        open={confirmingRefresh}
+        onOpenChange={(open) =>
+          open ? undefined : setConfirmingRefresh(false)
+        }
+      >
+        <ModalContent size="small" aria-describedby={undefined}>
+          <ModalHeader>
+            <ModalTitle>Discard unsaved changes?</ModalTitle>
+          </ModalHeader>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmingRefresh(false)}
+            >
+              Keep editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmingRefresh(false);
+                onRefresh();
+              }}
+            >
+              Discard and refresh
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <Button
         variant="ghost"
         size="sm"
@@ -3329,7 +3328,7 @@ function ValuesButton({
     patch: Partial<Pick<FieldsDraftEntry, "mode" | "translations">>
   ) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const values = useDisclosure();
   const options = onshapeValueOptions(entry.valueType, property?.options);
   const translations = entry.translations ?? [];
   const untranslated = options
@@ -3352,10 +3351,12 @@ function ValuesButton({
             : undefined
         }
         isDisabled={disabled}
-        onClick={() => setOpen(true)}
+        onClick={values.onOpen}
       />
-      {open ? (
+      {values.openCount > 0 ? (
         <ValuesModal
+          key={values.openCount}
+          open={values.isOpen}
           title={`${entry.onshapeName} → ${field.label}`}
           field={field}
           options={options}
@@ -3367,9 +3368,9 @@ function ValuesButton({
             if (fallback && fallbackValue !== undefined) {
               fallback.onChange(fallbackValue);
             }
-            setOpen(false);
+            values.onClose();
           }}
-          onClose={() => setOpen(false)}
+          onClose={values.onClose}
         />
       ) : null}
     </>
@@ -3730,6 +3731,7 @@ function ValuesModal({
   units,
   fallback,
   onApply,
+  open,
   onClose
 }: {
   title: string;
@@ -3739,6 +3741,7 @@ function ValuesModal({
   units: PlanUnitOfMeasure[];
   fallback?: { options: SelectOption[]; value: string };
   onApply: (translations: ValueTranslation[], fallback?: string) => void;
+  open: boolean;
   onClose: () => void;
 }) {
   const [fallbackValue, setFallbackValue] = useState(fallback?.value);
@@ -3821,7 +3824,10 @@ function ValuesModal({
     ];
   };
   return (
-    <Modal open onOpenChange={(open) => (open ? undefined : onClose())}>
+    <Modal
+      open={open}
+      onOpenChange={(isOpen) => (isOpen ? undefined : onClose())}
+    >
       <ModalContent size="medium" aria-describedby={undefined}>
         <ModalHeader>
           <ModalTitle>{title}</ModalTitle>

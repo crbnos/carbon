@@ -25,18 +25,20 @@ type InspectionDocumentFormProps = {
     partId: string;
     drawingNumber?: string;
   };
+  open?: boolean;
   onClose: () => void;
 };
 
 export default function InspectionDocumentForm({
   initialValues,
+  open = true,
   onClose
 }: InspectionDocumentFormProps) {
   const { t } = useLingui();
   const isEditing = Boolean(initialValues.id);
 
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent>
         <ValidatedForm
           validator={inspectionDocumentValidator}

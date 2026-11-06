@@ -274,11 +274,9 @@ const MemosTable = memo((props: MemosTableProps) => {
           text={t`Are you sure you want to delete ${selectedMemo.memoId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelectedMemo(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelectedMemo(null);
           }}
         />
       )}

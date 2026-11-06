@@ -27,11 +27,13 @@ import { useElementRoutes } from "./ElementRoutes";
 const TOP_LEVEL = "__top__";
 
 export function MoveElementModal({
+  open = true,
   projectId,
   element,
   elements,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   element: { id: string; readableId: string; parentId: string | null };
   elements: {
@@ -79,7 +81,7 @@ export function MoveElementModal({
   }, [elements, element.id, t]);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>

@@ -190,6 +190,7 @@ function TrainingContent() {
       : null;
   const [chosenType, setChosenType] = useState<ContentType>("write");
   const [switchTo, setSwitchTo] = useState<ContentType | null>(null);
+  const [isSwitchOpen, setIsSwitchOpen] = useState(false);
   const contentType = savedType ?? chosenType;
 
   return (
@@ -210,8 +211,10 @@ function TrainingContent() {
             disabled={!canEdit}
             onValueChange={(value) => {
               if (!isContentType(value) || value === contentType) return;
-              if (savedType) setSwitchTo(value);
-              else setChosenType(value);
+              if (savedType) {
+                setSwitchTo(value);
+                setIsSwitchOpen(true);
+              } else setChosenType(value);
             }}
           >
             <ToggleGroupItem size="sm" value="write">
@@ -287,10 +290,11 @@ function TrainingContent() {
           }
           confirmText={savedType === "pdf" ? t`Remove PDF` : t`Remove Video`}
           confirmVariant="destructive"
-          onCancel={() => setSwitchTo(null)}
+          isOpen={isSwitchOpen}
+          onCancel={() => setIsSwitchOpen(false)}
           onSubmit={() => {
             setChosenType(switchTo);
-            setSwitchTo(null);
+            setIsSwitchOpen(false);
           }}
         >
           <input type="hidden" name="ids" value={id} />

@@ -29,11 +29,13 @@ import type { TrackedEntity } from "~/services/types";
 
 export function SerialSelectorModal({
   availableEntities,
+  open = true,
   onCancel,
   onClose,
   onSelect
 }: {
   availableEntities: TrackedEntity[];
+  open?: boolean;
   onCancel: () => void;
   onClose: () => void;
   onSelect: (entity: TrackedEntity) => void;
@@ -43,7 +45,7 @@ export function SerialSelectorModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

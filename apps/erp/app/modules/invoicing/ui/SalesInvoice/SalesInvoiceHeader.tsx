@@ -511,8 +511,9 @@ const SalesInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
+      {postingModal.openCount > 0 && (
         <SalesInvoicePostModal
+          key={`post-${postingModal.openCount}`}
           invoiceId={invoiceId}
           customerId={salesInvoice.invoiceCustomerId}
           customerContactId={salesInvoice.invoiceCustomerContactId}
@@ -525,23 +526,22 @@ const SalesInvoiceHeader = () => {
         />
       )}
       <postRules.ViolationModal />
-      {voidModal.isOpen && (
-        <SalesInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={salesInvoice.invoiceId ?? "sales invoice"}
-          text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
+      <SalesInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deleteSalesInvoice(invoiceId)}
+        name={salesInvoice.invoiceId ?? "sales invoice"}
+        text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
       {auditLogDrawer}
       {documentEdit.modal}
     </>

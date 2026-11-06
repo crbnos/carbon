@@ -136,56 +136,48 @@ const DepreciationRunHeader = () => {
         }
       />
 
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteDepreciationRun(depreciationRunId)}
-          isOpen={deleteModal.isOpen}
-          name={run.depreciationRunId}
-          text={t`Are you sure you want to delete ${run.depreciationRunId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={() => {
-            deleteModal.onClose();
-            navigate(path.to.depreciationRuns);
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteDepreciationRun(depreciationRunId)}
+        isOpen={deleteModal.isOpen}
+        name={run.depreciationRunId}
+        text={t`Are you sure you want to delete ${run.depreciationRunId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={() => {
+          deleteModal.onClose();
+          navigate(path.to.depreciationRuns);
+        }}
+      />
 
-      {reverseModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.reverseDepreciationRun(depreciationRunId)}
-          isOpen={reverseModal.isOpen}
-          name={run.depreciationRunId}
-          title={t`Reverse ${run.depreciationRunId}`}
-          deleteText={t`Reverse Run`}
-          text={t`This will reverse the journals of ${run.depreciationRunId}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it.`}
-          onCancel={reverseModal.onClose}
-          onSubmit={reverseModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.reverseDepreciationRun(depreciationRunId)}
+        isOpen={reverseModal.isOpen}
+        name={run.depreciationRunId}
+        title={t`Reverse ${run.depreciationRunId}`}
+        deleteText={t`Reverse Run`}
+        text={t`This will reverse the journals of ${run.depreciationRunId}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it.`}
+        onCancel={reverseModal.onClose}
+        onSubmit={reverseModal.onClose}
+      />
 
-      {recalculateModal.isOpen && (
-        <Confirm
-          action={path.to.recalculateDepreciationRun(depreciationRunId)}
-          isOpen={recalculateModal.isOpen}
-          title={t`Recalculate Run`}
-          text={t`This will rebuild ${run.depreciationRunId} from the fixed assets as they are now: every active asset not covered by another run for the period ending ${formatDate(run.periodEnd)}.`}
-          confirmText={t`Recalculate`}
-          onCancel={recalculateModal.onClose}
-          onSubmit={recalculateModal.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.recalculateDepreciationRun(depreciationRunId)}
+        isOpen={recalculateModal.isOpen}
+        title={t`Recalculate Run`}
+        text={t`This will rebuild ${run.depreciationRunId} from the fixed assets as they are now: every active asset not covered by another run for the period ending ${formatDate(run.periodEnd)}.`}
+        confirmText={t`Recalculate`}
+        onCancel={recalculateModal.onClose}
+        onSubmit={recalculateModal.onClose}
+      />
 
-      {repeatModal.isOpen && (
-        <Confirm
-          action={path.to.repeatDepreciationRun(depreciationRunId)}
-          isOpen={repeatModal.isOpen}
-          title={t`Repeat Run`}
-          text={t`This will create a new draft depreciation run for the same period (${formatDate(run.periodEnd)}), including only active assets not already covered by an existing run.`}
-          confirmText={t`Create Repeat Run`}
-          onCancel={repeatModal.onClose}
-          onSubmit={repeatModal.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.repeatDepreciationRun(depreciationRunId)}
+        isOpen={repeatModal.isOpen}
+        title={t`Repeat Run`}
+        text={t`This will create a new draft depreciation run for the same period (${formatDate(run.periodEnd)}), including only active assets not already covered by an existing run.`}
+        confirmText={t`Create Repeat Run`}
+        onCancel={repeatModal.onClose}
+        onSubmit={repeatModal.onClose}
+      />
     </>
   );
 };

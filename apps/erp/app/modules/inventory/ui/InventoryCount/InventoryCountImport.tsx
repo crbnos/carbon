@@ -24,6 +24,7 @@ import { path } from "~/utils/path";
 
 type InventoryCountImportProps = {
   inventoryCountId: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -31,6 +32,7 @@ type InventoryCountImportProps = {
 // lists each error with its line.
 const InventoryCountImport = ({
   inventoryCountId,
+  open = true,
   onClose
 }: InventoryCountImportProps) => {
   const { t } = useLingui();
@@ -52,7 +54,7 @@ const InventoryCountImport = ({
       : [];
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <fetcher.Form
           method="post"

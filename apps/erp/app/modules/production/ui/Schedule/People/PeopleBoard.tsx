@@ -19,6 +19,7 @@ import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import { BoardContainer } from "../Kanban/components/ColumnCard";
 import { hasDraggableData } from "../Kanban/utils";
@@ -153,7 +154,8 @@ const PeopleBoard = ({
   const isDisabled = !permissions.can("update", "production");
 
   const [activeItem, setActiveItem] = useState<PeopleCardItem | null>(null);
-  const [editorItem, setEditorItem] = useState<PeopleCardItem | null>(null);
+  const hoursEditor = useDrawerItem<PeopleCardItem>();
+  const editorItem = hoursEditor.item;
   // a completed drag still fires a click on the source card — swallow it
   const recentDragRef = useRef(false);
 
@@ -510,7 +512,7 @@ const PeopleBoard = ({
   const cardHandlers: CardHandlers = {
     onOpen: (item: PeopleCardItem) => {
       if (recentDragRef.current) return;
-      setEditorItem(item);
+      hoursEditor.open(item);
     }
   };
 
@@ -596,10 +598,10 @@ const PeopleBoard = ({
 
       {editorItem && (
         <PeopleHoursModal
-          key={`${editorItem.employee.id}:${date}`}
-          open
+          key={`${hoursEditor.key}:${date}`}
+          open={hoursEditor.isOpen}
           onOpenChange={(open) => {
-            if (!open) setEditorItem(null);
+            if (!open) hoursEditor.close();
           }}
           employeeId={editorItem.employee.id}
           employeeName={editorItem.employee.name}

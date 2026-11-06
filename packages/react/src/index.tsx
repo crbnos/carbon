@@ -404,7 +404,11 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import {
+  afterDialogCloses,
+  hasOpenDialog,
+  isInsideTopmostDialog
+} from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
@@ -476,6 +480,7 @@ export {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
+  afterDialogCloses,
   Badge,
   BadgeCloseButton,
   BarProgress,

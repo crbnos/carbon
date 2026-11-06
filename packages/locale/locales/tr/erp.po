@@ -262,7 +262,7 @@ msgstr "{0, plural, one {# stok kartını taşı} other {Tüm # stok kartını t
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Kesme tarihinden önce tarihlendirilmiş # belgeyi muhasebeleştir veya sil.} other {Kesme tarihinden önce tarihlendirilmiş # belgeleri muhasebeleştir veya sil.}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {Bu yolu kaldırmak # bağlantının da kesilmesine neden olur.} other {Bu yolu kaldırmak # bağlantının da kesilmesine neden olur.}}"
 
@@ -4420,8 +4420,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "{0} öğesini silmek istediğinizden emin misiniz?"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Emin misiniz ki {0}'ı silmek istiyorsunuz? Bu geri alınamaz."
 
@@ -4434,12 +4434,12 @@ msgstr "{orderLabel}'yi silmek istediğinizden emin misiniz? Bu geri alınamaz."
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Gerçekten {readableId} silmek istiyor musunuz? Bu işlem geri alınamaz."
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "{0} ödemeyi silmek istediğinizden emin misiniz?"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "\"{0}\" görünümünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
@@ -4771,7 +4771,7 @@ msgstr "Bu tedarikçiyi reddetmek istediğinizden emin misiniz?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Bu iş emrini serbest bırakmak istediğinizden emin misiniz? Atölyede kullanılabilir hale gelecek ve satın almayı ve üretimi yönlendirecektir."
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "Gerçekten {0} ve ödeme satırlarını bu kiralamadan kaldırmak istiyor musunuz?"
 
@@ -9828,7 +9828,7 @@ msgstr "Sil"
 msgid "Delete {0}"
 msgstr "{0} Sil"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "{0} ve aşağıdaki her öğeyi sil? Maliyeti, zamanı, İş emri veya Satın alma siparişi satırı olan bir öğe silinemez."
@@ -15899,7 +15899,7 @@ msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Stok kartları: stok kartı veritabanı, BOM'lar, operasyon listesi, mühendislik değişiklikleri, CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "Bu haftanın {0} saat taslak zaman silindi."
 
@@ -21639,7 +21639,7 @@ msgstr "Ödeme"
 msgid "Payment — {0}"
 msgstr "Ödeme — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "ödeme {0}"
 
@@ -24187,7 +24187,7 @@ msgid "Release Batch"
 msgstr "Partiyi Serbest Bırak"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "Parti {0} serbest bırak"
 
@@ -24287,7 +24287,7 @@ msgstr "{0} öğesini son kullanılanlardan kaldır"
 msgid "Remove {0} from recent searches"
 msgstr "Son aramalardan {0} kaldır"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0} bu partiyi kaldırmak istiyor musunuz? Operasyonu çizelgeye geri döner ve kendi başına çalışacak."
 
@@ -24300,7 +24300,7 @@ msgstr "Bu adımdan {0}'ı kaldır"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1}'den {memberCount} operasyondan {0}'ını kaldırılsın mı?"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "{0} kaldırılsın mı?"
 

@@ -106,7 +106,6 @@ export function IssueAssociationsTree({
   };
 
   const onDeleteCancel = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -151,7 +150,7 @@ export function IssueAssociationsTree({
             ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild?.id && (
+      {selectedChild?.id && (
         <ConfirmDelete
           action={path.to.deleteIssueAssociation(
             nonConformanceId,
@@ -306,8 +305,9 @@ export function IssueAssociationItem({
           )}
         </div>
       )}
-      {newAssociationModal.isOpen && !node.readOnly && (
+      {newAssociationModal.openCount > 0 && !node.readOnly && (
         <NewAssociationModal
+          key={`new-association-${newAssociationModal.openCount}`}
           open={newAssociationModal.isOpen}
           onClose={newAssociationModal.onClose}
           type={node.key}

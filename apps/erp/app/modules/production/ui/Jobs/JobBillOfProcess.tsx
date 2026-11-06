@@ -2409,8 +2409,9 @@ function StepsListItem({
           )}
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-step-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteJobOperationStep(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={name}
@@ -2776,8 +2777,9 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-parameter-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteJobOperationParameter(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={key}
@@ -3590,8 +3592,10 @@ function OperationForm({
                       >
                         Sync Procedure
                       </Button>
-                      {procedureSyncDisclosure.isOpen && (
+                      {procedureSyncDisclosure.openCount > 0 && (
                         <ProcedureSyncModal
+                          key={`procedureSyncDisclosure-${procedureSyncDisclosure.openCount}`}
+                          open={procedureSyncDisclosure.isOpen}
                           operationId={item.id}
                           procedureId={processData.procedureId}
                           onClose={procedureSyncDisclosure.onClose}
@@ -3684,8 +3688,10 @@ function OperationForm({
                         >
                           Sync Assembly Steps
                         </Button>
-                        {assemblySyncDisclosure.isOpen && (
+                        {assemblySyncDisclosure.openCount > 0 && (
                           <AssemblyStepsSyncModal
+                            key={`assemblySyncDisclosure-${assemblySyncDisclosure.openCount}`}
+                            open={assemblySyncDisclosure.isOpen}
                             operationId={item.id}
                             assemblyInstructionId={
                               processData.assemblyInstructionId
@@ -3748,10 +3754,12 @@ function OperationForm({
 }
 
 function ProcedureSyncModal({
+  open = true,
   operationId,
   procedureId,
   onClose
 }: {
+  open?: boolean;
   operationId: string;
   procedureId: string;
   onClose: () => void;
@@ -3761,7 +3769,7 @@ function ProcedureSyncModal({
   });
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -3817,10 +3825,12 @@ function ProcedureSyncModal({
 }
 
 function AssemblyStepsSyncModal({
+  open = true,
   operationId,
   assemblyInstructionId,
   onClose
 }: {
+  open?: boolean;
   operationId: string;
   assemblyInstructionId: string;
   onClose: () => void;
@@ -3842,7 +3852,7 @@ function AssemblyStepsSyncModal({
   });
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -4071,8 +4081,9 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteModalDisclosure.openCount > 0 && (
         <ConfirmDelete
+          key={`delete-tool-${deleteModalDisclosure.openCount}`}
           action={path.to.deleteJobOperationTool(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={tool.readableIdWithRevision}

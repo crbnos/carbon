@@ -2735,8 +2735,10 @@ export function AssemblyView({
         </div>
       ) : null}
 
-      {issueModal.isOpen && (
+      {issueModal.openCount > 0 && (
         <IssueMaterialModal
+          key={`issue-${issueModal.openCount}`}
+          open={issueModal.isOpen}
           operationId={operationId}
           // Assembly builds one unit at a time: each scan issues one unit's
           // worth (issuePerUnit), so the pick order can never be attributed
@@ -2759,10 +2761,7 @@ export function AssemblyView({
           jobOperationStepId={step?.id}
           unitNumber={currentUnitIndex + 1}
           trackedInputs={materials?.trackedInputs ?? []}
-          onClose={() => {
-            setSelectedMaterial(null);
-            issueModal.onClose();
-          }}
+          onClose={issueModal.onClose}
         />
       )}
 
@@ -2773,8 +2772,10 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
-      {completeModal.isOpen && operation && (
+      {operation && completeModal.openCount > 0 && (
         <QuantityModal
+          key={`complete-${completeModal.openCount}`}
+          open={completeModal.isOpen}
           type="complete"
           operation={operation as unknown as OperationWithDetails}
           materials={(materials?.materials ?? []) as JobMaterial[]}
@@ -2789,8 +2790,10 @@ export function AssemblyView({
         />
       )}
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
@@ -2804,8 +2807,10 @@ export function AssemblyView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
@@ -2819,8 +2824,9 @@ export function AssemblyView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation as unknown as OperationWithDetails}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -2839,8 +2845,10 @@ export function AssemblyView({
         />
       )}
 
-      {serialModal.isOpen && (
+      {serialModal.openCount > 0 && (
         <SerialSelectorModal
+          key={`serial-${serialModal.openCount}`}
+          open={serialModal.isOpen}
           availableEntities={
             unitEntities.filter((entity) =>
               isUnitIncompleteForOperation(entity, operationId)
@@ -2929,56 +2937,54 @@ export function AssemblyView({
         </BottomSheetContent>
       </BottomSheet>
 
-      {completeAllModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) completeAllModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Complete all steps?</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                This records the{" "}
-                <span className="font-semibold text-foreground">
-                  {steps.length - doneCount}
-                </span>{" "}
-                remaining step(s) as complete for{" "}
-                <span className="font-semibold text-foreground">
-                  Unit {currentUnitIndex + 1}
-                </span>{" "}
-                without capturing their values. This is a manager override; each
-                step can still be undone individually.
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={completeAllModal.onClose}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                isLoading={completeAllFetcher.state !== "idle"}
-                onClick={() => {
-                  const fd = new FormData();
-                  fd.append("operationId", operationId);
-                  fd.append("index", String(activeIndex));
-                  completeAllFetcher.submit(fd, {
-                    method: "post",
-                    action: path.to.completeAllSteps
-                  });
-                  completeAllModal.onClose();
-                }}
-              >
-                Complete all
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={completeAllModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) completeAllModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Complete all steps?</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              This records the{" "}
+              <span className="font-semibold text-foreground">
+                {steps.length - doneCount}
+              </span>{" "}
+              remaining step(s) as complete for{" "}
+              <span className="font-semibold text-foreground">
+                Unit {currentUnitIndex + 1}
+              </span>{" "}
+              without capturing their values. This is a manager override; each
+              step can still be undone individually.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={completeAllModal.onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              isLoading={completeAllFetcher.state !== "idle"}
+              onClick={() => {
+                const fd = new FormData();
+                fd.append("operationId", operationId);
+                fd.append("index", String(activeIndex));
+                completeAllFetcher.submit(fd, {
+                  method: "post",
+                  action: path.to.completeAllSteps
+                });
+                completeAllModal.onClose();
+              }}
+            >
+              Complete all
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <ImageZoomViewer
         open={imageViewer.isOpen}
@@ -3446,6 +3452,7 @@ function StepCompleteAction({
   const fetcher = useFetcher();
   const user = useUser();
   const busy = fetcher.state !== "idle";
+  // Keyed by its open count: RecordModal seeds its state from the record on mount.
   const recordModal = useDisclosure();
 
   // Find the existing record for this unit (if done)
@@ -3588,8 +3595,10 @@ function StepCompleteAction({
           className="hidden md:flex"
         />
       </Button>
-      {recordModal.isOpen && (
+      {recordModal.openCount > 0 && (
         <RecordModal
+          key={recordModal.openCount}
+          open={recordModal.isOpen}
           attribute={step as unknown as JobOperationStep}
           activeStep={activeIndex}
           onClose={recordModal.onClose}

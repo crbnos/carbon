@@ -74,6 +74,7 @@ type LaborCategoryOption = {
  * company has none.
  */
 export function AddRowModal({
+  open = true,
   laborCategories,
   jobLocationId,
   pto = false,
@@ -82,6 +83,7 @@ export function AddRowModal({
   onAddServiceJob,
   onClose
 }: {
+  open?: boolean;
   laborCategories: LaborCategoryOption[];
   jobLocationId: string | null;
   pto?: boolean;
@@ -111,7 +113,7 @@ export function AddRowModal({
     );
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         {kind === "service" && onAddServiceJob ? (
@@ -347,6 +349,7 @@ function AddChargeNumberForm({
  * labor category defaulted to the original's.
  */
 export function CorrectionModal({
+  open = true,
   entryId,
   hours,
   label,
@@ -354,6 +357,7 @@ export function CorrectionModal({
   laborCategories,
   onClose
 }: {
+  open?: boolean;
   entryId: string;
   hours: number;
   label: string;
@@ -375,7 +379,7 @@ export function CorrectionModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm

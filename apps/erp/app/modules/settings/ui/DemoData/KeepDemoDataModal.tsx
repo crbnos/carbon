@@ -23,9 +23,11 @@ import { useState } from "react";
  * step of the demo data flow, and it gets a typed confirmation.
  */
 export function KeepDemoDataModal({
+  open = true,
   onConfirm,
   onCancel
 }: {
+  open?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -37,7 +39,7 @@ export function KeepDemoDataModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

@@ -569,11 +569,9 @@ const PurchaseOrdersTable = memo(
             text={`Are you sure you want to delete ${selectedPurchaseOrder.purchaseOrderId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchaseOrderModal.onClose();
-              setSelectedPurchaseOrder(null);
             }}
             onSubmit={() => {
               deletePurchaseOrderModal.onClose();
-              setSelectedPurchaseOrder(null);
             }}
           />
         )}

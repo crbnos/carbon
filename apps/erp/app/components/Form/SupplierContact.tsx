@@ -5,10 +5,10 @@
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { Avatar, HStack, useDisclosure } from "@carbon/react";
+import { Avatar, HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useCompanySettings } from "~/hooks";
+import { useEffect, useMemo, useRef } from "react";
+import { useCompanySettings, useDrawerItem } from "~/hooks";
 import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
 import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
@@ -63,11 +63,10 @@ const SupplierContact = ({
     Awaited<ReturnType<typeof getSupplierContacts>>
   >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
-  const newContactModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const [namePart, ...titleParts] = created.split(" - ");
+  const [namePart, ...titleParts] = (create.item ?? "").split(" - ");
   const initialTitle = titleParts.join(" - ").trim();
   const nameTokens = namePart.trim().split(" ");
   const initialFirstName = nameTokens[0] || "";
@@ -112,7 +111,7 @@ const SupplierContact = ({
 
   const emptyMessage = useEmptyState(
     "supplierContact",
-    supplier ? { onCreate: () => newContactModal.onOpen() } : undefined
+    supplier ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -127,8 +126,7 @@ const SupplierContact = ({
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newContactModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
       {missingEmail && (
@@ -136,15 +134,16 @@ const SupplierContact = ({
           {t`This contact has no email address.`}
         </p>
       )}
-      {newContactModal.isOpen && (
+      {create.item !== null && (
         <SupplierContactForm
+          key={create.key}
+          open={create.isOpen}
           supplierId={supplier!}
           type="modal"
           requireEmail={!!companySettings?.requireSupplierContactEmail}
           onClose={() => {
-            setCreated("");
-            newContactModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             email: "",

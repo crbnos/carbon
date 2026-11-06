@@ -52,7 +52,7 @@ const MaterialTypeForm = ({
     : !permissions.can("create", "parts");
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -62,7 +62,7 @@ const MaterialTypeForm = ({
         t`Failed to create material type: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   return (
     <ModalDrawerProvider type={type}>

@@ -173,24 +173,23 @@ export default function LeaseSetupRoute() {
           }
         />
       )}
-      {activate.isOpen && (
-        <Confirm
-          action={path.to.leaseActivate(id)}
-          title={t`Activate ${readableId}`}
-          text={activateText(lease)}
-          confirmText={t`Activate`}
-          onCancel={activate.onClose}
-          onSubmit={activate.onClose}
-          details={
-            <LeaseCommencementPreview
-              lease={lease}
-              lines={lines}
-              payments={payments}
-              policy={leasePolicy}
-            />
-          }
-        />
-      )}
+      <Confirm
+        isOpen={activate.isOpen}
+        action={path.to.leaseActivate(id)}
+        title={t`Activate ${readableId}`}
+        text={activateText(lease)}
+        confirmText={t`Activate`}
+        onCancel={activate.onClose}
+        onSubmit={activate.onClose}
+        details={
+          <LeaseCommencementPreview
+            lease={lease}
+            lines={lines}
+            payments={payments}
+            policy={leasePolicy}
+          />
+        }
+      />
     </SetupFrame>
   );
 }

@@ -93,6 +93,8 @@ const QuoteHeader = () => {
     (line) => line.status !== "No Quote"
   );
 
+  // Finalize and Copy/Revise keep fetched and submitted state: a new key per
+  // open starts each one fresh, as unmounting on close did.
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
   const shareModal = useDisclosure();
@@ -367,8 +369,10 @@ const QuoteHeader = () => {
           </>
         }
       />
-      {finalizeModal.isOpen && (
+      {finalizeModal.openCount > 0 && (
         <QuoteFinalizeModal
+          key={`finalizeModal-${finalizeModal.openCount}`}
+          open={finalizeModal.isOpen}
           quote={routeData?.quote}
           shipment={routeData?.shipment ?? null}
           onClose={finalizeModal.onClose}
@@ -376,20 +380,21 @@ const QuoteHeader = () => {
           defaultCc={routeData?.defaultCc ?? []}
         />
       )}
-      {createRevisionModal.isOpen && (
+      {createRevisionModal.openCount > 0 && (
         <CreateRevisionModal
+          key={`createRevisionModal-${createRevisionModal.openCount}`}
+          open={createRevisionModal.isOpen}
           quote={routeData?.quote}
           asRevision={asRevision}
           onClose={createRevisionModal.onClose}
         />
       )}
-      {shareModal.isOpen && (
-        <ShareQuoteModal
-          id={quoteId}
-          externalLinkId={routeData?.quote.externalLinkId ?? undefined}
-          onClose={shareModal.onClose}
-        />
-      )}
+      <ShareQuoteModal
+        open={shareModal.isOpen}
+        id={quoteId}
+        externalLinkId={routeData?.quote.externalLinkId ?? undefined}
+        onClose={shareModal.onClose}
+      />
       {/* we use isOpen so we don't lose state */}
       <QuoteToOrderDrawer
         isOpen={convertToOrderModal.isOpen}
@@ -398,22 +403,20 @@ const QuoteHeader = () => {
         lines={eligibleLines ?? []}
         pricing={routeData?.prices ?? []}
       />
-      {deleteQuoteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteQuote(quoteId)}
-          isOpen={deleteQuoteModal.isOpen}
-          name={getQuoteDisplayId(routeData?.quote)}
-          text={t`Are you sure you want to delete ${getQuoteDisplayId(
-            routeData?.quote
-          )}? This cannot be undone.`}
-          onCancel={() => {
-            deleteQuoteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteQuoteModal.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteQuote(quoteId)}
+        isOpen={deleteQuoteModal.isOpen}
+        name={getQuoteDisplayId(routeData?.quote)}
+        text={t`Are you sure you want to delete ${getQuoteDisplayId(
+          routeData?.quote
+        )}? This cannot be undone.`}
+        onCancel={() => {
+          deleteQuoteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteQuoteModal.onClose();
+        }}
+      />
       {auditLogDrawer}
       {documentEdit.modal}
     </>
@@ -423,10 +426,12 @@ const QuoteHeader = () => {
 export default QuoteHeader;
 
 function CreateRevisionModal({
+  open,
   quote,
   asRevision,
   onClose
 }: {
+  open: boolean;
   quote?: Quotation;
   asRevision: boolean;
   onClose: () => void;
@@ -456,7 +461,7 @@ function CreateRevisionModal({
 
   if (!quote) return null;
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>
@@ -533,10 +538,12 @@ function CreateRevisionModal({
 }
 
 function ShareQuoteModal({
+  open,
   id,
   externalLinkId,
   onClose
 }: {
+  open: boolean;
   id?: string;
   externalLinkId?: string;
   onClose: () => void;
@@ -550,7 +557,7 @@ function ShareQuoteModal({
   )}`;
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

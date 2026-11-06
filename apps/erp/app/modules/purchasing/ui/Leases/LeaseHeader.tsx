@@ -82,6 +82,7 @@ const LeaseHeader = ({
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
+  // The modal's typed terms live at its top level; a new key per open resets them.
   const modify = useDisclosure();
 
   const id = lease.id!;
@@ -294,8 +295,9 @@ const LeaseHeader = ({
         </HStack>
       </div>
 
-      {current && confirm.isOpen && (
+      {current && (
         <Confirm
+          isOpen={confirm.isOpen}
           action={current.action}
           title={current.title}
           text={current.text}
@@ -310,26 +312,26 @@ const LeaseHeader = ({
         </Confirm>
       )}
 
-      {modify.isOpen && (
+      {modify.openCount > 0 && (
         <LeaseModifyModal
+          key={modify.openCount}
           lease={lease}
           lines={lines}
           payments={payments}
           schedule={schedule}
+          open={modify.isOpen}
           onClose={modify.onClose}
         />
       )}
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteLease(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={readableId}
-          text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteLease(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={readableId}
+        text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

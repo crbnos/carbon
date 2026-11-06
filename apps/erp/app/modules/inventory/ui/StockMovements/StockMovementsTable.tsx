@@ -13,7 +13,7 @@ import {
 import { distinctItemText } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuArrowRightLeft,
   LuBlocks,
@@ -40,7 +40,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import type { InfiniteOptions } from "~/components/Table";
-import { usePermissions } from "~/hooks";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared/types";
 import { usePeople } from "~/stores";
@@ -62,8 +62,8 @@ const StockMovementsTable = memo(
   ({ data, count, infinite }: StockMovementsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
-    const [correctionTarget, setCorrectionTarget] =
-      useState<StockMovement | null>(null);
+    // Keyed per open: the correction modal loads the movement when it mounts.
+    const correction = useDrawerItem<StockMovement>();
     const [people] = usePeople();
     const locations = useLocations();
     const locationsById = useMemo(
@@ -290,13 +290,13 @@ const StockMovementsTable = memo(
       (row: StockMovement) => (
         <MenuItem
           disabled={!permissions.can("update", "inventory")}
-          onClick={() => setCorrectionTarget(row)}
+          onClick={() => correction.open(row)}
         >
           <MenuIcon icon={<LuWrench />} />
           {t`Correct Quantity`}
         </MenuItem>
       ),
-      [permissions, t]
+      [correction.open, permissions, t]
     );
 
     return (
@@ -314,10 +314,12 @@ const StockMovementsTable = memo(
           table="itemLedger"
           withSavedView
         />
-        {correctionTarget && (
+        {correction.item && (
           <StockMovementCorrectionModal
-            movement={correctionTarget}
-            onClose={() => setCorrectionTarget(null)}
+            key={correction.key}
+            open={correction.isOpen}
+            movement={correction.item}
+            onClose={correction.close}
           />
         )}
       </>

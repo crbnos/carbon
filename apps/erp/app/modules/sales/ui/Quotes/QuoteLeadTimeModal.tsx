@@ -52,6 +52,7 @@ type QuoteLeadTimeModalProps = {
   quantities: number[];
   isEditable: boolean;
   onApply: (leadTimeByQuantity: Record<number, number>) => Promise<void>;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -61,6 +62,7 @@ const QuoteLeadTimeModal = ({
   quantities,
   isEditable,
   onApply,
+  open = true,
   onClose
 }: QuoteLeadTimeModalProps) => {
   const { t } = useLingui();
@@ -72,15 +74,17 @@ const QuoteLeadTimeModal = ({
 
   const leadTimeAction = path.to.quoteLineLeadTime(quoteId, lineId);
 
-  // Predict on mount (queued + best case). The target verdict needs a due date,
-  // so it is only requested when the estimator picks one.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
+  // Predict on open (queued + best case). The target verdict needs a due date,
+  // so it is only requested when the estimator picks one. The caller keys the
+  // modal per open.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once per open
   useEffect(() => {
+    if (!open) return;
     fetcher.submit(
       { quantities },
       { method: "post", encType: "application/json", action: leadTimeAction }
     );
-  }, []);
+  }, [open]);
 
   const onTargetDateChange = (date: CalendarDate | null) => {
     setTargetDate(date);
@@ -152,7 +156,7 @@ const QuoteLeadTimeModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

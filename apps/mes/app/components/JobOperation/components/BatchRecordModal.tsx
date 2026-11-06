@@ -71,6 +71,7 @@ export function BatchRecordModal({
   step,
   members,
   jobIdOf,
+  open: modalOpen = true,
   onClose
 }: {
   batchId: string;
@@ -78,6 +79,7 @@ export function BatchRecordModal({
   // The step's per-member rows, already in job order.
   members: Member[];
   jobIdOf: (jobOperationId: string) => string;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -271,7 +273,7 @@ export function BatchRecordModal({
 
   return (
     <Modal
-      open
+      open={modalOpen}
       onOpenChange={(isOpen) => {
         if (!isOpen) onClose();
       }}

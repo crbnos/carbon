@@ -10,13 +10,13 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  HStack
+  HStack,
+  useDisclosure,
+  useRouteDialog
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
 import { LuPlus } from "react-icons/lu";
-import { useNavigate } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   IndirectRatesGrid,
@@ -40,21 +40,22 @@ export default function IndirectRatesRatesRoute() {
   const routeData = useRouteData<
     Awaited<ReturnType<typeof indirectRatesLoader>>
   >(path.to.indirectRates);
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(
+    `${path.to.indirectRates}?fiscalYear=${routeData?.fiscalYear}`
+  );
   const permissions = usePermissions();
-  const [settingRate, setSettingRate] = useState(false);
+  // Its openCount keys the modal, so its state and fetcher start fresh each time.
+  const settingRate = useDisclosure();
 
   if (!routeData) return null;
   const { fiscalYear, pools, rates, startMonth } = routeData;
   const activePools = pools.filter((pool) => pool.active);
-  const onClose = () =>
-    navigate(`${path.to.indirectRates}?fiscalYear=${fiscalYear}`);
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) dialog.close();
       }}
     >
       <DrawerContent size="xl">
@@ -78,7 +79,7 @@ export default function IndirectRatesRatesRoute() {
                 !permissions.can("update", "accounting") ||
                 activePools.length === 0
               }
-              onClick={() => setSettingRate(true)}
+              onClick={settingRate.onOpen}
             >
               <Trans>Set Rate</Trans>
             </Button>
@@ -92,12 +93,14 @@ export default function IndirectRatesRatesRoute() {
           />
         </DrawerBody>
       </DrawerContent>
-      {settingRate && (
+      {settingRate.openCount > 0 && (
         <SetIndirectRateModal
+          key={settingRate.openCount}
+          open={settingRate.isOpen}
           pools={activePools}
           fiscalYear={fiscalYear}
           action={path.to.indirectRates}
-          onClose={() => setSettingRate(false)}
+          onClose={settingRate.onClose}
         />
       )}
     </Drawer>

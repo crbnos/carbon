@@ -33,6 +33,7 @@ type PurchaseOrderApprovalModalProps = {
   approvalRequestId: string;
   decision: ApprovalDecision;
   fetcher: FetcherWithComponents<unknown>;
+  open?: boolean;
   onClose: () => void;
   defaultCc?: string[];
 };
@@ -41,6 +42,7 @@ const PurchaseOrderApprovalModal = ({
   purchaseOrder,
   approvalRequestId,
   decision,
+  open = true,
   onClose,
   fetcher,
   defaultCc = []
@@ -60,7 +62,7 @@ const PurchaseOrderApprovalModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

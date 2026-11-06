@@ -28,6 +28,7 @@ import { peopleAbsenceRangeValidator } from "~/modules/production/production.mod
 import { path } from "~/utils/path";
 
 type TimeOffDialogProps = {
+  open?: boolean;
   onClose: () => void;
   /** initial value of both range ends — the board's selected day */
   date: string;
@@ -40,6 +41,7 @@ type TimeOffDialogProps = {
  * two dates (`absent-range` intent — a week of vacation is one entry).
  */
 export function TimeOffDialog({
+  open = true,
   onClose,
   date,
   locationId,
@@ -52,7 +54,7 @@ export function TimeOffDialog({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

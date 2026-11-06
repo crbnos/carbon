@@ -38,7 +38,13 @@ import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.utils";
 import type { Receipt, ReceiptLine, RentalReceiptLine } from "../../types";
 
-const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
+const ReceiptPostModal = ({
+  open = true,
+  onClose
+}: {
+  open?: boolean;
+  onClose: () => void;
+}) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
@@ -209,7 +215,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <Modal
-      open={true}
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

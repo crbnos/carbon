@@ -23,6 +23,7 @@ import type { StockMovement } from "../../types";
 
 type InventoryCountHistoryProps = {
   movements: StockMovement[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -88,6 +89,7 @@ function toVersions(movements: StockMovement[]): Version[] {
 
 const InventoryCountHistory = ({
   movements,
+  open = true,
   onClose
 }: InventoryCountHistoryProps) => {
   const { t } = useLingui();
@@ -97,7 +99,7 @@ const InventoryCountHistory = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

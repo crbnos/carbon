@@ -37,6 +37,7 @@ type PurchaseOrderFinalizeModalProps = {
    *  (the planning pages); the route's `orderId` otherwise. */
   purchaseOrderId?: string;
   fetcher: FetcherWithComponents<unknown>;
+  open?: boolean;
   onClose: () => void;
   defaultCc?: string[];
   resolvedAttachments?: ResolvedAttachmentItem[];
@@ -45,6 +46,7 @@ type PurchaseOrderFinalizeModalProps = {
 const PurchaseOrderFinalizeModal = ({
   purchaseOrder,
   purchaseOrderId,
+  open = true,
   onClose,
   fetcher,
   defaultCc = [],
@@ -65,7 +67,7 @@ const PurchaseOrderFinalizeModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

@@ -233,16 +233,14 @@ const CustomerHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteCustomer(customerId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.customer?.name!}
-          text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteCustomer(customerId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.customer?.name!}
+        text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
       {auditLogDrawer}
     </>
   );

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type React from "react";
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import useCallbackRef from "./useCallbackRef";
 
 export interface UseDisclosureProps {
@@ -39,12 +39,29 @@ export default function useDisclosure(props: UseDisclosureProps = {}) {
 
   const isControlled = isOpenProp !== undefined;
 
+  // Goes up each time the disclosure turns open, through `onOpen` or the
+  // `isOpen` prop; opening an open one again does not count. A dialog that
+  // must start fresh on each open, and stays mounted so it can animate
+  // closed, renders as
+  // `{d.openCount > 0 && <Dialog key={d.openCount} open={d.isOpen} />}`.
+  const [openCount, setOpenCount] = useState(isOpen ? 1 : 0);
+  // Uncontrolled: `onOpen`/`onClose` keep this in step at once, so two opens
+  // in one tick count once and an open costs no extra render.
+  const isOpenNow = useRef(isOpen);
+  // Controlled: the prop's own transitions are counted during render.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (isControlled && isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setOpenCount((count) => count + 1);
+  }
+
   const uid = useId();
   const id = idProp ?? `disclosure-${uid}`;
 
   const onClose = useCallback(() => {
     if (!isControlled) {
       setIsOpen(false);
+      isOpenNow.current = false;
     }
     handleClose?.();
   }, [isControlled, handleClose]);
@@ -52,6 +69,10 @@ export default function useDisclosure(props: UseDisclosureProps = {}) {
   const onOpen = useCallback(() => {
     if (!isControlled) {
       setIsOpen(true);
+      if (!isOpenNow.current) {
+        isOpenNow.current = true;
+        setOpenCount((count) => count + 1);
+      }
     }
     handleOpen?.();
   }, [isControlled, handleOpen]);
@@ -86,6 +107,7 @@ export default function useDisclosure(props: UseDisclosureProps = {}) {
 
   return {
     isOpen,
+    openCount,
     onOpen,
     onClose,
     onToggle,

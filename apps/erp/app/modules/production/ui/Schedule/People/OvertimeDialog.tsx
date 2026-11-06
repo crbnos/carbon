@@ -31,6 +31,7 @@ type OvertimeAssignment = {
 };
 
 type OvertimeDialogProps = {
+  open?: boolean;
   onClose: () => void;
   range: "day" | "week";
   /** the board's selected day (day range) / the visible week's Monday */
@@ -55,6 +56,7 @@ type OvertimeDialogProps = {
  * the active department/shift filters (`overtime-bulk` intent).
  */
 export function OvertimeDialog({
+  open = true,
   onClose,
   range,
   date,
@@ -141,7 +143,7 @@ export function OvertimeDialog({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

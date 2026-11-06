@@ -39,7 +39,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  useDisclosure
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -406,7 +407,8 @@ function TypeBadge({ category }: { category: BlockCategory }) {
  */
 function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
   const { sections } = useDocumentTemplate();
-  const [open, setOpen] = useState(false);
+  // Keyed per open: the modal seeds its state from `section` on mount.
+  const editModal = useDisclosure();
   const targetId =
     kind === "header"
       ? BUILT_IN_SECTION_IDS.header
@@ -423,7 +425,7 @@ function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
       <Button
         variant="secondary"
         leftIcon={<LuPencil />}
-        onClick={() => setOpen(true)}
+        onClick={editModal.onOpen}
         isDisabled={!section}
       >
         Edit {kind} section
@@ -439,10 +441,12 @@ function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
         Open section library
       </Link>
 
-      {open && section && (
+      {section && editModal.openCount > 0 && (
         <SectionFormModal
+          key={editModal.openCount}
+          open={editModal.isOpen}
           action={path.to.documentSections}
-          onClose={() => setOpen(false)}
+          onClose={editModal.onClose}
           section={{
             id: section.id,
             name: section.name,

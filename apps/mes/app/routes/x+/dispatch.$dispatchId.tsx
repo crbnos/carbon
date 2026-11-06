@@ -242,6 +242,7 @@ export default function MaintenanceDetailRoute() {
   const { t } = useLingui();
   const fetcher = useFetcher();
   const deleteFetcher = useFetcher();
+  // Keyed by its open count: the add-part modal seeds its state on mount.
   const addPartModal = useDisclosure();
   const [tab, setTab] = useState("details");
   const [confirmComplete, setConfirmComplete] = useState(false);
@@ -704,48 +705,48 @@ export default function MaintenanceDetailRoute() {
       </WorkRecordShell>
 
       {/* Add Part Modal */}
-      {addPartModal.isOpen && (
+      {addPartModal.openCount > 0 && (
         <MaintenanceAddPartModal
+          key={addPartModal.openCount}
+          open={addPartModal.isOpen}
           dispatchId={dispatch.id}
           itemOptions={itemOptions}
           onClose={addPartModal.onClose}
         />
       )}
-      {confirmComplete && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setConfirmComplete(false);
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Complete ${dispatch.maintenanceDispatchId}?`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Trans>This marks the dispatch as completed.</Trans>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmComplete(false)}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                isLoading={isBusy}
-                onClick={() => {
-                  submitComplete();
-                  setConfirmComplete(false);
-                }}
-              >
-                <Trans>Complete</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={confirmComplete}
+        onOpenChange={(open) => {
+          if (!open) setConfirmComplete(false);
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Complete ${dispatch.maintenanceDispatchId}?`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Trans>This marks the dispatch as completed.</Trans>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmComplete(false)}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              isLoading={isBusy}
+              onClick={() => {
+                submitComplete();
+                setConfirmComplete(false);
+              }}
+            >
+              <Trans>Complete</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   );
 }

@@ -12,9 +12,10 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierLocation,
@@ -98,10 +99,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditSupplierLocationRoute() {
   const { location } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
 
   const { supplierId } = useParams();
   if (!supplierId) throw new Error("supplierId not found");
+  const dialog = useRouteDialog(path.to.supplierLocations(supplierId));
 
   const initialValues = {
     id: location?.id ?? undefined,
@@ -122,7 +123,8 @@ export default function EditSupplierLocationRoute() {
       key={initialValues.id}
       supplierId={supplierId}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.supplierLocations(supplierId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

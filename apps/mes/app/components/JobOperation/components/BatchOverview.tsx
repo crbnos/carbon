@@ -21,12 +21,13 @@ import {
   Tfoot,
   Th,
   Thead,
-  Tr
+  Tr,
+  useDisclosure
 } from "@carbon/react";
 import { distinctItemText, formatDate, groupBy, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { Fragment, Suspense, useCallback, useState } from "react";
+import { Fragment, Suspense, useState } from "react";
 import { FaCheck, FaTrash } from "react-icons/fa";
 import {
   LuActivity,
@@ -139,8 +140,10 @@ export function BatchOverview({
       ([a], [b]) => order.indexOf(a) - order.indexOf(b)
     );
   };
+  // The step stays chosen while its modal closes; the next open sets it.
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
-  const closeRecord = useCallback(() => setRecordingKey(null), []);
+  const recordModal = useDisclosure();
+  const closeRecord = recordModal.onClose;
   // Descriptions start open, as on the job's own step list.
   const [collapsedSteps, setCollapsedSteps] = useState<Set<string>>(
     () => new Set()
@@ -271,7 +274,10 @@ export function BatchOverview({
                                         allRecorded ? "ghost" : "secondary"
                                       }
                                       rightIcon={<LuCircleCheck />}
-                                      onClick={() => setRecordingKey(step.key)}
+                                      onClick={() => {
+                                        setRecordingKey(step.key);
+                                        recordModal.onOpen();
+                                      }}
                                     >
                                       {allRecorded ? (
                                         <Trans>Update</Trans>
@@ -326,8 +332,10 @@ export function BatchOverview({
                         const step = resolved.steps.find(
                           (s) => s.key === recordingKey
                         );
-                        return step ? (
+                        return step && recordModal.openCount > 0 ? (
                           <BatchRecordModal
+                            key={`record-${recordModal.openCount}`}
+                            open={recordModal.isOpen}
                             batchId={batch.id as string}
                             step={step}
                             members={inJobOrder(step.perMember)}

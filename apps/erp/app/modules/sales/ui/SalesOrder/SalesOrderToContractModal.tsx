@@ -62,6 +62,7 @@ type SalesOrderToContractModalProps = {
   /** Service lines not yet invoiced at all — the only ones a contract can
    *  take. */
   lines: SalesOrderLine[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -72,6 +73,7 @@ const SalesOrderToContractModal = ({
   salesOrderId,
   customerName,
   lines,
+  open = true,
   onClose
 }: SalesOrderToContractModalProps) => {
   const { t } = useLingui();
@@ -175,7 +177,7 @@ const SalesOrderToContractModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

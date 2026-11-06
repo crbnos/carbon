@@ -34,7 +34,8 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   Tr,
-  toast
+  toast,
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -169,7 +170,8 @@ export function AccountMapping({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
-  const [showAiModal, setShowAiModal] = useState(false);
+  // Its openCount keys the modal, so each open starts without the last suggestions.
+  const aiModal = useDisclosure();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<MappingFilter>("all");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -379,7 +381,7 @@ export function AccountMapping({
                   variant="secondary"
                   leftIcon={<LuSparkles />}
                   isDisabled={!canUpdate}
-                  onClick={() => setShowAiModal(true)}
+                  onClick={aiModal.onOpen}
                 >
                   <Trans>Suggest with AI</Trans>
                 </Button>
@@ -506,20 +508,21 @@ export function AccountMapping({
         </HStack>
       </DrawerFooter>
 
-      {showMatchDrawer && (
-        <MatchByCodeDrawer
-          proposals={proposals}
-          canUpdate={canUpdate}
-          onClose={() => setShowMatchDrawer(false)}
-        />
-      )}
+      <MatchByCodeDrawer
+        open={showMatchDrawer}
+        proposals={proposals}
+        canUpdate={canUpdate}
+        onClose={() => setShowMatchDrawer(false)}
+      />
 
-      {showAiModal && (
+      {aiModal.openCount > 0 && (
         <AiSuggestModal
+          key={aiModal.openCount}
+          open={aiModal.isOpen}
           unmapped={unmappedRequired}
           chart={chart}
           canUpdate={canUpdate}
-          onClose={() => setShowAiModal(false)}
+          onClose={aiModal.onClose}
         />
       )}
     </>
@@ -642,10 +645,12 @@ function useAccountMappingsSavedToast() {
 }
 
 function MatchByCodeDrawer({
+  open = true,
   proposals,
   canUpdate,
   onClose
 }: {
+  open?: boolean;
   proposals: AccountMatchProposalRow[];
   canUpdate: boolean;
   onClose: () => void;
@@ -687,7 +692,7 @@ function MatchByCodeDrawer({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -783,11 +788,13 @@ function MatchByCodeDrawer({
  * step itself writes nothing.
  */
 function AiSuggestModal({
+  open = true,
   unmapped,
   chart,
   canUpdate,
   onClose
 }: {
+  open?: boolean;
   unmapped: UnmappedAccountRow[];
   chart: AccountMappingChartAccount[];
   canUpdate: boolean;
@@ -847,7 +854,7 @@ function AiSuggestModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

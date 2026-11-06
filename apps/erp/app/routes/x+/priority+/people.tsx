@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useDisclosure } from "@carbon/react";
 import { formatDate, redirect } from "@carbon/utils";
 import {
   fromAbsolute,
@@ -17,7 +18,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
@@ -688,8 +689,9 @@ export default function SchedulePeopleRoute() {
     attendedByWorkCenter
   } = useLoaderData<typeof loader>();
   const { locale } = useLocale();
-  const [overtimeOpen, setOvertimeOpen] = useState(false);
-  const [timeOffOpen, setTimeOffOpen] = useState(false);
+  // Their openCounts key the dialogs, so each starts from the board's current day.
+  const overtimeDialog = useDisclosure();
+  const timeOffDialog = useDisclosure();
 
   const departments = useMemo(() => {
     const seen = new Map<string, string>();
@@ -867,8 +869,8 @@ export default function SchedulePeopleRoute() {
         shiftId={shiftId}
         departments={departments}
         shifts={shifts}
-        onOpenOvertime={() => setOvertimeOpen(true)}
-        onOpenTimeOff={() => setTimeOffOpen(true)}
+        onOpenOvertime={overtimeDialog.onOpen}
+        onOpenTimeOff={timeOffDialog.onOpen}
       />
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         {view === "board" &&
@@ -965,9 +967,11 @@ export default function SchedulePeopleRoute() {
         )}
       </div>
 
-      {overtimeOpen && (
+      {overtimeDialog.openCount > 0 && (
         <OvertimeDialog
-          onClose={() => setOvertimeOpen(false)}
+          key={`overtimeDialog-${overtimeDialog.openCount}`}
+          open={overtimeDialog.isOpen}
+          onClose={overtimeDialog.onClose}
           range={range}
           date={date}
           weekDates={weekDates}
@@ -981,9 +985,11 @@ export default function SchedulePeopleRoute() {
           weekAssignments={matrixAssignments}
         />
       )}
-      {timeOffOpen && (
+      {timeOffDialog.openCount > 0 && (
         <TimeOffDialog
-          onClose={() => setTimeOffOpen(false)}
+          key={`timeOffDialog-${timeOffDialog.openCount}`}
+          open={timeOffDialog.isOpen}
+          onClose={timeOffDialog.onClose}
           date={date}
           locationId={locationId}
           shiftId={shiftId}

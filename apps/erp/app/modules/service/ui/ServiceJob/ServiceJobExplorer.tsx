@@ -119,7 +119,6 @@ export function ServiceJobExplorer({
   };
 
   const onDeleteClose = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -177,7 +176,7 @@ export function ServiceJobExplorer({
           ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild && (
+      {selectedChild && (
         <ConfirmDelete
           action={getDeleteAction(jobId, selectedChild)}
           fields={
@@ -232,6 +231,7 @@ function ServiceJobExplorerItem({
   const [isExpanded, setIsExpanded] = useState(
     node.children.length > 0 && node.children.length < 10
   );
+  // Changes on each open, so the modal starts from an empty part.
   const issuePartModal = useDisclosure();
   const getLabel = useChildLabel();
 
@@ -328,8 +328,10 @@ function ServiceJobExplorerItem({
         </div>
       )}
 
-      {issuePartModal.isOpen && (
+      {node.key === "items" && issuePartModal.openCount > 0 && (
         <ServiceJobAddPartModal
+          key={issuePartModal.openCount}
+          open={issuePartModal.isOpen}
           jobId={jobId}
           onClose={issuePartModal.onClose}
         />

@@ -79,6 +79,7 @@ type SamplingRuleModalProps = {
   // The document default, used to preview what Inherit resolves to.
   inheritedRule?: SamplingRule | null;
   onSave: (rule: SamplingRule) => void;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -91,6 +92,7 @@ const SamplingRuleModal = ({
   initial,
   inheritedRule,
   onSave,
+  open = true,
   onClose
 }: SamplingRuleModalProps) => {
   const { t } = useLingui();
@@ -173,7 +175,7 @@ const SamplingRuleModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -7,10 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { deleteEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getEmployeeType } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
@@ -95,20 +96,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteEmployeeTypeRoute() {
   const { employeeTypeId } = useParams();
   const { employeeType } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.employeeTypes);
   const { t } = useLingui();
 
   if (!employeeType) return null;
   if (!employeeTypeId) throw new Error("employeeTypeId is not found");
-
-  const onCancel = () => navigate(path.to.employeeTypes);
 
   return (
     <ConfirmDelete
       action={path.to.deleteEmployeeType(employeeTypeId)}
       name={employeeType.name}
       text={t`Are you sure you want to delete the employee type: ${employeeType.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

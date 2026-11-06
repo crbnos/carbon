@@ -5,11 +5,10 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Enumerable } from "~/components/Enumerable";
-import { useRouteData } from "~/hooks";
+import { useDrawerItem, useRouteData } from "~/hooks";
 import type { getCustomerStatusesList } from "~/modules/sales/sales.service";
 import type { CustomerStatus as CustomerStatusStatus } from "~/modules/sales/types";
 import CustomerStatusForm from "~/modules/sales/ui/CustomerStatuses/CustomerStatusForm";
@@ -20,14 +19,13 @@ type CustomerStatusSelectProps = Omit<ComboboxProps, "options">;
 
 const CustomerStatus = (props: CustomerStatusSelectProps) => {
   const { t } = useLingui();
-  const newCustomerStatusModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useCustomerStatuses();
 
   const emptyMessage = useEmptyState("customerStatus", {
-    onCreate: () => newCustomerStatusModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -44,20 +42,20 @@ const CustomerStatus = (props: CustomerStatusSelectProps) => {
         {...props}
         label={props?.label ?? t`Customer Status`}
         onCreateOption={(option) => {
-          newCustomerStatusModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newCustomerStatusModal.isOpen && (
+      {create.item !== null && (
         <CustomerStatusForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newCustomerStatusModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}

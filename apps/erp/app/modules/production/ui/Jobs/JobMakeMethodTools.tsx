@@ -174,7 +174,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     configuratorModal.onClose();
     const sourceId = selectedConfigureItemId;
     setSelectedConfigureItemId(null);
-    setConfigurationParameters({ groups: [], parameters: [] });
     fetcher.submit(
       {
         type: "item",
@@ -726,9 +725,10 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
           </ValidatedForm>
         </ModalContent>
       </Modal>
-      {configuratorModal.isOpen && (
+      {configuratorModal.openCount > 0 && (
         <ConfiguratorModal
-          open
+          key={`configurator-${configuratorModal.openCount}`}
+          open={configuratorModal.isOpen}
           destructive
           initialValues={
             routeData?.job?.configuration
@@ -740,7 +740,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
           onClose={() => {
             configuratorModal.onClose();
             setSelectedConfigureItemId(null);
-            setConfigurationParameters({ groups: [], parameters: [] });
           }}
           onSubmit={(config: Record<string, any>) => {
             saveConfiguration(config);

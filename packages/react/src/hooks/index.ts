@@ -28,6 +28,7 @@ import useOutsideClick from "./useOutsideClick";
 import { usePlan } from "./usePlan";
 import { useRevalidator } from "./useRevalidator";
 import { useRouteData } from "./useRouteData";
+import { useRouteDialog } from "./useRouteDialog";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
@@ -73,6 +74,7 @@ export {
   usePlan,
   useRevalidator,
   useRouteData,
+  useRouteDialog,
   useScanPending,
   useShellThemeStyle,
   useShortcutKeyMap,

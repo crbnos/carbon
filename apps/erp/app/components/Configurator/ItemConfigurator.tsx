@@ -104,9 +104,10 @@ export function ItemConfigureButton({
       >
         {configuration ? <Trans>Reconfigure</Trans> : <Trans>Configure</Trans>}
       </Button>
-      {disclosure.isOpen && (
+      {disclosure.openCount > 0 && (
         <ConfiguratorModal
-          open
+          key={`configurator-${disclosure.openCount}`}
+          open={disclosure.isOpen}
           initialValues={configuration ?? {}}
           groups={parameters.groups}
           parameters={parameters.parameters}

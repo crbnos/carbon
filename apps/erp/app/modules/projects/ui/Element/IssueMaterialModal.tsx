@@ -226,6 +226,7 @@ function BomMaterialPicks({
  * A posting refusal shows in the modal, which stays open.
  */
 export function IssueMaterialModal({
+  open = true,
   projectId,
   element,
   defaultLocationId,
@@ -236,6 +237,7 @@ export function IssueMaterialModal({
   defaultQuantity,
   onClose
 }: {
+  open?: boolean;
   /** Fixed charge number; leave both out to pick one (Inventory). */
   projectId?: string;
   element?: {
@@ -303,7 +305,7 @@ export function IssueMaterialModal({
   );
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm

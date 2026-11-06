@@ -76,7 +76,7 @@ import { validationError, validator } from "@carbon/form";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Badge } from "@carbon/react";
+import { Badge, useRouteDialog } from "@carbon/react";
 import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
@@ -89,7 +89,6 @@ import {
   data,
   Link,
   useLoaderData,
-  useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
@@ -1638,7 +1637,7 @@ export default function IntegrationRoute() {
     devices
   } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.integrations);
   const [searchParams] = useSearchParams();
   const { id: integrationId } = useParams();
 
@@ -1795,7 +1794,8 @@ export default function IntegrationRoute() {
             onActionStarted: mountActions.onActionStarted
           }
         : {})}
-      onClose={() => navigate(path.to.integrations)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

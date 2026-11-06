@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertDemandProjections } from "@carbon/ee/forecast.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -155,14 +155,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function EditProjectionRoute() {
   const { initialValues, consumedValues } = useLoaderData<typeof loader>();
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <DemandProjectionsForm
       initialValues={initialValues}
       consumedValues={consumedValues}
       isEditing
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

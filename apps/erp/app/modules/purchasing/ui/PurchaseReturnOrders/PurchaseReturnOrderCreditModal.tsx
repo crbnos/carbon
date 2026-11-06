@@ -16,7 +16,6 @@ import {
   NumberField,
   NumberInput,
   ScrollArea,
-  useMount,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -29,11 +28,13 @@ import { path } from "~/utils/path";
 
 type PurchaseReturnOrderCreditModalProps = {
   currencyCode?: string | null;
+  open?: boolean;
   onClose: () => void;
 };
 
 const PurchaseReturnOrderCreditModal = ({
   currencyCode,
+  open = true,
   onClose
 }: PurchaseReturnOrderCreditModalProps) => {
   const { t } = useLingui();
@@ -48,9 +49,10 @@ const PurchaseReturnOrderCreditModal = ({
   });
   const percentFormatter = usePercentFormatter();
 
-  useMount(() => {
-    loadFetcher.load(path.to.purchaseReturnOrderCredit(orderId));
-  });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher is stable; load once per open
+  useEffect(() => {
+    if (open) loadFetcher.load(path.to.purchaseReturnOrderCredit(orderId));
+  }, [open, orderId]);
 
   const lines = loadFetcher.data?.lines ?? [];
 
@@ -131,7 +133,7 @@ const PurchaseReturnOrderCreditModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

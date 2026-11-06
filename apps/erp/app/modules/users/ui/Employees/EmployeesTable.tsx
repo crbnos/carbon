@@ -417,6 +417,7 @@ const EmployeesTable = memo(
                 {!isSelf && (
                   <MenuItem
                     onClick={(e) => {
+                      setBulkAllMatching(null);
                       setSelectedUserIds([row.id!]);
                       deactivateEmployeeModal.onOpen();
                     }}
@@ -432,6 +433,7 @@ const EmployeesTable = memo(
                 <MenuItem
                   disabled={!permissions.can("create", "users")}
                   onClick={() => {
+                    setBulkAllMatching(null);
                     setSelectedUserIds([row.id!]);
                     resendInviteModal.onOpen();
                   }}
@@ -491,44 +493,39 @@ const EmployeesTable = memo(
           title={t`Employee Accounts`}
           withSelectableRows={canEdit}
         />
-        {bulkEditDrawer.isOpen && (
+        {bulkEditDrawer.openCount > 0 && (
           <BulkEditPermissionsForm
+            key={`bulk-edit-${bulkEditDrawer.openCount}`}
             userIds={selectedUserIds}
             isOpen={bulkEditDrawer.isOpen}
             allMatching={bulkAllMatching}
             allMatchingFetcher={allMatchingFetcher}
-            onClose={() => {
-              bulkEditDrawer.onClose();
-              setBulkAllMatching(null);
-            }}
+            onClose={bulkEditDrawer.onClose}
           />
         )}
-        {deactivateEmployeeModal.isOpen && (
+        {deactivateEmployeeModal.openCount > 0 && (
           <DeactivateUsersModal
+            key={`deactivate-${deactivateEmployeeModal.openCount}`}
             userIds={selectedUserIds}
             isOpen={deactivateEmployeeModal.isOpen}
             allMatching={bulkAllMatching}
             allMatchingFetcher={allMatchingFetcher}
-            onClose={() => {
-              deactivateEmployeeModal.onClose();
-              setBulkAllMatching(null);
-            }}
+            onClose={deactivateEmployeeModal.onClose}
           />
         )}
-        {resendInviteModal.isOpen && (
+        {resendInviteModal.openCount > 0 && (
           <ResendInviteModal
+            key={`resend-invite-${resendInviteModal.openCount}`}
             userIds={selectedUserIds}
             isOpen={resendInviteModal.isOpen}
             allMatching={bulkAllMatching}
             allMatchingFetcher={allMatchingFetcher}
-            onClose={() => {
-              resendInviteModal.onClose();
-              setBulkAllMatching(null);
-            }}
+            onClose={resendInviteModal.onClose}
           />
         )}
-        {revokeInviteModal.isOpen && (
+        {revokeInviteModal.openCount > 0 && (
           <RevokeInviteModal
+            key={`revoke-invite-${revokeInviteModal.openCount}`}
             userIds={selectedUserIds}
             isOpen={revokeInviteModal.isOpen}
             onClose={revokeInviteModal.onClose}

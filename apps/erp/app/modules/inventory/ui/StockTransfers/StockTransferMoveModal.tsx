@@ -44,6 +44,7 @@ export function StockTransferMoveModal({
   itemTrackingType,
   trackedEntityId,
   trackedEntityLabel,
+  open = true,
   onClose
 }: {
   itemId: string;
@@ -55,6 +56,7 @@ export function StockTransferMoveModal({
   itemTrackingType: string;
   trackedEntityId: string | null;
   trackedEntityLabel: string | null;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -141,7 +143,7 @@ export function StockTransferMoveModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

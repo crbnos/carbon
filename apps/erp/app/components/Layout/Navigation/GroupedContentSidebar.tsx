@@ -31,6 +31,7 @@ import {
 } from "react-icons/lu";
 import { useSubmit } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { useDrawerItem } from "~/hooks";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
@@ -83,12 +84,13 @@ const GroupedContentSidebar = ({
       )
   );
 
-  const [selectedView, setSelectedView] = useState<{
+  const deleteView = useDrawerItem<{
     id: string;
     name: string;
     to: string;
     sortOrder: number;
-  } | null>(null);
+  }>();
+  const selectedView = deleteView.item;
 
   const toggleViews = (routeName: string) => {
     setExpandedViews((prev) => ({
@@ -219,7 +221,7 @@ const GroupedContentSidebar = ({
                 navigate: false
               });
             }}
-            onDelete={(view) => setSelectedView(view)}
+            onDelete={deleteView.open}
           />
         )}
       </div>
@@ -245,14 +247,12 @@ const GroupedContentSidebar = ({
       </SidebarLinks>
       {selectedView && (
         <ConfirmDelete
-          isOpen={!!selectedView}
+          isOpen={deleteView.isOpen}
           action={path.to.deleteSavedView(selectedView.id)}
           name={selectedView.name}
           text={t`Are you sure you want to delete the view "${selectedView.name}"?`}
-          onCancel={() => setSelectedView(null)}
-          onSubmit={() => {
-            setSelectedView(null);
-          }}
+          onCancel={deleteView.close}
+          onSubmit={deleteView.close}
         />
       )}
     </>

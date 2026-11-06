@@ -63,12 +63,14 @@ interface ItemDetails {
 export function MaintenanceAddPartModal({
   dispatchId,
   itemOptions,
+  open = true,
   onClose,
   action,
   title
 }: {
   dispatchId: string;
   itemOptions: ItemOption[];
+  open?: boolean;
   onClose: () => void;
   /** Where the part posts; a dispatch's add-and-issue route by default. */
   action?: string;
@@ -323,7 +325,7 @@ export function MaintenanceAddPartModal({
   }, [fetcher.data, onClose]);
 
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>{title ?? <Trans>Add Spare Part</Trans>}</ModalTitle>

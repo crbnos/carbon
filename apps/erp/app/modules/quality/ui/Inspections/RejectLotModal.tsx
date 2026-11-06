@@ -46,6 +46,7 @@ type RejectLotModalProps = {
   // Nothing failed statistically: the lot is rejected for another reason (a
   // suspected counterfeit, the wrong part), which the inspector must give.
   requiresReason?: boolean;
+  open?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
@@ -56,6 +57,7 @@ const RejectLotModal = ({
   summary,
   failedFeatureSummary,
   requiresReason = false,
+  open = true,
   onCancel,
   onSubmit
 }: RejectLotModalProps) => {
@@ -79,7 +81,7 @@ const RejectLotModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

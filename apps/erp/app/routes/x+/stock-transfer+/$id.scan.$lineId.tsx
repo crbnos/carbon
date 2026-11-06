@@ -8,12 +8,13 @@ import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   TrackedEntityPicker,
-  type TrackedEntitySelection
+  type TrackedEntitySelection,
+  useRouteDialog
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { stockTransferLineScanValidator } from "~/modules/inventory/inventory.models";
 import { getAvailableTrackedEntities } from "~/modules/inventory/inventory.service";
@@ -146,10 +147,10 @@ export default function StockTransferScan() {
 
   if (!stockTransferLine) throw new Error("stock transfer line not found");
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(
+    path.to.stockTransfer(stockTransferLine.stockTransferId!)
+  );
   const { t } = useLingui();
-  const onClose = () =>
-    navigate(path.to.stockTransfer(stockTransferLine.stockTransferId!));
 
   const fetcher = useAction<typeof action>();
 
@@ -209,7 +210,8 @@ export default function StockTransferScan() {
       nearExpiryWarningDays={nearExpiryWarningDays}
       expiredEntityPolicy={expiredEntityPolicy}
       onSelect={onPick}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

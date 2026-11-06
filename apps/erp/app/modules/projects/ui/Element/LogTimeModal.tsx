@@ -40,6 +40,7 @@ import { logTimeValidator } from "../../projects.models";
  * open.
  */
 export function LogTimeModal({
+  open = true,
   projectId,
   element,
   laborCategories,
@@ -50,6 +51,7 @@ export function LogTimeModal({
   onLogged,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   element: { id: string; readableId: string; name: string };
   laborCategories: { id: string; name: string }[];
@@ -81,7 +83,7 @@ export function LogTimeModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <ValidatedForm

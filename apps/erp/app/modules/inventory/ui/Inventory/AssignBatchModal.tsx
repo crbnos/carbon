@@ -53,6 +53,7 @@ export function AssignBatchModal({
   storageUnitId,
   quantity,
   batches,
+  open = true,
   onClose
 }: {
   itemId: string;
@@ -62,6 +63,7 @@ export function AssignBatchModal({
   /** How much in the storage unit has no batch number. */
   quantity: number;
   batches: ExistingBatch[];
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -81,7 +83,7 @@ export function AssignBatchModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

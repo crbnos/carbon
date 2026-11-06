@@ -30,6 +30,7 @@ export function WeekCertificationModal({
   certificationText,
   weekLabel,
   isSubmitting,
+  open = true,
   onSubmit,
   onClose
 }: {
@@ -37,6 +38,7 @@ export function WeekCertificationModal({
   certificationText: string | null;
   weekLabel: string;
   isSubmitting: boolean;
+  open?: boolean;
   onSubmit: (certificationText: string) => void;
   onClose: () => void;
 }) {
@@ -44,7 +46,10 @@ export function WeekCertificationModal({
   const [certified, setCertified] = useState(false);
 
   return (
-    <Modal open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
+    <Modal
+      open={open}
+      onOpenChange={(open) => !open && !isSubmitting && onClose()}
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>

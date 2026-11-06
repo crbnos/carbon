@@ -74,10 +74,12 @@ import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
 const SalesOrderConfirmModal = ({
+  open,
   salesOrder,
   onClose,
   defaultCc = []
 }: {
+  open: boolean;
   salesOrder?: SalesOrder;
   onClose: () => void;
   defaultCc?: string[];
@@ -107,7 +109,7 @@ const SalesOrderConfirmModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -231,6 +233,8 @@ const SalesOrderHeader = () => {
   });
 
   const salesOrderToJobsModal = useDisclosure();
+  // Create Contract and Confirm keep their choices in local state: a new key
+  // per open starts each one fresh, as unmounting on close did.
   const salesOrderToContractModal = useDisclosure();
   const confirmDisclosure = useDisclosure();
   const deleteSalesOrderModal = useDisclosure();
@@ -678,18 +682,19 @@ const SalesOrderHeader = () => {
           </>
         }
       />
-      {salesOrderToJobsModal.isOpen && (
-        <Confirm
-          title={t`Convert Lines to Jobs`}
-          text={t`Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs.`}
-          confirmText={t`Create Jobs`}
-          onCancel={salesOrderToJobsModal.onClose}
-          onSubmit={salesOrderToJobsModal.onClose}
-          action={path.to.salesOrderLinesToJobs(orderId)}
-        />
-      )}
-      {salesOrderToContractModal.isOpen && (
+      <Confirm
+        isOpen={salesOrderToJobsModal.isOpen}
+        title={t`Convert Lines to Jobs`}
+        text={t`Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs.`}
+        confirmText={t`Create Jobs`}
+        onCancel={salesOrderToJobsModal.onClose}
+        onSubmit={salesOrderToJobsModal.onClose}
+        action={path.to.salesOrderLinesToJobs(orderId)}
+      />
+      {salesOrderToContractModal.openCount > 0 && (
         <SalesOrderToContractModal
+          key={`salesOrderToContractModal-${salesOrderToContractModal.openCount}`}
+          open={salesOrderToContractModal.isOpen}
           orderId={orderId}
           salesOrderId={routeData?.salesOrder?.salesOrderId ?? ""}
           customerName={
@@ -700,8 +705,10 @@ const SalesOrderHeader = () => {
           onClose={salesOrderToContractModal.onClose}
         />
       )}
-      {confirmDisclosure.isOpen && (
+      {confirmDisclosure.openCount > 0 && (
         <SalesOrderConfirmModal
+          key={`confirmDisclosure-${confirmDisclosure.openCount}`}
+          open={confirmDisclosure.isOpen}
           salesOrder={routeData?.salesOrder}
           onClose={confirmDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}
@@ -720,21 +727,19 @@ const SalesOrderHeader = () => {
           cancelDisclosure.onClose();
         }}
       />
-      {deleteSalesOrderModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesOrder(orderId)}
-          isOpen={deleteSalesOrderModal.isOpen}
-          name={routeData?.salesOrder?.salesOrderId!}
-          text={t`Are you sure you want to delete ${routeData?.salesOrder
-            ?.salesOrderId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteSalesOrderModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteSalesOrderModal.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteSalesOrder(orderId)}
+        isOpen={deleteSalesOrderModal.isOpen}
+        name={routeData?.salesOrder?.salesOrderId!}
+        text={t`Are you sure you want to delete ${routeData?.salesOrder
+          ?.salesOrderId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteSalesOrderModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteSalesOrderModal.onClose();
+        }}
+      />
       {auditLogDrawer}
       {documentEdit.modal}
     </>

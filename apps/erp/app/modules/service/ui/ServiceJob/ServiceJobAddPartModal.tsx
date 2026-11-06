@@ -67,9 +67,11 @@ interface ItemDetails {
 }
 
 export function ServiceJobAddPartModal({
+  open = true,
   jobId,
   onClose
 }: {
+  open?: boolean;
   jobId: string;
   onClose: () => void;
 }) {
@@ -313,7 +315,7 @@ export function ServiceJobAddPartModal({
   );
 
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

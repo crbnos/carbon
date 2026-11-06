@@ -82,6 +82,8 @@ export type TrackedEntitySelection = {
 export type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 export type TrackedEntityPickerProps = {
+  /** Drive it with the host's open state, so it can animate closed. */
+  open?: boolean;
   /** Serial = qty 1 per lot; Batch = pick a partial quantity. */
   trackingType: "Serial" | "Batch";
   /** Control size: ERP passes "md" (default); MES passes "lg" (touch UI). */
@@ -159,7 +161,8 @@ export function TrackedEntityPicker({
   expiredEntityPolicy = "Warn",
   defaultOrder = "Default",
   onSelect,
-  onClose
+  onClose,
+  open = true
 }: TrackedEntityPickerProps) {
   const { t } = useLingui();
   const [activeTab, setActiveTab] = useState("scan");
@@ -213,7 +216,7 @@ export function TrackedEntityPicker({
   const matchedId = scanMatch?.readableId ?? scanMatch?.trackedEntityId;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>{title ?? t`Pick tracked item`}</ModalTitle>

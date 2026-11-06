@@ -99,12 +99,14 @@ type PurchaseInvoiceLineFormProps = {
     leaseReadableId?: string;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const PurchaseInvoiceLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: PurchaseInvoiceLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -550,6 +552,7 @@ const PurchaseInvoiceLineForm = ({
     >
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           defaultCollapsed={false}
           isCollapsible={isEditing}

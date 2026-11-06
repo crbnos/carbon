@@ -29,6 +29,7 @@ import { path } from "~/utils/path";
  * changed after the page loaded.
  */
 export function CertificationModal({
+  open = true,
   certificationText,
   weekStart,
   weekEnd,
@@ -36,6 +37,7 @@ export function CertificationModal({
   weekLabel,
   onClose
 }: {
+  open?: boolean;
   /** The text for the employee's FLSA status, or null when none is set. */
   certificationText: string | null;
   weekStart: string;
@@ -51,7 +53,7 @@ export function CertificationModal({
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
         <fetcher.Form method="post" action={path.to.timesheetSubmit}>

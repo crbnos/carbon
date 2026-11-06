@@ -28,12 +28,14 @@ type ScopeType = "customer" | "customerType";
 type DuplicatePriceListModalProps = {
   sourceScope: { customerId?: string; customerTypeId?: string };
   overrideIds?: string[];
+  open?: boolean;
   onClose: () => void;
 };
 
 export function DuplicatePriceListModal({
   sourceScope,
   overrideIds,
+  open = true,
   onClose
 }: DuplicatePriceListModalProps) {
   const { t } = useLingui();
@@ -55,7 +57,7 @@ export function DuplicatePriceListModal({
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

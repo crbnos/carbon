@@ -33,12 +33,14 @@ import { serviceJobEstimateSendFormValidator } from "../../service.models";
  * PDF goes to the chosen contact.
  */
 export function EstimateSendModal({
+  open = true,
   jobId,
   serviceJobId,
   customerId,
   customerContactId,
   onClose
 }: {
+  open?: boolean;
   jobId: string;
   serviceJobId: string;
   customerId: string;
@@ -63,7 +65,7 @@ export function EstimateSendModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

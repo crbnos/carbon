@@ -64,6 +64,7 @@ import {
 import { useFetcher, useParams } from "react-router";
 import { Empty } from "~/components";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import type { action as matchBomAction } from "~/routes/x+/assembly+/$id.component-mappings.auto";
 import type { action as mapComponentAction } from "~/routes/x+/assembly+/$id.component-mappings.new";
 import type { action as reassignAction } from "~/routes/x+/assembly+/$id.steps.components.reassign";
@@ -244,7 +245,7 @@ export default function AssemblyBomTree({
     new Set()
   );
   const [showCreateUnit, setShowCreateUnit] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<AssemblyUnit | null>(null);
+  const editingUnit = useDrawerItem<AssemblyUnit>();
   const lastClickedIndexRef = useRef<number | null>(null);
 
   // Every instance that belongs to a subassembly — those show under the
@@ -411,11 +412,16 @@ export default function AssemblyBomTree({
   // already used elsewhere we ask which — otherwise assign straight away.
   const reassignFetcher = useAction<typeof reassignAction>();
   const [assignPickerOpen, setAssignPickerOpen] = useState(false);
-  const [pendingAssign, setPendingAssign] = useState<{
+  const {
+    item: pendingAssign,
+    isOpen: isPendingAssignOpen,
+    open: openPendingAssign,
+    close: closePendingAssign
+  } = useDrawerItem<{
     targetStepId: string;
     targetTitle: string;
     conflictTitles: string[];
-  } | null>(null);
+  }>();
 
   // Parts go on ordinary steps only: a sub-assembly's parts come from its steps.
   const stepList = useMemo(
@@ -486,7 +492,7 @@ export default function AssemblyBomTree({
         submitAssign(targetStepId, "duplicate");
         return;
       }
-      setPendingAssign({
+      openPendingAssign({
         targetStepId,
         targetTitle:
           stepList.find((entry) => entry.id === targetStepId)?.title ??
@@ -494,7 +500,7 @@ export default function AssemblyBomTree({
         conflictTitles
       });
     },
-    [stepList, steps, selectedSet, submitAssign]
+    [stepList, steps, selectedSet, submitAssign, openPendingAssign]
   );
 
   const applyNodeSelection = (next: ReadonlySet<string>) => {
@@ -854,7 +860,7 @@ export default function AssemblyBomTree({
                       onToggleExpand={() =>
                         onToggleExpand(`unit:${row.unit.id}`)
                       }
-                      onEdit={() => setEditingUnit(row.unit)}
+                      onEdit={() => editingUnit.open(row.unit)}
                     />
                   );
                 }
@@ -977,8 +983,9 @@ export default function AssemblyBomTree({
           </Button>
         </div>
       )}
-      {showCreateUnit && modelUploadId && (
+      {modelUploadId && (
         <CreateUnitModal
+          open={showCreateUnit}
           instructionId={id}
           modelUploadId={modelUploadId}
           componentNodeIds={selectedNodeIds}
@@ -989,16 +996,18 @@ export default function AssemblyBomTree({
           }}
         />
       )}
-      {editingUnit && modelUploadId && (
+      {editingUnit.item && modelUploadId && (
         <EditUnitModal
+          key={editingUnit.key}
+          open={editingUnit.isOpen}
           instructionId={id}
           modelUploadId={modelUploadId}
-          unit={editingUnit}
+          unit={editingUnit.item}
           graphIndex={graphIndex}
           selectedNodeIds={selectedNodeIds}
-          onClose={() => setEditingUnit(null)}
+          onClose={editingUnit.close}
           onUpdated={() => {
-            setEditingUnit(null);
+            editingUnit.close();
             toast.success(
               t`Component group updated — re-run motion planning to apply the change`
             );
@@ -1007,9 +1016,9 @@ export default function AssemblyBomTree({
       )}
       {pendingAssign && (
         <Modal
-          open
+          open={isPendingAssignOpen}
           onOpenChange={(open) => {
-            if (!open) setPendingAssign(null);
+            if (!open) closePendingAssign();
           }}
         >
           <ModalContent>
@@ -1024,10 +1033,7 @@ export default function AssemblyBomTree({
               </ModalDescription>
             </ModalHeader>
             <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setPendingAssign(null)}
-              >
+              <Button variant="secondary" onClick={closePendingAssign}>
                 Cancel
               </Button>
               <Button
@@ -1035,7 +1041,7 @@ export default function AssemblyBomTree({
                 isDisabled={reassignFetcher.state !== "idle"}
                 onClick={() => {
                   submitAssign(pendingAssign.targetStepId, "duplicate");
-                  setPendingAssign(null);
+                  closePendingAssign();
                 }}
               >
                 Add a copy
@@ -1044,7 +1050,7 @@ export default function AssemblyBomTree({
                 isDisabled={reassignFetcher.state !== "idle"}
                 onClick={() => {
                   submitAssign(pendingAssign.targetStepId, "move");
-                  setPendingAssign(null);
+                  closePendingAssign();
                 }}
               >
                 Move here
@@ -1289,12 +1295,14 @@ function UnitChildRow({
 }
 
 function CreateUnitModal({
+  open = true,
   instructionId,
   modelUploadId,
   componentNodeIds,
   onClose,
   onCreated
 }: {
+  open?: boolean;
   instructionId: string;
   modelUploadId: string;
   componentNodeIds: string[];
@@ -1311,6 +1319,10 @@ function CreateUnitModal({
   });
   const [name, setName] = useState("");
 
+  useEffect(() => {
+    if (open) setName("");
+  }, [open]);
+
   const onSubmit = () => {
     if (!name.trim()) return;
     const formData = new FormData();
@@ -1325,7 +1337,7 @@ function CreateUnitModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1377,6 +1389,7 @@ function CreateUnitModal({
  * after saving.
  */
 function EditUnitModal({
+  open = true,
   instructionId,
   modelUploadId,
   unit,
@@ -1385,6 +1398,7 @@ function EditUnitModal({
   onClose,
   onUpdated
 }: {
+  open?: boolean;
   instructionId: string;
   modelUploadId: string;
   unit: AssemblyUnit;
@@ -1445,7 +1459,7 @@ function EditUnitModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
