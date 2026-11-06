@@ -297,7 +297,7 @@ export function NavRail({
           "w-14 data-[state=expanded]:w-[15rem]",
           "transition-[width] duration-200 ease-out motion-reduce:transition-none",
           "flex flex-col justify-between",
-          "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          "hide-scrollbar overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onPointerDown={(event) => {
           lastPointerType.current = event.pointerType;

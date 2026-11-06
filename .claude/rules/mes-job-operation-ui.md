@@ -273,6 +273,14 @@ of a paused URL, which is itself a valid link.
   next or spawned one), so the view's held-unit edge (`useOperation`, and
   `heldEntityRef` in `AssemblyView`) asks for the next scan. A scan through the
   ERP URL names no unit and still takes the route's pick.
+- A completion is recorded once per unit. The ERP refuses a serial unit
+  already complete on the operation (its `Operation <id>` marker, which also
+  hides the unit here). No production row names its unit, so deleting one
+  does not reopen a unit. The `AssemblyView` auto-complete of an untracked parent
+  sends `expectedQuantityComplete` (the count its page showed); `complete.tsx`
+  records nothing and returns `{ alreadyRecorded: true }` when the operation's
+  `quantityComplete` has moved on, since an untracked unit is addressed by
+  that count. A manual completion sends no count.
 - All three wedges (layout, `JobOperation`, `AssemblyView`) set `inTextFields`: a matching scan is taken even while a field
   has focus, and the field is set back to its value from before the scan.
   A scan no handler takes stays in the field.

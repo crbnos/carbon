@@ -190,7 +190,11 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 
 The operation (`postShipment` / `postReceipt` in `inventory.server.ts`): evaluates storage/sales
 rules (`@carbon/ee/rules.server`) over the relevant surfaces — a blocking rule returns
-`{ violations, ruleNames }`, which the route hands to `useRuleViolations` — optimistically sets
+`{ violations, ruleNames }`, which the route hands to `useRuleViolations` — and a shipment adds
+a built-in `warn` (`shipmentStockWarnings`, `inventory.service.ts`, rule
+"Not enough stock in the storage unit") for each untracked line whose bin holds less than it
+ships, naming the bins that hold the item (not for a rental, contract or purchase order
+shipment, which write no item ledger row); then it optimistically sets
 `status: "Pending"`, then
 `invokePosting(ctx, "post-shipment", { type: "post", shipmentId, postingDate }, service.postShipment)`
 (receipt: `invokePosting(ctx, "post-receipt", { receiptId, postingDate }, service.postReceipt)`,

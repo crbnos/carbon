@@ -102,9 +102,9 @@ strings (cosmetic).
   (`samplingStandard`, `samplingPlanType`, `sampleSize`, `acceptanceNumber`,
   `rejectionNumber`, `aql`, `inspectionLevel`, `severity`, `codeLetter`),
   `status` (`inspectionStatusType`: Pending/In Progress/Passed/Failed/Partial/
-  **Cancelled** — the lot of a voided receipt, `20261105211501`),
+  **Cancelled** — the lot of a voided receipt, `20261106020101`),
   `storageUnitId` (where the held stock sits) and `acceptedQuantity` (a Partial
-  lot's passed part) from `20261105211522`, `dispositionedBy`/`dispositionedAt`.
+  lot's passed part) from `20261106020122`, `dispositionedBy`/`dispositionedAt`.
   **No `itemTrackingType` column** — joined from `item`.
 - `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
@@ -301,7 +301,7 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   (item, unit) below `inspection_held_quantity` (open lots' lot size, plus a
   Partial lot's `lotSize - acceptedQuantity` until its NCR is Closed). Whether
   a lot holds stock is one SQL predicate, `inspection_lot_holds(id, status,
-  acceptedQuantity)` (`20261105211522`, no SET clause, so it can inline):
+  acceptedQuantity)` (`20261106020122`, no SET clause, so it can inline):
   the guard's EXISTS (on `inspection_hold_idx`), `inspection_held_quantity` and
   the lot and NCR interceptors all call it. The
   statement is judged as a whole: its rows at one (item, unit) net, and one
@@ -331,11 +331,11 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   Partial lot's remainder may ship to the supplier while its NCR is open. A lot
   holds untracked stock only in a non-nettable unit: lots open before the hold
   existed were left without a `storageUnitId`, and the roll-up counts only
-  such lots (`20261105211522`). Its on-hand read is served by the partial
+  such lots (`20261106020122`). Its on-hand read is served by the partial
   index `itemLedger_untracked_storageUnit_item_idx` (`storageUnitId, itemId,
   companyId` INCLUDE `quantity`, untracked rows only), an index-only scan.
 - **No release by a direct edit.** Six BEFORE interceptors (the generated
-  handlers migration, `20261106012250`) refuse, with a plain `RAISE`, what
+  handlers migration, `20261106020150`) refuse, with a plain `RAISE`, what
   would release held stock without moving it, unless `app.inspection_release`
   is on or `app.sync_in_progress` is set: `check_inspection_lot_release` on
   `inspection` (a Receipt lot's `status`, except Pending ↔ In Progress, which
