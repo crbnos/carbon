@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type {
-  CollectedValues,
   DocumentEditType,
   DocumentSettings
 } from "@carbon/documents/template";
@@ -20,9 +19,9 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuDownload, LuLock, LuRotateCcw } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DOCUMENT_EDIT_RECORDS } from "~/modules/settings/settings.utils";
 
 import type { loader as documentEditLoader } from "~/routes/api+/document-edit.$type.$id";
@@ -32,10 +31,16 @@ import {
   changedNotes,
   DocumentTemplateProvider,
   useDocumentTemplate,
-  useEditorStore
+  useEditorStore,
+  useIsDirty,
+  useLoadPrintedValues
 } from "./DocumentTemplateEditor/context";
 
 const logger = getLogger("erp", "document-edit-modal");
+
+type DocumentEditor = NonNullable<
+  Awaited<ReturnType<typeof documentEditLoader>>["data"]["data"]
+>;
 
 /**
  * "Edit document": how one record's document prints (its words, hidden fields
@@ -53,16 +58,16 @@ export default function DocumentEditModal({
 }) {
   const { t } = useLingui();
   const navigate = useNavigate();
-  const fetcher = useFetcher<typeof documentEditLoader>();
   const actionPath = path.to.api.documentEdit(documentType, documentId);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once, as the modal opens.
-  useEffect(() => {
-    fetcher.load(actionPath);
-  }, [actionPath]);
-
-  const result = fetcher.data;
-  const editor = result?.data ?? null;
+  const { editor, error } = useDocumentEditor(actionPath);
+  // The record's page keeps its own copy of the notes and saves it on the next
+  // keystroke, which would overwrite these. Reloading is the one way that works on
+  // every record's page.
+  const notesSaved = useRef(false);
+  const close = () => {
+    if (notesSaved.current) navigate(0);
+    else onClose();
+  };
   const printed = editor && applyDocumentEdit(editor.template, editor.edit);
 
   return (
@@ -88,8 +93,8 @@ export default function DocumentEditModal({
         {!editor || !printed ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
             <ModalTitle className="sr-only">{t`Edit document`}</ModalTitle>
-            {result?.error ? (
-              <p className="text-sm text-destructive">{result.error.message}</p>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
             ) : (
               <Spinner className="size-6" />
             )}
@@ -104,7 +109,7 @@ export default function DocumentEditModal({
             initialSettings={printed.settings as DocumentSettings}
             initialHeaderSectionId={editor.template.headerSectionId ?? null}
             initialFooterSectionId={editor.template.footerSectionId ?? null}
-            sections={[]}
+            sections={editor.sections}
             customFields={[]}
             previewEntities={[]}
             termsSeed={
@@ -123,19 +128,16 @@ export default function DocumentEditModal({
               }
             }}
             initialNotes={editor.notes as JSONContent | null}
-            onSaved={({ notesChanged }) => {
-              // The record's page keeps its own copy of the notes and saves it
-              // on the next keystroke, which would overwrite these. Reloading
-              // is the one way that works on every record's page.
-              if (notesChanged) navigate(0);
-              else onClose();
+            onSaved={({ notesChanged, stillEditing }) => {
+              notesSaved.current ||= notesChanged;
+              if (!stillEditing) close();
             }}
           >
             <DocumentValuesLoader
               path={path.to.api.documentEditValues(documentType, documentId)}
             />
             <DocumentEditBar
-              onCancel={onClose}
+              onCancel={close}
               previewPath={path.to.api.documentEditPreview(
                 documentType,
                 documentId
@@ -151,30 +153,46 @@ export default function DocumentEditModal({
   );
 }
 
-/**
- * Reads the record's own values once, for the pencils. A plain fetch, because a
- * fetcher's failure replaces the whole page with its error screen. Without the
- * values there are no pencils, and the words can still be edited.
- */
+/** Reads the record's own values once, for the pencils and the preview's clicks. */
 function DocumentValuesLoader({ path: valuesPath }: { path: string }) {
-  const setDocumentValues = useEditorStore((s) => s.setDocumentValues);
+  useLoadPrintedValues(valuesPath);
+  return null;
+}
+
+/**
+ * Loads the editor once, as the modal opens. A plain fetch: a fetcher would replace
+ * the page with its error screen on a failure, and reload after a save, which
+ * could take the draft away.
+ */
+function useDocumentEditor(actionPath: string) {
+  const { t } = useLingui();
+  const [state, setState] = useState<{
+    editor: DocumentEditor | null;
+    error: string | null;
+  }>({ editor: null, error: null });
 
   useEffect(() => {
     const controller = new AbortController();
+    const failed = t`The document could not be opened.`;
     (async () => {
       try {
-        const response = await fetch(valuesPath, { signal: controller.signal });
-        if (!response.ok) return;
-        const values: { data: CollectedValues } = await response.json();
-        setDocumentValues(values.data);
+        const response = await fetch(actionPath, { signal: controller.signal });
+        const result: { data?: DocumentEditor; error?: { message: string } } =
+          response.ok ? await response.json() : { error: { message: failed } };
+        setState({
+          editor: result.data ?? null,
+          error: result.data ? null : (result.error?.message ?? failed)
+        });
       } catch (error) {
-        if (!controller.signal.aborted) logger.error("Error", { error });
+        if (controller.signal.aborted) return;
+        logger.error("Failed to load the document editor", { error });
+        setState({ editor: null, error: failed });
       }
     })();
     return () => controller.abort();
-  }, [valuesPath, setDocumentValues]);
+  }, [actionPath, t]);
 
-  return null;
+  return state;
 }
 
 function DocumentEditBar({
@@ -185,8 +203,9 @@ function DocumentEditBar({
   previewPath: string;
 }) {
   const { t } = useLingui();
-  const { save, refuseDraft, isSaving, isDirty, blocks, settings } =
+  const { save, refuseDraft, isSaving, blocks, settings } =
     useDocumentTemplate();
+  const isDirty = useIsDirty();
   const document = useEditorStore((s) => s.document);
   const notes = useEditorStore(changedNotes);
   const resetToTemplate = useEditorStore((s) => s.resetToTemplate);
@@ -261,7 +280,7 @@ function DocumentEditBar({
       >
         <Trans>Download</Trans>
       </Button>
-      <Button variant="secondary" onClick={onCancel}>
+      <Button variant="secondary" onClick={onCancel} isDisabled={isSaving}>
         {document.locked ? t`Close` : t`Cancel`}
       </Button>
       {!document.locked && (

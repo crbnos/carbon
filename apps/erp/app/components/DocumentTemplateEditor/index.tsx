@@ -38,8 +38,8 @@ import { BlockConfig } from "./BlockConfig";
 import {
   AddBlockMenu,
   BodyBlockList,
+  FooterRow,
   HiddenBlockList,
-  PageBottomRows,
   PageTopRows,
   useHiddenBlockCount
 } from "./BlockList";
@@ -48,7 +48,9 @@ import {
   DocumentTemplateProvider,
   PickBlockProvider,
   useDocumentTemplate,
-  useEditorStore
+  useEditorStore,
+  useIsDirty,
+  useLoadPrintedValues
 } from "./context";
 import { FontConfig } from "./FontConfig";
 import { RememberedSection } from "./PanelSection";
@@ -109,10 +111,20 @@ export function DocumentTemplateEditor({
           canEdit={canEdit}
         />
         <ConflictBanner documentType={documentType} />
+        <TemplateValuesLoader actionPath={actionPath} />
         <EditorPanes actionPath={actionPath} />
       </div>
     </DocumentTemplateProvider>
   );
+}
+
+/** The values of the sample or the picked record, for a click on the preview. */
+function TemplateValuesLoader({ actionPath }: { actionPath: string }) {
+  const previewId = useEditorStore((s) => s.previewId);
+  useLoadPrintedValues(
+    `${actionPath}/values${previewId ? `?previewId=${encodeURIComponent(previewId)}` : ""}`
+  );
+  return null;
 }
 
 /**
@@ -275,7 +287,7 @@ function ControlRail() {
         </RememberedSection>
         {!isLabel && (
           <RememberedSection id="rail:bottom" title={t`Bottom of page`}>
-            <PageBottomRows />
+            <FooterRow />
           </RememberedSection>
         )}
         {hiddenCount > 0 && (
@@ -323,15 +335,17 @@ function ConflictBanner({
   return (
     <div className="flex items-center justify-between gap-3 border-b border-amber-500/40 bg-amber-500/10 px-4 py-2">
       <p className="text-sm text-amber-700 dark:text-amber-400">
-        Someone else just saved this template. Refresh to load their version, or
-        keep editing to overwrite it when you save.
+        <Trans>
+          Someone else just saved this template. Refresh to load their version,
+          or keep editing to overwrite it when you save.
+        </Trans>
       </p>
       <div className="flex shrink-0 items-center gap-2">
         <Button variant="secondary" size="sm" onClick={dismiss}>
-          Keep mine
+          <Trans>Keep mine</Trans>
         </Button>
         <Button size="sm" onClick={() => window.location.reload()}>
-          Refresh
+          <Trans>Refresh</Trans>
         </Button>
       </div>
     </div>
@@ -348,15 +362,9 @@ function EditorToolbar({
   // A draft printed on a real record needs update rights (`$type.preview`).
   const canPreviewRecords = usePermissions().can("update", "settings");
   const { t } = useLingui();
-  const {
-    isDirty,
-    isSaving,
-    reset,
-    save,
-    previewEntities,
-    previewId,
-    setPreviewId
-  } = useDocumentTemplate();
+  const isDirty = useIsDirty();
+  const { isSaving, reset, save, previewEntities, previewId, setPreviewId } =
+    useDocumentTemplate();
   const refreshPreview = useEditorStore((s) => s.refreshPreview);
 
   return (

@@ -20,11 +20,8 @@ import { getPreferenceHeaders, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import {
-  buildPreviewProps,
-  getCompany,
-  resolveSections
-} from "~/modules/settings/settings.service";
+import { templatePreviewProps } from "~/modules/settings/document-edit.pdf";
+import { resolveSections } from "~/modules/settings/settings.service";
 
 /**
  * Renders a sample of the document with the draft block layout, server-side.
@@ -92,37 +89,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const { locale } = getPreferenceHeaders(request);
-
   await ensureFont(settings.fontFamily);
 
-  const { Component, sample } = DOCUMENT_PDFS[documentType];
-
-  // When a record is picked, render the draft layout against its live data.
-  // Otherwise fall back to sample data with the real company branding.
-  const previewId = String(formData.get("previewId") ?? "") || null;
-  // A draft can reword or hide anything, so printing it on a real record is
-  // editing, not viewing.
-  if (previewId) await requirePermissions(request, { update: "settings" });
-  const real = previewId
-    ? await buildPreviewProps(
-        client,
-        companyId,
-        documentType,
-        previewId,
-        locale
-      )
-    : null;
-
-  let baseProps: Record<string, unknown>;
-  if (real) {
-    baseProps = real;
-  } else {
-    // Use the real company so the preview shows the actual logo / branding;
-    // everything else (line items, totals) stays sample data.
-    const company = await getCompany(client, companyId);
-    baseProps = { ...sample, company: company.data ?? sample.company, locale };
-  }
+  const { Component } = DOCUMENT_PDFS[documentType];
+  const baseProps = await templatePreviewProps(request, client, {
+    companyId,
+    documentType,
+    previewId: String(formData.get("previewId") ?? "") || null,
+    locale: getPreferenceHeaders(request).locale
+  });
 
   // Tracking-label preview: render against the picked stock (the layout scales
   // to any size). Overrides the sample's fixed size.

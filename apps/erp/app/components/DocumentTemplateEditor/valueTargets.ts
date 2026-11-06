@@ -13,7 +13,7 @@ import {
   isEditableValue,
   TOKEN_RE
 } from "@carbon/documents/template";
-import { normalize, type PageRun, printedEntries } from "./previewText";
+import { printedEntries } from "./previewText";
 
 /** One value a document prints that the user can change. */
 export interface ValueTarget {
@@ -96,71 +96,5 @@ export function valueTargets(
         }
       );
     }
-  );
-}
-
-/** Short values ("1", "EA") would match inside unrelated text. */
-const MIN_PARTIAL_MATCH = 3;
-
-function holdsWords(text: string, part: string) {
-  const index = text.indexOf(part);
-  if (index === -1) return false;
-  const before = text[index - 1];
-  const after = text[index + part.length];
-  const isWordChar = (c?: string) => !!c && /[\p{L}\p{N}]/u.test(c);
-  return !isWordChar(before) && !isWordChar(after);
-}
-
-/**
- * The value a click on the preview points at. The run is the value, ends with it
- * after a label ("Contact: Sam"), or is a piece of it (a wrapped or split line).
- * When rows repeat the same text, the n-th such run on the page is the n-th row.
- * Null means no changeable value printed here, so the caller falls back to the
- * words that printed it.
- */
-export function findPrintedValue(
-  lines: PageRun[][],
-  clicked: { line: number; run: number },
-  targets: ValueTarget[],
-  /** Texts with no variables: a run that equals one is that word, not a value. */
-  words: readonly string[] = []
-): ValueTarget | null {
-  const text = normalize(lines[clicked.line]?.[clicked.run]?.text ?? "");
-  if (!text) return null;
-
-  const candidates = targets
-    .map((target) => ({ target, value: normalize(target.printedValue) }))
-    .filter(({ value }) => value);
-
-  const exact = candidates.filter(({ value }) => value === text);
-  if (exact.length > 0) {
-    let earlier = 0;
-    for (let i = 0; i <= clicked.line; i++) {
-      const runs = lines[i] ?? [];
-      const end = i === clicked.line ? clicked.run : runs.length;
-      for (let r = 0; r < end; r++) {
-        if (normalize(runs[r]?.text ?? "") === text) earlier++;
-      }
-    }
-    return exact[earlier % exact.length]?.target ?? null;
-  }
-
-  const afterLabel = candidates
-    .filter(
-      ({ value }) =>
-        value.length >= MIN_PARTIAL_MATCH &&
-        text.endsWith(value) &&
-        holdsWords(text, value)
-    )
-    .sort((a, b) => b.value.length - a.value.length);
-  if (afterLabel[0]) return afterLabel[0].target;
-
-  if (text.length < MIN_PARTIAL_MATCH) return null;
-  const isWord = words.some(
-    (word) => normalize(word).toLowerCase() === text.toLowerCase()
-  );
-  if (isWord) return null;
-  return (
-    candidates.find(({ value }) => holdsWords(value, text))?.target ?? null
   );
 }

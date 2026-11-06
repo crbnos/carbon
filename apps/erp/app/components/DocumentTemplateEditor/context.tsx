@@ -19,6 +19,7 @@ import {
   validateDocumentEdit,
   validateTemplateText
 } from "@carbon/documents/template";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import { toast } from "@carbon/react";
@@ -37,6 +38,8 @@ import {
 import type { StoreApi } from "zustand";
 import { createStore, useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
+
+const logger = getLogger("erp", "document-template-editor");
 
 export type AddableBlockType = Extract<
   DocumentBlockType,
@@ -145,7 +148,7 @@ interface EditorState extends EditorSnapshot {
   textFocus: TextFocus | null;
   /** Set when the editor edits one record's document, not the template. */
   document: DocumentMode | null;
-  /** Document mode: the record's own values, once the route has read them. */
+  /** What the preview prints from: the sample's or a record's, once read. */
   documentValues: CollectedValues | null;
   /** Snapshot of the last-saved state; drives `isDirty` and `reset`. */
   baseline: EditorSnapshot;
@@ -157,7 +160,7 @@ interface EditorState extends EditorSnapshot {
   setLabelSizeId: (id: string) => void;
   /** Select the panel that edits this text and show the text in it. */
   focusText: (scope: string, key: string, fromPage?: boolean) => void;
-  setDocumentValues: (values: CollectedValues) => void;
+  setDocumentValues: (values: CollectedValues | null) => void;
   setNotes: (notes: JSONContent | null) => void;
   /** Document mode: drop this document's edits, back to the company template. */
   resetToTemplate: () => void;
@@ -179,8 +182,8 @@ interface EditorState extends EditorSnapshot {
   setFooterSection: (sectionId: string | null) => void;
   setHeaderConfig: (patch: Partial<HeaderOptions>) => void;
   reset: () => void;
-  /** Mark the current state as saved (clears `isDirty`). */
-  rebaseline: () => void;
+  /** Marks what was saved as clean; what was typed since stays a change. */
+  rebaseline: (saved: EditorSnapshot) => void;
 }
 
 export interface DocumentTemplateProps {
@@ -202,7 +205,7 @@ export interface DocumentTemplateProps {
   document?: DocumentMode;
   initialNotes?: JSONContent | null;
   /** Called after a successful save of one document, saying what it changed. */
-  onSaved?: (saved: { notesChanged: boolean }) => void;
+  onSaved?: (saved: { notesChanged: boolean; stillEditing: boolean }) => void;
 }
 
 function snapshot(s: EditorSnapshot): EditorSnapshot {
@@ -458,7 +461,7 @@ function createEditorStore(props: DocumentTemplateProps) {
       const { baseline } = get();
       set({ ...baseline, selectedId: null });
     },
-    rebaseline: () => set((s) => ({ baseline: snapshot(s) }))
+    rebaseline: (saved) => set({ baseline: saved })
   }));
 }
 
@@ -524,13 +527,23 @@ export function DocumentTemplateProvider({
 
   const { t } = useLingui();
   const describeProblem = useDescribeProblem();
+  // What the save in flight holds: words typed after it are not saved by it.
+  const submitted = useRef<EditorSnapshot | null>(null);
   const fetcher = useAction({
     onSuccess: () => {
-      const notesChanged = changedNotes(store.getState()) !== undefined;
-      store.getState().rebaseline();
+      const sent = submitted.current;
+      const state = store.getState();
+      const notesChanged =
+        changedNotes(sent ? { ...state, notes: sent.notes } : state) !==
+        undefined;
+      if (sent) state.rebaseline(sent);
       if (store.getState().document) {
         toast.success(t`Saved this document`);
-        props.onSaved?.({ notesChanged });
+        props.onSaved?.({
+          notesChanged,
+          // Words typed while it saved stay open, to be saved or cancelled.
+          stillEditing: selectIsDirty(store.getState())
+        });
       } else {
         toast.success(t`Saved document layout`);
       }
@@ -552,6 +565,7 @@ export function DocumentTemplateProvider({
   const save = useCallback(() => {
     if (refuseDraft()) return;
     const s = store.getState();
+    submitted.current = snapshot(s);
     const formData = new FormData();
     if (s.document) {
       if (s.document.locked) return;
@@ -581,6 +595,38 @@ export function DocumentTemplateProvider({
   return (
     <EditorContext.Provider value={value}>{children}</EditorContext.Provider>
   );
+}
+
+export function useIsDirty() {
+  return useEditorStore(selectIsDirty);
+}
+
+/**
+ * Loads the values a preview prints, for its clicks and a document's pencils. A
+ * plain fetch, because a fetcher's failure replaces the whole page with its error
+ * screen. Without the values a click reads only the words, and there are no
+ * pencils.
+ */
+export function useLoadPrintedValues(path: string) {
+  const setDocumentValues = useEditorStore((s) => s.setDocumentValues);
+
+  useEffect(() => {
+    setDocumentValues(null);
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const response = await fetch(path, { signal: controller.signal });
+        if (!response.ok) return;
+        const values: { data: CollectedValues } = await response.json();
+        setDocumentValues(values.data);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          logger.error("Failed to read the printed values", { error });
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [path, setDocumentValues]);
 }
 
 /**
@@ -620,8 +666,7 @@ export function useDocumentTemplate() {
       setHeaderSection: s.setHeaderSection,
       setFooterSection: s.setFooterSection,
       setHeaderConfig: s.setHeaderConfig,
-      reset: s.reset,
-      isDirty: selectIsDirty(s)
+      reset: s.reset
     }))
   );
   return { ...state, save, refuseDraft, isSaving };

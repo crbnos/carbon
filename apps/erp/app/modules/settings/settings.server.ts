@@ -9,6 +9,7 @@ import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
   blockSchema,
   COMPANY_MERGE_FIELDS,
+  collectSectionIds,
   DOCUMENT_EDIT_TYPES,
   type DocumentBlock,
   type DocumentSettings,
@@ -1688,13 +1689,20 @@ export const getDocumentEditor = defineServiceFn({
     const termsSeed = termsField
       ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
       : null;
+    // The preview's clicks read what the template's sections print.
+    const sections = await service.resolveSections(
+      client,
+      ctx.company.id,
+      collectSectionIds(template)
+    );
     return {
       ...record.data,
       documentType,
       documentId,
       template,
       edit,
-      termsSeed
+      termsSeed,
+      sections: Object.values(sections)
     };
   }
 });

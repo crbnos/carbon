@@ -160,11 +160,6 @@ export function PageTopRows() {
   );
 }
 
-/** The footer row: page chrome, pinned below the body. */
-export function PageBottomRows() {
-  return <FooterRow />;
-}
-
 /** The body blocks on the page, in print order and sortable. */
 export function BodyBlockList() {
   const { reorder } = useDocumentTemplate();
@@ -380,11 +375,14 @@ function AddMenuItem({
   );
 }
 
-function blockLabel(block: DocumentBlock, sections: SectionRef[]): string {
+function blockLabel(
+  block: DocumentBlock,
+  sections: SectionRef[],
+  deletedSection: string
+): string {
   const meta = BLOCK_META[block.type];
   return block.type === "shared"
-    ? (sections.find((s) => s.id === block.sectionId)?.name ??
-        "Shared Section (deleted)")
+    ? (sections.find((s) => s.id === block.sectionId)?.name ?? deletedSection)
     : block.type === "customField"
       ? block.label || meta.label
       : block.type === "field"
@@ -413,7 +411,7 @@ function BlockRow({ id }: { id: string }) {
   const isSelected = selectedId === id;
   const shown = block.visible;
   const onToggle = () => toggleVisible(id);
-  const label = blockLabel(block, sections);
+  const label = blockLabel(block, sections, t`Shared Section (deleted)`);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control and its click bubbles here
@@ -480,7 +478,7 @@ function BlockRow({ id }: { id: string }) {
       {meta.removable && !isDocument && (
         <button
           type="button"
-          aria-label="Remove block"
+          aria-label={t`Remove block`}
           onClick={(e) => {
             e.stopPropagation();
             removeBlock(id);
@@ -542,7 +540,7 @@ function StaticBlockRow({ id }: { id: string }) {
   const meta = BLOCK_META[block.type];
   const isSelected = selectedId === id;
   const shown = block.visible;
-  const label = blockLabel(block, sections);
+  const label = blockLabel(block, sections, t`Shared Section (deleted)`);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: mouse-sized hit area only; the inner label <button> is the keyboard/AT control
@@ -570,7 +568,7 @@ function StaticBlockRow({ id }: { id: string }) {
       {meta.removable && !isDocument && (
         <button
           type="button"
-          aria-label="Remove block"
+          aria-label={t`Remove block`}
           onClick={(e) => {
             e.stopPropagation();
             removeBlock(id);
@@ -711,7 +709,7 @@ function HeaderLogoRow() {
  * the sortable blocks. Eye toggles the footer on/off; selecting it opens the
  * footer config (page numbers, registration line).
  */
-function FooterRow() {
+export function FooterRow() {
   const { footerSectionId, setFooterSection, selectedId } =
     useDocumentTemplate();
   const pickBlock = usePickBlock();

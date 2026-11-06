@@ -7,7 +7,7 @@ import { cn } from "@carbon/react";
 import { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useResizeObserver } from "~/hooks/useResizeObserver";
-import type { ClickedRun, PageRun } from "./previewText";
+import { type ClickedRun, groupLines, type PageClick } from "./previewClick";
 // The text layer is what a click lands on; without its stylesheet its runs
 // sit in normal flow instead of over the words they belong to.
 import "react-pdf/dist/Page/TextLayer.css";
@@ -19,34 +19,30 @@ registerReactPdfWorker(pdfjs);
 /** A run of text in pdf.js's text layer (not a marked-content wrapper). */
 const RUN = ".textLayer span:not(.markedContent)";
 
-/**
- * The runs of a page's text layer, a line at a time: a run starts a new line
- * when it sits lower or higher than the one before it by half its height.
- */
-function readLines(layer: Element, clicked: Element) {
-  const lines: PageRun[][] = [];
-  let at = { line: 0, run: 0 };
-  let lastTop: number | null = null;
-  for (const run of layer.querySelectorAll(RUN)) {
-    // A blank run (the space between two words) has no height of its own.
-    const blank = !run.textContent?.trim();
-    const box = run.getBoundingClientRect();
-    if (
-      lastTop === null ||
-      (!blank && Math.abs(box.top - lastTop) > box.height / 2)
-    ) {
-      lines.push([]);
-    }
-    if (!blank) lastTop = box.top;
-    const line = lines[lines.length - 1];
-    if (run === clicked) at = { line: lines.length - 1, run: line.length };
-    line.push({
-      text: run.textContent ?? "",
-      left: box.left,
-      right: box.right
-    });
-  }
-  return { lines, at };
+function readPage(layer: Element, clicked: Element, file: string): PageClick {
+  const elements = [...layer.querySelectorAll(RUN)];
+  const { lines, places } = groupLines(
+    elements.map((run) => {
+      const box = run.getBoundingClientRect();
+      return {
+        text: run.textContent ?? "",
+        left: box.left,
+        right: box.right,
+        top: box.top,
+        height: box.height
+      };
+    })
+  );
+  const page = layer.getBoundingClientRect();
+  return {
+    file,
+    lines,
+    at: places[elements.indexOf(clicked)] as ClickedRun,
+    top: (clicked.getBoundingClientRect().top - page.top) / page.height,
+    pageNumber: Number(
+      layer.closest("[data-page-number]")?.getAttribute("data-page-number") ?? 1
+    )
+  };
 }
 
 /**
@@ -58,11 +54,16 @@ function readLines(layer: Element, clicked: Element) {
 export default function PreviewPages({
   file,
   onTextClick,
+  onDrawFailed,
+  onShown,
   keepMark
 }: {
   file: string;
+  onDrawFailed: () => void;
+  /** A new file has replaced the one on screen. */
+  onShown: (file: string) => void;
   /** Whether the click landed on a text the panel can edit. */
-  onTextClick: (lines: PageRun[][], clicked: ClickedRun) => boolean;
+  onTextClick: (click: PageClick) => boolean;
   /** The clicked run stays outlined only while the panel shows what it prints. */
   keepMark: boolean;
 }) {
@@ -90,14 +91,15 @@ export default function PreviewPages({
   }, [file]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a shortcut to what the block list and the text picker reach by keyboard
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a shortcut to what the block list and the text picker reach by keyboard
     <div
       ref={containerRef}
       onClick={(e) => {
         const run = (e.target as HTMLElement).closest(RUN);
         const layer = run?.closest(".textLayer");
         if (!run || !layer) return;
-        const { lines, at } = readLines(layer, run);
-        if (onTextClick(lines, at)) mark(run);
+        if (onTextClick(readPage(layer, run, files[0]))) mark(run);
       }}
       className={cn(
         // The scrollbar's space is always kept. Pages are drawn at this box's
@@ -115,7 +117,11 @@ export default function PreviewPages({
               file={f}
               width={width}
               hidden={index > 0}
-              onReady={() => setFiles((current) => current.slice(index))}
+              onReady={() => {
+                setFiles((current) => current.slice(index));
+                onShown(f);
+              }}
+              onFailed={onDrawFailed}
             />
           ))
         : null}
@@ -127,12 +133,14 @@ function PdfPages({
   file,
   width,
   hidden,
-  onReady
+  onReady,
+  onFailed
 }: {
   file: string;
   width: number;
   hidden: boolean;
   onReady: () => void;
+  onFailed: () => void;
 }) {
   const [numPages, setNumPages] = useState(0);
   const drawn = useRef(0);
@@ -145,6 +153,9 @@ function PdfPages({
       <Document
         file={file}
         loading={null}
+        error={null}
+        onLoadError={onFailed}
+        onSourceError={onFailed}
         onLoadSuccess={(pdf) => {
           drawn.current = 0;
           setNumPages(pdf.numPages);
@@ -157,6 +168,8 @@ function PdfPages({
             width={width}
             renderAnnotationLayer={false}
             loading={null}
+            error={null}
+            onRenderError={onFailed}
             className="mb-4 bg-white shadow-sm last:mb-0"
             onRenderSuccess={() => {
               drawn.current += 1;

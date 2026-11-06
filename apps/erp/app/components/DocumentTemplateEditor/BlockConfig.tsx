@@ -216,9 +216,17 @@ export function BlockConfig() {
       {block.type === "shared" && (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">
-            {sharedName
-              ? "Linked to a shared section. Edit it in the library to update it everywhere."
-              : "This shared section no longer exists. Remove the block or recreate the section."}
+            {sharedName ? (
+              <Trans>
+                Linked to a shared section. Edit it in the library to update it
+                everywhere.
+              </Trans>
+            ) : (
+              <Trans>
+                This shared section no longer exists. Remove the block or
+                recreate the section.
+              </Trans>
+            )}
           </p>
           {/* Leaving the page would lose a document's unsaved edits. */}
           {!isDocument && (

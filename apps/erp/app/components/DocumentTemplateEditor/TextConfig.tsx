@@ -288,7 +288,10 @@ function WordEditor({
     return () => cancelAnimationFrame(frame);
   }, [focusNonce]);
 
-  const documentValues = useEditorStore((s) => s.documentValues);
+  // A template's preview has values for its clicks; only a document changes them.
+  const documentValues = useEditorStore((s) =>
+    s.document ? s.documentValues : null
+  );
   const [editing, setEditing] = useState<{
     token: string;
     chip: HTMLElement;

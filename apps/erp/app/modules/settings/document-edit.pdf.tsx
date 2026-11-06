@@ -6,9 +6,11 @@ import { SUPABASE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { DOCUMENT_PDFS } from "@carbon/documents/pdf";
 import type {
   DocumentEdit,
   DocumentEditType,
+  DocumentTemplateType,
   ValueCollector
 } from "@carbon/documents/template";
 import { isDocumentEditType } from "@carbon/documents/template";
@@ -33,6 +35,7 @@ import {
   renderSalesReturnOrderPdf
 } from "~/modules/sales/sales.pdf";
 import { getDocumentEditRecord } from "./document-edit.service";
+import { buildPreviewProps, getCompany } from "./settings.service";
 import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
 
 const logger = getLogger("erp", "document-edit");
@@ -66,6 +69,38 @@ export async function requireDocumentEditRecord(
   if (!record.data) throw new Response("Document not found", { status: 404 });
 
   return { client, companyGroupId, key, record: record.data };
+}
+
+/**
+ * What a template preview prints on: the picked record, else the sample with the
+ * real company branding. A draft can reword or hide anything, so printing it on a
+ * real record is editing, not viewing.
+ */
+export async function templatePreviewProps(
+  request: Request,
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    documentType: DocumentTemplateType;
+    previewId: string | null;
+    locale: string;
+  }
+): Promise<Record<string, unknown>> {
+  const { companyId, documentType, previewId, locale } = args;
+  if (previewId) {
+    await requirePermissions(request, { update: "settings" });
+    const real = await buildPreviewProps(
+      client,
+      companyId,
+      documentType,
+      previewId,
+      locale
+    );
+    if (real) return real;
+  }
+  const { sample } = DOCUMENT_PDFS[documentType];
+  const company = await getCompany(client, companyId);
+  return { ...sample, company: company.data ?? sample.company, locale };
 }
 
 function pdfResponse({ body, fileName }: { body: Buffer; fileName: string }) {

@@ -68,6 +68,11 @@ export function ValueEditor({
     <Popover open onOpenChange={(open) => !open && onClose()}>
       <PopoverAnchor virtualRef={anchor} />
       <PopoverContent
+        // Only an anchor, so Radix has no trigger to give the focus back to.
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          chip.focus();
+        }}
         side="bottom"
         align="end"
         sideOffset={4}

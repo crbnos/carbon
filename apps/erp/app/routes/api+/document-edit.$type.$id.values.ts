@@ -19,7 +19,7 @@ import {
 const logger = getLogger("erp", "document-edit", "values");
 
 /**
- * The record's own values, for the pencils of "Edit document". Only a render
+ * The record's own values, for the pencils and preview clicks of "Edit document". Only a render
  * holds them, because a table row's variables are built as it prints. It
  * prints every block, so a block the user shows later already has its values,
  * and none of the changed values, so the section can tell what changed.

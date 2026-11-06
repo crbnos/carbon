@@ -7,8 +7,7 @@ import type {
   DocumentBlock
 } from "@carbon/documents/template";
 import { describe, expect, it } from "vitest";
-import type { PageRun } from "./previewText";
-import { findPrintedValue, valueTargets } from "./valueTargets";
+import { valueTargets } from "./valueTargets";
 
 const blocks: DocumentBlock[] = [
   { id: "parties", type: "parties", visible: true },
@@ -41,11 +40,6 @@ const collected: CollectedValues = {
   ]
 };
 const targets = valueTargets("purchaseOrder", blocks, {}, collected);
-const run = (text: string): PageRun => ({ text, left: 0, right: 1 });
-const at = (lines: PageRun[][], line: number, r = 0) => {
-  const hit = findPrintedValue(lines, { line, run: r }, targets);
-  return hit && `${hit.rowKey ?? "doc"}:${hit.token}`;
-};
 
 describe("valueTargets", () => {
   it("lists changeable values per row, not amounts or quantities", () => {
@@ -97,57 +91,6 @@ describe("valueTargets", () => {
   });
 });
 
-describe("findPrintedValue", () => {
-  it("finds a value with no label", () => {
-    expect(at([[run("Steelworks Ltd")]], 0)).toBe("doc:supplier.name");
-  });
-
-  it("tells two rows with the same label apart by their value", () => {
-    const lines = [[run("Contact: Sam")], [run("Contact: Pat")]];
-    expect(at(lines, 0)).toBe("doc:supplier.contactName");
-    expect(at(lines, 1)).toBe("doc:buyer.name");
-  });
-
-  it("takes the n-th row when rows print the same text", () => {
-    const lines = [[run("WIDGET")], [run("WIDGET")]];
-    expect(at(lines, 0)).toBe("line:a:line.description");
-    expect(at(lines, 1)).toBe("line:b:line.description");
-  });
-
-  it("finds a piece of a split or wrapped value", () => {
-    expect(at([[run("200"), run("Foundry Rd")]], 0, 1)).toBe(
-      "doc:supplier.addressLine1"
-    );
-  });
-
-  it("finds a value by what it prints now, not the record's text", () => {
-    const changed = valueTargets(
-      "purchaseOrder",
-      blocks,
-      {
-        valueEdits: {
-          rows: {
-            "line:a": { "line.description": "Smallsat Bus\nIncludes Harness" }
-          }
-        }
-      },
-      collected
-    );
-    const lines = [[run("Smallsat Bus")], [run("Includes Harness")]];
-    for (const line of [0, 1]) {
-      expect(findPrintedValue(lines, { line, run: 0 }, changed)?.rowKey).toBe(
-        "line:a"
-      );
-    }
-  });
-
-  it("finds nothing for an amount, a short piece or another word", () => {
-    expect(at([[run("100.00")]], 0)).toBeNull();
-    expect(at([[run("Ltd")], [run("St")]], 1)).toBeNull();
-    expect(at([[run("Terms & Conditions")]], 0)).toBeNull();
-  });
-});
-
 describe("the same value printed twice in one panel", () => {
   it("is one value to change", () => {
     const targets = valueTargets(
@@ -158,23 +101,5 @@ describe("the same value printed twice in one panel", () => {
       { document: { "issue.name": "Scratched" }, rows: [] }
     );
     expect(targets.filter((t) => t.token === "issue.name")).toHaveLength(1);
-  });
-});
-
-describe("a printed word that is also part of a value", () => {
-  it("is the word", () => {
-    const target = {
-      scope: "parties",
-      key: "companyName",
-      rowKey: null,
-      prefix: null,
-      token: "company.name",
-      recordValue: "Total Engineering Ltd",
-      printedValue: "Total Engineering Ltd"
-    };
-    const lines = [[{ text: "Total", left: 0, right: 10 }]];
-    const clicked = { line: 0, run: 0 };
-    expect(findPrintedValue(lines, clicked, [target])).toBe(target);
-    expect(findPrintedValue(lines, clicked, [target], ["Total"])).toBeNull();
   });
 });

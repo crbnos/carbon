@@ -2,9 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { isFigureProblem } from "@carbon/documents/template";
+import {
+  type DocumentTemplate,
+  isFigureProblem
+} from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
 import { Spinner } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   changedNotes,
@@ -12,13 +16,8 @@ import {
   useDocumentTemplate,
   useEditorStore
 } from "./context";
-import {
-  type ClickedRun,
-  findPrintedText,
-  type PageRun,
-  printedTexts
-} from "./previewText";
-import { findPrintedValue, valueTargets } from "./valueTargets";
+import { type PageClick, resolveClick } from "./previewClick";
+import { fillPrintedTexts, printedTexts } from "./previewText";
 
 const PreviewPages = lazy(() => import("./PreviewPages"));
 
@@ -36,6 +35,7 @@ const PREVIEW_DEBOUNCE_MS = 500;
 export function TemplatePreview({ previewPath }: { previewPath: string }) {
   const {
     blocks,
+    sections,
     theme,
     settings,
     headerSectionId,
@@ -53,21 +53,29 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
   const labelSizeId = useEditorStore((s) => s.labelSizeId);
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const urlRef = useRef<string | null>(null);
+  const [notice, setNotice] = useState<"failed" | "figure" | null>(null);
+  // What each PDF was drawn from: the shown one can be older than the draft.
+  const drawnFrom = useRef(
+    new Map<string, Pick<DocumentTemplate, "blocks" | "settings">>()
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `previewNonce` is a manual retrigger — bumped by the toolbar refresh button to re-run the fetch.
   useEffect(() => {
     const controller = new AbortController();
     const handle = setTimeout(async () => {
-      // No figure the record does not say reaches a PDF; the field shows why.
+      // No figure the record does not say reaches a PDF; the field shows why. A
+      // locked record prints what it saved, whatever the draft says.
       if (
+        !document?.locked &&
         draftProblems({ documentType, document, blocks, settings }).some(
           isFigureProblem
         )
       ) {
         setIsLoading(false);
+        setNotice("figure");
         return;
       }
+      setNotice(null);
       setIsLoading(true);
       try {
         const formData = new FormData();
@@ -85,14 +93,22 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
           body: formData,
           signal: controller.signal
         });
-        if (!response.ok) return;
+        if (!response.ok) {
+          setNotice("failed");
+          logger.error("The preview could not be rendered", {
+            status: response.status
+          });
+          return;
+        }
         const blob = await response.blob();
         const nextUrl = URL.createObjectURL(blob);
-        if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-        urlRef.current = nextUrl;
+        drawnFrom.current.set(nextUrl, { blocks, settings });
         setUrl(nextUrl);
       } catch (error) {
-        if (!controller.signal.aborted) logger.error("Error", { error: error });
+        if (!controller.signal.aborted) {
+          setNotice("failed");
+          logger.error("Error", { error: error });
+        }
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
       }
@@ -120,43 +136,72 @@ export function TemplatePreview({ previewPath }: { previewPath: string }) {
     notes
   ]);
 
-  // Revoke the last object URL on unmount.
-  useEffect(
-    () => () => {
-      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    },
-    []
-  );
+  useEffect(() => {
+    const urls = drawnFrom.current;
+    return () => {
+      for (const url of urls.keys()) URL.revokeObjectURL(url);
+    };
+  }, []);
 
-  const onTextClick = (lines: PageRun[][], clicked: ClickedRun) => {
-    const texts = printedTexts(documentType, blocks, settings);
-    if (documentValues) {
-      const value = findPrintedValue(
-        lines,
-        clicked,
-        valueTargets(documentType, blocks, settings, documentValues),
-        texts.map((text) => text.text).filter((text) => !text.includes("{"))
-      );
-      if (value) {
-        focusText(value.scope, value.key, true);
-        return true;
+  // The file on screen and the newest stay; any in between never showed. Read the
+  // newest from the map: this runs from a draw that started before it arrived.
+  const onShown = (shown: string) => {
+    setNotice((current) => (current === "failed" ? null : current));
+    const newest = [...drawnFrom.current.keys()].at(-1);
+    for (const drawn of drawnFrom.current.keys()) {
+      if (drawn !== shown && drawn !== newest) {
+        URL.revokeObjectURL(drawn);
+        drawnFrom.current.delete(drawn);
       }
     }
-    const hit = findPrintedText(lines, clicked, texts);
-    if (hit) focusText(hit.scope, hit.key, true);
-    return hit !== null;
+  };
+
+  const onTextClick = (click: PageClick) => {
+    const drawn = drawnFrom.current.get(click.file);
+    if (!drawn) return false;
+    const words = printedTexts(documentType, drawn.blocks, drawn.settings, {
+      content: (id) => sections.find((section) => section.id === id)?.content,
+      headerSectionId,
+      footerSectionId
+    });
+    const hit = resolveClick(
+      click,
+      documentType,
+      documentValues
+        ? fillPrintedTexts(words, documentValues, drawn.settings.valueEdits)
+        : words
+    );
+    if (hit) focusText(hit.scope, hit.key, hit.exact);
+    return hit?.exact ?? false;
   };
 
   return (
     <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden">
+      {notice && !isLoading && (
+        <p className="mb-2 shrink-0 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {notice === "figure" ? (
+            <Trans>
+              This preview is paused: a text changes a figure. Save shows which.
+            </Trans>
+          ) : (
+            <Trans>
+              The preview could not be drawn. It shows the last one that was.
+            </Trans>
+          )}
+        </p>
+      )}
       {url && (
-        <Suspense fallback={null}>
-          <PreviewPages
-            file={url}
-            onTextClick={onTextClick}
-            keepMark={pointedAtPage}
-          />
-        </Suspense>
+        <div className="min-h-0 flex-1">
+          <Suspense fallback={null}>
+            <PreviewPages
+              file={url}
+              onTextClick={onTextClick}
+              onDrawFailed={() => setNotice("failed")}
+              onShown={onShown}
+              keepMark={pointedAtPage}
+            />
+          </Suspense>
+        </div>
       )}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
