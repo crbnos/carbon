@@ -65,7 +65,7 @@ jobs:
       - name: Committed types match the migrations
         run: |
           files="packages/database/src/types.ts packages/database/src/constants.ts"
-          if ! git diff --quiet -- $files; then
+          if ! git diff --quiet -- $files || [ -n "$(git ls-files --others -- $files)" ]; then
             git --no-pager diff --stat -- $files
             git --no-pager diff -- $files | head -200
             echo "::error::The committed database types do not match the migrations. Run pnpm db:migrate (or pnpm generate:types against a migrated database) and commit packages/database/src/types.ts and constants.ts." >&2

@@ -180,7 +180,7 @@ pull_images() {
 # cache. A failure is not fatal: the first real boot does the same work.
 bake_database() {
   echo "cloud-dev: booting the stack once to migrate and seed the database and warm Vite"
-  local log="$HOME/.carbon/logs/bake.log" jar pid ok=0 started=$SECONDS
+  local log="$HOME/.carbon/logs/bake.log" jar url pid ok=0 started=$SECONDS
   mkdir -p "$HOME/.carbon/logs"
   CARBON_DEV_APPS=erp CARBON_DEV_YES=1 packages/dev/bin/crbn up --no-portless --no-regen \
     >"$log" 2>&1 < /dev/null &
@@ -192,7 +192,8 @@ bake_database() {
   done
   jar=$(mktemp)
   if curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 300 -d email=test@carbon.ms http://localhost:3000/login &&
-     curl -sf -o /dev/null -L -c "$jar" -b "$jar" --max-time 300 http://localhost:3000/x; then
+     url=$(curl -sf -o /dev/null -L -w '%{url_effective}' -c "$jar" -b "$jar" --max-time 300 http://localhost:3000/x) &&
+     [[ $url != */login* ]]; then
     ok=1
   fi
   rm -f "$jar"
@@ -275,7 +276,8 @@ else
           jar=$(mktemp)
           if curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 600 \
                -d email=test@carbon.ms http://localhost:3000/login \
-             && curl -sf -o /dev/null -L -c "$jar" -b "$jar" --max-time 600 http://localhost:3000/x; then
+             && url=$(curl -sf -o /dev/null -L -w '%{url_effective}' -c "$jar" -b "$jar" --max-time 600 http://localhost:3000/x) \
+             && [[ $url != */login* ]]; then
             echo "cloud-dev: app page served (GET /x as test@carbon.ms)"
           else
             echo "cloud-dev: could not open /x as test@carbon.ms"

@@ -431,7 +431,10 @@ export async function up(opts: UpOpts = {}) {
   process.env.CRBN_STACK_STATE = stateDir;
   // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
   // stale marker that would hold every request for 120 s.
-  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
+  if (!borrowSlug) {
+    rmSync(asleepFile(stateDir), { force: true });
+    rmSync(bootingFile(stateDir), { force: true });
+  }
   const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
   const hibernates =
     opts.hibernate !== false &&
