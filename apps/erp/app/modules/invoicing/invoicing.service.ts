@@ -13434,16 +13434,13 @@ export function postPaymentTransaction(
         invoice.currencyCode !== payment.currencyCode
       )
         throw new Error("Invoice party/currency does not match payment");
-      if (
-        invoice.status !==
-        (isReimbursement
-          ? "Posted"
-          : isRefund
-            ? "Posted"
-            : isAR
-              ? "Submitted"
-              : "Open")
-      ) {
+      const payableStatuses =
+        isReimbursement || isRefund
+          ? ["Posted"]
+          : isAR
+            ? ["Submitted", "Partially Paid", "Overdue"]
+            : ["Open", "Partially Paid", "Overdue"];
+      if (!payableStatuses.includes(invoice.status)) {
         throw new Error(
           `Cannot settle invoice ${invoice.id} in status ${invoice.status}`
         );

@@ -4687,3 +4687,13 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
+
+## Filtered payment document selections must clear their hidden IDs
+
+**Context:** Browser testing a new supplier payment switched to a refund after its PO advance was exhausted.
+
+**Problem:** Filtering the PO out of the combobox options left its controlled value and hidden purchaseOrderId intact, so a blank-looking picker still submitted the old scope.
+
+**Rule:** Reconcile controlled selections with changing option eligibility, and verify both the visible placeholder and submitted hidden values. Preserve saved historical links explicitly.
+
+**Applies to:** Payment deposit/refund document pickers and other forms whose choices depend on type, currency or party.
