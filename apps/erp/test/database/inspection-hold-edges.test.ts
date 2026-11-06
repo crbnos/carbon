@@ -1201,7 +1201,11 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
           postReceipt
         )
       );
-      expect(voided.error).not.toBeNull();
+      // Refused as the person's refusal, in the hold's words.
+      expect(voided.error?.status).toBe(400);
+      expect(voided.error?.message).toMatch(
+        /^Cannot void: .* is held for inspection in /
+      );
       expect(await untrackedAt(unitOf("share"))).toBe(10);
     },
     60_000
@@ -1253,8 +1257,10 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       expect(closed.error).toBeNull();
       // 20 received, 4 written off: the 6 accepted and the second lot's 10 stay.
       expect(await untrackedAt(unitOf("cap"))).toBe(16);
-      // All of the remainder was there: no shortfall to report.
-      expect(closed.data?.warning).toBeUndefined();
+      // 12 set to Scrap, the lot held 4: the close says so.
+      expect(closed.data?.warning).toMatch(
+        /^4 of 12 set to Scrap written off: the lot holds only 4 rejected\.$/
+      );
     },
     60_000
   );
@@ -1284,7 +1290,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
       expect(closed.error).toBeNull();
       // 3 written off: the second lot's 4 stay, and the close says so.
       expect(await untrackedAt(unitOf("pa"))).toBe(4);
-      expect(closed.data?.warning).toMatch(/^3 of 4 /);
+      expect(closed.data?.warning).toMatch(/^3 of 4 set to Scrap written off: 1 is not in /);
     },
     60_000
   );

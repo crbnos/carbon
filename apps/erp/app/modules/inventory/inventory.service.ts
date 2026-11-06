@@ -5,6 +5,7 @@
 import {
   InvalidInputError,
   NotFoundError,
+  RAISED_EXCEPTION,
   ServerFnError
 } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
@@ -13754,6 +13755,23 @@ export async function lockPostedReceipt(
 }
 
 /**
+ * Runs a void's transaction and turns the hold guard's refusal (a RAISE in our
+ * SQL, P0001) into the caller's refusal, so the person reads why ("… is held
+ * for inspection in …") instead of "Failed to void receipt".
+ */
+async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    const e = error as { code?: unknown; message?: unknown } | null;
+    if (e?.code === RAISED_EXCEPTION && typeof e.message === "string") {
+      throw new InvalidInputError(`Cannot void: ${e.message}`);
+    }
+    throw error;
+  }
+}
+
+/**
  * Refuses the void when an inspection of the receipt rejected an untracked
  * lot, or marked one Partial. The reject route writes that lot off; the void
  * would then take the same stock out a second time. A Partial lot's remainder
@@ -14167,191 +14185,195 @@ export async function postReceipt(
 
         // A sales return opens no lot, so its void runs with the hold guard on:
         // it cannot take what a purchase receipt's lot holds in the unit.
-        await db.transaction().execute(async (trx) => {
-          await lockPostedReceipt(trx, companyId, receiptId);
-          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-          await assertReceivedStockOnHand(
-            trx,
-            companyId,
-            reversingItemLedger.map(toReversingRow)
-          );
-          // Refuse to void when this receipt's cost layers were already
-          // (partially) consumed — the returned stock moved on (dispositioned,
-          // sold, scrapped), so reversing the full receipt would drive stock
-          // negative and double-count COGS. The remainder is a manual
-          // inventory adjustment, not a void.
-          const receiptLayers = await trx
-            .selectFrom("costLedger")
-            .select(["quantity", "remainingQuantity"])
-            .where("documentId", "=", receiptId)
-            .where("documentType", "=", "Sales Return Receipt")
-            .where("companyId", "=", companyId)
-            .forUpdate()
-            .execute();
-          const consumed = receiptLayers.some(
-            (layer) =>
-              Number(layer.quantity) > 0 &&
-              Number(layer.remainingQuantity) < Number(layer.quantity)
-          );
-          if (consumed) {
-            throw new InvalidInputError(
-              "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
-            );
-          }
-
-          // Service and Warranty lines: the jobs this receipt created are
-          // cancelled and their assets go back In Service. The serials stay
-          // Consumed (the entity reset below).
-          // Only the lines THIS receipt received: a line it carried at 0
-          // was received (and its job opened) by another receipt.
-          await voidServiceJobsForReturn(trx, {
-            companyId,
-            userId,
-            salesReturnOrderLineIds: [...receivedByLine.entries()]
-              .filter(([, quantity]) => quantity > 0)
-              .map(([lineId]) => lineId)
-          });
-
-          if (reversingItemLedger.length > 0) {
-            await trx
-              .insertInto("itemLedger")
-              .values(reversingItemLedger)
-              .execute();
-          }
-
-          if (reversingJournalLines.length > 0) {
-            const journalEntryId = await sequence.getNextSequence(
+        await refusingHeldStock(() =>
+          db.transaction().execute(async (trx) => {
+            await lockPostedReceipt(trx, companyId, receiptId);
+            await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+            await assertReceivedStockOnHand(
               trx,
-              "journalEntry",
-              companyId
+              companyId,
+              reversingItemLedger.map(toReversingRow)
             );
-            const journalResult = await trx
-              .insertInto("journal")
-              .values({
-                journalEntryId,
-                accountingPeriodId,
-                description: `VOID Sales Return Receipt ${receiptHeader.receiptId}`,
-                postingDate: today,
-                companyId,
-                sourceType: "Sales Return Receipt",
-                status: postingStatus,
-                postedAt: datetime.timestamp(),
-                postedBy: userId,
-                createdBy: userId
-              })
-              .returning(["id"])
-              .executeTakeFirstOrThrow();
-
-            await trx
-              .insertInto("journalLine")
-              .values(
-                reversingJournalLines.map((line) => ({
-                  ...line,
-                  journalId: journalResult.id
-                }))
-              )
+            // Refuse to void when this receipt's cost layers were already
+            // (partially) consumed — the returned stock moved on (dispositioned,
+            // sold, scrapped), so reversing the full receipt would drive stock
+            // negative and double-count COGS. The remainder is a manual
+            // inventory adjustment, not a void.
+            const receiptLayers = await trx
+              .selectFrom("costLedger")
+              .select(["quantity", "remainingQuantity"])
+              .where("documentId", "=", receiptId)
+              .where("documentType", "=", "Sales Return Receipt")
+              .where("companyId", "=", companyId)
+              .forUpdate()
               .execute();
-          }
+            const consumed = receiptLayers.some(
+              (layer) =>
+                Number(layer.quantity) > 0 &&
+                Number(layer.remainingQuantity) < Number(layer.quantity)
+            );
+            if (consumed) {
+              throw new InvalidInputError(
+                "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
+              );
+            }
 
-          await trx
-            .updateTable("costLedger")
-            .set({ remainingQuantity: 0 })
-            .where("documentId", "=", receiptId)
-            .where("documentType", "=", "Sales Return Receipt")
-            .where("companyId", "=", companyId)
-            .execute();
-
-          const returnLineById = indexBy(
-            returnLinesVoid.data ?? [],
-            (line) => line.id
-          );
-          await updateRowsById(
-            trx,
-            "salesReturnOrderLine",
-            companyId,
-            [...receivedByLine].flatMap(([lineId, received]) => {
-              const line = returnLineById.get(lineId);
-              if (!line) return [];
-              return [
-                {
-                  id: lineId,
-                  data: {
-                    quantityReceived: Math.max(
-                      0,
-                      Number(line.quantityReceived ?? 0) - received
-                    ),
-                    updatedBy: userId
-                  }
-                }
-              ];
-            })
-          );
-
-          await refreshSalesReturnOrderStatus(
-            trx,
-            salesReturnOrderId,
-            companyId,
-            userId
-          );
-
-          const voidActivity = await trx
-            .insertInto("trackedActivity")
-            .values({
-              type: "Void Receipt",
-              sourceDocument: "Receipt",
-              sourceDocumentId: receiptId,
-              sourceDocumentReadableId: receiptHeader.receiptId,
-              attributes: {
-                "Sales Return Order": salesReturnOrderId,
-                Receipt: receiptId,
-                Employee: userId
-              },
+            // Service and Warranty lines: the jobs this receipt created are
+            // cancelled and their assets go back In Service. The serials stay
+            // Consumed (the entity reset below).
+            // Only the lines THIS receipt received: a line it carried at 0
+            // was received (and its job opened) by another receipt.
+            await voidServiceJobsForReturn(trx, {
               companyId,
-              createdBy: userId,
-              createdAt: today
-            })
-            .returning(["id"])
-            .execute();
-          const voidActivityId = voidActivity[0]?.id;
+              userId,
+              salesReturnOrderLineIds: [...receivedByLine.entries()]
+                .filter(([, quantity]) => quantity > 0)
+                .map(([lineId]) => lineId)
+            });
 
-          const receiptLineTrackingEntities = receiptLineTracking.data ?? [];
-          await updateRowsById(
-            trx,
-            "trackedEntity",
-            companyId,
-            receiptLineTrackingEntities.map((entity) => ({
-              id: entity.id,
-              data: { status: "Consumed" }
-            }))
-          );
-          if (voidActivityId) {
-            const activityRows = receiptLineTrackingEntities.map((entity) => ({
-              trackedActivityId: voidActivityId,
-              trackedEntityId: entity.id,
-              quantity: entity.quantity ?? 0,
-              companyId,
-              createdBy: userId,
-              createdAt: today
-            }));
-            for (const rows of chunked(activityRows)) {
+            if (reversingItemLedger.length > 0) {
               await trx
-                .insertInto("trackedActivityInput")
-                .values(rows)
+                .insertInto("itemLedger")
+                .values(reversingItemLedger)
                 .execute();
             }
-          }
 
-          await trx
-            .updateTable("receipt")
-            .set({
-              status: "Voided",
-              updatedAt: today,
-              updatedBy: userId
-            })
-            .where("id", "=", receiptId)
-            .where("companyId", "=", companyId)
-            .execute();
-        });
+            if (reversingJournalLines.length > 0) {
+              const journalEntryId = await sequence.getNextSequence(
+                trx,
+                "journalEntry",
+                companyId
+              );
+              const journalResult = await trx
+                .insertInto("journal")
+                .values({
+                  journalEntryId,
+                  accountingPeriodId,
+                  description: `VOID Sales Return Receipt ${receiptHeader.receiptId}`,
+                  postingDate: today,
+                  companyId,
+                  sourceType: "Sales Return Receipt",
+                  status: postingStatus,
+                  postedAt: datetime.timestamp(),
+                  postedBy: userId,
+                  createdBy: userId
+                })
+                .returning(["id"])
+                .executeTakeFirstOrThrow();
+
+              await trx
+                .insertInto("journalLine")
+                .values(
+                  reversingJournalLines.map((line) => ({
+                    ...line,
+                    journalId: journalResult.id
+                  }))
+                )
+                .execute();
+            }
+
+            await trx
+              .updateTable("costLedger")
+              .set({ remainingQuantity: 0 })
+              .where("documentId", "=", receiptId)
+              .where("documentType", "=", "Sales Return Receipt")
+              .where("companyId", "=", companyId)
+              .execute();
+
+            const returnLineById = indexBy(
+              returnLinesVoid.data ?? [],
+              (line) => line.id
+            );
+            await updateRowsById(
+              trx,
+              "salesReturnOrderLine",
+              companyId,
+              [...receivedByLine].flatMap(([lineId, received]) => {
+                const line = returnLineById.get(lineId);
+                if (!line) return [];
+                return [
+                  {
+                    id: lineId,
+                    data: {
+                      quantityReceived: Math.max(
+                        0,
+                        Number(line.quantityReceived ?? 0) - received
+                      ),
+                      updatedBy: userId
+                    }
+                  }
+                ];
+              })
+            );
+
+            await refreshSalesReturnOrderStatus(
+              trx,
+              salesReturnOrderId,
+              companyId,
+              userId
+            );
+
+            const voidActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Void Receipt",
+                sourceDocument: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentReadableId: receiptHeader.receiptId,
+                attributes: {
+                  "Sales Return Order": salesReturnOrderId,
+                  Receipt: receiptId,
+                  Employee: userId
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today
+              })
+              .returning(["id"])
+              .execute();
+            const voidActivityId = voidActivity[0]?.id;
+
+            const receiptLineTrackingEntities = receiptLineTracking.data ?? [];
+            await updateRowsById(
+              trx,
+              "trackedEntity",
+              companyId,
+              receiptLineTrackingEntities.map((entity) => ({
+                id: entity.id,
+                data: { status: "Consumed" }
+              }))
+            );
+            if (voidActivityId) {
+              const activityRows = receiptLineTrackingEntities.map(
+                (entity) => ({
+                  trackedActivityId: voidActivityId,
+                  trackedEntityId: entity.id,
+                  quantity: entity.quantity ?? 0,
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today
+                })
+              );
+              for (const rows of chunked(activityRows)) {
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values(rows)
+                  .execute();
+              }
+            }
+
+            await trx
+              .updateTable("receipt")
+              .set({
+                status: "Voided",
+                updatedAt: today,
+                updatedBy: userId
+              })
+              .where("id", "=", receiptId)
+              .where("companyId", "=", companyId)
+              .execute();
+          })
+        );
 
         return { success: true };
       }
@@ -14686,298 +14708,302 @@ export async function postReceipt(
           ? await getCurrentAccountingPeriod(companyId, db, today)
           : null;
 
-      await db.transaction().execute(async (trx) => {
-        await lockPostedReceipt(trx, companyId, receiptId);
-        await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-        await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
-        await assertReceivedStockOnHand(
-          trx,
-          companyId,
-          reversingItemLedger.map(toReversingRow)
-        );
-        // Its open inspection lots close first: a cancelled lot holds nothing,
-        // so the reversal below takes this receipt's stock with the hold guard
-        // on, and cannot take what another receipt's lot holds in the unit.
-        await withInspectionRelease(trx, () =>
-          trx
-            .updateTable("inspection")
-            .set({
-              status: "Cancelled",
-              updatedBy: userId,
-              updatedAt: datetime.timestamp()
-            })
-            .where("companyId", "=", companyId)
-            .where("sourceDocument", "=", "Receipt")
-            .where("sourceDocumentId", "=", receiptId)
-            .where("status", "in", ["Pending", "In Progress"])
-            .execute()
-        );
-        // The cost layers this receipt wrote. Without this, a voided
-        // receipt's layer stayed open and later issues consumed stock that
-        // was never there.
-        const receiptCostLedger = await trx
-          .selectFrom("costLedger")
-          .select([
-            "id",
-            "itemId",
-            "quantity",
-            "remainingQuantity",
-            "cost",
-            "supplierId",
-            "trackedEntityId",
-            "projectId"
-          ])
-          .where("documentId", "=", receiptId)
-          .where("documentType", "=", "Purchase Receipt")
-          .where("adjustment", "=", false)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .execute();
-        const costLedgerPlan = planReceiptVoidCostLedger(
-          receiptCostLedger.map((row) => ({
-            ...row,
-            quantity: Number(row.quantity),
-            remainingQuantity: Number(row.remainingQuantity),
-            cost: Number(row.cost)
-          }))
-        );
-        if (costLedgerPlan.consumed) {
-          throw new InvalidInputError(
-            "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
-          );
-        }
-        // The receipt's units leave an Average item at the cost they came
-        // in at. Before the reversing item ledger rows: on-hand as it stood.
-        await applyAverageCostChanges(trx, {
-          companyId,
-          changes: receiptCostLedger.flatMap((row) =>
-            row.itemId
-              ? [
-                  {
-                    itemId: row.itemId,
-                    quantity: -Number(row.quantity),
-                    value: -Number(row.cost)
-                  }
-                ]
-              : []
-          )
-        });
-        if (costLedgerPlan.layerIdsToClose.length > 0) {
-          await trx
-            .updateTable("costLedger")
-            .set({ remainingQuantity: 0 })
-            .where("id", "in", costLedgerPlan.layerIdsToClose)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-        if (costLedgerPlan.restoringLayers.length > 0) {
-          await trx
-            .insertInto("costLedger")
-            .values(
-              costLedgerPlan.restoringLayers.map((layer) => ({
-                itemLedgerType: "Purchase" as const,
-                costLedgerType: "Direct Cost" as const,
-                adjustment: false,
-                documentType: "Purchase Receipt" as const,
-                documentId: receiptId,
-                externalDocumentId:
-                  receiptHeader.externalDocumentId ?? undefined,
-                itemId: layer.itemId,
-                trackedEntityId: layer.trackedEntityId,
-                quantity: layer.quantity,
-                cost: layer.cost,
-                remainingQuantity: layer.quantity,
-                supplierId: layer.supplierId,
-                projectId: layer.projectId,
-                companyId,
-                postingDate: today
-              }))
-            )
-            .execute();
-        }
-
-        await fixedAssetWrites.apply(trx, companyId);
-        await updateRowsById(
-          trx,
-          "purchaseOrderLine",
-          companyId,
-          Object.entries(purchaseOrderLineUpdatesVoid).map(([id, data]) => ({
-            id,
-            data
-          }))
-        );
-
-        // Only a released order follows its lines: a void never releases an
-        // order that is closed or waiting for approval.
-        await trx
-          .updateTable("purchaseOrder")
-          .set({ status: purchaseOrderStatusVoid })
-          .where("id", "=", receiptHeader.sourceDocumentId!)
-          .where("companyId", "=", companyId)
-          .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
-          .execute();
-
-        for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
-          await trx
-            .deleteFrom("fixedAssetCipCost")
-            .where("companyId", "=", companyId)
-            .where("sourceDocumentId", "=", receiptId)
-            .where("fixedAssetId", "=", assetId)
-            .execute();
-          await trx
-            .updateTable("fixedAsset")
-            .set({ acquisitionCost, updatedBy: userId })
-            .where("id", "=", assetId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        const reversalByOriginal = new Map<string, string>();
-        if (reversingJournalLines.length > 0) {
-          const voidJournalEntryId = await sequence.getNextSequence(
+      await refusingHeldStock(() =>
+        db.transaction().execute(async (trx) => {
+          await lockPostedReceipt(trx, companyId, receiptId);
+          await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+          await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
+          await assertReceivedStockOnHand(
             trx,
-            "journalEntry",
-            companyId
-          );
-
-          const journal = await trx
-            .insertInto("journal")
-            .values({
-              journalEntryId: voidJournalEntryId,
-              accountingPeriodId,
-              description: `VOID Purchase Receipt ${receiptHeader.receiptId}`,
-              postingDate: today,
-              companyId,
-              sourceType: "Purchase Receipt",
-              status: postingStatus,
-              postedAt: datetime.timestamp(),
-              postedBy: userId,
-              createdBy: userId
-            })
-            .returning(["id"])
-            .execute();
-
-          const journalId = journal[0]!.id;
-          if (!journalId) throw new Error("Failed to insert journal");
-
-          // Ids allocated first, so each project ledger reversal row can
-          // name the line that negates its original line.
-          const reversingLineIds = await allocateJournalLineIds(
-            trx,
-            reversingJournalLines.length
-          );
-          await trx
-            .insertInto("journalLine")
-            .values(
-              reversingJournalLines.map((journalLine, index) => ({
-                ...journalLine,
-                id: reversingLineIds[index],
-                journalId
-              }))
-            )
-            .execute();
-          for (const [index, line] of originalJournalLines.entries()) {
-            reversalByOriginal.set(line.id, reversingLineIds[index]!);
-          }
-        }
-
-        if (reversingItemLedger.length > 0) {
-          await trx
-            .insertInto("itemLedger")
-            .values(reversingItemLedger)
-            .execute();
-        }
-
-        // A grouped PO line's receipt hardened its pegs: the void turns
-        // them Soft again, so the next MRP run can re-peg the open supply.
-        if (purchaseOrderLinesVoid.data.some((line) => line.planningGroupId)) {
-          await softenPegsOfItemLedger(trx, {
             companyId,
-            userId,
-            itemLedgerIds: originalItemLedger.data.map((entry) => entry.id)
-          });
-        }
-
-        // Reverse the project charges of this receipt.
-        await reverseProjectLedgerRows(trx, {
-          companyId,
-          documentType: "Purchase Receipt",
-          documentId: receiptId,
-          postingDate: today,
-          userId,
-          reversalLineIds: reversalByOriginal
-        });
-        await reverseProjectCipRows(trx, {
-          companyId,
-          userId,
-          sourceType: "Receipt",
-          sourceDocumentId: receiptId
-        });
-
-        if (trackedEntitiesVoid.length > 0) {
-          const voidActivity = await trx
-            .insertInto("trackedActivity")
-            .values({
-              type: "Void Receipt",
-              sourceDocument: "Receipt",
-              sourceDocumentId: receiptId,
-              sourceDocumentReadableId: receiptHeader.receiptId,
-              attributes: {
-                "Purchase Order": receiptHeader.sourceDocumentId,
-                Receipt: receiptId,
-                Employee: userId
-              },
-              companyId,
-              createdBy: userId,
-              createdAt: today
-            })
-            .returning(["id"])
+            reversingItemLedger.map(toReversingRow)
+          );
+          // Its open inspection lots close first: a cancelled lot holds nothing,
+          // so the reversal below takes this receipt's stock with the hold guard
+          // on, and cannot take what another receipt's lot holds in the unit.
+          await withInspectionRelease(trx, () =>
+            trx
+              .updateTable("inspection")
+              .set({
+                status: "Cancelled",
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("companyId", "=", companyId)
+              .where("sourceDocument", "=", "Receipt")
+              .where("sourceDocumentId", "=", receiptId)
+              .where("status", "in", ["Pending", "In Progress"])
+              .execute()
+          );
+          // The cost layers this receipt wrote. Without this, a voided
+          // receipt's layer stayed open and later issues consumed stock that
+          // was never there.
+          const receiptCostLedger = await trx
+            .selectFrom("costLedger")
+            .select([
+              "id",
+              "itemId",
+              "quantity",
+              "remainingQuantity",
+              "cost",
+              "supplierId",
+              "trackedEntityId",
+              "projectId"
+            ])
+            .where("documentId", "=", receiptId)
+            .where("documentType", "=", "Purchase Receipt")
+            .where("adjustment", "=", false)
+            .where("companyId", "=", companyId)
+            .forUpdate()
             .execute();
-
-          const voidActivityId = voidActivity[0]!.id;
-
-          for await (const {
-            id,
-            voidedQuantity,
-            update
-          } of trackedEntitiesVoid) {
+          const costLedgerPlan = planReceiptVoidCostLedger(
+            receiptCostLedger.map((row) => ({
+              ...row,
+              quantity: Number(row.quantity),
+              remainingQuantity: Number(row.remainingQuantity),
+              cost: Number(row.cost)
+            }))
+          );
+          if (costLedgerPlan.consumed) {
+            throw new InvalidInputError(
+              "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
+            );
+          }
+          // The receipt's units leave an Average item at the cost they came
+          // in at. Before the reversing item ledger rows: on-hand as it stood.
+          await applyAverageCostChanges(trx, {
+            companyId,
+            changes: receiptCostLedger.flatMap((row) =>
+              row.itemId
+                ? [
+                    {
+                      itemId: row.itemId,
+                      quantity: -Number(row.quantity),
+                      value: -Number(row.cost)
+                    }
+                  ]
+                : []
+            )
+          });
+          if (costLedgerPlan.layerIdsToClose.length > 0) {
             await trx
-              .updateTable("trackedEntity")
-              .set(update)
-              .where("id", "=", id)
+              .updateTable("costLedger")
+              .set({ remainingQuantity: 0 })
+              .where("id", "in", costLedgerPlan.layerIdsToClose)
               .where("companyId", "=", companyId)
               .execute();
-
-            if (voidActivityId) {
-              await trx
-                .insertInto("trackedActivityInput")
-                .values({
-                  trackedActivityId: voidActivityId,
-                  trackedEntityId: id,
-                  quantity: voidedQuantity,
+          }
+          if (costLedgerPlan.restoringLayers.length > 0) {
+            await trx
+              .insertInto("costLedger")
+              .values(
+                costLedgerPlan.restoringLayers.map((layer) => ({
+                  itemLedgerType: "Purchase" as const,
+                  costLedgerType: "Direct Cost" as const,
+                  adjustment: false,
+                  documentType: "Purchase Receipt" as const,
+                  documentId: receiptId,
+                  externalDocumentId:
+                    receiptHeader.externalDocumentId ?? undefined,
+                  itemId: layer.itemId,
+                  trackedEntityId: layer.trackedEntityId,
+                  quantity: layer.quantity,
+                  cost: layer.cost,
+                  remainingQuantity: layer.quantity,
+                  supplierId: layer.supplierId,
+                  projectId: layer.projectId,
                   companyId,
-                  createdBy: userId,
-                  createdAt: today
-                })
-                .execute();
+                  postingDate: today
+                }))
+              )
+              .execute();
+          }
+
+          await fixedAssetWrites.apply(trx, companyId);
+          await updateRowsById(
+            trx,
+            "purchaseOrderLine",
+            companyId,
+            Object.entries(purchaseOrderLineUpdatesVoid).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
+
+          // Only a released order follows its lines: a void never releases an
+          // order that is closed or waiting for approval.
+          await trx
+            .updateTable("purchaseOrder")
+            .set({ status: purchaseOrderStatusVoid })
+            .where("id", "=", receiptHeader.sourceDocumentId!)
+            .where("companyId", "=", companyId)
+            .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+            .execute();
+
+          for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
+            await trx
+              .deleteFrom("fixedAssetCipCost")
+              .where("companyId", "=", companyId)
+              .where("sourceDocumentId", "=", receiptId)
+              .where("fixedAssetId", "=", assetId)
+              .execute();
+            await trx
+              .updateTable("fixedAsset")
+              .set({ acquisitionCost, updatedBy: userId })
+              .where("id", "=", assetId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
+          const reversalByOriginal = new Map<string, string>();
+          if (reversingJournalLines.length > 0) {
+            const voidJournalEntryId = await sequence.getNextSequence(
+              trx,
+              "journalEntry",
+              companyId
+            );
+
+            const journal = await trx
+              .insertInto("journal")
+              .values({
+                journalEntryId: voidJournalEntryId,
+                accountingPeriodId,
+                description: `VOID Purchase Receipt ${receiptHeader.receiptId}`,
+                postingDate: today,
+                companyId,
+                sourceType: "Purchase Receipt",
+                status: postingStatus,
+                postedAt: datetime.timestamp(),
+                postedBy: userId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .execute();
+
+            const journalId = journal[0]!.id;
+            if (!journalId) throw new Error("Failed to insert journal");
+
+            // Ids allocated first, so each project ledger reversal row can
+            // name the line that negates its original line.
+            const reversingLineIds = await allocateJournalLineIds(
+              trx,
+              reversingJournalLines.length
+            );
+            await trx
+              .insertInto("journalLine")
+              .values(
+                reversingJournalLines.map((journalLine, index) => ({
+                  ...journalLine,
+                  id: reversingLineIds[index],
+                  journalId
+                }))
+              )
+              .execute();
+            for (const [index, line] of originalJournalLines.entries()) {
+              reversalByOriginal.set(line.id, reversingLineIds[index]!);
             }
           }
-        }
 
-        await trx
-          .updateTable("receipt")
-          .set({
-            status: "Voided",
-            updatedAt: today,
-            updatedBy: userId
-          })
-          .where("id", "=", receiptId)
-          .where("companyId", "=", companyId)
-          .execute();
-        await sql`SELECT public.refresh_receipt_inspection_status(${receiptId})`.execute(
-          trx
-        );
-      });
+          if (reversingItemLedger.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(reversingItemLedger)
+              .execute();
+          }
+
+          // A grouped PO line's receipt hardened its pegs: the void turns
+          // them Soft again, so the next MRP run can re-peg the open supply.
+          if (
+            purchaseOrderLinesVoid.data.some((line) => line.planningGroupId)
+          ) {
+            await softenPegsOfItemLedger(trx, {
+              companyId,
+              userId,
+              itemLedgerIds: originalItemLedger.data.map((entry) => entry.id)
+            });
+          }
+
+          // Reverse the project charges of this receipt.
+          await reverseProjectLedgerRows(trx, {
+            companyId,
+            documentType: "Purchase Receipt",
+            documentId: receiptId,
+            postingDate: today,
+            userId,
+            reversalLineIds: reversalByOriginal
+          });
+          await reverseProjectCipRows(trx, {
+            companyId,
+            userId,
+            sourceType: "Receipt",
+            sourceDocumentId: receiptId
+          });
+
+          if (trackedEntitiesVoid.length > 0) {
+            const voidActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Void Receipt",
+                sourceDocument: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentReadableId: receiptHeader.receiptId,
+                attributes: {
+                  "Purchase Order": receiptHeader.sourceDocumentId,
+                  Receipt: receiptId,
+                  Employee: userId
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today
+              })
+              .returning(["id"])
+              .execute();
+
+            const voidActivityId = voidActivity[0]!.id;
+
+            for await (const {
+              id,
+              voidedQuantity,
+              update
+            } of trackedEntitiesVoid) {
+              await trx
+                .updateTable("trackedEntity")
+                .set(update)
+                .where("id", "=", id)
+                .where("companyId", "=", companyId)
+                .execute();
+
+              if (voidActivityId) {
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values({
+                    trackedActivityId: voidActivityId,
+                    trackedEntityId: id,
+                    quantity: voidedQuantity,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today
+                  })
+                  .execute();
+              }
+            }
+          }
+
+          await trx
+            .updateTable("receipt")
+            .set({
+              status: "Voided",
+              updatedAt: today,
+              updatedBy: userId
+            })
+            .where("id", "=", receiptId)
+            .where("companyId", "=", companyId)
+            .execute();
+          await sql`SELECT public.refresh_receipt_inspection_status(${receiptId})`.execute(
+            trx
+          );
+        })
+      );
 
       return { success: true };
     }

@@ -59,7 +59,7 @@ export async function action(args: ActionFunctionArgs) {
   const message = ["Inventory count posted."];
   if (short.length > 0) {
     message.push(
-      `${partList(short.map(shortfall))} ${short.length === 1 ? "was" : "were"} counted short in ${short.length === 1 ? "its" : "their"} inspection unit: the lot holds more than is there. Reject writes off what is there.`
+      `${partList(short.map(shortfall))} ${short.length === 1 ? "was" : "were"} counted short in ${short.length === 1 ? "its" : "their"} inspection unit: its inspection lots hold more than is there. A Reject or an NCR's Scrap writes off only what is there.`
     );
   }
   if (movable.length > 0) {

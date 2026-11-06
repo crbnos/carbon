@@ -4873,7 +4873,8 @@ export async function closeIssue(
           draws.reduce((sum, draw) => sum + draw.quantity, 0)
         );
         const missing = round(scrap - writtenOff);
-        if (missing > EPSILON) {
+        const overRemainder = round(heldPartial.requested - scrap);
+        if (missing > EPSILON || overRemainder > EPSILON) {
           const unitName = heldPartial.storageUnitId
             ? (
                 await trx
@@ -4884,11 +4885,17 @@ export async function closeIssue(
                   .executeTakeFirst()
               )?.name
             : undefined;
-          warning = `${writtenOff} of ${scrap} rejected written off: the other ${missing} ${
-            missing === 1 ? "is" : "are"
-          } not in ${unitName ?? "the location's stock"}, or another lot holds ${
-            missing === 1 ? "it" : "them"
-          }.`;
+          const why = [
+            overRemainder > EPSILON
+              ? `the lot holds only ${scrap} rejected`
+              : null,
+            missing > EPSILON
+              ? `${missing} ${missing === 1 ? "is" : "are"} not in ${
+                  unitName ?? "the location's stock"
+                }, or another lot holds ${missing === 1 ? "it" : "them"}`
+              : null
+          ].filter(Boolean);
+          warning = `${writtenOff} of ${heldPartial.requested} set to Scrap written off: ${why.join("; ")}.`;
         }
         for (const draw of draws) {
           movements.push({
