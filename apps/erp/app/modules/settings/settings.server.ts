@@ -58,8 +58,8 @@ import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
 import {
-  getDocumentEdit,
-  getPrintedTemplate
+  getCompanyTemplate,
+  getDocumentEdit
 } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import {
@@ -94,6 +94,10 @@ import {
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
 import { fromServerFn } from "../shared/shared.service";
+import {
+  getDocumentEditRecord,
+  saveDocumentEditRow
+} from "./document-edit.service";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -1656,7 +1660,7 @@ export const getDocumentEditor = defineServiceFn({
   permission: { by: "documentType", rules: documentEditPermissions },
   async run(ctx, { documentType, documentId }) {
     const client = ctx.asCaller.supabase;
-    const record = await service.getDocumentEditRecord(
+    const record = await getDocumentEditRecord(
       client,
       ctx.company.id,
       documentType,
@@ -1670,12 +1674,7 @@ export const getDocumentEditor = defineServiceFn({
     }
     const termsField = DOCUMENT_TERMS_FIELD[documentType];
     const [template, edit, terms] = await Promise.all([
-      // `null`: the company template alone, without this document's edits.
-      getPrintedTemplate(
-        client,
-        { companyId: ctx.company.id, documentType, documentId },
-        null
-      ),
+      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
       getDocumentEdit(client, {
         companyId: ctx.company.id,
         documentType,
@@ -1714,7 +1713,7 @@ export const saveDocumentEdit = defineServiceFn({
   async run(ctx, input) {
     const { documentType, documentId } = input;
     const client = ctx.asCaller.supabase;
-    const record = await service.getDocumentEditRecord(
+    const record = await getDocumentEditRecord(
       client,
       ctx.company.id,
       documentType,
@@ -1726,15 +1725,11 @@ export const saveDocumentEdit = defineServiceFn({
     if (!record.data) {
       return ctx.error("notFound", "The document could not be found");
     }
-    if (record.data.locked) {
-      return ctx.error("rule", "This document is locked.");
-    }
 
-    const template = await getPrintedTemplate(
-      client,
-      { companyId: ctx.company.id, documentType, documentId },
-      null
-    );
+    const template = await getCompanyTemplate(client, {
+      companyId: ctx.company.id,
+      documentType
+    });
     const edit = diffDocumentEdit(documentType, template, {
       blocks: input.blocks as DocumentBlock[],
       settings: input.settings as DocumentSettings
@@ -1747,8 +1742,7 @@ export const saveDocumentEdit = defineServiceFn({
       );
     }
 
-    // Checked again inside the write: the record may lock in between.
-    const saved = await service.saveDocumentEditRow(ctx.asSystem.pg, {
+    const saved = await saveDocumentEditRow(ctx.asSystem.pg, {
       companyId: ctx.company.id,
       documentType,
       documentId,
@@ -1756,8 +1750,11 @@ export const saveDocumentEdit = defineServiceFn({
       notes: input.notes as JSONContent | null | undefined,
       userId: ctx.auditUserId
     });
-    if (saved.locked) {
+    if (saved === "locked") {
       return ctx.error("rule", "This document is locked.");
+    }
+    if (saved === "notFound") {
+      return ctx.error("notFound", "The document could not be found");
     }
     return { documentId };
   }

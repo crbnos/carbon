@@ -57,11 +57,34 @@ export async function getDocumentEdit(
   return withoutLockedValues(args.documentType, parsed.data);
 }
 
+/** The company's template for this type, the default when none is saved. */
+export async function getCompanyTemplate(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; documentType: DocumentEditType }
+): Promise<DocumentTemplate> {
+  const stored = await client
+    .from("documentTemplate")
+    .select("*")
+    .eq("companyId", args.companyId)
+    .eq("documentType", args.documentType)
+    .maybeSingle();
+  if (stored.error) {
+    logger.error("Failed to read the document template", {
+      ...args,
+      error: stored.error
+    });
+    throw new Error("The document template could not be read.");
+  }
+  return resolveTemplate(
+    args.documentType,
+    toDocumentTemplate(stored.data, args.documentType)
+  );
+}
+
 /**
- * The template one document prints with: the company's template for its type
- * (the default when none is saved), with this document's edits on top. Pass
- * `draft` to preview unsaved edits instead of the saved ones. Every document
- * renderer reads its template here, so none can forget the document's edits.
+ * The template one document prints with: the company's, with this document's
+ * edits on top. Pass `edit` to print those instead of the saved ones. Every
+ * document renderer reads its template here, so none can forget the edits.
  */
 export async function getPrintedTemplate(
   client: SupabaseClient<Database>,
@@ -70,29 +93,11 @@ export async function getPrintedTemplate(
     documentType: DocumentEditType;
     documentId: string;
   },
-  draft?: DocumentEdit | null
+  edit?: DocumentEdit | null
 ): Promise<DocumentTemplate> {
-  const [stored, edit] = await Promise.all([
-    client
-      .from("documentTemplate")
-      .select("*")
-      .eq("companyId", args.companyId)
-      .eq("documentType", args.documentType)
-      .maybeSingle(),
-    draft !== undefined ? draft : getDocumentEdit(client, args)
+  const [template, printedEdit] = await Promise.all([
+    getCompanyTemplate(client, args),
+    edit !== undefined ? edit : getDocumentEdit(client, args)
   ]);
-  if (stored.error) {
-    logger.error("Failed to read the document template", {
-      ...args,
-      error: stored.error
-    });
-    throw new Error("The document template could not be read.");
-  }
-  return applyDocumentEdit(
-    resolveTemplate(
-      args.documentType,
-      toDocumentTemplate(stored.data, args.documentType)
-    ),
-    edit
-  );
+  return applyDocumentEdit(template, printedEdit);
 }

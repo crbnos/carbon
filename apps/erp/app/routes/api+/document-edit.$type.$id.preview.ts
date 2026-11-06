@@ -11,8 +11,8 @@ import {
   validateDocumentEdit
 } from "@carbon/documents/template";
 import {
-  getDocumentEdit,
-  getPrintedTemplate
+  getCompanyTemplate,
+  getDocumentEdit
 } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -46,8 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const draft = parseDraft(formData);
     if (!draft) return new Response("Invalid document", { status: 400 });
 
-    // `null`: the company template alone, to diff the draft against.
-    const template = await getPrintedTemplate(client, key, null);
+    const template = await getCompanyTemplate(client, key);
     edit = diffDocumentEdit(documentType, template, draft);
     const problems = validateDocumentEdit(documentType, template, edit).filter(
       (problem) => isDownload || isFigureProblem(problem)
@@ -61,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const response = await renderDocumentWithEdit(client, {
+    return await renderDocumentWithEdit(client, {
       documentType,
       documentId,
       companyId,
@@ -69,13 +68,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       locale: getPreferenceHeaders(request).locale,
       edit
     });
-    if (!isDownload) return response;
-    const headers = new Headers(response.headers);
-    headers.set(
-      "Content-Disposition",
-      (headers.get("Content-Disposition") ?? "").replace("inline", "attachment")
-    );
-    return new Response(response.body, { status: response.status, headers });
   } catch (error) {
     if (error instanceof Response) throw error;
     logger.error("Failed to render the document preview", {

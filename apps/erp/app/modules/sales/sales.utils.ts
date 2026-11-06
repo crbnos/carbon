@@ -1008,46 +1008,6 @@ export function priceListOverrideScopes(
   return [];
 }
 
-/**
- * Which line of a copied quote came from which line of the original. The copy
- * reports no ids, so lines pair by what they hold. Identical lines are left out,
- * since a row's changed value must never land on the wrong row.
- */
-export function pairCopiedQuoteLines(
-  lines: readonly {
-    id: string | null;
-    quoteId: string | null;
-    itemId: string | null;
-    description: string | null;
-    customerPartId: string | null;
-  }[],
-  fromQuoteId: string,
-  toQuoteId: string
-): Map<string, string> {
-  const idsBySignature = (quoteId: string) => {
-    const ids = new Map<string, string[]>();
-    for (const line of lines) {
-      if (line.quoteId !== quoteId || !line.id) continue;
-      const signature = JSON.stringify([
-        line.itemId,
-        line.description,
-        line.customerPartId
-      ]);
-      ids.set(signature, [...(ids.get(signature) ?? []), line.id]);
-    }
-    return ids;
-  };
-  const copies = idsBySignature(toQuoteId);
-  const pairs = new Map<string, string>();
-  for (const [signature, [id, ...others]] of idsBySignature(fromQuoteId)) {
-    const [copy, ...otherCopies] = copies.get(signature) ?? [];
-    if (id && copy && others.length === 0 && otherCopies.length === 0) {
-      pairs.set(id, copy);
-    }
-  }
-  return pairs;
-}
-
 // The customer portal is an open link: anyone holding it sees what it shows.
 // It serves photos and PDFs recorded on a job's steps, never CAD models or
 // drawings, which can be export-controlled. SVG is left out because it can

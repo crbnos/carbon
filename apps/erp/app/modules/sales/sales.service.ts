@@ -173,7 +173,6 @@ import { getEmployeeJob } from "~/modules/people/people.service";
 import { generateTimeAndMaterialsItems } from "~/modules/projects/project-posting";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
-  copyDocumentEdit,
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
@@ -294,7 +293,6 @@ import {
   decideRecalcPricing,
   getDefaultRentalRates,
   getEffectiveDefaultMarkups,
-  pairCopiedQuoteLines,
   priceListOverrideScopes,
   priceOverrideScopeError,
   QUOTE_BASE_PRICE_SOURCES,
@@ -447,7 +445,7 @@ export async function copyQuote(
     userId: string;
   }
 ) {
-  const copy = await invokePosting(
+  return invokePosting(
     { client, db, companyId: payload.companyId, userId: payload.userId },
     "get-method",
     {
@@ -457,50 +455,6 @@ export async function copyQuote(
     productionPostings.getMethod,
     { as: productionPostings.getMethodPermission }
   );
-
-  // A revision prints like the quote it revises; a new quote starts clean.
-  const newQuoteId = (copy.data as { newQuoteId?: string } | null)?.newQuoteId;
-  if (!copy.error && payload.targetId && newQuoteId) {
-    // The revision exists already: a failed copy leaves it printing the
-    // template's words, which the user can edit again, not a failed request.
-    try {
-      await copyDocumentEdit(db, {
-        companyId: payload.companyId,
-        documentType: "quote",
-        fromId: payload.sourceId,
-        toId: newQuoteId,
-        userId: payload.userId,
-        rowIds: pairCopiedQuoteLines(
-          await db
-            .selectFrom("quoteLine")
-            .select([
-              "id",
-              "quoteId",
-              "itemId",
-              "description",
-              "customerPartId"
-            ])
-            .where("companyId", "=", payload.companyId)
-            .where("quoteId", "in", [payload.sourceId, newQuoteId])
-            .execute(),
-          payload.sourceId,
-          newQuoteId
-        )
-      });
-    } catch (error) {
-      logger.error(
-        "Failed to copy the quote's document edits to its revision",
-        {
-          companyId: payload.companyId,
-          sourceId: payload.sourceId,
-          newQuoteId,
-          error
-        }
-      );
-      return { ...copy, documentEditsCopied: false };
-    }
-  }
-  return { ...copy, documentEditsCopied: true };
 }
 
 export async function createPricingRule(

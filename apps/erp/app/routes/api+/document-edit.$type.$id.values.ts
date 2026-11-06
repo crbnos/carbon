@@ -4,8 +4,8 @@
 
 import { collectValues } from "@carbon/documents/template";
 import {
-  getDocumentEdit,
-  getPrintedTemplate
+  getCompanyTemplate,
+  getDocumentEdit
 } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   try {
     const [template, saved] = await Promise.all([
-      getPrintedTemplate(client, key, null),
+      getCompanyTemplate(client, key),
       getDocumentEdit(client, key)
     ]);
     await renderDocumentWithEdit(client, {

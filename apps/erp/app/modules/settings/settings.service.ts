@@ -61,22 +61,17 @@ import {
 } from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
-  DocumentEdit,
-  DocumentEditType,
   DocumentSectionPlacement,
   DocumentSettings,
   DocumentTemplate,
   DocumentTemplateType,
   DocumentTheme,
-  ResolvedSection,
-  ValueEdits
+  ResolvedSection
 } from "@carbon/documents/template";
 import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
-  isEmptyDocumentEdit,
-  rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -328,7 +323,6 @@ import type {
   subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
-import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -9401,167 +9395,4 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
-}
-
-/**
- * The record a document prints, for the "Edit document" modal: its readable
- * number, whether it is locked, and the notes its Notes block prints. Read with
- * the caller's client, so a record the caller cannot see is not found.
- */
-export async function getDocumentEditRecord(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  documentType: DocumentEditType,
-  documentId: string
-) {
-  const record = DOCUMENT_EDIT_RECORDS[documentType];
-  const { data, error } = await client
-    .from(record.table as "purchaseOrder")
-    .select("*")
-    .eq("id", documentId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (error || !data) return { data: null, error };
-  const row = data as unknown as Record<string, unknown>;
-  return {
-    data: {
-      label: String(row[record.readableId] ?? documentId),
-      locked: record.isLocked(row.status as string | null),
-      notes: record.notesColumn
-        ? ((row[record.notesColumn] as JSONContent | null) ?? null)
-        : null
-    },
-    error: null
-  };
-}
-
-/**
- * Save one document's edits and, when given, its notes, together. An empty edit
- * deletes the row, so the document follows the template again. Returns
- * `{ locked: true }` and writes nothing when the record is locked.
- */
-export async function saveDocumentEditRow(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    documentType: DocumentEditType;
-    documentId: string;
-    edit: DocumentEdit;
-    notes?: JSONContent | null;
-    userId: string;
-  }
-) {
-  const { companyId, documentType, documentId, edit, userId } = args;
-  const now = datetime.timestamp();
-  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
-  const record = DOCUMENT_EDIT_RECORDS[documentType];
-
-  return withTransaction(db, async (trx) => {
-    // Lock the record row while the edit is written: a finalize that runs at the
-    // same time waits for this save, or this save sees the record locked.
-    const current = await trx
-      .selectFrom(record.table as "purchaseOrder")
-      .select("status")
-      .where("id", "=", documentId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!current || record.isLocked(current.status)) return { locked: true };
-
-    if (isEmptyDocumentEdit(edit)) {
-      await trx
-        .deleteFrom("documentEdit")
-        .where("companyId", "=", companyId)
-        .where("documentType", "=", documentType)
-        .where("documentId", "=", documentId)
-        .execute();
-    } else {
-      await trx
-        .insertInto("documentEdit")
-        .values({
-          companyId,
-          documentType,
-          documentId,
-          blocks: jsonb(edit.blocks),
-          settings: jsonb(edit.settings),
-          createdBy: userId
-        })
-        .onConflict((oc) =>
-          oc.columns(["companyId", "documentType", "documentId"]).doUpdateSet({
-            blocks: jsonb(edit.blocks),
-            settings: jsonb(edit.settings),
-            updatedBy: userId,
-            updatedAt: now
-          })
-        )
-        .execute();
-    }
-
-    if (args.notes !== undefined && record.notesColumn) {
-      // The record's own notes column: the same text its page edits.
-      await trx
-        .updateTable(record.table as "purchaseOrder")
-        .set({
-          [record.notesColumn]: jsonb(args.notes ?? {}),
-          updatedBy: userId,
-          updatedAt: now
-        } as never)
-        .where("id", "=", documentId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
-    return { locked: false };
-  });
-}
-
-/**
- * Give a new copy of a document the same edits (a quote revision prints like
- * the quote it revises). Nothing happens when the source has none.
- */
-export async function copyDocumentEdit(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    documentType: DocumentEditType;
-    fromId: string;
-    toId: string;
-    userId: string;
-    /** The copy's id for each of the record's row ids. */
-    rowIds: ReadonlyMap<string, string>;
-  }
-) {
-  const source = await db
-    .selectFrom("documentEdit")
-    .select(["blocks", "settings"])
-    .where("companyId", "=", args.companyId)
-    .where("documentType", "=", args.documentType)
-    .where("documentId", "=", args.fromId)
-    .executeTakeFirst();
-  if (!source) return;
-
-  const settings = (source.settings ?? {}) as { valueEdits?: ValueEdits };
-  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
-  await db
-    .insertInto("documentEdit")
-    .values({
-      companyId: args.companyId,
-      documentType: args.documentType,
-      documentId: args.toId,
-      blocks: jsonb(source.blocks),
-      settings: jsonb(
-        settings.valueEdits
-          ? {
-              ...settings,
-              valueEdits: rewriteValueEditRowKeys(settings.valueEdits, (id) =>
-                args.rowIds.get(id)
-              )
-            }
-          : settings
-      ),
-      createdBy: args.userId
-    })
-    .onConflict((oc) =>
-      oc.columns(["companyId", "documentType", "documentId"]).doNothing()
-    )
-    .execute();
 }
