@@ -611,6 +611,10 @@ msgstr "{0}份付款"
 msgid "{0} per hour"
 msgstr "{0} 每小时"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}个问题——未发布"
@@ -1095,6 +1099,9 @@ msgstr "提供商中缺少{missingCount}个凭证"
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "缺少{missingCount}个凭证，{mismatchCount}个月的总计不匹配"
+
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr ""
 
 msgid "{name} at {station}"
 msgstr "{name} 在 {station}"
@@ -2028,6 +2035,12 @@ msgstr "项目设置（无、警告或阻止），检查采购订单行、领料
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "一个项目或一个项目及其一个元素，工单、采购订单或发票行、工时表条目或原材料领料将其成本计费到该项目。仅未开始或已开始状态下的已下达项目和可计费元素可以被选择。"
 
+msgid "A promised date is optional to finalize"
+msgstr ""
+
+msgid "A promised date is required to finalize"
+msgstr ""
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "一份日期在截断日期前的临时凭证；设置会计时，它将被期初凭证替换，之后永远无法更改。"
 
@@ -2039,6 +2052,9 @@ msgstr "每个付款到期日草拟一份采购发票，每项资产的付款对
 
 msgid "A purchase invoice is posted"
 msgstr "采购发票已过账"
+
+msgid "A purchase order cannot leave Draft or Planned until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr ""
 
 msgid "A purchase order is created"
 msgstr "采购订单已创建"
@@ -2941,6 +2957,9 @@ msgstr "添加参数（仅限程序文件）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr ""
 
 msgid "Add a requirement"
 msgstr "添加要求"
@@ -4665,6 +4684,10 @@ msgstr "您确定要删除存储类型：{0}？此操作无法撤销。"
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "您确定要删除存储单元：{0}？此操作无法撤销。"
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "您确定要删除供应商类型：{0}？此操作无法撤销。"
@@ -5988,6 +6011,9 @@ msgstr "构建基于角色的培训材料"
 msgid "Build tailored, role-based training materials"
 msgstr "构建定制的、基于角色的培训材料"
 
+msgid "Builds"
+msgstr ""
+
 msgid "Built after this step"
 msgstr "在此步骤之后构建"
 
@@ -6863,6 +6889,9 @@ msgstr "选择一个选项"
 msgid "Choose another file"
 msgstr "选择另一个文件"
 
+msgid "Choose at least one part and a supplier."
+msgstr ""
+
 msgid "Choose avatar"
 msgstr "选择头像"
 
@@ -6880,6 +6909,12 @@ msgstr "为 {unitName} 选择返还至"
 
 msgid "Choose stock to move"
 msgstr "选择要移动的库存"
+
+msgid "Choose supplier"
+msgstr ""
+
+msgid "Choose suppliers"
+msgstr ""
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
@@ -8612,6 +8647,9 @@ msgstr "创建 {0} 个值"
 msgid "Create {name}"
 msgstr "创建{name}"
 
+msgid "Create {rfqCount} RFQs"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "创建并下达"
 
@@ -8746,6 +8784,9 @@ msgstr "创建替代品"
 
 msgid "Create Revision"
 msgstr "创建修订版"
+
+msgid "Create RFQ"
+msgstr ""
 
 msgid "Create Rule"
 msgstr "创建规则"
@@ -8908,6 +8949,9 @@ msgstr "已创建库存调拨行"
 msgid "Created storage type"
 msgstr "已创建存储类型"
 
+msgid "Created supplier stage"
+msgstr ""
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "已创建供应商：{0}"
@@ -8926,6 +8970,9 @@ msgstr "在项目已下达时创建"
 
 msgid "Created work center"
 msgstr "已创建工作中心"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr ""
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "为尚未贷项的已发货数量创建供应商贷项备忘录草稿"
@@ -10211,6 +10258,9 @@ msgstr "删除供应商报价"
 
 msgid "Delete Supplier Return"
 msgstr "删除供应商退货"
+
+msgid "Delete Supplier Stage"
+msgstr ""
 
 msgid "Delete Supplier Type"
 msgstr "删除供应商类型"
@@ -11687,6 +11737,9 @@ msgstr "编辑供应商零件"
 msgid "Edit supplier process"
 msgstr "编辑 供应商工艺"
 
+msgid "Edit Supplier Stage"
+msgstr ""
+
 msgid "Edit Supplier Type"
 msgstr "编辑供应商类型"
 
@@ -12954,6 +13007,10 @@ msgid "Failed to create service: {0}"
 msgstr "创建服务失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "创建供应商失败：{0}"
 
@@ -13431,6 +13488,9 @@ msgstr "融资"
 
 msgid "Financing Terms"
 msgstr "融资条款"
+
+msgid "Find a part"
+msgstr ""
 
 msgid "Find an element"
 msgstr "查找元素"
@@ -15060,6 +15120,10 @@ msgstr "来料检验"
 
 msgid "Inbox"
 msgstr "收件箱"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr ""
 
 msgid "Include bought components"
 msgstr "包括已购零件"
@@ -23037,6 +23101,12 @@ msgstr "承诺"
 msgid "Promised Date"
 msgstr "承诺日期"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr ""
+
+msgid "Promised date required to finalize purchase orders"
+msgstr ""
+
 msgid "Properties"
 msgstr "属性"
 
@@ -23590,6 +23660,9 @@ msgstr "通过电子邮件已接受的报价单"
 
 msgid "Quote expired"
 msgstr "报价已过期"
+
+msgid "Quote for"
+msgstr ""
 
 msgid "Quote ID"
 msgstr "报价单ID"
@@ -24865,6 +24938,9 @@ msgstr "请求审批"
 msgid "Request date"
 msgstr "请求日期"
 
+msgid "Request Quote"
+msgstr ""
+
 msgid "Requested"
 msgstr ""
 
@@ -24885,6 +24961,9 @@ msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
 msgid "Require a Customer Contact and Location"
 msgstr "需要客户联系人和地点"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr ""
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "需要签名审批采购订单"
@@ -26601,6 +26680,9 @@ msgstr "全选"
 msgid "Select all jobs"
 msgstr "选择所有工单"
 
+msgid "Select all parts"
+msgstr ""
+
 msgid "Select all rows"
 msgstr "选择所有行"
 
@@ -26758,6 +26840,9 @@ msgstr "选择序列号 {0}"
 
 msgid "Select station"
 msgstr "选择工作站"
+
+msgid "Select Supplier Stage"
+msgstr ""
 
 msgid "Select Supplier Status"
 msgstr "选择供应商状态"
@@ -27442,6 +27527,9 @@ msgstr "已发货 {shippedOn}"
 msgid "Shipped <0/>"
 msgstr "已发货 <0/>"
 
+msgid "Shipped Date"
+msgstr ""
+
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "该客户已发货行项中剩余待退货的数量"
 
@@ -28119,6 +28207,12 @@ msgstr "员工要求已禁用"
 
 msgid "Staffing requirement enabled"
 msgstr "员工要求已启用"
+
+msgid "Stage"
+msgstr ""
+
+msgid "Stages"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "建立托管"
@@ -28846,6 +28940,9 @@ msgstr "供应商电子邮件设置已更新"
 
 msgid "Supplier EORI"
 msgstr "供应商EORI"
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "供应商 ID"
@@ -28991,6 +29088,17 @@ msgstr "供应商RMA编号"
 
 msgid "Supplier State and Postal Code"
 msgstr "供应商州/省和邮政编码"
+msgid "supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr ""
+
+msgid "supplier stages"
+msgstr ""
+
+msgid "Supplier Stages"
+msgstr ""
 
 msgid "Supplier Status"
 msgstr "供应商状态"
@@ -31353,6 +31461,9 @@ msgstr "这个零件已过时（无库存）。"
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "此零件已被替代并设置为仅库存 — 它补充到其备件储备下限，与需求无关。"
+
+msgid "This part only"
+msgstr ""
 
 msgid "This path only decides what runs next"
 msgstr "此路径仅决定接下来运行什么"
@@ -34014,6 +34125,9 @@ msgstr "租赁何时开始，以及是否有结束日期。"
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "供应商何时承诺交货;计划使用该日期进行入库库存到达预测。"
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr ""
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "供应商定价不再被遵守时;此日期之后将该报价转换为PO可能需要重新报价。"
 
@@ -34052,6 +34166,9 @@ msgstr "使用看板时，完整条形码将完成操作的所有数量，而不
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "当您承诺交货时;计划将其视为履行的需求到期日期。"
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr ""
 
 msgid "When your fiscal and tax years start"
 msgstr "您的会计年度和税务年度的开始时间"
@@ -34115,6 +34232,9 @@ msgstr "此行的货物在收货时在库存中的位置；如果为空，收货
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "此维护请求的来源——操作员报告、计划、条件监控触发、工单后检验；驱动维护报告中的来源分布。"
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr ""
 
 msgid "Where you are today"
 msgstr "你今天的位置"

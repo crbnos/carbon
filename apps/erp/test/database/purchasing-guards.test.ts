@@ -8,7 +8,12 @@
 // route, so the operation is what has to refuse.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
-import { sql } from "kysely";
+import {
+  getPostgresClient,
+  type KyselyDatabase
+} from "@carbon/database/client";
+import { PostgresDriver, sql } from "kysely";
+import { Pool } from "pg";
 import { expect, it, vi } from "vitest";
 import {
   connectLocalTestDatabase,
@@ -499,6 +504,500 @@ test("a supplier bank account takes only its own columns from the body", async (
       .where("id", "=", row.id)
       .executeTakeFirstOrThrow();
     expect(after.isPrimary).toBe(false);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+async function requirePromisedDate(f: Awaited<ReturnType<typeof fixture>>) {
+  await sql`
+    UPDATE "companySettings"
+    SET "requirePromisedDateToFinalizePurchaseOrder" = true
+    WHERE id = ${f.companyId}
+  `.execute(f.db);
+}
+
+test("the promised date rule refuses an order with no date", async () => {
+  const f = await fixture({ approver: null });
+  try {
+    await requirePromisedDate(f);
+
+    const result = await purchasing.finalizePurchaseOrderAndNotify(
+      f.contextAs("system"),
+      { purchaseOrderId: f.ids.order }
+    );
+
+    expect(result.error?.message).toContain("promised date");
+    expect((await f.order())?.status).toBe("Draft");
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("one promised date on the order passes the rule", async () => {
+  const f = await fixture({ approver: null });
+  try {
+    await requirePromisedDate(f);
+    await sql`
+      UPDATE "purchaseOrderDelivery" SET "receiptPromisedDate" = '2026-12-01'
+      WHERE id = ${f.ids.order}
+    `.execute(f.db);
+
+    const result = await purchasing.finalizePurchaseOrderAndNotify(
+      f.contextAs("system"),
+      { purchaseOrderId: f.ids.order }
+    );
+
+    expect(result.error).toBeNull();
+    expect((await f.order())?.status).toBe("Needs Approval");
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("the rule refuses an approval when the date was cleared", async () => {
+  const f = await fixture({
+    status: "Needs Approval",
+    approver: "system",
+    pendingRequest: true
+  });
+  try {
+    await requirePromisedDate(f);
+
+    const result = await purchasing.decidePurchaseOrderApproval(
+      f.contextAs("system"),
+      {
+        purchaseOrderId: f.ids.order,
+        approvalRequestId: f.ids.request,
+        decision: "Approved"
+      }
+    );
+
+    expect(result.error?.message).toContain("promised date");
+    expect((await f.order())?.status).toBe("Needs Approval");
+    expect((await f.requests()).map((r) => r.status)).toEqual(["Pending"]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a released order saves shipping details until it is completed", async () => {
+  const f = await fixture({ status: "To Receive" });
+  // The edit lock holds one connection while the edit runs on another.
+  const pg = getPostgresClient<KyselyDatabase>(
+    new Pool({ connectionString: process.env.SUPABASE_DB_URL, max: 3 }),
+    PostgresDriver
+  );
+  const shipping = {
+    id: "",
+    trackingNumber: "T-1",
+    shippedDate: "2026-11-02",
+    expectedReceiptDate: "2026-11-20",
+    dropShipment: false
+  };
+  try {
+    const saved = await purchasing.updatePurchaseOrderDelivery(
+      f.contextAs("system", f.companyId, pg),
+      { ...shipping, id: f.ids.order }
+    );
+    expect(saved.error).toBeNull();
+
+    const delivery = await f.db
+      .selectFrom("purchaseOrderDelivery")
+      .select(["trackingNumber", "shippedDate", "expectedReceiptDate"])
+      .where("id", "=", f.ids.order)
+      .executeTakeFirst();
+    expect(delivery).toEqual({
+      trackingNumber: "T-1",
+      shippedDate: "2026-11-02",
+      expectedReceiptDate: "2026-11-20"
+    });
+
+    await sql`
+      UPDATE "purchaseOrder" SET status = 'Completed' WHERE id = ${f.ids.order}
+    `.execute(f.db);
+    const refused = await purchasing.updatePurchaseOrderDelivery(
+      f.contextAs("system", f.companyId, pg),
+      { ...shipping, id: f.ids.order, trackingNumber: "T-2" }
+    );
+    expect(refused.error).not.toBeNull();
+  } finally {
+    await pg.destroy();
+    await f.cleanup();
+  }
+});
+
+// Rolled back: sets the role and JWT the app's real caller has, so RLS applies.
+async function asUser<T>(
+  f: Awaited<ReturnType<typeof fixture>>,
+  userId: string,
+  read: (trx: typeof f.db) => Promise<T>
+) {
+  let result: T | undefined;
+  await f.db
+    .transaction()
+    .execute(async (trx) => {
+      await sql`SELECT set_config('request.jwt.claims', ${JSON.stringify({ sub: userId, role: "authenticated" })}, true)`.execute(
+        trx
+      );
+      await sql`SET LOCAL ROLE authenticated`.execute(trx);
+      result = await read(trx);
+      throw new Error("rollback");
+    })
+    .catch((error: Error) => {
+      if (error.message !== "rollback") throw error;
+    });
+  return result as T;
+}
+
+test("only an employee of the company reads its stages", async () => {
+  const f = await fixture();
+  const portalUser = crypto.randomUUID();
+  const employee = crypto.randomUUID();
+  try {
+    await sql`
+      INSERT INTO "supplierStage" (id, name, "companyId", "createdBy")
+      VALUES (${`${f.ids.supplier}-stage`}, 'Sampling', ${f.companyId}, 'system')
+    `.execute(f.db);
+    await sql`
+      INSERT INTO "user" (id, email, "firstName", "lastName") VALUES
+        (${portalUser}, ${`${portalUser}@example.test`}, 'Portal', 'User'),
+        (${employee}, ${`${employee}@example.test`}, 'Other', 'Employee')
+    `.execute(f.db);
+    await sql`
+      INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
+        (${portalUser}, ${f.companyId}, 'supplier'),
+        (${employee}, ${f.otherCompanyId}, 'employee')
+    `.execute(f.db);
+
+    const stages = (trx: typeof f.db) =>
+      trx
+        .selectFrom("supplierStage")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+    expect(await asUser(f, portalUser, stages)).toEqual([]);
+    expect(await asUser(f, employee, stages)).toEqual([]);
+  } finally {
+    await sql`
+      DELETE FROM "user" WHERE id IN (${portalUser}, ${employee})
+    `.execute(f.db);
+    await f.cleanup();
+  }
+});
+
+test("deleting a stage clears it and leaves the supplier status", async () => {
+  const f = await fixture();
+  try {
+    const stage = `${f.ids.supplier}-stage`;
+    await sql`
+      INSERT INTO "supplierStage" (id, name, "companyId", "createdBy")
+      VALUES (${stage}, 'Sampling', ${f.companyId}, 'system')
+    `.execute(f.db);
+    await sql`
+      UPDATE "supplier" SET "supplierStageId" = ${stage}, "supplierStatus" = 'Pending'
+      WHERE id = ${f.ids.supplier}
+    `.execute(f.db);
+
+    await sql`DELETE FROM "supplierStage" WHERE id = ${stage}`.execute(f.db);
+
+    const supplier = await f.db
+      .selectFrom("supplier")
+      .select(["supplierStageId", "supplierStatus", "companyId"])
+      .where("id", "=", f.ids.supplier)
+      .executeTakeFirst();
+    expect(supplier).toEqual({
+      supplierStageId: null,
+      supplierStatus: "Pending",
+      companyId: f.companyId
+    });
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("a supplier cannot take another company's stage", async () => {
+  const f = await fixture();
+  try {
+    const stage = `${f.ids.supplier}-other-stage`;
+    await sql`
+      INSERT INTO "supplierStage" (id, name, "companyId", "createdBy")
+      VALUES (${stage}, 'Sampling', ${f.otherCompanyId}, 'system')
+    `.execute(f.db);
+
+    await expect(
+      sql`
+        UPDATE "supplier" SET "supplierStageId" = ${stage} WHERE id = ${f.ids.supplier}
+      `.execute(f.db)
+    ).rejects.toThrow();
+  } finally {
+    await f.cleanup();
+  }
+});
+
+async function secondSupplierAndSequence(
+  f: Awaited<ReturnType<typeof fixture>>
+) {
+  const second = `${f.ids.supplier}-2`;
+  await sql`
+    INSERT INTO "supplier" (id, name, "readableId", "companyId", "createdBy")
+    VALUES (${second}, 'Two', 'S2', ${f.companyId}, 'system')
+  `.execute(f.db);
+  await sql`
+    INSERT INTO "sequence" ("table", name, prefix, size, step, next, "companyId")
+    VALUES ('purchasingRfq', 'RFQ', 'RFQ', 6, 1, 0, ${f.companyId})
+    ON CONFLICT DO NOTHING
+  `.execute(f.db);
+  return second;
+}
+
+test("Request Quote makes one draft RFQ per supplier", async () => {
+  const f = await fixture();
+  try {
+    const second = await secondSupplierAndSequence(f);
+    const otherItem = `${f.ids.item}-2`;
+    await sql`
+      INSERT INTO "item" (id, "readableId", name, type, "replenishmentSystem", "defaultMethodType",
+        "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
+      VALUES (${otherItem}, 'P-2', 'Part 2', 'Part', 'Buy', 'Pull from Inventory', 'Inventory', 'EA',
+        ${f.companyId}, 'system')
+    `.execute(f.db);
+    // The second supplier sells the part in boxes of 10.
+    await sql`
+      INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
+      VALUES ('BX', 'Box', ${f.companyId}, 'system')
+    `.execute(f.db);
+    await sql`
+      INSERT INTO "supplierPart" ("itemId", "supplierId", "supplierUnitOfMeasureCode",
+        "conversionFactor", "companyId", "createdBy")
+      VALUES (${otherItem}, ${second}, 'BX', 10, ${f.companyId}, 'system')
+    `.execute(f.db);
+
+    const result = await purchasing.requestQuoteFromItem(
+      f.contextAs("system"),
+      {
+        lines: [
+          { itemId: f.ids.item, quantity: 3, supplierIds: [f.ids.supplier] },
+          { itemId: otherItem, quantity: 40, supplierIds: [second] }
+        ]
+      }
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.data?.rfqs).toHaveLength(2);
+
+    const rows = await f.db
+      .selectFrom("purchasingRfq")
+      .innerJoin(
+        "purchasingRfqSupplier",
+        "purchasingRfqSupplier.purchasingRfqId",
+        "purchasingRfq.id"
+      )
+      .innerJoin(
+        "purchasingRfqLine",
+        "purchasingRfqLine.purchasingRfqId",
+        "purchasingRfq.id"
+      )
+      .select([
+        "purchasingRfq.status",
+        "purchasingRfqSupplier.supplierId",
+        "purchasingRfqLine.itemId",
+        "purchasingRfqLine.quantity",
+        "purchasingRfqLine.purchaseUnitOfMeasureCode"
+      ])
+      .where("purchasingRfq.companyId", "=", f.companyId)
+      .orderBy("purchasingRfqLine.itemId")
+      .execute();
+    expect(rows).toEqual([
+      {
+        status: "Draft",
+        supplierId: f.ids.supplier,
+        itemId: f.ids.item,
+        quantity: [3],
+        purchaseUnitOfMeasureCode: "EA"
+      },
+      {
+        status: "Draft",
+        supplierId: second,
+        itemId: otherItem,
+        quantity: [4],
+        purchaseUnitOfMeasureCode: "BX"
+      }
+    ]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("Request Quote rounds the quantity and keeps a service at EA, 1:1", async () => {
+  const f = await fixture();
+  try {
+    await secondSupplierAndSequence(f);
+    const service = `${f.ids.item}-service`;
+    await sql`
+      INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
+      VALUES ('HR', 'Hour', ${f.companyId}, 'system')
+    `.execute(f.db);
+    await sql`
+      INSERT INTO "item" (id, "readableId", name, type, "replenishmentSystem", "defaultMethodType",
+        "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
+      VALUES (${service}, 'SV-1', 'Service', 'Service', 'Buy', 'Pull from Inventory', 'Non-Inventory',
+        'HR', ${f.companyId}, 'system')
+    `.execute(f.db);
+    await sql`
+      INSERT INTO "supplierPart" ("itemId", "supplierId", "supplierUnitOfMeasureCode",
+        "conversionFactor", "companyId", "createdBy")
+      VALUES (${service}, ${f.ids.supplier}, 'HR', 8, ${f.companyId}, 'system')
+    `.execute(f.db);
+
+    const result = await purchasing.requestQuoteFromItem(
+      f.contextAs("system"),
+      {
+        lines: [
+          { itemId: service, quantity: 2, supplierIds: [f.ids.supplier] },
+          {
+            itemId: f.ids.item,
+            quantity: 0.1 * 3,
+            supplierIds: [f.ids.supplier]
+          }
+        ]
+      }
+    );
+    expect(result.error).toBeNull();
+
+    const lines = await f.db
+      .selectFrom("purchasingRfqLine")
+      .select(["itemId", "quantity", "purchaseUnitOfMeasureCode", "conversionFactor"])
+      .where("companyId", "=", f.companyId)
+      .orderBy("order")
+      .execute();
+    expect(lines).toEqual([
+      {
+        itemId: service,
+        quantity: [2],
+        purchaseUnitOfMeasureCode: "EA",
+        conversionFactor: 1
+      },
+      {
+        itemId: f.ids.item,
+        quantity: [0.3],
+        purchaseUnitOfMeasureCode: "EA",
+        conversionFactor: 1
+      }
+    ]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("Request Quote refuses another company's location", async () => {
+  const f = await fixture();
+  try {
+    await secondSupplierAndSequence(f);
+    const foreign = `${f.ids.supplier}-location`;
+    await sql`
+      INSERT INTO "location" (id, name, "addressLine1", city, "stateProvince", "postalCode",
+        "countryCode", timezone, "companyId", "createdBy")
+      VALUES (${foreign}, 'Foreign', '1 Main', 'City', 'ST', '00000', 'US', 'UTC',
+        ${f.otherCompanyId}, 'system')
+    `.execute(f.db);
+
+    const result = await purchasing.requestQuoteFromItem(
+      f.contextAs("system"),
+      {
+        locationId: foreign,
+        lines: [
+          { itemId: f.ids.item, quantity: 1, supplierIds: [f.ids.supplier] }
+        ]
+      }
+    );
+
+    expect(result.error).not.toBeNull();
+    const rfqs = await f.db
+      .selectFrom("purchasingRfq")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .execute();
+    expect(rfqs).toEqual([]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("Request Quote reads the parts to buy from the real method tree", async () => {
+  const f = await fixture();
+  try {
+    const top = `${f.ids.item}-top`;
+    const part = `${f.ids.item}-bought`;
+    // Inserted with the triggers on: they add the make method and the item cost
+    // that the method tree joins.
+    await sql`
+      INSERT INTO "item" (id, "readableId", name, type, "replenishmentSystem", "defaultMethodType",
+        "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy") VALUES
+        (${top}, 'TOP-1', 'Top', 'Part', 'Make', 'Make to Order', 'Inventory', 'EA', ${f.companyId}, 'system'),
+        (${part}, 'BUY-1', 'Bought', 'Part', 'Buy', 'Pull from Inventory', 'Inventory', 'EA', ${f.companyId}, 'system')
+    `.execute(f.db);
+    const method = await f.db
+      .selectFrom("makeMethod")
+      .select("id")
+      .where("itemId", "=", top)
+      .executeTakeFirstOrThrow();
+    await sql`
+      INSERT INTO "methodMaterial" ("makeMethodId", "itemId", "itemType", quantity, "methodType",
+        "unitOfMeasureCode", "companyId", "createdBy")
+      VALUES (${method.id}, ${part}, 'Part', 3, 'Pull from Inventory', 'EA', ${f.companyId}, 'system')
+    `.execute(f.db);
+    await sql`
+      INSERT INTO "supplierPart" ("itemId", "supplierId", "companyId", "createdBy")
+      VALUES (${part}, ${f.ids.supplier}, ${f.companyId}, 'system')
+    `.execute(f.db);
+
+    const result = await purchasing.getRequestQuoteRows(f.contextAs("system"), {
+      itemId: top
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data?.rows).toMatchObject([
+      {
+        itemId: part,
+        quantity: 3,
+        usedIn: ["TOP-1"],
+        defaultSupplierId: f.ids.supplier
+      }
+    ]);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test("Request Quote refuses another company's supplier and creates nothing", async () => {
+  const f = await fixture();
+  try {
+    await secondSupplierAndSequence(f);
+    const foreign = `${f.ids.supplier}-foreign`;
+    await sql`
+      INSERT INTO "supplier" (id, name, "readableId", "companyId", "createdBy")
+      VALUES (${foreign}, 'Foreign', 'F1', ${f.otherCompanyId}, 'system')
+    `.execute(f.db);
+
+    const result = await purchasing.requestQuoteFromItem(
+      f.contextAs("system"),
+      {
+        lines: [
+          { itemId: f.ids.item, quantity: 1, supplierIds: [f.ids.supplier] },
+          { itemId: f.ids.item, quantity: 1, supplierIds: [foreign] }
+        ]
+      }
+    );
+
+    expect(result.error).not.toBeNull();
+    const rfqs = await f.db
+      .selectFrom("purchasingRfq")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .execute();
+    expect(rfqs).toEqual([]);
   } finally {
     await f.cleanup();
   }

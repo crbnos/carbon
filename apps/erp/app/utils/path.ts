@@ -354,6 +354,8 @@ export const path = {
       quoteLines: (quoteId: string) =>
         generatePath(`${api}/sales/quotes/${quoteId}/lines`),
       quotes: `${api}/sales/quotes`,
+      requestQuoteRows: (itemId: string) =>
+        generatePath(`${api}/purchasing/request-quote/${itemId}`),
       resourcesKpi: (key: string) =>
         generatePath(`${api}/resources/kpi/${key}`),
       rollback: (table: string, id: string) =>
@@ -437,6 +439,7 @@ export const path = {
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
       supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
+      supplierStages: `${api}/purchasing/supplier-stages`,
       supplierTypes: `${api}/purchasing/supplier-types`,
       systemStatus: `${api}/system-status`,
       tableExport: `${api}/table/export`,
@@ -1132,6 +1135,8 @@ export const path = {
       generatePath(`${x}/supplier-quote/${id}/delete`),
     deleteSupplierQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/supplier-quote/${id}/${lineId}/delete`),
+    deleteSupplierStage: (id: string) =>
+      generatePath(`${x}/purchasing/supplier-stages/delete/${id}`),
     deleteSupplierType: (id: string) =>
       generatePath(`${x}/purchasing/supplier-types/delete/${id}`),
     deleteTimecard: (id: string) =>
@@ -2059,6 +2064,7 @@ export const path = {
     newSupplierQuote: `${x}/supplier-quote/new`,
     newSupplierQuoteLine: (id: string) =>
       generatePath(`${x}/supplier-quote/${id}/new`),
+    newSupplierStage: `${x}/purchasing/supplier-stages/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTag: `${x}/settings/tags/new`,
     newTimecard: `${x}/people/timecard/new`,
@@ -2517,6 +2523,7 @@ export const path = {
     repeatRevenueRecognitionRun: (id: string) =>
       generatePath(`${x}/revenue-recognition-run/${id}/repeat`),
     reports: `${x}/accounting/reports`,
+    requestQuote: `${x}/purchasing-rfq/request-quote`,
     requiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/${id}`),
     requiredActions: `${x}/quality/required-actions`,
@@ -2820,6 +2827,9 @@ export const path = {
     supplierRoot: `${x}/supplier`,
     supplierShipping: (id: string) =>
       generatePath(`${x}/supplier/${id}/shipping`),
+    supplierStage: (id: string) =>
+      generatePath(`${x}/purchasing/supplier-stages/${id}`),
+    supplierStages: `${x}/purchasing/supplier-stages`,
     suppliers: `${x}/purchasing/suppliers`,
     supplierTax: (id: string) => generatePath(`${x}/supplier/${id}/tax`),
     supplierType: (id: string) =>

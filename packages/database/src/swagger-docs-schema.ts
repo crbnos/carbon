@@ -30759,6 +30759,159 @@ export default {
         tags: ["quoteOperationToolStep"]
       }
     },
+    "/supplierStage": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/supplierStage"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["supplierStage"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.supplierStage"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["supplierStage"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["supplierStage"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.supplierStage"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["supplierStage"]
+      }
+    },
     "/salesOrderPayment": {
       get: {
         parameters: [
@@ -59558,6 +59711,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.suppliers.fax"
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.supplierStageId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.stage"
           },
           {
             $ref: "#/parameters/select"
@@ -103678,6 +103837,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incotermLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.shippedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.expectedReceiptDate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -103797,6 +103962,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incotermLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.shippedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.expectedReceiptDate"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -103868,6 +104039,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incotermLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.shippedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.expectedReceiptDate"
           },
           {
             $ref: "#/parameters/body.purchaseOrderDelivery"
@@ -105853,6 +106030,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrders.accountManagerPhone"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrders.shippedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.expectedReceiptDate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -106054,6 +106237,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.readableId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.supplierStageId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -106185,6 +106371,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.readableId"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.supplierStageId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -106268,6 +106457,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.supplierStageId"
           },
           {
             $ref: "#/parameters/body.supplier"
@@ -117391,6 +117583,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
@@ -117729,6 +117924,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
@@ -118019,6 +118217,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
@@ -151545,6 +151746,49 @@ export default {
       },
       type: "object"
     },
+    supplierStage: {
+      required: ["id", "name", "companyId", "createdAt", "createdBy"],
+      properties: {
+        id: {
+          default: "public.id('sstg'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesOrderPayment: {
       required: ["id", "paymentComplete", "companyId"],
       properties: {
@@ -165300,6 +165544,14 @@ export default {
           type: "string"
         },
         fax: {
+          format: "text",
+          type: "string"
+        },
+        supplierStageId: {
+          format: "text",
+          type: "string"
+        },
+        stage: {
           format: "text",
           type: "string"
         }
@@ -186004,6 +186256,14 @@ export default {
         incotermLocation: {
           format: "text",
           type: "string"
+        },
+        shippedDate: {
+          format: "date",
+          type: "string"
+        },
+        expectedReceiptDate: {
+          format: "date",
+          type: "string"
         }
       },
       type: "object"
@@ -187087,6 +187347,14 @@ export default {
         accountManagerPhone: {
           format: "text",
           type: "string"
+        },
+        shippedDate: {
+          format: "date",
+          type: "string"
+        },
+        expectedReceiptDate: {
+          format: "date",
+          type: "string"
         }
       },
       type: "object"
@@ -187306,6 +187574,10 @@ export default {
         },
         readableId: {
           default: "",
+          format: "text",
+          type: "string"
+        },
+        supplierStageId: {
           format: "text",
           type: "string"
         }
@@ -192785,6 +193057,7 @@ export default {
         "kanbanLabelSize",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
+        "requirePromisedDateToFinalizePurchaseOrder",
         "includeSupplierPartFiles"
       ],
       properties: {
@@ -193274,6 +193547,11 @@ export default {
           type: "boolean"
         },
         requireCustomerContactEmail: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requirePromisedDateToFinalizePurchaseOrder: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -210254,6 +210532,57 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.supplierStage": {
+      name: "supplierStage",
+      description: "supplierStage",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/supplierStage"
+      }
+    },
+    "rowFilter.supplierStage.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierStage.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierStage.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierStage.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierStage.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierStage.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierStage.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesOrderPayment": {
       name: "salesOrderPayment",
       description: "salesOrderPayment",
@@ -225460,6 +225789,18 @@ export default {
     },
     "rowFilter.suppliers.fax": {
       name: "fax",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.suppliers.supplierStageId": {
+      name: "supplierStageId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.suppliers.stage": {
+      name: "stage",
       required: false,
       in: "query",
       type: "string"
@@ -248621,6 +248962,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderDelivery.shippedDate": {
+      name: "shippedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderDelivery.expectedReceiptDate": {
+      name: "expectedReceiptDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.pickingLists": {
       name: "pickingLists",
       description: "pickingLists",
@@ -249848,6 +250201,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrders.shippedDate": {
+      name: "shippedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrders.expectedReceiptDate": {
+      name: "expectedReceiptDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.openSalesOrderLines": {
       name: "openSalesOrderLines",
       description: "openSalesOrderLines",
@@ -250096,6 +250461,12 @@ export default {
     },
     "rowFilter.supplier.readableId": {
       name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplier.supplierStageId": {
+      name: "supplierStageId",
       required: false,
       in: "query",
       type: "string"
@@ -256683,6 +257054,12 @@ export default {
     },
     "rowFilter.companySettings.requireCustomerContactEmail": {
       name: "requireCustomerContactEmail",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder": {
+      name: "requirePromisedDateToFinalizePurchaseOrder",
       required: false,
       in: "query",
       type: "string"

@@ -1622,6 +1622,10 @@ export const terms = {
     term: msg`Supplier Status`,
     definition: msg`The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors.`
   },
+  "supplier-stage": {
+    term: msg`Supplier Stage`,
+    definition: msg`Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use.`
+  },
   "supplier-type-field": {
     term: msg`Supplier Type`,
     definition: msg`The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings.`
@@ -1761,6 +1765,14 @@ export const terms = {
   "purchase-order-delivery-promised-date": {
     term: msg`Receipt Promised Date`,
     definition: msg`When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection.`
+  },
+  "purchase-order-delivery-shipped-date": {
+    term: msg`Shipped Date`,
+    definition: msg`When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized.`
+  },
+  "purchase-order-delivery-expected-receipt-date": {
+    term: msg`Expected Receipt Date`,
+    definition: msg`When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date.`
   },
   "purchase-order-delivery-actual-date": {
     term: msg`Delivery Date`,

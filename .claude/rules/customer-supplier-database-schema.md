@@ -83,6 +83,7 @@ RLS is gated by company employee permissions (newest standardized policies in `2
 
 ## Gotchas
 - **No `invoicingContactId`** on `customer`/`supplier` — only `salesContactId`/`purchasingContactId`. Don't reintroduce it.
+- **`supplier.supplierStageId`** → `supplierStage`, a per-company list of onboarding stages (employees only). It is separate from `supplierStatus` and gates nothing.
 - **Status is asymmetric:** customer = FK table, supplier = inline enum. Don't assume a `supplierStatus` table exists.
 - **`contact.email` is nullable and not unique.** Don't assume NOT NULL or a unique constraint.
 - **`externalId` is not a column** — query `externalIntegrationMapping` (or the view's computed field).
