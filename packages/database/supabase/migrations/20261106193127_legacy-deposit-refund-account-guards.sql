@@ -2,6 +2,9 @@
 
 -- Ships these rules to databases where `authz sync` does not run after migrations yet.
 
+-- Intentional rewrite of 20261106192501: compute positive legacy-refund scope once,
+-- refuse source voids before pool locks, and exclude zero-principal memo refunds.
+-- The repeated legacy EXISTS query is replaced, not lost; account and FIFO guards remain.
 CREATE OR REPLACE FUNCTION public.prevent_invalid_deposit_refund(p_table text, p_operation text, p_new jsonb, p_old jsonb)
  RETURNS void
  LANGUAGE plpgsql
