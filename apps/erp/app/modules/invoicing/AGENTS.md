@@ -54,19 +54,16 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `replaceInvoiceSettlements` the `isReimbursement` arm targets `targetReimbursementId` ONLY and
   refuses any discount, write-off, invoice/memo target, or cash-in direction; `isRefund` is
   `!isReimbursement && cashIn !== isAR`, so a three-way party can't be misread as a refund.
-  `totalAmount` may be 0 — a payment can be a pure credit application. A supplier payment
-  with `purchaseOrderId` is a **supplier prepayment** (the AP mirror of a customer deposit,
-  booked on `supplierPrepaymentAccount`, an asset, and applied only to that order's
-  invoices); see accounting AGENTS → Supplier prepayments.
+  `totalAmount` may be 0 — a payment can be a pure credit application.
 - **`invoiceSettlement`** — source is exactly one of `paymentId`/`memoId`; target exactly one of
-  FIVE (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
-  `targetReimbursementId`, `targetPaymentId` — the last is derived by deposit-refund
-  posting, added by `20261105223836`). **`appliedAmount`, `discountAmount` and `writeOffAmount` are
+  FOUR (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
+  `targetReimbursementId` — the fourth added by `20260923231244`, which widened
+  `invoiceSettlement_target_check`). **`appliedAmount`, `discountAmount` and `writeOffAmount` are
   company BASE currency; `sourceAmount` is the exact principal in the funding source's DOCUMENT
   currency** (per the `COMMENT ON COLUMN` statements in
   `20260908021155_accounting_posting_corrections.sql`) — getting that pair backwards is a live
-  money bug. `fxGainLossAmount` stores the source carrying release versus target
-  relief; deposit-refund rows store zero and the journal books cash FX separately.
+  money bug. `fxGainLossAmount` is GENERATED
+  (`appliedAmount * (sourceExchangeRate - targetExchangeRate)`); never write it.
 - **Charge** — renamed from `cardTransaction` by `20260922195151` (tables, enums, triggers, RLS,
   sequence, and the `Card Transaction` journal-source label). Ramp-fed and **read-only in the
   ERP**: list, drawer, void (`charges{,.$id,.$id.void}.tsx`). No `chargeValidator` and no
@@ -159,7 +156,7 @@ pnpm --filter erp test                                    # the whole app's vite
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
-| `invoiceSettlement` | Applications: one source × one of five targets; base-currency reliefs + stored `fxGainLossAmount` |
+| `invoiceSettlement` | Applications: one source × one of four targets; base-currency reliefs + generated `fxGainLossAmount` |
 | `charge` / `chargeLine` | Card charges (`chargeType`: Charge/Credit/Payment/Cashback/Repayment) |
 | `reimbursement` / `reimbursementLine` / `reimbursementLineDimension` | Employee expense payable, coding lines, dimension tags |
 | `paymentTerm`, `currency`, `company` | Due-date, decimals, and base-currency resolution |
@@ -285,7 +282,3 @@ How they behave:
 - `.claude/rules/ramp-integration.md` — where `charge` and `reimbursement` rows come from
 - `.claude/rules/conventions-forms.md` — `ValidatedForm` + zod + route-action shape
 - `.claude/rules/module-files.md` — the `post-*` postings these routes call (building blocks in `invoicing.service.ts`)
-
-## Deposit and prepayment refunds
-
-A scoped refund (`paymentKind.isRefund` with `fundingScopeOf(payment)`) consumes its document's effective original advances FIFO through `allocateDepositRefund` (`@carbon/utils`). Posting derives the `invoiceSettlement.targetPaymentId` rows; callers cannot submit them. Each row uses the refund as `paymentId` and its original advance as both `sourcePaymentId` and `targetPaymentId`, preserving document principal and carrying base. These rows reduce funding availability and block voiding their source while the refund remains Posted. The refund journals each original account at carrying value and handles cash FX separately. A scoped Draft refund has no memo apply table. `getInvoiceSettlements` embeds the original payment, `PaymentApplications` links it, and `getSettlementRelatedItems` returns it for the Documents panel. Refunding and applying an advance share effective-source and tenant/party/currency validation; voiding a refund restores its sources.

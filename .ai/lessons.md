@@ -6,16 +6,6 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
-## A deposit refund must consume its original funding source
-
-**Context:** Refunding customer deposits or supplier prepayments held against a document.
-
-**Problem:** Posting an opposite cash leg on the prepayment account leaves the original advance available to pay invoices again. Using today's default account or refund rate also loses the original carrying value.
-
-**Rule:** Persist payment-target consumption in `invoiceSettlement`, cap the refund at effective remaining principal, and release each original source's account and carrying base. Post cash FX separately. Verify refund voids, exhausted sources rebuilt after cutover, and legacy cutover reads as well as the initial journal.
-
-**Applies to:** Payment posting/rebuilding, `allocateDepositRefund`, funding availability, and accounting cutover.
-
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
@@ -4580,13 +4570,3 @@ publishes it. After moving any building block, check `git diff` on
 regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
 
 **Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.
-
-## Reference images guide structure within the docs theme
-
-**Context:** A user provided a dark screenshot to illustrate an accounting journal layout.
-
-**Problem:** Copying the screenshot’s colors replaced the established documentation styling.
-
-**Rule:** Carry over the requested information structure, such as numbered events and Account/DR/CR rows, while keeping the existing site theme unless the user explicitly asks to change it.
-
-**Applies to:** Documentation layout revisions based on reference screenshots.
