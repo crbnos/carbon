@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105230630",
+  "schemaVersion": "20261106214206",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-06T09:31:33.941Z",
+  "exportedAt": "2026-11-06T21:43:47.442Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -496,10 +496,6 @@
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
-        "requirePurchaseOrderApprovalSignature",
-        "serialNumberTiming",
-        "useCalendarWeeks",
-        "kanbanLabelSize",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -510,6 +506,10 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
         "serviceLaborCostRate",
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
@@ -1249,8 +1249,8 @@
         "companyId",
         "locationId",
         "quantityOnHand",
-        "quantityNonNettable",
-        "projectId"
+        "projectId",
+        "quantityNonNettable"
       ]
     },
     {
@@ -5452,9 +5452,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
+        "projectId",
         "foundDuringCount",
-        "assignedReadableId",
-        "projectId"
+        "assignedReadableId"
       ]
     },
     {
