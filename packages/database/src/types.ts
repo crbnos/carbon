@@ -100422,6 +100422,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customerId: string | null
+          customerName: string | null
           customerReference: string | null
           customFields: Json | null
           dateDue: string | null
@@ -100435,6 +100436,7 @@ export type Database = {
           invoiceCustomerContactId: string | null
           invoiceCustomerId: string | null
           invoiceCustomerLocationId: string | null
+          invoiceCustomerName: string | null
           invoiceId: string | null
           invoiceTotal: number | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -106949,6 +106951,14 @@ export type Database = {
           unitPrice: number
         }[]
       }
+      get_sales_invoice_customer_names: {
+        Args: { company_id: string; invoice_ids: string[] }
+        Returns: {
+          customerName: string
+          id: string
+          invoiceCustomerName: string
+        }[]
+      }
       get_sales_order_lines_by_customer_id: {
         Args: { customer_id: string }
         Returns: {
@@ -107884,6 +107894,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customerId: string | null
+          customerName: string | null
           customerReference: string | null
           customFields: Json | null
           dateDue: string | null
@@ -107897,6 +107908,7 @@ export type Database = {
           invoiceCustomerContactId: string | null
           invoiceCustomerId: string | null
           invoiceCustomerLocationId: string | null
+          invoiceCustomerName: string | null
           invoiceId: string | null
           invoiceTotal: number | null
           itemType: Database["public"]["Enums"]["itemType"] | null

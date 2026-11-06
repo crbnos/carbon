@@ -81,6 +81,11 @@ export type InfiniteOptions = {
    */
   listKey?: string;
   /**
+   * Set from the registry entry's `exportOnServer`: the CSV export always
+   * runs as the background export job, never in the browser.
+   */
+  exportOnServer?: boolean;
+  /**
    * URL search params that do not define the list, for example the param
    * that opens a drawer over it. A change of one keeps the loaded pages, the
    * scroll offset and the selection. `after` is always ignored.

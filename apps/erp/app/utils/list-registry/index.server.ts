@@ -87,6 +87,11 @@ export type ListDefinition<
 > = Paging & {
   /** The list's key, for example "sales-orders". */
   key: string;
+  /**
+   * The CSV export always runs on the server (the background export job),
+   * whatever the row count: the browser never builds the file.
+   */
+  exportOnServer?: true;
   /** The loader's permission check, without `bypassRls`. */
   permission: ListPermission;
   /** The loader's query for one page. */
@@ -268,7 +273,8 @@ export function searchList<
   service,
   params: readers = {},
   rows,
-  exportValues
+  exportValues,
+  exportOnServer
 }: {
   key: string;
   permission: ListPermission;
@@ -281,9 +287,11 @@ export function searchList<
   params?: Record<string, ParamReader>;
   rows?: (rows: TRow[], context: ListRowsContext) => Promise<TOut[]>;
   exportValues?: Record<string, (row: TOut) => unknown>;
+  exportOnServer?: true;
 }): ListDefinition<TRow, TOut> {
   return {
     key,
+    ...(exportOnServer ? { exportOnServer } : {}),
     permission,
     ...paging,
     ...(rows ? { rows } : {}),
