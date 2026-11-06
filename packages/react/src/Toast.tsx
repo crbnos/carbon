@@ -4,7 +4,25 @@
 
 "use client";
 
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner, toast as sonnerToast } from "sonner";
+
+/**
+ * Sonner's `toast`, except an error stays until it is dismissed (with the
+ * close button or Escape): a 4-second error is gone before a screen reader
+ * user, or anyone reading slowly, can take it in. A caller's own `duration`
+ * still wins.
+ */
+const toast: typeof sonnerToast = Object.assign(
+  (...args: Parameters<typeof sonnerToast>) => sonnerToast(...args),
+  sonnerToast,
+  {
+    error: ((message, data) =>
+      sonnerToast.error(message, {
+        duration: Number.POSITIVE_INFINITY,
+        ...data
+      })) as typeof sonnerToast.error
+  }
+);
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 

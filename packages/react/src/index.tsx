@@ -182,6 +182,7 @@ import {
   FormHelperText,
   FormLabel
 } from "./Form";
+import { useFormControl, useInlineTriggerLabel } from "./Form/useFormControl";
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
@@ -406,7 +407,7 @@ import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
-import { isEditableTarget } from "./utils/keyboard";
+import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
   getValidChildren,
   optionLabelText,
@@ -618,6 +619,7 @@ export {
   InputOTPSlot,
   InputRightAddon,
   InputRightElement,
+  isBareKeyForAnotherControl,
   isEditableTarget,
   isInsideTopmostDialog,
   isRichTextEmpty,
@@ -796,6 +798,8 @@ export {
   toastError,
   useBotProtection,
   useEnumerableAsText,
+  useFormControl,
+  useInlineTriggerLabel,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

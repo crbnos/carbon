@@ -418,11 +418,13 @@ const EditableGaugeType =
     value,
     row,
     accessorKey,
+    label,
     onUpdate
   }: EditableTableCellComponentProps<FeatureRow>) => (
     <Combobox
       autoFocus
       isClearable
+      aria-label={label}
       className="rounded-none"
       size="sm"
       value={(value as string | null) ?? undefined}
@@ -2921,6 +2923,7 @@ export default function InspectionDocumentEditor({
       <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
         <div className="flex min-w-0 items-center gap-1 pr-2">
           <Input
+            aria-label={t`Diagram title`}
             borderless
             value={title}
             placeholder={t`Untitled Diagram`}
@@ -3188,6 +3191,7 @@ export default function InspectionDocumentEditor({
               }}
             >
               {hasPdf ? (
+                // biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave only resets in-progress pointer drag state; not a control
                 <div
                   ref={overlayRef}
                   className="relative select-none"
@@ -3581,6 +3585,7 @@ export default function InspectionDocumentEditor({
                   >
                     <VStack spacing={2} className="w-52">
                       <input
+                        aria-label={t`Annotation text`}
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
                         placeholder={t`Annotation text`}
                         value={annotationDraft.text}
@@ -3591,6 +3596,7 @@ export default function InspectionDocumentEditor({
                         }
                       />
                       <input
+                        aria-label={t`Annotation text size`}
                         type="text"
                         inputMode="numeric"
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
@@ -3669,6 +3675,7 @@ export default function InspectionDocumentEditor({
                   >
                     <VStack spacing={2} className="w-52">
                       <input
+                        aria-label={t`Annotation text`}
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
                         placeholder={t`Annotation text`}
                         value={annotationEditDraft.text}
@@ -3679,6 +3686,7 @@ export default function InspectionDocumentEditor({
                         }
                       />
                       <input
+                        aria-label={t`Annotation text size`}
                         type="text"
                         inputMode="numeric"
                         className="h-8 w-full rounded border bg-background px-2 text-xs"

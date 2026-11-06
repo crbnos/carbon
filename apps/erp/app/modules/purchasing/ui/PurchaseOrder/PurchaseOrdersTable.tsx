@@ -328,7 +328,12 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "dropShipment",
           header: t`Drop Shipment`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Drop Shipment`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -527,6 +532,7 @@ const PurchaseOrdersTable = memo(
     return (
       <>
         <Table<PurchaseOrderListItem>
+          getRowLabel={(row) => row.purchaseOrderId ?? undefined}
           count={count}
           columns={columns}
           data={data}

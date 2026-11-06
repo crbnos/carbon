@@ -444,6 +444,7 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
+  const { t } = useLingui();
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
@@ -500,6 +501,8 @@ const LineItems = ({
           return null;
         }
 
+        const lineName = line.itemReadableId ?? "";
+
         return (
           <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
@@ -520,9 +523,13 @@ const LineItems = ({
                   thumbnail beside it, pushing the description and price
                   past the card edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  onClick={() => toggleOpen(line.id!)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
@@ -569,16 +576,24 @@ const LineItems = ({
                       <motion.button
                         type="button"
                         aria-expanded={openItems.includes(line.id)}
+                        aria-controls={
+                          openItems.includes(line.id)
+                            ? `quote-line-details-${line.id}`
+                            : undefined
+                        }
+                        aria-label={
+                          openItems.includes(line.id)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
                         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
                         }}
                         transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                        <span className="sr-only">
-                          <Trans>Details</Trans>
-                        </span>
+                        <LuChevronRight size={24} aria-hidden />
                       </motion.button>
                     </HStack>
                   </div>
@@ -602,6 +617,7 @@ const LineItems = ({
             <AnimatePresence initial={false}>
               {openItems.includes(line.id) ? (
                 <motion.div
+                  id={`quote-line-details-${line.id}`}
                   key="panel"
                   initial={{ opacity: 0, height: 0, marginTop: 0 }}
                   animate={{ opacity: 1, height: "auto", marginTop: 16 }}
@@ -1683,6 +1699,7 @@ export const ErrorMessage = ({
           variants={itemVariants}
         >
           <svg
+            aria-hidden="true"
             className="absolute inset-0"
             viewBox="0 0 100 100"
             fill="none"

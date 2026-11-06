@@ -13,13 +13,19 @@ export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return (client as any)
-    .from("inspection")
-    .select(
-      "*, item(readableId, name, type, itemTrackingType), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
-    )
-    .eq("id", id)
-    .single();
+  return (
+    (client as any)
+      .from("inspection")
+      .select(
+        "*, item(readableId, name, type, itemTrackingType), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      )
+      .eq("id", id)
+      // Samples in the order they were made: an embed has no order of its own,
+      // and an UPDATE moves a row, so the grids' positions would shift.
+      .order("createdAt", { referencedTable: "inspectionSample" })
+      .order("id", { referencedTable: "inspectionSample" })
+      .single()
+  );
 }
 
 export async function getInspectionSamplingPlans(

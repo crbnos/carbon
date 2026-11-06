@@ -315,20 +315,14 @@ export function PeopleHoursModal({
             </section>
 
             <section>
-              <button
-                type="button"
-                className="flex min-h-[44px] w-full items-center justify-between px-6 py-2 text-left"
-                onClick={() => setOffDay((value) => !value)}
-              >
+              {/* The row is the switch's label: clicking anywhere toggles it
+                  and names it, without a button around the switch. */}
+              <label className="flex min-h-[44px] w-full cursor-pointer items-center justify-between px-6 py-2 text-left">
                 <span className="text-[0.9375rem]">
                   <Trans>Not working today</Trans>
                 </span>
-                <Switch
-                  checked={offDay}
-                  onClick={(e) => e.stopPropagation()}
-                  onCheckedChange={setOffDay}
-                />
-              </button>
+                <Switch checked={offDay} onCheckedChange={setOffDay} />
+              </label>
             </section>
 
             <section
@@ -507,6 +501,7 @@ export function PeopleHoursModal({
                 <Trans>Note</Trans>
               </span>
               <Textarea
+                aria-label={t`Note`}
                 value={noteDraft}
                 rows={2}
                 placeholder={t`Anything the people should know`}

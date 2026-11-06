@@ -224,7 +224,15 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
       {
         accessorKey: "invoiced",
         header: t`Invoiced`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const shipmentId = item.row.original.shipmentId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Invoiced: ${shipmentId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -418,6 +426,7 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
   return (
     <>
       <Table<(typeof data)[number]>
+        getRowLabel={(row) => row.shipmentId ?? undefined}
         data={data}
         infinite={infinite}
         columns={columns}

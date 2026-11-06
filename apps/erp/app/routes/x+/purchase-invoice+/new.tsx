@@ -20,7 +20,10 @@ import { PurchaseInvoiceForm } from "~/modules/invoicing/ui";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
+
+export const meta = newRecordMeta("Purchase Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,

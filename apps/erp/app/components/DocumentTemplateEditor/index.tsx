@@ -373,6 +373,7 @@ function EditorToolbar({
   title: string;
   canEdit: boolean;
 }) {
+  const { t } = useLingui();
   const {
     isDirty,
     isSaving,
@@ -408,7 +409,11 @@ function EditorToolbar({
               setPreviewId(value === SAMPLE_DATA_VALUE ? null : value)
             }
           >
-            <SelectTrigger size="sm" className="w-full">
+            <SelectTrigger
+              aria-label={t`Preview data`}
+              size="sm"
+              className="w-full"
+            >
               <SelectValue placeholder="Sample data" />
             </SelectTrigger>
             <SelectContent>
@@ -455,6 +460,7 @@ function EditorToolbar({
  * seeded from the company's configured label size.
  */
 function LabelSizePicker() {
+  const { t } = useLingui();
   const documentType = useEditorStore((s) => s.documentType);
   const labelSizeId = useEditorStore((s) => s.labelSizeId);
   const setLabelSizeId = useEditorStore((s) => s.setLabelSizeId);
@@ -464,7 +470,11 @@ function LabelSizePicker() {
     <div className="flex flex-col items-start gap-0.5">
       <Subheading variant="heavy">Preview size</Subheading>
       <Select value={labelSizeId} onValueChange={setLabelSizeId}>
-        <SelectTrigger size="sm" className="w-[160px]">
+        <SelectTrigger
+          aria-label={t`Preview size`}
+          size="sm"
+          className="w-[160px]"
+        >
           <SelectValue placeholder="Label size" />
         </SelectTrigger>
         <SelectContent>

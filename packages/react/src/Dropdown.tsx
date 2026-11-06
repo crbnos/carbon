@@ -15,6 +15,7 @@ import { cloneElement, forwardRef } from "react";
 import { LuCheck, LuChevronRight } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { BottomSheetTrigger } from "./BottomSheet";
+import { ariaKeyShortcuts } from "./hooks/useShortcutKeys";
 import {
   compactPart,
   MenuSheetCheckboxItem,
@@ -138,6 +139,7 @@ const DesktopDropdownMenuItem = forwardRef<
       ref={ref}
       asChild={asChild}
       data-menu-shortcut={shortcut}
+      aria-keyshortcuts={ariaKeyShortcuts(shortcut)}
       className={cn(
         "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         inset && "pl-8",
@@ -154,7 +156,12 @@ const DesktopDropdownMenuItem = forwardRef<
         <>
           {children}
           <DropdownMenuShortcut className="shrink-0 pl-4">
-            <ShortcutKey shortcut={shortcut} variant="small" className="mx-0" />
+            <ShortcutKey
+              aria-hidden
+              shortcut={shortcut}
+              variant="small"
+              className="mx-0"
+            />
           </DropdownMenuShortcut>
         </>
       )}

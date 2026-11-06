@@ -23,7 +23,7 @@ import {
   ModalTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { type RefObject, useState } from "react";
 import { LuLayers, LuTriangleAlert } from "react-icons/lu";
 import type { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -85,7 +85,7 @@ function BatchErrorSummary() {
   );
   if (!hasMemberError) return null;
   return (
-    <p className="mt-2 text-sm text-destructive">
+    <p role="alert" className="mt-2 text-sm text-destructive">
       <Trans>Fix the highlighted quantities before completing.</Trans>
     </p>
   );
@@ -100,14 +100,25 @@ export function BatchCompleteModal({
   batch,
   isCompleting,
   fetcher,
+  returnFocusRef,
   onClose
 }: {
   batch: JobOperationBatch;
   isCompleting: boolean;
   fetcher: ReturnType<typeof useFetcher>;
+  // Where focus goes on close when the control that opened the modal is gone
+  // (an item in a sheet that closed as the modal opened).
+  returnFocusRef?: RefObject<HTMLElement | null>;
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  // The modal opens from state, not a DialogTrigger, so Radix has no trigger
+  // to return focus to and it falls to <body>. Remember the opener instead.
+  const [opener] = useState(() =>
+    typeof document === "undefined"
+      ? null
+      : (document.activeElement as HTMLElement | null)
+  );
   const members = batch.operations ?? [];
   // Any member producing a batch-tracked item gets a batch-number column; its
   // WIP entity is finalized as the produced lot at completion.
@@ -174,7 +185,18 @@ export function BatchCompleteModal({
         if (!open) onClose();
       }}
     >
-      <ModalContent size="large" withCloseButton={false}>
+      <ModalContent
+        size="large"
+        withCloseButton={false}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target =
+            opener?.isConnected && opener !== document.body
+              ? opener
+              : returnFocusRef?.current;
+          target?.focus();
+        }}
+      >
         <ModalHeader>
           <ModalTitle>
             <Trans>Complete Batch</Trans>

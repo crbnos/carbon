@@ -133,6 +133,12 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
+- Every page has its own document title. A record route exports
+  `meta = ({ data }) => recordMeta(...)`, a new-record route
+  `meta = newRecordMeta("Sales Order")` and a module layout
+  `meta = moduleMeta("Sales")` (`~/utils/meta`), which titles each list and
+  settings page from its breadcrumbs. `RouteAnnouncer` reads that title aloud
+  on navigation, so a route without one is announced as the bare module.
 - A route under `/x` renders `<RecordOutlet />` from `@carbon/react`, never a plain
   `<Outlet />`. React Router keeps a page mounted when only its params change, so
   a form's default values, an editor's content or a `useState` copy would stay the

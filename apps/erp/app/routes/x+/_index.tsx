@@ -45,7 +45,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   ClaudeIcon,
@@ -80,6 +80,8 @@ const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 // The home page is always accessible. When a hub is active (enrolled and not yet
 // finished) it surfaces as a primary-nav item (`getImplementationNavItem`) and a
 // summary card below — it never replaces the home page for anyone.
+export const meta: MetaFunction = () => [{ title: "Home | Carbon" }];
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
 
@@ -164,6 +166,10 @@ export default function AppIndexRoute() {
     <div className="relative w-full h-full overflow-hidden">
       <div className="relative z-10 w-full h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8 max-md:p-4 max-md:pb-[calc(var(--dock-height,0px)+1rem)]">
+          {/* The greeting is the visible headline; the page's h1 names it. */}
+          <h1 className="sr-only">
+            <Trans>Home</Trans>
+          </h1>
           <div className="mb-8">
             {!CONTROLLED_ENVIRONMENT && (
               <div className="max-md:hidden">
@@ -527,12 +533,12 @@ const RecentDocumentRow = ({
         </div>
       </PrefetchLink>
       <IconButton
-        aria-label={t`Remove`}
+        aria-label={t`Remove ${doc.title} from recent`}
         icon={<LuX />}
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 transition-opacity max-md:top-3 max-md:translate-y-0"
+        className="absolute right-2 top-1/2 -translate-y-1/2 md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity max-md:top-3 max-md:translate-y-0"
       />
     </div>
   );

@@ -103,14 +103,25 @@ export function usePhoneAutoFocus(autoFocus: boolean | undefined) {
 }
 
 /**
- * A Radix `onOpenAutoFocus` that skips the first focus on phones and then
- * runs the caller's own handler.
+ * A Radix `onOpenAutoFocus` that, on phones, skips focusing the first field
+ * and focuses the dialog's own container instead, then runs the caller's
+ * handler. Focus still enters the dialog, so a screen reader is inside it and
+ * reads its title, and no keyboard pops up.
  */
 export function usePhoneOpenAutoFocus(handler?: (event: Event) => void) {
   const { isPhone } = useViewport();
   return (event: Event) => {
     if (isPhone) event.preventDefault();
     handler?.(event);
+    if (!isPhone) return;
+    // Radix dispatches the event on the focus-trapped content (tabIndex -1).
+    const content = event.currentTarget;
+    if (
+      content instanceof HTMLElement &&
+      !content.contains(document.activeElement)
+    ) {
+      content.focus({ preventScroll: true });
+    }
   };
 }
 

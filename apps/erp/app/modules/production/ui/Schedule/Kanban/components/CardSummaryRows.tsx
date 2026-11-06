@@ -60,15 +60,19 @@ export function CardSummaryRows({
         <HStack className="justify-start space-x-2">
           {getDeadlineIcon(deadlineType)}
           <Tooltip>
-            <TooltipTrigger>
-              <span className={cn("text-sm", isOverdue ? "text-red-500" : "")}>
-                {["ASAP", "No Deadline"].includes(deadlineType)
-                  ? deadlineType
-                  : dueDate
-                    ? `Due ${formatRelativeTime(
-                        convertDateStringToIsoString(dueDate)
-                      )}`
-                    : "–"}
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <span
+                  className={cn("text-sm", isOverdue ? "text-red-500" : "")}
+                >
+                  {["ASAP", "No Deadline"].includes(deadlineType)
+                    ? deadlineType
+                    : dueDate
+                      ? `Due ${formatRelativeTime(
+                          convertDateStringToIsoString(dueDate)
+                        )}`
+                      : "–"}
+                </span>
               </span>
             </TooltipTrigger>
             <TooltipContent side="right">{deadlineType}</TooltipContent>

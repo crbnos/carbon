@@ -41,6 +41,7 @@ const CustomerAvatar = ({
         {...props}
         name={customer?.name ?? ""}
         imageUrl={imageUrl}
+        decorative
       />
       <span className={className}>{customer.name}</span>
     </HStack>

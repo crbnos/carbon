@@ -159,7 +159,7 @@ const WorkCentersTable = memo(
                   if (!process) return [];
                   return {
                     label: process.label,
-                    onClick: () => navigate(path.to.process(process.value))
+                    to: path.to.process(process.value)
                   };
                 }
               )}
@@ -211,7 +211,12 @@ const WorkCentersTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Active`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -312,7 +317,6 @@ const WorkCentersTable = memo(
       people,
       formatter,
       customColumns,
-      navigate,
       t
     ]);
 

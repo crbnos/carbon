@@ -381,7 +381,10 @@ const JobForm = ({
                     isDisabled={isEditing && isLocked}
                   >
                     <ModalCardHeader>
-                      <ModalCardTitle>
+                      {/* The page's h1 when the form is the page. */}
+                      <ModalCardTitle
+                        aria-level={isEditing || isModal ? undefined : 1}
+                      >
                         {isEditing ? "Job" : "New Job"}
                       </ModalCardTitle>
                       {!isEditing && (
@@ -711,7 +714,7 @@ const JobForm = ({
                   defaultValues={bulkInitialValues}
                 >
                   <CardHeader>
-                    <CardTitle>
+                    <CardTitle aria-level={1}>
                       <Trans>Bulk Jobs</Trans>
                     </CardTitle>
                     <CardDescription>

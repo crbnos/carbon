@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", not running"
+msgstr ", 未运行"
+
+msgid ", running"
+msgstr ", 运行中"
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" 是必需的。"
 
@@ -31,9 +37,17 @@ msgstr "{0} 启用"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} 当前工作显示"
+
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
 msgstr "{0} 个客户"
+
+#. placeholder {0}: counts.failed
+msgid "{0} failed"
+msgstr "{0} 项不合格"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -57,17 +71,23 @@ msgstr "{0} 个物料"
 msgid "{0} jobs"
 msgstr "{0} 个工作"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} 维护显示"
+
+#. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
-#. placeholder {0}: serialIndex + 1
+#. placeholder {1}: characteristic.sampleSize
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
-#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} / {1} 已完成"
 
@@ -88,14 +108,26 @@ msgstr "{0} 已登记"
 msgid "{0} running"
 msgstr "运行中 {0} 个"
 
+#. placeholder {0}: workTypeLabels[runningType]
+#. placeholder {1}: formatDurationMilliseconds( progress[runningType], { style: "short" } )
+msgid "{0} running: {1}"
+msgstr "{0} 进行中：{1}"
+
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "工单 {0} 在生产批次 {1}"
 
+#. placeholder {0}: d.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} 已报废"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
+
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}，样本 {sample}"
 
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} 与现有的 \"{target}\" 不匹配。"
@@ -109,8 +141,20 @@ msgstr "{completed} 的 {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} 个已通过的件将被完成。"
 
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, other {落后于目标 # 天}}"
+
+msgid "{failedReadings} failed"
+msgstr "{failedReadings} 项不合格"
+
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
+
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel}的国家代码"
+
+msgid "{fieldLabel} hex value"
+msgstr "{fieldLabel} 十六进制值"
 
 msgid "{hour} h"
 msgstr "{hour} 小时"
@@ -118,12 +162,28 @@ msgstr "{hour} 小时"
 msgid "{hours} h"
 msgstr "{hours} 小时"
 
+msgid "{label}, overdue"
+msgstr "{label}，已逾期"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, 已完成 {percent}%"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
+msgid "{numerator} of {denominator}"
+msgstr "{numerator}/{denominator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} 个工单"
+
+msgid "{workTypeLabel} timer started"
+msgstr "{workTypeLabel}计时已开始"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
@@ -163,6 +223,9 @@ msgstr "关于"
 msgid "About this field"
 msgstr "关于此字段"
 
+msgid "Above the upper limit"
+msgstr "高于上限"
+
 msgid "Accept"
 msgstr "接受"
 
@@ -181,12 +244,22 @@ msgstr "账户设置"
 msgid "Account Settings"
 msgstr "账户设置"
 
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "科目：{0}"
+
 msgid "Acknowledge & finish"
 msgstr "确认并完成"
 
 #. placeholder {0}: members.length
 msgid "across {0} jobs"
 msgstr "跨越 {0} 工单"
+
+msgid "Action"
+msgstr "操作"
+
+msgid "Action Menu"
+msgstr "操作菜单"
 
 msgid "Active"
 msgstr "启用"
@@ -197,6 +270,12 @@ msgstr "实际"
 msgid "Add"
 msgstr "添加"
 
+msgid "Add {fieldLabel}"
+msgstr "添加{fieldLabel}"
+
+msgid "Add {label}"
+msgstr "添加{label}"
+
 msgid "Add {phrase}"
 msgstr "添加 {phrase}"
 
@@ -206,11 +285,23 @@ msgstr "添加并发放"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
+msgid "Add another option"
+msgstr "再添加一个选项"
+
 msgid "Add Authenticator App"
 msgstr "添加身份验证应用"
 
+msgid "Add filter"
+msgstr "添加筛选"
+
 msgid "Add Inventory"
 msgstr "添加库存管理"
+
+msgid "Add option"
+msgstr "添加选项"
+
+msgid "Add Option"
+msgstr "添加选项"
 
 msgid "Add Part"
 msgstr "添加零件"
@@ -238,6 +329,9 @@ msgstr "添加您的签名"
 
 msgid "Added"
 msgstr "已添加"
+
+msgid "Adjustment Type"
+msgstr "调整类型"
 
 msgid "All"
 msgstr "全部"
@@ -273,6 +367,9 @@ msgstr "分配单位"
 msgid "Appearance"
 msgstr "外观"
 
+msgid "Apply link"
+msgstr "应用链接"
+
 msgid "Approvals"
 msgstr "审批"
 
@@ -300,8 +397,14 @@ msgstr "要求主管将 {processName} 技能添加到您的档案。"
 msgid "Assembly steps"
 msgstr "装配步骤"
 
+msgid "Assembly view"
+msgstr "装配视图"
+
 msgid "Assigned"
 msgstr "已分配"
+
+msgid "Assigned to"
+msgstr "分配给"
 
 msgid "Assigned to Me"
 msgstr "已分配给我"
@@ -309,11 +412,17 @@ msgstr "已分配给我"
 msgid "Assignee"
 msgstr "经办人"
 
+msgid "Attach file"
+msgstr "附加文件"
+
 msgid "Authentication Error"
 msgstr "认证错误"
 
 msgid "Authenticator app"
 msgstr "身份验证应用"
+
+msgid "Authenticator code"
+msgstr "身份验证器代码"
 
 msgid "Authenticator QR code"
 msgstr "身份验证 QR 码"
@@ -345,6 +454,10 @@ msgstr "背景"
 msgid "Batch"
 msgstr "批次"
 
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "生产批次 {0}"
+
 msgid "Batch Details"
 msgstr "生产批次详情"
 
@@ -353,6 +466,10 @@ msgstr "批次不可用"
 
 msgid "Batch notes"
 msgstr "生产批次备注"
+
+#. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "生产批次号 {0}"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -364,11 +481,15 @@ msgstr "批次号为必填项"
 msgid "Batch quantity"
 msgstr "批次数量"
 
+#. placeholder {0}: index + 1
+msgid "Batch to unconsume {0}"
+msgstr "需取消领料的生产批次 {0}"
+
 msgid "batch total"
 msgstr "生产批次总计"
 
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "落后于目标 {daysBehindTarget} 天"
+msgid "Below the lower limit"
+msgstr "低于下限"
 
 msgid "Bigger or smaller text. The layout stays put."
 msgstr "更大或更小的文本。布局保持不变。"
@@ -389,6 +510,9 @@ msgstr "阻塞中"
 msgid "Board view"
 msgstr "看板视图"
 
+msgid "Bold"
+msgstr "粗体"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
 
@@ -396,6 +520,12 @@ msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链
 #. placeholder {1}: info.license.name
 msgid "By <0>{0}</0>, <1>{1}</1>"
 msgstr "由 <0>{0}</0>，<1>{1}</1>"
+
+msgid "By characteristic"
+msgstr "按特性"
+
+msgid "By part"
+msgstr "按零件"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
@@ -445,6 +575,12 @@ msgstr "费用编号"
 msgid "Charge numbers"
 msgstr "费用编号"
 
+msgid "Chart"
+msgstr "图表"
+
+msgid "Chart of {series}"
+msgstr "{series}图表"
+
 msgid "Chat"
 msgstr "聊天"
 
@@ -468,6 +604,12 @@ msgstr "选择 Carbon 如何与您联系。"
 
 msgid "Clear"
 msgstr "清除"
+
+msgid "Clear {clearTarget}"
+msgstr "清除{clearTarget}"
+
+msgid "Clear {fieldLabel}"
+msgstr "清除{fieldLabel}"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
@@ -504,6 +646,9 @@ msgstr "在您的时间卡上打卡"
 
 msgid "Close"
 msgstr "关闭"
+
+msgid "Code"
+msgstr "代码"
 
 msgid "Collapse characteristics table"
 msgstr "折叠特性表格"
@@ -552,10 +697,16 @@ msgstr "公司"
 msgid "Complete"
 msgstr "完成"
 
+msgid "Complete ({count} passed)"
+msgstr "完成（{count} 项合格）"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 #. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "完成 {0}?"
+
+msgid "Complete {stepLabel}"
+msgstr "完成{stepLabel}"
 
 msgid "Complete All"
 msgstr "全部完成"
@@ -565,9 +716,6 @@ msgstr "完成生产批次"
 
 msgid "Complete Batch"
 msgstr "完成批次"
-
-msgid "Complete passed"
-msgstr "完成已通过"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "完成 {trainingName} 培训以获得 {processName} 技能。"
@@ -596,11 +744,17 @@ msgstr "继续"
 msgid "Contract"
 msgstr "合同"
 
+msgid "Copied"
+msgstr "已复制"
+
 msgid "Copied!"
 msgstr "已复制！"
 
 msgid "Copy"
 msgstr "复制"
+
+msgid "Copy secret"
+msgstr "复制密钥"
 
 msgid "Copy to clipboard"
 msgstr "复制到剪贴板"
@@ -608,6 +762,9 @@ msgstr "复制到剪贴板"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
+
+msgid "Country code"
+msgstr "国家代码"
 
 msgid "Coverage"
 msgstr "覆盖范围"
@@ -640,14 +797,23 @@ msgstr "客户"
 msgid "Customer Site"
 msgstr "客户现场"
 
+msgid "Customer:"
+msgstr "客户："
+
 msgid "Dark"
 msgstr "深色"
 
 msgid "Date"
 msgstr "日期"
 
+msgid "Date range"
+msgstr "日期范围"
+
 msgid "Deadline"
 msgstr "截止日期"
+
+msgid "Decrease {fieldLabel}"
+msgstr "减少{fieldLabel}"
 
 msgid "Default"
 msgstr "默认"
@@ -657,6 +823,9 @@ msgstr "默认存储单元"
 
 msgid "Delete"
 msgstr "删除"
+
+msgid "Delete {stepLabel}"
+msgstr "删除{stepLabel}"
 
 msgid "Delete passkey"
 msgstr "删除通行密钥"
@@ -700,6 +869,9 @@ msgstr "显示"
 msgid "Displays"
 msgstr "显示屏"
 
+msgid "Displays (opens in new tab)"
+msgstr "显示（在新标签页中打开）"
+
 msgid "Done"
 msgstr "完成"
 
@@ -718,6 +890,9 @@ msgstr "因已计划维护停机"
 
 msgid "Download"
 msgstr "下载"
+
+msgid "Download {fileName}"
+msgstr "下载 {fileName}"
 
 msgid "Download Labels"
 msgstr "下载标签"
@@ -749,7 +924,7 @@ msgstr "应交期"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -781,6 +956,9 @@ msgstr "每个工单的产出是其自己的批次 — 保持每个工单的零�
 msgid "Edit"
 msgstr "编辑"
 
+msgid "Edit {fieldLabel}"
+msgstr "编辑{fieldLabel}"
+
 msgid "Edit Passkey"
 msgstr "编辑通行密钥"
 
@@ -798,6 +976,9 @@ msgstr "电子邮件地址"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "电子邮件通知不包括在您公司的当前计划中;如果启用,电子邮件偏好设置将适用。"
+
+msgid "Emoji: {emoji}"
+msgstr "表情: {emoji}"
 
 msgid "Employee"
 msgstr "员工"
@@ -858,6 +1039,12 @@ msgstr "面"
 #. placeholder {0}: index + 1
 msgid "Face {0}"
 msgstr "面 {0}"
+
+msgid "Fail"
+msgstr "不合格"
+
+msgid "Fail (out of tolerance)"
+msgstr "不合格（超出公差）"
 
 msgid "Failed"
 msgstr "失败"
@@ -922,6 +1109,9 @@ msgstr "上传签名失败"
 msgid "Failure Mode"
 msgstr "失效模式"
 
+msgid "File"
+msgstr "文件"
+
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
 
@@ -936,6 +1126,9 @@ msgstr "筛选"
 
 msgid "Filter by location"
 msgstr "按位置筛选"
+
+msgid "Filter steps"
+msgstr "筛选步骤"
 
 msgid "Findings"
 msgstr "发现"
@@ -962,6 +1155,9 @@ msgstr "自适应"
 msgid "Fix the highlighted quantities before completing."
 msgstr "完成前请修正突出显示的数量。"
 
+msgid "Flag issue"
+msgstr "标记问题"
+
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
 
@@ -980,14 +1176,36 @@ msgstr "返回操作"
 msgid "Go to onboarding"
 msgstr "前往入门"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "前往步骤 {0}：{1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "前往步骤 {0}：{1}（已完成）"
+
 msgid "Gradient"
 msgstr "渐变"
+
+msgid "Grid layout"
+msgstr "表格布局"
+
+msgid "Hard deadline"
+msgstr "硬性截止日期"
 
 msgid "Heading {level}"
 msgstr "标题 {level}"
 
+msgid "Hex value"
+msgstr "十六进制值"
+
 msgid "Hide description"
 msgstr "隐藏描述"
+
+msgid "Hide drawing"
+msgstr "隐藏图纸"
 
 msgid "Hours"
 msgstr "小时"
@@ -1019,6 +1237,9 @@ msgstr "空闲"
 msgid "Idle for"
 msgstr "闲置时间"
 
+msgid "Image"
+msgstr "图片"
+
 msgid "Impact"
 msgstr "影响"
 
@@ -1043,6 +1264,12 @@ msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "应用内通知始终会发送。选择哪些主题还会通过电子邮件发送给您。"
+
+msgid "Inactive"
+msgstr "已停用"
+
+msgid "Increase {fieldLabel}"
+msgstr "增加{fieldLabel}"
 
 msgid "Inspect Item"
 msgstr "检验物品"
@@ -1077,6 +1304,15 @@ msgstr "是以下任一"
 msgid "Issue"
 msgstr "发放"
 
+msgid "Issue {item}"
+msgstr "领料 {item}"
+
+msgid "Issue {partName}"
+msgstr "领取 {partName}"
+
+msgid "Issue another material"
+msgstr "再领取一种物料"
+
 msgid "Issue Material"
 msgstr "领料"
 
@@ -1095,6 +1331,9 @@ msgstr "已发放 {issuedQuantity} 个 {lotLabel} — 还剩 {remainingQuantity}
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "它仍在 \"{table}\" 记录中使用；请先移除那个。"
 
+msgid "Italic"
+msgstr "斜体"
+
 msgid "Item"
 msgstr "物料"
 
@@ -1109,6 +1348,9 @@ msgstr "工单"
 
 msgid "Job Details"
 msgstr "工单详情"
+
+msgid "Job due"
+msgstr "工单到期"
 
 msgid "Job Traveler"
 msgstr "工单流转卡"
@@ -1142,6 +1384,9 @@ msgstr "人工费率未设置。在设置之前，无法记录或计费时间。
 
 msgid "Labor until <0/>"
 msgstr "人工直到 <0/>"
+
+msgid "Labor, timer running"
+msgstr "人工，计时器运行中"
 
 msgid "Large"
 msgstr "大"
@@ -1182,8 +1427,14 @@ msgstr "浅色"
 msgid "Light, dark, or follow your system setting."
 msgstr "浅色、深色或跟随系统设置。"
 
+msgid "Line"
+msgstr "行"
+
 msgid "lines"
 msgstr "行"
+
+msgid "Link URL"
+msgstr "链接 URL"
 
 msgid "List view"
 msgstr "列表视图"
@@ -1251,6 +1502,9 @@ msgstr "机器"
 msgid "Machine down for maintenance now?"
 msgstr "机器现在正在维护吗？"
 
+msgid "Machine, timer running"
+msgstr "机器，计时器运行中"
+
 msgid "Main"
 msgstr "主菜单"
 
@@ -1276,6 +1530,9 @@ msgstr "手动从库存管理中移除物料"
 msgid "Mark {0} as Done"
 msgstr "将 {0} 标记为完成"
 
+msgid "Mark {itemName} short"
+msgstr "标记 {itemName} 缺料"
+
 msgid "Mark as Done"
 msgstr "标记为完成"
 
@@ -1287,6 +1544,9 @@ msgstr "标记短缺"
 
 msgid "Mark the step done / record"
 msgstr "标记步骤完成/记录"
+
+msgid "Match found: {matchedId}"
+msgstr "找到匹配项：{matchedId}"
 
 msgid "matches"
 msgstr "匹配"
@@ -1300,6 +1560,9 @@ msgstr "已发出原材料"
 msgid "Maximum number of records reached"
 msgstr "已达到最大记录数"
 
+msgid "Message"
+msgstr "消息"
+
 msgid "Metric"
 msgstr "公制"
 
@@ -1312,6 +1575,9 @@ msgstr "模型"
 msgid "More"
 msgstr "更多"
 
+msgid "More {children} options"
+msgstr "更多{children}选项"
+
 msgid "More actions"
 msgstr "更多操作"
 
@@ -1320,6 +1586,10 @@ msgstr "更多操作"
 
 msgid "More options"
 msgstr "更多选项"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "{0} 的更多选项"
 
 msgid "More than one unit has this serial. Choose one."
 msgstr "多个件具有此序列号。选择一个。"
@@ -1400,8 +1670,17 @@ msgstr "未找到可用的序列号"
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
+msgid "No cell could take the pasted values"
+msgstr "没有单元格可以接收粘贴的值"
+
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
+
+msgid "No color"
+msgstr "无颜色"
+
+msgid "No country found."
+msgstr "未找到国家。"
 
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
@@ -1430,6 +1709,9 @@ msgstr "尚未设置假期。请您的经理在 ERP 中设置。"
 
 msgid "No maintenance scheduled for today"
 msgstr "今天没有计划的维护"
+
+msgid "No match"
+msgstr "无匹配项"
 
 msgid "No matches. Type to create one."
 msgstr "没有匹配项。输入以创建一个。"
@@ -1631,8 +1913,14 @@ msgstr "为MRB处置打开NCR"
 msgid "Open at this location"
 msgstr "此地点未结"
 
+msgid "Open calendar"
+msgstr "打开日历"
+
 msgid "Open ERP"
 msgstr "打开 ERP"
+
+msgid "Open item image"
+msgstr "打开物料图片"
 
 msgid "Open Jobs"
 msgstr "未结工单"
@@ -1642,10 +1930,16 @@ msgstr "未结工单"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
 
+msgid "Operation due"
+msgstr "工序到期"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "工序需求日期：{0}"
+
+msgid "Operation sections"
+msgstr "工序分区"
 
 msgid "Operations"
 msgstr "工序"
@@ -1698,6 +1992,13 @@ msgstr "部分处置"
 msgid "Parts"
 msgstr "零件"
 
+msgid "Pass"
+msgstr "合格"
+
+#. placeholder {0}: characteristic.label
+msgid "Pass all empty cells of {0}"
+msgstr "将 {0} 的所有空单元格标记为合格"
+
 msgid "Passed inspection"
 msgstr "已通过检验"
 
@@ -1719,8 +2020,18 @@ msgstr "通行密钥已禁用"
 msgid "Pause"
 msgstr "暂停"
 
-msgid "Pause timer"
-msgstr "暂停计时器"
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Pause {0} timer"
+msgstr "暂停{0}计时器"
+
+msgid "Pause {workType}"
+msgstr "暂停{workType}"
+
+msgid "Pause {workTypeLabel} timer"
+msgstr "暂停{workTypeLabel}计时器"
+
+msgid "Pause maintenance"
+msgstr "暂停维护"
 
 msgid "Phone"
 msgstr "电话"
@@ -1741,6 +2052,9 @@ msgstr "拣货"
 msgid "Pick {0}"
 msgstr "拣货 {0}"
 
+msgid "Pick {itemName}"
+msgstr "拣货 {itemName}"
+
 msgid "Pick a style, a color and a face."
 msgstr "选择样式、颜色和面。"
 
@@ -1758,6 +2072,19 @@ msgstr "选择您所做的工作，然后选择人工类别。"
 
 msgid "Picked"
 msgstr "已拣货"
+
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "已拣货（短缺）：{quantityPicked}{unitSuffix}，共 {quantityToPick}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "已拣货 {0}{unitSuffix} {itemName}"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "已拣货 {quantity}{unitSuffix} {itemName}"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "已拣货 {quantityPicked}，共 {quantityToPick}{unitSuffix}"
 
 msgid "Picked as"
 msgstr "拣货为"
@@ -1791,6 +2118,9 @@ msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
 
 msgid "Planned"
 msgstr "已计划"
+
+msgid "Planned duration:"
+msgstr "计划时长："
 
 msgid "Please record all steps for this operation before closing."
 msgstr "请在关闭前记录此工序的所有步骤。"
@@ -1867,6 +2197,9 @@ msgstr "进度"
 msgid "Project"
 msgstr "项目"
 
+msgid "Projected completion:"
+msgstr "预计完成:"
+
 msgid "PTO"
 msgstr "PTO"
 
@@ -1885,8 +2218,15 @@ msgstr "质量问题已创建"
 msgid "Quantity"
 msgstr "数量"
 
+#. placeholder {0}: index + 1
+msgid "Quantity {0}"
+msgstr "数量 {0}"
+
 msgid "Quantity must be greater than 0"
 msgstr "数量必须大于 0"
+
+msgid "Quantity:"
+msgstr "数量："
 
 msgid "Queue empty"
 msgstr "队列为空"
@@ -1896,6 +2236,9 @@ msgstr "报价单"
 
 msgid "Reason for change"
 msgstr "变更原因"
+
+msgid "Reason for issuing expired stock"
+msgstr "领用过期库存的原因"
 
 msgid "Reason for late entry"
 msgstr "迟交原因"
@@ -1920,11 +2263,17 @@ msgstr "记录 {0}"
 msgid "Record {0} jobs"
 msgstr "记录 {0} 个工单"
 
+msgid "Record {stepLabel}"
+msgstr "记录{stepLabel}"
+
 msgid "Record only"
 msgstr "仅记录"
 
 msgid "Record Partial"
 msgstr "记录部分"
+
+msgid "Record sections"
+msgstr "记录分区"
 
 msgid "Recorded"
 msgstr "已记录"
@@ -1947,11 +2296,19 @@ msgstr "已下达"
 msgid "Remove"
 msgstr "移除"
 
+#. placeholder {0}: attachment.name
+msgid "Remove {0}"
+msgstr "移除 {0}"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "移除{itemLabel} {0}"
+
 msgid "Remove authenticator app"
 msgstr "移除身份验证应用"
 
-msgid "Remove filter"
-msgstr "移除筛选"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "移除筛选{filterHeader}: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "移除库存管理"
@@ -1961,6 +2318,9 @@ msgstr "移除零件"
 
 msgid "Remove two-factor authentication"
 msgstr "移除双因素认证"
+
+msgid "Removed"
+msgstr "已移除"
 
 msgid "Removed signature"
 msgstr "已移除签名"
@@ -1980,11 +2340,23 @@ msgstr "登录时需要输入身份验证应用中的6位数代码。"
 msgid "Required"
 msgstr "必填"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "需求：{quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "需要: {quantityToPick}{unitSuffix}, 已拣货: {quantityPicked}{unitSuffix}"
+
 msgid "Resolution"
 msgstr "解决方案"
 
 msgid "Result"
 msgstr "结果"
+
+msgid "Results recorded: {done}"
+msgstr "已记录结果: {done}"
+
+msgid "Results recorded: {done}. Values skipped: {skipped}."
+msgstr "已记录结果: {done}。已跳过的值: {skipped}。"
 
 msgid "Retry Completion"
 msgstr "重试完成"
@@ -2000,6 +2372,9 @@ msgstr "返工创建成功"
 
 msgid "Rework quantity"
 msgstr "返工数量"
+
+msgid "Rich text"
+msgstr "富文本"
 
 msgid "Running"
 msgstr "运行中"
@@ -2017,6 +2392,9 @@ msgstr "销售订单"
 msgid "Same for every job"
 msgstr "对所有工单相同"
 
+msgid "Sample"
+msgstr "样本"
+
 msgid "Save"
 msgstr "保存"
 
@@ -2029,8 +2407,19 @@ msgstr "保存您正在编辑的表单"
 msgid "Saved signature"
 msgstr "已保存签名"
 
+#. placeholder {0}: bulkProgress.done
+#. placeholder {1}: bulkProgress.total
+msgid "Saving {0}/{1}"
+msgstr "正在保存 {0}/{1}"
+
 msgid "Scan"
 msgstr "扫码"
+
+msgid "Scan {itemName}"
+msgstr "扫码 {itemName}"
+
+msgid "Scan {partName}"
+msgstr "扫描 {partName}"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "扫码追踪实体以添加第一个样本列。"
@@ -2098,17 +2487,44 @@ msgstr "搜索"
 msgid "Search {gaugeTypeName}..."
 msgstr "搜索 {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "搜索{label}"
+
+msgid "Search active operations"
+msgstr "搜索启用中的工序"
+
+msgid "Search assigned operations"
+msgstr "搜索已分配的工序"
+
 msgid "Search by job or item ID"
 msgstr "按工作或项目ID搜索"
 
+msgid "Search country..."
+msgstr "搜索国家..."
+
+msgid "Search filters"
+msgstr "搜索筛选条件"
+
+msgid "Search gauges"
+msgstr "搜索量具"
+
 msgid "Search gauges..."
 msgstr "搜索量具..."
+
+msgid "Search jobs"
+msgstr "搜索工单"
+
+msgid "Search operators"
+msgstr "搜索操作员"
 
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
 msgid "Search projects and tasks"
 msgstr "搜索项目和任务"
+
+msgid "Search recent operations"
+msgstr "搜索近期工序"
 
 msgid "Search..."
 msgstr "搜索..."
@@ -2184,6 +2600,13 @@ msgstr "单独批次"
 msgid "Serial"
 msgstr "序列号"
 
+msgid "Serial number"
+msgstr "序列号"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "序列号 {0}"
+
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "序列号 {0}"
@@ -2236,6 +2659,9 @@ msgstr "在规划生产批次时设置。"
 msgid "Setup"
 msgstr "换型"
 
+msgid "Setup, timer running"
+msgstr "换型，计时器运行中"
+
 msgid "short"
 msgstr "短缺"
 
@@ -2248,8 +2674,14 @@ msgstr "短缺拣货 {itemName}"
 msgid "Show description"
 msgstr "显示描述"
 
+msgid "Show drawing"
+msgstr "显示图纸"
+
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
+
+msgid "Show legend"
+msgstr "显示图例"
 
 msgid "Shuffle"
 msgstr "随机生成"
@@ -2314,6 +2746,9 @@ msgstr "小"
 msgid "Smaller"
 msgstr "更小"
 
+msgid "Soft deadline"
+msgstr "软性截止日期"
+
 msgid "Solid"
 msgstr "纯色"
 
@@ -2333,17 +2768,27 @@ msgstr "开始"
 msgid "Start {0}"
 msgstr "开始 {0}"
 
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Start {0} timer"
+msgstr "开始{0}计时器"
+
+msgid "Start {workType}"
+msgstr "开始{workType}"
+
+msgid "Start {workTypeLabel} timer"
+msgstr "开始{workTypeLabel}计时器"
+
 msgid "Start clock"
 msgstr "开始计时"
 
 msgid "Start Job"
 msgstr "开始工单"
 
+msgid "Start maintenance"
+msgstr "开始维护"
+
 msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
-
-msgid "Start timer"
-msgstr "启动计时器"
 
 msgid "Start work"
 msgstr "开工"
@@ -2367,6 +2812,9 @@ msgstr "状态"
 msgid "Stay on this page"
 msgstr "留在此页面"
 
+msgid "step {stepNumber}: {name}"
+msgstr "步骤{stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "步骤"
 
@@ -2375,6 +2823,9 @@ msgstr "缺少步骤"
 
 msgid "Storage Unit"
 msgstr "存储单元"
+
+msgid "Strikethrough"
+msgstr "删除线"
 
 msgid "Style"
 msgstr "风格"
@@ -2435,6 +2886,9 @@ msgstr "使工作中心离线"
 
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "点击一天以向 {selectedLabel} 添加时间。拖动条形的下边缘以更改其小时数。"
+
+msgid "Text color"
+msgstr "文本颜色"
 
 msgid "Text size"
 msgstr "文本大小"
@@ -2510,6 +2964,9 @@ msgstr "此生产批次没有作业指导书。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
 
+msgid "This is a pass / fail check. Press P or F."
+msgstr "这是合格 / 不合格检查。请按 P 或 F。"
+
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"
 
@@ -2527,6 +2984,9 @@ msgstr "此零件将从库存报废。其要求保持未结，以便您可以领
 
 msgid "This posts the job's time. The job can no longer change."
 msgstr "这将过账工单的时间。工单不再能更改。"
+
+msgid "This sample was removed"
+msgstr "此样本已被删除"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "这将停止您的时钟并过账工单的时间。工单不再能更改。"
@@ -2555,6 +3015,16 @@ msgstr "时间和成本按数量比例分配到各个工作中。"
 msgid "Time Entries"
 msgstr "工时记录"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "每 {0} 耗时:"
+
+msgid "Time per piece:"
+msgstr "每件耗时:"
+
+msgid "Time type"
+msgstr "时间类型"
+
 msgid "Time Worked"
 msgstr "工作时间"
 
@@ -2567,14 +3037,8 @@ msgstr "待启动"
 msgid "Today"
 msgstr "今天"
 
-msgid "Toggle labor"
-msgstr "切换人工"
-
-msgid "Toggle machine"
-msgstr "切换机器"
-
-msgid "Toggle setup"
-msgstr "切换换型"
+msgid "Toggle sidebar"
+msgstr "切换侧边栏"
 
 msgid "Toggle the sidebar"
 msgstr "切换侧栏"
@@ -2618,11 +3082,17 @@ msgstr "总计：{0}"
 msgid "Tracked Entity"
 msgstr "追踪实体"
 
+msgid "Tracked entity, serial or batch"
+msgstr "追踪实体、序列号或生产批次"
+
 msgid "tracked lines"
 msgstr "已跟踪行"
 
 msgid "Tracking"
 msgstr "追踪"
+
+msgid "Tracking number"
+msgstr "跟踪号"
 
 msgid "Training"
 msgstr "培训"
@@ -2650,6 +3120,9 @@ msgstr "无法解锁"
 
 msgid "Unassigned"
 msgstr "未分配"
+
+msgid "Underline"
+msgstr "下划线"
 
 msgid "Undo"
 msgstr "撤销"
@@ -2679,6 +3152,12 @@ msgstr "取消拣选"
 msgid "Unpick {0}"
 msgstr "取消拣选 {0}"
 
+msgid "Unpick {itemName}"
+msgstr "取消拣货 {itemName}"
+
+msgid "Unpicked {itemName}"
+msgstr "未拣货 {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "非计划停机时间"
 
@@ -2700,6 +3179,9 @@ msgstr "最多可分配 {maxAllocatable} 个单位；其余的将被记录而不
 
 msgid "Update"
 msgstr "更新"
+
+msgid "Update {stepLabel}"
+msgstr "更新{stepLabel}"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
@@ -2750,6 +3232,9 @@ msgstr "验证失败"
 
 msgid "Verify"
 msgstr "验证"
+
+msgid "View"
+msgstr "查看"
 
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"

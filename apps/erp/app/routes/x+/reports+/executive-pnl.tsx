@@ -216,6 +216,7 @@ export default function ExecutivePnlRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">{t`Executive P&L`}</h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}

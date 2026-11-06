@@ -57,10 +57,13 @@ export interface AvatarProps
     VariantProps<typeof avatarVariants> {
   name?: string;
   src?: string;
+  /** The name is shown as text beside the avatar: hide the image from
+   *  assistive tech so the name is not read twice ("Jane Doe Jane Doe"). */
+  decorative?: boolean;
 }
 
 const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
-  ({ className, name, src, size, children, ...props }, ref) => {
+  ({ className, name, src, size, children, decorative, ...props }, ref) => {
     const isGroup = !!useAvatarGroupContext()?.limit;
     const avatarInitials = getInitials(name ?? "");
     // `src` may be a generated-avatar value from `user.avatarUrl` rather than a
@@ -84,7 +87,7 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
           generated && generatedAvatarClassName(generated.style),
           className
         )}
-        alt={name ?? "avatar"}
+        alt={decorative ? "" : (name ?? "avatar")}
         data-avatar={size ?? "sm"}
         src={imageSrc}
         onError={() => setFailedSrc(imageSrc)}
@@ -101,12 +104,20 @@ const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(
         )}
         style={name ? { background, color } : undefined}
         data-avatar={size ?? "sm"}
+        // Initials read as letters ("J D"); the avatar is named after the
+        // person instead, as its image would be.
+        {...(decorative
+          ? { "aria-hidden": true }
+          : avatarInitials
+            ? { role: "img", "aria-label": name }
+            : {})}
         {...props}
         ref={ref}
       >
         <>
           {avatarInitials ? (
             <span
+              aria-hidden
               className="text-foreground no-underline"
               style={name ? { color } : undefined}
             >

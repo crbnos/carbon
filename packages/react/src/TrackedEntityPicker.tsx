@@ -6,7 +6,7 @@
 
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   LuCheck,
   LuList,
@@ -165,6 +165,7 @@ export function TrackedEntityPicker({
   const [activeTab, setActiveTab] = useState("scan");
   const [order, setOrder] = useState<TrackedEntityPickOrder>(defaultOrder);
   const [scan, setScan] = useState("");
+  const scanStatusId = useId();
 
   // Hosts open the picker and fetch its data in parallel, so `defaultOrder`
   // arrives a render after mount (undefined -> the item's configured order).
@@ -209,6 +210,7 @@ export function TrackedEntityPicker({
   };
 
   const scanMatch = scan ? matchScan(scan) : undefined;
+  const matchedId = scanMatch?.readableId ?? scanMatch?.trackedEntityId;
 
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>
@@ -237,6 +239,9 @@ export function TrackedEntityPicker({
                     autoFocus
                     size={size}
                     placeholder={t`Scan or enter tracking number`}
+                    aria-label={t`Tracking number`}
+                    aria-invalid={scan && !scanMatch ? true : undefined}
+                    aria-describedby={scan ? scanStatusId : undefined}
                     value={scan}
                     onChange={(e) => setScan(e.target.value)}
                     onKeyDown={(e) => {
@@ -252,12 +257,20 @@ export function TrackedEntityPicker({
                   <InputRightElement>
                     {scan &&
                       (scanMatch ? (
-                        <LuCheck className="text-emerald-500" />
+                        <LuCheck aria-hidden className="text-emerald-500" />
                       ) : (
-                        <LuX className="text-red-500" />
+                        <LuX aria-hidden className="text-red-500" />
                       ))}
                   </InputRightElement>
                 </InputGroup>
+                {/* The icon above says it by colour; this says it in words. */}
+                <span id={scanStatusId} role="status" className="sr-only">
+                  {scan
+                    ? scanMatch
+                      ? t`Match found: ${matchedId}`
+                      : t`No match`
+                    : ""}
+                </span>
                 {scanMatch && isBlocked(scanMatch) && (
                   <p className="text-sm text-red-600">
                     {t`This lot is expired and can't be picked.`}

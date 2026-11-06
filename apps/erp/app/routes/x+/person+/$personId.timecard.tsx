@@ -477,7 +477,7 @@ export default function PersonTimecardRoute() {
                     value={addDate}
                     onValueChange={(value) => setAddDate(value)}
                   >
-                    <SelectTrigger size="sm">
+                    <SelectTrigger size="sm" aria-label={t`Date`}>
                       <SelectValue placeholder={t`Date`} />
                     </SelectTrigger>
                     <SelectContent>

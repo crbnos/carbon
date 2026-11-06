@@ -1343,6 +1343,7 @@ export function IssueMaterialModal({
                         Item
                       </label>
                       <ComboboxBase
+                        aria-label={t`Item`}
                         placeholder="Select an item..."
                         value={selectedItemId}
                         onChange={(value) => {
@@ -1380,7 +1381,7 @@ export function IssueMaterialModal({
                               name="adjustmentType"
                               defaultValue="Negative Adjmt."
                             >
-                              <SelectTrigger>
+                              <SelectTrigger aria-label={t`Adjustment Type`}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1443,6 +1444,7 @@ export function IssueMaterialModal({
                         Item
                       </label>
                       <ComboboxBase
+                        aria-label={t`Item`}
                         placeholder="Select an item..."
                         value={selectedItemId}
                         onChange={handleItemChange}
@@ -1509,6 +1511,7 @@ export function IssueMaterialModal({
                                     <Input
                                       autoFocus={index === 0}
                                       placeholder={`Serial Number ${index + 1}`}
+                                      aria-label={t`Serial number ${index + 1}`}
                                       value={sn.id}
                                       onChange={(e) => {
                                         const newValue = e.target.value;
@@ -1590,7 +1593,10 @@ export function IssueMaterialModal({
                                 )}
                               </div>
                               {serialErrors[index] && (
-                                <span className="text-xs text-destructive">
+                                <span
+                                  role="alert"
+                                  className="text-xs text-destructive"
+                                >
                                   {serialErrors[index]}
                                 </span>
                               )}
@@ -1620,6 +1626,7 @@ export function IssueMaterialModal({
                                 <div className="flex-1">
                                   <ComboboxBase
                                     placeholder={`Select Serial Number ${index + 1}`}
+                                    aria-label={t`Serial number ${index + 1}`}
                                     value={sn.id}
                                     onChange={(value) => {
                                       const newSerialNumbers = [
@@ -1660,7 +1667,10 @@ export function IssueMaterialModal({
                                 )}
                               </div>
                               {serialErrors[index] && (
-                                <span className="text-xs text-destructive">
+                                <span
+                                  role="alert"
+                                  className="text-xs text-destructive"
+                                >
                                   {serialErrors[index]}
                                 </span>
                               )}
@@ -1802,6 +1812,7 @@ export function IssueMaterialModal({
                                         );
                                       }}
                                       placeholder="Scan batch number"
+                                      aria-label={t`Batch number ${index + 1}`}
                                     />
                                     <InputRightElement className="pl-2">
                                       {!batchErrors[index] && batch.id ? (
@@ -1815,6 +1826,7 @@ export function IssueMaterialModal({
                                 <div className="w-24">
                                   <NumberField
                                     id={`quantity-${index}`}
+                                    aria-label={t`Quantity ${index + 1}`}
                                     value={batch.quantity}
                                     formatOptions={INPUT_FORMAT.quantity}
                                     onChange={(value) =>
@@ -1859,7 +1871,10 @@ export function IssueMaterialModal({
                                 )}
                               </div>
                               {batchErrors[index] && (
-                                <span className="text-xs text-destructive">
+                                <span
+                                  role="alert"
+                                  className="text-xs text-destructive"
+                                >
                                   {batchErrors[index]}
                                 </span>
                               )}
@@ -1895,10 +1910,12 @@ export function IssueMaterialModal({
                                     }}
                                     options={batchOptions}
                                     placeholder="Select batch number"
+                                    aria-label={t`Batch number ${index + 1}`}
                                   />
                                 </div>
                                 <div className="w-24">
                                   <NumberField
+                                    aria-label={t`Quantity ${index + 1}`}
                                     value={batch.quantity}
                                     formatOptions={INPUT_FORMAT.quantity}
                                     onChange={(value) =>
@@ -1943,7 +1960,10 @@ export function IssueMaterialModal({
                                 )}
                               </div>
                               {batchErrors[index] && (
-                                <span className="text-xs text-destructive">
+                                <span
+                                  role="alert"
+                                  className="text-xs text-destructive"
+                                >
                                   {batchErrors[index]}
                                 </span>
                               )}
@@ -1984,12 +2004,14 @@ export function IssueMaterialModal({
                                         )
                                     )}
                                     placeholder="Select batch to unconsume"
+                                    aria-label={t`Batch to unconsume ${index + 1}`}
                                   />
                                 </div>
                                 {batch.id && (
                                   <div className="w-24">
                                     <Input
                                       isReadOnly
+                                      aria-label={t`Quantity ${index + 1}`}
                                       value={
                                         trackedInputs
                                           .find(
@@ -2059,6 +2081,7 @@ export function IssueMaterialModal({
                             <textarea
                               className="border rounded-md p-2 text-sm bg-background"
                               placeholder="Reason for issuing expired stock"
+                              aria-label={t`Reason for issuing expired stock`}
                               value={expiryOverrideReason}
                               onChange={(e) =>
                                 setExpiryOverrideReason(e.target.value)
