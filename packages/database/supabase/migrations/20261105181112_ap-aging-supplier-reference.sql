@@ -3,9 +3,12 @@ DROP FUNCTION IF EXISTS public.get_ap_open_by_supplier(text, date);
 CREATE FUNCTION public.get_ap_open_by_supplier(_company_id text, _as_of_date date)
  RETURNS TABLE("supplierId" text, "documentId" text, "documentNumber" text, "documentType" text, "dateDue" date, "currencyCode" text, "exchangeRate" numeric, "totalAmount" numeric, settled numeric, "openInCurrency" numeric, "openInBase" numeric, "supplierReference" text)
  LANGUAGE sql
+ STABLE
 AS $function$
   WITH effective_settlements AS (
-    SELECT s.*
+    SELECT s."companyId", s."targetPurchaseInvoiceId", s."paymentId",
+      s."memoId", s."targetMemoId", s."appliedAmount", s."discountAmount",
+      s."writeOffAmount", s."sourceAmount", s."fxGainLossAmount"
     FROM "invoiceSettlement" s
     LEFT JOIN "payment" p ON p."id" = s."paymentId"
       AND p."companyId" = s."companyId"
@@ -62,7 +65,9 @@ AS $function$
       AND j."status"='Posted' AND j."postingDate"<=_as_of_date
     GROUP BY line."documentId"
   ), invoice_open AS (
-    SELECT i.*, COALESCE(s.settled_base, 0) AS settled_base,
+    SELECT i."supplierId", i."id", i."invoiceId", i."dateDue", i."currencyCode",
+      i."exchangeRate", i."totalAmount", i."supplierReference",
+      COALESCE(s.settled_base, 0) AS settled_base,
       amounts.remaining_document,
       COALESCE(c.original_base, accounting_round_internal(i."totalAmount")) - COALESCE(s.settled_base,0) AS remaining_base
     FROM "purchaseInvoices" i
@@ -78,11 +83,12 @@ AS $function$
     ) amounts
     WHERE i."companyId" = _company_id
       AND i."postingDate" <= _as_of_date
-      AND i."status" NOT IN ('Draft', 'Pending', 'Voided')
+      AND ib."status" NOT IN ('Draft', 'Pending', 'Voided')
       AND NOT (ib."status" = 'Paid'
         AND (ib."datePaid" IS NULL OR ib."datePaid" <= _as_of_date))
   ), memo_open AS (
-    SELECT m.*,
+    SELECT m."supplierId", m."id", m."memoId", m."direction", m."currencyCode",
+      m."exchangeRate", m."amount",
       accounting_round_internal(m."amount"/m."exchangeRate") - COALESCE(s.settled_base,0) - COALESCE(t.settled_base,0) AS remaining_base,
       COALESCE(s.settled_document, 0) + COALESCE(t.settled_document, 0) AS settled_document,
       m."amount" - COALESCE(s.settled_document, 0)

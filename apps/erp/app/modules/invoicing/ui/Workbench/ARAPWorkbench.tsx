@@ -33,7 +33,7 @@ import {
   LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
-import { Link, useFetcher, useLocation, useNavigate } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
@@ -115,8 +115,6 @@ export function ARAPWorkbench({
 }: ARAPWorkbenchProps) {
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
-  const navigate = useNavigate();
-  const { search } = useLocation();
   const adjustFetcher = useFetcher();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
@@ -211,32 +209,34 @@ export function ARAPWorkbench({
   // The selected invoices, and whether they can become one payment. A payment
   // has one counterparty and one currency, so the action is enabled only when
   // the selection is homogeneous on both.
-  const selectedInvoices = useMemo(
-    () => open.filter((inv) => selectedIds.has(inv.invoiceId)),
-    [open, selectedIds]
-  );
-  const selectedPartyIds = useMemo(
-    () => new Set(selectedInvoices.map((inv) => partyIdOf(inv))),
-    [selectedInvoices, partyIdOf]
-  );
-  const selectedCurrencies = useMemo(
-    () => new Set(selectedInvoices.map((inv) => inv.currencyCode)),
-    [selectedInvoices]
-  );
-  const sameParty = selectedPartyIds.size === 1;
-  const sameCurrency = selectedCurrencies.size === 1;
-  const canPay = selectedInvoices.length > 0 && sameParty && sameCurrency;
+  const { selectedInvoices, sameParty, payHref } = useMemo(() => {
+    const selectedInvoices = open.filter((inv) =>
+      selectedIds.has(inv.invoiceId)
+    );
+    const selectedPartyIds = new Set(selectedInvoices.map(partyIdOf));
+    const selectedCurrencies = new Set(
+      selectedInvoices.map((inv) => inv.currencyCode)
+    );
+    const sameParty = selectedPartyIds.size === 1;
+    const sameCurrency = selectedCurrencies.size === 1;
+    const partyId = [...selectedPartyIds][0];
+    let payHref: string | null = null;
+    if (sameParty && sameCurrency && partyId) {
+      const params = new URLSearchParams();
+      params.set(side === "ar" ? "customerId" : "supplierId", partyId);
+      for (const inv of selectedInvoices)
+        params.append("invoiceId", inv.invoiceId);
+      payHref = `${path.to.paymentNew}?${params.toString()}`;
+    }
+    return { selectedInvoices, sameParty, payHref };
+  }, [open, selectedIds, partyIdOf, side]);
 
-  const payHref = useMemo(() => {
-    if (!canPay) return null;
-    const pid = [...selectedPartyIds][0];
-    if (!pid) return null;
-    const params = new URLSearchParams();
-    params.set(side === "ar" ? "customerId" : "supplierId", pid);
-    for (const inv of selectedInvoices)
-      params.append("invoiceId", inv.invoiceId);
-    return `${path.to.paymentNew}?${params.toString()}`;
-  }, [canPay, selectedPartyIds, selectedInvoices, side]);
+  const exportParams = new URLSearchParams({
+    asOfDate,
+    agingMethod,
+    bucketDays: bucketDays.join(",")
+  });
+  const exportHref = `${side === "ar" ? path.to.arAgingCsv : path.to.apAgingCsv}?${exportParams.toString()}`;
 
   const columns = useMemo<ColumnDef<WorkbenchRow>[]>(() => {
     return [
@@ -509,13 +509,17 @@ export function ARAPWorkbench({
           </PopoverContent>
         </Popover>
       ) : null}
-      {canPay && payHref ? (
-        <Button variant="primary" onClick={() => navigate(payHref)}>
-          {side === "ar" ? (
-            <Trans>Receive Payment · {selectedInvoices.length} invoices</Trans>
-          ) : (
-            <Trans>Make Payment · {selectedInvoices.length} invoices</Trans>
-          )}
+      {payHref ? (
+        <Button asChild variant="primary">
+          <Link to={payHref}>
+            {side === "ar" ? (
+              <Trans>
+                Receive Payment · {selectedInvoices.length} invoices
+              </Trans>
+            ) : (
+              <Trans>Make Payment · {selectedInvoices.length} invoices</Trans>
+            )}
+          </Link>
         </Button>
       ) : selectedInvoices.length > 0 ? (
         <Tooltip>
@@ -538,10 +542,7 @@ export function ARAPWorkbench({
         </Tooltip>
       ) : null}
       <Button asChild variant="secondary" leftIcon={<LuDownload />}>
-        <a
-          href={`${side === "ar" ? path.to.arAgingCsv : path.to.apAgingCsv}${search}`}
-          download
-        >
+        <a href={exportHref} download>
           <Trans>Export</Trans>
         </a>
       </Button>
