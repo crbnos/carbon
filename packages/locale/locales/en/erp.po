@@ -893,6 +893,9 @@ msgstr "{counted} counted"
 msgid "{created} created, {updated} updated."
 msgstr "{created} created, {updated} updated."
 
+msgid "{created} created."
+msgstr "{created} created."
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -1138,6 +1141,9 @@ msgstr "{received} of {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} not found"
 
+msgid "{refused} orders start before today and were not created. Reschedule them from today."
+msgstr "{refused} orders start before today and were not created. Reschedule them from today."
+
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 
@@ -1327,6 +1333,9 @@ msgstr "1 batchable operation is not in a batch — it runs individually until b
 msgid "1 check"
 msgstr "1 check"
 
+msgid "1 created."
+msgstr "1 created."
+
 msgid "1 day"
 msgstr "1 day"
 
@@ -1353,6 +1362,9 @@ msgstr "1 job created"
 
 msgid "1 line"
 msgstr "1 line"
+
+msgid "1 order starts before today and was not created. Reschedule it from today."
+msgstr "1 order starts before today and was not created. Reschedule it from today."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 part skipped — it already has an open job"
@@ -23725,6 +23737,12 @@ msgstr "Requires Repair"
 
 msgid "Requires staffing"
 msgstr "Requires staffing"
+
+msgid "Reschedule from today"
+msgstr "Reschedule from today"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Reschedule from today, due {rescheduledDue}"
 
 msgid "Reschedule tolerance"
 msgstr "Reschedule tolerance"

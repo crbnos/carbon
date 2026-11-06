@@ -37,7 +37,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
@@ -48,6 +48,7 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
+import type { RefusedPlanningOrder } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   type PlanningActionHandlers,
@@ -68,7 +69,10 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { refusedOrdersByRowKey } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -129,6 +133,8 @@ type PurchasingPlanningOrderDrawerProps = {
   onClose: () => void;
   onSupplierChange: (itemId: string, supplierId: string) => void;
   setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
+  /** Drop the item's draft list so the drawer re-seeds from the suggestions. */
+  onSuggestionsStale: (item: PurchasingPlanningItem) => void;
   setSelectedItem: (item: PurchasingPlanningItem) => void;
 };
 
@@ -145,6 +151,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     actionHandlers,
     ordersVersion = 0,
     setOrders,
+    onSuggestionsStale,
     locationId,
     periods,
     selectedSupplier,
@@ -159,6 +166,9 @@ export const PurchasingPlanningOrderDrawer = memo(
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
     const fetcher = useFetcher<typeof bulkUpdateAction>();
+    // A refused order is found by its index in the orders as submitted.
+    const submitted = useRef<PlannedOrder[]>([]);
+    const pastStartToast = usePastStartToast();
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
@@ -542,6 +552,7 @@ export const PurchasingPlanningOrderDrawer = memo(
           ],
           action: "order" as const
         };
+        submitted.current = ordersWithPeriods;
         fetcher.submit(payload, {
           method: "post",
           action: path.to.bulkUpdatePurchasingPlanning,
@@ -574,6 +585,24 @@ export const PurchasingPlanningOrderDrawer = memo(
               purchaseOrders?: { id: string; readableId: string }[];
             }
           )?.purchaseOrders ?? [];
+        // the late orders stay here to be moved from today
+        const refused =
+          refusedOrdersByRowKey(
+            [
+              {
+                id: selectedItem.id,
+                planningSegmentId: selectedItem.planningSegmentId ?? "",
+                orders: submitted.current
+              }
+            ],
+            (fetcher.data as { refusedOrders?: RefusedPlanningOrder[] })
+              .refusedOrders
+          )[planningRowKey(selectedItem)] ?? [];
+        if (refused.length > 0) {
+          setOrders(selectedItem, refused);
+          toast.error(pastStartToast(purchaseOrders.length, refused.length));
+          return;
+        }
 
         if (purchaseOrders.length === 0) {
           toast.success(t`Orders submitted`);
@@ -597,7 +626,8 @@ export const PurchasingPlanningOrderDrawer = memo(
           );
         }
 
-        setOrders(selectedItem, []);
+        // re-seed: a week ordered in part keeps its remainder
+        onSuggestionsStale(selectedItem);
         onClose();
       }
     }, [fetcher.state, fetcher.data]);

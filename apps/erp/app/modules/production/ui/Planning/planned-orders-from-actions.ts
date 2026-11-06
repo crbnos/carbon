@@ -24,10 +24,15 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
-import type { ProductionOrder } from "~/modules/production/production.models";
+import type {
+  ProductionOrder,
+  RefusedPlanningOrder
+} from "~/modules/production/production.models";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
+import { planningRowKey } from "./planning-action-scope";
 
 type NewSupplyActionFields = {
+  id: string;
   type: Database["public"]["Enums"]["planningActionType"];
   status: Database["public"]["Enums"]["planningActionStatus"];
   purchaseOrderLineId: string | null;
@@ -147,6 +152,7 @@ export function productionOrdersFromActions(
       periodId: action.periodId,
       quantity: batch.quantity,
       isASAP: batch.isASAP,
+      planningActionId: action.id,
       policyName: action.policyName ?? undefined,
       reason: action.reason ?? undefined,
       triggerValues: triggerValuesOf(action.triggerValues)
@@ -184,6 +190,7 @@ export function plannedOrdersFromActions(
           ? round(batch.quantity / conversionFactor, 0, RoundingMode.Up)
           : batch.quantity,
       supplierId: context.supplierId ?? action.supplierId ?? undefined,
+      planningActionId: action.id,
       itemReadableId: context.itemReadableId,
       description: context.description,
       unitOfMeasureCode: context.unitOfMeasureCode,
@@ -223,4 +230,32 @@ export function supplierConversionFactor(
     parts.data?.find((part) => part.supplierId === supplierId)
       ?.conversionFactor ?? 1
   );
+}
+
+/**
+ * The submitted orders that Make / Order refused for starting in the past
+ * (`refusedOrders`), by planning row (`planningRowKey`); a row with none is
+ * absent. They stay the row's draft to be moved from today.
+ */
+export function refusedOrdersByRowKey<O>(
+  submitted: { id: string; planningSegmentId: string; orders: O[] }[],
+  refused: RefusedPlanningOrder[] | null | undefined
+): Record<string, O[]> {
+  const byRowKey: Record<string, O[]> = {};
+  for (const item of submitted) {
+    const indexes = new Set(
+      (refused ?? [])
+        .filter(
+          (r) =>
+            r.itemId === item.id &&
+            r.planningSegmentId === item.planningSegmentId
+        )
+        .map((r) => r.index)
+    );
+    if (indexes.size === 0) continue;
+    byRowKey[planningRowKey(item)] = item.orders.filter((_, index) =>
+      indexes.has(index)
+    );
+  }
+  return byRowKey;
 }

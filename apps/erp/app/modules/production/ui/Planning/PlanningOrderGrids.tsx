@@ -8,7 +8,10 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Skeleton
+  Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import { formatDate, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -18,7 +21,7 @@ import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuCalendarClock, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -31,6 +34,11 @@ import {
 } from "./PlanningActionLines";
 import type { PlanningPurchaseOrder } from "./planning-review";
 import { isPlanningActionLate } from "./planning-review";
+import {
+  type SuggestedOrderDates,
+  withDatesInStep,
+  withStartDate
+} from "./suggested-order-dates";
 
 // The two tables of the planning order drawer. They look alike and save
 // DIFFERENTLY, which is why they are two tables and not one list:
@@ -82,10 +90,7 @@ function SectionTitle({
 
 // ─── Suggested orders (draft) ────────────────────────────────────────────────
 
-type SuggestedOrder = {
-  quantity: number;
-  dueDate?: string | null;
-};
+type SuggestedOrder = SuggestedOrderDates & { quantity: number };
 
 type SuggestedOrdersGridProps<O extends SuggestedOrder> = {
   title: ReactNode;
@@ -98,8 +103,8 @@ type SuggestedOrdersGridProps<O extends SuggestedOrder> = {
    *  already passed. */
   todayIso: string;
   quantityHeader: string;
-  /** Header of the derived "last day to act" column: a purchase is ordered
-   *  by that day, a job is started by it. */
+  /** Header of the "last day to act" column: a purchase is ordered by that
+   *  day, a job is started by it. */
   orderByHeader: string;
   isDisabled?: boolean;
   onChange: (orders: O[]) => void;
@@ -156,9 +161,21 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
   const editableComponents = useMemo(
     () => ({
       quantity: EditableNumber<O>(draftMutation, QUANTITY_FIELD),
-      dueDate: EditableDate<O>(draftMutation)
+      dueDate: EditableDate<O>(draftMutation),
+      startDate: EditableDate<O>(draftMutation)
     }),
     []
+  );
+
+  const onGridChange = useCallback(
+    (next: O[]) => onChange(withDatesInStep(next, orders, leadTime, todayIso)),
+    [onChange, orders, leadTime, todayIso]
+  );
+
+  const rescheduledDue = formatDate(
+    parseDate(todayIso).add({ days: leadTime }).toString(),
+    undefined,
+    locale
   );
 
   const columns = useMemo<ColumnDef<O>[]>(() => {
@@ -187,26 +204,61 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
       },
       {
         // The last day to place the order and still receive it by the due
-        // date. Derived from the row's CURRENT due date, so it moves with an
-        // edit; red once that day has passed.
-        id: "orderBy",
+        // date; red once it has passed.
+        accessorKey: "startDate",
         header: orderByHeader,
-        size: 140,
+        size: 172,
         cell: ({ row }) => {
-          const dueDate = row.original.dueDate;
-          if (!dueDate) return "—";
-          const orderBy = parseDate(dueDate)
-            .subtract({ days: leadTime })
-            .toString();
+          const { startDate, dueDate } = row.original;
+          const orderBy =
+            startDate ??
+            (dueDate
+              ? parseDate(dueDate).subtract({ days: leadTime }).toString()
+              : null);
+          if (!orderBy) return "—";
+          const isLate = orderBy < todayIso;
           return (
-            <span
-              className={
-                orderBy < todayIso
-                  ? "tabular-nums font-medium text-red-500"
-                  : "tabular-nums"
-              }
-            >
-              {formatDate(orderBy, undefined, locale)}
+            <span className="flex items-center gap-1">
+              <span
+                className={
+                  isLate
+                    ? "tabular-nums font-medium text-red-500"
+                    : "tabular-nums"
+                }
+              >
+                {formatDate(orderBy, undefined, locale)}
+              </span>
+              {isLate && !isDisabled && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      aria-label={t`Reschedule from today`}
+                      icon={<LuCalendarClock />}
+                      onClick={(event) => {
+                        // keep the click from opening the cell's editor
+                        event.stopPropagation();
+                        onChange(
+                          orders.map((order, index) =>
+                            index === row.index
+                              ? withStartDate(
+                                  order,
+                                  todayIso,
+                                  leadTime,
+                                  todayIso
+                                )
+                              : order
+                          )
+                        );
+                      }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <Trans>Reschedule from today, due {rescheduledDue}</Trans>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </span>
           );
         }
@@ -244,6 +296,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
     locale,
     leadTime,
     todayIso,
+    rescheduledDue,
     isDisabled,
     orders,
     onChange,
@@ -258,7 +311,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
         columns={columns}
         canEdit={!isDisabled}
         editableComponents={editableComponents}
-        onDataChange={onChange}
+        onDataChange={onGridChange}
         onNewRow={!isDisabled ? onAdd : undefined}
         contained={false}
         withSimpleSorting={false}

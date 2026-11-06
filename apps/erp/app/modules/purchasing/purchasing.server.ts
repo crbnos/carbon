@@ -56,6 +56,11 @@ import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  pastStartRefusalMessage,
+  planningOrderStartsInPast,
+  type RefusedPlanningOrder
+} from "~/modules/production/production.models";
+import {
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
@@ -3106,7 +3111,10 @@ export const confirmReturnOrder = defineServiceFn({
  * order already has on the same date adds to that line. The quantity is
  * raised to the supplier part's minimum; the price is the supplier part's,
  * converted at today's rate (refused for a currency with no rate); the tax is
- * the supplier's. An item whose purchasing is blocked is skipped. The orders
+ * the supplier's. An item whose purchasing is blocked is skipped. An order
+ * that starts (else is due) before the location's today is refused and
+ * listed in `refusedOrders` (item, segment and its index in the item's
+ * `orders`) and in `errors`; the item's other orders are still placed. The orders
  * raised keep their planning approval bypass, the supply forecast is
  * recorded, and the Order suggestions they answer are settled.
  *
@@ -3184,12 +3192,29 @@ export const orderPlannedPurchases = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       purchaseOrderLineId: string;
+      quantity: number;
+      planningActionId?: string;
     }[] = [];
+
+    // Weeks are counted from the location's today, as the planning grid's are.
+    const asOf = datetime.today(
+      await getLocationTimeZone(client, locationId, companyId)
+    );
+    const today = asOf.toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
 
     for (const item of itemsToOrder) {
       itemIds.add(item.id);
       let itemHasUsableOrder = false;
-      for (const order of item.orders) {
+      for (const [index, order] of item.orders.entries()) {
+        if (planningOrderStartsInPast(order, today)) {
+          refusedOrders.push({
+            itemId: item.id,
+            planningSegmentId: item.planningSegmentId,
+            index
+          });
+          continue;
+        }
         if (order.supplierId) supplierIds.add(order.supplierId);
         if (order.periodId) periodIds.add(order.periodId);
         if (order.supplierId && order.periodId) {
@@ -3204,7 +3229,10 @@ export const orderPlannedPurchases = defineServiceFn({
           itemHasUsableOrder = true;
         }
       }
-      if (!itemHasUsableOrder) {
+      if (
+        !itemHasUsableOrder &&
+        !refusedOrders.some((refused) => refused.itemId === item.id)
+      ) {
         errors.push(
           `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
         );
@@ -3220,7 +3248,7 @@ export const orderPlannedPurchases = defineServiceFn({
     if (location) return location;
     const ownedItems = await client
       .from("item")
-      .select("id")
+      .select("id, readableId, readableIdWithRevision")
       .in("id", Array.from(itemIds))
       .eq("companyId", companyId);
     if (ownedItems.error || (ownedItems.data?.length ?? 0) !== itemIds.size) {
@@ -3233,6 +3261,22 @@ export const orderPlannedPurchases = defineServiceFn({
       });
       return ctx.error("notFound", "Item not found");
     }
+    const refusedCountByItem = new Map<string, number>();
+    for (const refused of refusedOrders) {
+      refusedCountByItem.set(
+        refused.itemId,
+        (refusedCountByItem.get(refused.itemId) ?? 0) + 1
+      );
+    }
+    const pastStartErrors = [...refusedCountByItem].map(([itemId, count]) => {
+      const item = ownedItems.data.find((owned) => owned.id === itemId);
+      return pastStartRefusalMessage(
+        item?.readableIdWithRevision ?? item?.readableId ?? itemId,
+        count,
+        today
+      );
+    });
+    errors.push(...pastStartErrors);
 
     // An order in a project segment is charged to that project: the PO
     // line carries the project, and the receipt puts the stock in the
@@ -3327,11 +3371,6 @@ export const orderPlannedPurchases = defineServiceFn({
       .eq("companyId", companyId);
     const purchasingByItem = new Map(
       (purchasingRows.data ?? []).map((row) => [row.itemId, row])
-    );
-
-    // Weeks are counted from the location's today, as the planning grid's are.
-    const asOf = datetime.today(
-      await getLocationTimeZone(client, locationId, companyId)
     );
 
     // Every open PO an order may join, with its lines, in one read: the
@@ -3609,7 +3648,11 @@ export const orderPlannedPurchases = defineServiceFn({
             itemId,
             periodId: order.periodId,
             planningSegmentId,
-            purchaseOrderLineId: purchaseOrderLineId!
+            purchaseOrderLineId: purchaseOrderLineId!,
+            // The action is in inventory units; the line in purchase units,
+            // after the supplier part's minimum.
+            quantity: adjustedQuantity * (supplierPart?.conversionFactor ?? 1),
+            planningActionId: order.planningActionId
           });
           allSupplyForecasts.push({
             itemId,
@@ -3685,8 +3728,13 @@ export const orderPlannedPurchases = defineServiceFn({
           lineByOrder.set(key, entry.purchaseOrderLineId);
         }
       }
+      // Only a fully answered action hands its pegs over: one still open
+      // for a remainder keeps them, and the next MRP run re-pegs.
       const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+        if (
+          action.status !== "Actioned" ||
+          !segments.planningGroupIds.has(action.planningSegmentId)
+        ) {
           return [];
         }
         const supplyId = lineByOrder.get(
@@ -3722,9 +3770,13 @@ export const orderPlannedPurchases = defineServiceFn({
       });
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        errors.length === pastStartErrors.length
+          ? `No orders were created. ${errors.slice(0, 3).join(" ")}${
+              errors.length > 3 ? ` And ${errors.length - 3} more.` : ""
+            }`
+          : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
+              errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+            }`
       );
     }
 
@@ -3743,6 +3795,7 @@ export const orderPlannedPurchases = defineServiceFn({
       purchaseOrders: Array.from(
         new Map(Array.from(poCache.values()).map((po) => [po.id, po])).values()
       ),
+      refusedOrders,
       errors: errors.length > 0 ? errors : undefined
     };
   }

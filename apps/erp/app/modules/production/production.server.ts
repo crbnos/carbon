@@ -56,6 +56,7 @@ import {
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
+  getLocationTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import {
@@ -89,6 +90,7 @@ import {
   jobValidator,
   makeToAssetItemError,
   PLANNING_EDITABLE_JOB_STATUSES,
+  pastStartRefusalMessage,
   peopleAbsenceRangeValidator,
   peopleAbsenceValidator,
   peopleAssignmentValidator,
@@ -100,10 +102,12 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  planningOrderStartsInPast,
   procedureStatus,
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  type RefusedPlanningOrder,
   SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
@@ -4386,8 +4390,11 @@ export const markPersonAbsentRange = defineServiceFn({
  * `updatePlannedJob` or Apply. The location and every item must
  * be this company's. Per item: one whose manufacturing is blocked, needs
  * configuration or is held by an unreleased change notice is skipped and
- * named in `errors`; each order becomes a
- * Planned job (ASAP or Soft Deadline) at the location with the item's method.
+ * named in `errors`. An order that starts (else is due) before the location's
+ * today is refused and listed in `refusedOrders` (item, segment and its index
+ * in the item's `orders`) and in `errors`; the item's other orders are still
+ * made. Each becomes a Planned job (ASAP or Soft Deadline) at the location
+ * with the item's method.
  * Then the Make suggestions those orders answer are settled, the jobs' supply
  * is recorded per week (`supplyForecast`) and their requirements are
  * recalculated. An item with no orders is counted as already planned (it has
@@ -4436,7 +4443,7 @@ export const orderPlannedJobs = defineServiceFn({
         .maybeSingle(),
       client
         .from("item")
-        .select("id")
+        .select("id, readableId, readableIdWithRevision")
         .in("id", itemIds)
         .eq("companyId", companyId)
     ]);
@@ -4454,6 +4461,17 @@ export const orderPlannedJobs = defineServiceFn({
       });
       return ctx.error("notFound", "Not found");
     }
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const today = datetime
+      .today(await getLocationTimeZone(client, locationId, companyId))
+      .toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
+    let pastStartErrorCount = 0;
 
     // A job in a project segment is charged to that project and receives
     // its output into the project's stock. A job in a planning group
@@ -4498,6 +4516,8 @@ export const orderPlannedJobs = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       jobId: string;
+      quantity: number;
+      planningActionId?: string;
     }[] = [];
     const errors: string[] = [];
     let processedItems = 0;
@@ -4558,8 +4578,32 @@ export const orderPlannedJobs = defineServiceFn({
         continue;
       }
 
+      const pastIndexes = new Set(
+        item.orders.flatMap((order, index) =>
+          planningOrderStartsInPast(order, today) ? [index] : []
+        )
+      );
+      if (pastIndexes.size > 0) {
+        for (const index of pastIndexes) {
+          refusedOrders.push({
+            itemId: item.id,
+            planningSegmentId: item.planningSegmentId,
+            index
+          });
+        }
+        errors.push(
+          pastStartRefusalMessage(
+            readableIdByItem.get(item.id) ?? item.id,
+            pastIndexes.size,
+            today
+          )
+        );
+        pastStartErrorCount++;
+      }
+
       let itemProcessed = false;
-      for (const order of item.orders) {
+      for (const [index, order] of item.orders.entries()) {
+        if (pastIndexes.has(index)) continue;
         const created = await service.insertJob(
           client,
           db,
@@ -4614,7 +4658,9 @@ export const orderPlannedJobs = defineServiceFn({
           itemId: item.id,
           periodId: order.periodId,
           planningSegmentId: item.planningSegmentId,
-          jobId: id
+          jobId: id,
+          quantity: order.quantity,
+          planningActionId: order.planningActionId
         });
         const key = [item.id, order.periodId, item.planningSegmentId].join(
           "\u001f"
@@ -4665,8 +4711,13 @@ export const orderPlannedJobs = defineServiceFn({
         ].join("\u0000");
         if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
       }
+      // Only a fully answered action hands its pegs over: one still open
+      // for a remainder keeps them, and the next MRP run re-pegs.
       const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+        if (
+          action.status !== "Actioned" ||
+          !segments.planningGroupIds.has(action.planningSegmentId)
+        ) {
           return [];
         }
         const supplyId = jobByOrder.get(
@@ -4737,9 +4788,13 @@ export const orderPlannedJobs = defineServiceFn({
     if (errors.length > 0 && processedItems === 0) {
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        errors.length === pastStartErrorCount
+          ? `No jobs were created. ${errors.slice(0, 3).join(" ")}${
+              errors.length > 3 ? ` And ${errors.length - 3} more.` : ""
+            }`
+          : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
+              errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+            }`
       );
     }
 
@@ -4749,6 +4804,7 @@ export const orderPlannedJobs = defineServiceFn({
       noDemandItemCount: itemsWithoutOrders.length - alreadyPlannedItemIds.size,
       processedItems,
       totalItems: items.length,
+      refusedOrders,
       errors
     };
   }

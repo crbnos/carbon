@@ -25,7 +25,7 @@ import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -58,7 +58,8 @@ import {
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
-  PLANNING_DRAWER_PARAM
+  PLANNING_DRAWER_PARAM,
+  type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
@@ -73,6 +74,7 @@ import {
 import {
   openNewSupplyActions,
   plannedOrdersFromActions,
+  refusedOrdersByRowKey,
   supplierConversionFactor
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
@@ -84,6 +86,7 @@ import {
   type PlanningSegmentProject,
   planningColumns
 } from "~/modules/production/ui/Planning/planningColumns";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
@@ -171,6 +174,11 @@ const PlanningTable = memo(
     });
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+    // A refused order is found by its index in the items as submitted.
+    const submittedItems = useRef<
+      { id: string; planningSegmentId: string; orders: PlannedOrder[] }[]
+    >([]);
+    const pastStartToast = usePastStartToast();
 
     // Every loaded row, each with its own actions. The open drawer's param
     // does not change the list.
@@ -256,14 +264,26 @@ const PlanningTable = memo(
       }
 
       if (bulkUpdateFetcher.data?.success === true) {
-        // The drafts became PO lines; the next open re-seeds from the new split.
-        setOrdersMap({});
+        // The drafts became PO lines; the next open re-seeds from the new
+        // split. An order refused for starting in the past stays its row's
+        // draft.
+        const refused = refusedOrdersByRowKey(
+          submittedItems.current,
+          (bulkUpdateFetcher.data as { refusedOrders?: RefusedPlanningOrder[] })
+            .refusedOrders
+        );
+        setOrdersMap(refused);
         const purchaseOrders =
           (
             bulkUpdateFetcher.data as {
               purchaseOrders?: { id: string; readableId: string }[];
             }
           )?.purchaseOrders ?? [];
+        const refusedCount = Object.values(refused).flat().length;
+        if (refusedCount > 0) {
+          toast.error(pastStartToast(purchaseOrders.length, refusedCount));
+          if (purchaseOrders.length === 0) return;
+        }
 
         if (purchaseOrders.length === 0) {
           toast.success(t`Orders submitted`);
@@ -474,6 +494,7 @@ const PlanningTable = memo(
             }),
           action: action
         };
+        submittedItems.current = payload.items;
         bulkUpdateFetcher.submit(payload, {
           method: "post",
           action: path.to.bulkUpdatePurchasingPlanning,
@@ -536,6 +557,17 @@ const PlanningTable = memo(
       },
       []
     );
+
+    // After an order the row's draft is stale: drop it so the drawer re-seeds.
+    const dropOrders = useCallback((item: PurchasingPlanningItem) => {
+      if (!item.id) return;
+      const key = planningRowKey(item);
+      setOrdersMap((prev) => {
+        if (!(key in prev)) return prev;
+        const { [key]: _dropped, ...rest } = prev;
+        return rest;
+      });
+    }, []);
 
     // The drawer's own Planning Horizon control: the same on-screen override
     // as the grid cell, for the row the drawer is open on.
@@ -1010,6 +1042,7 @@ const PlanningTable = memo(
             actionHandlers={actionHandlers}
             ordersVersion={ordersVersion}
             setOrders={setOrders}
+            onSuggestionsStale={dropOrders}
             periods={periods}
             isOpen={isDrawerOpen}
             onClose={closeDrawer}

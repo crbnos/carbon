@@ -893,6 +893,9 @@ msgstr "{counted} policzone"
 msgid "{created} created, {updated} updated."
 msgstr "{created} utworzono, {updated} zaktualizowano."
 
+msgid "{created} created."
+msgstr "Utworzono: {created}."
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -1138,6 +1141,9 @@ msgstr "{received} z {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} nie znaleziono"
 
+msgid "{refused} orders start before today and were not created. Reschedule them from today."
+msgstr "Zlecenia ({refused}) zaczynają się przed dzisiejszym dniem i nie zostały utworzone. Zaplanuj je ponownie od dziś."
+
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} jest zakończone. # sztuka nie jest dostarczona} other {{jobId} jest zakończone. # sztuk nie jest dostarczonych}}"
 
@@ -1327,6 +1333,9 @@ msgstr "1 operacja możliwa do tworzenia partii nie należy do partii — urucha
 msgid "1 check"
 msgstr "1 sprawdzenie"
 
+msgid "1 created."
+msgstr "Utworzono: 1."
+
 msgid "1 day"
 msgstr "1 dzień"
 
@@ -1353,6 +1362,9 @@ msgstr "1 zadanie utworzone"
 
 msgid "1 line"
 msgstr "1 pozycja"
+
+msgid "1 order starts before today and was not created. Reschedule it from today."
+msgstr "1 zlecenie zaczyna się przed dzisiejszym dniem i nie zostało utworzone. Zaplanuj je ponownie od dziś."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 część pominięta — ma już otwarte zadanie"
@@ -23725,6 +23737,12 @@ msgstr "Wymaga naprawy"
 
 msgid "Requires staffing"
 msgstr "Wymaga obsady"
+
+msgid "Reschedule from today"
+msgstr "Zaplanuj ponownie od dziś"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Zaplanuj ponownie od dziś, termin {rescheduledDue}"
 
 msgid "Reschedule tolerance"
 msgstr "Tolerancja przesunięcia"
