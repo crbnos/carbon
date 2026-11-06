@@ -64,7 +64,7 @@ DECLARE
   v_group_id text; v_company_id text; v_location_id text; v_storage_unit_id text; v_defaults jsonb;
   v_assembly text; v_part text; v_bin_b text; v_quarantine text;
   v_wip_account text; v_raw_account text; v_other_account text;
-  v_job text;
+  v_job text; v_other text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Backflush split test', 'system') RETURNING id INTO v_group_id;
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
@@ -140,7 +140,17 @@ BEGIN
   ASSERT (SELECT quantity FROM "itemLedger" WHERE "documentId" = v_job AND "entryType" = 'Consumption' AND "storageUnitId" IS NULL) = -3,
     'No storage unit must give its 3';
 
-  RAISE NOTICE 'ALL BACKFLUSH SPLIT CASES PASSED (empty named bin, short named bin, no bin named with quarantine)';
+  -- (d) A Non-Inventory material holds no stock: it is issued with no ledger
+  -- row, as the operation backflush (issueJobOperationMaterials) issues it.
+  INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
+    VALUES ('SP-SERVICE', 'Non-stock part', 'Part', 'Buy', 'Non-Inventory', 'EA', v_company_id, 'system') RETURNING id INTO v_other;
+  v_job := pg_temp.backflush(v_company_id, v_location_id, v_assembly, v_other, 'SP-D', 4, NULL, NULL);
+  ASSERT (SELECT count(*) FROM "itemLedger" WHERE "documentId" = v_job AND "itemId" = v_other) = 0,
+    'A Non-Inventory material must write no ledger row';
+  ASSERT (SELECT "quantityIssued" FROM "jobMaterial" WHERE "jobId" = v_job) = 4,
+    'A Non-Inventory material must still be issued';
+
+  RAISE NOTICE 'ALL BACKFLUSH SPLIT CASES PASSED (empty named bin, short named bin, no bin named with quarantine, Non-Inventory material)';
 END;
 $cases$;
 ROLLBACK;

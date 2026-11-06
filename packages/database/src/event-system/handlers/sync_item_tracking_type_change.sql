@@ -29,17 +29,27 @@ BEGIN
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
   CROSS JOIN LATERAL (
+    -- A lot counts by each place it is in: +5 in one bin and -5 in another
+    -- is stock in two places, not none. A serial unit is one unit in one place.
     SELECT count(*) AS lots, sum(per_lot.net) AS quantity,
-           min(te."readableId") FILTER (WHERE round(per_lot.net, 5) <> 1) AS "multiUnitLot",
-           max(per_lot.net) FILTER (WHERE round(per_lot.net, 5) <> 1) AS "multiUnitQuantity"
+           min(te."readableId") FILTER (
+             WHERE per_lot.places > 1 OR round(per_lot.net, 5) <> 1
+           ) AS "multiUnitLot",
+           max(per_lot.net) FILTER (
+             WHERE per_lot.places > 1 OR round(per_lot.net, 5) <> 1
+           ) AS "multiUnitQuantity"
     FROM (
-      SELECT il."trackedEntityId", sum(il.quantity) AS net
-      FROM "itemLedger" il
-      WHERE il."itemId" = n.id
-        AND il."companyId" = n."companyId"
-        AND il."trackedEntityId" IS NOT NULL
-      GROUP BY il."trackedEntityId"
-      HAVING round(sum(il.quantity), 5) <> 0
+      SELECT per_place."trackedEntityId", sum(per_place.net) AS net, count(*) AS places
+      FROM (
+        SELECT il."trackedEntityId", sum(il.quantity) AS net
+        FROM "itemLedger" il
+        WHERE il."itemId" = n.id
+          AND il."companyId" = n."companyId"
+          AND il."trackedEntityId" IS NOT NULL
+        GROUP BY il."trackedEntityId", il."locationId", il."storageUnitId", il."projectId"
+        HAVING round(sum(il.quantity), 5) <> 0
+      ) per_place
+      GROUP BY per_place."trackedEntityId"
     ) per_lot
     LEFT JOIN "trackedEntity" te
       ON te.id = per_lot."trackedEntityId" AND te."companyId" = n."companyId"
@@ -128,9 +138,12 @@ BEGIN
     );
   END IF;
 
-  -- The open documents that copied the tracking type take the new one: the
-  -- materials and assemblies of Draft and Planned jobs, and the lines of Draft
-  -- receipts, shipments and stock transfers.
+  -- The documents that copied the tracking type take the new one: the lines
+  -- of Draft receipts, shipments and stock transfers, and the materials and
+  -- assemblies of every job that is not Closed. A running job was refused
+  -- above, so that is a Draft, Planned, Completed or Cancelled job (a finished
+  -- one can be reopened, and job completion reads the copy when it receives),
+  -- or one released between the check and this update.
   UPDATE "jobMakeMethod" t
   SET "requiresSerialTracking" = n."itemTrackingType" = 'Serial',
       "requiresBatchTracking" = n."itemTrackingType" = 'Batch',
@@ -138,7 +151,7 @@ BEGIN
       "updatedAt" = NOW()
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
-  JOIN "job" j ON j."companyId" = n."companyId" AND j.status IN ('Draft', 'Planned')
+  JOIN "job" j ON j."companyId" = n."companyId" AND j.status <> 'Closed'
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
     AND t."itemId" = n.id
     AND t."companyId" = n."companyId"
@@ -151,7 +164,7 @@ BEGIN
       "updatedAt" = NOW()
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
-  JOIN "job" j ON j."companyId" = n."companyId" AND j.status IN ('Draft', 'Planned')
+  JOIN "job" j ON j."companyId" = n."companyId" AND j.status <> 'Closed'
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
     AND t."itemId" = n.id
     AND t."companyId" = n."companyId"
@@ -195,6 +208,33 @@ BEGIN
     AND t."itemId" = n.id
     AND t."companyId" = n."companyId"
     AND t."stockTransferId" = d.id;
+
+  -- A Draft receipt line's batch or serial records were made for the old type,
+  -- and posting would make them Available with the line's quantity. Release
+  -- them as a receipt does (releaseReceiptSerialEntities): a record with no
+  -- ledger history is deleted, one with history only loses its receipt link.
+  DELETE FROM "trackedEntity" te
+  USING batched_new n
+  JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
+  JOIN "receiptLine" rl ON rl."itemId" = n.id AND rl."companyId" = n."companyId"
+  JOIN "receipt" r ON r.id = rl."receiptId" AND r."companyId" = rl."companyId" AND r.status = 'Draft'
+  WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
+    AND te."companyId" = n."companyId"
+    AND te.attributes ->> 'Receipt Line' = rl.id
+    AND NOT EXISTS (
+      SELECT 1 FROM "itemLedger" il
+      WHERE il."trackedEntityId" = te.id AND il."companyId" = te."companyId"
+    );
+
+  UPDATE "trackedEntity" te
+  SET attributes = te.attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'
+  FROM batched_new n
+  JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
+  JOIN "receiptLine" rl ON rl."itemId" = n.id AND rl."companyId" = n."companyId"
+  JOIN "receipt" r ON r.id = rl."receiptId" AND r."companyId" = rl."companyId" AND r.status = 'Draft'
+  WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
+    AND te."companyId" = n."companyId"
+    AND te.attributes ->> 'Receipt Line' = rl.id;
 
   RETURN NULL;
 END;

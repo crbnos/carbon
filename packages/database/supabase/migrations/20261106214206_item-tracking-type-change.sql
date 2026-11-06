@@ -18,26 +18,45 @@ BEGIN
   END IF;
 
   -- Stock held in a form the new tracking type cannot use. Untracked draws read
-  -- only rows with no tracked entity, and tracked draws only rows with one, so
-  -- that stock would be stranded: Inventory cannot see batch or serial stock,
-  -- and Batch or Serial cannot see untracked stock (or the other's lots).
+  -- only rows with no tracked entity, and tracked draws only rows with one:
+  -- - Inventory cannot use batch or serial stock.
+  -- - Serial cannot use untracked stock, nor a lot of more than one unit.
+  -- - Non-Inventory holds no stock at all.
+  -- Batch takes any stock: untracked stock becomes stock with no batch number,
+  -- which assignBatchToUnnumberedStock numbers in place, and lots left from an
+  -- earlier change are batches again.
   SELECT o."readableIdWithRevision" AS "item", n."itemTrackingType" AS "newType",
          tracked.lots, tracked.quantity AS "trackedQuantity",
-         untracked.quantity AS "untrackedQuantity"
+         tracked."multiUnitLot", tracked."multiUnitQuantity",
+         untracked.bins, untracked.quantity AS "untrackedQuantity"
   INTO v_problem
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
   CROSS JOIN LATERAL (
-    SELECT count(*) AS lots, sum(net) AS quantity
+    -- A lot counts by each place it is in: +5 in one bin and -5 in another
+    -- is stock in two places, not none. A serial unit is one unit in one place.
+    SELECT count(*) AS lots, sum(per_lot.net) AS quantity,
+           min(te."readableId") FILTER (
+             WHERE per_lot.places > 1 OR round(per_lot.net, 5) <> 1
+           ) AS "multiUnitLot",
+           max(per_lot.net) FILTER (
+             WHERE per_lot.places > 1 OR round(per_lot.net, 5) <> 1
+           ) AS "multiUnitQuantity"
     FROM (
-      SELECT sum(il.quantity) AS net
-      FROM "itemLedger" il
-      WHERE il."itemId" = n.id
-        AND il."companyId" = n."companyId"
-        AND il."trackedEntityId" IS NOT NULL
-      GROUP BY il."trackedEntityId"
-      HAVING round(sum(il.quantity), 5) <> 0
+      SELECT per_place."trackedEntityId", sum(per_place.net) AS net, count(*) AS places
+      FROM (
+        SELECT il."trackedEntityId", sum(il.quantity) AS net
+        FROM "itemLedger" il
+        WHERE il."itemId" = n.id
+          AND il."companyId" = n."companyId"
+          AND il."trackedEntityId" IS NOT NULL
+        GROUP BY il."trackedEntityId", il."locationId", il."storageUnitId", il."projectId"
+        HAVING round(sum(il.quantity), 5) <> 0
+      ) per_place
+      GROUP BY per_place."trackedEntityId"
     ) per_lot
+    LEFT JOIN "trackedEntity" te
+      ON te.id = per_lot."trackedEntityId" AND te."companyId" = n."companyId"
   ) tracked
   CROSS JOIN LATERAL (
     SELECT count(*) AS bins, sum(net) AS quantity
@@ -52,24 +71,40 @@ BEGIN
     ) per_bin
   ) untracked
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
-    AND (
-      tracked.lots > 0
-      OR (n."itemTrackingType" <> 'Inventory' AND untracked.bins > 0)
-    )
+    AND CASE n."itemTrackingType"
+      WHEN 'Inventory' THEN tracked.lots > 0
+      WHEN 'Serial' THEN untracked.bins > 0 OR tracked."multiUnitQuantity" IS NOT NULL
+      WHEN 'Non-Inventory' THEN tracked.lots > 0 OR untracked.bins > 0
+      ELSE false
+    END
   LIMIT 1;
 
   IF FOUND THEN
-    IF v_problem.lots > 0 THEN
+    IF v_problem."newType" = 'Inventory' THEN
       RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
-        '%s still has %s on hand in %s batch or serial numbers. Adjust that stock to zero before you change the tracking type to %s.',
-        v_problem."item", trim_scale(round(v_problem."trackedQuantity", 5)),
-        v_problem.lots, v_problem."newType"
+        '%s still has stock in %s batch or serial numbers (%s in total). Adjust each to zero before you change the tracking type to Inventory.',
+        v_problem."item", v_problem.lots,
+        trim_scale(round(v_problem."trackedQuantity", 5))
+      );
+    END IF;
+    IF v_problem."newType" = 'Serial' AND v_problem.bins > 0 THEN
+      RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
+        '%s still has stock with no serial number in %s storage units (%s in total). Adjust each to zero before you change the tracking type to Serial.',
+        v_problem."item", v_problem.bins,
+        trim_scale(round(v_problem."untrackedQuantity", 5))
+      );
+    END IF;
+    IF v_problem."newType" = 'Serial' THEN
+      RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
+        '%s has %s on hand in batch %s. A serial number holds one unit: adjust that stock before you change the tracking type to Serial.',
+        v_problem."item", trim_scale(round(v_problem."multiUnitQuantity", 5)),
+        coalesce(v_problem."multiUnitLot", 'with no number')
       );
     END IF;
     RAISE EXCEPTION USING ERRCODE = '23514', MESSAGE = format(
-      '%s still has %s on hand without a batch or serial number. Adjust that stock to zero before you change the tracking type to %s.',
-      v_problem."item", trim_scale(round(v_problem."untrackedQuantity", 5)),
-      v_problem."newType"
+      '%s still has stock in %s storage units or batch or serial numbers (%s in total). Adjust each to zero before you change the tracking type to Non-Inventory.',
+      v_problem."item", v_problem.lots + v_problem.bins,
+      trim_scale(round(coalesce(v_problem."trackedQuantity", 0) + coalesce(v_problem."untrackedQuantity", 0), 5))
     );
   END IF;
 
@@ -107,9 +142,12 @@ BEGIN
     );
   END IF;
 
-  -- The open documents that copied the tracking type take the new one: the
-  -- materials and assemblies of Draft and Planned jobs, and the lines of Draft
-  -- receipts, shipments and stock transfers.
+  -- The documents that copied the tracking type take the new one: the lines
+  -- of Draft receipts, shipments and stock transfers, and the materials and
+  -- assemblies of every job that is not Closed. A running job was refused
+  -- above, so that is a Draft, Planned, Completed or Cancelled job (a finished
+  -- one can be reopened, and job completion reads the copy when it receives),
+  -- or one released between the check and this update.
   UPDATE "jobMakeMethod" t
   SET "requiresSerialTracking" = n."itemTrackingType" = 'Serial',
       "requiresBatchTracking" = n."itemTrackingType" = 'Batch',
@@ -117,7 +155,7 @@ BEGIN
       "updatedAt" = NOW()
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
-  JOIN "job" j ON j."companyId" = n."companyId" AND j.status IN ('Draft', 'Planned')
+  JOIN "job" j ON j."companyId" = n."companyId" AND j.status <> 'Closed'
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
     AND t."itemId" = n.id
     AND t."companyId" = n."companyId"
@@ -130,7 +168,7 @@ BEGIN
       "updatedAt" = NOW()
   FROM batched_new n
   JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
-  JOIN "job" j ON j."companyId" = n."companyId" AND j.status IN ('Draft', 'Planned')
+  JOIN "job" j ON j."companyId" = n."companyId" AND j.status <> 'Closed'
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
     AND t."itemId" = n.id
     AND t."companyId" = n."companyId"
@@ -174,6 +212,33 @@ BEGIN
     AND t."itemId" = n.id
     AND t."companyId" = n."companyId"
     AND t."stockTransferId" = d.id;
+
+  -- A Draft receipt line's batch or serial records were made for the old type,
+  -- and posting would make them Available with the line's quantity. Release
+  -- them as a receipt does (releaseReceiptSerialEntities): a record with no
+  -- ledger history is deleted, one with history only loses its receipt link.
+  DELETE FROM "trackedEntity" te
+  USING batched_new n
+  JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
+  JOIN "receiptLine" rl ON rl."itemId" = n.id AND rl."companyId" = n."companyId"
+  JOIN "receipt" r ON r.id = rl."receiptId" AND r."companyId" = rl."companyId" AND r.status = 'Draft'
+  WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
+    AND te."companyId" = n."companyId"
+    AND te.attributes ->> 'Receipt Line' = rl.id
+    AND NOT EXISTS (
+      SELECT 1 FROM "itemLedger" il
+      WHERE il."trackedEntityId" = te.id AND il."companyId" = te."companyId"
+    );
+
+  UPDATE "trackedEntity" te
+  SET attributes = te.attributes - 'Receipt' - 'Receipt Line' - 'Receipt Line Index'
+  FROM batched_new n
+  JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
+  JOIN "receiptLine" rl ON rl."itemId" = n.id AND rl."companyId" = n."companyId"
+  JOIN "receipt" r ON r.id = rl."receiptId" AND r."companyId" = rl."companyId" AND r.status = 'Draft'
+  WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
+    AND te."companyId" = n."companyId"
+    AND te.attributes ->> 'Receipt Line' = rl.id;
 
   RETURN NULL;
 END;

@@ -76,6 +76,7 @@ DECLARE
   v_group_id text; v_company_id text; v_location_id text;
   v_batch text; v_plain text; v_empty text; v_running text; v_draft_part text; v_assembly text;
   v_stranded text; v_split text; v_units text; v_service text; v_bin text;
+  v_moved text; v_received text; v_receipt text; v_line text; v_unit text; v_returned text;
   v_lot text; v_job text; v_message text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Tracking type test', 'system') RETURNING id INTO v_group_id;
@@ -142,6 +143,17 @@ BEGIN
   ASSERT v_message = 'TT-SPLIT still has stock with no serial number in 2 storage units (0 in total). Adjust each to zero before you change the tracking type to Serial.',
     format('Offsetting bins must refuse the change to Serial, got: %s', v_message);
 
+  -- (f2) A lot at +5 in A-1 and -5 with no storage unit nets to zero but is
+  -- stock in two places: the change to Inventory is still refused.
+  v_moved := pg_temp.item(v_company_id, 'TT-MOVED', 'Batch');
+  v_lot := pg_temp.lot(v_company_id, v_location_id, v_moved, 'LOT-MOVED', 0);
+  PERFORM pg_temp.stock(v_company_id, v_location_id, v_moved, 5, v_lot, v_bin);
+  PERFORM pg_temp.stock(v_company_id, v_location_id, v_moved, -5, v_lot);
+  v_message := pg_temp.refusal(format(
+    $$UPDATE item SET "itemTrackingType" = 'Inventory' WHERE id = %L$$, v_moved));
+  ASSERT v_message = 'TT-MOVED still has stock in 1 batch or serial numbers (0 in total). Adjust each to zero before you change the tracking type to Inventory.',
+    format('A lot split across places must refuse the change to Inventory, got: %s', v_message);
+
   -- (g) Lots of one unit each can become serial numbers.
   v_units := pg_temp.item(v_company_id, 'TT-UNITS', 'Batch');
   PERFORM pg_temp.lot(v_company_id, v_location_id, v_units, 'U-1', 1);
@@ -200,7 +212,7 @@ BEGIN
   ASSERT (SELECT "itemTrackingType" FROM item WHERE id = v_draft_part) = 'Inventory',
     'The free item in a refused bulk change must not be written';
 
-  -- (o) Completed and cancelled jobs do not block; a Draft job takes the new type.
+  -- (o) Completed and cancelled jobs do not block; they and a Draft job take the new type.
   UPDATE job SET status = 'Completed' WHERE "jobId" = 'TT-J1' AND "companyId" = v_company_id;
   v_job := pg_temp.job(v_company_id, v_location_id, v_assembly, v_draft_part, 'TT-J2', 'Draft');
   ASSERT pg_temp.refusal(format(
@@ -209,9 +221,9 @@ BEGIN
   ASSERT (SELECT "requiresBatchTracking" AND NOT "requiresSerialTracking" FROM "jobMaterial"
           WHERE "jobId" = v_job AND "itemId" = v_draft_part),
     'A Draft job''s material must take the new tracking type';
-  ASSERT (SELECT NOT "requiresBatchTracking" FROM "jobMaterial" jm JOIN job j ON j.id = jm."jobId"
+  ASSERT (SELECT "requiresBatchTracking" FROM "jobMaterial" jm JOIN job j ON j.id = jm."jobId"
           WHERE j."jobId" = 'TT-J1' AND j."companyId" = v_company_id AND jm."itemId" = v_running),
-    'A completed job''s material must keep its copy';
+    'A completed job''s material must take the new type: a reopened job issues by it';
 
   -- (p) The assembly a Draft job makes takes the new type on its make method.
   UPDATE job SET status = 'Cancelled' WHERE id = v_job;
@@ -222,6 +234,35 @@ BEGIN
   ASSERT (SELECT "requiresSerialTracking" FROM "jobMakeMethod"
           WHERE "jobId" = v_job AND "itemId" = v_assembly AND "parentMaterialId" IS NULL),
     'A Planned job''s make method must take the new tracking type';
+
+  -- (q) A Draft receipt's serial records were made for Serial. A change to
+  -- Inventory releases them: one with no ledger history is deleted, one with
+  -- history (a returned unit) only loses its receipt link.
+  v_received := pg_temp.item(v_company_id, 'TT-RECEIVED', 'Serial');
+  INSERT INTO receipt ("receiptId", status, "companyId", "createdBy")
+    VALUES ('TT-R1', 'Draft', v_company_id, 'system') RETURNING id INTO v_receipt;
+  INSERT INTO "receiptLine" ("receiptId", "itemId", "orderQuantity", "receivedQuantity", "unitOfMeasure", "unitPrice", "requiresSerialTracking", "companyId", "createdBy")
+    VALUES (v_receipt, v_received, 2, 2, 'EA', 0, true, v_company_id, 'system') RETURNING id INTO v_line;
+  INSERT INTO "trackedEntity" (quantity, status, "sourceDocument", "sourceDocumentId", "readableId", "itemId", attributes, "companyId", "createdBy")
+    VALUES (1, 'On Hold', 'Item', v_received, 'SN-1', v_received,
+      jsonb_build_object('Receipt', v_receipt, 'Receipt Line', v_line, 'Receipt Line Index', 0), v_company_id, 'system')
+    RETURNING id INTO v_unit;
+  INSERT INTO "trackedEntity" (quantity, status, "sourceDocument", "sourceDocumentId", "readableId", "itemId", attributes, "companyId", "createdBy")
+    VALUES (1, 'On Hold', 'Item', v_received, 'SN-2', v_received,
+      jsonb_build_object('Receipt', v_receipt, 'Receipt Line', v_line, 'Receipt Line Index', 1, 'Shipment', 'SHP-OLD'), v_company_id, 'system')
+    RETURNING id INTO v_returned;
+  -- SN-2 went out and came back: it has ledger history, netting to zero.
+  PERFORM pg_temp.stock(v_company_id, v_location_id, v_received, 1, v_returned);
+  PERFORM pg_temp.stock(v_company_id, v_location_id, v_received, -1, v_returned);
+  ASSERT pg_temp.refusal(format(
+    $$UPDATE item SET "itemTrackingType" = 'Inventory' WHERE id = %L$$, v_received)) IS NULL,
+    'Receipt serials with no stock must not block the change';
+  ASSERT NOT EXISTS (SELECT 1 FROM "trackedEntity" WHERE id = v_unit),
+    'A receipt serial with no ledger history must be deleted';
+  ASSERT (SELECT attributes FROM "trackedEntity" WHERE id = v_returned) = jsonb_build_object('Shipment', 'SHP-OLD'),
+    'A receipt serial with history must keep its other attributes and lose its receipt link';
+  ASSERT (SELECT NOT "requiresSerialTracking" FROM "receiptLine" WHERE id = v_line),
+    'The Draft receipt line must take the new type';
 END;
 $cases$;
 
