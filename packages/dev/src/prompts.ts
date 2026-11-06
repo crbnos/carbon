@@ -82,7 +82,7 @@ export async function pickApps(): Promise<AppId[]> {
   if (!process.stdin.isTTY) return defaultApps;
 
   note(
-    "When no apps are selected it will only run (postgres, kong, supabase, inngest, mail) without spawning ERP/MES dev servers.",
+    "When no apps are selected it will only run (postgres, the API gateway, supabase, inngest, mail) without spawning ERP/MES dev servers.",
     "Tip"
   );
   const picked = await multiselect({
@@ -222,7 +222,11 @@ export async function confirmReset(projectName: string): Promise<boolean> {
   return ok as boolean;
 }
 
-export async function confirmPrune(count: number, trees = 0): Promise<boolean> {
+export async function confirmPrune(
+  count: number,
+  trees = 0,
+  sharedData = 0
+): Promise<boolean> {
   if (process.env.CARBON_DEV_YES === "1") return true;
   requireTerminal("Confirming a prune", CONFIRM_BY_ENV);
   const ok = await confirm({
@@ -231,7 +235,12 @@ export async function confirmPrune(count: number, trees = 0): Promise<boolean> {
       count
         ? `Destroy ${count} stack(s) and their volumes (postgres, storage, inngest data will be wiped)`
         : "",
-      trees ? `${count ? "remove" : "Remove"} ${trees} worktree(s)` : ""
+      sharedData
+        ? `${count ? "drop" : "Drop"} ${sharedData} worktree database(s) or old volume(s)`
+        : "",
+      trees
+        ? `${count || sharedData ? "remove" : "Remove"} ${trees} worktree(s)`
+        : ""
     ]
       .filter(Boolean)
       .join(", and ")}?`,

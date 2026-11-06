@@ -75,6 +75,10 @@ import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { Location, StorageUnit } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -143,6 +147,7 @@ const JobHeader = () => {
   const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
+  const documentEdit = useDocumentEditModal("jobTraveler", jobId);
 
   const { company } = useUser();
   const location = useOptimisticLocation();
@@ -454,6 +459,9 @@ const JobHeader = () => {
                       <Trans>Job Traveler</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                   <DropdownMenuRadioGroup
                     value={currentValue}
                     onValueChange={(option) => {
@@ -647,6 +655,7 @@ const JobHeader = () => {
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

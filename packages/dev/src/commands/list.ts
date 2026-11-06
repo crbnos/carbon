@@ -8,7 +8,13 @@ import { listWorktrees as gitListWorktrees } from "../git.js";
 import { dockerProjectStates } from "../services/compose.js";
 import { isAsleep } from "../services/hibernate.js";
 import { worktreesTable } from "../ui.js";
-import { listSlugs, projectName, slugForWorktreePath } from "../worktree.js";
+import {
+  listSlugs,
+  projectName,
+  recordedStackMode,
+  slugForWorktreePath,
+  stackDatabase
+} from "../worktree.js";
 
 export async function listWorktrees(opts: { json?: boolean } = {}) {
   if (!opts.json) intro("Carbon · worktrees");
@@ -27,12 +33,15 @@ export async function listWorktrees(opts: { json?: boolean } = {}) {
       : isAsleep(slug)
         ? "hibernated"
         : (dockerStates.get(projectName(slug)) ?? null);
+    const mode = slug ? recordedStackMode(slug) : null;
     return {
       path: w.path,
       branch: w.branch,
       current: w.current,
       slug,
-      dockerState
+      dockerState,
+      mode,
+      database: slug && mode ? stackDatabase(slug, mode) : null
     };
   });
 

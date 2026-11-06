@@ -28,6 +28,7 @@ import {
   LuCircleX,
   LuEye,
   LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
   LuSend,
@@ -36,6 +37,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -50,6 +52,7 @@ import PurchasingRFQStatus from "./PurchasingRFQStatus";
 const PurchasingRFQHeader = () => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
+  const documentEdit = useDocumentEditModal("purchasingRfq", rfqId);
 
   const { t } = useLingui();
   const finalizeModal = useDisclosure();
@@ -161,6 +164,17 @@ const PurchasingRFQHeader = () => {
                 </a>
               </Button>
             </RecordAction>
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
+                </Button>
+              </RecordAction>
+            )}
 
             {/* Share Dropdown - for Requested status with external links */}
             {status === "Requested" && hasSuppliers && (
@@ -321,6 +335,7 @@ const PurchasingRFQHeader = () => {
           purchasingRfqId={rfqId}
         />
       )}
+      {documentEdit.modal}
     </>
   );
 };

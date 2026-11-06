@@ -6,7 +6,7 @@
  * Representative sample data for previewing a document template without a real
  * record. Co-located with the PDFs (the "sample" half of Bindery's
  * schema+sample idea; the "schema" half is the merge-field catalog in
- * template/merge.ts). Cast to `any` — it only needs the fields blocks read.
+ * template/mergeFields.ts). Cast to `any` — it only needs the fields blocks read.
  */
 export const SAMPLE_SALES_INVOICE = {
   company: {
@@ -92,10 +92,12 @@ export const SAMPLE_SALES_INVOICE = {
   },
   salesInvoiceShipment: {
     shippingCost: 0,
-    shippingMethodId: "ground"
+    shippingMethodId: "ground",
+    shippingTermId: "fob"
   },
   paymentTerms: [{ id: "net30", name: "Net 30" }],
   shippingMethods: [{ id: "ground", name: "Ground" }],
+  shippingTerms: [{ id: "fob", name: "FOB Origin" }],
   terms: {
     type: "doc",
     content: [

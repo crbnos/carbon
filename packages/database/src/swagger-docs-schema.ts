@@ -117313,12 +117313,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117353,6 +117347,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
@@ -117651,12 +117651,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117691,6 +117685,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
@@ -117943,12 +117943,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117983,6 +117977,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborBillRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactEmail"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
@@ -119733,6 +119733,186 @@ export default {
         tags: ["projectBaseline"]
       }
     },
+    "/documentEdit": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/documentEdit"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.documentEdit"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["documentEdit"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.blocks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.settings"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.documentEdit.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.documentEdit"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["documentEdit"]
+      }
+    },
     "/salesOrderTransaction": {
       get: {
         parameters: [
@@ -120695,7 +120875,7 @@ export default {
       get: {
         parameters: [
           {
-            format: "extensions.vector",
+            format: "vector",
             in: "query",
             name: "query_embedding",
             required: true,
@@ -120756,7 +120936,7 @@ export default {
                   type: "string"
                 },
                 query_embedding: {
-                  format: "extensions.vector",
+                  format: "vector",
                   type: "string"
                 }
               },
@@ -125744,6 +125924,96 @@ export default {
         tags: ["(rpc) get_user_select_group_members"]
       }
     },
+    "/rpc/inspection_holds_at": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_open_lots_only",
+            required: false,
+            type: "boolean"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_holds_at"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_open_lots_only: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_item_id", "p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_holds_at"]
+      }
+    },
     "/rpc/get_effective_work_center_id": {
       get: {
         parameters: [
@@ -126469,6 +126739,13 @@ export default {
             name: "p_storage_unit_id",
             required: true,
             type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_open_lots_only",
+            required: false,
+            type: "boolean"
           }
         ],
         produces: [
@@ -126498,6 +126775,10 @@ export default {
                 p_item_id: {
                   format: "text",
                   type: "string"
+                },
+                p_open_lots_only: {
+                  format: "boolean",
+                  type: "boolean"
                 },
                 p_storage_unit_id: {
                   format: "text",
@@ -135826,6 +136107,74 @@ export default {
         tags: ["(rpc) get_exchange_rates"]
       }
     },
+    "/rpc/inspection_line_lot_open": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_receipt_line_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_line_lot_open"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_receipt_line_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_receipt_line_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_line_lot_open"]
+      }
+    },
     "/rpc/get_custom_field_unique_values": {
       post: {
         parameters: [
@@ -135912,6 +136261,85 @@ export default {
           }
         },
         tags: ["(rpc) sync_create_customer_entries"]
+      }
+    },
+    "/rpc/inspection_untracked_on_hand": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_untracked_on_hand"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_item_id", "p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_untracked_on_hand"]
       }
     },
     "/rpc/get_claims": {
@@ -136480,7 +136908,7 @@ export default {
       get: {
         parameters: [
           {
-            format: "extensions.vector",
+            format: "vector",
             in: "query",
             name: "query_embedding",
             required: true,
@@ -136541,7 +136969,7 @@ export default {
                   type: "string"
                 },
                 query_embedding: {
-                  format: "extensions.vector",
+                  format: "vector",
                   type: "string"
                 }
               },
@@ -192095,8 +192523,6 @@ export default {
         "serialNumberTiming",
         "useCalendarWeeks",
         "kanbanLabelSize",
-        "requireSupplierContactEmail",
-        "requireCustomerContactEmail",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -192105,6 +192531,8 @@ export default {
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
+        "requireSupplierContactEmail",
+        "requireCustomerContactEmail",
         "includeSupplierPartFiles"
       ],
       properties: {
@@ -192530,16 +192958,6 @@ export default {
           format: 'public."kanbanLabelSize"',
           type: "string"
         },
-        requireSupplierContactEmail: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        requireCustomerContactEmail: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
         timesheetApprovalRequired: {
           default: false,
           format: "boolean",
@@ -192597,6 +193015,16 @@ export default {
         serviceLaborBillRate: {
           format: "numeric",
           type: "number"
+        },
+        requireSupplierContactEmail: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireCustomerContactEmail: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         includeSupplierPartFiles: {
           default: true,
@@ -193326,6 +193754,68 @@ export default {
         },
         createdAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    documentEdit: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('dedit'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        blocks: {
+          format: "jsonb"
+        },
+        settings: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -255837,18 +256327,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requireSupplierContactEmail": {
-      name: "requireSupplierContactEmail",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.requireCustomerContactEmail": {
-      name: "requireCustomerContactEmail",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.timesheetApprovalRequired": {
       name: "timesheetApprovalRequired",
       required: false,
@@ -255917,6 +256395,18 @@ export default {
     },
     "rowFilter.companySettings.serviceLaborBillRate": {
       name: "serviceLaborBillRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireSupplierContactEmail": {
+      name: "requireSupplierContactEmail",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireCustomerContactEmail": {
+      name: "requireCustomerContactEmail",
       required: false,
       in: "query",
       type: "string"
@@ -256706,6 +257196,75 @@ export default {
     },
     "rowFilter.projectBaseline.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.documentEdit": {
+      name: "documentEdit",
+      description: "documentEdit",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/documentEdit"
+      }
+    },
+    "rowFilter.documentEdit.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.blocks": {
+      name: "blocks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.settings": {
+      name: "settings",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.documentEdit.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

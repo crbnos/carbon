@@ -46,6 +46,10 @@ import { Link, useFetcher, useNavigation, useParams } from "react-router";
 import { RevisionSuffix } from "~/components";
 import type { ResolvedAttachmentItem } from "~/components/AttachmentsList";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
@@ -100,6 +104,7 @@ function RelatedDocsErrorTooltip({
 const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
+  const documentEdit = useDocumentEditModal("purchaseOrder", orderId);
 
   const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -366,6 +371,9 @@ const PurchaseOrderHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -762,6 +770,7 @@ const PurchaseOrderHeader = () => {
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

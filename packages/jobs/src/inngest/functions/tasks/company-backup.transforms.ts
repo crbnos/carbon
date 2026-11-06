@@ -3,6 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import {
+  rewriteValueEditRowKeys,
+  type ValueEdits
+} from "@carbon/documents/template";
 import { type Kysely, sql } from "kysely";
 import { ID_REF_COLUMNS } from "../../../backups/id-refs";
 import {
@@ -352,6 +356,9 @@ export function buildRowTransforms(
           : rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite);
       };
     }
+    if (table.name === "documentEdit" && col.name === "settings") {
+      return (v) => rewriteDocumentEditRowKeys(v, ctx.idRewrite);
+    }
     if (!fk && ID_REF_COLUMNS[table.name]?.includes(col.name)) {
       const { idRewrite } = ctx;
       const rewrite = (id: unknown) =>
@@ -578,4 +585,19 @@ export async function getUniqueColumnGroups(
     GROUP BY ix.indexrelid
   `.execute(db);
   return result.rows.map((r) => r.cols);
+}
+
+/** A document's changed row values are keyed by record ids that a restore changes. */
+export function rewriteDocumentEditRowKeys(
+  settings: unknown,
+  idRewrite: ReadonlyMap<string, string>
+): unknown {
+  const parsed = typeof settings === "string" ? JSON.parse(settings) : settings;
+  const edits = (parsed as { valueEdits?: ValueEdits } | null)?.valueEdits;
+  if (!edits?.rows) return settings;
+  const next = {
+    ...(parsed as object),
+    valueEdits: rewriteValueEditRowKeys(edits, (id) => idRewrite.get(id) ?? id)
+  };
+  return typeof settings === "string" ? JSON.stringify(next) : next;
 }

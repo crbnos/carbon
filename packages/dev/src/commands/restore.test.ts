@@ -54,4 +54,11 @@ describe("buildRestoreEnv", () => {
       buildRestoreEnv({ keepStorageObjects: true }).KEEP_STORAGE_OBJECTS
     ).toBe("1");
   });
+
+  it("names the worktree's database, which in shared mode is not postgres", () => {
+    const env = buildRestoreEnv({}, { port: 54322, database: "wt_carbon_x" });
+    expect(env.PORT_DB).toBe("54322");
+    expect(env.DB_NAME).toBe("wt_carbon_x");
+    expect(buildRestoreEnv({})).not.toHaveProperty("DB_NAME");
+  });
 });
