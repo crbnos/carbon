@@ -1287,3 +1287,35 @@ it("refuses refunds exceeding advances held for the exact document", () => {
     })
   ).toThrow();
 });
+
+it("rejects refund principal or source balances whose currency units are unsafe", () => {
+  const scope = { type: "purchaseOrder" as const, id: "po" };
+  for (const [requestedDocumentPrincipal, available] of [
+    [100000000000000.03, 100000000000000.03],
+    [1, 100000000000000.03]
+  ] as const) {
+    expect(() =>
+      allocateDepositRefund({
+        scope,
+        sources: [source("advance", available, 1, { scope })],
+        requestedDocumentPrincipal,
+        currencyDecimals: 2
+      })
+    ).toThrow(/safe document currency units/);
+  }
+  expect(
+    allocateDepositRefund({
+      scope,
+      sources: [source("advance", 0.3, 1, { scope })],
+      requestedDocumentPrincipal: 0.1 + 0.2,
+      currencyDecimals: 2
+    })
+  ).toEqual([
+    {
+      sourcePaymentId: "advance",
+      sourceAmount: 0.3,
+      carryingBase: 0.3,
+      sourceExchangeRate: 1
+    }
+  ]);
+});

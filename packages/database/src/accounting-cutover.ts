@@ -339,6 +339,18 @@ export function migrationClearingByAccount(
   return { rows, total: total === 0 ? 0 : total };
 }
 
+/** Required control balances reconcile independently of offsetting differences. */
+export function migrationReconciliationBlockers(
+  rows: MigrationClearingRow[],
+  requiredAccountIds: ReadonlySet<string>
+): MigrationClearingRow[] {
+  return rows.filter(
+    (row) =>
+      requiredAccountIds.has(row.accountId) &&
+      !isMigrationClearingZero(row.difference)
+  );
+}
+
 /**
  * An open item the user may ignore on Migration Clearing: a sales or purchase
  * invoice. Before the cutover another system kept the books, so an invoice

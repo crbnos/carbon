@@ -802,6 +802,10 @@ export function allocateDepositRefund(input: {
     const normalized = toDocumentAmount(value, 1, input.currencyDecimals);
     if (Math.abs(normalized - value) > Number.EPSILON * Math.max(1, value) * 4)
       throw new Error("Refund principal exceeds document currency precision");
+    if (
+      !Number.isSafeInteger(round(normalized * 10 ** input.currencyDecimals, 0))
+    )
+      throw new Error("Refund principal exceeds safe document currency units");
     return normalized;
   };
   let remaining = documentAmount(input.requestedDocumentPrincipal);

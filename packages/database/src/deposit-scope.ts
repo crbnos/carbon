@@ -158,10 +158,21 @@ export async function loadPurchaseInvoiceDocumentIds(
   );
   if (!invoiceIds.length) return byInvoice;
   const lines = await db
-    .selectFrom("purchaseInvoiceLine")
-    .select(["invoiceId", "purchaseOrderId"])
-    .where("companyId", "=", companyId)
-    .where("invoiceId", "in", [...invoiceIds])
+    .selectFrom("purchaseInvoiceLine as invoiceLine")
+    .leftJoin("purchaseOrderLine as orderLine", (join) =>
+      join
+        .onRef("orderLine.id", "=", "invoiceLine.purchaseOrderLineId")
+        .onRef("orderLine.companyId", "=", "invoiceLine.companyId")
+    )
+    .select([
+      "invoiceLine.invoiceId",
+      (eb) =>
+        eb.fn
+          .coalesce("invoiceLine.purchaseOrderId", "orderLine.purchaseOrderId")
+          .as("purchaseOrderId")
+    ])
+    .where("invoiceLine.companyId", "=", companyId)
+    .where("invoiceLine.invoiceId", "in", [...invoiceIds])
     .execute();
   for (const line of lines) {
     const ids = byInvoice.get(line.invoiceId);

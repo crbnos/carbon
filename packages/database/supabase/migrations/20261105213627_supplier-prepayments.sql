@@ -8,14 +8,14 @@
 
 ALTER TABLE "payment" ADD COLUMN IF NOT EXISTS "purchaseOrderId" TEXT;
 
-DO $prepay$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payment_purchaseOrder_fkey') THEN
-    ALTER TABLE "payment" ADD CONSTRAINT "payment_purchaseOrder_fkey"
-      FOREIGN KEY ("purchaseOrderId")
-      REFERENCES "purchaseOrder"("id") ON DELETE SET NULL;
-  END IF;
-END $prepay$;
+CREATE UNIQUE INDEX IF NOT EXISTS "purchaseOrder_id_companyId_key"
+  ON "purchaseOrder" ("id", "companyId");
+
+ALTER TABLE "payment" DROP CONSTRAINT IF EXISTS "payment_purchaseOrder_fkey";
+ALTER TABLE "payment" ADD CONSTRAINT "payment_purchaseOrder_fkey"
+  FOREIGN KEY ("purchaseOrderId", "companyId")
+  REFERENCES "purchaseOrder"("id", "companyId")
+  ON DELETE SET NULL ("purchaseOrderId");
 
 CREATE INDEX IF NOT EXISTS "payment_purchaseOrderId_idx"
   ON "payment" ("purchaseOrderId", "companyId") WHERE "purchaseOrderId" IS NOT NULL;

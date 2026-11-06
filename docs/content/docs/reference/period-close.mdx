@@ -65,7 +65,7 @@ The seeded checks, from `computePeriodReadiness`:
 | Trial balance in balance for the period | Blocker | Any posted journal has unequal debits and credits. |
 | Post depreciation runs covering the period | Warning | A draft depreciation run ends in this period. |
 | Match & eliminate intercompany transactions | Warning | Unmatched intercompany transactions involve this company. |
-| Invoice shipped sales orders | Warning | A sales order shipment posted in this period has lines with no posted sales invoice dated by the period end, so the cost of sale is in this period and the revenue is not. |
+| Invoice shipped sales orders | Warning | A sales order shipment posted in this period has net shipped quantity not covered by cumulative posted invoice quantity by period end. Partial invoicing leaves the task Open. Posted uninvoiced returns reduce the quantity to bill; invoice coverage applies to the oldest shipments first. |
 
 A seventh seeded Auto task, **Review negative on-hand inventory** (Warning), has no live evaluator yet, so it fails closed and stays a standing Warning you resolve by skipping with a reason. The remaining three seeded tasks are the two Action steps (**Lock the period**, **Close the period**) and one Manual step (**Review financial statements**).
 

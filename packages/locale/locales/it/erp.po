@@ -2174,8 +2174,8 @@ msgstr "Una richiesta di offerta (RdO) di vendita è una richiesta del cliente p
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Un RFQ di vendita (un cliente ti chiede di quotare) o un RFQ di acquisto (chiedi ai fornitori); entrambi alimentano il thread di opportunità."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "Una spedizione di vendita registra il costo del venduto; la fattura di vendita registra i ricavi. Le spedizioni degli ordini di vendita registrate in questo periodo, le cui righe non hanno una fattura registrata con data entro la fine del periodo, lasciano il costo in questo periodo e i ricavi in un periodo successivo. Fatturale con data in questo periodo oppure escludile indicando un motivo se i termini di spedizione rinviano i ricavi a un periodo successivo."
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr "Una spedizione di vendita registra il costo del venduto; la fattura di vendita registra i ricavi. Le spedizioni degli ordini di vendita registrate in questo periodo la cui quantità netta spedita supera la quantità complessiva delle fatture registrate entro la fine del periodo lasciano parte del costo in questo periodo e i ricavi in un periodo successivo. Fatturale con una data compresa in questo periodo, oppure salta l’attività indicando un motivo se le condizioni di spedizione attribuiscono i ricavi a un periodo successivo."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Un segreto con ambito inviato nell'intestazione della richiesta carbon-key che autentica le chiamate programmatiche a Carbon, portando le proprie autorizzazioni e limite di velocità invece della sessione utente."
@@ -27340,6 +27340,9 @@ msgstr "Sconti per il Pagamento dei Fornitori (predefinito)"
 
 msgid "Supplier Prepayments"
 msgstr "Acconti fornitori"
+
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Gli acconti ai fornitori devono essere riconciliati con il bilancio di verifica. <0>Vai al bilancio di verifica</0>"
 
 msgid "supplier process"
 msgstr "processo del fornitore"

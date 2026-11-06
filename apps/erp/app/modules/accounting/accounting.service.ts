@@ -3605,39 +3605,15 @@ export async function closeAccountingPeriod(
     };
   }
 
-  // Checklist gate: every required task must be Done/Skipped and no Blocker
-  // auto-check may be failing (acceptance criteria 7/10). Instantiation is
-  // idempotent, so this both materializes and evaluates the checklist.
-  const checklist = await loadPeriodCloseChecklist(
-    client,
-    db,
-    args.companyId,
-    args.periodId,
-    previewRuns,
-    entitlements
-  );
-  if (checklist.error || !checklist.data) {
-    return {
-      data: null,
-      error: checklist.error ?? { message: "Failed to load close checklist" }
-    };
-  }
-  if (!checklist.data.canClose) {
-    return {
-      data: null,
-      error: {
-        message:
-          checklist.data.blockingReason ?? "Close checklist is not complete"
-      }
-    };
-  }
-
   // Persist the final Auto-task states and flip the period atomically. The
   // checklist state and the period status must move together — a partial write
   // would leave the checklist inconsistent with the period. supabase-js has no
   // multi-statement transaction, so the writes go through the Kysely client;
   // the DB close trigger remains the backstop for the invariant.
-  const now = new Date().toISOString();
+  // Run previews synthesize schedules in their own rolled-back transactions.
+  // Finish those before holding the period lock to avoid inverted lock order.
+  const runPreview = await previewRuns(period.data.endDate);
+  const now = datetime.timestamp();
   // periodCloseTask and accountingPeriod.closeStatus are added by the
   // period-close-lifecycle migration; the generated Kysely types don't include
   // them yet, so the write builder is cast until types are regenerated (this
@@ -3645,6 +3621,37 @@ export async function closeAccountingPeriod(
   try {
     await db.transaction().execute(async (trx) => {
       const tx = trx as any;
+      // Match posting's FOR SHARE before reading the checklist. NO KEY UPDATE
+      // still permits its separate client's task inserts to check their FK.
+      const lockedPeriod = await trx
+        .selectFrom("accountingPeriod")
+        .select("closeStatus")
+        .where("id", "=", args.periodId)
+        .where("companyId", "=", args.companyId)
+        .forNoKeyUpdate()
+        .executeTakeFirst();
+      if (lockedPeriod?.closeStatus !== "Locked") {
+        throw new Error("Period must be locked before closing.");
+      }
+      const checklist = await loadPeriodCloseChecklist(
+        client,
+        trx,
+        args.companyId,
+        args.periodId,
+        async () => runPreview,
+        entitlements
+      );
+      if (checklist.error || !checklist.data) {
+        throw new Error(
+          checklist.error?.message ?? "Failed to load close checklist"
+        );
+      }
+      if (!checklist.data.canClose) {
+        throw new Error(
+          checklist.data.blockingReason ?? "Close checklist is not complete"
+        );
+      }
+
       for (const state of checklist.data.autoTaskStates) {
         await tx
           .updateTable("periodCloseTask")
@@ -4249,13 +4256,10 @@ export function shippedNotInvoicedCheck({
 }
 
 /**
- * The "Invoice shipped sales orders" close check. Posted Sales Order
- * shipments with a posting date in the period, joined to their lines
- * (`shipmentLine.lineId` = the sales order line), where cumulative shipped
- * quantity exceeds cumulative posted invoiced quantity through the period end.
- * Earlier partial invoices cannot clear later shipments of the same line.
- * `shipment.invoiced` is order-level, so it is not read. Reads with the privileged Kysely client; a failed read
- * counts as one, so the warning shows rather than a false pass.
+ * Invoices name an order line, not a shipment, so their quantity covers the
+ * oldest net shipments first (posting date, then id). Uninvoiced goods returned
+ * by period end no longer need billing; service returns do not cancel a sale.
+ * A failed read keeps the warning open rather than reporting a false pass.
  */
 export async function getShippedNotInvoiced(
   db: Kysely<KyselyDatabase>,
@@ -4264,50 +4268,69 @@ export async function getShippedNotInvoiced(
   endDate: string
 ): Promise<ReturnType<typeof shippedNotInvoicedCheck>> {
   try {
-    const rows = await db
-      .selectFrom("shipment as s")
-      .select(["s.id", "s.shipmentId", "s.status"])
-      .where("s.companyId", "=", companyId)
-      .where("s.status", "=", "Posted")
-      .where("s.sourceDocument", "=", "Sales Order")
-      .where("s.postingDate", ">=", startDate)
-      .where("s.postingDate", "<=", endDate)
-      .where(({ exists, selectFrom }) =>
-        exists(
-          selectFrom("shipmentLine as l")
-            .select("l.id")
-            .whereRef("l.shipmentId", "=", "s.id")
-            .whereRef("l.companyId", "=", "s.companyId")
-            .where("l.shippedQuantity", ">", 0)
-            .where("l.lineId", "is not", null)
-            .where(sql<boolean>`
-              COALESCE((
-                SELECT SUM(shipped."shippedQuantity")
-                FROM "shipmentLine" shipped
-                JOIN shipment history
-                  ON history.id = shipped."shipmentId"
-                  AND history."companyId" = shipped."companyId"
-                WHERE shipped."lineId" = l."lineId"
-                  AND shipped."companyId" = l."companyId"
-                  AND history.status = 'Posted'
-                  AND history."sourceDocument" = 'Sales Order'
-                  AND history."postingDate" <= ${endDate}::date
-              ), 0) > COALESCE((
-                SELECT SUM(il.quantity)
-                FROM "salesInvoiceLine" il
-                JOIN "salesInvoice" i
-                  ON i.id = il."invoiceId"
-                  AND i."companyId" = il."companyId"
-                WHERE il."salesOrderLineId" = l."lineId"
-                  AND il."companyId" = l."companyId"
-                  AND i.status NOT IN ('Draft', 'Pending', 'Voided')
-                  AND i."postingDate" <= ${endDate}::date
-              ), 0)
-            `)
-        )
+    const { rows } = await sql<{
+      id: string;
+      shipmentId: string | null;
+      status: string;
+    }>`
+      WITH returns AS (
+        SELECT r."shipmentLineId", SUM(rl."receivedQuantity") AS quantity
+        FROM "salesReturnOrderLine" r
+        JOIN "receiptLine" rl
+          ON rl."lineId" = r.id AND rl."companyId" = r."companyId"
+        JOIN receipt receipt
+          ON receipt.id = rl."receiptId" AND receipt."companyId" = rl."companyId"
+        WHERE r."companyId" = ${companyId}
+          AND r."salesInvoiceLineId" IS NULL
+          AND r."returnType" NOT IN ('Return for Service', 'Return for Warranty')
+          AND receipt.status = 'Posted'
+          AND receipt."sourceDocument" = 'Sales Return Order'
+          AND receipt."postingDate" <= ${endDate}::date
+        GROUP BY r."shipmentLineId"
+      ), shipped_lines AS (
+        SELECT l."shipmentId", l."lineId" AS "orderLineId",
+          GREATEST(l."shippedQuantity" - COALESCE(r.quantity, 0), 0) AS quantity
+        FROM "shipmentLine" l
+        LEFT JOIN returns r ON r."shipmentLineId" = l.id
+        WHERE l."companyId" = ${companyId} AND l."lineId" IS NOT NULL
+        UNION ALL
+        SELECT l."shipmentId", l."salesOrderLineId", 1
+        FROM "shipmentFixedAssetLine" l
+        WHERE l."companyId" = ${companyId} AND l.shipped
+          AND l."salesOrderLineId" IS NOT NULL
+      ), shipments AS (
+        SELECT s.id, s."shipmentId", s.status, s."postingDate",
+          l."orderLineId", SUM(l.quantity) AS quantity
+        FROM shipment s
+        JOIN shipped_lines l ON l."shipmentId" = s.id
+        WHERE s."companyId" = ${companyId} AND s.status = 'Posted'
+          AND s."sourceDocument" = 'Sales Order'
+          AND s."postingDate" <= ${endDate}::date
+        GROUP BY s.id, s."shipmentId", s.status, s."postingDate", l."orderLineId"
+      ), coverage AS (
+        SELECT shipments.*,
+          SUM(quantity) OVER (
+            PARTITION BY "orderLineId" ORDER BY "postingDate", id
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+          ) AS "cumulativeQuantity"
+        FROM shipments
+      ), invoiced AS (
+        SELECT il."salesOrderLineId", SUM(il.quantity) AS quantity
+        FROM "salesInvoiceLine" il
+        JOIN "salesInvoice" i
+          ON i.id = il."invoiceId" AND i."companyId" = il."companyId"
+        WHERE il."companyId" = ${companyId}
+          AND i.status NOT IN ('Draft', 'Pending', 'Voided')
+          AND i."postingDate" <= ${endDate}::date
+        GROUP BY il."salesOrderLineId"
       )
-      .orderBy("s.shipmentId")
-      .execute();
+      SELECT DISTINCT c.id, c."shipmentId", c.status
+      FROM coverage c
+      LEFT JOIN invoiced i ON i."salesOrderLineId" = c."orderLineId"
+      WHERE c."postingDate" >= ${startDate}::date AND c.quantity > 0
+        AND c."cumulativeQuantity" > COALESCE(i.quantity, 0)
+      ORDER BY c."shipmentId", c.id
+    `.execute(db);
     return shippedNotInvoicedCheck({ shipments: rows, count: rows.length });
   } catch (error) {
     logger.error("Failed to read shipped-not-invoiced close check", {
@@ -22426,6 +22449,11 @@ export async function activateAccounting(
       const failed = readiness.checks.find((check) => !check.passed);
       if (failed) refuse(failed.detail ?? failed.label);
       const clearing = await getMigrationClearing(trx, args);
+      if (clearing.reconciliationBlockers.length > 0) {
+        refuse(
+          "Reconcile supplier prepayments on the trial balance before setting up accounting."
+        );
+      }
       if (!isMigrationClearingZero(clearing.total)) {
         refuse(
           `Migration Clearing totals ${clearing.total}. It must be zero to set up accounting.`

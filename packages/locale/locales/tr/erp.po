@@ -2174,8 +2174,8 @@ msgstr "Satış teklif talebi (RFQ), bir dizi parça ve miktar üzerinde fiyatla
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Bir satış RFQ (müşteri sizi alıntı yapmak için ister) veya satın alma RFQ (siz tedarikçileri istersiniz); her ikisi de fırsat ipliğini besler."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "Satış sevkiyatında satılan malın maliyeti muhasebeleştirilir; satış faturasında hasılat kaydedilir. Bu dönemde muhasebeleştirilen satış siparişi sevkiyatlarının satırları için dönem sonuna kadar tarihli muhasebeleştirilmiş fatura yoksa maliyet bu döneme, hasılat ise sonraki döneme kalır. Faturayı bu dönemin tarihiyle düzenleyin veya teslimat koşulları hasılatın daha sonra kaydedilmesini gerektiriyorsa neden belirterek atlayın."
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr "Satış sevkiyatı satılan malın maliyetini, satış faturası ise hasılatı muhasebeleştirir. Bu dönemde muhasebeleştirilen satış siparişi sevkiyatlarında net sevk edilen miktar, dönem sonuna kadar muhasebeleştirilen faturaların kümülatif miktarını aşıyorsa maliyetin bir kısmı bu dönemde, hasılat ise sonraki bir dönemde kalır. Bunları bu döneme ait bir tarihle faturalandırın veya sevkiyat koşulları hasılatı sonraki bir döneme bırakıyorsa gerekçe belirterek görevi atlayın."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığında gönderilen kapsamlı bir gizli anahtar; bir kullanıcı oturumunun yerine kendi izinleri ve hız sınırını taşır."
@@ -27340,6 +27340,9 @@ msgstr "Tedarikçi ödeme iskontoları (varsayılan)"
 
 msgid "Supplier Prepayments"
 msgstr "Tedarikçi avansları"
+
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Tedarikçilere verilen avanslar mizanla mutabık olmalıdır. <0>Mizana git</0>"
 
 msgid "supplier process"
 msgstr "tedarikçi prosesi"

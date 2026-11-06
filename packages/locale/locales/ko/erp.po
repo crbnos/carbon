@@ -2174,8 +2174,8 @@ msgstr "영업 견적 요청(RFQ)은 일정한 부품 및 수량에 대한 가�
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "영업 견적 요청(고객이 견적을 요청) 또는 구매 견적 요청(공급업체에 견적을 요청); 둘 다 영업 기회로 이어집니다."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "판매 출하 시 매출원가가 전기되고 매출 송장 발행 시 매출이 인식됩니다. 이번 기간에 전기된 수주 출하 중 기간 말까지 날짜가 이번 기간인 전기 완료 송장이 없는 라인은 원가가 이번 기간에, 매출은 이후 기간에 반영됩니다. 이번 기간 날짜로 송장을 발행하거나, 선적 조건상 매출을 이후에 인식해야 하는 경우 사유를 입력하고 건너뛰세요."
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr "판매 출하는 매출원가를 전기하고, 매출 송장은 매출을 전기합니다. 이 기간에 전기된 수주 출하의 순출하 수량이 기간 말까지 전기된 송장의 누적 수량을 초과하면 일부 원가는 이 기간에 남고 매출은 이후 기간에 기록됩니다. 이 기간의 날짜로 송장을 발행하거나, 출하 조건에 따라 매출이 이후 기간에 해당하는 경우 사유를 입력하고 작업을 건너뛰세요."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key 요청 헤더에서 전송되는 범위 제한 암호로서, Carbon에 대한 프로그래밍 방식 호출을 인증하며 사용자 세션의 권한이 아닌 자체 권한 및 속도 제한을 전달합니다."
@@ -27340,6 +27340,9 @@ msgstr "공급업체 지불 할인 (기본값)"
 
 msgid "Supplier Prepayments"
 msgstr "공급업체 선급금"
+
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "공급업체 선급금은 시산표와 대사하여 일치해야 합니다. <0>시산표로 이동</0>"
 
 msgid "supplier process"
 msgstr "공급업체 공법"

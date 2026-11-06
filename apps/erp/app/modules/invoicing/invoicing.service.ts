@@ -2514,7 +2514,11 @@ async function getOpenInvoicesForParty(
     Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
     "invoiceId" | "rentalAgreementId" | "salesOrderId" | "customerContractId"
   >;
-  type PurchaseLineRow = { invoiceId: string; purchaseOrderId: string | null };
+  type PurchaseLineRow = {
+    invoiceId: string;
+    purchaseOrderId: string | null;
+    purchaseOrderLine: { purchaseOrderId: string; companyId: string } | null;
+  };
   type ContractInvoiceRow = { id: string; customerContractId: string | null };
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
@@ -2637,12 +2641,14 @@ async function getOpenInvoicesForParty(
         : fetchAllFromTable<PurchaseLineRow>(
             client,
             "purchaseInvoiceLine",
-            "invoiceId, purchaseOrderId",
+            "invoiceId, purchaseOrderId, purchaseOrderLine:purchaseOrderLineId(purchaseOrderId, companyId)",
             (query) =>
               query
                 .eq("companyId", companyId)
                 .in("invoiceId", batch)
-                .or("purchaseOrderId.not.is.null")
+                .or(
+                  "purchaseOrderId.not.is.null,purchaseOrderLineId.not.is.null"
+                )
                 .order("id")
           )
     ]);
@@ -2699,11 +2705,16 @@ async function getOpenInvoicesForParty(
   };
   for (const line of purchaseLines) {
     const documents = documentsOf(line.invoiceId);
+    const purchaseOrderId =
+      line.purchaseOrderId ??
+      (line.purchaseOrderLine?.companyId === companyId
+        ? line.purchaseOrderLine.purchaseOrderId
+        : null);
     if (
-      line.purchaseOrderId &&
-      !documents.purchaseOrderIds.includes(line.purchaseOrderId)
+      purchaseOrderId &&
+      !documents.purchaseOrderIds.includes(purchaseOrderId)
     )
-      documents.purchaseOrderIds.push(line.purchaseOrderId);
+      documents.purchaseOrderIds.push(purchaseOrderId);
   }
   const addContract = (invoiceId: string, contractId: string | null) => {
     if (!contractId) return;
@@ -3112,8 +3123,7 @@ async function loadOnAccountSources(
       query = query
         .eq("companyId", companyId)
         .eq("payment.companyId", companyId)
-        .eq("payment.status", "Posted")
-        .eq("payment.paymentType", party.paymentType);
+        .eq("payment.status", "Posted");
       query =
         party.paymentType === "Receipt"
           ? query.eq("payment.customerId", party.customerId)
@@ -4998,10 +5008,10 @@ export async function getDepositDocuments(
       .select("id, customerContractId, customerId, status")
       .eq("companyId", companyId)
       .order("customerContractId", { ascending: false }),
-    fetchAllFromTable<{ purchaseOrderId: string | null }>(
+    fetchAllFromTable<FundingPaymentRow & { purchaseOrderId: string | null }>(
       client,
       "payment",
-      "purchaseOrderId",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, purchaseOrderId",
       (query) =>
         query
           .eq("companyId", companyId)
@@ -5034,6 +5044,62 @@ export async function getDepositDocuments(
     prepayments.error ??
     openPurchaseOrders.error;
   if (firstError) throw new Error(firstError.message);
+  const company = await client
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error || !company.data?.companyGroupId)
+    throw new Error("Company currency configuration is missing");
+  const [currencies, consumption] = await Promise.all([
+    client
+      .from("currency")
+      .select("code, decimalPlaces")
+      .eq("companyGroupId", company.data.companyGroupId),
+    fetchAllByIds<
+      FundingConsumptionRow & { payment: { status: string } | null }
+    >(
+      (prepayments.data ?? []).map((payment) => payment.id),
+      (batch) =>
+        client
+          .from("invoiceSettlement")
+          .select(
+            "paymentId, sourcePaymentId, sourceAmount, appliedAmount, fxGainLossAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)"
+          )
+          .eq("companyId", companyId)
+          .eq("payment.companyId", companyId)
+          .eq("payment.status", "Posted")
+          .in("sourcePaymentId", batch)
+          .order("id")
+    )
+  ]);
+  if (currencies.error) throw new Error(currencies.error.message);
+  if (consumption.error) throw new Error(consumption.error.message);
+  const currencyByPayment = new Map(
+    (prepayments.data ?? []).map((payment) => [
+      payment.id,
+      payment.currencyCode
+    ])
+  );
+  const refundableCurrencies = new Map<string, Set<string>>();
+  for (const source of remainingFundingSources(
+    (prepayments.data ?? []).map((payment) => ({
+      ...payment,
+      scope: fundingScopeOf(payment)
+    })),
+    consumption.data ?? [],
+    new Map(
+      (currencies.data ?? []).map((row) => [row.code, row.decimalPlaces])
+    ),
+    false
+  )) {
+    if (!source.scope) continue;
+    const codes =
+      refundableCurrencies.get(source.scope.id) ?? new Set<string>();
+    const currency = currencyByPayment.get(source.paymentId);
+    if (currency) codes.add(currency);
+    refundableCurrencies.set(source.scope.id, codes);
+  }
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
     ...new Set(
@@ -5115,7 +5181,8 @@ export async function getDepositDocuments(
       partyId: order.supplierId,
       kind: "purchaseOrder" as const,
       status: order.status,
-      open: listedPurchase.has(order.id)
+      open: listedPurchase.has(order.id),
+      refundableCurrencyCodes: [...(refundableCurrencies.get(order.id) ?? [])]
     }))
   ];
 }
@@ -12653,6 +12720,7 @@ export function assemblePaymentJournal(args: {
   /** The current cash the funding allocation left unapplied, in base. */
   newOnAccountBase: number;
   fee?: PaymentJournalFeeInput;
+  legacyCustomerDepositRefund?: boolean;
   journalLineReference: string;
 }): {
   lines: PaymentJournalLineWithRole[];
@@ -12708,6 +12776,7 @@ export function assemblePaymentJournal(args: {
     journalLineReference: args.journalLineReference,
     applications,
     newOnAccountBase: args.newOnAccountBase,
+    legacyCustomerDepositRefund: args.legacyCustomerDepositRefund,
     fee: args.fee,
     accounts: {
       // For a reimbursement this drives ONLY the new on-account remainder:
@@ -12841,6 +12910,25 @@ export function postPaymentTransaction(
 ): Promise<{ journalId: string | null }> {
   const { companyId, paymentId, userId, today, fee, type } = args;
   return db.transaction().execute(async (trx) => {
+    // Activation locks settings before rebuilding payments; use the same order.
+    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+    const postingStatus = postingStatusFor(cutoverDate);
+    const reference = await trx
+      .selectFrom("payment")
+      .select("purchaseOrderId")
+      .where("id", "=", paymentId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    // A PO delete locks the order before its FK updates linked draft payments.
+    const purchaseOrder = reference?.purchaseOrderId
+      ? await trx
+          .selectFrom("purchaseOrder")
+          .select("supplierId")
+          .where("id", "=", reference.purchaseOrderId)
+          .where("companyId", "=", companyId)
+          .forShare()
+          .executeTakeFirst()
+      : null;
     const payment = await trx
       .selectFrom("payment")
       .selectAll()
@@ -12849,6 +12937,11 @@ export function postPaymentTransaction(
       .forUpdate()
       .executeTakeFirst();
     if (!payment) throw new NotFoundError("Payment not found");
+    if (payment.purchaseOrderId !== reference?.purchaseOrderId) {
+      throw new InvalidInputError(
+        "The payment's purchase order changed. Try again."
+      );
+    }
     if (type === "post" && payment.status === "Posted") {
       return { journalId: payment.journalId };
     }
@@ -12862,8 +12955,6 @@ export function postPaymentTransaction(
     // Every payment posts a journal: Provisional before the company's
     // accounting cutover, Posted after it. FOR SHARE holds the cutover until
     // commit. A Provisional journal has no accounting period.
-    const cutoverDate = await readAccountingCutoverDate(trx, companyId);
-    const postingStatus = postingStatusFor(cutoverDate);
     const timestamp = datetime.timestamp();
     let accountingPeriodId: string | null = null;
     if (postingStatus === "Posted") {
@@ -13543,6 +13634,14 @@ export function postPaymentTransaction(
       new Map([[payment.currencyCode, decimals]]),
       isAR
     );
+    if (
+      payment.purchaseOrderId &&
+      purchaseOrder?.supplierId !== payment.supplierId
+    ) {
+      throw new InvalidInputError(
+        "The purchase order belongs to a different supplier or no longer exists"
+      );
+    }
     const currentScope =
       !isRefund && !isReimbursement
         ? await loadDepositScope(trx, companyId, payment)
@@ -14104,6 +14203,12 @@ export async function rebuildPaymentJournals(
         kind.cashIn
       ),
       fee: feeByPaymentId.get(payment.id),
+      legacyCustomerDepositRefund:
+        payment.status !== "Draft" &&
+        kind.isAR &&
+        kind.isDeposit &&
+        !kind.cashIn &&
+        applications.every((application) => !application.targetPaymentId),
       journalLineReference: nanoid()
     });
     assertNoMigrationClearing(lines, defaults.migrationClearingAccount);

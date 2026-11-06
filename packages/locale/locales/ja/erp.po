@@ -2174,8 +2174,8 @@ msgstr "売上見積依頼（RFQ）は、複数の部品と数量に関する価
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "売上見積依頼（得意先が見積をお願いする）または購買見積依頼（仕入先に見積をお願いする）で、どちらも商談に情報を提供します。"
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "販売出荷では売上原価が転記され、売上請求書では売上高が転記されます。この期間に転記された受注の出荷のうち、期間末までの日付の転記済請求書がない明細は、原価がこの期間に、売上高が後の期間に計上されます。期間内の日付で請求書を発行するか、出荷条件により売上高の計上が後になる場合は理由を添えてスキップしてください。"
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr "販売に伴う出荷では売上原価が転記され、売上請求書では売上高が転記されます。当期間に転記された受注の出荷で、正味出荷数量が期末までの転記済請求書の累計数量を上回る場合、原価の一部が当期間に残り、対応する売上高は後続期間に計上されます。当期間の日付で請求するか、出荷条件により売上高を後続期間に計上する場合は理由を記入してこのタスクをスキップしてください。"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付きシークレット。Carbon へのプログラマティック呼び出しを認証し、ユーザー セッションではなく独自の権限とレート制限を保有します。"
@@ -27340,6 +27340,9 @@ msgstr "仕入先支払値引（デフォルト）"
 
 msgid "Supplier Prepayments"
 msgstr "仕入先前払金"
+
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "仕入先への前払金は試算表と照合して一致させる必要があります。<0>試算表へ移動</0>"
 
 msgid "supplier process"
 msgstr "仕入先工法"

@@ -44,6 +44,12 @@ function clientFor(
           order: () => q,
           or: () => q,
           gt: () => q,
+          not: (key: string, _op: string, value: unknown) => {
+            result = result.filter(
+              (row) => row[key] !== undefined && row[key] !== value
+            );
+            return q;
+          },
           eq: (key: string, value: unknown) => {
             call.filters.push([key, value]);
             result = result.filter(
@@ -90,7 +96,7 @@ function databaseFor(tables: Record<string, Row[]>) {
     insertInto: (table: string) => query(table, "insert")
   };
   function query(table: string, mode = "select") {
-    let rows = tables[table] ?? [];
+    let rows = tables[table.split(/\s+as\s+/)[0]!] ?? [];
     const q: any = {
       select: () => q,
       selectAll: () => q,
@@ -1383,4 +1389,61 @@ describe("customer deposits fund only their own document", () => {
       salesOrderIds: ["so-1"]
     });
   });
+});
+
+it("a supplier refund removes returned principal from the composer and new refund choices", async () => {
+  const { client } = clientFor({
+    ...config,
+    payment: [
+      {
+        ...payment,
+        customerId: null,
+        supplierId: "supplier",
+        paymentType: "Disbursement",
+        purchaseOrderId: "po"
+      }
+    ],
+    purchaseOrder: [
+      {
+        id: "po",
+        purchaseOrderId: "PO1",
+        companyId: "co",
+        supplierId: "supplier",
+        status: "Completed"
+      }
+    ],
+    invoiceSettlement: [
+      {
+        paymentId: "refund",
+        sourcePaymentId: "prior",
+        sourceAmount: 110,
+        appliedAmount: 100,
+        fxGainLossAmount: 0,
+        payment: { status: "Posted" },
+        "payment.paymentType": "Receipt",
+        "payment.supplierId": "supplier",
+        "payment.currencyCode": "EUR"
+      }
+    ]
+  });
+  expect(
+    await onAccountSources(client, {
+      paymentType: "Disbursement",
+      supplierId: "supplier"
+    })
+  ).toEqual({
+    data: { sources: [], availableDocumentAmount: 0, availableBaseAmount: 0 },
+    error: null
+  });
+  expect(await service.getDepositDocuments(client, "co", [], ["po"])).toEqual([
+    {
+      id: "po",
+      readableId: "PO1",
+      partyId: "supplier",
+      kind: "purchaseOrder",
+      status: "Completed",
+      open: false,
+      refundableCurrencyCodes: []
+    }
+  ]);
 });

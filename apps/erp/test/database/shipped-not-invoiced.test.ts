@@ -11,7 +11,7 @@ import {
 } from "./fixtures/local-database";
 
 databaseTest(
-  "keeps later and partially billed shipments in the close warning until their quantity is billed",
+  "warns only for net shipments whose quantity remains uninvoiced, including fixed assets",
   async () => {
     const db = await connectLocalTestDatabase();
     try {
@@ -29,6 +29,10 @@ databaseTest(
         await sql`CREATE TEMP TABLE "salesInvoiceLine" (id text, "invoiceId" text, "companyId" text, "salesOrderLineId" text, quantity numeric) ON COMMIT DROP`.execute(
           trx
         );
+        await sql`CREATE TEMP TABLE "shipmentFixedAssetLine" ("shipmentId" text, "companyId" text, "salesOrderLineId" text, shipped boolean) ON COMMIT DROP`.execute(trx);
+        await sql`CREATE TEMP TABLE "salesReturnOrderLine" (id text, "companyId" text, "shipmentLineId" text, "salesInvoiceLineId" text, "returnType" text) ON COMMIT DROP`.execute(trx);
+        await sql`CREATE TEMP TABLE "receiptLine" ("receiptId" text, "companyId" text, "lineId" text, "receivedQuantity" numeric) ON COMMIT DROP`.execute(trx);
+        await sql`CREATE TEMP TABLE receipt (id text, "companyId" text, status text, "sourceDocument" text, "postingDate" date) ON COMMIT DROP`.execute(trx);
         await sql`INSERT INTO shipment VALUES ('oct', 'c', 'SH01', 'Posted', 'Sales Order', '2026-10-01'), ('nov', 'c', 'SH02', 'Posted', 'Sales Order', '2026-11-01')`.execute(
           trx
         );
@@ -56,6 +60,9 @@ databaseTest(
           ]
         };
         expect(await read()).toEqual(warning);
+        // The first shipment is fully billed; a later shipment cannot reopen it.
+        expect(await getShippedNotInvoiced(trx, "c", "2026-10-01", "2026-11-30")).toEqual(warning);
+
         await sql`UPDATE "salesInvoice" SET status = 'Submitted' WHERE id = 'nov-invoice'`.execute(
           trx
         );
@@ -72,6 +79,21 @@ databaseTest(
           trx
         );
         expect(await read()).toEqual(warning);
+        await sql`INSERT INTO "salesReturnOrderLine" VALUES ('return', 'c', 'nov-line', NULL, 'Return to Stock')`.execute(trx);
+        await sql`INSERT INTO receipt VALUES ('return-receipt', 'c', 'Posted', 'Sales Return Order', '2026-11-20')`.execute(trx);
+        await sql`INSERT INTO "receiptLine" VALUES ('return-receipt', 'c', 'return', 5)`.execute(trx);
+        expect(await read()).toEqual({ failing: false, count: 0, documents: [] });
+        await sql`UPDATE "salesReturnOrderLine" SET "returnType" = 'Return for Service'`.execute(trx);
+        expect(await read()).toEqual(warning);
+        await sql`UPDATE "salesReturnOrderLine" SET "returnType" = 'Return to Stock'`.execute(trx);
+        await sql`UPDATE receipt SET "postingDate" = '2026-12-01'`.execute(trx);
+        expect(await read()).toEqual(warning);
+        await sql`UPDATE receipt SET "postingDate" = '2026-11-20'`.execute(trx);
+        await sql`INSERT INTO shipment VALUES ('asset', 'c', 'SH03', 'Posted', 'Sales Order', '2026-11-10')`.execute(trx);
+        await sql`INSERT INTO "shipmentFixedAssetLine" VALUES ('asset', 'c', 'asset-order-line', true)`.execute(trx);
+        expect(await read()).toEqual({ failing: true, count: 1, documents: [{ documentType: 'Shipment', id: 'asset', readableId: 'SH03', status: 'Posted' }] });
+        await sql`INSERT INTO "salesInvoiceLine" VALUES ('asset-billed', 'oct-invoice', 'c', 'asset-order-line', 1)`.execute(trx);
+        expect(await read()).toEqual({ failing: false, count: 0, documents: [] });
       });
     } finally {
       await db.destroy();

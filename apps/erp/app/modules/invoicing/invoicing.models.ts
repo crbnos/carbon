@@ -646,6 +646,7 @@ export type DepositDocument = {
   kind: "salesOrder" | "rentalAgreement" | "customerContract" | "purchaseOrder";
   status: string;
   open: boolean;
+  refundableCurrencyCodes?: string[];
 };
 
 // ----------------------------------------------------------------------

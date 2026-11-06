@@ -56,9 +56,10 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `!isReimbursement && cashIn !== isAR`, so a three-way party can't be misread as a refund.
   `totalAmount` may be 0 — a payment can be a pure credit application.
 - **`invoiceSettlement`** — source is exactly one of `paymentId`/`memoId`; target exactly one of
-  FOUR (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
-  `targetReimbursementId` — the fourth added by `20260923231244`, which widened
-  `invoiceSettlement_target_check`). **`appliedAmount`, `discountAmount` and `writeOffAmount` are
+  FIVE (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
+  `targetReimbursementId`, `targetPaymentId`). `targetPaymentId` links an advance refund
+  to its original payment; the managed `prevent_invalid_deposit_refund` interceptor
+  validates its party, currency, document scope and effective funding under source locks. **`appliedAmount`, `discountAmount` and `writeOffAmount` are
   company BASE currency; `sourceAmount` is the exact principal in the funding source's DOCUMENT
   currency** (per the `COMMENT ON COLUMN` statements in
   `20260908021155_accounting_posting_corrections.sql`) — getting that pair backwards is a live
@@ -156,7 +157,7 @@ pnpm --filter erp test                                    # the whole app's vite
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
-| `invoiceSettlement` | Applications: one source × one of four targets; base-currency reliefs + generated `fxGainLossAmount` |
+| `invoiceSettlement` | Applications: one source × one of five targets; base-currency reliefs + generated `fxGainLossAmount` |
 | `charge` / `chargeLine` | Card charges (`chargeType`: Charge/Credit/Payment/Cashback/Repayment) |
 | `reimbursement` / `reimbursementLine` / `reimbursementLineDimension` | Employee expense payable, coding lines, dimension tags |
 | `paymentTerm`, `currency`, `company` | Due-date, decimals, and base-currency resolution |
@@ -193,6 +194,11 @@ guarded by `requireUnlockedBulk`, not validators.
 - `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
   `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
   discounts batch-load their terms in one query, never per invoice.
+- `postPaymentTransaction` locks company settings, a linked purchase order, the payment,
+  then funding sources; it rechecks the order reference after locking the payment.
+  Activation takes the same settings-first order. Journal, normalized settlements and payment
+  status commit together. `rebuildPaymentJournals` alone opts historical customer refunds into
+  legacy reconstruction; new refunds must allocate original advances.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos

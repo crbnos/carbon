@@ -102,6 +102,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (item) => !AGGREGATE_ITEM_TYPES.has(item.openItemType)
     ).length,
     migrationClearingTotal: clearing.total,
+    reconciliationBlockerCount: clearing.reconciliationBlockers.length,
     // In the order the enable journals them.
     legacyDocuments: (
       Object.entries(legacyCounts) as [LegacyDocumentFamily, number][]
@@ -132,6 +133,7 @@ export default function AccountingActivationEnableRoute() {
     readinessPassed,
     openItemCount,
     migrationClearingTotal,
+    reconciliationBlockerCount,
     legacyDocuments
   } = useLoaderData<typeof loader>();
   const { company } = useUser();
@@ -143,6 +145,7 @@ export default function AccountingActivationEnableRoute() {
   const canEnable =
     readinessPassed &&
     isClearingZero &&
+    reconciliationBlockerCount === 0 &&
     permissions.can("update", "accounting");
 
   return (
@@ -184,6 +187,19 @@ export default function AccountingActivationEnableRoute() {
                   className="underline"
                 >
                   Go to Readiness
+                </Link>
+              </Trans>
+            </p>
+          )}
+          {reconciliationBlockerCount > 0 && (
+            <p className="text-sm text-destructive">
+              <Trans>
+                Supplier prepayments must reconcile with the trial balance.{" "}
+                <Link
+                  to={activationStepPath("trial-balance", cutoverDate)}
+                  className="underline"
+                >
+                  Go to Trial Balance
                 </Link>
               </Trans>
             </p>

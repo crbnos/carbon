@@ -2174,8 +2174,8 @@ msgstr "Eine Anfrage (RFQ) ist eine Kundenanfrage für Preise für eine Reihe vo
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Ein Verkaufs-Anfrage (ein Kunde bittet Sie um ein Angebot) oder eine Einkaufs-Anfrage (Sie bitten Lieferanten um ein Angebot); beide nähren die Verkaufschance."
 
-msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose lines have no posted invoice dated by the period end leave the cost here and the revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
-msgstr "Bei einer Vertriebslieferung werden die Umsatzkosten gebucht; bei der Ausgangsrechnung werden die Umsatzerlöse gebucht. Lieferungen zu Kundenaufträgen, die in diesem Zeitraum gebucht wurden und deren Positionen bis zum Periodenende keine gebuchte Rechnung mit entsprechendem Datum haben, belasten die Kosten diesem Zeitraum und weisen die Umsatzerlöse einem späteren Zeitraum zu. Stellen Sie die Rechnung mit einem Datum innerhalb dieses Zeitraums aus oder überspringen Sie die Lieferung mit Begründung, wenn die Versandbedingungen die Umsatzerlöse in einen späteren Zeitraum verlagern."
+msgid "A sales shipment posts the cost of goods sold; the sales invoice posts the revenue. Sales order shipments posted in this period whose net shipped quantity exceeds cumulative posted invoice quantity by the period end leave some cost here and revenue in a later period. Invoice them dated in this period, or skip with a reason if the shipping terms put the revenue later."
+msgstr "Eine Lieferung aus einem Verkauf bucht die Umsatzkosten; die Ausgangsrechnung bucht die Umsatzerlöse. Bei in dieser Periode gebuchten Lieferungen zu Kundenaufträgen, deren netto gelieferte Menge die kumulierte Menge der bis zum Periodenende gebuchten Rechnungen übersteigt, verbleiben Kosten in dieser Periode, während die Umsatzerlöse erst in einer späteren Periode anfallen. Stellen Sie diese mit einem Datum innerhalb dieser Periode in Rechnung, oder überspringen Sie die Aufgabe mit einer Begründung, wenn die Lieferbedingungen die Umsatzerlöse einer späteren Periode zuordnen."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesendet wird und programmgesteuerte Aufrufe an Carbon authentifiziert, mit eigenen Berechtigungen und Ratenlimit statt einer Benutzersitzung."
@@ -27340,6 +27340,9 @@ msgstr "Lieferanten-Zahlungsrabatte (Standard)"
 
 msgid "Supplier Prepayments"
 msgstr "Lieferantenanzahlungen"
+
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Anzahlungen an Lieferanten müssen mit der Rohbilanz abgestimmt sein. <0>Zur Rohbilanz</0>"
 
 msgid "supplier process"
 msgstr "Lieferantenverfahren"

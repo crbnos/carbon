@@ -187,7 +187,11 @@ const PaymentForm = ({
         (doc) =>
           doc.partyId === partyId &&
           (doc.kind === "purchaseOrder") === isSupplier &&
-          (!takesDeposit || doc.open || depositValue(doc) === initialDeposit)
+          (takesDeposit
+            ? doc.open || (isEditing && depositValue(doc) === initialDeposit)
+            : !doc.refundableCurrencyCodes ||
+              doc.refundableCurrencyCodes.includes(currencyCode) ||
+              (isEditing && depositValue(doc) === initialDeposit))
       )
       .map((doc) => ({
         value: depositValue(doc),
@@ -208,6 +212,8 @@ const PaymentForm = ({
     partyId,
     isSupplier,
     takesDeposit,
+    isEditing,
+    currencyCode,
     initialDeposit,
     t
   ]);

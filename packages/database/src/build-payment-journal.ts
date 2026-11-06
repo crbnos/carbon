@@ -110,6 +110,8 @@ export interface BuildPaymentJournalInput {
    *  advances through payment-target applications, never a new unapplied leg. */
   isDeposit?: boolean;
   depositAccountId?: string | null;
+  /** Historical customer refunds predate explicit advance-consumption applications. */
+  legacyCustomerDepositRefund?: boolean;
 }
 
 export interface BuildPaymentJournalResult {
@@ -215,7 +217,25 @@ export function buildPaymentJournal(
       fee.description ?? "Payment Processing Fee"
     );
   }
-  const isDepositRefund = isDeposit && !isReimbursement && cashIn !== isAR;
+  const legacyCustomerDepositRefund =
+    input.legacyCustomerDepositRefund ?? false;
+  if (
+    legacyCustomerDepositRefund &&
+    (!isAR ||
+      !isDeposit ||
+      cashIn ||
+      isReimbursement ||
+      applications.some((application) => application.targetPaymentId))
+  ) {
+    throw new Error(
+      "Only historical customer deposit refunds may use legacy reconstruction"
+    );
+  }
+  const isDepositRefund =
+    isDeposit &&
+    !isReimbursement &&
+    cashIn !== isAR &&
+    !legacyCustomerDepositRefund;
   let refundedPrincipal = 0;
   let refundedCarrying = 0;
   let totalFxImpact = 0;

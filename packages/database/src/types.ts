@@ -45997,31 +45997,17 @@ export type Database = {
           },
           {
             foreignKeyName: "payment_purchaseOrder_fkey"
-            columns: ["purchaseOrderId"]
+            columns: ["purchaseOrderId", "companyId"]
             isOneToOne: false
             referencedRelation: "purchaseOrder"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "payment_purchaseOrder_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderLinesToReceive"
-            referencedColumns: ["purchaseOrderId"]
-          },
-          {
-            foreignKeyName: "payment_purchaseOrder_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderLocations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_purchaseOrder_fkey"
-            columns: ["purchaseOrderId"]
+            columns: ["purchaseOrderId", "companyId"]
             isOneToOne: false
             referencedRelation: "purchaseOrders"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "payment_rentalAgreementId_fkey"
@@ -106729,11 +106715,19 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      prevent_invalid_deposit_refund: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       prevent_posted_purchase_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
       prevent_posted_sales_invoice_deletion: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      prevent_prepaid_purchase_order_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

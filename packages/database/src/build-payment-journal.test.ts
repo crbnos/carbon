@@ -393,3 +393,99 @@ it("refuses an unallocated deposit refund", () => {
     )
   ).toThrow();
 });
+
+it("reconstructs a legacy customer deposit refund without payment-target applications", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: true,
+      cashIn: false,
+      totalAmount: 110,
+      exchangeRate: 1.1,
+      newOnAccountBase: 100,
+      isDeposit: true,
+      depositAccountId: "prepayment",
+      legacyCustomerDepositRefund: true
+    })
+  );
+  expect(
+    result.lines.map(({ accountId, amount, description }) => ({
+      accountId,
+      amount,
+      description
+    }))
+  ).toEqual([
+    { accountId: "bank", amount: -100, description: "Bank / Cash" },
+    {
+      accountId: "prepayment",
+      amount: -100,
+      description: CUSTOMER_DEPOSIT_DESCRIPTION
+    }
+  ]);
+  expect(result.signedDebitTotal).toBe(0);
+});
+
+it("reconstructs a legacy customer deposit refund's memo application and remaining deposit debit", () => {
+  const result = buildPaymentJournal(
+    base({
+      isAR: true,
+      cashIn: false,
+      totalAmount: 110,
+      exchangeRate: 1.1,
+      newOnAccountBase: 60,
+      isDeposit: true,
+      depositAccountId: "prepayment",
+      legacyCustomerDepositRefund: true,
+      applications: [
+        {
+          targetMemoId: "memo",
+          sourcePaymentId: null,
+          sourceAmount: 44,
+          appliedAmount: 40,
+          sourceExchangeRate: 1.1,
+          targetExchangeRate: 1.1,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          fxGainLossAmount: 0
+        }
+      ]
+    })
+  );
+  expect(amountOf(result, "bank")).toBe(-100);
+  expect(amountOf(result, "today-control")).toBe(40);
+  expect(amountOf(result, "prepayment")).toBe(-60);
+  expect(result.signedDebitTotal).toBe(0);
+});
+
+it.each([true, false])(
+  "new unallocated deposit refunds remain strict (isAR=%s)",
+  (isAR) => {
+    expect(() =>
+      buildPaymentJournal(
+        base({
+          isAR,
+          cashIn: !isAR,
+          totalAmount: 10,
+          newOnAccountBase: 10,
+          isDeposit: true,
+          depositAccountId: "prepayment"
+        })
+      )
+    ).toThrow();
+  }
+);
+
+it("does not allow supplier refunds to opt into legacy customer reconstruction", () => {
+  expect(() =>
+    buildPaymentJournal(
+      base({
+        isAR: false,
+        cashIn: true,
+        totalAmount: 10,
+        newOnAccountBase: 10,
+        isDeposit: true,
+        depositAccountId: "prepayment",
+        legacyCustomerDepositRefund: true
+      })
+    )
+  ).toThrow();
+});
