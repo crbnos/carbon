@@ -497,8 +497,6 @@ export function iconImports() {
   };
   /** @type {Map<string, number>} */
   const versions = new Map();
-  /** @type {Map<string, string>} */
-  const setSources = new Map();
   /** @type {string | undefined} */
   let packageDirectory;
   return {
@@ -553,14 +551,12 @@ export function iconImports() {
         if (!packageDirectory) return;
         ensureScanned();
         const set = id.slice(ICON_MODULE_PREFIX.length + 1).split(":")[0];
-        let source = setSources.get(set);
-        if (source === undefined) {
-          source = fs.readFileSync(
-            path.join(packageDirectory, set, "index.mjs"),
-            "utf8"
-          );
-          setSources.set(set, source);
-        }
+        // Read on each load, not kept: a set's source is up to a few MB, and a
+        // set loads again only when a new icon bumps its version.
+        const source = fs.readFileSync(
+          path.join(packageDirectory, set, "index.mjs"),
+          "utf8"
+        );
         // Every name so far: a version only ever grows, so each importer's
         // names are in the module its version names. No sourcemap: the code
         // is copied verbatim, and Vite's generated one quadrupled the module.
