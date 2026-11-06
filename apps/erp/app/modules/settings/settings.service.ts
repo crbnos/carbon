@@ -157,11 +157,6 @@ import {
 import { enableAuditLog } from "@carbon/ee/audit.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
-  ensureOnshapeReleaseWebhook,
-  getIntegrationServerHooks,
-  onshapeConnectionHasWriteScope
-} from "@carbon/ee/hooks.server";
-import {
   connectionsHealthy,
   needsReconnect,
   readConnections
@@ -2906,6 +2901,7 @@ async function getConnectionHealth(
     };
   }
 
+  const { getIntegrationServerHooks } = await import("@carbon/ee/hooks.server");
   const serverHooks = getIntegrationServerHooks(integration.id!);
   const config = getIntegrationConfigById(integration.id as IntegrationID);
   const healthcheck = serverHooks?.onHealthcheck ?? config?.onHealthcheck;
@@ -5363,6 +5359,8 @@ export async function completeOnshapeAuthorization({
   userId: string;
   companyId: string;
 }) {
+  const { ensureOnshapeReleaseWebhook, onshapeConnectionHasWriteScope } =
+    await import("@carbon/ee/hooks.server");
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
 

@@ -8,8 +8,7 @@
 
 import { registerCarbon } from "@carbon/api/carbon.server";
 import { registerPostings } from "@carbon/api/postings.server";
-import { postings } from "./postings.server";
-import { type Router, router } from "./router.server";
+import type { Router } from "./router.server";
 import { serviceContext } from "./service-context.server";
 
 declare module "@carbon/api/carbon.server" {
@@ -18,5 +17,10 @@ declare module "@carbon/api/carbon.server" {
   }
 }
 
-registerCarbon({ router, context: serviceContext });
-registerPostings(postings);
+// Loaded on first use, not at start: the router and the postings reach most of
+// the ERP's modules, and a dev server would compile all of them for its first page.
+registerCarbon({
+  loadRouter: () => import("./router.server").then((m) => m.router),
+  context: serviceContext
+});
+registerPostings(() => import("./postings.server").then((m) => m.postings));

@@ -24,7 +24,7 @@ import {
 
 // The burden run posts its rows through `post-project-burden`, which the app
 // registers at start: the test registers the ERP's postings the same way.
-registerPostings(postings);
+registerPostings(() => postings);
 
 // requireEntitlement passes the client to the stubbed feature check only.
 const client = {} as SupabaseClient;

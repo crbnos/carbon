@@ -645,6 +645,22 @@ export async function listDatasetAssetFiles(directory) {
 }
 
 /**
+ * Keeps React Router's generated route types out of Vite's file watcher. The
+ * dev server rewrites every file under `.react-router/` at start (one per
+ * route), and each write went through Vite's update pipeline and React
+ * Router's route lookup, though nothing at runtime reads them.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function ignoreGeneratedTypes() {
+  return {
+    name: "carbon:ignore-generated-types",
+    apply: "serve",
+    config: () => ({ server: { watch: { ignored: ["**/.react-router/**"] } } }),
+  };
+}
+
+/**
  * The demo-template asset glob (`@carbon/database/dataset-assets`) as one
  * module in dev. Vite serves an eager `?url` glob as one module per file
  * (about 180 SVG, GLB and graph files), and every page loads them all through
@@ -656,12 +672,15 @@ export async function listDatasetAssetFiles(directory) {
  * @returns {import("vite").Plugin}
  */
 export function datasetAssets() {
+  /** @type {any} */
+  let client;
   return {
     name: "carbon:dataset-assets",
     apply: "serve",
     enforce: "pre",
     // Built at startup, so the first page does not wait for 180 transforms.
     configureServer(server) {
+      client = server.environments.client;
       const require = createRequire(path.join(server.config.root, "package.json"));
       let file;
       try {
@@ -699,8 +718,10 @@ export function datasetAssets() {
         // An edited asset (a small SVG is inlined as a data URL) rebuilds
         // the map, as it would invalidate the glob.
         for (const file of files) this.addWatchFile(path.join(directory, file));
-        // A DevEnvironment: the plugin only runs in serve.
-        const environment = /** @type {any} */ (this.environment);
+        // The URLs the browser loads, from the client environment for both:
+        // the server renders the same URLs without compiling every asset
+        // again. A DevEnvironment: the plugin only runs in serve.
+        const environment = client ?? /** @type {any} */ (this.environment);
         // All at once: this module waits on them, and so does every page.
         const urls = await Promise.all(
           files.map(async (file) => {
@@ -789,6 +810,7 @@ export async function carbon({
   const { lingui } = await import("@lingui/vite-plugin");
   return [
     stackActivity(),
+    ignoreGeneratedTypes(),
     iconImports(),
     datasetAssets(),
     dropStalledHmrClients(),

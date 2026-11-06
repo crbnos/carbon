@@ -56,10 +56,8 @@ import {
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
-import {
-  getPurchaseOrderDisplayId,
-  type PurchaseOrderApproval
-} from "@carbon/documents/pdf";
+import type { PurchaseOrderApproval } from "@carbon/documents/pdf";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
@@ -243,7 +241,7 @@ import {
   splitRfqFileAttachments,
   taxPairForQuantity
 } from "./purchasing.models";
-import { renderPurchaseOrderPdf } from "./purchasing.pdf";
+import type { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type {
   PurchaseOrder,
   PurchaseOrderStatus,
@@ -8245,6 +8243,7 @@ export async function attachPurchaseOrderPdf(
   const purchaseOrderId = purchaseOrder.id!;
   let pdf: Awaited<ReturnType<typeof renderPurchaseOrderPdf>>;
   try {
+    const { renderPurchaseOrderPdf } = await import("./purchasing.pdf");
     pdf = await renderPurchaseOrderPdf(ctx.asCaller.supabase, {
       companyId,
       companyGroupId: ctx.company.groupId,

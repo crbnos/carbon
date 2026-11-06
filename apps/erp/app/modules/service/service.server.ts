@@ -40,7 +40,6 @@ import {
   serviceJobValidator,
   warrantyStatuses
 } from "./service.models";
-import { renderServiceJobEstimatePdf } from "./service.pdf";
 import * as service from "./service.service";
 
 const logger = getLogger("erp", "service");
@@ -873,6 +872,7 @@ export const sendServiceJobEstimate = defineServiceFn({
 
     // The PDF is filed on the job before anything changes, as a quote's is on
     // Finalize: a send that cannot produce its estimate changes nothing.
+    const { renderServiceJobEstimatePdf } = await import("./service.pdf");
     const rendered = await renderServiceJobEstimatePdf(ctx.asCaller.supabase, {
       id: jobId,
       companyId: ctx.company.id,

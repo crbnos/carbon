@@ -13,7 +13,7 @@ export const config = {
 
 /** Apply a reviewed release plan; Carbon's state at apply time outranks the plan. */
 export async function action({ request }: ActionFunctionArgs) {
-  const api = carbonFor(
+  const api = await carbonFor(
     await requireOnshapePanelPermissions(request, {
       create: "parts",
       update: "parts",

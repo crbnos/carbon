@@ -258,24 +258,28 @@ export type Postings = {
   ) => Promise<PostingOutcome<PostingContract[K]["output"]>>;
 };
 
-let registered: Postings | null = null;
+let loadPostings: (() => Postings | Promise<Postings>) | null = null;
 
-/** Called once at server start with the app's postings. */
-export function registerPostings(postings: Postings) {
-  registered = postings;
+/**
+ * Called once at server start with how to load the app's postings. It runs on
+ * every posting, so pass a dynamic `import()` (see `registerCarbon`).
+ */
+export function registerPostings(load: () => Postings | Promise<Postings>) {
+  loadPostings = load;
 }
 
-export function posting<K extends PostingName>(
+export async function posting<K extends PostingName>(
   name: K,
   handles: PostingHandles,
   input: PostingContract[K]["input"]
 ): Promise<PostingOutcome<PostingContract[K]["output"]>> {
-  if (!registered) {
+  if (!loadPostings) {
     throw new Error(
       `posting("${name}"): the app has not called registerPostings`
     );
   }
-  return registered[name](handles, input);
+  const postings = await loadPostings();
+  return postings[name](handles, input);
 }
 
 /** {@link posting}, throwing its refusal: for a caller that lets it fail. */

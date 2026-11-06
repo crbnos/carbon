@@ -5,7 +5,7 @@
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
-import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
@@ -108,7 +108,6 @@ import {
   salesRfqValidator,
   selectedLinesValidator
 } from "./sales.models";
-import { renderQuotePdf, renderSalesReturnOrderPdf } from "./sales.pdf";
 import type {
   ContractAmendmentPreview,
   ContractCancellationPreview,
@@ -1162,12 +1161,15 @@ export const finalizeAndSendQuote = defineServiceFn({
         .eq("companyId", companyId);
     }
 
-    const pdf = await renderQuotePdf(ctx.asCaller.supabase, {
-      id: quoteId,
-      companyId,
-      companyGroupId: ctx.company.groupId,
-      locale
-    })
+    const pdf = await import("./sales.pdf")
+      .then(({ renderQuotePdf }) =>
+        renderQuotePdf(ctx.asCaller.supabase, {
+          id: quoteId,
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          locale
+        })
+      )
       .then((rendered) =>
         service.attachDocumentPdf(ctx, {
           pdf: rendered,
@@ -2565,12 +2567,15 @@ export const confirmReturnOrder = defineServiceFn({
     // The RMA is confirmed: a failed PDF does not undo it.
     // Render inside the chain, so a failed render is caught like a failed
     // upload.
-    const pdf = await renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
-      id,
-      companyId,
-      companyGroupId: ctx.company.groupId,
-      locale
-    })
+    const pdf = await import("./sales.pdf")
+      .then(({ renderSalesReturnOrderPdf }) =>
+        renderSalesReturnOrderPdf(ctx.asCaller.supabase, {
+          id,
+          companyId,
+          companyGroupId: ctx.company.groupId,
+          locale
+        })
+      )
       .then((rendered) =>
         service.attachDocumentPdf(ctx, {
           pdf: rendered,
