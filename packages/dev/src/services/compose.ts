@@ -313,11 +313,16 @@ export async function bootSharedRedis() {
   if (tooFewDbs) {
     log.info(`recreating shared redis with ${REDIS_DB_MAX} DBs (data kept)`);
     // Stop first: a SIGTERM lets redis flush its AOF buffer, `rm -f` alone
-    // would kill it with acknowledged writes still unwritten.
-    await execa("docker", ["stop", REDIS_CONTAINER], {
-      reject: false,
-      stdio: "ignore"
+    // would kill it with acknowledged writes still unwritten. `docker stop`
+    // succeeds on a stopped container, so a failure means it may still run.
+    const stopped = await execa("docker", ["stop", REDIS_CONTAINER], {
+      reject: false
     });
+    if (stopped.exitCode !== 0) {
+      throw new Error(
+        `Could not stop ${REDIS_CONTAINER} to resize it: ${stopped.stderr.trim()}`
+      );
+    }
     await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
       reject: false,
       stdio: "ignore"

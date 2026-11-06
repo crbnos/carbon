@@ -69,4 +69,19 @@ describe("patched Vite", () => {
       retrieveFile: expect.any(Function)
     });
   });
+
+  it("maps an SSR stack trace back to the TypeScript line", async () => {
+    const thrower = join(root, "boom.ts");
+    writeFileSync(
+      thrower,
+      'type Unused = { a: number };\n\nexport function boom(): never {\n  throw new Error("boom");\n}\n'
+    );
+    const ssr = server.environments.ssr as unknown as {
+      runner: { import(url: string): Promise<{ boom(): never }> };
+    };
+    const { boom } = await ssr.runner.import("/boom.ts");
+    expect(() => boom()).toThrow(
+      expect.objectContaining({ stack: expect.stringContaining("boom.ts:4:") })
+    );
+  });
 });
