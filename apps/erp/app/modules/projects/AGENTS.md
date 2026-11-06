@@ -5,7 +5,7 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 
 Files (`.claude/rules/module-files.md`): `projects.server.ts` holds only the module's
 `defineServiceFn` operations (`api.projects.<name>`, MCP `projects_<name>` when tagged
-`@mcp`); `projects.service.ts` holds every building block, including the posting bodies
+`publish`); `projects.service.ts` holds every building block, including the posting bodies
 `postTimesheet`, `saveTimesheetEntry`, `submitTimesheetWeek`, `postProjectIssue`,
 `postProjectExpense`, `postProjectStockTransfer` and
 `postProjectBurden` (each with its `<name>Input` and `<name>Permission`);
@@ -190,7 +190,7 @@ operation of the same name in `projects.server.ts`.
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
 - `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page.
 - `getProjectElementPage` — everything the element page loads, in parallel.
-- `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
+- `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `publish`).
 - `saveTimesheetEntry`, `submitTimesheetWeek` — the posting bodies of
   `save-timesheet-entry` and `submit-timesheet-week`, which hold the DCAA rules for the
   ERP and the MES. The grid saves a cell and submits a week through the operations of the
@@ -281,14 +281,14 @@ operation of the same name in `projects.server.ts`.
   timesheet page `projects+/timesheets.$employeeId.tsx`) — DCAA timekeeping (5a).
 - `getLateTimesheetEntries`, `getMissingTimesheetDays`, `getLaborTransfers`,
   `getTimesheetAuditRows`, `getLaborDistributionRows`, `getLaborDistributionPeriods`,
-  `getCostByClin` (Kysely, no `@mcp` tag); `buildLaborDistribution`, `projectReportKeys`
+  `getCostByClin` (Kysely, no `publish`); `buildLaborDistribution`, `projectReportKeys`
   (models) — Projects → **Reports** (`projects+/reports.tsx`) and its CSV route
   `api+/projects.reports.$reportKey[.]csv.ts`, which checks each report's permissions.
   The operations `getLaborDistributionPeriods` and `getLaborDistribution` publish the
   labor distribution at the report's permissions. Like the CSV route they do not read the
   timekeeping mode; only the Reports page hides the report outside DCAA.
-- `getRdLedgerRows`, `getRdEmployeeYear` (Kysely, no `@mcp` tag), `getRdComponents`
-  (`@mcp read`). The operations `getRdSection174AReport` and `getRdForm6765GReport`
+- `getRdLedgerRows`, `getRdEmployeeYear` (Kysely, no `publish`), `getRdComponents`
+  (`publish: "read"`). The operations `getRdSection174AReport` and `getRdForm6765GReport`
   publish the two reports. `buildSection174ARows`, `buildSection6765Input`, `rdTaxReportKeys`,
   `taxYearOf`, `monthNumber`, `rdActivityRoles`, `rdComponentTypes`, `rdSoftwareTypes`
   (models) — the R&D tax reports `rd-section-174a` and `rd-form-6765-g` by tax year

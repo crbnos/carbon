@@ -375,7 +375,10 @@ export const serviceJobEstimateSendFormValidator = z
 export const serviceJobEstimateSendValidator = z.object({
   jobId: z.string().min(1, { message: "Job is required" }),
   notification: z.enum(["Email", "None"]).optional(),
-  customerContact: z.string().optional(),
+  customerContact: z
+    .string()
+    .optional()
+    .describe("The customer contact to email; required with Email"),
   cc: z.array(z.string()).optional(),
   locale: z.string().default("en-US")
 });

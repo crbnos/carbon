@@ -3,20 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The ONE server-side entry point for running a Carbon API operation outside HTTP:
-// MCP call_tool, the in-app agent, and the workflow dispatcher all call this. It
-// runs the operation through the real oRPC procedure (its service function's gate
-// included) via server-side call(), and folds the outcome into a { success, … }
-// envelope.
+// MCP call_tool and the workflow dispatcher call this. It validates the
+// arguments with the function's own validator, runs the function (its gate
+// included) inside the operation's span, and folds the outcome into a
+// { success, … } envelope. No HTTP shaping happens here, so nothing has to
+// be reversed.
 
 import { getLogger } from "@carbon/logger";
-import { call, ORPCError } from "@orpc/server";
+import { ORPCError } from "@orpc/server";
 import type { AuthedContext } from "./base.server";
-import {
-  operationId,
-  operationsByName,
-  unshapeHttpBody
-} from "./operations.server";
-import { router } from "./router.server";
+import { operationsByName } from "./operations.server";
+import { traceOperation } from "./router.server";
+import { callServiceFn } from "./service-fn.server";
 import {
   formatValidationIssues,
   type StandardIssue
@@ -51,9 +49,8 @@ export async function callOperation(
     }
   }
 
-  const meta = operationsByName.get(name);
-  const procedure = meta ? router[meta.module]?.[operationId(meta)] : undefined;
-  if (!meta || !procedure) {
+  const op = operationsByName.get(name);
+  if (!op) {
     return {
       success: false,
       error: `Operation not found: ${name}`,
@@ -61,11 +58,22 @@ export async function callOperation(
     };
   }
 
+  // Validation runs before the permission check, so a malformed call gets a
+  // 400 before a 403, as over HTTP.
+  const parsed = op.fn.input.safeParse(args ?? {});
+  if (!parsed.success) {
+    return {
+      success: false,
+      category: "validation",
+      error: formatValidationIssues(parsed.error.issues as StandardIssue[]),
+      errorKind: "execution"
+    };
+  }
+
   try {
-    // The handler shapes the HTTP body (bare single results, `{ results, count }`
-    // lists); unshapeHttpBody reverses it for MCP, agent and workflow callers.
-    const body = await call(procedure, args ?? {}, { context });
-    const result = unshapeHttpBody(meta, body);
+    const result = await traceOperation(op, () =>
+      callServiceFn(op.fn, context, args ?? {})
+    );
     return {
       success: true,
       data: result.data,

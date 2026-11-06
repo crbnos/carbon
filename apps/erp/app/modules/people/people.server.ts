@@ -31,16 +31,11 @@ const shiftInput = z.object({
   customFields: customFieldValues.optional()
 });
 
-/**
- * Create a shift.
- *
- * @remarks
- * Saves a work schedule at a location: its start and end times and the days
- * of the week it runs.
- *
- * @mcp
- */
 export const createShift = defineServiceFn({
+  publish: true,
+  title: "Create a shift",
+  description: `Saves a work schedule at a location: its start and end times and the days
+of the week it runs.`,
   output: rows.shift.pick({ id: true }).meta({ table: "shift" }),
   input: shiftInput,
   permission: { create: "people" },
@@ -65,17 +60,12 @@ export const createShift = defineServiceFn({
   }
 });
 
-/**
- * Change a shift.
- *
- * @remarks
- * Saves the shift, then marks the company's active jobs as needing a new
- * schedule, because the hours people can work have changed. Refused when the
- * shift is not the company's.
- *
- * @mcp
- */
 export const updateShift = defineServiceFn({
+  publish: true,
+  title: "Change a shift",
+  description: `Saves the shift, then marks the company's active jobs as needing a new
+schedule, because the hours people can work have changed. Refused when the
+shift is not the company's.`,
   output: rows.shift.pick({ id: true }).meta({ table: "shift" }),
   input: shiftInput.extend({ id: z.string().min(1) }),
   // The route gated on create; the write runs under the update policy.
@@ -113,22 +103,16 @@ export const updateShift = defineServiceFn({
   }
 });
 
-/**
- * Change a person's job: title, start date, location, shift, department,
- * manager, and the project time fields (labor category, FLSA status,
- * officer, timesheet required).
- *
- * @remarks
- * Every id is checked against the company, and the person's shift
- * assignment for scheduling is kept in step with the job, in one
- * transaction. Then the company's active jobs are marked as needing a new
- * schedule. Refused when the person, location, shift, department, manager
- * or labor category is not in the company. `isOfficer` and
- * `timesheetRequired` left out keep their stored values.
- *
- * @mcp
- */
 export const updatePersonJob = defineServiceFn({
+  publish: true,
+  title:
+    "Change a person's job: title, start date, location, shift, department, manager, and the project time fields (labor category, FLSA status, officer, timesheet required)",
+  description: `Every id is checked against the company, and the person's shift
+assignment for scheduling is kept in step with the job, in one
+transaction. Then the company's active jobs are marked as needing a new
+schedule. Refused when the person, location, shift, department, manager
+or labor category is not in the company. \`isOfficer\` and
+\`timesheetRequired\` left out keep their stored values.`,
   output: z.object({
     employeeId: z.string()
   }),
@@ -302,12 +286,9 @@ export const clockOutSelf = defineServiceFn({
     return { employeeId: ctx.auditUserId };
   }
 });
-/**
- * Delete attribute
- *
- * @mcp destructive
- */
 export const deleteAttribute = defineServiceFn({
+  publish: "destructive",
+  title: "Delete attribute",
   output: z.array(
     z.object({
       id: z.string()
@@ -326,12 +307,9 @@ export const deleteAttribute = defineServiceFn({
   }
 });
 
-/**
- * Delete attribute category
- *
- * @mcp destructive
- */
 export const deleteAttributeCategory = defineServiceFn({
+  publish: "destructive",
+  title: "Delete attribute category",
   output: z.array(
     z.object({
       id: z.string()
@@ -350,12 +328,9 @@ export const deleteAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Delete department
- *
- * @mcp destructive
- */
 export const deleteDepartment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete department",
   output: z.array(
     rows.department.pick({ id: true }).meta({ table: "department" })
   ),
@@ -372,12 +347,9 @@ export const deleteDepartment = defineServiceFn({
   }
 });
 
-/**
- * Delete holiday
- *
- * @mcp destructive
- */
 export const deleteHoliday = defineServiceFn({
+  publish: "destructive",
+  title: "Delete holiday",
   output: z.array(rows.holiday.pick({ id: true }).meta({ table: "holiday" })),
   input: z.looseObject({ holidayId: z.string() }),
   permission: { delete: "people" },
@@ -399,12 +371,9 @@ export const deleteHoliday = defineServiceFn({
   }
 });
 
-/**
- * Delete shift
- *
- * @mcp destructive
- */
 export const deleteShift = defineServiceFn({
+  publish: "destructive",
+  title: "Delete shift",
   output: z.array(rows.shift.pick({ id: true }).meta({ table: "shift" })),
   input: z.looseObject({ shiftId: z.string() }),
   permission: { delete: "people" },
@@ -424,12 +393,9 @@ export const deleteShift = defineServiceFn({
   }
 });
 
-/**
- * Get attribute
- *
- * @mcp read
- */
 export const getAttribute = defineServiceFn({
+  publish: "read",
+  title: "Get attribute",
   output: z.object({
     active: z.boolean().nullable(),
     attributeDataTypeId: z.number(),
@@ -460,12 +426,9 @@ export const getAttribute = defineServiceFn({
   }
 });
 
-/**
- * Get attribute categories
- *
- * @mcp read
- */
 export const getAttributeCategories = defineServiceFn({
+  publish: "read",
+  title: "Get attribute categories",
   output: z
     .array(
       z.object({
@@ -514,12 +477,9 @@ export const getAttributeCategories = defineServiceFn({
   }
 });
 
-/**
- * Get attribute category
- *
- * @mcp read
- */
 export const getAttributeCategory = defineServiceFn({
+  publish: "read",
+  title: "Get attribute category",
   output: z.object({
     active: z.boolean().nullable(),
     companyId: z.string().nullable(),
@@ -564,12 +524,9 @@ export const getAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Get attribute data types
- *
- * @mcp read
- */
 export const getAttributeDataTypes = defineServiceFn({
+  publish: "read",
+  title: "Get attribute data types",
   output: z.array(rows.attributeDataType),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
@@ -581,12 +538,9 @@ export const getAttributeDataTypes = defineServiceFn({
   }
 });
 
-/**
- * Get department
- *
- * @mcp read
- */
 export const getDepartment = defineServiceFn({
+  publish: "read",
+  title: "Get department",
   output: rows.department
     .pick({
       companyId: true,
@@ -670,12 +624,9 @@ export const getDepartment = defineServiceFn({
   }
 });
 
-/**
- * Get departments list
- *
- * @mcp read
- */
 export const getDepartmentsList = defineServiceFn({
+  publish: "read",
+  title: "Get departments list",
   output: z.array(
     rows.department.pick({ id: true, name: true }).meta({ table: "department" })
   ),
@@ -689,12 +640,9 @@ export const getDepartmentsList = defineServiceFn({
   }
 });
 
-/**
- * Get departments tree
- *
- * @mcp read
- */
 export const getDepartmentsTree = defineServiceFn({
+  publish: "read",
+  title: "Get departments tree",
   output: z.array(
     rows.department
       .pick({ id: true, name: true, parentDepartmentId: true })
@@ -710,12 +658,9 @@ export const getDepartmentsTree = defineServiceFn({
   }
 });
 
-/**
- * Get employee job
- *
- * @mcp read
- */
 export const getEmployeeJob = defineServiceFn({
+  publish: "read",
+  title: "Get employee job",
   output: rows.employeeJob
     .pick({
       companyId: true,
@@ -807,12 +752,9 @@ export const getEmployeeJob = defineServiceFn({
   }
 });
 
-/**
- * Get employee summary
- *
- * @mcp read
- */
 export const getEmployeeSummary = defineServiceFn({
+  publish: "read",
+  title: "Get employee summary",
   output: rows.employeeSummary,
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
@@ -828,12 +770,9 @@ export const getEmployeeSummary = defineServiceFn({
   }
 });
 
-/**
- * Get holiday
- *
- * @mcp read
- */
 export const getHoliday = defineServiceFn({
+  publish: "read",
+  title: "Get holiday",
   output: rows.holiday
     .pick({
       companyId: true,
@@ -915,12 +854,9 @@ export const getHoliday = defineServiceFn({
   }
 });
 
-/**
- * Get holidays
- *
- * @mcp read
- */
 export const getHolidays = defineServiceFn({
+  publish: "read",
+  title: "Get holidays",
   output: z
     .array(
       rows.holiday
@@ -990,12 +926,9 @@ export const getHolidays = defineServiceFn({
   }
 });
 
-/**
- * Get holiday years
- *
- * @mcp read
- */
 export const getHolidayYears = defineServiceFn({
+  publish: "read",
+  title: "Get holiday years",
   output: z.array(rows.holidayYears.pick({ year: true })),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "people" },
@@ -1007,12 +940,9 @@ export const getHolidayYears = defineServiceFn({
   }
 });
 
-/**
- * Get people
- *
- * @mcp read
- */
 export const getPeople = defineServiceFn({
+  publish: "read",
+  title: "Get people",
   output: z.array(z.unknown()),
   input: z.looseObject({
     limit: z
@@ -1036,12 +966,9 @@ export const getPeople = defineServiceFn({
   }
 });
 
-/**
- * Get shift
- *
- * @mcp read
- */
 export const getShift = defineServiceFn({
+  publish: "read",
+  title: "Get shift",
   output: rows.shifts
     .pick({
       active: true,
@@ -1132,12 +1059,9 @@ export const getShift = defineServiceFn({
   }
 });
 
-/**
- * Get shifts
- *
- * @mcp read
- */
 export const getShifts = defineServiceFn({
+  publish: "read",
+  title: "Get shifts",
   output: z
     .array(
       rows.shifts
@@ -1216,12 +1140,9 @@ export const getShifts = defineServiceFn({
   }
 });
 
-/**
- * Get shifts list
- *
- * @mcp read
- */
 export const getShiftsList = defineServiceFn({
+  publish: "read",
+  title: "Get shifts list",
   output: z.array(
     rows.shift.pick({ id: true, name: true }).meta({ table: "shift" })
   ),
@@ -1239,12 +1160,9 @@ export const getShiftsList = defineServiceFn({
   }
 });
 
-/**
- * Get employee shifts
- *
- * @mcp read
- */
 export const getEmployeeShifts = defineServiceFn({
+  publish: "read",
+  title: "Get employee shifts",
   output: z.array(
     rows.employeeShift
       .pick({ employeeId: true, shiftId: true })
@@ -1260,12 +1178,9 @@ export const getEmployeeShifts = defineServiceFn({
   }
 });
 
-/**
- * Get employee departments
- *
- * @mcp read
- */
 export const getEmployeeDepartments = defineServiceFn({
+  publish: "read",
+  title: "Get employee departments",
   output: z.array(
     z.object({
       id: z.string(),
@@ -1285,12 +1200,9 @@ export const getEmployeeDepartments = defineServiceFn({
   }
 });
 
-/**
- * Get shifts with times
- *
- * @mcp read
- */
 export const getShiftsWithTimes = defineServiceFn({
+  publish: "read",
+  title: "Get shifts with times",
   output: z.array(
     rows.shift
       .pick({
@@ -1322,12 +1234,9 @@ export const getShiftsWithTimes = defineServiceFn({
   }
 });
 
-/**
- * Insert attribute
- *
- * @mcp
- */
 export const insertAttribute = defineServiceFn({
+  publish: true,
+  title: "Insert attribute",
   output: z.object({
     id: z.string()
   }),
@@ -1350,12 +1259,9 @@ export const insertAttribute = defineServiceFn({
   }
 });
 
-/**
- * Insert attribute category
- *
- * @mcp
- */
 export const insertAttributeCategory = defineServiceFn({
+  publish: true,
+  title: "Insert attribute category",
   output: z.object({
     id: z.string()
   }),
@@ -1376,12 +1282,9 @@ export const insertAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Insert employee job
- *
- * @mcp
- */
 export const insertEmployeeJob = defineServiceFn({
+  publish: true,
+  title: "Insert employee job",
   output: rows.employeeJob
     .pick({
       companyId: true,
@@ -1472,12 +1375,9 @@ export const insertEmployeeJob = defineServiceFn({
   }
 });
 
-/**
- * Update attribute
- *
- * @mcp
- */
 export const updateAttribute = defineServiceFn({
+  publish: true,
+  title: "Update attribute",
   output: z.array(
     z.object({
       id: z.string()
@@ -1501,12 +1401,9 @@ export const updateAttribute = defineServiceFn({
   }
 });
 
-/**
- * Update attribute category
- *
- * @mcp
- */
 export const updateAttributeCategory = defineServiceFn({
+  publish: true,
+  title: "Update attribute category",
   output: z.array(
     z.object({
       id: z.string()
@@ -1530,12 +1427,9 @@ export const updateAttributeCategory = defineServiceFn({
   }
 });
 
-/**
- * Update attribute sort order
- *
- * @mcp
- */
 export const updateAttributeSortOrder = defineServiceFn({
+  publish: true,
+  title: "Update attribute sort order",
   output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -1552,15 +1446,10 @@ export const updateAttributeSortOrder = defineServiceFn({
   }
 });
 
-/**
- * Create a department
- *
- * @remarks
- * Upsert department
- *
- * @mcp
- */
 export const createDepartment = defineServiceFn({
+  publish: true,
+  title: "Create a department",
+  description: "Upsert department",
   output: rows.department
     .pick({
       companyId: true,
@@ -1652,15 +1541,10 @@ export const createDepartment = defineServiceFn({
   }
 });
 
-/**
- * Update a department
- *
- * @remarks
- * Upsert department
- *
- * @mcp
- */
 export const updateDepartment = defineServiceFn({
+  publish: true,
+  title: "Update a department",
+  description: "Upsert department",
   output: rows.department
     .pick({
       companyId: true,
@@ -1754,15 +1638,10 @@ export const updateDepartment = defineServiceFn({
   }
 });
 
-/**
- * Create a holiday
- *
- * @remarks
- * Upsert holiday
- *
- * @mcp
- */
 export const createHoliday = defineServiceFn({
+  publish: true,
+  title: "Create a holiday",
+  description: "Upsert holiday",
   output: rows.holiday
     .pick({
       companyId: true,
@@ -1862,15 +1741,10 @@ export const createHoliday = defineServiceFn({
   }
 });
 
-/**
- * Update a holiday
- *
- * @remarks
- * Upsert holiday
- *
- * @mcp
- */
 export const updateHoliday = defineServiceFn({
+  publish: true,
+  title: "Update a holiday",
+  description: "Upsert holiday",
   output: rows.holiday
     .pick({
       companyId: true,
@@ -1972,12 +1846,9 @@ export const updateHoliday = defineServiceFn({
   }
 });
 
-/**
- * Create time card entry
- *
- * @mcp
- */
 export const createTimeCardEntry = defineServiceFn({
+  publish: true,
+  title: "Create time card entry",
   output: rows.timeCardEntry
     .pick({ id: true })
     .meta({ table: "timeCardEntry" }),
@@ -1999,12 +1870,9 @@ export const createTimeCardEntry = defineServiceFn({
   }
 });
 
-/**
- * Delete time card entry
- *
- * @mcp destructive
- */
 export const deleteTimeCardEntry = defineServiceFn({
+  publish: "destructive",
+  title: "Delete time card entry",
   output: z.array(
     rows.timeCardEntry.pick({ id: true }).meta({ table: "timeCardEntry" })
   ),
@@ -2021,12 +1889,9 @@ export const deleteTimeCardEntry = defineServiceFn({
   }
 });
 
-/**
- * Get open clock entry
- *
- * @mcp read
- */
 export const getOpenClockEntry = defineServiceFn({
+  publish: "read",
+  title: "Get open clock entry",
   output: rows.timeCardEntry,
   input: z.looseObject({ employeeId: z.string() }),
   permission: { view: "people" },
@@ -2042,12 +1907,9 @@ export const getOpenClockEntry = defineServiceFn({
   }
 });
 
-/**
- * Get time card entry
- *
- * @mcp read
- */
 export const getTimeCardEntry = defineServiceFn({
+  publish: "read",
+  title: "Get time card entry",
   output: rows.timeCardEntry,
   input: z.looseObject({ entryId: z.string() }),
   permission: { view: "people" },
@@ -2062,12 +1924,9 @@ export const getTimeCardEntry = defineServiceFn({
   }
 });
 
-/**
- * Get time card entries
- *
- * @mcp read
- */
 export const getTimeCardEntries = defineServiceFn({
+  publish: "read",
+  title: "Get time card entries",
   output: z.array(rows.timeCardEntry),
   input: z.looseObject({
     employeeId: z.string(),
@@ -2086,12 +1945,9 @@ export const getTimeCardEntries = defineServiceFn({
   }
 });
 
-/**
- * Get timecard entries
- *
- * @mcp read
- */
 export const getTimecardEntries = defineServiceFn({
+  publish: "read",
+  title: "Get timecard entries",
   output: z.array(rows.timeCardEntries).nullable(),
   input: z.looseObject({
     limit: z
@@ -2115,16 +1971,11 @@ export const getTimecardEntries = defineServiceFn({
   }
 });
 
-/**
- * List the imported payroll totals.
- *
- * @remarks
- * One row per employee and pay period, from the payroll system's export:
- * the gross wages and the hours paid. Newest period first.
- *
- * @mcp read
- */
 export const getPayrollPeriodTotals = defineServiceFn({
+  publish: "read",
+  title: "List the imported payroll totals",
+  description: `One row per employee and pay period, from the payroll system's export:
+the gross wages and the hours paid. Newest period first.`,
   output: z
     .array(
       rows.payrollPeriodTotal
@@ -2161,12 +2012,9 @@ export const getPayrollPeriodTotals = defineServiceFn({
   }
 });
 
-/**
- * Update time card entry
- *
- * @mcp
- */
 export const updateTimeCardEntry = defineServiceFn({
+  publish: true,
+  title: "Update time card entry",
   output: z.array(
     rows.timeCardEntry.pick({ id: true }).meta({ table: "timeCardEntry" })
   ),

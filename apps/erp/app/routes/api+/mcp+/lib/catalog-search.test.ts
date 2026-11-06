@@ -11,9 +11,10 @@ import {
   splitWords
 } from "@carbon/ee/mcp";
 import { describe, expect, test } from "vitest";
-import toolMetadata from "./tool-metadata.json";
+import { OPERATIONS } from "../../v1+/lib/operations.server";
 
-const tools = toolMetadata.tools as unknown as ManifestEntry[];
+// The catalog the server searches: built from the service-function registry.
+const tools: ManifestEntry[] = OPERATIONS;
 const catalog = createCatalogSearch(tools);
 
 const page = { limit: 20, offset: 0 };

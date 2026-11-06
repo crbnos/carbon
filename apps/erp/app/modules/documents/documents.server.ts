@@ -228,12 +228,9 @@ export const recordDocumentDownload = defineServiceFn({
     return { documentId };
   }
 });
-/**
- * Delete document
- *
- * @mcp destructive
- */
 export const deleteDocument = defineServiceFn({
+  publish: "destructive",
+  title: "Delete document",
   output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "documents" },
@@ -245,12 +242,9 @@ export const deleteDocument = defineServiceFn({
   }
 });
 
-/**
- * Get document
- *
- * @mcp read
- */
 export const getDocument = defineServiceFn({
+  publish: "read",
+  title: "Get document",
   output: rows.documents,
   input: z.looseObject({ documentId: z.string() }),
   permission: { view: "documents" },
@@ -265,12 +259,9 @@ export const getDocument = defineServiceFn({
   }
 });
 
-/**
- * Get documents
- *
- * @mcp read
- */
 export const getDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get documents",
   output: z.array(rows.documents).nullable(),
   input: z.looseObject({
     limit: z
@@ -297,12 +288,9 @@ export const getDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get document extensions
- *
- * @mcp read
- */
 export const getDocumentExtensions = defineServiceFn({
+  publish: "read",
+  title: "Get document extensions",
   output: z.array(
     z.object({
       extension: z.string()
@@ -318,12 +306,9 @@ export const getDocumentExtensions = defineServiceFn({
   }
 });
 
-/**
- * Get document labels
- *
- * @mcp read
- */
 export const getDocumentLabels = defineServiceFn({
+  publish: "read",
+  title: "Get document labels",
   output: z.array(rows.documentLabels),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "documents" },
@@ -335,12 +320,9 @@ export const getDocumentLabels = defineServiceFn({
   }
 });
 
-/**
- * Move document to trash
- *
- * @mcp
- */
 export const moveDocumentToTrash = defineServiceFn({
+  publish: true,
+  title: "Move document to trash",
   output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
@@ -356,12 +338,9 @@ export const moveDocumentToTrash = defineServiceFn({
   }
 });
 
-/**
- * Restore document
- *
- * @mcp
- */
 export const restoreDocument = defineServiceFn({
+  publish: true,
+  title: "Restore document",
   output: z.array(rows.document.pick({ id: true }).meta({ table: "document" })),
   input: z.looseObject({ id: z.string() }),
   permission: { update: "documents" },
@@ -377,16 +356,11 @@ export const restoreDocument = defineServiceFn({
   }
 });
 
-/**
- * Create a document
- *
- * @remarks
- * Records the document row for a file. To change an existing document, use
- * `documents_updateDocument`.
- *
- * @mcp
- */
 export const createDocument = defineServiceFn({
+  publish: true,
+  title: "Create a document",
+  description: `Records the document row for a file. To change an existing document, use
+\`documents_updateDocument\`.`,
   output: z.union([
     z.array(
       z.object({
@@ -502,15 +476,10 @@ export const createDocument = defineServiceFn({
   }
 });
 
-/**
- * Update a document
- *
- * @remarks
- * Changes the document with this `id`.
- *
- * @mcp
- */
 export const updateDocument = defineServiceFn({
+  publish: true,
+  title: "Update a document",
+  description: "Changes the document with this `id`.",
   output: z.union([
     z.array(
       z.object({
@@ -629,12 +598,9 @@ export const updateDocument = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for a document in the company's bucket
- *
- * @mcp
- */
 export const createDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title: "Create a presigned upload URL for a document in the company's bucket",
   output: z.object({
     signedUrl: z.string(),
     token: z.string(),
@@ -657,12 +623,9 @@ export const createDocumentUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Register the metadata row for a file already uploaded to storage
- *
- * @mcp
- */
 export const insertUploadedDocument = defineServiceFn({
+  publish: true,
+  title: "Register the metadata row for a file already uploaded to storage",
   output: z.union([
     z.array(
       z.object({
@@ -773,15 +736,11 @@ export const insertUploadedDocument = defineServiceFn({
   }
 });
 
-/**
- * Mark or unmark a document as one of the caller's favorites.
- *
- * @remarks
- * Changes only the caller's own favorites list; the record is unchanged.
- *
- * @mcp
- */
 export const updateDocumentFavorite = defineServiceFn({
+  publish: true,
+  title: "Mark or unmark a document as one of the caller's favorites",
+  description:
+    "Changes only the caller's own favorites list; the record is unchanged.",
   output: z.null(),
   input: z.looseObject({ id: z.string(), favorite: z.boolean() }),
   permission: { update: "documents" },
@@ -796,12 +755,9 @@ export const updateDocumentFavorite = defineServiceFn({
   }
 });
 
-/**
- * Update document labels
- *
- * @mcp destructive
- */
 export const updateDocumentLabels = defineServiceFn({
+  publish: "destructive",
+  title: "Update document labels",
   output: z.null(),
   input: z.looseObject({
     documentId: z.string().min(20),
@@ -819,12 +775,9 @@ export const updateDocumentLabels = defineServiceFn({
   }
 });
 
-/**
- * Insert document extraction
- *
- * @mcp
- */
 export const insertDocumentExtraction = defineServiceFn({
+  publish: true,
+  title: "Insert document extraction",
   output: rows.documentExtraction
     .pick({ id: true, companyId: true })
     .meta({ table: "documentExtraction" }),

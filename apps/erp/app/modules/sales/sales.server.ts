@@ -145,20 +145,15 @@ const salesRfqFields = [
   "salesPersonId"
 ] as const;
 
-/**
- * Create a sales RFQ.
- *
- * @remarks
- * Every customer, contact and location id must belong to this company. The
- * RFQ is created with its opportunity. Then, optionally: one line per
- * extracted `lines` entry that has a part number or description (each mapped
- * to an existing item when its text matches one directly), and the file at
- * `documentPath` (an extraction upload) copied onto the opportunity as a
- * document. A failed line or copy does not fail the RFQ.
- *
- * @mcp
- */
 export const createSalesRfq = defineServiceFn({
+  publish: true,
+  title: "Create a sales RFQ",
+  description: `Every customer, contact and location id must belong to this company. The
+RFQ is created with its opportunity. Then, optionally: one line per
+extracted \`lines\` entry that has a part number or description (each mapped
+to an existing item when its text matches one directly), and the file at
+\`documentPath\` (an extraction upload) copied onto the opportunity as a
+document. A failed line or copy does not fail the RFQ.`,
   output: rows.salesRfq
     .pick({ id: true, rfqId: true })
     .meta({ table: "salesRfq" }),
@@ -336,17 +331,12 @@ export const updateSalesRfqField = defineServiceFn({
   }
 });
 
-/**
- * Set a sales RFQ's status.
- *
- * @remarks
- * Ready for Quote first notifies the company's RFQ-ready group (a failed
- * notification leaves the status unchanged). Closed clears the assignee.
- * `noQuoteReasonId` records why it was not quoted.
- *
- * @mcp
- */
 export const setSalesRfqStatus = defineServiceFn({
+  publish: true,
+  title: "Set a sales RFQ's status",
+  description: `Ready for Quote first notifies the company's RFQ-ready group (a failed
+notification leaves the status unchanged). Closed clears the assignee.
+\`noQuoteReasonId\` records why it was not quoted.`,
   output: rows.salesRfq
     .pick({ id: true, status: true })
     .meta({ table: "salesRfq" }),
@@ -393,20 +383,15 @@ export const setSalesRfqStatus = defineServiceFn({
   }
 });
 
-/**
- * Convert a sales RFQ to a quote.
- *
- * @remarks
- * First the sales-rule gate: every RFQ line that names an item is checked as
- * a quote line. An error, or a warning not `acknowledged`, returns
- * `violations` and converts nothing. Then the `convert` server function mints
- * the quote, and every new line that has no prices yet is priced for each of
- * its quantities by its method (Make to Order from its cost rollup, Pull from
- * Inventory from the item's price, Purchase to Order from the supplier's).
- *
- * @mcp
- */
 export const convertSalesRfq = defineServiceFn({
+  publish: true,
+  title: "Convert a sales RFQ to a quote",
+  description: `First the sales-rule gate: every RFQ line that names an item is checked as
+a quote line. An error, or a warning not \`acknowledged\`, returns
+\`violations\` and converts nothing. Then the \`convert\` server function mints
+the quote, and every new line that has no prices yet is priced for each of
+its quantities by its method (Make to Order from its cost rollup, Pull from
+Inventory from the item's price, Purchase to Order from the supplier's).`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -574,20 +559,15 @@ export const attachSalesRfqFile = defineServiceFn({
     return { lineId };
   }
 });
-/**
- * Map a sales RFQ's extracted lines to items.
- *
- * @remarks
- * Each mapping maps its line to `itemId`, creates a Make to Order part named
- * `createName` (or reuses the item with that part number), or is ignored.
- * Every line must be on this RFQ and every item and the customer this
- * company's. A mapped line with a customer part number also records it as
- * the customer's part for the item. A line that cannot be mapped does not
- * stop the others; `failed` counts them.
- *
- * @mcp
- */
 export const mapSalesRfqLines = defineServiceFn({
+  publish: true,
+  title: "Map a sales RFQ's extracted lines to items",
+  description: `Each mapping maps its line to \`itemId\`, creates a Make to Order part named
+\`createName\` (or reuses the item with that part number), or is ignored.
+Every line must be on this RFQ and every item and the customer this
+company's. A mapped line with a customer part number also records it as
+the customer's part for the item. A line that cannot be mapped does not
+stop the others; \`failed\` counts them.`,
   output: z.object({
     failed: z.number()
   }),
@@ -871,21 +851,16 @@ export const updateQuoteField = defineServiceFn({
     return { ids };
   }
 });
-/**
- * Add a line to a quote.
- *
- * @remarks
- * Refused while the quote is locked. The line is first checked against the
- * sales rules at every quantity break: an error, or a warning not
- * `acknowledged`, returns `violations` and adds nothing. Then the line is
- * priced by its method: Purchase to Order from the supplier's prices, Pull
- * from Inventory from the item's price, Make to Order by copying the item's
- * method and rolling up its cost. When pricing fails the line is kept and
- * `warning` says what failed.
- *
- * @mcp
- */
 export const createQuoteLine = defineServiceFn({
+  publish: true,
+  title: "Add a line to a quote",
+  description: `Refused while the quote is locked. The line is first checked against the
+sales rules at every quantity break: an error, or a warning not
+\`acknowledged\`, returns \`violations\` and adds nothing. Then the line is
+priced by its method: Purchase to Order from the supplier's prices, Pull
+from Inventory from the item's price, Make to Order by copying the item's
+method and rolling up its cost. When pricing fails the line is kept and
+\`warning\` says what failed.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -971,20 +946,15 @@ export const createQuoteLine = defineServiceFn({
     return { quoteLineId, warning };
   }
 });
-/**
- * Change a quote line.
- *
- * @remarks
- * Refused while the quote is locked. The line is first checked against the
- * sales rules at every quantity break (see `createQuoteLine`). Then its
- * quantity breaks are reconciled: a break no longer offered loses its price,
- * and a new break of a Make to Order, Pull from Inventory or Purchase to
- * Order line is priced. The prices are computed before anything is written,
- * and the line and its prices are saved in one transaction.
- *
- * @mcp
- */
 export const updateQuoteLine = defineServiceFn({
+  publish: true,
+  title: "Change a quote line",
+  description: `Refused while the quote is locked. The line is first checked against the
+sales rules at every quantity break (see \`createQuoteLine\`). Then its
+quantity breaks are reconciled: a break no longer offered loses its price,
+and a new break of a Make to Order, Pull from Inventory or Purchase to
+Order line is priced. The prices are computed before anything is written,
+and the line and its prices are saved in one transaction.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -1133,21 +1103,16 @@ export const updateQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Finalize a quote and send it to the customer.
- *
- * @remarks
- * In order: the customer must have a reachable contact when the company
- * requires one; the sales-rule gate re-checks every line (an error, or a
- * warning not `acknowledged`, returns `violations` and changes nothing); the
- * quote gets its share link; its PDF is filed on the opportunity; the quote
- * is set Sent and its lines Complete. With `notification` Email the PDF is
- * then emailed to `customerContact` (and `cc`); when that fails the quote is
- * still Sent and `warning` says so. `locale` formats the PDF.
- *
- * @mcp
- */
 export const finalizeAndSendQuote = defineServiceFn({
+  publish: true,
+  title: "Finalize a quote and send it to the customer",
+  description: `In order: the customer must have a reachable contact when the company
+requires one; the sales-rule gate re-checks every line (an error, or a
+warning not \`acknowledged\`, returns \`violations\` and changes nothing); the
+quote gets its share link; its PDF is filed on the opportunity; the quote
+is set Sent and its lines Complete. With \`notification\` Email the PDF is
+then emailed to \`customerContact\` (and \`cc\`); when that fails the quote is
+still Sent and \`warning\` says so. \`locale\` formats the PDF.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -1307,22 +1272,17 @@ export const finalizeAndSendQuote = defineServiceFn({
     }
   }
 });
-/**
- * Convert a quote to a sales order.
- *
- * @remarks
- * `selectedLines` maps each quote line to the quantity break and prices to
- * order; a line with quantity 0 is not converted. First the sales-rule gate
- * re-checks the lines that convert (an error, or a warning not
- * `acknowledged`, returns `violations` and converts nothing). Then the
- * `convert` server function creates the order with `purchaseOrderNumber`.
- * Its PDF is filed on the opportunity and, with `notification` Email,
- * emailed to `customerContact`; those two never fail the conversion, and a
- * requested email that was not sent comes back as `warning`.
- *
- * @mcp
- */
 export const convertQuote = defineServiceFn({
+  publish: true,
+  title: "Convert a quote to a sales order",
+  description: `\`selectedLines\` maps each quote line to the quantity break and prices to
+order; a line with quantity 0 is not converted. First the sales-rule gate
+re-checks the lines that convert (an error, or a warning not
+\`acknowledged\`, returns \`violations\` and converts nothing). Then the
+\`convert\` server function creates the order with \`purchaseOrderNumber\`.
+Its PDF is filed on the opportunity and, with \`notification\` Email,
+emailed to \`customerContact\`; those two never fail the conversion, and a
+requested email that was not sent comes back as \`warning\`.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -1856,16 +1816,11 @@ const NON_ADVANCING_SALES_ORDER_STATUSES = new Set([
   "Cancelled",
   "Closed"
 ]);
-/**
- * Set a quote's status.
- *
- * @remarks
- * A status past Draft, Lost, Cancelled and Expired is refused when the quote
- * breaks an error-severity sales rule.
- *
- * @mcp
- */
 export const setQuoteStatus = defineServiceFn({
+  publish: true,
+  title: "Set a quote's status",
+  description: `A status past Draft, Lost, Cancelled and Expired is refused when the quote
+breaks an error-severity sales rule.`,
   output: rows.quote
     .pick({ quoteId: true, status: true })
     .meta({ table: "quote" }),
@@ -1900,17 +1855,12 @@ export const setQuoteStatus = defineServiceFn({
   }
 });
 
-/**
- * Update a quote's details.
- *
- * @remarks
- * Refused while the quote is locked. A status past Draft, Lost, Cancelled and
- * Expired is checked against the sales rules as `quote.setStatus` does. A new
- * currency re-reads the exchange rate; a new customer moves the opportunity.
- *
- * @mcp
- */
 export const updateQuoteDetails = defineServiceFn({
+  publish: true,
+  title: "Update a quote's details",
+  description: `Refused while the quote is locked. A status past Draft, Lost, Cancelled and
+Expired is checked against the sales rules as \`quote.setStatus\` does. A new
+currency re-reads the exchange rate; a new customer moves the opportunity.`,
   output: rows.quote.pick({ quoteId: true }).meta({ table: "quote" }),
   input: quoteValidator.safeExtend({
     id: z.string(),
@@ -1952,19 +1902,14 @@ export const updateQuoteDetails = defineServiceFn({
   }
 });
 
-/**
- * Set a sales order's status.
- *
- * @remarks
- * Cancelling cancels the order through `cancelSalesOrder`: with `cancelJobIds`
- * only those jobs are cancelled (an empty list cancels none), without it every
- * open job of the order. A status past Draft, Needs Approval, Cancelled and
- * Closed is refused when the order breaks an error-severity sales rule.
- * Closing an order clears its assignee.
- *
- * @mcp
- */
 export const setSalesOrderStatus = defineServiceFn({
+  publish: true,
+  title: "Set a sales order's status",
+  description: `Cancelling cancels the order through \`cancelSalesOrder\`: with \`cancelJobIds\`
+only those jobs are cancelled (an empty list cancels none), without it every
+open job of the order. A status past Draft, Needs Approval, Cancelled and
+Closed is refused when the order breaks an error-severity sales rule.
+Closing an order clears its assignee.`,
   output: z.union([
     z.object({
       salesOrderId: z.string(),
@@ -2131,21 +2076,16 @@ export const updateSalesOrderField = defineServiceFn({
   }
 });
 
-/**
- * Confirm a sales order.
- *
- * @remarks
- * In order: the customer must have a reachable contact when the company
- * requires one; the sales-rule gate re-checks every line (an error, or a
- * warning not `acknowledged`, returns `violations` and confirms nothing);
- * the order's PDF is filed; with `notification` Email it is sent to
- * `customerContact` (and `cc`). Only then does the order take its status
- * from its lines, with today as the order date when it had none. MRP then
- * plans it. A failed PDF or email leaves the order unconfirmed.
- *
- * @mcp
- */
 export const confirmSalesOrder = defineServiceFn({
+  publish: true,
+  title: "Confirm a sales order",
+  description: `In order: the customer must have a reachable contact when the company
+requires one; the sales-rule gate re-checks every line (an error, or a
+warning not \`acknowledged\`, returns \`violations\` and confirms nothing);
+the order's PDF is filed; with \`notification\` Email it is sent to
+\`customerContact\` (and \`cc\`). Only then does the order take its status
+from its lines, with today as the order date when it had none. MRP then
+plans it. A failed PDF or email leaves the order unconfirmed.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -2319,18 +2259,13 @@ export const confirmSalesOrder = defineServiceFn({
     return { salesOrderId, status };
   }
 });
-/**
- * Update a sales order's details.
- *
- * @remarks
- * Refused while the order is locked. A status past Draft, Needs Approval,
- * Cancelled and Closed is checked against the sales rules as
- * `order.setStatus` does. A new currency re-reads the exchange rate; a new
- * customer moves the opportunity.
- *
- * @mcp
- */
 export const updateSalesOrderDetails = defineServiceFn({
+  publish: true,
+  title: "Update a sales order's details",
+  description: `Refused while the order is locked. A status past Draft, Needs Approval,
+Cancelled and Closed is checked against the sales rules as
+\`order.setStatus\` does. A new currency re-reads the exchange rate; a new
+customer moves the opportunity.`,
   output: rows.salesOrder
     .pick({ salesOrderId: true })
     .meta({ table: "salesOrder" }),
@@ -2378,18 +2313,13 @@ const salesOrderLineInput = salesOrderLineValidator.safeExtend({
   acknowledged: z.boolean().default(false)
 });
 
-/**
- * Add a line to a sales order.
- *
- * @remarks
- * Refused while the order is locked, and for an item a change notice still
- * holds (an unreleased revision cannot be ordered). A line with an item is
- * first checked against the sales rules at the order's ship-to: an error,
- * or a warning not `acknowledged`, returns `violations` and adds nothing.
- *
- * @mcp
- */
 export const createSalesOrderLine = defineServiceFn({
+  publish: true,
+  title: "Add a line to a sales order",
+  description: `Refused while the order is locked, and for an item a change notice still
+holds (an unreleased revision cannot be ordered). A line with an item is
+first checked against the sales rules at the order's ship-to: an error,
+or a warning not \`acknowledged\`, returns \`violations\` and adds nothing.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -2469,16 +2399,11 @@ export const createSalesOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Change a sales order line.
- *
- * @remarks
- * Refused while the order is locked. A line with an item is first checked
- * against the sales rules (see `createSalesOrderLine`).
- *
- * @mcp
- */
 export const updateSalesOrderLine = defineServiceFn({
+  publish: true,
+  title: "Change a sales order line",
+  description: `Refused while the order is locked. A line with an item is first checked
+against the sales rules (see \`createSalesOrderLine\`).`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -2552,16 +2477,11 @@ export const updateSalesOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Create a shipment for one sales order line.
- *
- * @remarks
- * The line needs a location; the shipment is created there through the
- * `create` server function.
- *
- * @mcp
- */
 export const shipSalesOrderLine = defineServiceFn({
+  publish: true,
+  title: "Create a shipment for one sales order line",
+  description: `The line needs a location; the shipment is created there through the
+\`create\` server function.`,
   output: z.object({
     shipmentId: z.string()
   }),
@@ -2702,19 +2622,14 @@ export const updateSalesReturnOrderField = defineServiceFn({
   }
 });
 
-/**
- * Confirm a sales return order (RMA).
- *
- * @remarks
- * Authorizes the customer to return the goods on its lines: each line's
- * quantity is checked, under row locks, against what its source document can
- * still take back, and a line over that refuses the whole confirm. Then the
- * RMA's PDF is filed on it; when that fails the RMA is still confirmed and
- * `warning` says so. `locale` formats the PDF.
- *
- * @mcp
- */
 export const confirmReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Confirm a sales return order (RMA)",
+  description: `Authorizes the customer to return the goods on its lines: each line's
+quantity is checked, under row locks, against what its source document can
+still take back, and a line over that refuses the whole confirm. Then the
+RMA's PDF is filed on it; when that fails the RMA is still confirmed and
+\`warning\` says so. \`locale\` formats the PDF.`,
   output: z.union([
     z.object({
       salesReturnOrderId: z.string(),
@@ -2800,18 +2715,13 @@ export const confirmReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Add a line to a sales return order (RMA).
- *
- * @remarks
- * Only while the RMA is Draft: its quantities are checked against their
- * sources at Confirm, so a later line would skip that check. A line from a
- * sales order links the RMA to that order when it has none yet (the first
- * line's order wins; a link someone set is never replaced).
- *
- * @mcp
- */
 export const createReturnOrderLine = defineServiceFn({
+  publish: true,
+  title: "Add a line to a sales return order (RMA)",
+  description: `Only while the RMA is Draft: its quantities are checked against their
+sources at Confirm, so a later line would skip that check. A line from a
+sales order links the RMA to that order when it has none yet (the first
+line's order wins; a link someone set is never replaced).`,
   output: z.object({
     salesReturnOrderLineId: z.string()
   }),
@@ -2885,23 +2795,18 @@ export const createReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Escalate a sales return order line to a quality Issue.
- *
- * @remarks
- * Scrap and Rework are quality decisions, so the line gets an Issue for its
- * received quantity, linked to the line and to its returned entities still
- * On Hold (expected serials or batches, and those received blind against the
- * line), and the line records the disposition. Needs a received quantity, an
- * Issue Type and a location (the RMA's, else the user's). When the line has
- * an open Issue already, only the disposition changes and that Issue is
- * returned (`created` false), so changing the choice never opens a second
- * Issue for the same goods. A failure after the Issue is created deletes it
- * again; a failed disposition write keeps it and `warning` says so.
- *
- * @mcp
- */
 export const escalateReturnOrderLine = defineServiceFn({
+  publish: true,
+  title: "Escalate a sales return order line to a quality Issue",
+  description: `Scrap and Rework are quality decisions, so the line gets an Issue for its
+received quantity, linked to the line and to its returned entities still
+On Hold (expected serials or batches, and those received blind against the
+line), and the line records the disposition. Needs a received quantity, an
+Issue Type and a location (the RMA's, else the user's). When the line has
+an open Issue already, only the disposition changes and that Issue is
+returned (\`created\` false), so changing the choice never opens a second
+Issue for the same goods. A failure after the Issue is created deletes it
+again; a failed disposition write keeps it and \`warning\` says so.`,
   output: z.object({
     issueId: z.string(),
     created: z.boolean(),
@@ -3095,19 +3000,14 @@ export const escalateReturnOrderLine = defineServiceFn({
     };
   }
 });
-/**
- * Change a sales return order (RMA) line.
- *
- * @remarks
- * Refused when the RMA is completed or cancelled, and for a line of another
- * RMA. Once the RMA is confirmed, its quantity, item, unit price, restocking
- * fee, unit of measure and source links are locked: they were checked
- * against their sources at Confirm. A field that is sent unchanged, or not
- * sent, is no change.
- *
- * @mcp
- */
 export const updateReturnOrderLine = defineServiceFn({
+  publish: true,
+  title: "Change a sales return order (RMA) line",
+  description: `Refused when the RMA is completed or cancelled, and for a line of another
+RMA. Once the RMA is confirmed, its quantity, item, unit price, restocking
+fee, unit of measure and source links are locked: they were checked
+against their sources at Confirm. A field that is sent unchanged, or not
+sent, is no change.`,
   output: z.object({
     salesReturnOrderLineId: z.string()
   }),
@@ -3231,20 +3131,15 @@ export const updateReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Add one sales return order (RMA) line per customer asset.
- *
- * @remarks
- * Only while the RMA is Draft. Each line is one unit of the asset's item and
- * names the asset. Its return type follows the asset's warranty on the
- * company's today: Return for Warranty while the labor or parts warranty
- * runs, else Return for Service. The unit stays the customer's and is never
- * credited, so the unit price is 0. Refused when an asset is not the RMA
- * customer's or is on the RMA already. One insert for all the lines.
- *
- * @mcp
- */
 export const createReturnOrderLinesFromAssets = defineServiceFn({
+  publish: true,
+  title: "Add one sales return order (RMA) line per customer asset",
+  description: `Only while the RMA is Draft. Each line is one unit of the asset's item and
+names the asset. Its return type follows the asset's warranty on the
+company's today: Return for Warranty while the labor or parts warranty
+runs, else Return for Service. The unit stays the customer's and is never
+credited, so the unit price is 0. Refused when an asset is not the RMA
+customer's or is on the RMA already. One insert for all the lines.`,
   output: z.object({
     salesReturnOrderLineIds: z.array(z.string())
   }),
@@ -3278,19 +3173,14 @@ const returnLineInput = z.object({
   lineId: z.string().min(1)
 });
 
-/**
- * Scrap the unit of a Return for Service or Return for Warranty line.
- *
- * @remarks
- * With the customer's consent, or after a no-charge replacement. The line's
- * disposition becomes Scrap, its serial Scrapped and its customer asset
- * Returned. The unit was never valued, so nothing posts. Refused before the
- * line's service job is Completed or Invoiced, and once the unit has shipped
- * back. The RMA status follows.
- *
- * @mcp
- */
 export const scrapReturnedUnit = defineServiceFn({
+  publish: true,
+  title: "Scrap the unit of a Return for Service or Return for Warranty line",
+  description: `With the customer's consent, or after a no-charge replacement. The line's
+disposition becomes Scrap, its serial Scrapped and its customer asset
+Returned. The unit was never valued, so nothing posts. Refused before the
+line's service job is Completed or Invoiced, and once the unit has shipped
+back. The RMA status follows.`,
   output: z.object({
     salesReturnOrderLineId: z.string()
   }),
@@ -3313,20 +3203,15 @@ export const scrapReturnedUnit = defineServiceFn({
   }
 });
 
-/**
- * Replace the unit of a Return for Warranty line at no charge.
- *
- * @remarks
- * For a unit its service job found not repairable: the job must be Completed
- * with Repairable set to no. Adds a line at unit price 0 that names this RMA
- * line to the RMA's replacement order while it is Draft, else creates a new
- * Draft order. When the replacement ships, its cost goes to warranty expense.
- * The old unit is then scrapped (`scrapReturnedUnit`). Returns the sales
- * order.
- *
- * @mcp
- */
 export const replaceReturnedUnit = defineServiceFn({
+  publish: true,
+  title: "Replace the unit of a Return for Warranty line at no charge",
+  description: `For a unit its service job found not repairable: the job must be Completed
+with Repairable set to no. Adds a line at unit price 0 that names this RMA
+line to the RMA's replacement order while it is Draft, else creates a new
+Draft order. When the replacement ships, its cost goes to warranty expense.
+The old unit is then scrapped (\`scrapReturnedUnit\`). Returns the sales
+order.`,
   output: z.object({
     salesOrderId: z.string()
   }),
@@ -3409,20 +3294,15 @@ export const replaceReturnedUnit = defineServiceFn({
   }
 });
 
-/**
- * Change a Return for Warranty line to Return for Service: the warranty is
- * denied.
- *
- * @remarks
- * Runs `post-service-job` `set-coverage` on the line's service job: the job
- * becomes Billable, and the cost of the parts already issued moves from
- * warranty expense to the cost of service in one journal. Then the line
- * becomes Return for Service. Refused before the unit is received (change
- * the line's return type instead) and once the job is Completed.
- *
- * @mcp
- */
 export const changeReturnLineToService = defineServiceFn({
+  publish: true,
+  title:
+    "Change a Return for Warranty line to Return for Service: the warranty is denied",
+  description: `Runs \`post-service-job\` \`set-coverage\` on the line's service job: the job
+becomes Billable, and the cost of the parts already issued moves from
+warranty expense to the cost of service in one journal. Then the line
+becomes Return for Service. Refused before the unit is received (change
+the line's return type instead) and once the job is Completed.`,
   output: z.object({
     salesReturnOrderLineId: z.string()
   }),
@@ -3478,17 +3358,12 @@ const methodParts = z.object({
   steps: z.boolean().default(true),
   workInstructions: z.boolean().default(true)
 });
-/**
- * Copy an item's method onto a quote line.
- *
- * @remarks
- * The parts chosen in `parts` replace the line's method (with a
- * configuration, the item's configured method), then the line's quantities
- * are repriced from it.
- *
- * @mcp
- */
 export const copyItemMethodToQuoteLine = defineServiceFn({
+  publish: true,
+  title: "Copy an item's method onto a quote line",
+  description: `The parts chosen in \`parts\` replace the line's method (with a
+configuration, the item's configured method), then the line's quantities
+are repriced from it.`,
   output: z.object({
     quoteLineId: z.string()
   }),
@@ -3540,17 +3415,12 @@ export const copyItemMethodToQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Copy another quote line's method onto a quote line.
- *
- * @remarks
- * `sourceId` and `targetId` are both `quoteId:quoteLineId`. The parts chosen
- * in `parts` are copied, then the target line is repriced with its pricing
- * rules and configuration prices on top of the copied cost.
- *
- * @mcp
- */
 export const copyQuoteLineMethod = defineServiceFn({
+  publish: true,
+  title: "Copy another quote line's method onto a quote line",
+  description: `\`sourceId\` and \`targetId\` are both \`quoteId:quoteLineId\`. The parts chosen
+in \`parts\` are copied, then the target line is repriced with its pricing
+rules and configuration prices on top of the copied cost.`,
   output: z.object({
     quoteLineId: z.string()
   }),
@@ -3598,16 +3468,11 @@ export const copyQuoteLineMethod = defineServiceFn({
   }
 });
 
-/**
- * Copy an item's method onto a quote material's make method.
- *
- * @remarks
- * `targetId` is the material's make method. The parts chosen in `parts`
- * replace it (with a configuration, the item's configured method).
- *
- * @mcp
- */
 export const copyItemMethodToQuoteMaterial = defineServiceFn({
+  publish: true,
+  title: "Copy an item's method onto a quote material's make method",
+  description: `\`targetId\` is the material's make method. The parts chosen in \`parts\`
+replace it (with a configuration, the item's configured method).`,
   output: z.object({
     quoteMaterialMakeMethodId: z.string()
   }),
@@ -3651,18 +3516,13 @@ const quoteMaterialInput = z.object({
   customFields: customFieldValues.optional()
 });
 
-/**
- * Add a material to a quote line's method.
- *
- * @remarks
- * The line, its make method and the operation it is issued to must be this
- * company's and the line's. A Make to Order material gets the item's method
- * (when that fails the material is kept and `warning` says so). Then the
- * line is repriced.
- *
- * @mcp
- */
 export const createQuoteMaterial = defineServiceFn({
+  publish: true,
+  title: "Add a material to a quote line's method",
+  description: `The line, its make method and the operation it is issued to must be this
+company's and the line's. A Make to Order material gets the item's method
+(when that fails the material is kept and \`warning\` says so). Then the
+line is repriced.`,
   output: z.object({
     id: z.string(),
     warning: z.string().nullable()
@@ -3732,17 +3592,12 @@ export const createQuoteMaterial = defineServiceFn({
   }
 });
 
-/**
- * Change a material on a quote line's method.
- *
- * @remarks
- * The material, its line and the operation it is issued to must be this
- * company's and the line's. A material never moves to another line. Then the
- * line is repriced.
- *
- * @mcp
- */
 export const updateQuoteMaterial = defineServiceFn({
+  publish: true,
+  title: "Change a material on a quote line's method",
+  description: `The material, its line and the operation it is issued to must be this
+company's and the line's. A material never moves to another line. Then the
+line is repriced.`,
   output: rows.quoteMaterial
     .pick({ id: true, methodType: true })
     .meta({ table: "quoteMaterial" }),
@@ -3781,12 +3636,9 @@ export const updateQuoteMaterial = defineServiceFn({
   }
 });
 
-/**
- * Remove a material from a quote line's method, then reprice the line.
- *
- * @mcp destructive
- */
 export const deleteQuoteMaterialAndReprice = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a material from a quote line's method, then reprice the line",
   output: rows.quoteMaterial
     .pick({ id: true })
     .meta({ table: "quoteMaterial" }),
@@ -3878,19 +3730,14 @@ const newQuoteOperationInput = quoteOperationFields
   .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
-/**
- * Add an operation to a quote line's method, then reprice the line.
- *
- * @remarks
- * The line and its make method must be this company's and the line's. Times,
- * units and rates left out are filled as the bill of process form fills them:
- * from the work center, else the process's default standard factor and the
- * average of its active work centers, with times 0; an outside operation's
- * minimum cost and lead time come from its supplier process.
- *
- * @mcp
- */
 export const createQuoteOperation = defineServiceFn({
+  publish: true,
+  title: "Add an operation to a quote line's method, then reprice the line",
+  description: `The line and its make method must be this company's and the line's. Times,
+units and rates left out are filled as the bill of process form fills them:
+from the work center, else the process's default standard factor and the
+average of its active work centers, with times 0; an outside operation's
+minimum cost and lead time come from its supplier process.`,
   output: rows.quoteOperation
     .pick({ id: true })
     .meta({ table: "quoteOperation" }),
@@ -3922,15 +3769,10 @@ export const createQuoteOperation = defineServiceFn({
   }
 });
 
-/**
- * Change an operation on a quote line's method, then reprice the line.
- *
- * @remarks
- * A field left out keeps its value.
- *
- * @mcp
- */
 export const updateQuoteOperation = defineServiceFn({
+  publish: true,
+  title: "Change an operation on a quote line's method, then reprice the line",
+  description: "A field left out keeps its value.",
   output: rows.quoteOperation
     .pick({ id: true })
     .meta({ table: "quoteOperation" }),
@@ -3969,24 +3811,22 @@ export const updateQuoteOperation = defineServiceFn({
   }
 });
 
-/**
- * Set the work instruction of a quote operation.
- *
- * @remarks
- * Replaces the operation's work instruction; the rest of the operation and
- * the line's price are unchanged.
- *
- * @param id - The quote operation's id.
- * @param text - The work instruction as Markdown: headings, **bold**,
- *   _italic_, lists, links, quotes and code. Empty text clears it.
- *
- * @mcp
- */
 export const setQuoteOperationWorkInstruction = defineServiceFn({
+  publish: true,
+  title: "Set the work instruction of a quote operation",
+  description: `Replaces the operation's work instruction; the rest of the operation and
+the line's price are unchanged.`,
   output: rows.quoteOperation
     .pick({ id: true })
     .meta({ table: "quoteOperation" }),
-  input: z.object({ id: z.string().min(1), text: z.string() }),
+  input: z.object({
+    id: z.string().min(1).describe("The quote operation's id."),
+    text: z
+      .string()
+      .describe(
+        "The work instruction as Markdown: headings, **bold**, _italic_, lists, links, quotes and code. Empty text clears it."
+      )
+  }),
   permission: { update: "sales" },
 
   async run(ctx, { id, text }) {
@@ -3994,12 +3834,10 @@ export const setQuoteOperationWorkInstruction = defineServiceFn({
   }
 });
 
-/**
- * Remove an operation from a quote line's method, then reprice its line.
- *
- * @mcp destructive
- */
 export const deleteQuoteOperationAndReprice = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Remove an operation from a quote line's method, then reprice its line",
   output: rows.quoteOperation
     .pick({ id: true })
     .meta({ table: "quoteOperation" }),
@@ -4093,19 +3931,14 @@ export const deleteQuoteOperationsAndReprice = defineServiceFn({
 });
 
 // --- Contracts --------------------------------------------------------------
-/**
- * Create a Draft contract.
- *
- * @remarks
- * The contract type, when not sent, is suggested from the customer's other
- * contracts. The bill-to, invoice contact and address, ship-to and payment
- * terms the input leaves out come from the customer's invoicing and shipping
- * defaults. The exchange rate is today's for the currency. The contract is
- * then set up from its products step.
- *
- * @mcp
- */
 export const createContract = defineServiceFn({
+  publish: true,
+  title: "Create a Draft contract",
+  description: `The contract type, when not sent, is suggested from the customer's other
+contracts. The bill-to, invoice contact and address, ship-to and payment
+terms the input leaves out come from the customer's invoicing and shipping
+defaults. The exchange rate is today's for the currency. The contract is
+then set up from its products step.`,
   output: z.object({
     id: z.string()
   }),
@@ -4214,18 +4047,13 @@ export const createContract = defineServiceFn({
   }
 });
 
-/**
- * Save a Draft contract's terms from its setup.
- *
- * @remarks
- * Refused once the contract is not a Draft. A new customer brings its own
- * bill-to, invoice contact and address, ship-to and payment terms; a new
- * currency brings today's exchange rate. Custom fields the input leaves out
- * are kept.
- *
- * @mcp
- */
 export const updateContractTerms = defineServiceFn({
+  publish: true,
+  title: "Save a Draft contract's terms from its setup",
+  description: `Refused once the contract is not a Draft. A new customer brings its own
+bill-to, invoice contact and address, ship-to and payment terms; a new
+currency brings today's exchange rate. Custom fields the input leaves out
+are kept.`,
   output: rows.terms.pick({ id: true }).meta({ table: "terms" }),
   input: customerContractValidator.safeExtend({
     id: z.string(),
@@ -4317,21 +4145,16 @@ const contractTermFields = [
   "notes"
 ] as const;
 
-/**
- * Set one term of a contract.
- *
- * @remarks
- * A Draft's terms are checked as a whole (an end date on or after the start,
- * a custom duration needs an end date), so the stored terms are read, the
- * one field is swapped in and the whole set is validated and saved. A new
- * customer brings its own invoicing defaults; a new bill-to clears the
- * invoice contact and address; an end date makes the term custom; a new
- * currency brings today's rate. `notes` is plain text. An Active contract
- * changes its terms with Amend: only its notes are set here.
- *
- * @mcp
- */
 export const setContractTerm = defineServiceFn({
+  publish: true,
+  title: "Set one term of a contract",
+  description: `A Draft's terms are checked as a whole (an end date on or after the start,
+a custom duration needs an end date), so the stored terms are read, the
+one field is swapped in and the whole set is validated and saved. A new
+customer brings its own invoicing defaults; a new bill-to clears the
+invoice contact and address; an end date makes the term custom; a new
+currency brings today's rate. \`notes\` is plain text. An Active contract
+changes its terms with Amend: only its notes are set here.`,
   output: rows.terms.pick({ id: true }).meta({ table: "terms" }),
   input: z.object({
     id: z.string(),
@@ -4510,15 +4333,10 @@ export const setContractTerm = defineServiceFn({
   }
 });
 
-/**
- * Set a contract's type.
- *
- * @remarks
- * Stays editable while the contract is Active.
- *
- * @mcp
- */
 export const setContractType = defineServiceFn({
+  publish: true,
+  title: "Set a contract's type",
+  description: "Stays editable while the contract is Active.",
   output: z.object({
     id: z.string()
   }),
@@ -4546,18 +4364,13 @@ export const setContractType = defineServiceFn({
   }
 });
 
-/**
- * Set how a contract's invoices are posted and sent.
- *
- * @remarks
- * Null is the company's setting. Stripe needs Stripe connected. On a
- * confirmed contract, a mode that posts (anything but Draft Only, the
- * company's setting included) needs the invoicing create permission as well,
- * as confirming does. Post and Email needs an invoice contact email.
- *
- * @mcp
- */
 export const setContractInvoiceAutomation = defineServiceFn({
+  publish: true,
+  title: "Set how a contract's invoices are posted and sent",
+  description: `Null is the company's setting. Stripe needs Stripe connected. On a
+confirmed contract, a mode that posts (anything but Draft Only, the
+company's setting included) needs the invoicing create permission as well,
+as confirming does. Post and Email needs an invoice contact email.`,
   output: z.object({
     id: z.string()
   }),
@@ -4613,20 +4426,15 @@ export const setContractInvoiceAutomation = defineServiceFn({
   }
 });
 
-/**
- * Confirm a Draft contract.
- *
- * @remarks
- * A contract whose invoices post on their own (any mode but Draft Only)
- * needs the invoicing create permission as well. Under Post and Send via
- * Stripe a billing customer with no Stripe customer is linked first, as
- * `stripeCustomerAction` says. The `post-customer-contract` server function
- * then checks the lines, fixes the invoice schedule and revenue plan and
- * makes the contract Active.
- *
- * @mcp
- */
 export const confirmContract = defineServiceFn({
+  publish: true,
+  title: "Confirm a Draft contract",
+  description: `A contract whose invoices post on their own (any mode but Draft Only)
+needs the invoicing create permission as well. Under Post and Send via
+Stripe a billing customer with no Stripe customer is linked first, as
+\`stripeCustomerAction\` says. The \`post-customer-contract\` server function
+then checks the lines, fixes the invoice schedule and revenue plan and
+makes the contract Active.`,
   output: z.object({
     id: z.string()
   }),
@@ -4717,17 +4525,12 @@ const contractAmendment = customerContractAmendmentValidator.extend({
     .min(1, { message: "Change at least one line" })
 });
 
-/**
- * Preview an amendment to an Active contract.
- *
- * @remarks
- * Runs the amendment the way `sales.contract.amend` would and rolls it
- * back: the adjustments, the next two invoices and the suggested contract
- * type.
- *
- * @mcp
- */
 export const previewContractAmendment = defineServiceFn({
+  publish: true,
+  title: "Preview an amendment to an Active contract",
+  description: `Runs the amendment the way \`sales.contract.amend\` would and rolls it
+back: the adjustments, the next two invoices and the suggested contract
+type.`,
   output: z.object({
     effectiveDate: z.string(),
     adjustments: z.array(
@@ -4794,19 +4597,14 @@ export const previewContractAmendment = defineServiceFn({
   }
 });
 
-/**
- * Amend an Active contract.
- *
- * @remarks
- * Changes, adds or ends lines from `amendmentDate`, recorded with its type
- * and reason. The `post-customer-contract` server function owns every guard
- * and re-plans the schedule and revenue from the effective date; its
- * refusal is the message. An added Cost Plus line, or a line moved to
- * Percent Complete revenue, needs the Project Revenue feature.
- *
- * @mcp
- */
 export const amendContract = defineServiceFn({
+  publish: true,
+  title: "Amend an Active contract",
+  description: `Changes, adds or ends lines from \`amendmentDate\`, recorded with its type
+and reason. The \`post-customer-contract\` server function owns every guard
+and re-plans the schedule and revenue from the effective date; its
+refusal is the message. An added Cost Plus line, or a line moved to
+Percent Complete revenue, needs the Project Revenue feature.`,
   output: z.object({
     id: z.string()
   }),
@@ -4843,16 +4641,11 @@ export const amendContract = defineServiceFn({
   }
 });
 
-/**
- * Preview cancelling an Active contract.
- *
- * @remarks
- * Runs the cancellation and rolls it back: the credit available for the
- * unused time after `endDate`.
- *
- * @mcp
- */
 export const previewContractCancellation = defineServiceFn({
+  publish: true,
+  title: "Preview cancelling an Active contract",
+  description: `Runs the cancellation and rolls it back: the credit available for the
+unused time after \`endDate\`.`,
   output: z.object({
     credit: z.number(),
     creditAvailable: z.boolean(),
@@ -4892,17 +4685,12 @@ export const previewContractCancellation = defineServiceFn({
   }
 });
 
-/**
- * Cancel an Active contract.
- *
- * @remarks
- * Ends it at `endDate`. With `creditUnusedTime` a Draft credit memo is
- * drafted for the unused time, which needs the invoicing create permission
- * as well; `memoReadableId` names it.
- *
- * @mcp
- */
 export const cancelContract = defineServiceFn({
+  publish: true,
+  title: "Cancel an Active contract",
+  description: `Ends it at \`endDate\`. With \`creditUnusedTime\` a Draft credit memo is
+drafted for the unused time, which needs the invoicing create permission
+as well; \`memoReadableId\` names it.`,
   output: z.object({
     id: z.string(),
     memoReadableId: z.string().nullable()
@@ -4942,17 +4730,12 @@ export const cancelContract = defineServiceFn({
   }
 });
 
-/**
- * Revert a contract's cancellation.
- *
- * @remarks
- * Restores the lines, end date and renewal it changed. When the
- * cancellation drafted a credit memo, it is deleted, which needs the
- * invoicing delete permission as well (a failed check for one asks for it).
- *
- * @mcp
- */
 export const revertContractCancellation = defineServiceFn({
+  publish: true,
+  title: "Revert a contract's cancellation",
+  description: `Restores the lines, end date and renewal it changed. When the
+cancellation drafted a credit memo, it is deleted, which needs the
+invoicing delete permission as well (a failed check for one asks for it).`,
   output: z.object({
     id: z.string()
   }),
@@ -4998,19 +4781,14 @@ const rentalAgreementInput = rentalAgreementValidator.safeExtend({
   customFields: customFieldValues.optional()
 });
 
-/**
- * Create a Draft rental agreement.
- *
- * @remarks
- * Takes the next agreement number. With `fixedAssetId` (the fleet's Rent)
- * the unit is added at its monthly rate on file; when that fails the
- * agreement is kept and `warning` says so. `customerContactId` is the
- * primary contact and `contacts` the others. The agreement
- * is then set up from its units step.
- *
- * @mcp
- */
 export const createRentalAgreement = defineServiceFn({
+  publish: true,
+  title: "Create a Draft rental agreement",
+  description: `Takes the next agreement number. With \`fixedAssetId\` (the fleet's Rent)
+the unit is added at its monthly rate on file; when that fails the
+agreement is kept and \`warning\` says so. \`customerContactId\` is the
+primary contact and \`contacts\` the others. The agreement
+is then set up from its units step.`,
   output: z.object({
     id: z.string(),
     warning: z.string().nullable()
@@ -5167,20 +4945,15 @@ const rentalBooleanTerms = new Set<string>([
   "purchaseOptionReasonablyCertain"
 ]);
 
-/**
- * Set one term of a Draft rental agreement.
- *
- * @remarks
- * The terms are checked as a whole (an end date after the start, a purchase
- * option reasonably certain needs an end date), so the stored terms are
- * read, the one field is swapped in and the whole set is validated and
- * saved. A new customer clears the site and the contacts; a new currency
- * brings today's rate. The yes/no terms take `true` or `on`. Contacts are set
- * with `setRentalAgreementContacts`.
- *
- * @mcp
- */
 export const setRentalAgreementTerm = defineServiceFn({
+  publish: true,
+  title: "Set one term of a Draft rental agreement",
+  description: `The terms are checked as a whole (an end date after the start, a purchase
+option reasonably certain needs an end date), so the stored terms are
+read, the one field is swapped in and the whole set is validated and
+saved. A new customer clears the site and the contacts; a new currency
+brings today's rate. The yes/no terms take \`true\` or \`on\`. Contacts are set
+with \`setRentalAgreementContacts\`.`,
   output: rows.rentalAgreement
     .pick({ id: true })
     .meta({ table: "rentalAgreement" }),
@@ -5299,17 +5072,12 @@ export const setRentalAgreementTerm = defineServiceFn({
   }
 });
 
-/**
- * Set how a rental agreement's invoices are posted and sent.
- *
- * @remarks
- * Null is the company's setting. Stays editable while the agreement is
- * Active. Stripe needs Stripe connected; Post and Email needs a contact
- * email.
- *
- * @mcp
- */
 export const setRentalInvoiceAutomation = defineServiceFn({
+  publish: true,
+  title: "Set how a rental agreement's invoices are posted and sent",
+  description: `Null is the company's setting. Stays editable while the agreement is
+Active. Stripe needs Stripe connected; Post and Email needs a contact
+email.`,
   output: z.object({
     id: z.string()
   }),
@@ -5346,29 +5114,29 @@ export const setRentalInvoiceAutomation = defineServiceFn({
   }
 });
 
-/**
- * Set a rental agreement's contacts.
- *
- * @remarks
- * The primary contact and the other contacts become exactly what is given.
- * The primary contact is on every invoice drafted from now on and is the
- * one emailed; drafted invoices keep theirs. Every contact must belong to the
- * agreement's customer. A new primary contact needs an email while invoices
- * are posted and emailed. Works on a Draft or Active agreement.
- *
- * @param primaryId - The primary contact; null for none.
- * @param contacts - The other contacts, each with an optional role (for example Site or Ordered by, at most 50 characters).
- *
- * @mcp
- */
 export const setRentalAgreementContacts = defineServiceFn({
+  publish: true,
+  title: "Set a rental agreement's contacts",
+  description: `The primary contact and the other contacts become exactly what is given.
+The primary contact is on every invoice drafted from now on and is the
+one emailed; drafted invoices keep theirs. Every contact must belong to the
+agreement's customer. A new primary contact needs an email while invoices
+are posted and emailed. Works on a Draft or Active agreement.`,
   output: rows.rentalAgreementContact
     .pick({ id: true })
     .meta({ table: "rentalAgreementContact" }),
   input: z.object({
     rentalAgreementId: z.string(),
-    primaryId: z.string().nullable(),
-    contacts: z.array(rentalAgreementContactRowValidator).max(100)
+    primaryId: z
+      .string()
+      .nullable()
+      .describe("The primary contact; null for none."),
+    contacts: z
+      .array(rentalAgreementContactRowValidator)
+      .max(100)
+      .describe(
+        "The other contacts, each with an optional role (for example Site or Ordered by, at most 50 characters)."
+      )
   }),
   permission: { update: "sales" },
 
@@ -5383,18 +5151,13 @@ export const setRentalAgreementContacts = defineServiceFn({
   }
 });
 
-/**
- * Activate a Draft rental agreement.
- *
- * @remarks
- * Needs at least one unit. The `post-rental-agreement` server function then
- * checks every unit, classifies each line (rental or sale), books a sale's
- * commencement and cuts the first billing periods, in one transaction; its
- * refusal is the message.
- *
- * @mcp
- */
 export const activateRentalAgreement = defineServiceFn({
+  publish: true,
+  title: "Activate a Draft rental agreement",
+  description: `Needs at least one unit. The \`post-rental-agreement\` server function then
+checks every unit, classifies each line (rental or sale), books a sale's
+commencement and cuts the first billing periods, in one transaction; its
+refusal is the message.`,
   output: rows.rentalAgreement
     .pick({ id: true })
     .meta({ table: "rentalAgreement" }),
@@ -5434,19 +5197,14 @@ export const activateRentalAgreement = defineServiceFn({
   }
 });
 
-/**
- * Close or cancel a rental agreement.
- *
- * @remarks
- * Close needs every unit back and every period and charge invoiced, and no
- * open rental shipment or receipt. Cancel needs nothing on rent, sold,
- * invoiced or recognized, and deletes the Pending lines. The
- * `post-rental-agreement` server function owns the checks; its refusal is
- * the message.
- *
- * @mcp
- */
 export const setRentalAgreementStatus = defineServiceFn({
+  publish: true,
+  title: "Close or cancel a rental agreement",
+  description: `Close needs every unit back and every period and charge invoiced, and no
+open rental shipment or receipt. Cancel needs nothing on rent, sold,
+invoiced or recognized, and deletes the Pending lines. The
+\`post-rental-agreement\` server function owns the checks; its refusal is
+the message.`,
   output: z.object({
     id: z.string(),
     intent: z.enum(["cancel", "close"])
@@ -5483,17 +5241,12 @@ export const setRentalAgreementStatus = defineServiceFn({
   }
 });
 
-/**
- * Release a Pending unit that never left the yard.
- *
- * @remarks
- * Its billing stops at `returnedAt` and the line is Returned. Refused for a
- * future date, a line that is not Pending, a unit treated as a sale, and a
- * unit on an open rental shipment or receipt.
- *
- * @mcp
- */
 export const releaseRentalUnit = defineServiceFn({
+  publish: true,
+  title: "Release a Pending unit that never left the yard",
+  description: `Its billing stops at \`returnedAt\` and the line is Returned. Refused for a
+future date, a line that is not Pending, a unit treated as a sale, and a
+unit on an open rental shipment or receipt.`,
   output: z.object({
     rentalAgreementLineId: z.string()
   }),
@@ -5525,16 +5278,11 @@ export const releaseRentalUnit = defineServiceFn({
   }
 });
 
-/**
- * Put a rental unit on a shipment to deliver it.
- *
- * @remarks
- * Adds the unit to the agreement's Draft rental shipment (or creates one);
- * the shipment is posted from inventory. Only on an Active agreement.
- *
- * @mcp
- */
 export const deliverRentalUnit = defineServiceFn({
+  publish: true,
+  title: "Put a rental unit on a shipment to deliver it",
+  description: `Adds the unit to the agreement's Draft rental shipment (or creates one);
+the shipment is posted from inventory. Only on an Active agreement.`,
   output: z.object({
     shipmentId: z.string()
   }),
@@ -5564,18 +5312,13 @@ export const deliverRentalUnit = defineServiceFn({
   }
 });
 
-/**
- * Deliver a part CLIN.
- *
- * @remarks
- * Opens the contract's Draft delivery with this line on it, or makes one
- * (spec section 10.4): the line at what its jobs completed and it has not
- * delivered yet. The part moves no stock; its job consumed it to the
- * project.
- *
- * @mcp
- */
 export const deliverContractLine = defineServiceFn({
+  publish: true,
+  title: "Deliver a part CLIN",
+  description: `Opens the contract's Draft delivery with this line on it, or makes one
+(spec section 10.4): the line at what its jobs completed and it has not
+delivered yet. The part moves no stock; its job consumed it to the
+project.`,
   output: z.object({
     shipmentId: z.string()
   }),
@@ -5605,16 +5348,11 @@ export const deliverContractLine = defineServiceFn({
   }
 });
 
-/**
- * Put a rental unit on a receipt to return it.
- *
- * @remarks
- * Adds the unit to the agreement's Draft rental receipt (or creates one);
- * the receipt is posted from inventory. Only on an Active agreement.
- *
- * @mcp
- */
 export const returnRentalUnit = defineServiceFn({
+  publish: true,
+  title: "Put a rental unit on a receipt to return it",
+  description: `Adds the unit to the agreement's Draft rental receipt (or creates one);
+the receipt is posted from inventory. Only on an Active agreement.`,
   output: z.object({
     receiptId: z.string()
   }),
@@ -5644,17 +5382,12 @@ export const returnRentalUnit = defineServiceFn({
   }
 });
 
-/**
- * Override how a Draft rental agreement's unit is accounted for.
- *
- * @remarks
- * Rental or Sale, with a reason, while the agreement is Draft (activation
- * fixes the treatment). Read and written with the service role, since an
- * accountant may not see sales; an audit entry is written best-effort.
- *
- * @mcp
- */
 export const classifyRentalUnit = defineServiceFn({
+  publish: true,
+  title: "Override how a Draft rental agreement's unit is accounted for",
+  description: `Rental or Sale, with a reason, while the agreement is Draft (activation
+fixes the treatment). Read and written with the service role, since an
+accountant may not see sales; an audit entry is written best-effort.`,
   output: z.object({
     rentalAgreementLineId: z.string(),
     classification: z.enum(["Rental", "Sale"])
@@ -5764,19 +5497,14 @@ export const classifyRentalUnit = defineServiceFn({
   }
 });
 
-/**
- * Sell a rental unit to its customer: exercise the purchase option.
- *
- * @remarks
- * Only for a unit treated as a sale, on rent under an Active agreement with
- * a purchase option, once per unit, and not before the end of the term
- * (ending a sale early is a manual journal). Bills the option as a Purchase
- * Option charge dated today and drafts its invoice; posting that invoice
- * transfers the unit. An invoice the automation may post is queued for it.
- *
- * @mcp
- */
 export const sellRentalUnit = defineServiceFn({
+  publish: true,
+  title: "Sell a rental unit to its customer: exercise the purchase option",
+  description: `Only for a unit treated as a sale, on rent under an Active agreement with
+a purchase option, once per unit, and not before the end of the term
+(ending a sale early is a manual journal). Bills the option as a Purchase
+Option charge dated today and drafts its invoice; posting that invoice
+transfers the unit. An invoice the automation may post is queued for it.`,
   output: z.object({
     invoiceIds: z.array(z.string())
   }),
@@ -5900,12 +5628,9 @@ export const sellRentalUnit = defineServiceFn({
     return { invoiceIds: invoices.map((invoice) => invoice.invoiceId) };
   }
 });
-/**
- * Copy quote
- *
- * @mcp
- */
 export const copyQuote = defineServiceFn({
+  publish: true,
+  title: "Copy quote",
   output: z.object({
     success: z.boolean(),
     newQuoteId: z.string().nullable().optional()
@@ -5924,12 +5649,9 @@ export const copyQuote = defineServiceFn({
   }
 });
 
-/**
- * Create pricing rule
- *
- * @mcp
- */
 export const createPricingRule = defineServiceFn({
+  publish: true,
+  title: "Create pricing rule",
   output: rows.pricingRule.pick({ id: true }).meta({ table: "pricingRule" }),
   input: z.looseObject({
     id: z.string().optional(),
@@ -5973,12 +5695,9 @@ export const createPricingRule = defineServiceFn({
   }
 });
 
-/**
- * Delete customer
- *
- * @mcp destructive
- */
 export const deleteCustomer = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer",
   output: z.array(rows.customer.pick({ id: true }).meta({ table: "customer" })),
   input: z.looseObject({ customerId: z.string() }),
   permission: { delete: "sales" },
@@ -5993,12 +5712,9 @@ export const deleteCustomer = defineServiceFn({
   }
 });
 
-/**
- * Delete customer bank account
- *
- * @mcp destructive
- */
 export const deleteCustomerBankAccount = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer bank account",
   output: z.array(
     rows.customerBankAccount
       .pick({ id: true })
@@ -6017,12 +5733,9 @@ export const deleteCustomerBankAccount = defineServiceFn({
   }
 });
 
-/**
- * Lists a customer's bank accounts
- *
- * @mcp read
- */
 export const getCustomerBankAccounts = defineServiceFn({
+  publish: "read",
+  title: "Lists a customer's bank accounts",
   output: z.array(
     rows.customerBankAccount
       .pick({
@@ -6091,15 +5804,10 @@ export const getCustomerBankAccounts = defineServiceFn({
   }
 });
 
-/**
- * Create a customer bank account
- *
- * @remarks
- * Upsert customer bank account
- *
- * @mcp
- */
 export const createCustomerBankAccount = defineServiceFn({
+  publish: true,
+  title: "Create a customer bank account",
+  description: "Upsert customer bank account",
   output: rows.customerBankAccount
     .pick({ id: true })
     .meta({ table: "customerBankAccount" }),
@@ -6130,15 +5838,10 @@ export const createCustomerBankAccount = defineServiceFn({
   }
 });
 
-/**
- * Update a customer bank account
- *
- * @remarks
- * Upsert customer bank account
- *
- * @mcp
- */
 export const updateCustomerBankAccount = defineServiceFn({
+  publish: true,
+  title: "Update a customer bank account",
+  description: "Upsert customer bank account",
   output: rows.customerBankAccount
     .pick({ id: true })
     .meta({ table: "customerBankAccount" }),
@@ -6171,12 +5874,9 @@ export const updateCustomerBankAccount = defineServiceFn({
   }
 });
 
-/**
- * Delete customer contact
- *
- * @mcp destructive
- */
 export const deleteCustomerContact = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer contact",
   output: rows.customerContact
     .pick({ contactId: true })
     .meta({ table: "customerContact" }),
@@ -6197,12 +5897,9 @@ export const deleteCustomerContact = defineServiceFn({
   }
 });
 
-/**
- * Delete customer location
- *
- * @mcp destructive
- */
 export const deleteCustomerLocation = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer location",
   output: z.array(
     rows.customerLocation.pick({ id: true }).meta({ table: "customerLocation" })
   ),
@@ -6223,12 +5920,9 @@ export const deleteCustomerLocation = defineServiceFn({
   }
 });
 
-/**
- * Delete customer status
- *
- * @mcp destructive
- */
 export const deleteCustomerStatus = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer status",
   output: z.array(
     rows.customerStatus.pick({ id: true }).meta({ table: "customerStatus" })
   ),
@@ -6245,12 +5939,9 @@ export const deleteCustomerStatus = defineServiceFn({
   }
 });
 
-/**
- * Delete customer type
- *
- * @mcp destructive
- */
 export const deleteCustomerType = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer type",
   output: z.array(
     rows.customerType.pick({ id: true }).meta({ table: "customerType" })
   ),
@@ -6267,12 +5958,9 @@ export const deleteCustomerType = defineServiceFn({
   }
 });
 
-/**
- * Delete no quote reason
- *
- * @mcp destructive
- */
 export const deleteNoQuoteReason = defineServiceFn({
+  publish: "destructive",
+  title: "Delete no quote reason",
   output: z.array(
     rows.noQuoteReason.pick({ id: true }).meta({ table: "noQuoteReason" })
   ),
@@ -6289,12 +5977,9 @@ export const deleteNoQuoteReason = defineServiceFn({
   }
 });
 
-/**
- * Delete pricing rule
- *
- * @mcp destructive
- */
 export const deletePricingRule = defineServiceFn({
+  publish: "destructive",
+  title: "Delete pricing rule",
   output: z.array(
     rows.pricingRule.pick({ id: true }).meta({ table: "pricingRule" })
   ),
@@ -6311,12 +5996,9 @@ export const deletePricingRule = defineServiceFn({
   }
 });
 
-/**
- * Delete quote
- *
- * @mcp destructive
- */
 export const deleteQuote = defineServiceFn({
+  publish: "destructive",
+  title: "Delete quote",
   output: z.array(rows.quote.pick({ id: true }).meta({ table: "quote" })),
   input: z.looseObject({ quoteId: z.string() }),
   permission: { delete: "sales" },
@@ -6328,12 +6010,9 @@ export const deleteQuote = defineServiceFn({
   }
 });
 
-/**
- * Delete quote line
- *
- * @mcp destructive
- */
 export const deleteQuoteLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete quote line",
   output: z.array(
     rows.quoteLine.pick({ id: true }).meta({ table: "quoteLine" })
   ),
@@ -6350,12 +6029,9 @@ export const deleteQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Delete quote operation step
- *
- * @mcp destructive
- */
 export const deleteQuoteOperationStep = defineServiceFn({
+  publish: "destructive",
+  title: "Delete quote operation step",
   output: z.array(
     rows.quoteOperationStep
       .pick({ id: true })
@@ -6374,12 +6050,9 @@ export const deleteQuoteOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Delete quote operation parameter
- *
- * @mcp destructive
- */
 export const deleteQuoteOperationParameter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete quote operation parameter",
   output: z.array(
     rows.quoteOperationParameter
       .pick({ id: true })
@@ -6398,12 +6071,9 @@ export const deleteQuoteOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Delete quote operation tool
- *
- * @mcp destructive
- */
 export const deleteQuoteOperationTool = defineServiceFn({
+  publish: "destructive",
+  title: "Delete quote operation tool",
   output: z.array(
     rows.quoteOperationTool
       .pick({ id: true })
@@ -6422,12 +6092,9 @@ export const deleteQuoteOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Delete sales order
- *
- * @mcp destructive
- */
 export const deleteSalesOrder = defineServiceFn({
+  publish: "destructive",
+  title: "Delete sales order",
   output: z.array(
     rows.salesOrder.pick({ id: true }).meta({ table: "salesOrder" })
   ),
@@ -6444,12 +6111,9 @@ export const deleteSalesOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete sales order line
- *
- * @mcp destructive
- */
 export const deleteSalesOrderLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete sales order line",
   output: z.array(
     rows.salesOrderLine.pick({ id: true }).meta({ table: "salesOrderLine" })
   ),
@@ -6466,12 +6130,9 @@ export const deleteSalesOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Delete sales r f q
- *
- * @mcp destructive
- */
 export const deleteSalesRFQ = defineServiceFn({
+  publish: "destructive",
+  title: "Delete sales r f q",
   output: z.array(rows.salesRfq.pick({ id: true }).meta({ table: "salesRfq" })),
   input: z.looseObject({ salesRfqId: z.string() }),
   permission: { delete: "sales" },
@@ -6486,12 +6147,9 @@ export const deleteSalesRFQ = defineServiceFn({
   }
 });
 
-/**
- * Delete sales r f q line
- *
- * @mcp destructive
- */
 export const deleteSalesRFQLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete sales r f q line",
   output: z.array(
     rows.salesRfqLine.pick({ id: true }).meta({ table: "salesRfqLine" })
   ),
@@ -6508,12 +6166,9 @@ export const deleteSalesRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Duplicate pricing rule
- *
- * @mcp
- */
 export const duplicatePricingRule = defineServiceFn({
+  publish: true,
+  title: "Duplicate pricing rule",
   output: rows.pricingRule.pick({ id: true }).meta({ table: "pricingRule" }),
   input: z.looseObject({ id: z.string() }),
   permission: { create: "sales" },
@@ -6530,12 +6185,9 @@ export const duplicatePricingRule = defineServiceFn({
   }
 });
 
-/**
- * Get configuration parameters by quote line id
- *
- * @mcp read
- */
 export const getConfigurationParametersByQuoteLineId = defineServiceFn({
+  publish: "read",
+  title: "Get configuration parameters by quote line id",
   output: z.object({
     groups: z.array(
       z.object({
@@ -6584,12 +6236,9 @@ export const getConfigurationParametersByQuoteLineId = defineServiceFn({
   }
 });
 
-/**
- * Get customer
- *
- * @mcp read
- */
 export const getCustomer = defineServiceFn({
+  publish: "read",
+  title: "Get customer",
   output: rows.customers
     .pick({
       accountManagerId: true,
@@ -6747,12 +6396,9 @@ export const getCustomer = defineServiceFn({
   }
 });
 
-/**
- * Get customer contact
- *
- * @mcp read
- */
 export const getCustomerContact = defineServiceFn({
+  publish: "read",
+  title: "Get customer contact",
   output: rows.customerContact
     .pick({
       companyId: true,
@@ -6847,12 +6493,9 @@ export const getCustomerContact = defineServiceFn({
   }
 });
 
-/**
- * Get customer contacts
- *
- * @mcp read
- */
 export const getCustomerContacts = defineServiceFn({
+  publish: "read",
+  title: "Get customer contacts",
   output: z.array(
     rows.customerContact
       .pick({
@@ -6928,12 +6571,9 @@ export const getCustomerContacts = defineServiceFn({
   }
 });
 
-/**
- * Get customer item price override
- *
- * @mcp read
- */
 export const getCustomerItemPriceOverride = defineServiceFn({
+  publish: "read",
+  title: "Get customer item price override",
   output: rows.customerItemPriceOverride
     .pick({
       id: true,
@@ -6969,12 +6609,9 @@ export const getCustomerItemPriceOverride = defineServiceFn({
   }
 });
 
-/**
- * Get customer location
- *
- * @mcp read
- */
 export const getCustomerLocation = defineServiceFn({
+  publish: "read",
+  title: "Get customer location",
   output: rows.customerLocation
     .pick({
       addressId: true,
@@ -7071,12 +6708,9 @@ export const getCustomerLocation = defineServiceFn({
   }
 });
 
-/**
- * Get customer locations
- *
- * @mcp read
- */
 export const getCustomerLocations = defineServiceFn({
+  publish: "read",
+  title: "Get customer locations",
   output: z.array(
     rows.customerLocation
       .pick({
@@ -7146,12 +6780,9 @@ export const getCustomerLocations = defineServiceFn({
   }
 });
 
-/**
- * Get customer payment
- *
- * @mcp read
- */
 export const getCustomerPayment = defineServiceFn({
+  publish: "read",
+  title: "Get customer payment",
   output: rows.customerPayment,
   input: z.looseObject({ customerId: z.string() }),
   permission: { view: "sales" },
@@ -7167,12 +6798,9 @@ export const getCustomerPayment = defineServiceFn({
   }
 });
 
-/**
- * Get customer shipping
- *
- * @mcp read
- */
 export const getCustomerShipping = defineServiceFn({
+  publish: "read",
+  title: "Get customer shipping",
   output: rows.customerShipping,
   input: z.looseObject({ customerId: z.string() }),
   permission: { view: "sales" },
@@ -7188,12 +6816,9 @@ export const getCustomerShipping = defineServiceFn({
   }
 });
 
-/**
- * Get customer tax
- *
- * @mcp read
- */
 export const getCustomerTax = defineServiceFn({
+  publish: "read",
+  title: "Get customer tax",
   output: rows.customerTax,
   input: z.looseObject({ customerId: z.string() }),
   permission: { view: "sales" },
@@ -7209,12 +6834,9 @@ export const getCustomerTax = defineServiceFn({
   }
 });
 
-/**
- * Get customers
- *
- * @mcp read
- */
 export const getCustomers = defineServiceFn({
+  publish: "read",
+  title: "Get customers",
   output: z
     .array(
       rows.customers
@@ -7291,12 +6913,9 @@ export const getCustomers = defineServiceFn({
   }
 });
 
-/**
- * Get customers list
- *
- * @mcp read
- */
 export const getCustomersList = defineServiceFn({
+  publish: "read",
+  title: "Get customers list",
   output: z.array(
     rows.customer.pick({ id: true, name: true }).meta({ table: "customer" })
   ),
@@ -7310,12 +6929,9 @@ export const getCustomersList = defineServiceFn({
   }
 });
 
-/**
- * Get customer status
- *
- * @mcp read
- */
 export const getCustomerStatus = defineServiceFn({
+  publish: "read",
+  title: "Get customer status",
   output: rows.customerStatus
     .pick({
       companyId: true,
@@ -7398,12 +7014,9 @@ export const getCustomerStatus = defineServiceFn({
   }
 });
 
-/**
- * Get customer statuses
- *
- * @mcp read
- */
 export const getCustomerStatuses = defineServiceFn({
+  publish: "read",
+  title: "Get customer statuses",
   output: z
     .array(
       z.object({
@@ -7461,12 +7074,9 @@ export const getCustomerStatuses = defineServiceFn({
   }
 });
 
-/**
- * Get customer statuses list
- *
- * @mcp read
- */
 export const getCustomerStatusesList = defineServiceFn({
+  publish: "read",
+  title: "Get customer statuses list",
   output: z.array(
     rows.customerStatus
       .pick({ id: true, name: true })
@@ -7485,12 +7095,9 @@ export const getCustomerStatusesList = defineServiceFn({
   }
 });
 
-/**
- * Get customer type
- *
- * @mcp read
- */
 export const getCustomerType = defineServiceFn({
+  publish: "read",
+  title: "Get customer type",
   output: rows.customerType
     .pick({
       companyId: true,
@@ -7574,12 +7181,9 @@ export const getCustomerType = defineServiceFn({
   }
 });
 
-/**
- * Get customer types
- *
- * @mcp read
- */
 export const getCustomerTypes = defineServiceFn({
+  publish: "read",
+  title: "Get customer types",
   output: z
     .array(
       rows.customerType
@@ -7648,12 +7252,9 @@ export const getCustomerTypes = defineServiceFn({
   }
 });
 
-/**
- * Get customer types list
- *
- * @mcp read
- */
 export const getCustomerTypesList = defineServiceFn({
+  publish: "read",
+  title: "Get customer types list",
   output: z.array(
     rows.customerType
       .pick({ id: true, name: true })
@@ -7669,12 +7270,9 @@ export const getCustomerTypesList = defineServiceFn({
   }
 });
 
-/**
- * Get external sales order lines
- *
- * @mcp read
- */
 export const getExternalSalesOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get external sales order lines",
   output: z
     .array(
       z.object({
@@ -7779,12 +7377,9 @@ export const getExternalSalesOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get model by quote line id
- *
- * @mcp read
- */
 export const getModelByQuoteLineId = defineServiceFn({
+  publish: "read",
+  title: "Get model by quote line id",
   input: z.looseObject({ quoteLineId: z.string() }),
   permission: { view: "sales" },
   async run(ctx, input) {
@@ -7795,12 +7390,9 @@ export const getModelByQuoteLineId = defineServiceFn({
   }
 });
 
-/**
- * Get no quote reason
- *
- * @mcp read
- */
 export const getNoQuoteReason = defineServiceFn({
+  publish: "read",
+  title: "Get no quote reason",
   output: rows.noQuoteReason
     .pick({
       companyId: true,
@@ -7882,12 +7474,9 @@ export const getNoQuoteReason = defineServiceFn({
   }
 });
 
-/**
- * Get no quote reasons
- *
- * @mcp read
- */
 export const getNoQuoteReasons = defineServiceFn({
+  publish: "read",
+  title: "Get no quote reasons",
   output: z
     .array(
       rows.noQuoteReason
@@ -7954,12 +7543,9 @@ export const getNoQuoteReasons = defineServiceFn({
   }
 });
 
-/**
- * Get opportunity
- *
- * @mcp read
- */
 export const getOpportunity = defineServiceFn({
+  publish: "read",
+  title: "Get opportunity",
   output: z.object({
     id: z.string(),
     companyId: z.string(),
@@ -8485,12 +8071,9 @@ export const getOpportunity = defineServiceFn({
   }
 });
 
-/**
- * Get opportunity documents
- *
- * @mcp read
- */
 export const getOpportunityDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get opportunity documents",
   output: z.array(
     z.object({
       bucket: z.string(),
@@ -8554,12 +8137,9 @@ export const getOpportunityDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get opportunity line documents
- *
- * @mcp read
- */
 export const getOpportunityLineDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get opportunity line documents",
   output: z.array(
     z.object({
       bucket: z.string(),
@@ -8627,12 +8207,9 @@ export const getOpportunityLineDocuments = defineServiceFn({
   }
 });
 
-/**
- * Get pricing rule
- *
- * @mcp read
- */
 export const getPricingRule = defineServiceFn({
+  publish: "read",
+  title: "Get pricing rule",
   output: rows.pricingRule
     .pick({
       active: true,
@@ -8724,12 +8301,9 @@ export const getPricingRule = defineServiceFn({
   }
 });
 
-/**
- * Get pricing rules
- *
- * @mcp read
- */
 export const getPricingRules = defineServiceFn({
+  publish: "read",
+  title: "Get pricing rules",
   output: z
     .array(
       rows.pricingRule
@@ -8809,12 +8383,9 @@ export const getPricingRules = defineServiceFn({
   }
 });
 
-/**
- * Get quote
- *
- * @mcp read
- */
 export const getQuote = defineServiceFn({
+  publish: "read",
+  title: "Get quote",
   output: rows.quotes
     .pick({
       assignee: true,
@@ -9088,12 +8659,9 @@ export const getQuote = defineServiceFn({
   }
 });
 
-/**
- * Get quotes
- *
- * @mcp read
- */
 export const getQuotes = defineServiceFn({
+  publish: "read",
+  title: "Get quotes",
   output: z
     .array(
       rows.quotes
@@ -9174,12 +8742,9 @@ export const getQuotes = defineServiceFn({
   }
 });
 
-/**
- * Get quotes list
- *
- * @mcp read
- */
 export const getQuotesList = defineServiceFn({
+  publish: "read",
+  title: "Get quotes list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -9197,12 +8762,9 @@ export const getQuotesList = defineServiceFn({
   }
 });
 
-/**
- * Get quote customer details
- *
- * @mcp read
- */
 export const getQuoteCustomerDetails = defineServiceFn({
+  publish: "read",
+  title: "Get quote customer details",
   output: rows.quoteCustomerDetails,
   input: z.looseObject({ quoteId: z.string() }),
   permission: { view: "sales" },
@@ -9217,12 +8779,9 @@ export const getQuoteCustomerDetails = defineServiceFn({
   }
 });
 
-/**
- * Get quote line
- *
- * @mcp read
- */
 export const getQuoteLine = defineServiceFn({
+  publish: "read",
+  title: "Get quote line",
   output: rows.quoteLines
     .pick({
       autodeskUrn: true,
@@ -9605,12 +9164,9 @@ export const getQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Get quote lines list
- *
- * @mcp read
- */
 export const getQuoteLinesList = defineServiceFn({
+  publish: "read",
+  title: "Get quote lines list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -9631,12 +9187,9 @@ export const getQuoteLinesList = defineServiceFn({
   }
 });
 
-/**
- * Get quote make method
- *
- * @mcp read
- */
 export const getQuoteMakeMethod = defineServiceFn({
+  publish: "read",
+  title: "Get quote make method",
   output: rows.quoteMakeMethod
     .pick({
       companyId: true,
@@ -9732,12 +9285,9 @@ export const getQuoteMakeMethod = defineServiceFn({
   }
 });
 
-/**
- * Get root quote make method
- *
- * @mcp read
- */
 export const getRootQuoteMakeMethod = defineServiceFn({
+  publish: "read",
+  title: "Get root quote make method",
   output: rows.quoteMakeMethod
     .pick({
       companyId: true,
@@ -9833,12 +9383,9 @@ export const getRootQuoteMakeMethod = defineServiceFn({
   }
 });
 
-/**
- * Get quote method trees
- *
- * @mcp read
- */
 export const getQuoteMethodTrees = defineServiceFn({
+  publish: "read",
+  title: "Get quote method trees",
   output: z.array(
     z.object({
       id: z.string(),
@@ -9912,12 +9459,9 @@ export const getQuoteMethodTrees = defineServiceFn({
   }
 });
 
-/**
- * Get quote lines
- *
- * @mcp read
- */
 export const getQuoteLines = defineServiceFn({
+  publish: "read",
+  title: "Get quote lines",
   output: z.array(
     rows.quoteLines
       .pick({
@@ -10131,12 +9675,9 @@ export const getQuoteLines = defineServiceFn({
   }
 });
 
-/**
- * Get quote by external id
- *
- * @mcp read
- */
 export const getQuoteByExternalId = defineServiceFn({
+  publish: "read",
+  title: "Get quote by external id",
   output: rows.quote
     .pick({
       assignee: true,
@@ -10352,12 +9893,9 @@ export const getQuoteByExternalId = defineServiceFn({
   }
 });
 
-/**
- * Get quote line prices
- *
- * @mcp read
- */
 export const getQuoteLinePrices = defineServiceFn({
+  publish: "read",
+  title: "Get quote line prices",
   output: z.array(
     rows.quoteLinePrice
       .pick({
@@ -10453,12 +9991,9 @@ export const getQuoteLinePrices = defineServiceFn({
   }
 });
 
-/**
- * Get quote line prices by quote id
- *
- * @mcp read
- */
 export const getQuoteLinePricesByQuoteId = defineServiceFn({
+  publish: "read",
+  title: "Get quote line prices by quote id",
   output: z.array(
     rows.quoteLinePrice
       .pick({
@@ -10554,12 +10089,9 @@ export const getQuoteLinePricesByQuoteId = defineServiceFn({
   }
 });
 
-/**
- * Get quote materials by method id
- *
- * @mcp read
- */
 export const getQuoteMaterialsByMethodId = defineServiceFn({
+  publish: "read",
+  title: "Get quote materials by method id",
   output: z.array(
     rows.quoteMaterial
       .pick({
@@ -10642,12 +10174,9 @@ export const getQuoteMaterialsByMethodId = defineServiceFn({
   }
 });
 
-/**
- * Get quote operations by line
- *
- * @mcp read
- */
 export const getQuoteOperationsByLine = defineServiceFn({
+  publish: "read",
+  title: "Get quote operations by line",
   output: z.array(
     rows.quoteOperation
       .pick({
@@ -10729,12 +10258,9 @@ export const getQuoteOperationsByLine = defineServiceFn({
   }
 });
 
-/**
- * Get quote operations by method id
- *
- * @mcp read
- */
 export const getQuoteOperationsByMethodId = defineServiceFn({
+  publish: "read",
+  title: "Get quote operations by method id",
   output: z.array(
     rows.quoteOperation
       .pick({
@@ -10880,12 +10406,9 @@ export const getQuoteOperationsByMethodId = defineServiceFn({
   }
 });
 
-/**
- * Get quote payment
- *
- * @mcp read
- */
 export const getQuotePayment = defineServiceFn({
+  publish: "read",
+  title: "Get quote payment",
   output: z.object({
     companyId: z.string(),
     customFields: z.union([
@@ -10964,12 +10487,9 @@ export const getQuotePayment = defineServiceFn({
   }
 });
 
-/**
- * Get quote shipment
- *
- * @mcp read
- */
 export const getQuoteShipment = defineServiceFn({
+  publish: "read",
+  title: "Get quote shipment",
   output: rows.quoteShipment,
   input: z.looseObject({ quoteId: z.string() }),
   permission: { view: "sales" },
@@ -10984,12 +10504,9 @@ export const getQuoteShipment = defineServiceFn({
   }
 });
 
-/**
- * Get related prices for quote line
- *
- * @mcp read
- */
 export const getRelatedPricesForQuoteLine = defineServiceFn({
+  publish: "read",
+  title: "Get related prices for quote line",
   output: z.object({
     historicalQuoteLinePrices: z
       .array(
@@ -11424,12 +10941,9 @@ export const getRelatedPricesForQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Get sales documents assigned to me
- *
- * @mcp read
- */
 export const getSalesDocumentsAssignedToMe = defineServiceFn({
+  publish: "read",
+  title: "Get sales documents assigned to me",
   output: z.array(
     z.union([
       z.object({
@@ -11798,12 +11312,9 @@ export const getSalesDocumentsAssignedToMe = defineServiceFn({
   }
 });
 
-/**
- * Get sales order
- *
- * @mcp read
- */
 export const getSalesOrder = defineServiceFn({
+  publish: "read",
+  title: "Get sales order",
   output: rows.salesOrders
     .pick({
       assignee: true,
@@ -12084,12 +11595,9 @@ export const getSalesOrder = defineServiceFn({
   }
 });
 
-/**
- * Get sales order related items
- *
- * @mcp read
- */
 export const getSalesOrderRelatedItems = defineServiceFn({
+  publish: "read",
+  title: "Get sales order related items",
   output: z.object({
     jobs: z.array(
       z.object({
@@ -12422,12 +11930,9 @@ export const getSalesOrderRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Get sales orders
- *
- * @mcp read
- */
 export const getSalesOrders = defineServiceFn({
+  publish: "read",
+  title: "Get sales orders",
   output: z
     .array(
       rows.salesOrders
@@ -12512,12 +12017,9 @@ export const getSalesOrders = defineServiceFn({
   }
 });
 
-/**
- * Get sales orders list
- *
- * @mcp read
- */
 export const getSalesOrdersList = defineServiceFn({
+  publish: "read",
+  title: "Get sales orders list",
   output: z.array(
     rows.salesOrder
       .pick({ id: true, salesOrderId: true })
@@ -12533,12 +12035,9 @@ export const getSalesOrdersList = defineServiceFn({
   }
 });
 
-/**
- * Get sales order payment
- *
- * @mcp read
- */
 export const getSalesOrderPayment = defineServiceFn({
+  publish: "read",
+  title: "Get sales order payment",
   output: rows.salesOrderPayment
     .pick({
       companyId: true,
@@ -12622,12 +12121,9 @@ export const getSalesOrderPayment = defineServiceFn({
   }
 });
 
-/**
- * Get sales terms
- *
- * @mcp read
- */
 export const getSalesTerms = defineServiceFn({
+  publish: "read",
+  title: "Get sales terms",
   output: z.object({
     salesTerms: z.union([
       z.string(),
@@ -12695,12 +12191,9 @@ export const getSalesTerms = defineServiceFn({
   }
 });
 
-/**
- * Get sales order shipment
- *
- * @mcp read
- */
 export const getSalesOrderShipment = defineServiceFn({
+  publish: "read",
+  title: "Get sales order shipment",
   output: rows.salesOrderShipment
     .pick({
       assignee: true,
@@ -12796,12 +12289,9 @@ export const getSalesOrderShipment = defineServiceFn({
   }
 });
 
-/**
- * Get sales order lines
- *
- * @mcp read
- */
 export const getSalesOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get sales order lines",
   output: z.array(
     rows.salesOrderLines
       .pick({
@@ -13015,12 +12505,9 @@ export const getSalesOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get sales order invoice lines
- *
- * @mcp read
- */
 export const getSalesOrderInvoiceLines = defineServiceFn({
+  publish: "read",
+  title: "Get sales order invoice lines",
   output: z.array(
     z.object({
       invoiceId: z.string()
@@ -13039,12 +12526,9 @@ export const getSalesOrderInvoiceLines = defineServiceFn({
   }
 });
 
-/**
- * Get sales order invoices by ids
- *
- * @mcp read
- */
 export const getSalesOrderInvoicesByIds = defineServiceFn({
+  publish: "read",
+  title: "Get sales order invoices by ids",
   output: z.array(
     z.object({
       id: z.string().nullable(),
@@ -13068,12 +12552,9 @@ export const getSalesOrderInvoicesByIds = defineServiceFn({
   }
 });
 
-/**
- * Get sales order invoice payments by ids
- *
- * @mcp read
- */
 export const getSalesOrderInvoicePaymentsByIds = defineServiceFn({
+  publish: "read",
+  title: "Get sales order invoice payments by ids",
   output: z.array(
     z.object({
       targetSalesInvoiceId: z.string().nullable(),
@@ -13099,13 +12580,10 @@ export const getSalesOrderInvoicePaymentsByIds = defineServiceFn({
   }
 });
 
-/**
- * Sales order lines a job can link to: lines for the job's item on sales
- * orders that are still open (not Completed, Invoiced, Cancelled or Closed).
- *
- * @mcp read
- */
 export const getOpenSalesOrderLinesForItem = defineServiceFn({
+  publish: "read",
+  title:
+    "Sales order lines a job can link to: lines for the job's item on sales orders that are still open (not Completed, Invoiced, Cancelled or Closed)",
   output: z.array(
     rows.salesOrderLine
       .pick({ id: true, saleQuantity: true, salesOrderLineType: true })
@@ -13145,12 +12623,9 @@ export const getOpenSalesOrderLinesForItem = defineServiceFn({
   }
 });
 
-/**
- * Get sales order line
- *
- * @mcp read
- */
 export const getSalesOrderLine = defineServiceFn({
+  publish: "read",
+  title: "Get sales order line",
   output: rows.salesOrderLines
     .pick({
       accountId: true,
@@ -13502,12 +12977,9 @@ export const getSalesOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Get sales order line shipments
- *
- * @mcp read
- */
 export const getSalesOrderLineShipments = defineServiceFn({
+  publish: "read",
+  title: "Get sales order line shipments",
   output: z.array(
     z.object({
       companyId: z.string(),
@@ -13673,12 +13145,9 @@ export const getSalesOrderLineShipments = defineServiceFn({
   }
 });
 
-/**
- * Get sales r f q
- *
- * @mcp read
- */
 export const getSalesRFQ = defineServiceFn({
+  publish: "read",
+  title: "Get sales r f q",
   output: rows.salesRfqs
     .pick({
       assignee: true,
@@ -13885,12 +13354,9 @@ export const getSalesRFQ = defineServiceFn({
   }
 });
 
-/**
- * Get sales r f qs
- *
- * @mcp read
- */
 export const getSalesRFQs = defineServiceFn({
+  publish: "read",
+  title: "Get sales r f qs",
   output: z
     .array(
       rows.salesRfqs
@@ -14029,12 +13495,9 @@ export const getSalesRFQs = defineServiceFn({
   }
 });
 
-/**
- * Get sales r f q line
- *
- * @mcp read
- */
 export const getSalesRFQLine = defineServiceFn({
+  publish: "read",
+  title: "Get sales r f q line",
   output: rows.salesRfqLines
     .pick({
       autodeskUrn: true,
@@ -14245,12 +13708,9 @@ export const getSalesRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Get sales r f q lines
- *
- * @mcp read
- */
 export const getSalesRFQLines = defineServiceFn({
+  publish: "read",
+  title: "Get sales r f q lines",
   output: z.array(
     rows.salesRfqLines
       .pick({
@@ -14379,12 +13839,9 @@ export const getSalesRFQLines = defineServiceFn({
   }
 });
 
-/**
- * Insert customer contact
- *
- * @mcp
- */
 export const insertCustomerContact = defineServiceFn({
+  publish: true,
+  title: "Insert customer contact",
   output: rows.customerContact
     .pick({ id: true })
     .meta({ table: "customerContact" }),
@@ -14423,12 +13880,9 @@ export const insertCustomerContact = defineServiceFn({
   }
 });
 
-/**
- * Insert customer location
- *
- * @mcp
- */
 export const insertCustomerLocation = defineServiceFn({
+  publish: true,
+  title: "Insert customer location",
   output: rows.customerLocation
     .pick({ id: true })
     .meta({ table: "customerLocation" }),
@@ -14457,12 +13911,9 @@ export const insertCustomerLocation = defineServiceFn({
   }
 });
 
-/**
- * Resolve price
- *
- * @mcp
- */
 export const resolvePrice = defineServiceFn({
+  publish: true,
+  title: "Resolve price",
   output: z.object({
     finalPrice: z.number(),
     basePrice: z.number(),
@@ -14498,12 +13949,9 @@ export const resolvePrice = defineServiceFn({
   }
 });
 
-/**
- * Resolve price list
- *
- * @mcp
- */
 export const resolvePriceList = defineServiceFn({
+  publish: true,
+  title: "Resolve price list",
   output: z.object({
     data: z.array(
       z.object({
@@ -14571,12 +14019,9 @@ export const resolvePriceList = defineServiceFn({
   }
 });
 
-/**
- * Get base catalog
- *
- * @mcp read
- */
 export const getBaseCatalog = defineServiceFn({
+  publish: "read",
+  title: "Get base catalog",
   output: z.object({
     data: z.array(
       z.object({
@@ -14637,15 +14082,10 @@ export const getBaseCatalog = defineServiceFn({
   }
 });
 
-/**
- * Create a customer
- *
- * @remarks
- * Upsert customer
- *
- * @mcp
- */
 export const createCustomer = defineServiceFn({
+  publish: true,
+  title: "Create a customer",
+  description: "Upsert customer",
   output: rows.customer.pick({ id: true }).meta({ table: "customer" }),
   input: z.looseObject({
     readableId: z.string().optional(),
@@ -14675,15 +14115,10 @@ export const createCustomer = defineServiceFn({
   }
 });
 
-/**
- * Update a customer
- *
- * @remarks
- * Upsert customer
- *
- * @mcp
- */
 export const updateCustomer = defineServiceFn({
+  publish: true,
+  title: "Update a customer",
+  description: "Upsert customer",
   output: rows.customer.pick({ id: true }).meta({ table: "customer" }),
   input: z
     .looseObject({
@@ -14715,18 +14150,13 @@ export const updateCustomer = defineServiceFn({
   }
 });
 
-/**
- * Upsert customer item price override
- *
- * @remarks
- * Sets an item's price for one customer (`customerId`), one customer type
- * (`customerTypeId`), or every customer (`allCustomers: true`). Exactly one
- * scope is required: a price for every customer replaces the item's list
- * price on every quote, so it is never the default.
- *
- * @mcp destructive
- */
 export const upsertCustomerItemPriceOverride = defineServiceFn({
+  publish: "destructive",
+  title: "Upsert customer item price override",
+  description: `Sets an item's price for one customer (\`customerId\`), one customer type
+(\`customerTypeId\`), or every customer (\`allCustomers: true\`). Exactly one
+scope is required: a price for every customer replaces the item's list
+price on every quote, so it is never the default.`,
   output: rows.customerItemPriceOverride
     .pick({ id: true })
     .meta({ table: "customerItemPriceOverride" }),
@@ -14769,12 +14199,9 @@ export const upsertCustomerItemPriceOverride = defineServiceFn({
   }
 });
 
-/**
- * Delete customer item price override
- *
- * @mcp destructive
- */
 export const deleteCustomerItemPriceOverride = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer item price override",
   output: z.array(
     rows.customerItemPriceOverride
       .pick({ id: true })
@@ -14794,12 +14221,9 @@ export const deleteCustomerItemPriceOverride = defineServiceFn({
   }
 });
 
-/**
- * Get customer item price override by id
- *
- * @mcp read
- */
 export const getCustomerItemPriceOverrideById = defineServiceFn({
+  publish: "read",
+  title: "Get customer item price override by id",
   input: z.looseObject({ id: z.string() }),
   permission: { view: "sales" },
   async run(ctx, input) {
@@ -14814,12 +14238,9 @@ export const getCustomerItemPriceOverrideById = defineServiceFn({
   }
 });
 
-/**
- * Update customer contact
- *
- * @mcp
- */
 export const updateCustomerContact = defineServiceFn({
+  publish: true,
+  title: "Update customer contact",
   output: rows.customerContact
     .pick({ id: true })
     .meta({ table: "customerContact" }),
@@ -14858,12 +14279,9 @@ export const updateCustomerContact = defineServiceFn({
   }
 });
 
-/**
- * Update customer location
- *
- * @mcp
- */
 export const updateCustomerLocation = defineServiceFn({
+  publish: true,
+  title: "Update customer location",
   output: rows.customerLocation
     .pick({ id: true })
     .meta({ table: "customerLocation" }),
@@ -14892,12 +14310,9 @@ export const updateCustomerLocation = defineServiceFn({
   }
 });
 
-/**
- * Update customer payment
- *
- * @mcp
- */
 export const updateCustomerPayment = defineServiceFn({
+  publish: true,
+  title: "Update customer payment",
   output: z.null(),
   input: z.looseObject({
     customerId: z.string().min(1),
@@ -14918,12 +14333,9 @@ export const updateCustomerPayment = defineServiceFn({
   }
 });
 
-/**
- * Update customer shipping
- *
- * @mcp
- */
 export const updateCustomerShipping = defineServiceFn({
+  publish: true,
+  title: "Update customer shipping",
   output: z.null(),
   input: z.looseObject({
     customerId: z.string().min(1),
@@ -14960,12 +14372,9 @@ export const updateCustomerShipping = defineServiceFn({
   }
 });
 
-/**
- * Update customer tax
- *
- * @mcp
- */
 export const updateCustomerTax = defineServiceFn({
+  publish: true,
+  title: "Update customer tax",
   output: z.null(),
   input: z.looseObject({
     customerId: z.string().min(1),
@@ -15003,12 +14412,9 @@ export const updateCustomerTax = defineServiceFn({
   }
 });
 
-/**
- * Update pricing rule
- *
- * @mcp
- */
 export const updatePricingRule = defineServiceFn({
+  publish: true,
+  title: "Update pricing rule",
   output: rows.pricingRule.pick({ id: true }).meta({ table: "pricingRule" }),
   input: z.looseObject({
     id: z.string(),
@@ -15055,15 +14461,10 @@ export const updatePricingRule = defineServiceFn({
   }
 });
 
-/**
- * Create a customer status
- *
- * @remarks
- * Upsert customer status
- *
- * @mcp
- */
 export const createCustomerStatus = defineServiceFn({
+  publish: true,
+  title: "Create a customer status",
+  description: "Upsert customer status",
   output: z.array(
     rows.customerStatus.pick({ id: true }).meta({ table: "customerStatus" })
   ),
@@ -15087,15 +14488,10 @@ export const createCustomerStatus = defineServiceFn({
   }
 });
 
-/**
- * Update a customer status
- *
- * @remarks
- * Upsert customer status
- *
- * @mcp
- */
 export const updateCustomerStatus = defineServiceFn({
+  publish: true,
+  title: "Update a customer status",
+  description: "Upsert customer status",
   output: z.array(
     rows.customerStatus.pick({ id: true }).meta({ table: "customerStatus" })
   ),
@@ -15121,15 +14517,10 @@ export const updateCustomerStatus = defineServiceFn({
   }
 });
 
-/**
- * Create a customer type
- *
- * @remarks
- * Upsert customer type
- *
- * @mcp
- */
 export const createCustomerType = defineServiceFn({
+  publish: true,
+  title: "Create a customer type",
+  description: "Upsert customer type",
   output: z.array(
     rows.customerType.pick({ id: true }).meta({ table: "customerType" })
   ),
@@ -15153,15 +14544,10 @@ export const createCustomerType = defineServiceFn({
   }
 });
 
-/**
- * Update a customer type
- *
- * @remarks
- * Upsert customer type
- *
- * @mcp
- */
 export const updateCustomerType = defineServiceFn({
+  publish: true,
+  title: "Update a customer type",
+  description: "Upsert customer type",
   output: z.array(
     rows.customerType.pick({ id: true }).meta({ table: "customerType" })
   ),
@@ -15187,15 +14573,10 @@ export const updateCustomerType = defineServiceFn({
   }
 });
 
-/**
- * Create a no quote reason
- *
- * @remarks
- * Upsert no quote reason
- *
- * @mcp
- */
 export const createNoQuoteReason = defineServiceFn({
+  publish: true,
+  title: "Create a no quote reason",
+  description: "Upsert no quote reason",
   output: z.array(
     rows.noQuoteReason.pick({ id: true }).meta({ table: "noQuoteReason" })
   ),
@@ -15219,15 +14600,10 @@ export const createNoQuoteReason = defineServiceFn({
   }
 });
 
-/**
- * Update a no quote reason
- *
- * @remarks
- * Upsert no quote reason
- *
- * @mcp
- */
 export const updateNoQuoteReason = defineServiceFn({
+  publish: true,
+  title: "Update a no quote reason",
+  description: "Upsert no quote reason",
   output: z.array(
     rows.noQuoteReason.pick({ id: true }).meta({ table: "noQuoteReason" })
   ),
@@ -15253,12 +14629,9 @@ export const updateNoQuoteReason = defineServiceFn({
   }
 });
 
-/**
- * Update quote exchange rate
- *
- * @mcp
- */
 export const updateQuoteExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Update quote exchange rate",
   output: z.array(
     rows.exchangeRate.pick({ id: true }).meta({ table: "exchangeRate" })
   ),
@@ -15275,12 +14648,9 @@ export const updateQuoteExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Update quote line precision
- *
- * @mcp
- */
 export const updateQuoteLinePrecision = defineServiceFn({
+  publish: true,
+  title: "Update quote line precision",
   input: z.looseObject({
     quoteId: z.string(),
     lineId: z.string(),
@@ -15298,12 +14668,9 @@ export const updateQuoteLinePrecision = defineServiceFn({
   }
 });
 
-/**
- * Update sales order exchange rate
- *
- * @mcp
- */
 export const updateSalesOrderExchangeRate = defineServiceFn({
+  publish: true,
+  title: "Update sales order exchange rate",
   output: z.array(
     rows.exchangeRate.pick({ id: true }).meta({ table: "exchangeRate" })
   ),
@@ -15320,12 +14687,9 @@ export const updateSalesOrderExchangeRate = defineServiceFn({
   }
 });
 
-/**
- * Update quote material order
- *
- * @mcp
- */
 export const updateQuoteMaterialOrder = defineServiceFn({
+  publish: true,
+  title: "Update quote material order",
   output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
@@ -15342,12 +14706,9 @@ export const updateQuoteMaterialOrder = defineServiceFn({
   }
 });
 
-/**
- * Update quote operation order
- *
- * @mcp
- */
 export const updateQuoteOperationOrder = defineServiceFn({
+  publish: true,
+  title: "Update quote operation order",
   output: z.array(z.null()),
   input: z.looseObject({
     updates: z.array(z.looseObject({ id: z.string(), order: z.number() }))
@@ -15364,12 +14725,9 @@ export const updateQuoteOperationOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert make method from quote line
- *
- * @mcp
- */
 export const upsertMakeMethodFromQuoteLine = defineServiceFn({
+  publish: true,
+  title: "Upsert make method from quote line",
   output: z.object({
     success: z.boolean(),
     newQuoteId: z.string().nullable().optional()
@@ -15402,12 +14760,9 @@ export const upsertMakeMethodFromQuoteLine = defineServiceFn({
   }
 });
 
-/**
- * Upsert make method from quote method
- *
- * @mcp
- */
 export const upsertMakeMethodFromQuoteMethod = defineServiceFn({
+  publish: true,
+  title: "Upsert make method from quote method",
   output: z.null(),
   input: z.looseObject({
     sourceId: z.string(),
@@ -15436,15 +14791,12 @@ export const upsertMakeMethodFromQuoteMethod = defineServiceFn({
   }
 });
 
-/**
- * Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer
- *
- * @remarks
- * Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a quote with just customerId.
- *
- * @mcp
- */
 export const insertQuote = defineServiceFn({
+  publish: true,
+  title:
+    "Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer",
+  description:
+    "Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a quote with just customerId.",
   output: rows.quote.pick({ id: true, quoteId: true }).meta({ table: "quote" }),
   input: z.looseObject({
     customerId: z.string(),
@@ -15486,12 +14838,9 @@ export const insertQuote = defineServiceFn({
   }
 });
 
-/**
- * Update quote line order
- *
- * @mcp
- */
 export const updateQuoteLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update quote line order",
   input: z.looseObject({
     quoteId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -15508,12 +14857,9 @@ export const updateQuoteLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert quote line additional charges
- *
- * @mcp
- */
 export const upsertQuoteLineAdditionalCharges = defineServiceFn({
+  publish: true,
+  title: "Upsert quote line additional charges",
   output: z.array(
     rows.quoteLine.pick({ id: true }).meta({ table: "quoteLine" })
   ),
@@ -15536,12 +14882,9 @@ export const upsertQuoteLineAdditionalCharges = defineServiceFn({
   }
 });
 
-/**
- * Upsert quote line prices
- *
- * @mcp destructive
- */
 export const upsertQuoteLinePrices = defineServiceFn({
+  publish: "destructive",
+  title: "Upsert quote line prices",
   input: z.looseObject({
     quoteId: z.string(),
     lineId: z.string(),
@@ -15584,12 +14927,9 @@ export const upsertQuoteLinePrices = defineServiceFn({
   }
 });
 
-/**
- * Explains each quantity's price on a quote line
- *
- * @mcp read
- */
 export const getQuoteLinePriceTraces = defineServiceFn({
+  publish: "read",
+  title: "Explains each quantity's price on a quote line",
   output: z.array(
     z.object({
       quantity: z.number(),
@@ -15638,12 +14978,10 @@ export const getQuoteLinePriceTraces = defineServiceFn({
   }
 });
 
-/**
- * Reprices a quote line's system rows to what today's rules give — the `currentTrace` getQuoteLinePriceTraces shows — storing that trace with the price
- *
- * @mcp
- */
 export const repriceQuoteLineFromRules = defineServiceFn({
+  publish: true,
+  title:
+    "Reprices a quote line's system rows to what today's rules give — the `currentTrace` getQuoteLinePriceTraces shows — storing that trace with the price",
   output: z.null(),
   input: z.looseObject({ quoteId: z.string(), quoteLineId: z.string() }),
   permission: { update: "sales" },
@@ -15662,15 +15000,10 @@ export const repriceQuoteLineFromRules = defineServiceFn({
   }
 });
 
-/**
- * Create a quote operation step
- *
- * @remarks
- * Upsert quote operation step
- *
- * @mcp
- */
 export const createQuoteOperationStep = defineServiceFn({
+  publish: true,
+  title: "Create a quote operation step",
+  description: "Upsert quote operation step",
   output: rows.quoteOperationStep
     .pick({ id: true })
     .meta({ table: "quoteOperationStep" }),
@@ -15712,15 +15045,10 @@ export const createQuoteOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Update a quote operation step
- *
- * @remarks
- * Upsert quote operation step
- *
- * @mcp
- */
 export const updateQuoteOperationStep = defineServiceFn({
+  publish: true,
+  title: "Update a quote operation step",
+  description: "Upsert quote operation step",
   output: rows.quoteOperationStep
     .pick({ id: true })
     .meta({ table: "quoteOperationStep" }),
@@ -15764,15 +15092,10 @@ export const updateQuoteOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Create a quote operation parameter
- *
- * @remarks
- * Upsert quote operation parameter
- *
- * @mcp
- */
 export const createQuoteOperationParameter = defineServiceFn({
+  publish: true,
+  title: "Create a quote operation parameter",
+  description: "Upsert quote operation parameter",
   output: rows.quoteOperationParameter
     .pick({ id: true })
     .meta({ table: "quoteOperationParameter" }),
@@ -15798,15 +15121,10 @@ export const createQuoteOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Update a quote operation parameter
- *
- * @remarks
- * Upsert quote operation parameter
- *
- * @mcp
- */
 export const updateQuoteOperationParameter = defineServiceFn({
+  publish: true,
+  title: "Update a quote operation parameter",
+  description: "Upsert quote operation parameter",
   output: rows.quoteOperationParameter
     .pick({ id: true })
     .meta({ table: "quoteOperationParameter" }),
@@ -15834,15 +15152,10 @@ export const updateQuoteOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Create a quote operation tool
- *
- * @remarks
- * Upsert quote operation tool
- *
- * @mcp
- */
 export const createQuoteOperationTool = defineServiceFn({
+  publish: true,
+  title: "Create a quote operation tool",
+  description: "Upsert quote operation tool",
   output: rows.quoteOperationTool
     .pick({ id: true })
     .meta({ table: "quoteOperationTool" }),
@@ -15868,15 +15181,10 @@ export const createQuoteOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Update a quote operation tool
- *
- * @remarks
- * Upsert quote operation tool
- *
- * @mcp
- */
 export const updateQuoteOperationTool = defineServiceFn({
+  publish: true,
+  title: "Update a quote operation tool",
+  description: "Upsert quote operation tool",
   output: rows.quoteOperationTool
     .pick({ id: true })
     .meta({ table: "quoteOperationTool" }),
@@ -15904,12 +15212,9 @@ export const updateQuoteOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Upsert quote payment
- *
- * @mcp
- */
 export const upsertQuotePayment = defineServiceFn({
+  publish: true,
+  title: "Upsert quote payment",
   output: rows.quotePayment.pick({ id: true }).meta({ table: "quotePayment" }),
   input: z.looseObject({
     id: z.string(),
@@ -15931,12 +15236,9 @@ export const upsertQuotePayment = defineServiceFn({
   }
 });
 
-/**
- * Upsert quote shipment
- *
- * @mcp
- */
 export const upsertQuoteShipment = defineServiceFn({
+  publish: true,
+  title: "Upsert quote shipment",
   output: rows.quoteShipment
     .pick({ id: true })
     .meta({ table: "quoteShipment" }),
@@ -15975,15 +15277,12 @@ export const upsertQuoteShipment = defineServiceFn({
   }
 });
 
-/**
- * Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer
- *
- * @remarks
- * Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.
- *
- * @mcp
- */
 export const insertSalesOrder = defineServiceFn({
+  publish: true,
+  title:
+    "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer",
+  description:
+    "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
   output: rows.salesOrder
     .pick({ id: true, salesOrderId: true })
     .meta({ table: "salesOrder" }),
@@ -16030,12 +15329,9 @@ export const insertSalesOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert sales order shipment
- *
- * @mcp
- */
 export const upsertSalesOrderShipment = defineServiceFn({
+  publish: true,
+  title: "Upsert sales order shipment",
   output: rows.salesOrderShipment
     .pick({ id: true })
     .meta({ table: "salesOrderShipment" }),
@@ -16084,12 +15380,9 @@ export const upsertSalesOrderShipment = defineServiceFn({
   }
 });
 
-/**
- * Update sales order line order
- *
- * @mcp
- */
 export const updateSalesOrderLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update sales order line order",
   input: z.looseObject({
     salesOrderId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -16106,12 +15399,9 @@ export const updateSalesOrderLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert sales order payment
- *
- * @mcp
- */
 export const upsertSalesOrderPayment = defineServiceFn({
+  publish: true,
+  title: "Upsert sales order payment",
   output: rows.salesOrderPayment
     .pick({ id: true })
     .meta({ table: "salesOrderPayment" }),
@@ -16446,15 +15736,10 @@ export const upsertSalesOrderPayment = defineServiceFn({
   }
 });
 
-/**
- * Create a sales rfq
- *
- * @remarks
- * Upsert sales r f q
- *
- * @mcp
- */
 export const createSalesRFQ = defineServiceFn({
+  publish: true,
+  title: "Create a sales rfq",
+  description: "Upsert sales r f q",
   output: z.array(rows.salesRfq.pick({ id: true }).meta({ table: "salesRfq" })),
   input: z.looseObject({
     customerLocationId: z.string().optional(),
@@ -16488,15 +15773,10 @@ export const createSalesRFQ = defineServiceFn({
   }
 });
 
-/**
- * Update a sales rfq
- *
- * @remarks
- * Upsert sales r f q
- *
- * @mcp
- */
 export const updateSalesRFQ = defineServiceFn({
+  publish: true,
+  title: "Update a sales rfq",
+  description: "Upsert sales r f q",
   output: z.array(rows.salesRfq.pick({ id: true }).meta({ table: "salesRfq" })),
   input: z
     .looseObject({
@@ -16534,15 +15814,10 @@ export const updateSalesRFQ = defineServiceFn({
   }
 });
 
-/**
- * Create a sales rfqline
- *
- * @remarks
- * Upsert sales r f q line
- *
- * @mcp
- */
 export const createSalesRFQLine = defineServiceFn({
+  publish: true,
+  title: "Create a sales rfqline",
+  description: "Upsert sales r f q line",
   output: rows.salesRfqLine.pick({ id: true }).meta({ table: "salesRfqLine" }),
   input: z.looseObject({
     salesRfqId: z.string().min(1),
@@ -16572,15 +15847,10 @@ export const createSalesRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Update a sales rfqline
- *
- * @remarks
- * Upsert sales r f q line
- *
- * @mcp
- */
 export const updateSalesRFQLine = defineServiceFn({
+  publish: true,
+  title: "Update a sales rfqline",
+  description: "Upsert sales r f q line",
   output: rows.salesRfqLine.pick({ id: true }).meta({ table: "salesRfqLine" }),
   input: z
     .looseObject({
@@ -16612,12 +15882,9 @@ export const updateSalesRFQLine = defineServiceFn({
   }
 });
 
-/**
- * Update sales r f q line order
- *
- * @mcp
- */
 export const updateSalesRFQLineOrder = defineServiceFn({
+  publish: true,
+  title: "Update sales r f q line order",
   input: z.looseObject({
     salesRfqId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -16634,12 +15901,9 @@ export const updateSalesRFQLineOrder = defineServiceFn({
   }
 });
 
-/**
- * Get return reasons
- *
- * @mcp read
- */
 export const getReturnReasons = defineServiceFn({
+  publish: "read",
+  title: "Get return reasons",
   output: z
     .array(
       rows.returnReason
@@ -16707,12 +15971,9 @@ export const getReturnReasons = defineServiceFn({
   }
 });
 
-/**
- * Get return reasons list
- *
- * @mcp read
- */
 export const getReturnReasonsList = defineServiceFn({
+  publish: "read",
+  title: "Get return reasons list",
   output: z.array(
     rows.returnReason
       .pick({ id: true, name: true, inventoryValueZero: true })
@@ -16728,12 +15989,9 @@ export const getReturnReasonsList = defineServiceFn({
   }
 });
 
-/**
- * Get return reason
- *
- * @mcp read
- */
 export const getReturnReason = defineServiceFn({
+  publish: "read",
+  title: "Get return reason",
   output: rows.returnReason
     .pick({
       companyId: true,
@@ -16816,15 +16074,10 @@ export const getReturnReason = defineServiceFn({
   }
 });
 
-/**
- * Create a return reason
- *
- * @remarks
- * Upsert return reason
- *
- * @mcp
- */
 export const createReturnReason = defineServiceFn({
+  publish: true,
+  title: "Create a return reason",
+  description: "Upsert return reason",
   output: rows.returnReason.pick({ id: true }).meta({ table: "returnReason" }),
   input: z.looseObject({
     name: z.string().min(1),
@@ -16847,15 +16100,10 @@ export const createReturnReason = defineServiceFn({
   }
 });
 
-/**
- * Update a return reason
- *
- * @remarks
- * Upsert return reason
- *
- * @mcp
- */
 export const updateReturnReason = defineServiceFn({
+  publish: true,
+  title: "Update a return reason",
+  description: "Upsert return reason",
   output: rows.returnReason.pick({ id: true }).meta({ table: "returnReason" }),
   input: z
     .looseObject({
@@ -16880,12 +16128,9 @@ export const updateReturnReason = defineServiceFn({
   }
 });
 
-/**
- * Delete return reason
- *
- * @mcp destructive
- */
 export const deleteReturnReason = defineServiceFn({
+  publish: "destructive",
+  title: "Delete return reason",
   output: z.array(
     rows.returnReason.pick({ id: true }).meta({ table: "returnReason" })
   ),
@@ -16902,12 +16147,9 @@ export const deleteReturnReason = defineServiceFn({
   }
 });
 
-/**
- * Get sales return orders
- *
- * @mcp read
- */
 export const getSalesReturnOrders = defineServiceFn({
+  publish: "read",
+  title: "Get sales return orders",
   output: z
     .array(
       rows.salesReturnOrders
@@ -17047,12 +16289,9 @@ export const getSalesReturnOrders = defineServiceFn({
   }
 });
 
-/**
- * Get sales return order
- *
- * @mcp read
- */
 export const getSalesReturnOrder = defineServiceFn({
+  publish: "read",
+  title: "Get sales return order",
   output: rows.salesReturnOrders
     .pick({
       assignee: true,
@@ -17261,12 +16500,9 @@ export const getSalesReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Get sales return order lines
- *
- * @mcp read
- */
 export const getSalesReturnOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get sales return order lines",
   output: z.array(
     rows.salesReturnOrderLine
       .pick({
@@ -17364,12 +16600,9 @@ export const getSalesReturnOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get sales return order line
- *
- * @mcp read
- */
 export const getSalesReturnOrderLine = defineServiceFn({
+  publish: "read",
+  title: "Get sales return order line",
   output: rows.salesReturnOrderLine
     .pick({
       closedComplete: true,
@@ -17468,12 +16701,9 @@ export const getSalesReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Insert sales return order
- *
- * @mcp
- */
 export const insertSalesReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Insert sales return order",
   output: rows.salesReturnOrder
     .pick({ id: true, salesReturnOrderId: true })
     .meta({ table: "salesReturnOrder" }),
@@ -17503,12 +16733,9 @@ export const insertSalesReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete sales return order
- *
- * @mcp destructive
- */
 export const deleteSalesReturnOrder = defineServiceFn({
+  publish: "destructive",
+  title: "Delete sales return order",
   output: z.array(
     rows.salesReturnOrder.pick({ id: true }).meta({ table: "salesReturnOrder" })
   ),
@@ -17525,12 +16752,9 @@ export const deleteSalesReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Delete sales return order line
- *
- * @mcp destructive
- */
 export const deleteSalesReturnOrderLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete sales return order line",
   output: z.array(
     rows.salesReturnOrderLine
       .pick({ id: true })
@@ -17549,12 +16773,9 @@ export const deleteSalesReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Get sales return order receipts
- *
- * @mcp read
- */
 export const getSalesReturnOrderReceipts = defineServiceFn({
+  publish: "read",
+  title: "Get sales return order receipts",
   output: z.array(
     rows.receipt
       .pick({
@@ -17580,12 +16801,9 @@ export const getSalesReturnOrderReceipts = defineServiceFn({
   }
 });
 
-/**
- * Get sales return order credits
- *
- * @mcp read
- */
 export const getSalesReturnOrderCredits = defineServiceFn({
+  publish: "read",
+  title: "Get sales return order credits",
   output: z.array(
     z.object({
       id: z.string(),
@@ -17611,12 +16829,9 @@ export const getSalesReturnOrderCredits = defineServiceFn({
   }
 });
 
-/**
- * Get sales return order issues
- *
- * @mcp read
- */
 export const getSalesReturnOrderIssues = defineServiceFn({
+  publish: "read",
+  title: "Get sales return order issues",
   output: z.array(
     z.object({
       id: z.string(),
@@ -17643,12 +16858,9 @@ export const getSalesReturnOrderIssues = defineServiceFn({
   }
 });
 
-/**
- * Reopen an RMA to Draft so its lines can be edited again
- *
- * @mcp
- */
 export const reopenSalesReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Reopen an RMA to Draft so its lines can be edited again",
   input: z.looseObject({ id: z.string() }),
   permission: { update: "sales" },
   async run(ctx, input) {
@@ -17659,12 +16871,9 @@ export const reopenSalesReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Cancel sales return order
- *
- * @mcp
- */
 export const cancelSalesReturnOrder = defineServiceFn({
+  publish: true,
+  title: "Cancel sales return order",
   output: rows.salesReturnOrder
     .pick({ id: true })
     .meta({ table: "salesReturnOrder" }),
@@ -17678,12 +16887,10 @@ export const cancelSalesReturnOrder = defineServiceFn({
   }
 });
 
-/**
- * Short-close ("stop expecting") an RMA line — the shortClosePurchaseOrderLine mechanic
- *
- * @mcp
- */
 export const shortCloseSalesReturnOrderLine = defineServiceFn({
+  publish: true,
+  title:
+    'Short-close ("stop expecting") an RMA line — the shortClosePurchaseOrderLine mechanic',
   input: z.looseObject({
     lineId: z.string(),
     salesReturnOrderId: z.string(),
@@ -17698,12 +16905,10 @@ export const shortCloseSalesReturnOrderLine = defineServiceFn({
   }
 });
 
-/**
- * Returnable shipment lines for a customer, searched + paginated in the database via the get_returnable_shipment_lines RPC
- *
- * @mcp read
- */
 export const getReturnableLinesForCustomer = defineServiceFn({
+  publish: "read",
+  title:
+    "Returnable shipment lines for a customer, searched + paginated in the database via the get_returnable_shipment_lines RPC",
   output: z.array(
     z.object({
       alreadyReturned: z.number(),
@@ -17743,13 +16948,10 @@ export const getReturnableLinesForCustomer = defineServiceFn({
   }
 });
 
-/**
- * Serials and batches shipped to a customer, for the lines of a return:
- * consumed tracked entities tagged with one of its posted shipments.
- *
- * @mcp read
- */
 export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
+  publish: "read",
+  title:
+    "Serials and batches shipped to a customer, for the lines of a return: consumed tracked entities tagged with one of its posted shipments",
   output: z.array(
     z.object({
       id: z.string(),
@@ -17807,13 +17009,10 @@ export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
   }
 });
 
-/**
- * Per-line creditable pool = received − already credited, for the Return to
- * Stock lines (a Service or Warranty unit is not credited)
- *
- * @mcp read
- */
 export const getCreditableQuantities = defineServiceFn({
+  publish: "read",
+  title:
+    "Per-line creditable pool = received − already credited, for the Return to Stock lines (a Service or Warranty unit is not credited)",
   output: z.array(
     z.object({
       salesReturnOrderLineId: z.string(),
@@ -17839,12 +17038,10 @@ export const getCreditableQuantities = defineServiceFn({
   }
 });
 
-/**
- * Issue Credit: one AR memo (direction Credit, linked via memo.salesReturnOrderId) + per-line salesReturnOrderCreditLine breakdown
- *
- * @mcp
- */
 export const createSalesReturnOrderCredit = defineServiceFn({
+  publish: true,
+  title:
+    "Issue Credit: one AR memo (direction Credit, linked via memo.salesReturnOrderId) + per-line salesReturnOrderCreditLine breakdown",
   output: z.string(),
   input: z.looseObject({
     salesReturnOrderId: z.string(),
@@ -17866,18 +17063,12 @@ export const createSalesReturnOrderCredit = defineServiceFn({
   }
 });
 
-/**
- * Create a replacement sales order from a return: a Draft order of the
- * Return to Stock lines at their resolved prices, which the user can change.
- * A Service or Warranty line is replaced from its own line (No-charge
- * Replacement), never here.
- *
- * @remarks
- * One replacement per return: calling it again returns the existing order.
- *
- * @mcp
- */
 export const createReplacementSalesOrder = defineServiceFn({
+  publish: true,
+  title:
+    "Create a replacement sales order from a return: a Draft order of the Return to Stock lines at their resolved prices, which the user can change. A Service or Warranty line is replaced from its own line (No-charge Replacement), never here",
+  description:
+    "One replacement per return: calling it again returns the existing order.",
   output: rows.salesOrder.pick({ id: true }).meta({ table: "salesOrder" }),
   input: z.looseObject({ salesReturnOrderId: z.string() }),
   permission: { create: "sales" },
@@ -17892,12 +17083,9 @@ export const createReplacementSalesOrder = defineServiceFn({
   }
 });
 
-/**
- * Set an RMA line's disposition
- *
- * @mcp
- */
 export const setSalesReturnOrderLineDisposition = defineServiceFn({
+  publish: true,
+  title: "Set an RMA line's disposition",
   output: rows.salesReturnOrderLine
     .pick({ id: true })
     .meta({ table: "salesReturnOrderLine" }),
@@ -17931,12 +17119,10 @@ export const setSalesReturnOrderLineDisposition = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for an opportunity (quote/sales order/RFQ/sales invoice) document
- *
- * @mcp
- */
 export const createOpportunityDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title:
+    "Create a presigned upload URL for an opportunity (quote/sales order/RFQ/sales invoice) document",
   output: z.object({
     signedUrl: z.string(),
     token: z.string(),
@@ -17955,12 +17141,9 @@ export const createOpportunityDocumentUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for an opportunity LINE document
- *
- * @mcp
- */
 export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title: "Create a presigned upload URL for an opportunity LINE document",
   output: z.object({
     signedUrl: z.string(),
     token: z.string(),
@@ -17979,12 +17162,9 @@ export const createOpportunityLineDocumentUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Get rental agreements
- *
- * @mcp read
- */
 export const getRentalAgreements = defineServiceFn({
+  publish: "read",
+  title: "Get rental agreements",
   output: z
     .array(
       rows.rentalAgreements
@@ -18081,12 +17261,9 @@ export const getRentalAgreements = defineServiceFn({
   }
 });
 
-/**
- * Get rental agreement
- *
- * @mcp read
- */
 export const getRentalAgreement = defineServiceFn({
+  publish: "read",
+  title: "Get rental agreement",
   output: rows.rentalAgreements
     .pick({
       activatedAt: true,
@@ -18199,12 +17376,10 @@ export const getRentalAgreement = defineServiceFn({
   }
 });
 
-/**
- * Only a Draft agreement can be deleted — an activated one has billing periods and possibly invoices; it is cancelled or closed instead
- *
- * @mcp destructive
- */
 export const deleteRentalAgreement = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Only a Draft agreement can be deleted — an activated one has billing periods and possibly invoices; it is cancelled or closed instead",
   output: rows.rentalAgreement
     .pick({ id: true })
     .meta({ table: "rentalAgreement" }),
@@ -18222,12 +17397,9 @@ export const deleteRentalAgreement = defineServiceFn({
   }
 });
 
-/**
- * Get rental agreement lines
- *
- * @mcp read
- */
 export const getRentalAgreementLines = defineServiceFn({
+  publish: "read",
+  title: "Get rental agreement lines",
   output: z.array(
     rows.rentalAgreementLine
       .pick({
@@ -18319,12 +17491,9 @@ export const getRentalAgreementLines = defineServiceFn({
   }
 });
 
-/**
- * Get rental agreement line
- *
- * @mcp read
- */
 export const getRentalAgreementLine = defineServiceFn({
+  publish: "read",
+  title: "Get rental agreement line",
   output: rows.rentalAgreementLine
     .pick({
       classificationOverride: true,
@@ -18442,15 +17611,11 @@ export const getRentalAgreementLine = defineServiceFn({
   }
 });
 
-/**
- * Create a rental agreement line
- *
- * @remarks
- * The line's item and serial always come from its fleet unit, never the form, so a line cannot name one unit and bill another's rates
- *
- * @mcp
- */
 export const createRentalAgreementLine = defineServiceFn({
+  publish: true,
+  title: "Create a rental agreement line",
+  description:
+    "The line's item and serial always come from its fleet unit, never the form, so a line cannot name one unit and bill another's rates",
   output: rows.rentalAgreementLine
     .pick({ id: true })
     .meta({ table: "rentalAgreementLine" }),
@@ -18480,15 +17645,11 @@ export const createRentalAgreementLine = defineServiceFn({
   }
 });
 
-/**
- * Update a rental agreement line
- *
- * @remarks
- * The line's item and serial always come from its fleet unit, never the form, so a line cannot name one unit and bill another's rates
- *
- * @mcp
- */
 export const updateRentalAgreementLine = defineServiceFn({
+  publish: true,
+  title: "Update a rental agreement line",
+  description:
+    "The line's item and serial always come from its fleet unit, never the form, so a line cannot name one unit and bill another's rates",
   output: rows.rentalAgreementLine
     .pick({ id: true })
     .meta({ table: "rentalAgreementLine" }),
@@ -18520,12 +17681,10 @@ export const updateRentalAgreementLine = defineServiceFn({
   }
 });
 
-/**
- * Only from a Draft agreement — an activated line has billing periods behind it; return the unit or cancel the agreement instead
- *
- * @mcp destructive
- */
 export const deleteRentalAgreementLine = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Only from a Draft agreement — an activated line has billing periods behind it; return the unit or cancel the agreement instead",
   output: z.array(
     rows.rentalAgreementLine
       .pick({ id: true })
@@ -18545,12 +17704,9 @@ export const deleteRentalAgreementLine = defineServiceFn({
   }
 });
 
-/**
- * Every charge on the agreement's lines, with the line's fleet unit
- *
- * @mcp read
- */
 export const getRentalAgreementCharges = defineServiceFn({
+  publish: "read",
+  title: "Every charge on the agreement's lines, with the line's fleet unit",
   output: z.array(
     rows.rentalAgreementCharge
       .extend({
@@ -18581,15 +17737,11 @@ export const getRentalAgreementCharges = defineServiceFn({
   }
 });
 
-/**
- * Create a rental agreement charge
- *
- * @remarks
- * A variable charge (damage, delivery, overage) on one unit of an open agreement
- *
- * @mcp
- */
 export const createRentalAgreementCharge = defineServiceFn({
+  publish: true,
+  title: "Create a rental agreement charge",
+  description:
+    "A variable charge (damage, delivery, overage) on one unit of an open agreement",
   output: rows.rentalAgreementCharge
     .pick({ id: true })
     .meta({ table: "rentalAgreementCharge" }),
@@ -18617,15 +17769,11 @@ export const createRentalAgreementCharge = defineServiceFn({
   }
 });
 
-/**
- * Update a rental agreement charge
- *
- * @remarks
- * A variable charge (damage, delivery, overage) on one unit of an open agreement
- *
- * @mcp
- */
 export const updateRentalAgreementCharge = defineServiceFn({
+  publish: true,
+  title: "Update a rental agreement charge",
+  description:
+    "A variable charge (damage, delivery, overage) on one unit of an open agreement",
   output: rows.rentalAgreementCharge
     .pick({ id: true })
     .meta({ table: "rentalAgreementCharge" }),
@@ -18655,16 +17803,11 @@ export const updateRentalAgreementCharge = defineServiceFn({
   }
 });
 
-/**
- * Delete a rental agreement charge.
- *
- * @remarks
- * Only an open (Draft or Active) agreement's charges can be removed. A charge
- * that has been invoiced stays: void or delete the invoice first.
- *
- * @mcp destructive
- */
 export const deleteRentalAgreementCharge = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a rental agreement charge",
+  description: `Only an open (Draft or Active) agreement's charges can be removed. A charge
+that has been invoiced stays: void or delete the invoice first.`,
   output: rows.rentalAgreementCharge
     .pick({ id: true })
     .meta({ table: "rentalAgreementCharge" }),
@@ -18682,12 +17825,9 @@ export const deleteRentalAgreementCharge = defineServiceFn({
   }
 });
 
-/**
- * Every billing period of the agreement's lines, oldest first
- *
- * @mcp read
- */
 export const getRentalBillingPeriods = defineServiceFn({
+  publish: "read",
+  title: "Every billing period of the agreement's lines, oldest first",
   output: z.array(
     rows.rentalBillingPeriod
       .extend({
@@ -18725,12 +17865,9 @@ export const getRentalBillingPeriods = defineServiceFn({
   }
 });
 
-/**
- * Fleet units free to put on a new line
- *
- * @mcp read
- */
 export const getRentableFleetAssets = defineServiceFn({
+  publish: "read",
+  title: "Fleet units free to put on a new line",
   output: z.array(
     rows.fleetAssets
       .pick({
@@ -18758,12 +17895,9 @@ export const getRentableFleetAssets = defineServiceFn({
   }
 });
 
-/**
- * Get item rental rate
- *
- * @mcp read
- */
 export const getItemRentalRate = defineServiceFn({
+  publish: "read",
+  title: "Get item rental rate",
   output: rows.itemRentalRate,
   input: z.looseObject({ itemId: z.string(), currencyCode: z.string() }),
   permission: { view: "sales" },
@@ -18780,12 +17914,10 @@ export const getItemRentalRate = defineServiceFn({
   }
 });
 
-/**
- * One ladder per item and currency: an existing row is replaced in place
- *
- * @mcp
- */
 export const upsertItemRentalRate = defineServiceFn({
+  publish: true,
+  title:
+    "One ladder per item and currency: an existing row is replaced in place",
   output: rows.itemRentalRate
     .pick({ id: true })
     .meta({ table: "itemRentalRate" }),
@@ -18808,14 +17940,10 @@ export const upsertItemRentalRate = defineServiceFn({
   }
 });
 
-/**
- * The rate each item starts at on a rental line for this customer, per
- * frequency: the customer's own rate, else its customer type's, else the
- * item's, in effect on `asOf`. Keyed by item id.
- *
- * @mcp read
- */
 export const getDefaultRentalRates = defineServiceFn({
+  publish: "read",
+  title:
+    "The rate each item starts at on a rental line for this customer, per frequency: the customer's own rate, else its customer type's, else the item's, in effect on `asOf`. Keyed by item id",
   output: z.record(
     z.string(),
     z.object({
@@ -18857,12 +17985,9 @@ export const getDefaultRentalRates = defineServiceFn({
   }
 });
 
-/**
- * Get customer item rental rates
- *
- * @mcp read
- */
 export const getCustomerItemRentalRates = defineServiceFn({
+  publish: "read",
+  title: "Get customer item rental rates",
   output: z.array(
     rows.customerItemRentalRate
       .extend({
@@ -18895,12 +18020,9 @@ export const getCustomerItemRentalRates = defineServiceFn({
   }
 });
 
-/**
- * Get customer item rental rate
- *
- * @mcp read
- */
 export const getCustomerItemRentalRate = defineServiceFn({
+  publish: "read",
+  title: "Get customer item rental rate",
   output: rows.customerItemRentalRate,
   input: z.looseObject({ customerItemRentalRateId: z.string() }),
   permission: { view: "sales" },
@@ -18916,12 +18038,10 @@ export const getCustomerItemRentalRate = defineServiceFn({
   }
 });
 
-/**
- * One row per customer (or customer type), item and currency — a second row for the same scope is refused by the unique index (23505)
- *
- * @mcp
- */
 export const upsertCustomerItemRentalRate = defineServiceFn({
+  publish: true,
+  title:
+    "One row per customer (or customer type), item and currency — a second row for the same scope is refused by the unique index (23505)",
   output: rows.customerItemRentalRate
     .pick({ id: true })
     .meta({ table: "customerItemRentalRate" }),
@@ -18950,12 +18070,9 @@ export const upsertCustomerItemRentalRate = defineServiceFn({
   }
 });
 
-/**
- * Delete customer item rental rate
- *
- * @mcp destructive
- */
 export const deleteCustomerItemRentalRate = defineServiceFn({
+  publish: "destructive",
+  title: "Delete customer item rental rate",
   output: z.array(
     rows.customerItemRentalRate
       .pick({ id: true })
@@ -18975,12 +18092,9 @@ export const deleteCustomerItemRentalRate = defineServiceFn({
   }
 });
 
-/**
- * Customer payments held against the agreement — deposits and refunds
- *
- * @mcp read
- */
 export const getRentalAgreementDeposits = defineServiceFn({
+  publish: "read",
+  title: "Customer payments held against the agreement — deposits and refunds",
   output: z.array(
     z.object({
       id: z.string(),
@@ -19006,12 +18120,9 @@ export const getRentalAgreementDeposits = defineServiceFn({
   }
 });
 
-/**
- * Get rental agreement related documents
- *
- * @mcp read
- */
 export const getRentalAgreementRelatedDocuments = defineServiceFn({
+  publish: "read",
+  title: "Get rental agreement related documents",
   output: z.object({
     shipments: z.array(
       z.object({
@@ -19056,12 +18167,10 @@ export const getRentalAgreementRelatedDocuments = defineServiceFn({
   }
 });
 
-/**
- * Lists contracts with their customer, value invoiced to date and next invoice date
- *
- * @mcp read
- */
 export const getContracts = defineServiceFn({
+  publish: "read",
+  title:
+    "Lists contracts with their customer, value invoiced to date and next invoice date",
   output: z
     .array(
       z.object({
@@ -19139,12 +18248,10 @@ export const getContracts = defineServiceFn({
   }
 });
 
-/**
- * Gets one contract with its customer, value invoiced to date and next invoice date
- *
- * @mcp read
- */
 export const getContract = defineServiceFn({
+  publish: "read",
+  title:
+    "Gets one contract with its customer, value invoiced to date and next invoice date",
   output: z.object({
     billedThrough: z.string().nullable(),
     billingAlignment: z.enum(["Anniversary", "Calendar"]).nullable(),
@@ -19344,12 +18451,9 @@ export const getContract = defineServiceFn({
   }
 });
 
-/**
- * Lists a contract's lines with their service items
- *
- * @mcp read
- */
 export const getContractLines = defineServiceFn({
+  publish: "read",
+  title: "Lists a contract's lines with their service items",
   output: z.array(
     z.object({
       amendmentId: z.string().nullable(),
@@ -19452,12 +18556,9 @@ export const getContractLines = defineServiceFn({
   }
 });
 
-/**
- * Gets one contract line with its service item
- *
- * @mcp read
- */
 export const getContractLine = defineServiceFn({
+  publish: "read",
+  title: "Gets one contract line with its service item",
   output: z.object({
     amendmentId: z.string().nullable(),
     amendsLineId: z.string().nullable(),
@@ -19598,19 +18699,14 @@ export const getContractLine = defineServiceFn({
   }
 });
 
-/**
- * Build a part CLIN: a job for the line's part.
- *
- * @remarks
- * The job is charged to the task the user picks under the line's project
- * and linked to the CLIN (spec section 10.2). It consumes to the project and
- * gets its own Make to Order plan line on the task, so the user sets nothing
- * but the task, quantity, due date and location. Only a line that names a
- * part, on an Active contract.
- *
- * @mcp
- */
 export const buildContractLineJob = defineServiceFn({
+  publish: true,
+  title: "Build a part CLIN: a job for the line's part",
+  description: `The job is charged to the task the user picks under the line's project
+and linked to the CLIN (spec section 10.2). It consumes to the project and
+gets its own Make to Order plan line on the task, so the user sets nothing
+but the task, quantity, due date and location. Only a line that names a
+part, on an Active contract.`,
   output: z.object({
     jobId: z.string()
   }),
@@ -19666,12 +18762,10 @@ export const buildContractLineJob = defineServiceFn({
   }
 });
 
-/**
- * Gets a contract's persisted invoice schedule: planned invoices with their lines, and the cancellation credits that sit on a memo instead of an invoice
- *
- * @mcp read
- */
 export const getContractInvoiceSchedule = defineServiceFn({
+  publish: "read",
+  title:
+    "Gets a contract's persisted invoice schedule: planned invoices with their lines, and the cancellation credits that sit on a memo instead of an invoice",
   output: z.object({
     invoices: z.array(
       z.object({
@@ -19747,12 +18841,10 @@ export const getContractInvoiceSchedule = defineServiceFn({
   }
 });
 
-/**
- * Lists a contract's amendments, oldest first, with the lines each one added or replaced
- *
- * @mcp read
- */
 export const getContractAmendments = defineServiceFn({
+  publish: "read",
+  title:
+    "Lists a contract's amendments, oldest first, with the lines each one added or replaced",
   output: z.array(
     z.object({
       amendmentDate: z.string(),
@@ -19831,12 +18923,10 @@ export const getContractAmendments = defineServiceFn({
   }
 });
 
-/**
- * Lists the statuses of a customer's contracts, from which a new contract's type is suggested
- *
- * @mcp read
- */
 export const getCustomerContractStatuses = defineServiceFn({
+  publish: "read",
+  title:
+    "Lists the statuses of a customer's contracts, from which a new contract's type is suggested",
   output: z.array(
     rows.customerContract
       .pick({ status: true })
@@ -19856,15 +18946,11 @@ export const getCustomerContractStatuses = defineServiceFn({
   }
 });
 
-/**
- * Create a contract line
- *
- * @remarks
- * Adds or changes a line on a Draft contract; the item must be a Service item
- *
- * @mcp
- */
 export const createContractLine = defineServiceFn({
+  publish: true,
+  title: "Create a contract line",
+  description:
+    "Adds or changes a line on a Draft contract; the item must be a Service item",
   output: z.object({
     id: z.string()
   }),
@@ -19918,15 +19004,11 @@ export const createContractLine = defineServiceFn({
   }
 });
 
-/**
- * Update a contract line
- *
- * @remarks
- * Adds or changes a line on a Draft contract; the item must be a Service item
- *
- * @mcp
- */
 export const updateContractLine = defineServiceFn({
+  publish: true,
+  title: "Update a contract line",
+  description:
+    "Adds or changes a line on a Draft contract; the item must be a Service item",
   output: z.object({
     id: z.string()
   }),
@@ -19982,22 +19064,14 @@ export const updateContractLine = defineServiceFn({
   }
 });
 
-/**
- * Draft a contract's project billing invoices.
- *
- * @remarks
- * Per Active contract with a started billing line (Time & Materials or Cost
- * Plus), one Draft invoice for the Unbilled items posted on or before the
- * latest billing period end that has passed by `asOf`, within each line's
- * funding (`create-project-billing-invoices`). A contract that fails is
- * reported in `failures`; the others still draft.
- *
- * @param asOf - The day to bill up to, `YYYY-MM-DD` in the company's timezone.
- * @param customerContractId - Draft one contract only.
- *
- * @mcp
- */
 export const createProjectBillingInvoices = defineServiceFn({
+  publish: true,
+  title: "Draft a contract's project billing invoices",
+  description: `Per Active contract with a started billing line (Time & Materials or Cost
+Plus), one Draft invoice for the Unbilled items posted on or before the
+latest billing period end that has passed by \`asOf\`, within each line's
+funding (\`create-project-billing-invoices\`). A contract that fails is
+reported in \`failures\`; the others still draft.`,
   output: z.object({
     invoices: z.array(
       z.object({
@@ -20030,19 +19104,14 @@ export const createProjectBillingInvoices = defineServiceFn({
   }
 });
 
-/**
- * Generate a contract line's billable items.
- *
- * @remarks
- * The line's items for the ledger rows posted up to today that have none
- * yet: work posted before the line existed, or rows the job SQL wrote. A Time
- * & Materials line runs the T&M backfill (`generate-contract-billable-items`);
- * a Cost Plus line runs the commercial generator, which needs the Project
- * Revenue feature.
- *
- * @mcp
- */
 export const generateContractBillableItems = defineServiceFn({
+  publish: true,
+  title: "Generate a contract line's billable items",
+  description: `The line's items for the ledger rows posted up to today that have none
+yet: work posted before the line existed, or rows the job SQL wrote. A Time
+& Materials line runs the T&M backfill (\`generate-contract-billable-items\`);
+a Cost Plus line runs the commercial generator, which needs the Project
+Revenue feature.`,
   output: z.object({
     generated: z.number()
   }),
@@ -20116,17 +19185,12 @@ export const generateContractBillableItems = defineServiceFn({
 // ---------------------------------------------------------------------------
 // Project contracts: research flags, funding, bill rates, billing invoices
 
-/**
- * Set a contract's R&D tax flags.
- *
- * @remarks
- * Tax facts, not terms, so they change in any status. A flag left out keeps
- * its value. `researchFunded` null means the default: funded when the
- * contract has a Cost Plus or Time & Materials line.
- *
- * @mcp
- */
 export const updateContractResearchFlags = defineServiceFn({
+  publish: true,
+  title: "Set a contract's R&D tax flags",
+  description: `Tax facts, not terms, so they change in any status. A flag left out keeps
+its value. \`researchFunded\` null means the default: funded when the
+contract has a Cost Plus or Time & Materials line.`,
   output: z.object({
     id: z.string()
   }),
@@ -20159,16 +19223,11 @@ export const updateContractResearchFlags = defineServiceFn({
   }
 });
 
-/**
- * List the funding actions of billing lines.
- *
- * @remarks
- * The contract modifications of Time & Materials and Cost Plus lines, by
- * funded date.
- *
- * @mcp read
- */
 export const getContractFundingActions = defineServiceFn({
+  publish: "read",
+  title: "List the funding actions of billing lines",
+  description: `The contract modifications of Time & Materials and Cost Plus lines, by
+funded date.`,
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -20205,15 +19264,10 @@ export const getContractFundingActions = defineServiceFn({
   }
 });
 
-/**
- * List the bill rates of a contract line.
- *
- * @remarks
- * Per labor category and per employee, newest first.
- *
- * @mcp read
- */
 export const getContractLaborRates = defineServiceFn({
+  publish: "read",
+  title: "List the bill rates of a contract line",
+  description: "Per labor category and per employee, newest first.",
   output: z.array(
     z.object({
       id: z.string(),
@@ -20239,16 +19293,11 @@ export const getContractLaborRates = defineServiceFn({
   }
 });
 
-/**
- * Create or change a bill rate of a contract line.
- *
- * @remarks
- * For a labor category or an employee. Rates change at any time, also on an
- * Active contract. Only a Time & Materials line has bill rates.
- *
- * @mcp
- */
 export const upsertContractLaborRate = defineServiceFn({
+  publish: true,
+  title: "Create or change a bill rate of a contract line",
+  description: `For a labor category or an employee. Rates change at any time, also on an
+Active contract. Only a Time & Materials line has bill rates.`,
   output: z.object({
     id: z.string()
   }),
@@ -20273,12 +19322,9 @@ export const upsertContractLaborRate = defineServiceFn({
   }
 });
 
-/**
- * Delete a bill rate of a contract line.
- *
- * @mcp destructive
- */
 export const deleteContractLaborRate = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a bill rate of a contract line",
   output: z.object({
     id: z.string()
   }),
@@ -20302,16 +19348,11 @@ export const deleteContractLaborRate = defineServiceFn({
   }
 });
 
-/**
- * Get the funding position of billing lines.
- *
- * @remarks
- * Billed, unbilled, incurred cost and the cost of the last 90 days, on
- * `asOf` (today in the company's timezone when left out).
- *
- * @mcp read
- */
 export const getContractLineFunding = defineServiceFn({
+  publish: "read",
+  title: "Get the funding position of billing lines",
+  description: `Billed, unbilled, incurred cost and the cost of the last 90 days, on
+\`asOf\` (today in the company's timezone when left out).`,
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -20346,17 +19387,12 @@ export const getContractLineFunding = defineServiceFn({
   }
 });
 
-/**
- * Change the funding of a billing line.
- *
- * @remarks
- * The funded amount and cost, the ceiling and the notice terms, on a Draft
- * or Active contract; nothing else on the line changes. In DCAA mode the
- * funding actions own the funded cost and amount.
- *
- * @mcp
- */
 export const updateContractLineFunding = defineServiceFn({
+  publish: true,
+  title: "Change the funding of a billing line",
+  description: `The funded amount and cost, the ceiling and the notice terms, on a Draft
+or Active contract; nothing else on the line changes. In DCAA mode the
+funding actions own the funded cost and amount.`,
   output: z.object({
     id: z.string()
   }),
@@ -20435,16 +19471,11 @@ export const deleteContractFunding = defineServiceFn({
   }
 });
 
-/**
- * List a contract's project billing invoices.
- *
- * @remarks
- * The sales invoices that bill its Time & Materials and Cost Plus lines,
- * each with the lines' billed total, newest first.
- *
- * @mcp read
- */
 export const getContractProjectBillingInvoices = defineServiceFn({
+  publish: "read",
+  title: "List a contract's project billing invoices",
+  description: `The sales invoices that bill its Time & Materials and Cost Plus lines,
+each with the lines' billed total, newest first.`,
   output: z.array(
     z.object({
       amount: z.number(),
@@ -20478,18 +19509,13 @@ export const getContractProjectBillingInvoices = defineServiceFn({
   }
 });
 
-/**
- * Get the backup of a project billing invoice.
- *
- * @remarks
- * Every billable item it billed, with the ledger row's posting date, cost
- * type, employee, labor category, hours and document, and the billing
- * element. A burden item carries its pool, fiscal year, rate and base.
- * Reconciles the invoice to the books (DFARS 252.242-7006).
- *
- * @mcp read
- */
 export const getProjectBillingBackup = defineServiceFn({
+  publish: "read",
+  title: "Get the backup of a project billing invoice",
+  description: `Every billable item it billed, with the ledger row's posting date, cost
+type, employee, labor category, hours and document, and the billing
+element. A burden item carries its pool, fiscal year, rate and base.
+Reconciles the invoice to the books (DFARS 252.242-7006).`,
   output: z.array(
     z.object({
       id: z.string(),

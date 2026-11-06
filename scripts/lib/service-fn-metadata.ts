@@ -12,12 +12,14 @@
  */
 
 import * as path from "path";
-import type {
-  Classification,
-  ManifestEntry,
-  PermissionAction,
-  ToolPermission
-} from "@carbon/api";
+import type { ManifestEntry, PermissionAction, ToolPermission } from "@carbon/api";
+import {
+  classify,
+  GENERIC_FILTERS_SCHEMA,
+  GENERIC_SORTS_SCHEMA,
+  operationDescription
+} from "@carbon/api/catalog.server";
+import type { Publish } from "@carbon/api/service-fn.server";
 import {
   type CallExpression,
   Node,
@@ -39,50 +41,6 @@ const ROUTER_FILE = path.resolve(
 );
 
 const ACTIONS: PermissionAction[] = ["view", "create", "update", "delete"];
-
-/** `GenericQueryFilters.filters` (`apps/erp/app/utils/query.ts`). */
-const GENERIC_FILTERS_SCHEMA: JsonSchema = {
-  type: "array",
-  description:
-    "Narrows the list: each filter compares one returned field. `in` and `contains` take a comma-separated list, `between` takes `from,to`.",
-  items: {
-    type: "object",
-    properties: {
-      column: { type: "string" },
-      operator: {
-        type: "string",
-        enum: [
-          "between",
-          "contains",
-          "eq",
-          "gt",
-          "gte",
-          "in",
-          "lt",
-          "lte",
-          "neq",
-          "startsWith"
-        ]
-      },
-      value: { type: "string" }
-    },
-    required: ["column", "operator", "value"]
-  }
-};
-
-/** `GenericQueryFilters.sorts`. */
-const GENERIC_SORTS_SCHEMA: JsonSchema = {
-  type: "array",
-  description: "Orders the list by returned fields, first to last.",
-  items: {
-    type: "object",
-    properties: {
-      sortBy: { type: "string" },
-      sortAsc: { type: "boolean" }
-    },
-    required: ["sortBy", "sortAsc"]
-  }
-};
 
 export interface ServiceFnLeaf {
   path: string[];
@@ -190,75 +148,110 @@ export function routerLeaves(
   return leaves;
 }
 
-export interface LeafDocs {
+export interface LeafPublication {
+  publish: Publish | undefined;
   title: string;
-  description: string;
-  /** `@param name - text`: published on the input field of that name. */
-  params: Record<string, string>;
-  published: boolean;
-  destructive: boolean;
-  /** `@mcp read`: changes nothing, whatever its permission names. */
-  read: boolean;
+  description: string | undefined;
 }
 
-/** The leaf's TSDoc: the summary, `@remarks`, and `@mcp [destructive]`. */
-export function leafDocs(leaf: ServiceFnLeaf): LeafDocs {
-  const where = `router.${leaf.path.join(".")}`;
-  const doc = leaf.declaration.getVariableStatement()?.getJsDocs().at(-1);
-  const summary = doc?.getDescription().trim().split(/\n\s*\n/)[0] ?? "";
-  const title = summary.replace(/\s+/g, " ").replace(/\.$/, "");
-  const tags = doc?.getTags() ?? [];
-  const text = (name: string) =>
-    tags
-      .find((tag) => tag.getTagName() === name)
-      ?.getCommentText()
-      ?.trim();
-  const remarks = text("remarks");
-  const returns = text("returns");
-  const params: Record<string, string> = {};
-  for (const tag of tags) {
-    if (tag.getTagName() !== "param") continue;
-    // `@param name - text`; ts-morph keeps the name in the comment for a
-    // const, so it is read from the text either way.
-    const raw = (tag.getText().replace(/^@param\s+/, "").replace(/\*\/\s*$/, ""))
-      .replace(/\n\s*\*\s?/g, " ")
-      .trim();
-    const match = raw.match(/^([A-Za-z_$][\w$]*)\s*(?:-\s*)?([\s\S]*)$/);
-    if (!match?.[2]) throw new Error(`${where}: @param needs a name and a text`);
-    // A tag's text runs to the next tag, so it may end on the doc's `*`.
-    params[match[1]!] = match[2]
-      .replace(/\s+/g, " ")
-      .replace(/(\s\*)+\s*$/, "")
-      .trim();
+function literalText(node: Node | undefined): string | undefined {
+  if (!node) return undefined;
+  if (Node.isStringLiteral(node) || Node.isNoSubstitutionTemplateLiteral(node)) {
+    return node.getLiteralValue();
   }
-  const mcp = tags.filter((tag) => tag.getTagName() === "mcp");
-  if (mcp.length > 1) throw new Error(`${where}: more than one @mcp tag`);
-  const modifier = mcp[0]?.getCommentText()?.trim() ?? "";
-  if (modifier !== "" && modifier !== "destructive" && modifier !== "read") {
+  return undefined;
+}
+
+/**
+ * `publish`, `title` and `description` as written on the definition — the
+ * same values the runtime catalog reads. A doc block may remain for anything
+ * else; a leftover `@mcp` or `@param` tag is the old channel and fails.
+ */
+export function leafPublication(leaf: ServiceFnLeaf): LeafPublication {
+  const where = `router.${leaf.path.join(".")}`;
+  const definition = leaf.call.getArguments()[0];
+  // The runtime catalog reads the evaluated definition; this reads the source.
+  // A value it cannot read (a spread, a shorthand property) would silently
+  // leave the manifest, the docs and the digest short of an operation the API
+  // and the MCP publish, so it fails here instead.
+  if (definition && Node.isObjectLiteralExpression(definition)) {
+    for (const entry of definition.getProperties()) {
+      if (Node.isSpreadAssignment(entry)) {
+        throw new Error(
+          `${where}: the definition spreads ${entry.getExpression().getText()}; write publish, title and description as literal properties`
+        );
+      }
+      if (
+        Node.isShorthandPropertyAssignment(entry) &&
+        ["publish", "title", "description"].includes(entry.getName())
+      ) {
+        throw new Error(
+          `${where}: \`${entry.getName()}\` must be a literal property, not a shorthand`
+        );
+      }
+    }
+  }
+  const property = (name: string) => {
+    const entry =
+      definition && Node.isObjectLiteralExpression(definition)
+        ? definition.getProperty(name)
+        : undefined;
+    return entry && Node.isPropertyAssignment(entry)
+      ? entry.getInitializer()
+      : undefined;
+  };
+  const tags = leaf.declaration
+    .getVariableStatement()
+    ?.getJsDocs()
+    .flatMap((doc) => doc.getTags().map((tag) => tag.getTagName()));
+  for (const tag of ["mcp", "param"]) {
+    if (tags?.includes(tag)) {
+      throw new Error(
+        `${where}: @${tag} is no longer read; publish with \`publish\`, \`title\` and \`description\` on the definition and \`.describe()\` on the field`
+      );
+    }
+  }
+  const publishNode = property("publish");
+  let publish: Publish | undefined;
+  if (publishNode) {
+    const text = publishNode.getText();
+    const value = literalText(publishNode);
+    if (text === "true") publish = true;
+    else if (value === "read" || value === "destructive") publish = value;
+    else {
+      throw new Error(
+        `${where}: publish takes true, "read" or "destructive", not ${text}`
+      );
+    }
+  }
+  const titleNode = property("title");
+  const title = literalText(titleNode)?.trim() ?? "";
+  if (publish && !title) {
     throw new Error(
-      `${where}: @mcp takes nothing, "read" or "destructive", not "${modifier}"`
+      `${where}: a published service function needs a literal \`title\``
     );
   }
-  if (mcp.length > 0 && !title) {
-    throw new Error(`${where}: a published service function needs a summary`);
+  if (titleNode && !literalText(titleNode)) {
+    throw new Error(`${where}: \`title\` must be a string literal`);
   }
-  // A summary someone cut short: it is the tool's title and description.
+  // A title someone cut short: it is the tool's title and description.
   if (
     /(…|\.\.\.)$/.test(title) ||
     (title.match(/`/g)?.length ?? 0) % 2 === 1 ||
     (title.match(/\(/g)?.length ?? 0) !== (title.match(/\)/g)?.length ?? 0)
   ) {
-    throw new Error(`${where}: the summary is cut off: "${title}"`);
+    throw new Error(`${where}: the title is cut off: "${title}"`);
   }
-  const sentence = title ? `${title}.` : "";
-  const parts = [sentence, remarks, returns ? `Returns ${returns}` : ""];
+  const descriptionNode = property("description");
+  if (descriptionNode && literalText(descriptionNode) === undefined) {
+    throw new Error(
+      `${where}: \`description\` must be a string or template literal without substitutions`
+    );
+  }
   return {
+    publish,
     title,
-    description: parts.filter(Boolean).join("\n\n"),
-    params,
-    published: mcp.length > 0,
-    destructive: modifier === "destructive",
-    read: modifier === "read"
+    description: literalText(descriptionNode)?.trim() || undefined
   };
 }
 
@@ -356,17 +349,6 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   };
 }
 
-function classify(
-  actions: PermissionAction[],
-  destructive: boolean,
-  read = false
-): Classification {
-  if (read) return "READ";
-  if (destructive || actions.includes("delete")) return "DESTRUCTIVE";
-  return actions.length > 0 && actions.every((a) => a === "view")
-    ? "READ"
-    : "WRITE";
-}
 
 /**
  * The checker orders a union's members by its own type ids, which move when
@@ -441,21 +423,16 @@ export function buildServiceFnTools(
   leaves = routerLeaves(project, routerFile)
 ): ManifestEntry[] {
   return leaves.flatMap((leaf) => {
-    const docs = leafDocs(leaf);
-    if (!docs.published) return [];
+    const docs = leafPublication(leaf);
+    if (!docs.publish) return [];
     const where = `router.${leaf.path.join(".")}`;
     if (leaf.path.length < 2) {
       throw new Error(`${where}: a published leaf needs a module namespace`);
     }
+    const name = leaf.path.join("_");
     const { permission, actions } = leafPermission(leaf);
-    const writes = actions.filter((action) => action !== "view");
-    if (docs.read && writes.length > 0) {
-      // A READ tool is offered as safe to run unasked; a permission that
-      // names a write says the function may change something.
-      throw new Error(
-        `${where}: @mcp read on a function whose permission names ${writes.join(", ")}; drop "read" or gate it on view`
-      );
-    }
+    // The same rule the runtime catalog applies (a "read" that writes throws).
+    const classification = classify(name, docs.publish, actions);
     const { input, response: returned } = schemasOf(leaf);
     const rows = pagedRows(returned);
     if (rows && ![rows.type].flat().includes("array")) {
@@ -478,23 +455,16 @@ export function buildServiceFnTools(
         undefined &&
       appliesGenericFilters(leaf.call)
     ) {
-      properties.filters ??= GENERIC_FILTERS_SCHEMA;
-      properties.sorts ??= GENERIC_SORTS_SCHEMA;
-    }
-    for (const [name, text] of Object.entries(docs.params)) {
-      const property = properties?.[name];
-      if (!property) {
-        throw new Error(`${where}: @param ${name} is not a field of its input`);
-      }
-      property.description = text;
+      properties.filters ??= GENERIC_FILTERS_SCHEMA as JsonSchema;
+      properties.sorts ??= GENERIC_SORTS_SCHEMA as JsonSchema;
     }
     return [
       {
-        name: leaf.path.join("_"),
+        name,
         module: leaf.path[0]!,
-        classification: classify(actions, docs.destructive, docs.read),
+        classification,
         title: docs.title,
-        description: docs.description,
+        description: operationDescription(docs.title, docs.description),
         permission,
         paginates: rows !== undefined,
         schema: input,

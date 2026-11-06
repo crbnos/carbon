@@ -215,7 +215,7 @@ guarded by `requireUnlockedBulk`, not validators.
 
 Every route action that composes writes calls one `defineServiceFn` operation through
 `carbon(request)` (`api.invoicing.postSalesInvoice(input)`); the API and MCP publish the ones
-tagged `@mcp` (all below except the two `*Field` updates) as `invoicing_<name>`:
+with `publish` (all below except the two `*Field` updates) as `invoicing_<name>`:
 
 - Sales invoices: `updateSalesInvoiceField`, `postSalesInvoice`, `voidSalesInvoice`,
   `sendSalesInvoice`, `deleteDraftSalesInvoice`; `createSalesInvoiceLine` /

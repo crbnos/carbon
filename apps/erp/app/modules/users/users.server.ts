@@ -901,12 +901,10 @@ export const certifyItarUser = defineServiceFn({
     });
   }
 });
-/**
- * The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user
- *
- * @mcp read
- */
 export const getItarCertificationStatus = defineServiceFn({
+  publish: "read",
+  title:
+    "The ITAR gate: does a valid, unexpired entity Rider acceptance exist for this company, and a valid user attestation for this user",
   output: z.object({
     entityCertified: z.boolean(),
     userCertified: z.boolean()
@@ -922,12 +920,10 @@ export const getItarCertificationStatus = defineServiceFn({
   }
 });
 
-/**
- * The company's latest entity Rider acceptance, or null when nobody has accepted one yet
- *
- * @mcp read
- */
 export const getItarEntityCertification = defineServiceFn({
+  publish: "read",
+  title:
+    "The company's latest entity Rider acceptance, or null when nobody has accepted one yet",
   output: z.object({
     userId: z.string(),
     fullLegalName: z.string(),
@@ -950,12 +946,10 @@ export const getItarEntityCertification = defineServiceFn({
   }
 });
 
-/**
- * Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)
- *
- * @mcp read
- */
 export const getItarCertificationReport = defineServiceFn({
+  publish: "read",
+  title:
+    "Compliance report source: every active employee with their latest ITAR certification (version / date / expiry)",
   output: z.array(
     z.object({
       id: z.string().nullable(),
@@ -979,12 +973,9 @@ export const getItarCertificationReport = defineServiceFn({
   }
 });
 
-/**
- * Delete group
- *
- * @mcp destructive
- */
 export const deleteGroup = defineServiceFn({
+  publish: "destructive",
+  title: "Delete group",
   output: z.array(rows.group.pick({ id: true }).meta({ table: "group" })),
   input: z.looseObject({ groupId: z.string() }),
   permission: { delete: "users" },
@@ -996,12 +987,9 @@ export const deleteGroup = defineServiceFn({
   }
 });
 
-/**
- * Get customers
- *
- * @mcp read
- */
 export const getCustomers = defineServiceFn({
+  publish: "read",
+  title: "Get customers",
   output: z
     .array(
       z.object({
@@ -1047,12 +1035,9 @@ export const getCustomers = defineServiceFn({
   }
 });
 
-/**
- * Get employee
- *
- * @mcp read
- */
 export const getEmployee = defineServiceFn({
+  publish: "read",
+  title: "Get employee",
   output: rows.employees,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "users" },
@@ -1068,12 +1053,9 @@ export const getEmployee = defineServiceFn({
   }
 });
 
-/**
- * Get unrevoked invite emails
- *
- * @mcp read
- */
 export const getUnrevokedInviteEmails = defineServiceFn({
+  publish: "read",
+  title: "Get unrevoked invite emails",
   output: z.array(rows.invite.pick({ email: true }).meta({ table: "invite" })),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
@@ -1088,12 +1070,9 @@ export const getUnrevokedInviteEmails = defineServiceFn({
   }
 });
 
-/**
- * User ids in this company with a verified authenticator
- *
- * @mcp read
- */
 export const getUsersWithVerifiedMfa = defineServiceFn({
+  publish: "read",
+  title: "User ids in this company with a verified authenticator",
   output: z.array(
     z.object({
       userId: z.string()
@@ -1112,12 +1091,9 @@ export const getUsersWithVerifiedMfa = defineServiceFn({
   }
 });
 
-/**
- * Get employees
- *
- * @mcp read
- */
 export const getEmployees = defineServiceFn({
+  publish: "read",
+  title: "Get employees",
   output: z.array(rows.employees).nullable(),
   input: z.looseObject({
     limit: z
@@ -1142,11 +1118,11 @@ export const getEmployees = defineServiceFn({
 });
 
 /**
- * Gets console operators — users with @console.internal emails
- *
- * @mcp read
+ * @console .internal emails
  */
 export const getConsoleOperators = defineServiceFn({
+  publish: "read",
+  title: "Gets console operators (users with @console.internal emails)",
   output: z.array(rows.employees).nullable(),
   input: z.looseObject({
     limit: z
@@ -1170,12 +1146,9 @@ export const getConsoleOperators = defineServiceFn({
   }
 });
 
-/**
- * Get employee type
- *
- * @mcp read
- */
 export const getEmployeeType = defineServiceFn({
+  publish: "read",
+  title: "Get employee type",
   output: rows.employeeType,
   input: z.looseObject({ employeeTypeId: z.string() }),
   permission: { view: "users" },
@@ -1190,12 +1163,9 @@ export const getEmployeeType = defineServiceFn({
   }
 });
 
-/**
- * Get employee types
- *
- * @mcp read
- */
 export const getEmployeeTypes = defineServiceFn({
+  publish: "read",
+  title: "Get employee types",
   output: z.array(rows.employeeType).nullable(),
   input: z.looseObject({
     limit: z
@@ -1219,12 +1189,9 @@ export const getEmployeeTypes = defineServiceFn({
   }
 });
 
-/**
- * Get invitable
- *
- * @mcp read
- */
 export const getInvitable = defineServiceFn({
+  publish: "read",
+  title: "Get invitable",
   output: z.array(rows.employeesAcrossCompanies),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
@@ -1236,12 +1203,9 @@ export const getInvitable = defineServiceFn({
   }
 });
 
-/**
- * Get modules
- *
- * @mcp read
- */
 export const getModules = defineServiceFn({
+  publish: "read",
+  title: "Get modules",
   output: z.array(rows.modules),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "users" },
@@ -1250,12 +1214,9 @@ export const getModules = defineServiceFn({
   }
 });
 
-/**
- * Get group
- *
- * @mcp read
- */
 export const getGroup = defineServiceFn({
+  publish: "read",
+  title: "Get group",
   output: rows.group.pick({ id: true, name: true }).meta({ table: "group" }),
   input: z.looseObject({ groupId: z.string() }),
   permission: { view: "users" },
@@ -1267,12 +1228,9 @@ export const getGroup = defineServiceFn({
   }
 });
 
-/**
- * Get group members
- *
- * @mcp read
- */
 export const getGroupMembers = defineServiceFn({
+  publish: "read",
+  title: "Get group members",
   output: z.array(
     rows.groupMembers
       .pick({
@@ -1296,12 +1254,9 @@ export const getGroupMembers = defineServiceFn({
   }
 });
 
-/**
- * Get groups
- *
- * @mcp read
- */
 export const getGroups = defineServiceFn({
+  publish: "read",
+  title: "Get groups",
   output: z
     .array(
       rows.group
@@ -1371,12 +1326,9 @@ export const getGroups = defineServiceFn({
   }
 });
 
-/**
- * Get group emails
- *
- * @mcp read
- */
 export const getGroupEmails = defineServiceFn({
+  publish: "read",
+  title: "Get group emails",
   output: z.array(z.string()),
   input: z.looseObject({ groupIds: z.array(z.string()) }),
   permission: { view: "users" },
@@ -1388,12 +1340,9 @@ export const getGroupEmails = defineServiceFn({
   }
 });
 
-/**
- * Get user select groups
- *
- * @mcp read
- */
 export const getUserSelectGroups = defineServiceFn({
+  publish: "read",
+  title: "Get user select groups",
   output: z.array(
     rows.group
       .pick({
@@ -1431,12 +1380,9 @@ export const getUserSelectGroups = defineServiceFn({
   }
 });
 
-/**
- * Get user select group members
- *
- * @mcp read
- */
 export const getUserSelectGroupMembers = defineServiceFn({
+  publish: "read",
+  title: "Get user select group members",
   output: z.object({
     groups: z.array(
       z.object({
@@ -1477,12 +1423,9 @@ export const getUserSelectGroupMembers = defineServiceFn({
   }
 });
 
-/**
- * Search users for select
- *
- * @mcp read
- */
 export const searchUsersForSelect = defineServiceFn({
+  publish: "read",
+  title: "Search users for select",
   output: z.array(
     z.object({
       memberUserId: z.string(),
@@ -1534,12 +1477,9 @@ export const searchUsersForSelect = defineServiceFn({
   }
 });
 
-/**
- * Resolve user select ids
- *
- * @mcp
- */
 export const resolveUserSelectIds = defineServiceFn({
+  publish: true,
+  title: "Resolve user select ids",
   output: z.object({
     users: z.union([
       z.object({
@@ -1621,12 +1561,9 @@ export const resolveUserSelectIds = defineServiceFn({
   }
 });
 
-/**
- * Get permissions by employee type
- *
- * @mcp read
- */
 export const getPermissionsByEmployeeType = defineServiceFn({
+  publish: "read",
+  title: "Get permissions by employee type",
   output: z.array(
     z.object({
       view: z.array(z.string()),
@@ -1669,12 +1606,9 @@ export const getPermissionsByEmployeeType = defineServiceFn({
   }
 });
 
-/**
- * Get suppliers
- *
- * @mcp read
- */
 export const getSuppliers = defineServiceFn({
+  publish: "read",
+  title: "Get suppliers",
   output: z
     .array(
       z.object({
@@ -1934,12 +1868,9 @@ export const setOwnFlag = defineServiceFn({
   }
 });
 
-/**
- * Get notification preferences
- *
- * @mcp read
- */
 export const getNotificationPreferences = defineServiceFn({
+  publish: "read",
+  title: "Get notification preferences",
   output: z.array(
     rows.notificationPreference
       .pick({ topic: true, channel: true, enabled: true })
@@ -1959,12 +1890,9 @@ export const getNotificationPreferences = defineServiceFn({
   }
 });
 
-/**
- * Upsert notification preference
- *
- * @mcp
- */
 export const upsertNotificationPreference = defineServiceFn({
+  publish: true,
+  title: "Upsert notification preference",
   output: z.null(),
   input: z.looseObject({
     topic: z.string(),
@@ -1983,12 +1911,9 @@ export const upsertNotificationPreference = defineServiceFn({
   }
 });
 
-/**
- * Get account
- *
- * @mcp read
- */
 export const getAccount = defineServiceFn({
+  publish: "read",
+  title: "Get account",
   output: rows.user,
   input: z.looseObject({ id: z.string() }),
   permission: {},
@@ -2000,12 +1925,9 @@ export const getAccount = defineServiceFn({
   }
 });
 
-/**
- * Return the connected user's own profile (id, email, name)
- *
- * @mcp read
- */
 export const getCurrentUser = defineServiceFn({
+  publish: "read",
+  title: "Return the connected user's own profile (id, email, name)",
   output: rows.user
     .pick({
       id: true,
@@ -2026,12 +1948,9 @@ export const getCurrentUser = defineServiceFn({
   }
 });
 
-/**
- * Get all attribute categories
- *
- * @mcp read
- */
 export const getAllAttributeCategories = defineServiceFn({
+  publish: "read",
+  title: "Get all attribute categories",
   output: z.array(
     z.object({
       id: z.string(),
@@ -2082,12 +2001,9 @@ export const getAllAttributeCategories = defineServiceFn({
   }
 });
 
-/**
- * Get attribute category with values
- *
- * @mcp read
- */
 export const getAttributeCategoryWithValues = defineServiceFn({
+  publish: "read",
+  title: "Get attribute category with values",
   output: z.object({
     id: z.string(),
     name: z.string(),
@@ -2138,12 +2054,9 @@ export const getAttributeCategoryWithValues = defineServiceFn({
   }
 });
 
-/**
- * Update public account
- *
- * @mcp
- */
 export const updatePublicAccount = defineServiceFn({
+  publish: true,
+  title: "Update public account",
   output: z.array(
     z.object({
       id: z.string()

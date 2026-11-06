@@ -12,7 +12,7 @@
 // endpoints + attributes + a response example, and pre-renders code samples with
 // @httptoolkit/httpsnippet. Emits lib/api-data.generated.json.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import HTTPSnippet from "@httptoolkit/httpsnippet";
@@ -382,6 +382,12 @@ console.log(`[api-docs] wrote ${OUT}`);
 // ── MCP tools catalog ─────────────────────────────────────────────────────────
 const TOOLS_SRC = resolve(__dirname, "../../apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json");
 const TOOLS_OUT = resolve(__dirname, "../lib/tools-data.generated.ts");
+if (!existsSync(TOOLS_SRC)) {
+  console.error(
+    `[api-docs] ${TOOLS_SRC} is missing. It is generated, not committed: run \`pnpm generate:mcp\` at the repository root first (the docs turbo tasks do this themselves).`
+  );
+  process.exit(1);
+}
 const toolMeta = JSON.parse(readFileSync(TOOLS_SRC, "utf8"));
 const allTools = Array.isArray(toolMeta) ? toolMeta : toolMeta.tools;
 const toolsByModule = new Map();

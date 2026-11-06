@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { COMPANY_TABLES as companyTables } from "@carbon/database/company-tables";
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import raw from "../../mcp+/lib/tool-metadata.json";
 import { scopedToCompany } from "./company-scope.server";
 
 // The real supabase-js client, with only the network replaced: what is
@@ -105,7 +105,6 @@ describe("the client a service is handed", () => {
   });
 
   it("knows the tables from the generated database types", () => {
-    const companyTables = (raw as { companyTables: string[] }).companyTables;
     expect(companyTables).toEqual(
       expect.arrayContaining([
         "customer",

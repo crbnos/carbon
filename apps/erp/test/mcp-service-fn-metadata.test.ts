@@ -11,6 +11,9 @@ import { buildServiceFnTools } from "../../../scripts/lib/service-fn-metadata";
 const HELPER = `
 type Result<T> = { data: T; error: null } | { data: null; error: { message: string } };
 export declare function defineServiceFn<I, R>(definition: {
+  publish?: unknown;
+  title?: unknown;
+  description?: unknown;
   input: unknown;
   permission: unknown;
   run(ctx: unknown, input: I): Promise<R>;
@@ -29,15 +32,10 @@ function toolsFor(files: Record<string, string>) {
 const PRODUCTION = `
 import { defineServiceFn } from "./helper";
 
-/**
- * Cancel a job.
- *
- * @remarks
- * Returns the picked material first.
- *
- * @mcp
- */
 export const cancelJob = defineServiceFn({
+  publish: true,
+  title: "Cancel a job",
+  description: "Returns the picked material first.",
   input: null,
   permission: { update: "production" },
   async run(_ctx, input: { jobId: string; reason?: string }) {
@@ -45,12 +43,9 @@ export const cancelJob = defineServiceFn({
   }
 });
 
-/**
- * Delete a job.
- *
- * @mcp destructive
- */
 export const deleteJob = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a job",
   input: null,
   permission: { update: ["production", "inventory"] },
   async run(_ctx, input: { jobId: string }) {
@@ -77,7 +72,7 @@ describe("buildServiceFnTools", () => {
   const tools = toolsFor({ "/m/production.ts": PRODUCTION, "/m/router.ts": ROUTER });
   const cancel = tools.find((tool) => tool.name === "production_cancelJob");
 
-  it("publishes only the leaves tagged @mcp, named module_function", () => {
+  it("publishes only the leaves with `publish`, named module_function", () => {
     expect(tools.map((tool) => tool.name)).toEqual([
       "production_cancelJob",
       "production_deleteJob"
@@ -94,7 +89,7 @@ describe("buildServiceFnTools", () => {
     ).toThrow(/export helper is not a defineServiceFn/);
   });
 
-  it("takes the title from the summary and the description from @remarks", () => {
+  it("takes the title and the description from the definition", () => {
     expect(cancel?.title).toBe("Cancel a job");
     expect(cancel?.description).toBe(
       "Cancel a job.\n\nReturns the picked material first."
@@ -124,12 +119,9 @@ describe("buildServiceFnTools", () => {
     const [jobs] = toolsFor({
       "/m/production.ts": `
 import { defineServiceFn } from "./helper";
-/**
- * List jobs.
- *
- * @mcp
- */
 export const getJobs = defineServiceFn({
+  publish: true,
+  title: "List jobs",
   input: null,
   permission: { view: "production" },
   async run(_ctx, input: { limit?: number }) {
@@ -150,12 +142,9 @@ export const getJobs = defineServiceFn({
       toolsFor({
         "/m/production.ts": `
 import { defineServiceFn } from "./helper";
-/**
- * Count jobs.
- *
- * @mcp
- */
 export const countJobs = defineServiceFn({
+  publish: true,
+  title: "Count jobs",
   input: null,
   permission: { view: "production" },
   async run(_ctx, input: { limit?: number }) {
@@ -167,17 +156,14 @@ export const countJobs = defineServiceFn({
     ).toThrow("a paged result's rows must be a list");
   });
 
-  it("refuses @mcp read on a function whose permission names a write", () => {
+  it('refuses publish "read" on a function whose permission names a write', () => {
     const read = (permission: string) =>
       toolsFor({
         "/m/production.ts": `
 import { defineServiceFn } from "./helper";
-/**
- * Get API keys.
- *
- * @mcp read
- */
 export const getKeys = defineServiceFn({
+  publish: "read",
+  title: "Get API keys",
   input: null,
   permission: ${permission},
   async run(_ctx, input: { id: string }) {
@@ -187,22 +173,19 @@ export const getKeys = defineServiceFn({
         "/m/router.ts": ROUTER
       });
     expect(() => read(`{ update: "users" }`)).toThrow(
-      "@mcp read on a function whose permission names update"
+      'publish "read" on a permission that requires update'
     );
     expect(read(`{ view: "users" }`)[0]?.classification).toBe("READ");
   });
 
-  it("refuses a summary that was cut off", () => {
-    const tool = (summary: string) =>
+  it("refuses a title that was cut off", () => {
+    const tool = (title: string) =>
       toolsFor({
         "/m/production.ts": `
 import { defineServiceFn } from "./helper";
-/**
- * ${summary}
- *
- * @mcp read
- */
 export const getJob = defineServiceFn({
+  publish: "read",
+  title: ${JSON.stringify(title)},
   input: null,
   permission: { view: "production" },
   async run(_ctx, input: { id: string }) {
@@ -212,12 +195,12 @@ export const getJob = defineServiceFn({
         "/m/router.ts": ROUTER
       });
     expect(() => tool("Get the job and the operations it…")).toThrow(
-      "the summary is cut off"
+      "the title is cut off"
     );
     expect(() => tool("Get the job (with its `operations")).toThrow(
-      "the summary is cut off"
+      "the title is cut off"
     );
-    expect(tool("Get the job (with its `operations`).")[0]?.title).toBe(
+    expect(tool("Get the job (with its `operations`)")[0]?.title).toBe(
       "Get the job (with its `operations`)"
     );
   });
@@ -227,12 +210,9 @@ export const getJob = defineServiceFn({
       "/m/production.ts": `
 import { defineServiceFn } from "./helper";
 const recostPermission = { update: "accounting" } as const;
-/**
- * Recost a unit.
- *
- * @mcp
- */
 export const recost = defineServiceFn({
+  publish: true,
+  title: "Recost a unit",
   input: null,
   permission: recostPermission,
   async run(_ctx, input: { id: string }) {
@@ -244,10 +224,20 @@ export const recost = defineServiceFn({
     expect(recost?.permission).toEqual({ module: "accounting", actions: ["update"] });
   });
 
+  it("refuses a leftover @mcp tag", () => {
+    const tagged = PRODUCTION.replace(
+      "export const cancelJob = defineServiceFn({",
+      "/** Cancel a job.\n *\n * @mcp\n */\nexport const cancelJob = defineServiceFn({"
+    );
+    expect(() =>
+      toolsFor({ "/m/production.ts": tagged, "/m/router.ts": ROUTER })
+    ).toThrow("@mcp is no longer read");
+  });
+
   it("refuses to publish a system-only function", () => {
     const published = PRODUCTION.replace(
-      "/** Re-plan an item. Not published. */",
-      "/**\n * Re-plan an item.\n *\n * @mcp\n */"
+      "export const replan = defineServiceFn({",
+      'export const replan = defineServiceFn({\n  publish: true,\n  title: "Re-plan an item",'
     );
     expect(() =>
       toolsFor({ "/m/production.ts": published, "/m/router.ts": ROUTER })

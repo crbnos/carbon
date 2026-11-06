@@ -107,22 +107,17 @@ const NOT_FOUND = "No matching record was found.";
 // Receipts
 // ---------------------------------------------------------------------------
 
-/**
- * Create a receipt.
- *
- * @remarks
- * From its source document, with its lines: a purchase order, a sales return
- * order, an inbound warehouse transfer or a rental agreement. With no source
- * document it creates an empty receipt. The location is the caller's default
- * location; a sales return falls back to the return order's own.
- *
- * A sales return order or rental agreement with a Draft receipt already
- * returns that receipt instead of a second one. A purchase order with Draft
- * receipts returns the oldest one.
- *
- * @mcp
- */
 export const createReceipt = defineServiceFn({
+  publish: true,
+  title: "Create a receipt",
+  description: `From its source document, with its lines: a purchase order, a sales return
+order, an inbound warehouse transfer or a rental agreement. With no source
+document it creates an empty receipt. The location is the caller's default
+location; a sales return falls back to the return order's own.
+
+A sales return order or rental agreement with a Draft receipt already
+returns that receipt instead of a second one. A purchase order with Draft
+receipts returns the oldest one.`,
   output: rows.receipt.pick({ id: true }).meta({ table: "receipt" }),
   input: z.object({
     sourceDocument: z.enum(receiptSourceDocumentType).optional(),
@@ -223,19 +218,14 @@ export const createReceipt = defineServiceFn({
   }
 });
 
-/**
- * Update a receipt's details.
- *
- * @remarks
- * A changed source document or location rebuilds the receipt's lines from
- * the new source (a purchase order, a sales return order or an inbound
- * transfer), and is refused once the receipt is not Draft. Otherwise the
- * fields are saved as sent. A rental receipt keeps its rental agreement:
- * changing it is refused.
- *
- * @mcp
- */
 export const updateReceipt = defineServiceFn({
+  publish: true,
+  title: "Update a receipt's details",
+  description: `A changed source document or location rebuilds the receipt's lines from
+the new source (a purchase order, a sales return order or an inbound
+transfer), and is refused once the receipt is not Draft. Otherwise the
+fields are saved as sent. A rental receipt keeps its rental agreement:
+changing it is refused.`,
   output: rows.receipt.pick({ id: true }).meta({ table: "receipt" }),
   input: z.object({
     id: z.string(),
@@ -346,33 +336,28 @@ export const updateReceipt = defineServiceFn({
   }
 });
 
-/**
- * Post a receipt.
- *
- * @remarks
- * In order:
- *   1. A Posted or Voided receipt is refused (`conflict`): posting it again
- *      would duplicate its ledger entries, cost layers and journal lines.
- *   2. Storage rules run on the `receipt` and `place` surfaces (and
- *      `warehouseTransfer` for an inbound transfer), and a purchase order
- *      receipt is checked for over-receipt against the live order lines. A
- *      blocking rule returns its `violations` and `ruleNames` and changes
- *      nothing; send `acknowledged: true` to post past warnings.
- *   3. The receipt is set Pending (only from Draft or Pending: `conflict`
- *      otherwise).
- *   4. Stale serial entities on serial-tracked lines are deleted, so they
- *      are not made Available as phantom serials, and the receipt is posted:
- *      ledger entries, cost layers, the journal and tracked entities. A
- *      failed post sets it back to Draft.
- *   5. Supplier lead times are refreshed when the company setting is on,
- *      labels print when the receiving printer auto-prints, and the
- *      receipt-posted workflow moment is raised.
- *
- * `postingDate` dates a rental return; every other receipt posts today.
- *
- * @mcp
- */
 export const postReceipt = defineServiceFn({
+  publish: true,
+  title: "Post a receipt",
+  description: `In order:
+  1. A Posted or Voided receipt is refused (\`conflict\`): posting it again
+     would duplicate its ledger entries, cost layers and journal lines.
+  2. Storage rules run on the \`receipt\` and \`place\` surfaces (and
+     \`warehouseTransfer\` for an inbound transfer), and a purchase order
+     receipt is checked for over-receipt against the live order lines. A
+     blocking rule returns its \`violations\` and \`ruleNames\` and changes
+     nothing; send \`acknowledged: true\` to post past warnings.
+  3. The receipt is set Pending (only from Draft or Pending: \`conflict\`
+     otherwise).
+  4. Stale serial entities on serial-tracked lines are deleted, so they
+     are not made Available as phantom serials, and the receipt is posted:
+     ledger entries, cost layers, the journal and tracked entities. A
+     failed post sets it back to Draft.
+  5. Supplier lead times are refreshed when the company setting is on,
+     labels print when the receiving printer auto-prints, and the
+     receipt-posted workflow moment is raised.
+
+\`postingDate\` dates a rental return; every other receipt posts today.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -617,18 +602,13 @@ export const postReceipt = defineServiceFn({
   }
 });
 
-/**
- * Void a posted receipt.
- *
- * @remarks
- * Reverses its inventory adjustments and journal entries, restores its
- * tracked entities and the purchase order quantities. Only a Posted receipt
- * can be voided, and not one a purchase invoice created: void the invoice
- * instead.
- *
- * @mcp destructive
- */
 export const voidReceipt = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted receipt",
+  description: `Reverses its inventory adjustments and journal entries, restores its
+tracked entities and the purchase order quantities. Only a Posted receipt
+can be voided, and not one a purchase invoice created: void the invoice
+instead.`,
   output: rows.receipt.pick({ receiptId: true }).meta({ table: "receipt" }),
   input: z.object({ receiptId: z.string() }),
   permission: { update: "inventory" },
@@ -677,16 +657,11 @@ export const voidReceipt = defineServiceFn({
   }
 });
 
-/**
- * Split a receipt line in two.
- *
- * @remarks
- * Moves `quantity` of the line onto a new line of the same receipt, so the
- * two can go to different storage units or carry different tracking.
- *
- * @mcp
- */
 export const splitReceiptLine = defineServiceFn({
+  publish: true,
+  title: "Split a receipt line in two",
+  description: `Moves \`quantity\` of the line onto a new line of the same receipt, so the
+two can go to different storage units or carry different tracking.`,
   output: z.object({
     receiptLineId: z.string()
   }),
@@ -730,17 +705,12 @@ export const splitReceiptLine = defineServiceFn({
   }
 });
 
-/**
- * Set one field on receipt lines.
- *
- * @remarks
- * `storageUnitId` or `receivedQuantity`, on every line in `ids`. An empty
- * value clears the field. Storage rules run when the receipt is posted, not
- * here.
- *
- * @mcp
- */
 export const updateReceiptLines = defineServiceFn({
+  publish: true,
+  title: "Set one field on receipt lines",
+  description: `\`storageUnitId\` or \`receivedQuantity\`, on every line in \`ids\`. An empty
+value clears the field. Storage rules run when the receipt is posted, not
+here.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -835,18 +805,13 @@ export const updateReceiptLines = defineServiceFn({
   }
 });
 
-/**
- * Update one field of a fixed-asset line on a receipt.
- *
- * @remarks
- * `received`, `serialNumber`, `meter`, `notes`, `outOfService` (an empty
- * value returns the unit to service, any other text is the reason) or
- * `residualDestination`. A posted or voided receipt is a record: its lines no
- * longer change.
- *
- * @mcp
- */
 export const updateReceiptFixedAssetLine = defineServiceFn({
+  publish: true,
+  title: "Update one field of a fixed-asset line on a receipt",
+  description: `\`received\`, \`serialNumber\`, \`meter\`, \`notes\`, \`outOfService\` (an empty
+value returns the unit to service, any other text is the reason) or
+\`residualDestination\`. A posted or voided receipt is a record: its lines no
+longer change.`,
   output: rows.receiptFixedAssetLine
     .pick({ id: true })
     .meta({ table: "receiptFixedAssetLine" }),
@@ -885,20 +850,15 @@ export const updateReceiptFixedAssetLine = defineServiceFn({
     return { id };
   }
 });
-/**
- * Set the batch number of a batch-tracked receipt line.
- *
- * @remarks
- * Creates or updates the line's batch (On Hold until the receipt posts) with
- * the line's quantity, its properties and an optional `expirationDate` in
- * `properties`. `trackedEntityId` names the line's existing batch (another
- * entity is refused); without it the batch already tagged with the line is
- * updated, so renaming a batch number never orphans the old one. Only a
- * Draft receipt's batches change.
- *
- * @mcp
- */
 export const setReceiptLineBatch = defineServiceFn({
+  publish: true,
+  title: "Set the batch number of a batch-tracked receipt line",
+  description: `Creates or updates the line's batch (On Hold until the receipt posts) with
+the line's quantity, its properties and an optional \`expirationDate\` in
+\`properties\`. \`trackedEntityId\` names the line's existing batch (another
+entity is refused); without it the batch already tagged with the line is
+updated, so renaming a batch number never orphans the old one. Only a
+Draft receipt's batches change.`,
   output: z.object({
     receiptLineId: z.string()
   }),
@@ -988,18 +948,13 @@ export const setReceiptLineBatch = defineServiceFn({
   }
 });
 
-/**
- * Set one serial number of a serial-tracked receipt line.
- *
- * @remarks
- * `index` is the unit's position on the line, from 0. An empty serial number
- * clears the position. A serial number the line's item already uses at another
- * position, or that belongs to an existing unit with stock movements, is
- * refused and the position is cleared.
- *
- * @mcp
- */
 export const setReceiptLineSerial = defineServiceFn({
+  publish: true,
+  title: "Set one serial number of a serial-tracked receipt line",
+  description: `\`index\` is the unit's position on the line, from 0. An empty serial number
+clears the position. A serial number the line's item already uses at another
+position, or that belongs to an existing unit with stock movements, is
+refused and the position is cleared.`,
   output: z.object({
     receiptLineId: z.string(),
     index: z.number()
@@ -1072,20 +1027,15 @@ export const setReceiptLineSerial = defineServiceFn({
     return { receiptLineId: input.receiptLineId, index: input.index };
   }
 });
-/**
- * Assign a returned tracked entity to a sales-return receipt line.
- *
- * @remarks
- * Re-tags the EXISTING entity a customer sent back with this receipt line,
- * instead of creating a new serial or batch; posting reactivates it On Hold.
- * The entity must be Consumed, the return line's item, and have left on a
- * posted shipment to the return's customer. One that another Draft
- * sales-return receipt has claimed is refused. Whatever entity held the slot
- * (`index` for a serial, the line for a batch) is cleared first.
- *
- * @mcp
- */
 export const assignReceiptReturnEntity = defineServiceFn({
+  publish: true,
+  title: "Assign a returned tracked entity to a sales-return receipt line",
+  description: `Re-tags the EXISTING entity a customer sent back with this receipt line,
+instead of creating a new serial or batch; posting reactivates it On Hold.
+The entity must be Consumed, the return line's item, and have left on a
+posted shipment to the return's customer. One that another Draft
+sales-return receipt has claimed is refused. Whatever entity held the slot
+(\`index\` for a serial, the line for a batch) is cleared first.`,
   output: z.object({
     trackedEntityId: z.string()
   }),
@@ -1261,16 +1211,11 @@ export const assignReceiptReturnEntity = defineServiceFn({
   }
 });
 
-/**
- * Remove a returned tracked entity from a sales-return receipt line.
- *
- * @remarks
- * Clears the receipt tracking the entity carries, only when it points at
- * this receipt line: another receipt's assignment is refused.
- *
- * @mcp
- */
 export const removeReceiptReturnEntity = defineServiceFn({
+  publish: true,
+  title: "Remove a returned tracked entity from a sales-return receipt line",
+  description: `Clears the receipt tracking the entity carries, only when it points at
+this receipt line: another receipt's assignment is refused.`,
   output: z.object({
     trackedEntityId: z.string()
   }),
@@ -1341,24 +1286,19 @@ const NO_DEFAULT_LOCATION =
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
-/**
- * Create a shipment.
- *
- * @remarks
- * From its source document, with its lines: a sales order, a sales return
- * order, a purchase order, a purchase return order, an outbound warehouse
- * transfer or a rental agreement. With no source document it creates an
- * empty shipment. The location is the caller's default location, which a
- * purchase order shipment requires. A sales order shipment ships from the
- * order's location, or from the caller's default location when one of the
- * order's lines ships from there.
- *
- * A return order or rental agreement with a Draft shipment already returns
- * that shipment instead of a second one.
- *
- * @mcp
- */
 export const createShipment = defineServiceFn({
+  publish: true,
+  title: "Create a shipment",
+  description: `From its source document, with its lines: a sales order, a sales return
+order, a purchase order, a purchase return order, an outbound warehouse
+transfer or a rental agreement. With no source document it creates an
+empty shipment. The location is the caller's default location, which a
+purchase order shipment requires. A sales order shipment ships from the
+order's location, or from the caller's default location when one of the
+order's lines ships from there.
+
+A return order or rental agreement with a Draft shipment already returns
+that shipment instead of a second one.`,
   output: rows.shipment.pick({ id: true }).meta({ table: "shipment" }),
   input: z.object({
     sourceDocument: z.enum(shipmentSourceDocumentType).optional(),
@@ -1483,19 +1423,14 @@ export const createShipment = defineServiceFn({
   }
 });
 
-/**
- * Update a shipment's details.
- *
- * @remarks
- * A changed source document or location rebuilds the shipment's lines from
- * the new source (a sales order, a sales return order, a purchase order, a
- * purchase return order or an outbound transfer), and is refused once the
- * shipment is not Draft. Otherwise the fields are saved as sent. A rental
- * shipment keeps its rental agreement: changing it is refused.
- *
- * @mcp
- */
 export const updateShipment = defineServiceFn({
+  publish: true,
+  title: "Update a shipment's details",
+  description: `A changed source document or location rebuilds the shipment's lines from
+the new source (a sales order, a sales return order, a purchase order, a
+purchase return order or an outbound transfer), and is refused once the
+shipment is not Draft. Otherwise the fields are saved as sent. A rental
+shipment keeps its rental agreement: changing it is refused.`,
   output: rows.shipment.pick({ id: true }).meta({ table: "shipment" }),
   input: z.object({
     id: z.string(),
@@ -1629,38 +1564,33 @@ export const updateShipment = defineServiceFn({
     return { id };
   }
 });
-/**
- * Post a shipment.
- *
- * @remarks
- * In order:
- *   1. Storage rules run on the `shipment` and `pick` surfaces (and
- *      `warehouseTransfer` for an outbound transfer), and a sales order
- *      shipment runs its order's sales rules on the lines shipped. An
- *      untracked line whose storage unit holds less than it ships adds a
- *      warning that names the storage units holding the item. A
- *      blocking rule returns its `violations` and `ruleNames` and changes
- *      nothing (a blocked sales rule is recorded on the order); send
- *      `acknowledged: true` to post past warnings.
- *   2. Expired batches on the shipment: the company's expired-entity policy
- *      refuses the post (`Block`, `BlockWithOverride`), or posts it with a
- *      `warning` (`Warn`). Expiry is judged on the shipping location's
- *      calendar.
- *   3. The shipment is set Pending (only from Draft or Pending: `conflict`
- *      otherwise). A sales order shipment saves its packing slip on the
- *      order's opportunity.
- *   4. The shipment is posted: ledger entries, cost of goods, the journal and
- *      tracked entities. A failed post sets it back to Draft.
- *   5. Labels print when the shipping printer auto-prints (and for batches
- *      the post split), acknowledged sales rules are recorded on the order,
- *      and the shipment-posted workflow moment is raised.
- *
- * `postingDate` dates a rental delivery; every other shipment posts today.
- * `locale` formats the packing slip.
- *
- * @mcp
- */
 export const postShipment = defineServiceFn({
+  publish: true,
+  title: "Post a shipment",
+  description: `In order:
+  1. Storage rules run on the \`shipment\` and \`pick\` surfaces (and
+     \`warehouseTransfer\` for an outbound transfer), and a sales order
+     shipment runs its order's sales rules on the lines shipped. An
+     untracked line whose storage unit holds less than it ships adds a
+     warning that names the storage units holding the item. A
+     blocking rule returns its \`violations\` and \`ruleNames\` and changes
+     nothing (a blocked sales rule is recorded on the order); send
+     \`acknowledged: true\` to post past warnings.
+  2. Expired batches on the shipment: the company's expired-entity policy
+     refuses the post (\`Block\`, \`BlockWithOverride\`), or posts it with a
+     \`warning\` (\`Warn\`). Expiry is judged on the shipping location's
+     calendar.
+  3. The shipment is set Pending (only from Draft or Pending: \`conflict\`
+     otherwise). A sales order shipment saves its packing slip on the
+     order's opportunity.
+  4. The shipment is posted: ledger entries, cost of goods, the journal and
+     tracked entities. A failed post sets it back to Draft.
+  5. Labels print when the shipping printer auto-prints (and for batches
+     the post split), acknowledged sales rules are recorded on the order,
+     and the shipment-posted workflow moment is raised.
+
+\`postingDate\` dates a rental delivery; every other shipment posts today.
+\`locale\` formats the packing slip.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -1949,17 +1879,12 @@ export const postShipment = defineServiceFn({
   }
 });
 
-/**
- * Void a posted shipment.
- *
- * @remarks
- * Reverses its inventory movements and journal entries and restores its
- * tracked entities and the source document's shipped quantities. Only a
- * Posted shipment can be voided.
- *
- * @mcp destructive
- */
 export const voidShipment = defineServiceFn({
+  publish: "destructive",
+  title: "Void a posted shipment",
+  description: `Reverses its inventory movements and journal entries and restores its
+tracked entities and the source document's shipped quantities. Only a
+Posted shipment can be voided.`,
   output: rows.shipment.pick({ shipmentId: true }).meta({ table: "shipment" }),
   input: z.object({ shipmentId: z.string() }),
   permission: { update: "inventory" },
@@ -1999,16 +1924,11 @@ export const voidShipment = defineServiceFn({
   }
 });
 
-/**
- * Split a shipment line in two.
- *
- * @remarks
- * Moves `quantity` of the line onto a new line of the same shipment, so the
- * two can come from different storage units or carry different tracking.
- *
- * @mcp
- */
 export const splitShipmentLine = defineServiceFn({
+  publish: true,
+  title: "Split a shipment line in two",
+  description: `Moves \`quantity\` of the line onto a new line of the same shipment, so the
+two can come from different storage units or carry different tracking.`,
   output: z.object({
     shipmentLineId: z.string()
   }),
@@ -2052,18 +1972,13 @@ export const splitShipmentLine = defineServiceFn({
   }
 });
 
-/**
- * Set one field on shipment lines.
- *
- * @remarks
- * `storageUnitId`, `shippedQuantity` or `serialNumber` (a contract
- * delivery's typed serial), on every line in `ids`. An empty
- * value clears the field. Storage rules run when the shipment is posted, not
- * here.
- *
- * @mcp
- */
 export const updateShipmentLines = defineServiceFn({
+  publish: true,
+  title: "Set one field on shipment lines",
+  description: `\`storageUnitId\`, \`shippedQuantity\` or \`serialNumber\` (a contract
+delivery's typed serial), on every line in \`ids\`. An empty
+value clears the field. Storage rules run when the shipment is posted, not
+here.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -2118,16 +2033,11 @@ export const updateShipmentLines = defineServiceFn({
   }
 });
 
-/**
- * Update one field of a fixed-asset line on a shipment.
- *
- * @remarks
- * `shipped`, `serialNumber` or `meter` (a rental unit's meter out). A posted
- * or voided shipment is a record: its lines no longer change.
- *
- * @mcp
- */
 export const updateShipmentFixedAssetLine = defineServiceFn({
+  publish: true,
+  title: "Update one field of a fixed-asset line on a shipment",
+  description: `\`shipped\`, \`serialNumber\` or \`meter\` (a rental unit's meter out). A posted
+or voided shipment is a record: its lines no longer change.`,
   output: rows.shipmentFixedAssetLine
     .pick({ id: true })
     .meta({ table: "shipmentFixedAssetLine" }),
@@ -2171,19 +2081,14 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
   }
 });
 
-/**
- * Assign a tracked entity to a shipment line.
- *
- * @remarks
- * Tags the batch, or the serial unit at `index`, with the shipment line;
- * posting ships it. The entity must be the line's item and Available (On
- * Hold for a return-to-customer shipment, and then it must have come back on
- * a receipt of that return order). A batch must hold at least `quantity`.
- * Whatever entity held the slot before is cleared once the new one is set.
- *
- * @mcp
- */
 export const assignShipmentLineEntity = defineServiceFn({
+  publish: true,
+  title: "Assign a tracked entity to a shipment line",
+  description: `Tags the batch, or the serial unit at \`index\`, with the shipment line;
+posting ships it. The entity must be the line's item and Available (On
+Hold for a return-to-customer shipment, and then it must have come back on
+a receipt of that return order). A batch must hold at least \`quantity\`.
+Whatever entity held the slot before is cleared once the new one is set.`,
   output: z.object({
     trackedEntityId: z.string()
   }),
@@ -2420,20 +2325,15 @@ export const assignShipmentLineEntity = defineServiceFn({
 // Stock transfers
 // ---------------------------------------------------------------------------
 
-/**
- * Create a stock transfer.
- *
- * @remarks
- * Moves stock between storage units of one location. The transfer is created
- * Released, so storage rules run on the `stockTransfer` surface against each
- * line's destination before it exists: a blocking rule returns its
- * `violations` and `ruleNames` and creates nothing; send `acknowledged: true`
- * to create past warnings. A serial-tracked line of N units becomes N lines
- * of one.
- *
- * @mcp
- */
 export const createStockTransfer = defineServiceFn({
+  publish: true,
+  title: "Create a stock transfer",
+  description: `Moves stock between storage units of one location. The transfer is created
+Released, so storage rules run on the \`stockTransfer\` surface against each
+line's destination before it exists: a blocking rule returns its
+\`violations\` and \`ruleNames\` and creates nothing; send \`acknowledged: true\`
+to create past warnings. A serial-tracked line of N units becomes N lines
+of one.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -2690,18 +2590,13 @@ export const createStockTransfer = defineServiceFn({
   }
 });
 
-/**
- * Pick every untracked line of a stock transfer.
- *
- * @remarks
- * Moves the remaining quantity of each line that is not serial or batch
- * tracked from its source to its destination storage unit, in one
- * transaction. Tracked lines are left: each needs its unit picked. A
- * Draft or Completed transfer is refused.
- *
- * @mcp
- */
 export const pickAllStockTransferLines = defineServiceFn({
+  publish: true,
+  title: "Pick every untracked line of a stock transfer",
+  description: `Moves the remaining quantity of each line that is not serial or batch
+tracked from its source to its destination storage unit, in one
+transaction. Tracked lines are left: each needs its unit picked. A
+Draft or Completed transfer is refused.`,
   output: z.object({
     stockTransferId: z.string(),
     pickedLineIds: z.array(z.string())
@@ -2756,18 +2651,13 @@ export const pickAllStockTransferLines = defineServiceFn({
   }
 });
 
-/**
- * Get the serial and batch stock at a location
- *
- * @remarks
- * Per item and storage unit: the quantity in Available serial or batch units
- * (what a stock transfer can pick), split by batch number for a batch item,
- * and the quantity that has no serial or batch number, which cannot be picked
- * until it is given one.
- *
- * @mcp read
- */
 export const getTrackedStockAtLocation = defineServiceFn({
+  publish: "read",
+  title: "Get the serial and batch stock at a location",
+  description: `Per item and storage unit: the quantity in Available serial or batch units
+(what a stock transfer can pick), split by batch number for a batch item,
+and the quantity that has no serial or batch number, which cannot be picked
+until it is given one.`,
   output: z.object({
     stock: z.array(
       z.object({
@@ -2805,18 +2695,13 @@ export const getTrackedStockAtLocation = defineServiceFn({
   }
 });
 
-/**
- * Give stock with no batch number a batch
- *
- * @remarks
- * For a batch-tracked item: moves `quantity` of the storage unit's stock that
- * has no batch number into a new batch `readableId` in the same storage unit,
- * so it can be picked, moved and shipped. Nothing is revalued and no journal
- * is posted.
- *
- * @mcp
- */
 export const assignBatchToUnnumberedStock = defineServiceFn({
+  publish: true,
+  title: "Give stock with no batch number a batch",
+  description: `For a batch-tracked item: moves \`quantity\` of the storage unit's stock that
+has no batch number into a new batch \`readableId\` in the same storage unit,
+so it can be picked, moved and shipped. Nothing is revalued and no journal
+is posted.`,
   output: z.object({
     trackedEntityId: z.string()
   }),
@@ -2864,21 +2749,16 @@ const COMPLETE_NEEDS_RELEASE =
 const COMPLETE_NEEDS_PICK =
   "Pick at least one line before completing the stock transfer";
 
-/**
- * Set a stock transfer's status.
- *
- * @remarks
- * Released and Completed commit the transfer plan: storage rules run on the
- * `stockTransfer` surface against each line's destination, and a blocking
- * rule returns its `violations` and `ruleNames` and changes nothing (send
- * `acknowledged: true` to continue past warnings). Completing needs a
- * Released or In Progress transfer with at least one line picked; it clears
- * the assignee and stamps the completion time. Reopening a Completed
- * transfer needs the inventory `delete` permission.
- *
- * @mcp
- */
 export const setStockTransferStatus = defineServiceFn({
+  publish: true,
+  title: "Set a stock transfer's status",
+  description: `Released and Completed commit the transfer plan: storage rules run on the
+\`stockTransfer\` surface against each line's destination, and a blocking
+rule returns its \`violations\` and \`ruleNames\` and changes nothing (send
+\`acknowledged: true\` to continue past warnings). Completing needs a
+Released or In Progress transfer with at least one line picked; it clears
+the assignee and stamps the completion time. Reopening a Completed
+transfer needs the inventory \`delete\` permission.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -3033,18 +2913,13 @@ export const setStockTransferStatus = defineServiceFn({
     return { id, status };
   }
 });
-/**
- * Pick a stock transfer line.
- *
- * @remarks
- * Moves `quantity` of the line's item from its source to its destination
- * storage unit. A serial- or batch-tracked line needs its `trackedEntityId`;
- * `pickStockTransferLineEntity` picks a scanned one. A Completed
- * transfer is refused.
- *
- * @mcp
- */
 export const pickStockTransferLine = defineServiceFn({
+  publish: true,
+  title: "Pick a stock transfer line",
+  description: `Moves \`quantity\` of the line's item from its source to its destination
+storage unit. A serial- or batch-tracked line needs its \`trackedEntityId\`;
+\`pickStockTransferLineEntity\` picks a scanned one. A Completed
+transfer is refused.`,
   output: z.object({
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
@@ -3085,17 +2960,12 @@ export const pickStockTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Unpick a stock transfer line.
- *
- * @remarks
- * Moves the line's picked stock back to its source storage unit. A serial-
- * or batch-tracked line needs its `trackedEntityId`. A Completed transfer is
- * refused.
- *
- * @mcp
- */
 export const unpickStockTransferLine = defineServiceFn({
+  publish: true,
+  title: "Unpick a stock transfer line",
+  description: `Moves the line's picked stock back to its source storage unit. A serial-
+or batch-tracked line needs its \`trackedEntityId\`. A Completed transfer is
+refused.`,
   output: z.object({
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
@@ -3136,18 +3006,13 @@ export const unpickStockTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Pick a scanned serial unit or batch for a stock transfer line.
- *
- * @remarks
- * A serial scan moves one unit; a batch scan moves `quantity` of it, which
- * may not exceed what the line still has to pick. Refused when the line is
- * already fully picked, when the entity is already picked, or when the
- * transfer is Completed.
- *
- * @mcp
- */
 export const pickStockTransferLineEntity = defineServiceFn({
+  publish: true,
+  title: "Pick a scanned serial unit or batch for a stock transfer line",
+  description: `A serial scan moves one unit; a batch scan moves \`quantity\` of it, which
+may not exceed what the line still has to pick. Refused when the line is
+already fully picked, when the entity is already picked, or when the
+transfer is Completed.`,
   output: z.object({
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
@@ -3194,17 +3059,12 @@ export const pickStockTransferLineEntity = defineServiceFn({
   }
 });
 
-/**
- * Set one storage unit on stock transfer lines.
- *
- * @remarks
- * `fromStorageUnitId` or `toStorageUnitId`, on every line in `ids`. An empty
- * value clears it. A transfer that is not Draft is locked: reopen it first.
- * Storage rules run when the transfer is released, not here.
- *
- * @mcp
- */
 export const updateStockTransferLines = defineServiceFn({
+  publish: true,
+  title: "Set one storage unit on stock transfer lines",
+  description: `\`fromStorageUnitId\` or \`toStorageUnitId\`, on every line in \`ids\`. An empty
+value clears it. A transfer that is not Draft is locked: reopen it first.
+Storage rules run when the transfer is released, not here.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -3250,19 +3110,14 @@ const WAREHOUSE_TRANSFER_COMMITS = new Set<string>([
   "Completed"
 ]);
 
-/**
- * Set a warehouse transfer's status.
- *
- * @remarks
- * Confirming, shipping, receiving or completing commits the transfer plan:
- * storage rules run on the `warehouseTransfer` surface against each line's
- * destination, and a blocking rule returns its `violations` and `ruleNames`
- * and changes nothing (send `acknowledged: true` to continue past warnings).
- * Draft (reopen) and Cancelled are not commits and run no rules.
- *
- * @mcp
- */
 export const setWarehouseTransferStatus = defineServiceFn({
+  publish: true,
+  title: "Set a warehouse transfer's status",
+  description: `Confirming, shipping, receiving or completing commits the transfer plan:
+storage rules run on the \`warehouseTransfer\` surface against each line's
+destination, and a blocking rule returns its \`violations\` and \`ruleNames\`
+and changes nothing (send \`acknowledged: true\` to continue past warnings).
+Draft (reopen) and Cancelled are not commits and run no rules.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -3361,16 +3216,11 @@ const warehouseTransferLineFields = {
   notes: z.string().optional()
 };
 
-/**
- * Add a line to a Draft warehouse transfer.
- *
- * @remarks
- * The line moves `quantity` of the item between the transfer's locations.
- * A transfer that is not Draft is locked: reopen it first.
- *
- * @mcp
- */
 export const createWarehouseTransferLine = defineServiceFn({
+  publish: true,
+  title: "Add a line to a Draft warehouse transfer",
+  description: `The line moves \`quantity\` of the item between the transfer's locations.
+A transfer that is not Draft is locked: reopen it first.`,
   output: rows.warehouseTransferLine
     .pick({ id: true })
     .meta({ table: "warehouseTransferLine" }),
@@ -3407,16 +3257,11 @@ export const createWarehouseTransferLine = defineServiceFn({
     return { id: created.data.id };
   }
 });
-/**
- * Update a line of a Draft warehouse transfer.
- *
- * @remarks
- * Sets the line's quantity, storage units and notes. A transfer that is not
- * Draft is locked: reopen it first.
- *
- * @mcp
- */
 export const updateWarehouseTransferLine = defineServiceFn({
+  publish: true,
+  title: "Update a line of a Draft warehouse transfer",
+  description: `Sets the line's quantity, storage units and notes. A transfer that is not
+Draft is locked: reopen it first.`,
   output: rows.warehouseTransferLine
     .pick({ id: true })
     .meta({ table: "warehouseTransferLine" }),
@@ -3455,15 +3300,10 @@ export const updateWarehouseTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Delete a line of a Draft warehouse transfer.
- *
- * @remarks
- * A transfer that is not Draft is locked: reopen it first.
- *
- * @mcp destructive
- */
 export const removeWarehouseTransferLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a line of a Draft warehouse transfer",
+  description: "A transfer that is not Draft is locked: reopen it first.",
   output: rows.warehouseTransferLine
     .pick({ id: true })
     .meta({ table: "warehouseTransferLine" }),
@@ -3498,19 +3338,14 @@ export const removeWarehouseTransferLine = defineServiceFn({
 // Inventory counts and adjustments
 // ---------------------------------------------------------------------------
 
-/**
- * Create an inventory count.
- *
- * @remarks
- * Creates a Draft count at a location and snapshots its on-hand into count
- * lines: one per item, storage unit and tracked entity with stock history,
- * Rejected and Consumed lots left out. `storageUnitIds` and `itemType`
- * narrow what is counted. If the snapshot fails the count is deleted, so no
- * empty count is left behind.
- *
- * @mcp
- */
 export const createInventoryCount = defineServiceFn({
+  publish: true,
+  title: "Create an inventory count",
+  description: `Creates a Draft count at a location and snapshots its on-hand into count
+lines: one per item, storage unit and tracked entity with stock history,
+Rejected and Consumed lots left out. \`storageUnitIds\` and \`itemType\`
+narrow what is counted. If the snapshot fails the count is deleted, so no
+empty count is left behind.`,
   output: rows.inventoryCount
     .pick({ id: true })
     .meta({ table: "inventoryCount" }),
@@ -3587,20 +3422,15 @@ export const createInventoryCount = defineServiceFn({
   }
 });
 
-/**
- * Post a confirmed inventory count.
- *
- * @remarks
- * Only a Pending (confirmed) count posts. Each counted line's variance
- * against its snapshot is booked as an inventory adjustment, all in one
- * transaction: ledger entries, cost layers and the journal. Posted is
- * final. A count with lines that cannot post (a serial line counted as
- * anything but 0 or 1) is not posted and returns `invalidLineIds` with the
- * reason in `message`.
- *
- * @mcp
- */
 export const postInventoryCount = defineServiceFn({
+  publish: true,
+  title: "Post a confirmed inventory count",
+  description: `Only a Pending (confirmed) count posts. Each counted line's variance
+against its snapshot is booked as an inventory adjustment, all in one
+transaction: ledger entries, cost layers and the journal. Posted is
+final. A count with lines that cannot post (a serial line counted as
+anything but 0 or 1) is not posted and returns \`invalidLineIds\` with the
+reason in \`message\`.`,
   output: z.union([
     z.object({
       invalidLineIds: z.array(z.string()),
@@ -3640,25 +3470,20 @@ export const postInventoryCount = defineServiceFn({
   }
 });
 
-/**
- * Adjust an item's stock.
- *
- * @remarks
- * A positive or negative adjustment, a set quantity, a scrap (with its scrap
- * reason) or an unscrap of a Scrapped tracked entity. It writes the ledger
- * entry, updates the tracked entity, maintains cost layers and posts the
- * journal in one transaction. Storage rules run first on the
- * `inventoryAdjustment` surface and, when a storage unit is named, on `pick`
- * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
- * returns its `violations` and `ruleNames` and changes nothing; send
- * `acknowledged: true` to adjust past warnings.
- *
- * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
- * location, bin and cost from the original scrap.
- *
- * @mcp
- */
 export const adjustInventory = defineServiceFn({
+  publish: true,
+  title: "Adjust an item's stock",
+  description: `A positive or negative adjustment, a set quantity, a scrap (with its scrap
+reason) or an unscrap of a Scrapped tracked entity. It writes the ledger
+entry, updates the tracked entity, maintains cost layers and posts the
+journal in one transaction. Storage rules run first on the
+\`inventoryAdjustment\` surface and, when a storage unit is named, on \`pick\`
+(a decrease or scrap) or \`place\` (an increase or unscrap): a blocking rule
+returns its \`violations\` and \`ruleNames\` and changes nothing; send
+\`acknowledged: true\` to adjust past warnings.
+
+Every adjustment but an unscrap needs \`locationId\`; an unscrap resolves its
+location, bin and cost from the original scrap.`,
   output: z.union([
     z.object({
       violations: z.array(
@@ -3758,16 +3583,11 @@ export const adjustInventory = defineServiceFn({
 // Storage units
 // ---------------------------------------------------------------------------
 
-/**
- * Delete a storage unit.
- *
- * @remarks
- * A unit with nested units is refused unless `cascade` is set, which deletes
- * the whole subtree.
- *
- * @mcp destructive
- */
 export const removeStorageUnit = defineServiceFn({
+  publish: "destructive",
+  title: "Delete a storage unit",
+  description: `A unit with nested units is refused unless \`cascade\` is set, which deletes
+the whole subtree.`,
   output: z.object({
     storageUnitId: z.string(),
     cascade: z.boolean()
@@ -3813,20 +3633,15 @@ export const removeStorageUnit = defineServiceFn({
 // Picking lists
 // ---------------------------------------------------------------------------
 
-/**
- * Set a picking list's status.
- *
- * @remarks
- * Reopening a Completed, Partial or Cancelled list needs the inventory delete
- * permission. Finishing (Completed) checks the lines first: with lines left
- * unpicked, the company's incomplete picking list policy refuses (`error`) or
- * returns `needsAcknowledgement` with those lines until the call is repeated
- * with `acknowledged` (`warn`). A list with unpicked or short lines finishes
- * Partial, not Completed.
- *
- * @mcp
- */
 export const setPickingListStatus = defineServiceFn({
+  publish: true,
+  title: "Set a picking list's status",
+  description: `Reopening a Completed, Partial or Cancelled list needs the inventory delete
+permission. Finishing (Completed) checks the lines first: with lines left
+unpicked, the company's incomplete picking list policy refuses (\`error\`) or
+returns \`needsAcknowledgement\` with those lines until the call is repeated
+with \`acknowledged\` (\`warn\`). A list with unpicked or short lines finishes
+Partial, not Completed.`,
   output: z.union([
     z.object({
       needsAcknowledgement: z.boolean(),
@@ -3962,16 +3777,11 @@ export const setPickingListStatus = defineServiceFn({
   }
 });
 
-/**
- * Update a Draft picking list's details.
- *
- * @remarks
- * Location, assignee, due date, notes and custom fields. A list past Draft is
- * locked: reopen it first.
- *
- * @mcp
- */
 export const updatePickingList = defineServiceFn({
+  publish: true,
+  title: "Update a Draft picking list's details",
+  description: `Location, assignee, due date, notes and custom fields. A list past Draft is
+locked: reopen it first.`,
   output: rows.pickingList
     .pick({ pickingListId: true })
     .meta({ table: "pickingList" }),
@@ -4023,16 +3833,11 @@ const pickingListLineInput = {
   pickingListLineId: z.string()
 };
 
-/**
- * Pick a picking list line, or mark it short.
- *
- * @remarks
- * Sets the line's picked quantity (0 unpicks); with `markShort` the line is
- * Short at that quantity. The line must be on the list.
- *
- * @mcp
- */
 export const pickPickingListLineChecked = defineServiceFn({
+  publish: true,
+  title: "Pick a picking list line, or mark it short",
+  description: `Sets the line's picked quantity (0 unpicks); with \`markShort\` the line is
+Short at that quantity. The line must be on the list.`,
   output: rows.pickingListLine
     .pick({ id: true })
     .meta({ table: "pickingListLine" }),
@@ -4066,17 +3871,12 @@ export const pickPickingListLineChecked = defineServiceFn({
   }
 });
 
-/**
- * Pick a serial or batch for a picking list line, or put it back.
- *
- * @remarks
- * Picks `quantity` of the tracked entity (from `fromStorageUnitId` when
- * given) onto the line; with `unpick` the entity's pick is undone. The line
- * must be on the list.
- *
- * @mcp
- */
 export const pickPickingListLineEntity = defineServiceFn({
+  publish: true,
+  title: "Pick a serial or batch for a picking list line, or put it back",
+  description: `Picks \`quantity\` of the tracked entity (from \`fromStorageUnitId\` when
+given) onto the line; with \`unpick\` the entity's pick is undone. The line
+must be on the list.`,
   output: rows.pickingListLine
     .pick({ id: true })
     .meta({ table: "pickingListLine" }),
@@ -4569,12 +4369,9 @@ export const scanKanban = defineServiceFn({
     return ctx.error("rule", `${card.replenishmentSystem} is not supported`);
   }
 });
-/**
- * Delete batch property
- *
- * @mcp destructive
- */
 export const deleteBatchProperty = defineServiceFn({
+  publish: "destructive",
+  title: "Delete batch property",
   output: z.array(
     rows.batchProperty.pick({ id: true }).meta({ table: "batchProperty" })
   ),
@@ -4595,12 +4392,9 @@ export const deleteBatchProperty = defineServiceFn({
   }
 });
 
-/**
- * Delete kanban
- *
- * @mcp destructive
- */
 export const deleteKanban = defineServiceFn({
+  publish: "destructive",
+  title: "Delete kanban",
   output: z.array(rows.kanban.pick({ id: true }).meta({ table: "kanban" })),
   input: z.looseObject({ kanbanId: z.string() }),
   permission: { delete: "inventory" },
@@ -4616,15 +4410,10 @@ export const deleteKanban = defineServiceFn({
   }
 });
 
-/**
- * Delete receipt
- *
- * @remarks
- * A posted receipt cannot be deleted; void it instead.
- *
- * @mcp destructive
- */
 export const deleteReceipt = defineServiceFn({
+  publish: "destructive",
+  title: "Delete receipt",
+  description: "A posted receipt cannot be deleted; void it instead.",
   output: z.array(rows.receipt.pick({ id: true }).meta({ table: "receipt" })),
   input: z.looseObject({ receiptId: z.string() }),
   permission: { delete: "inventory" },
@@ -4652,15 +4441,10 @@ export const deleteReceipt = defineServiceFn({
   }
 });
 
-/**
- * Delete receipt line
- *
- * @remarks
- * Only a Draft receipt's lines can be deleted.
- *
- * @mcp destructive
- */
 export const deleteReceiptLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete receipt line",
+  description: "Only a Draft receipt's lines can be deleted.",
   output: z.array(
     rows.receiptLine.pick({ id: true }).meta({ table: "receiptLine" })
   ),
@@ -4692,15 +4476,10 @@ export const deleteReceiptLine = defineServiceFn({
   }
 });
 
-/**
- * Delete shipment
- *
- * @remarks
- * A posted shipment cannot be deleted; void it instead.
- *
- * @mcp destructive
- */
 export const deleteShipment = defineServiceFn({
+  publish: "destructive",
+  title: "Delete shipment",
+  description: "A posted shipment cannot be deleted; void it instead.",
   output: z.array(rows.shipment.pick({ id: true }).meta({ table: "shipment" })),
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { delete: "inventory" },
@@ -4728,15 +4507,10 @@ export const deleteShipment = defineServiceFn({
   }
 });
 
-/**
- * Delete shipment line
- *
- * @remarks
- * Only a Draft shipment's lines can be deleted.
- *
- * @mcp destructive
- */
 export const deleteShipmentLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete shipment line",
+  description: "Only a Draft shipment's lines can be deleted.",
   output: z.array(
     rows.shipmentLine.pick({ id: true }).meta({ table: "shipmentLine" })
   ),
@@ -4768,12 +4542,9 @@ export const deleteShipmentLine = defineServiceFn({
   }
 });
 
-/**
- * Delete shipping method
- *
- * @mcp destructive
- */
 export const deleteShippingMethod = defineServiceFn({
+  publish: "destructive",
+  title: "Delete shipping method",
   output: z.array(
     rows.shippingMethod.pick({ id: true }).meta({ table: "shippingMethod" })
   ),
@@ -4794,15 +4565,11 @@ export const deleteShippingMethod = defineServiceFn({
   }
 });
 
-/**
- * Delete stock transfer
- *
- * @remarks
- * Only a Draft transfer can be deleted: reopen a locked one first.
- *
- * @mcp destructive
- */
 export const deleteStockTransfer = defineServiceFn({
+  publish: "destructive",
+  title: "Delete stock transfer",
+  description:
+    "Only a Draft transfer can be deleted: reopen a locked one first.",
   output: z.array(
     rows.stockTransfer.pick({ id: true }).meta({ table: "stockTransfer" })
   ),
@@ -4824,15 +4591,11 @@ export const deleteStockTransfer = defineServiceFn({
   }
 });
 
-/**
- * Delete stock transfer line
- *
- * @remarks
- * Only a line of a Draft transfer can be deleted: reopen a locked one first.
- *
- * @mcp destructive
- */
 export const deleteStockTransferLine = defineServiceFn({
+  publish: "destructive",
+  title: "Delete stock transfer line",
+  description:
+    "Only a line of a Draft transfer can be deleted: reopen a locked one first.",
   output: z.array(
     rows.stockTransferLine
       .pick({ id: true })
@@ -4872,12 +4635,9 @@ export const deleteStockTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Delete warehouse transfer
- *
- * @mcp destructive
- */
 export const deleteWarehouseTransfer = defineServiceFn({
+  publish: "destructive",
+  title: "Delete warehouse transfer",
   output: z.array(
     rows.warehouseTransfer
       .pick({ id: true })
@@ -4900,16 +4660,12 @@ export const deleteWarehouseTransfer = defineServiceFn({
   }
 });
 
-/**
- * Keyset-paginated item-ledger activity for the per-item Activity panel
- *
- * @remarks
- * A page of `rows`, newest first. `hasMore` says another page lies beyond
- * it: send the last row's `entryNumber` to read it.
- *
- * @mcp read
- */
 export const getItemLedgerActivity = defineServiceFn({
+  publish: "read",
+  title:
+    "Keyset-paginated item-ledger activity for the per-item Activity panel",
+  description: `A page of \`rows\`, newest first. \`hasMore\` says another page lies beyond
+it: send the last row's \`entryNumber\` to read it.`,
   output: z.object({
     rows: z.array(
       z.object({
@@ -5023,14 +4779,10 @@ export const getItemLedgerActivity = defineServiceFn({
   }
 });
 
-/**
- * On-hand quantity of an item at a location right after ledger entry
- * `entryNumber` (omit it for on-hand now), on the same definition as the
- * inventory table's On Hand column.
- *
- * @mcp read
- */
 export const getItemLedgerBalance = defineServiceFn({
+  publish: "read",
+  title:
+    "On-hand quantity of an item at a location right after ledger entry `entryNumber` (omit it for on-hand now), on the same definition as the inventory table's On Hand column",
   output: z.number(),
   input: z.looseObject({
     itemId: z.string(),
@@ -5049,12 +4801,9 @@ export const getItemLedgerBalance = defineServiceFn({
   }
 });
 
-/**
- * Get batch properties
- *
- * @mcp read
- */
 export const getBatchProperties = defineServiceFn({
+  publish: "read",
+  title: "Get batch properties",
   output: z.array(rows.batchProperty),
   input: z.looseObject({ itemIds: z.array(z.string()) }),
   permission: { view: "inventory" },
@@ -5070,12 +4819,9 @@ export const getBatchProperties = defineServiceFn({
   }
 });
 
-/**
- * Get inventory items
- *
- * @mcp read
- */
 export const getInventoryItems = defineServiceFn({
+  publish: "read",
+  title: "Get inventory items",
   output: z
     .array(
       z.object({
@@ -5168,12 +4914,9 @@ export const getInventoryItems = defineServiceFn({
   }
 });
 
-/**
- * Get inventory valuation
- *
- * @mcp read
- */
 export const getInventoryValuation = defineServiceFn({
+  publish: "read",
+  title: "Get inventory valuation",
   output: z.array(
     z.object({
       costingMethod: z.enum(["Average", "FIFO", "LIFO", "Standard"]),
@@ -5219,12 +4962,9 @@ export const getInventoryValuation = defineServiceFn({
   }
 });
 
-/**
- * Get inventory valuation tie out
- *
- * @mcp read
- */
 export const getInventoryValuationTieOut = defineServiceFn({
+  publish: "read",
+  title: "Get inventory valuation tie out",
   output: z.array(
     z.object({
       accountId: z.string(),
@@ -5249,12 +4989,10 @@ export const getInventoryValuationTieOut = defineServiceFn({
   }
 });
 
-/**
- * Creates a draft GL journal that clears the inventory valuation variance
- *
- * @mcp
- */
 export const createInventoryReconciliationJournal = defineServiceFn({
+  publish: true,
+  title:
+    "Creates a draft GL journal that clears the inventory valuation variance",
   output: z.object({
     journalId: z.string()
   }),
@@ -5273,12 +5011,9 @@ export const createInventoryReconciliationJournal = defineServiceFn({
   }
 });
 
-/**
- * Get kanbans
- *
- * @mcp read
- */
 export const getKanbans = defineServiceFn({
+  publish: "read",
+  title: "Get kanbans",
   output: z.array(rows.kanbans).nullable(),
   input: z.looseObject({
     locationId: z.string(),
@@ -5304,12 +5039,9 @@ export const getKanbans = defineServiceFn({
   }
 });
 
-/**
- * Get kanban
- *
- * @mcp read
- */
 export const getKanban = defineServiceFn({
+  publish: "read",
+  title: "Get kanban",
   output: rows.kanbans,
   input: z.looseObject({ kanbanId: z.string() }),
   permission: { view: "inventory" },
@@ -5325,12 +5057,9 @@ export const getKanban = defineServiceFn({
   }
 });
 
-/**
- * Get kanban projected quantities
- *
- * @mcp read
- */
 export const getKanbanProjectedQuantities = defineServiceFn({
+  publish: "read",
+  title: "Get kanban projected quantities",
   output: z.array(
     z.object({
       kanbanId: z.string(),
@@ -5352,12 +5081,9 @@ export const getKanbanProjectedQuantities = defineServiceFn({
   }
 });
 
-/**
- * Get stock transfer
- *
- * @mcp read
- */
 export const getStockTransfer = defineServiceFn({
+  publish: "read",
+  title: "Get stock transfer",
   output: rows.stockTransfer
     .pick({
       assignee: true,
@@ -5501,12 +5227,9 @@ export const getStockTransfer = defineServiceFn({
   }
 });
 
-/**
- * Get stock transfer lines
- *
- * @mcp read
- */
 export const getStockTransferLines = defineServiceFn({
+  publish: "read",
+  title: "Get stock transfer lines",
   output: z.array(rows.stockTransferLines),
   input: z.looseObject({ stockTransferId: z.string() }),
   permission: { view: "inventory" },
@@ -5522,12 +5245,9 @@ export const getStockTransferLines = defineServiceFn({
   }
 });
 
-/**
- * Get stock transfers
- *
- * @mcp read
- */
 export const getStockTransfers = defineServiceFn({
+  publish: "read",
+  title: "Get stock transfers",
   output: z
     .array(
       rows.stockTransfer
@@ -5628,12 +5348,9 @@ export const getStockTransfers = defineServiceFn({
   }
 });
 
-/**
- * Get receipts
- *
- * @mcp read
- */
 export const getReceipts = defineServiceFn({
+  publish: "read",
+  title: "Get receipts",
   output: z
     .array(
       rows.receipt
@@ -5740,12 +5457,9 @@ export const getReceipts = defineServiceFn({
   }
 });
 
-/**
- * Get receipt
- *
- * @mcp read
- */
 export const getReceipt = defineServiceFn({
+  publish: "read",
+  title: "Get receipt",
   output: rows.receipt
     .pick({
       assignee: true,
@@ -5896,12 +5610,9 @@ export const getReceipt = defineServiceFn({
   }
 });
 
-/**
- * Get receipt lines
- *
- * @mcp read
- */
 export const getReceiptLines = defineServiceFn({
+  publish: "read",
+  title: "Get receipt lines",
   output: z.array(rows.receiptLines),
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "inventory" },
@@ -5917,14 +5628,10 @@ export const getReceiptLines = defineServiceFn({
   }
 });
 
-/**
- * The documents around a receipt that its own row does not name: the purchase
- * invoices raised against its supplier interaction, and, for a customer
- * return, the customer it came back from.
- *
- * @mcp read
- */
 export const getReceiptRelatedItems = defineServiceFn({
+  publish: "read",
+  title:
+    "The documents around a receipt that its own row does not name: the purchase invoices raised against its supplier interaction, and, for a customer return, the customer it came back from",
   output: z.object({
     invoices: z.array(
       z.object({
@@ -5976,12 +5683,9 @@ export const getReceiptRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Get receipt tracking
- *
- * @mcp read
- */
 export const getReceiptTracking = defineServiceFn({
+  publish: "read",
+  title: "Get receipt tracking",
   output: z.array(rows.trackedEntity),
   input: z.looseObject({ receiptId: z.string() }),
   permission: { view: "inventory" },
@@ -5997,16 +5701,11 @@ export const getReceiptTracking = defineServiceFn({
   }
 });
 
-/**
- * Get receipt files
- *
- * @remarks
- * The files attached to each receipt line in `lineIds`, at most 200 lines a
- * call.
- *
- * @mcp read
- */
 export const getReceiptFiles = defineServiceFn({
+  publish: "read",
+  title: "Get receipt files",
+  description: `The files attached to each receipt line in \`lineIds\`, at most 200 lines a
+call.`,
   // One storage listing per line.
   output: z.array(z.unknown()),
   input: z.looseObject({ lineIds: z.array(z.string()).max(200) }),
@@ -6023,12 +5722,9 @@ export const getReceiptFiles = defineServiceFn({
   }
 });
 
-/**
- * Get serial numbers for item
- *
- * @mcp read
- */
 export const getSerialNumbersForItem = defineServiceFn({
+  publish: "read",
+  title: "Get serial numbers for item",
   output: z.array(rows.trackedEntity),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "inventory" },
@@ -6043,12 +5739,10 @@ export const getSerialNumbersForItem = defineServiceFn({
   }
 });
 
-/**
- * Available tracked entities for an item at a location, one row per entity, with its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker
- *
- * @mcp read
- */
 export const getAvailableTrackedEntities = defineServiceFn({
+  publish: "read",
+  title:
+    "Available tracked entities for an item at a location, one row per entity, with its bin, on-hand, and FEFO/FIFO order keys — for the shared TrackedEntityPicker",
   output: z.array(
     z.object({
       availableQuantity: z.number(),
@@ -6083,12 +5777,10 @@ export const getAvailableTrackedEntities = defineServiceFn({
   }
 });
 
-/**
- * The configured tracked-entity pick order for an item at a location, used as the picker's default sort
- *
- * @mcp read
- */
 export const getPickOrder = defineServiceFn({
+  publish: "read",
+  title:
+    "The configured tracked-entity pick order for an item at a location, used as the picker's default sort",
   output: z.enum(["Default", "FEFO", "FIFO", "LIFO"]).nullable(),
   input: z.looseObject({ itemId: z.string(), locationId: z.string() }),
   permission: { view: "inventory" },
@@ -6100,12 +5792,9 @@ export const getPickOrder = defineServiceFn({
   }
 });
 
-/**
- * Get batch numbers for item
- *
- * @mcp read
- */
 export const getBatchNumbersForItem = defineServiceFn({
+  publish: "read",
+  title: "Get batch numbers for item",
   output: z.array(rows.trackedEntity),
   input: z.looseObject({
     itemId: z.string(),
@@ -6123,12 +5812,9 @@ export const getBatchNumbersForItem = defineServiceFn({
   }
 });
 
-/**
- * Get storage units list
- *
- * @mcp read
- */
 export const getStorageUnitsList = defineServiceFn({
+  publish: "read",
+  title: "Get storage units list",
   output: z.array(
     rows.storageUnit
       .pick({ id: true, name: true })
@@ -6144,12 +5830,9 @@ export const getStorageUnitsList = defineServiceFn({
   }
 });
 
-/**
- * Get storage units list for location
- *
- * @mcp read
- */
 export const getStorageUnitsListForLocation = defineServiceFn({
+  publish: "read",
+  title: "Get storage units list for location",
   output: z.array(
     rows.storageUnit
       .pick({ id: true, name: true })
@@ -6169,12 +5852,9 @@ export const getStorageUnitsListForLocation = defineServiceFn({
   }
 });
 
-/**
- * Get storage units tree for location
- *
- * @mcp read
- */
 export const getStorageUnitsTreeForLocation = defineServiceFn({
+  publish: "read",
+  title: "Get storage units tree for location",
   output: z.array(
     rows.storageUnit
       .pick({ id: true, name: true, parentId: true })
@@ -6198,12 +5878,9 @@ export const getStorageUnitsTreeForLocation = defineServiceFn({
   }
 });
 
-/**
- * Get storage unit
- *
- * @mcp read
- */
 export const getStorageUnit = defineServiceFn({
+  publish: "read",
+  title: "Get storage unit",
   output: rows.storageUnit
     .pick({
       active: true,
@@ -6296,12 +5973,9 @@ export const getStorageUnit = defineServiceFn({
   }
 });
 
-/**
- * Get effective work center id
- *
- * @mcp read
- */
 export const getEffectiveWorkCenterId = defineServiceFn({
+  publish: "read",
+  title: "Get effective work center id",
   output: z.string(),
   input: z.looseObject({ storageUnitId: z.string() }),
   permission: { view: "inventory" },
@@ -6320,12 +5994,9 @@ export const getEffectiveWorkCenterId = defineServiceFn({
   }
 });
 
-/**
- * Get storage unit roots
- *
- * @mcp read
- */
 export const getStorageUnitRoots = defineServiceFn({
+  publish: "read",
+  title: "Get storage unit roots",
   output: z.array(rows.storageUnits_recursive).nullable(),
   input: z.looseObject({
     locationId: z.string(),
@@ -6351,12 +6022,9 @@ export const getStorageUnitRoots = defineServiceFn({
   }
 });
 
-/**
- * Get storage unit children
- *
- * @mcp read
- */
 export const getStorageUnitChildren = defineServiceFn({
+  publish: "read",
+  title: "Get storage unit children",
   output: z.array(rows.storageUnits_recursive),
   input: z.looseObject({ parentId: z.string() }),
   permission: { view: "inventory" },
@@ -6372,12 +6040,9 @@ export const getStorageUnitChildren = defineServiceFn({
   }
 });
 
-/**
- * Get storage unit subtrees
- *
- * @mcp read
- */
 export const getStorageUnitSubtrees = defineServiceFn({
+  publish: "read",
+  title: "Get storage unit subtrees",
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -6417,12 +6082,9 @@ export const getStorageUnitSubtrees = defineServiceFn({
   }
 });
 
-/**
- * Get storage unit parent ids with children
- *
- * @mcp read
- */
 export const getStorageUnitParentIdsWithChildren = defineServiceFn({
+  publish: "read",
+  title: "Get storage unit parent ids with children",
   output: z.array(z.string()),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "inventory" },
@@ -6438,12 +6100,9 @@ export const getStorageUnitParentIdsWithChildren = defineServiceFn({
   }
 });
 
-/**
- * Search storage units with ancestors
- *
- * @mcp read
- */
 export const searchStorageUnitsWithAncestors = defineServiceFn({
+  publish: "read",
+  title: "Search storage units with ancestors",
   output: z.null(),
   input: z.looseObject({ locationId: z.string(), search: z.string() }),
   permission: { view: "inventory" },
@@ -6460,12 +6119,9 @@ export const searchStorageUnitsWithAncestors = defineServiceFn({
   }
 });
 
-/**
- * Get stock movements
- *
- * @mcp read
- */
 export const getStockMovements = defineServiceFn({
+  publish: "read",
+  title: "Get stock movements",
   output: z.array(rows.itemLedgers).nullable(),
   input: z.looseObject({
     limit: z
@@ -6489,12 +6145,9 @@ export const getStockMovements = defineServiceFn({
   }
 });
 
-/**
- * Get shipments
- *
- * @mcp read
- */
 export const getShipments = defineServiceFn({
+  publish: "read",
+  title: "Get shipments",
   output: z
     .array(
       rows.shipment
@@ -6632,12 +6285,9 @@ export const getShipments = defineServiceFn({
   }
 });
 
-/**
- * Get shipment
- *
- * @mcp read
- */
 export const getShipment = defineServiceFn({
+  publish: "read",
+  title: "Get shipment",
   output: rows.shipment
     .pick({
       assignee: true,
@@ -6847,12 +6497,9 @@ export const getShipment = defineServiceFn({
   }
 });
 
-/**
- * Get shipment lines
- *
- * @mcp read
- */
 export const getShipmentLines = defineServiceFn({
+  publish: "read",
+  title: "Get shipment lines",
   output: z.array(
     rows.shipmentLines
       .extend({
@@ -6976,12 +6623,9 @@ export const getShipmentLines = defineServiceFn({
   }
 });
 
-/**
- * Get shipment related items
- *
- * @mcp read
- */
 export const getShipmentRelatedItems = defineServiceFn({
+  publish: "read",
+  title: "Get shipment related items",
   output: z.object({
     invoices: z.array(
       z.object({
@@ -7138,12 +6782,9 @@ export const getShipmentRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Get shipment tracking
- *
- * @mcp read
- */
 export const getShipmentTracking = defineServiceFn({
+  publish: "read",
+  title: "Get shipment tracking",
   output: z.array(rows.trackedEntity),
   input: z.looseObject({ shipmentId: z.string() }),
   permission: { view: "inventory" },
@@ -7159,12 +6800,9 @@ export const getShipmentTracking = defineServiceFn({
   }
 });
 
-/**
- * Get rental shipment lines
- *
- * @mcp read
- */
 export const getRentalShipmentLines = defineServiceFn({
+  publish: "read",
+  title: "Get rental shipment lines",
   output: z.array(
     z.object({
       id: z.string(),
@@ -7222,12 +6860,9 @@ export const getRentalShipmentLines = defineServiceFn({
   }
 });
 
-/**
- * Get rental receipt lines
- *
- * @mcp read
- */
 export const getRentalReceiptLines = defineServiceFn({
+  publish: "read",
+  title: "Get rental receipt lines",
   output: z.array(
     z.object({
       id: z.string(),
@@ -7289,12 +6924,9 @@ export const getRentalReceiptLines = defineServiceFn({
   }
 });
 
-/**
- * Get shipping method
- *
- * @mcp read
- */
 export const getShippingMethod = defineServiceFn({
+  publish: "read",
+  title: "Get shipping method",
   output: rows.shippingMethod
     .pick({
       active: true,
@@ -7382,12 +7014,9 @@ export const getShippingMethod = defineServiceFn({
   }
 });
 
-/**
- * Get shipping methods
- *
- * @mcp read
- */
 export const getShippingMethods = defineServiceFn({
+  publish: "read",
+  title: "Get shipping methods",
   output: z
     .array(
       rows.shippingMethod
@@ -7459,12 +7088,9 @@ export const getShippingMethods = defineServiceFn({
   }
 });
 
-/**
- * Get shipping methods list
- *
- * @mcp read
- */
 export const getShippingMethodsList = defineServiceFn({
+  publish: "read",
+  title: "Get shipping methods list",
   output: z.array(
     rows.shippingMethod
       .pick({ id: true, name: true })
@@ -7483,12 +7109,9 @@ export const getShippingMethodsList = defineServiceFn({
   }
 });
 
-/**
- * Get shipping terms list
- *
- * @mcp read
- */
 export const getShippingTermsList = defineServiceFn({
+  publish: "read",
+  title: "Get shipping terms list",
   output: z.array(
     rows.shippingTerm
       .pick({ id: true, name: true })
@@ -7504,12 +7127,9 @@ export const getShippingTermsList = defineServiceFn({
   }
 });
 
-/**
- * Get tracked entities
- *
- * @mcp read
- */
 export const getTrackedEntities = defineServiceFn({
+  publish: "read",
+  title: "Get tracked entities",
   output: z.array(rows.trackedEntity).nullable(),
   input: z.looseObject({
     limit: z
@@ -7533,12 +7153,9 @@ export const getTrackedEntities = defineServiceFn({
   }
 });
 
-/**
- * Get tracked entities by make method id
- *
- * @mcp read
- */
 export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
+  publish: "read",
+  title: "Get tracked entities by make method id",
   output: z.array(rows.trackedEntity),
   input: z.looseObject({ jobMakeMethodId: z.string() }),
   permission: { view: "inventory" },
@@ -7554,12 +7171,9 @@ export const getTrackedEntitiesByMakeMethodId = defineServiceFn({
   }
 });
 
-/**
- * Get tracked entity
- *
- * @mcp read
- */
 export const getTrackedEntity = defineServiceFn({
+  publish: "read",
+  title: "Get tracked entity",
   output: rows.trackedEntity,
   input: z.looseObject({ trackedEntityId: z.string() }),
   permission: { view: "inventory" },
@@ -7575,16 +7189,11 @@ export const getTrackedEntity = defineServiceFn({
   }
 });
 
-/**
- * Manual override of a tracked entity's expirationDate
- *
- * @remarks
- * An empty or missing `expirationDate` clears it. The `reason` is kept in the
- * entity's override history.
- *
- * @mcp
- */
 export const updateTrackedEntityExpiry = defineServiceFn({
+  publish: true,
+  title: "Manual override of a tracked entity's expirationDate",
+  description: `An empty or missing \`expirationDate\` clears it. The \`reason\` is kept in the
+entity's override history.`,
   output: z.array(
     rows.trackedEntity.pick({ id: true }).meta({ table: "trackedEntity" })
   ),
@@ -7616,18 +7225,13 @@ export const updateTrackedEntityExpiry = defineServiceFn({
   }
 });
 
-/**
- * Merge tracked entities into one lot.
- *
- * @remarks
- * Combines two or more Available lots of one item into ONE new lot: their
- * summed quantity, the earliest expiration date and the attributes every lot
- * shares. The merged lots become Consumed, and the new lot's genealogy names
- * each of them. It takes the first lot's number unless `readableId` names one.
- *
- * @mcp
- */
 export const mergeTrackedEntities = defineServiceFn({
+  publish: true,
+  title: "Merge tracked entities into one lot",
+  description: `Combines two or more Available lots of one item into ONE new lot: their
+summed quantity, the earliest expiration date and the attributes every lot
+shares. The merged lots become Consumed, and the new lot's genealogy names
+each of them. It takes the first lot's number unless \`readableId\` names one.`,
   input: z.object({
     trackedEntityIds: z.array(z.string()).min(2),
     readableId: z.string().nullable().optional()
@@ -7652,12 +7256,9 @@ export const mergeTrackedEntities = defineServiceFn({
   }
 });
 
-/**
- * Get warehouse transfers
- *
- * @mcp read
- */
 export const getWarehouseTransfers = defineServiceFn({
+  publish: "read",
+  title: "Get warehouse transfers",
   output: z
     .array(
       rows.warehouseTransfer
@@ -7738,12 +7339,9 @@ export const getWarehouseTransfers = defineServiceFn({
   }
 });
 
-/**
- * Get warehouse transfer
- *
- * @mcp read
- */
 export const getWarehouseTransfer = defineServiceFn({
+  publish: "read",
+  title: "Get warehouse transfer",
   output: rows.warehouseTransfer
     .pick({
       companyId: true,
@@ -7932,12 +7530,10 @@ export const getWarehouseTransfer = defineServiceFn({
   }
 });
 
-/**
- * The documents a warehouse transfer has raised: the shipments that send it out of the source location and the receipts that take it in at the destination
- *
- * @mcp read
- */
 export const getWarehouseTransferRelatedItems = defineServiceFn({
+  publish: "read",
+  title:
+    "The documents a warehouse transfer has raised: the shipments that send it out of the source location and the receipts that take it in at the destination",
   output: z.object({
     shipments: z.array(
       z.object({
@@ -7965,12 +7561,9 @@ export const getWarehouseTransferRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Get warehouse transfer line
- *
- * @mcp read
- */
 export const getWarehouseTransferLine = defineServiceFn({
+  publish: "read",
+  title: "Get warehouse transfer line",
   output: rows.warehouseTransferLine
     .pick({
       companyId: true,
@@ -8121,12 +7714,9 @@ export const getWarehouseTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Get warehouse transfer lines
- *
- * @mcp read
- */
 export const getWarehouseTransferLines = defineServiceFn({
+  publish: "read",
+  title: "Get warehouse transfer lines",
   output: z.array(
     rows.warehouseTransferLine
       .pick({
@@ -8281,12 +7871,9 @@ export const getWarehouseTransferLines = defineServiceFn({
   }
 });
 
-/**
- * Get stock movement effective quantity
- *
- * @mcp read
- */
 export const getStockMovementEffectiveQuantity = defineServiceFn({
+  publish: "read",
+  title: "Get stock movement effective quantity",
   output: z.object({
     rootId: z.string(),
     effectiveQuantity: z.number()
@@ -8305,17 +7892,12 @@ export const getStockMovementEffectiveQuantity = defineServiceFn({
   }
 });
 
-/**
- * Correct stock movement
- *
- * @remarks
- * Books one opposite movement so the posted movement's quantity becomes
- * `correctedQuantity` (signed, as the ledger stores it), dated with the
- * original and posted into its accounting period.
- *
- * @mcp
- */
 export const correctStockMovement = defineServiceFn({
+  publish: true,
+  title: "Correct stock movement",
+  description: `Books one opposite movement so the posted movement's quantity becomes
+\`correctedQuantity\` (signed, as the ledger stores it), dated with the
+original and posted into its accounting period.`,
   output: z.object({
     id: z.unknown()
   }),
@@ -8329,12 +7911,9 @@ export const correctStockMovement = defineServiceFn({
   }
 });
 
-/**
- * Get inventory counts
- *
- * @mcp read
- */
 export const getInventoryCounts = defineServiceFn({
+  publish: "read",
+  title: "Get inventory counts",
   output: z
     .array(
       rows.inventoryCount
@@ -8435,12 +8014,9 @@ export const getInventoryCounts = defineServiceFn({
   }
 });
 
-/**
- * Get inventory count
- *
- * @mcp read
- */
 export const getInventoryCount = defineServiceFn({
+  publish: "read",
+  title: "Get inventory count",
   output: rows.inventoryCount
     .pick({
       companyId: true,
@@ -8585,12 +8161,9 @@ export const getInventoryCount = defineServiceFn({
   }
 });
 
-/**
- * Get inventory count lines
- *
- * @mcp read
- */
 export const getInventoryCountLines = defineServiceFn({
+  publish: "read",
+  title: "Get inventory count lines",
   output: z
     .array(
       rows.inventoryCountLines
@@ -8693,18 +8266,13 @@ export const getInventoryCountLines = defineServiceFn({
   }
 });
 
-/**
- * Get the groups of an inventory count
- *
- * @remarks
- * One row per item and storage unit: expected, counted and variance, and how
- * many units are Found, Missing, Unexpected, Not counted and without a serial
- * number. While the count is blind and not posted, `expectedQuantity` and
- * `variance` are left out.
- *
- * @mcp read
- */
 export const getInventoryCountGroups = defineServiceFn({
+  publish: "read",
+  title: "Get the groups of an inventory count",
+  description: `One row per item and storage unit: expected, counted and variance, and how
+many units are Found, Missing, Unexpected, Not counted and without a serial
+number. While the count is blind and not posted, \`expectedQuantity\` and
+\`variance\` are left out.`,
   output: z.array(rows.inventoryCountGroups).nullable(),
   input: z.looseObject({
     inventoryCountId: z.string(),
@@ -8760,12 +8328,9 @@ export const getInventoryCountGroups = defineServiceFn({
   }
 });
 
-/**
- * Get inventory count line summary
- *
- * @mcp read
- */
 export const getInventoryCountLineSummary = defineServiceFn({
+  publish: "read",
+  title: "Get inventory count line summary",
   output: z.object({
     uncounted: z.number(),
     variances: z.number()
@@ -8781,12 +8346,9 @@ export const getInventoryCountLineSummary = defineServiceFn({
   }
 });
 
-/**
- * Get inventory count movements
- *
- * @mcp read
- */
 export const getInventoryCountMovements = defineServiceFn({
+  publish: "read",
+  title: "Get inventory count movements",
   output: z.array(rows.itemLedgers),
   input: z.looseObject({ inventoryCountId: z.string() }),
   permission: { view: "inventory" },
@@ -8802,12 +8364,9 @@ export const getInventoryCountMovements = defineServiceFn({
   }
 });
 
-/**
- * Delete inventory count
- *
- * @mcp destructive
- */
 export const deleteInventoryCount = defineServiceFn({
+  publish: "destructive",
+  title: "Delete inventory count",
   output: z.array(
     rows.inventoryCount.pick({ id: true }).meta({ table: "inventoryCount" })
   ),
@@ -8844,16 +8403,11 @@ export const deleteInventoryCount = defineServiceFn({
   }
 });
 
-/**
- * Update inventory count line
- *
- * @remarks
- * Records the caller's count of one line; leaving out `countedQuantity`
- * clears it. Only a Draft count's lines change.
- *
- * @mcp
- */
 export const updateInventoryCountLine = defineServiceFn({
+  publish: true,
+  title: "Update inventory count line",
+  description: `Records the caller's count of one line; leaving out \`countedQuantity\`
+clears it. Only a Draft count's lines change.`,
   output: rows.inventoryCountLine
     .pick({ id: true })
     .meta({ table: "inventoryCountLine" }),
@@ -8879,27 +8433,19 @@ export const updateInventoryCountLine = defineServiceFn({
   }
 });
 
-/**
- * Record a scanned code on an inventory count
- *
- * @remarks
- * The code is a serial or batch number, an item readable id, or a new number.
- * A unit already on the count in the storage unit is counted (1 for a serial,
- * `quantity` for a batch or an untracked item). A unit on the count in another
- * storage unit, or on no line, gets a new line that reads as Unexpected; the
- * post moves a known unit from its bin and creates a new one. The result's
- * `outcome` says what happened: `counted`, `added`, `alreadyCounted`, or what
- * the caller must send again — `ambiguous` (pick one of `itemIds`), `unknown`
- * (send `itemId` for a new number), `needsQuantity`, `needsUnitNumber` (scan
- * the serial or batch, not the item), `notInventory` (a Non-Inventory item has no
- * stock to count), `wrongStorageUnit`. Draft counts only.
- *
- * @param storageUnitId - The storage unit counted; left out for stock in no storage unit.
- * @param itemId - The item, when the code matches 2 or more items or is a new number.
- * @param quantity - A batch's or an untracked item's counted quantity.
- * @mcp
- */
 export const recordInventoryCountScan = defineServiceFn({
+  publish: true,
+  title: "Record a scanned code on an inventory count",
+  description: `The code is a serial or batch number, an item readable id, or a new number.
+A unit already on the count in the storage unit is counted (1 for a serial,
+\`quantity\` for a batch or an untracked item). A unit on the count in another
+storage unit, or on no line, gets a new line that reads as Unexpected; the
+post moves a known unit from its bin and creates a new one. The result's
+\`outcome\` says what happened: \`counted\`, \`added\`, \`alreadyCounted\`, or what
+the caller must send again — \`ambiguous\` (pick one of \`itemIds\`), \`unknown\`
+(send \`itemId\` for a new number), \`needsQuantity\`, \`needsUnitNumber\` (scan
+the serial or batch, not the item), \`notInventory\` (a Non-Inventory item has no
+stock to count), \`wrongStorageUnit\`. Draft counts only.`,
   output: z.union([
     z.object({
       outcome: z.enum(["added", "counted"]),
@@ -8937,10 +8483,25 @@ export const recordInventoryCountScan = defineServiceFn({
   ]),
   input: z.object({
     inventoryCountId: z.string().min(1),
-    storageUnitId: z.string().nullable().optional(),
+    storageUnitId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        "The storage unit counted; left out for stock in no storage unit."
+      ),
     code: z.string().trim().min(1),
-    itemId: z.string().optional(),
-    quantity: z.number().min(0).optional()
+    itemId: z
+      .string()
+      .optional()
+      .describe(
+        "The item, when the code matches 2 or more items or is a new number."
+      ),
+    quantity: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("A batch's or an untracked item's counted quantity.")
   }),
   permission: { update: "inventory" },
   async run(ctx, input) {
@@ -8963,16 +8524,11 @@ export const recordInventoryCountScan = defineServiceFn({
   }
 });
 
-/**
- * Add a unit to an inventory count by hand
- *
- * @remarks
- * The same as `recordInventoryCountScan`, with the item named: for a serial
- * or batch the counter reads off the unit, found on the shelf.
- *
- * @mcp
- */
 export const addInventoryCountUnit = defineServiceFn({
+  publish: true,
+  title: "Add a unit to an inventory count by hand",
+  description: `The same as \`recordInventoryCountScan\`, with the item named: for a serial
+or batch the counter reads off the unit, found on the shelf.`,
   output: z.union([
     z.object({
       outcome: z.enum(["added", "counted"]),
@@ -9036,26 +8592,24 @@ export const addInventoryCountUnit = defineServiceFn({
   }
 });
 
-/**
- * Count the units with no serial number in one group
- *
- * @remarks
- * Units with no serial number cannot be told apart, so they are counted as a
- * quantity: the oldest `quantity` units are Found and the rest Missing. A
- * quantity above the number of such units is refused: scan or type a serial
- * number for each extra unit. Draft counts only.
- *
- * @param storageUnitId - The storage unit; left out for stock in no storage unit.
- * @mcp
- */
 export const setInventoryCountUnnumberedQuantity = defineServiceFn({
+  publish: true,
+  title: "Count the units with no serial number in one group",
+  description: `Units with no serial number cannot be told apart, so they are counted as a
+quantity: the oldest \`quantity\` units are Found and the rest Missing. A
+quantity above the number of such units is refused: scan or type a serial
+number for each extra unit. Draft counts only.`,
   output: z.object({
     counted: z.number()
   }),
   input: z.object({
     inventoryCountId: z.string().min(1),
     itemId: z.string().min(1),
-    storageUnitId: z.string().nullable().optional(),
+    storageUnitId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("The storage unit; left out for stock in no storage unit."),
     quantity: z.number().int().min(0)
   }),
   permission: { update: "inventory" },
@@ -9087,17 +8641,12 @@ export const setInventoryCountUnnumberedQuantity = defineServiceFn({
   }
 });
 
-/**
- * Give a counted unit with no serial number a serial number
- *
- * @remarks
- * The unit must be on the count, counted Found, and have no serial number.
- * The number must not be on another unit of the item, on the shelf or on this
- * count. The post writes it to the unit. Draft counts only.
- *
- * @mcp
- */
 export const assignInventoryCountSerial = defineServiceFn({
+  publish: true,
+  title: "Give a counted unit with no serial number a serial number",
+  description: `The unit must be on the count, counted Found, and have no serial number.
+The number must not be on another unit of the item, on the shelf or on this
+count. The post writes it to the unit. Draft counts only.`,
   output: z.object({
     lineId: z.string()
   }),
@@ -9136,22 +8685,17 @@ export const assignInventoryCountSerial = defineServiceFn({
   }
 });
 
-/**
- * Import the results of an inventory count
- *
- * @remarks
- * Each row names an item, a storage unit (empty for stock in no storage
- * unit), a serial or batch number (empty for an untracked item, or for a
- * serial with no number) and the counted quantity. Each (item, storage unit)
- * with a counted row is a full count: its units the rows leave out become
- * Missing, and units added while counting that the rows leave out are
- * removed. A row with a null quantity is not counted yet and leaves its unit
- * as it is. Non-Inventory items are refused. Rows resolve as a scan does. Nothing is written when any row has an error; the
- * result then lists `errors` with their line numbers. Draft counts only.
- *
- * @mcp
- */
 export const importInventoryCountResults = defineServiceFn({
+  publish: true,
+  title: "Import the results of an inventory count",
+  description: `Each row names an item, a storage unit (empty for stock in no storage
+unit), a serial or batch number (empty for an untracked item, or for a
+serial with no number) and the counted quantity. Each (item, storage unit)
+with a counted row is a full count: its units the rows leave out become
+Missing, and units added while counting that the rows leave out are
+removed. A row with a null quantity is not counted yet and leaves its unit
+as it is. Non-Inventory items are refused. Rows resolve as a scan does. Nothing is written when any row has an error; the
+result then lists \`errors\` with their line numbers. Draft counts only.`,
   output: z.union([
     z.object({
       errors: z.array(
@@ -9200,16 +8744,11 @@ export const importInventoryCountResults = defineServiceFn({
   }
 });
 
-/**
- * Remove a unit added to an inventory count
- *
- * @remarks
- * Removes a line the counter added (an Unexpected unit). A line from the
- * snapshot cannot be removed; count it 0. Draft counts only.
- *
- * @mcp destructive
- */
 export const removeInventoryCountUnit = defineServiceFn({
+  publish: "destructive",
+  title: "Remove a unit added to an inventory count",
+  description: `Removes a line the counter added (an Unexpected unit). A line from the
+snapshot cannot be removed; count it 0. Draft counts only.`,
   output: z.object({
     lineId: z.string()
   }),
@@ -9230,17 +8769,12 @@ export const removeInventoryCountUnit = defineServiceFn({
   }
 });
 
-/**
- * Confirm or reopen an inventory count
- *
- * @remarks
- * `Pending` confirms a Draft count for review; `Draft` reopens a Pending one
- * for entry. A count is posted only by `postInventoryCount`, which books its
- * variances; a Posted count stays Posted.
- *
- * @mcp
- */
 export const updateInventoryCountStatus = defineServiceFn({
+  publish: true,
+  title: "Confirm or reopen an inventory count",
+  description: `\`Pending\` confirms a Draft count for review; \`Draft\` reopens a Pending one
+for entry. A count is posted only by \`postInventoryCount\`, which books its
+variances; a Posted count stays Posted.`,
   output: z.object({
     id: z.string(),
     status: z.enum(["Draft", "Pending"])
@@ -9289,12 +8823,9 @@ export const updateInventoryCountStatus = defineServiceFn({
   }
 });
 
-/**
- * Update batch property order
- *
- * @mcp
- */
 export const updateBatchPropertyOrder = defineServiceFn({
+  publish: true,
+  title: "Update batch property order",
   output: z.array(
     rows.batchProperty.pick({ id: true }).meta({ table: "batchProperty" })
   ),
@@ -9320,15 +8851,11 @@ export const updateBatchPropertyOrder = defineServiceFn({
   }
 });
 
-/**
- * Upsert batch property
- *
- * @remarks
- * A `list` property needs its `listOptions`; another type keeps none.
- *
- * @mcp
- */
 export const upsertBatchProperty = defineServiceFn({
+  publish: true,
+  title: "Upsert batch property",
+  description:
+    "A `list` property needs its `listOptions`; another type keeps none.",
   output: z.array(
     rows.batchProperty.pick({ id: true }).meta({ table: "batchProperty" })
   ),
@@ -9424,18 +8951,13 @@ const kanbanInput = z
     }
   );
 
-/**
- * Create a kanban
- *
- * @remarks
- * A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
- * storage unit, and only it can have a replenishment level. Neither storage
- * unit may be non-nettable. When the location's Kanbans printer auto-prints,
- * the new kanban's Create card is printed.
- *
- * @mcp
- */
 export const createKanban = defineServiceFn({
+  publish: true,
+  title: "Create a kanban",
+  description: `A Buy kanban needs its supplier; a Transfer kanban needs a from and a to
+storage unit, and only it can have a replenishment level. Neither storage
+unit may be non-nettable. When the location's Kanbans printer auto-prints,
+the new kanban's Create card is printed.`,
   output: rows.kanban.pick({ id: true }).meta({ table: "kanban" }),
   input: kanbanInput,
   permission: { create: "inventory" },
@@ -9465,15 +8987,10 @@ export const createKanban = defineServiceFn({
   }
 });
 
-/**
- * Update a kanban
- *
- * @remarks
- * The same rules as `createKanban`.
- *
- * @mcp
- */
 export const updateKanban = defineServiceFn({
+  publish: true,
+  title: "Update a kanban",
+  description: "The same rules as `createKanban`.",
   output: rows.kanban.pick({ id: true }).meta({ table: "kanban" }),
   input: kanbanInput.extend({
     id: z.string().describe("The kanban to update.")
@@ -9510,15 +9027,10 @@ export const updateKanban = defineServiceFn({
   }
 });
 
-/**
- * Create a storage unit
- *
- * @remarks
- * Upsert storage unit
- *
- * @mcp
- */
 export const createStorageUnit = defineServiceFn({
+  publish: true,
+  title: "Create a storage unit",
+  description: "Upsert storage unit",
   output: rows.storageUnit.pick({ id: true }).meta({ table: "storageUnit" }),
   input: z.looseObject({
     name: z.string().min(1),
@@ -9547,15 +9059,10 @@ export const createStorageUnit = defineServiceFn({
   }
 });
 
-/**
- * Update a storage unit
- *
- * @remarks
- * Upsert storage unit
- *
- * @mcp
- */
 export const updateStorageUnit = defineServiceFn({
+  publish: true,
+  title: "Update a storage unit",
+  description: "Upsert storage unit",
   output: rows.storageUnit.pick({ id: true }).meta({ table: "storageUnit" }),
   input: z
     .looseObject({
@@ -9592,15 +9099,10 @@ export const updateStorageUnit = defineServiceFn({
   }
 });
 
-/**
- * Create a shipping method
- *
- * @remarks
- * Upsert shipping method
- *
- * @mcp
- */
 export const createShippingMethod = defineServiceFn({
+  publish: true,
+  title: "Create a shipping method",
+  description: "Upsert shipping method",
   output: rows.shippingMethod
     .pick({ id: true })
     .meta({ table: "shippingMethod" }),
@@ -9623,15 +9125,10 @@ export const createShippingMethod = defineServiceFn({
   }
 });
 
-/**
- * Update a shipping method
- *
- * @remarks
- * Upsert shipping method
- *
- * @mcp
- */
 export const updateShippingMethod = defineServiceFn({
+  publish: true,
+  title: "Update a shipping method",
+  description: "Upsert shipping method",
   output: rows.shippingMethod
     .pick({ id: true })
     .meta({ table: "shippingMethod" }),
@@ -9662,16 +9159,11 @@ export const updateShippingMethod = defineServiceFn({
   }
 });
 
-/**
- * Create a stock transfer line
- *
- * @remarks
- * Adds a line to a Draft stock transfer: reopen a locked one first. The line
- * starts unpicked; picking moves stock through `pickStockTransferLine`.
- *
- * @mcp
- */
 export const createStockTransferLine = defineServiceFn({
+  publish: true,
+  title: "Create a stock transfer line",
+  description: `Adds a line to a Draft stock transfer: reopen a locked one first. The line
+starts unpicked; picking moves stock through \`pickStockTransferLine\`.`,
   output: rows.stockTransferLine
     .pick({ id: true })
     .meta({ table: "stockTransferLine" }),
@@ -9704,16 +9196,11 @@ export const createStockTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Update a stock transfer line
- *
- * @remarks
- * Changes a line of a Draft stock transfer: reopen a locked one first. Its
- * picked quantity moves only by picking (`pickStockTransferLine`).
- *
- * @mcp
- */
 export const updateStockTransferLine = defineServiceFn({
+  publish: true,
+  title: "Update a stock transfer line",
+  description: `Changes a line of a Draft stock transfer: reopen a locked one first. Its
+picked quantity moves only by picking (\`pickStockTransferLine\`).`,
   output: rows.stockTransferLine
     .pick({ id: true })
     .meta({ table: "stockTransferLine" }),
@@ -9768,12 +9255,9 @@ export const updateStockTransferLine = defineServiceFn({
   }
 });
 
-/**
- * Get storage unit descendants
- *
- * @mcp read
- */
 export const getStorageUnitDescendants = defineServiceFn({
+  publish: "read",
+  title: "Get storage unit descendants",
   output: z.array(
     z.object({
       id: z.string().nullable(),
@@ -9804,12 +9288,9 @@ export const getStorageUnitDescendants = defineServiceFn({
   }
 });
 
-/**
- * Expand storage unit ids with descendants
- *
- * @mcp read
- */
 export const expandStorageUnitIdsWithDescendants = defineServiceFn({
+  publish: "read",
+  title: "Expand storage unit ids with descendants",
   output: z.array(z.string()),
   input: z.looseObject({ storageUnitIds: z.array(z.string()) }),
   permission: { view: "inventory" },
@@ -9821,12 +9302,9 @@ export const expandStorageUnitIdsWithDescendants = defineServiceFn({
   }
 });
 
-/**
- * Get storage type usage
- *
- * @mcp read
- */
 export const getStorageTypeUsage = defineServiceFn({
+  publish: "read",
+  title: "Get storage type usage",
   output: z.array(
     rows.storageType
       .pick({ id: true, name: true })
@@ -9846,16 +9324,11 @@ export const getStorageTypeUsage = defineServiceFn({
   }
 });
 
-/**
- * Delete storage type with cascade
- *
- * @remarks
- * A storage type that storage units still have is deleted only with
- * `cascade`, which takes it off those units in the same transaction.
- *
- * @mcp destructive
- */
 export const deleteStorageTypeWithCascade = defineServiceFn({
+  publish: "destructive",
+  title: "Delete storage type with cascade",
+  description: `A storage type that storage units still have is deleted only with
+\`cascade\`, which takes it off those units in the same transaction.`,
   output: rows.storageType.pick({ id: true }).meta({ table: "storageType" }),
   input: z.looseObject({ id: z.string(), cascade: z.boolean().optional() }),
   permission: { delete: "parts" },
@@ -9893,12 +9366,9 @@ export const deleteStorageTypeWithCascade = defineServiceFn({
   }
 });
 
-/**
- * Get storage types
- *
- * @mcp read
- */
 export const getStorageTypes = defineServiceFn({
+  publish: "read",
+  title: "Get storage types",
   output: z
     .array(
       rows.storageType
@@ -9966,12 +9436,9 @@ export const getStorageTypes = defineServiceFn({
   }
 });
 
-/**
- * Get storage type
- *
- * @mcp read
- */
 export const getStorageType = defineServiceFn({
+  publish: "read",
+  title: "Get storage type",
   output: rows.storageType
     .pick({
       companyId: true,
@@ -10055,12 +9522,9 @@ export const getStorageType = defineServiceFn({
   }
 });
 
-/**
- * Get storage types list
- *
- * @mcp read
- */
 export const getStorageTypesList = defineServiceFn({
+  publish: "read",
+  title: "Get storage types list",
   output: z.array(
     rows.storageType
       .pick({ id: true, name: true })
@@ -10076,15 +9540,10 @@ export const getStorageTypesList = defineServiceFn({
   }
 });
 
-/**
- * Create a storage type
- *
- * @remarks
- * Upsert storage type
- *
- * @mcp
- */
 export const createStorageType = defineServiceFn({
+  publish: true,
+  title: "Create a storage type",
+  description: "Upsert storage type",
   output: rows.storageType.pick({ id: true }).meta({ table: "storageType" }),
   input: z.looseObject({
     name: z.string().min(1),
@@ -10106,15 +9565,10 @@ export const createStorageType = defineServiceFn({
   }
 });
 
-/**
- * Update a storage type
- *
- * @remarks
- * Upsert storage type
- *
- * @mcp
- */
 export const updateStorageType = defineServiceFn({
+  publish: true,
+  title: "Update a storage type",
+  description: "Upsert storage type",
   output: rows.storageType.pick({ id: true }).meta({ table: "storageType" }),
   input: z
     .looseObject({
@@ -10144,12 +9598,9 @@ export const updateStorageType = defineServiceFn({
   }
 });
 
-/**
- * Get shelf life for items
- *
- * @mcp read
- */
 export const getShelfLifeForItems = defineServiceFn({
+  publish: "read",
+  title: "Get shelf life for items",
   output: z.array(
     z.object({
       itemId: z.string(),
@@ -10172,12 +9623,9 @@ export const getShelfLifeForItems = defineServiceFn({
   }
 });
 
-/**
- * Map of trackedEntityId → expirationDate (or null) for a set of ids
- *
- * @mcp read
- */
 export const getTrackedEntityExpirations = defineServiceFn({
+  publish: "read",
+  title: "Map of trackedEntityId → expirationDate (or null) for a set of ids",
   output: z.record(z.string(), z.string().nullable()),
   input: z.looseObject({ trackedEntityIds: z.array(z.string()) }),
   permission: { view: "inventory" },
@@ -10203,12 +9651,9 @@ export const getTrackedEntityExpirations = defineServiceFn({
   }
 });
 
-/**
- * Get picking lists
- *
- * @mcp read
- */
 export const getPickingLists = defineServiceFn({
+  publish: "read",
+  title: "Get picking lists",
   output: z
     .array(
       rows.pickingLists
@@ -10314,12 +9759,9 @@ export const getPickingLists = defineServiceFn({
   }
 });
 
-/**
- * Get picking list
- *
- * @mcp read
- */
 export const getPickingList = defineServiceFn({
+  publish: "read",
+  title: "Get picking list",
   output: rows.pickingList
     .pick({
       assignee: true,
@@ -10470,12 +9912,9 @@ export const getPickingList = defineServiceFn({
   }
 });
 
-/**
- * Get picks by job material
- *
- * @mcp read
- */
 export const getPicksByJobMaterial = defineServiceFn({
+  publish: "read",
+  title: "Get picks by job material",
   output: z.record(
     z.string(),
     z.array(
@@ -10505,12 +9944,9 @@ export const getPicksByJobMaterial = defineServiceFn({
   }
 });
 
-/**
- * Get picking list lines
- *
- * @mcp read
- */
 export const getPickingListLines = defineServiceFn({
+  publish: "read",
+  title: "Get picking list lines",
   output: z.array(
     rows.pickingListLine
       .pick({
@@ -10643,12 +10079,10 @@ export const getPickingListLines = defineServiceFn({
   }
 });
 
-/**
- * The documents around a picking list that its own row doesn't name: the jobs its lines pick for, with their status
- *
- * @mcp read
- */
 export const getPickingListRelatedItems = defineServiceFn({
+  publish: "read",
+  title:
+    "The documents around a picking list that its own row doesn't name: the jobs its lines pick for, with their status",
   output: z.object({
     jobs: z.array(
       z.object({
@@ -10681,13 +10115,10 @@ export const getPickingListRelatedItems = defineServiceFn({
   }
 });
 
-/**
- * Warehouse on-hand for each line of a picking list: every bin but lineside,
- * the unassigned bin included, keyed by picking list line id.
- *
- * @mcp read
- */
 export const getPickingListAvailability = defineServiceFn({
+  publish: "read",
+  title:
+    "Warehouse on-hand for each line of a picking list: every bin but lineside, the unassigned bin included, keyed by picking list line id",
   output: z.record(z.string(), z.unknown()),
   input: z.looseObject({ pickingListId: z.string() }),
   permission: { view: "inventory" },
@@ -10703,12 +10134,10 @@ export const getPickingListAvailability = defineServiceFn({
   }
 });
 
-/**
- * The recommended tracked entities (serial/batch lots) for each tracked picking line, in pick order — surfaced as at-a-glance subtext before the picker opens
- *
- * @mcp read
- */
 export const getPickingListRecommendations = defineServiceFn({
+  publish: "read",
+  title:
+    "The recommended tracked entities (serial/batch lots) for each tracked picking line, in pick order — surfaced as at-a-glance subtext before the picker opens",
   output: z.record(
     z.string(),
     z.array(
@@ -10732,12 +10161,9 @@ export const getPickingListRecommendations = defineServiceFn({
   }
 });
 
-/**
- * Get picking list line
- *
- * @mcp read
- */
 export const getPickingListLine = defineServiceFn({
+  publish: "read",
+  title: "Get picking list line",
   output: rows.pickingListLine
     .pick({
       companyId: true,
@@ -10876,12 +10302,9 @@ export const getPickingListLine = defineServiceFn({
   }
 });
 
-/**
- * Delete picking list
- *
- * @mcp destructive
- */
 export const deletePickingList = defineServiceFn({
+  publish: "destructive",
+  title: "Delete picking list",
   output: z.array(
     rows.pickingList.pick({ id: true }).meta({ table: "pickingList" })
   ),
@@ -10902,12 +10325,9 @@ export const deletePickingList = defineServiceFn({
   }
 });
 
-/**
- * Get picking schedule
- *
- * @mcp read
- */
 export const getPickingSchedule = defineServiceFn({
+  publish: "read",
+  title: "Get picking schedule",
   output: z.array(
     z.object({
       customerId: z.string(),
@@ -11012,12 +10432,9 @@ export const getPickingSchedule = defineServiceFn({
   }
 });
 
-/**
- * Generate picking list
- *
- * @mcp destructive
- */
 export const generatePickingList = defineServiceFn({
+  publish: "destructive",
+  title: "Generate picking list",
   output: rows.pickingList
     .pick({ id: true, pickingListId: true })
     .meta({ table: "pickingList" }),
@@ -11039,16 +10456,11 @@ export const generatePickingList = defineServiceFn({
   }
 });
 
-/**
- * Create a warehouse transfer between locations
- *
- * @remarks
- * Create a Draft warehouse transfer between locations. Generates sequence ID
- * automatically. Its status moves only through `setWarehouseTransferStatus`.
- *
- * @mcp
- */
 export const insertWarehouseTransfer = defineServiceFn({
+  publish: true,
+  title: "Create a warehouse transfer between locations",
+  description: `Create a Draft warehouse transfer between locations. Generates sequence ID
+automatically. Its status moves only through \`setWarehouseTransferStatus\`.`,
   output: rows.warehouseTransfer
     .pick({ id: true, transferId: true })
     .meta({ table: "warehouseTransfer" }),
@@ -11074,16 +10486,11 @@ export const insertWarehouseTransfer = defineServiceFn({
   }
 });
 
-/**
- * Update an existing warehouse transfer
- *
- * @remarks
- * Only a Draft transfer's header changes: reopen it first. Its status moves
- * only through `setWarehouseTransferStatus`.
- *
- * @mcp
- */
 export const updateWarehouseTransfer = defineServiceFn({
+  publish: true,
+  title: "Update an existing warehouse transfer",
+  description: `Only a Draft transfer's header changes: reopen it first. Its status moves
+only through \`setWarehouseTransferStatus\`.`,
   output: rows.warehouseTransfer
     .pick({ id: true })
     .meta({ table: "warehouseTransfer" }),
@@ -11112,17 +10519,12 @@ export const updateWarehouseTransfer = defineServiceFn({
   }
 });
 
-/**
- * Value an item's serial units on hand.
- *
- * @remarks
- * What each serial unit of the item on hand would leave stock at, valued the
- * way a shipment or a capitalization relieves it, keyed by tracked entity id.
- * With `locationId`, only the units at that location.
- *
- * @mcp read
- */
 export const getSerialUnitCosts = defineServiceFn({
+  publish: "read",
+  title: "Value an item's serial units on hand",
+  description: `What each serial unit of the item on hand would leave stock at, valued the
+way a shipment or a capitalization relieves it, keyed by tracked entity id.
+With \`locationId\`, only the units at that location.`,
   output: z.union([
     z.object({
       costs: z.record(z.string(), z.unknown()),
@@ -11143,17 +10545,12 @@ export const getSerialUnitCosts = defineServiceFn({
   }
 });
 
-/**
- * Recost one serial unit in stock.
- *
- * @remarks
- * Re-books the unit's cost layer at `unitCost` and posts the difference
- * against the offset account. The unit must be the only one of its serial on
- * hand at one location, of a FIFO or LIFO item.
- *
- * @mcp
- */
 export const recostSerialUnit = defineServiceFn({
+  publish: true,
+  title: "Recost one serial unit in stock",
+  description: `Re-books the unit's cost layer at \`unitCost\` and posts the difference
+against the offset account. The unit must be the only one of its serial on
+hand at one location, of a FIFO or LIFO item.`,
   output: z.object({
     previousCost: z.number(),
     unitCost: z.number(),

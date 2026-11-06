@@ -89,18 +89,13 @@ const customFieldsInput = z
 
 const itemIdsInput = z.array(z.string()).min(1);
 
-/**
- * Change items' tracking type.
- *
- * @remarks
- * Writes `itemTrackingType` on every item, then carries the serial and batch
- * flags onto the open jobs, receipts, shipments and stock transfers that copied
- * them (`cascadeItemTrackingType`). A failed carry-over leaves the items
- * changed and returns an error.
- *
- * @mcp
- */
 export const setItemTrackingType = defineServiceFn({
+  publish: true,
+  title: "Change items' tracking type",
+  description: `Writes \`itemTrackingType\` on every item, then carries the serial and batch
+flags onto the open jobs, receipts, shipments and stock transfers that copied
+them (\`cascadeItemTrackingType\`). A failed carry-over leaves the items
+changed and returns an error.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -139,15 +134,11 @@ export const setItemTrackingType = defineServiceFn({
   }
 });
 
-/**
- * Change items' name, description, manufacturer part number or unit of measure.
- *
- * @remarks
- * A field left out is unchanged; every item gets the same value.
- *
- * @mcp
- */
 export const setItemFields = defineServiceFn({
+  publish: true,
+  title:
+    "Change items' name, description, manufacturer part number or unit of measure",
+  description: "A field left out is unchanged; every item gets the same value.",
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -179,20 +170,16 @@ export const setItemFields = defineServiceFn({
   }
 });
 
-/**
- * Change items' replenishment system, default method type or sourcing type.
- *
- * @remarks
- * Exactly one of the three per call. They are interlocked
- * (`deriveItemMethodUpdate`): a concrete replenishment system sets the default
- * method type, a concrete method type sets the replenishment system, and a
- * sourcing type sets the method type. The item columns and their copies on
- * the items' Draft method materials change in one transaction
- * (`updateItemMethodAndSourcing`); Active and Archived methods are left alone.
- *
- * @mcp
- */
 export const setItemSourcing = defineServiceFn({
+  publish: true,
+  title:
+    "Change items' replenishment system, default method type or sourcing type",
+  description: `Exactly one of the three per call. They are interlocked
+(\`deriveItemMethodUpdate\`): a concrete replenishment system sets the default
+method type, a concrete method type sets the replenishment system, and a
+sourcing type sets the method type. The item columns and their copies on
+the items' Draft method materials change in one transaction
+(\`updateItemMethodAndSourcing\`); Active and Archived methods are left alone.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -241,18 +228,13 @@ export const setItemSourcing = defineServiceFn({
   }
 });
 
-/**
- * Activate or deactivate items.
- *
- * @remarks
- * Activating is refused while a change notice that created an item is not
- * released: release activates the revisions and parts a notice minted, and an
- * item switched on by hand would reach the pickers, MRP and job creation with
- * the notice's unapproved draft method. Deactivating is always allowed.
- *
- * @mcp
- */
 export const setItemActive = defineServiceFn({
+  publish: true,
+  title: "Activate or deactivate items",
+  description: `Activating is refused while a change notice that created an item is not
+released: release activates the revisions and parts a notice minted, and an
+item switched on by hand would reach the pickers, MRP and job creation with
+the notice's unapproved draft method. Deactivating is always allowed.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -293,17 +275,12 @@ export const setItemActive = defineServiceFn({
   }
 });
 
-/**
- * Set items' item group (posting group).
- *
- * @remarks
- * The group lives on the item's cost row: it is updated where the item has
- * one, and a Standard cost row of zero is created where it has none. Null
- * clears the group.
- *
- * @mcp
- */
 export const setItemPostingGroup = defineServiceFn({
+  publish: true,
+  title: "Set items' item group (posting group)",
+  description: `The group lives on the item's cost row: it is updated where the item has
+one, and a Standard cost row of zero is created where it has none. Null
+clears the group.`,
   output: z.object({
     ids: z.array(z.string())
   }),
@@ -434,17 +411,13 @@ const renumberedTable = {
   Tool: "tool"
 } as const;
 
-/**
- * Change the readable id (part number) of a part, consumable, material or tool.
- *
- * @remarks
- * Every revision of the item takes the new id, and so does its type row
- * (`part`, `consumable`, `material`, `tool`), which is keyed by it. Refused
- * when the item is not of `type`.
- *
- * @mcp
- */
 export const setItemReadableId = defineServiceFn({
+  publish: true,
+  title:
+    "Change the readable id (part number) of a part, consumable, material or tool",
+  description: `Every revision of the item takes the new id, and so does its type row
+(\`part\`, \`consumable\`, \`material\`, \`tool\`), which is keyed by it. Refused
+when the item is not of \`type\`.`,
   output: rows.item
     .pick({ id: true, readableId: true })
     .meta({ table: "item" }),
@@ -508,17 +481,12 @@ export const setItemReadableId = defineServiceFn({
   }
 });
 
-/**
- * Rename a service.
- *
- * @remarks
- * A service is identified by its name, so every revision's readable id and the
- * service row's id follow it (`updateServiceName`, one transaction). Refused
- * when the name is empty or another service already has it.
- *
- * @mcp
- */
 export const renameService = defineServiceFn({
+  publish: true,
+  title: "Rename a service",
+  description: `A service is identified by its name, so every revision's readable id and the
+service row's id follow it (\`updateServiceName\`, one transaction). Refused
+when the name is empty or another service already has it.`,
   output: z.object({
     readableId: z.string()
   }),
@@ -542,19 +510,14 @@ export const renameService = defineServiceFn({
   }
 });
 
-/**
- * Change materials' substance, shape, type, finish, grade or dimension.
- *
- * @remarks
- * For each material among `ids` (its revisions count once), the change goes
- * through `updateMaterialProperties`: dependent properties reset, each value
- * must fit the substance and shape, and generated material ids are renamed.
- * Each material commits on its own, so every material is tried and every
- * refusal is named. A field left out is unchanged; null clears it.
- *
- * @mcp
- */
 export const setMaterialProperties = defineServiceFn({
+  publish: true,
+  title: "Change materials' substance, shape, type, finish, grade or dimension",
+  description: `For each material among \`ids\` (its revisions count once), the change goes
+through \`updateMaterialProperties\`: dependent properties reset, each value
+must fit the substance and shape, and generated material ids are renamed.
+Each material commits on its own, so every material is tried and every
+refusal is named. A field left out is unchanged; null clears it.`,
   output: z.object({
     materialIds: z.array(z.string())
   }),
@@ -615,16 +578,11 @@ const partInput = applyStorageAndShelfLifeRefines(
   partFields.extend({ customFields: customFieldsInput })
 );
 
-/**
- * Create a part.
- *
- * @remarks
- * Writes the item and its part row, its item group and unit cost, batch size,
- * default storage unit and shelf life (`upsertPart`).
- *
- * @mcp
- */
 export const createPart = defineServiceFn({
+  publish: true,
+  title: "Create a part",
+  description: `Writes the item and its part row, its item group and unit cost, batch size,
+default storage unit and shelf life (\`upsertPart\`).`,
   output: z.object({
     id: z.unknown()
   }),
@@ -647,17 +605,12 @@ export const createPart = defineServiceFn({
   }
 });
 
-/**
- * Save a part's details.
- *
- * @remarks
- * `id` is the item id or the part number. A full replace: an optional field
- * left out is cleared (`upsertPart`), including the default storage unit and
- * shelf life.
- *
- * @mcp
- */
 export const updatePart = defineServiceFn({
+  publish: true,
+  title: "Save a part's details",
+  description: `\`id\` is the item id or the part number. A full replace: an optional field
+left out is cleared (\`upsertPart\`), including the default storage unit and
+shelf life.`,
   output: rows.part.pick({ id: true }).meta({ table: "part" }),
   input: partInput,
   permission: { update: "parts" },
@@ -675,16 +628,11 @@ export const updatePart = defineServiceFn({
   }
 });
 
-/**
- * Save a tool's details.
- *
- * @remarks
- * `id` is the item id or the tool number. A full replace: an optional field
- * left out is cleared (`upsertTool`).
- *
- * @mcp
- */
 export const updateTool = defineServiceFn({
+  publish: true,
+  title: "Save a tool's details",
+  description: `\`id\` is the item id or the tool number. A full replace: an optional field
+left out is cleared (\`upsertTool\`).`,
   output: rows.tool.pick({ id: true }).meta({ table: "tool" }),
   input: applyStorageAndShelfLifeRefines(
     toolFields.extend({ customFields: customFieldsInput })
@@ -704,18 +652,13 @@ export const updateTool = defineServiceFn({
   }
 });
 
-/**
- * Save an item's manufacturing settings, then re-plan it.
- *
- * @remarks
- * Batch size, scrap percentage, lead time and whether it must be configured.
- * MRP then re-plans the item, so the planning pages' suggestions follow the
- * new settings now rather than at the next scheduled run; a failed run does
- * not fail the save.
- *
- * @mcp
- */
 export const updateItemManufacturing = defineServiceFn({
+  publish: true,
+  title: "Save an item's manufacturing settings, then re-plan it",
+  description: `Batch size, scrap percentage, lead time and whether it must be configured.
+MRP then re-plans the item, so the planning pages' suggestions follow the
+new settings now rather than at the next scheduled run; a failed run does
+not fail the save.`,
   output: z.object({
     itemId: z.string()
   }),
@@ -745,19 +688,14 @@ export const updateItemManufacturing = defineServiceFn({
   }
 });
 
-/**
- * Save an item's planning settings at a location, then re-plan it.
- *
- * @remarks
- * The reordering policy and its sizing parameters, the planning horizon and
- * the responsible employee. A full replace: an optional field left out is
- * cleared. The responsible employee must be an active employee of the
- * company. MRP then re-plans the item, so the planning pages' suggestions
- * follow the new settings now; a failed run does not fail the save.
- *
- * @mcp
- */
 export const updateItemPlanning = defineServiceFn({
+  publish: true,
+  title: "Save an item's planning settings at a location, then re-plan it",
+  description: `The reordering policy and its sizing parameters, the planning horizon and
+the responsible employee. A full replace: an optional field left out is
+cleared. The responsible employee must be an active employee of the
+company. MRP then re-plans the item, so the planning pages' suggestions
+follow the new settings now; a failed run does not fail the save.`,
   output: rows.itemPlanning
     .pick({ itemId: true, locationId: true })
     .meta({ table: "itemPlanning" }),
@@ -796,20 +734,15 @@ export const updateItemPlanning = defineServiceFn({
   }
 });
 
-/**
- * Set or clear an item's supersession: the successor that replaces it and how
- * it is phased out.
- *
- * @remarks
- * Mode, successor, discontinuation and successor effectivity dates, and the
- * conversion factor (1 old = N new). No mode clears the supersession. With
- * `locationId`, also the minimum service-stock reserve at that location.
- * Refused (`rule`) when the successor would close a loop, or make a chain
- * longer than ten hops.
- *
- * @mcp destructive
- */
 export const setItemSupersession = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Set or clear an item's supersession: the successor that replaces it and how it is phased out",
+  description: `Mode, successor, discontinuation and successor effectivity dates, and the
+conversion factor (1 old = N new). No mode clears the supersession. With
+\`locationId\`, also the minimum service-stock reserve at that location.
+Refused (\`rule\`) when the successor would close a loop, or make a chain
+longer than ten hops.`,
   output: rows.itemSupersession
     .pick({ itemId: true })
     .meta({ table: "itemSupersession" }),
@@ -832,19 +765,14 @@ export const setItemSupersession = defineServiceFn({
   }
 });
 
-/**
- * Make another part a predecessor of this one: the other part is phased out
- * in favour of `itemId`.
- *
- * @remarks
- * The supersession is written on the predecessor, with `itemId` as its
- * successor. Refused when the predecessor is the part itself, is not one of
- * the company's parts, already has a different successor (change it from that
- * part's planning page), or would close a loop.
- *
- * @mcp
- */
 export const addItemPredecessor = defineServiceFn({
+  publish: true,
+  title:
+    "Make another part a predecessor of this one: the other part is phased out in favour of `itemId`",
+  description: `The supersession is written on the predecessor, with \`itemId\` as its
+successor. Refused when the predecessor is the part itself, is not one of
+the company's parts, already has a different successor (change it from that
+part's planning page), or would close a loop.`,
   output: z.object({
     itemId: z.string(),
     successorItemId: z.string()
@@ -912,21 +840,16 @@ const supplierPartInput = supplierPartValidator.omit({ id: true }).extend({
 
 const supplierPartTaken =
   "This item already has a supplier part for this supplier";
-/**
- * Add a supplier part to an item: what the supplier calls it, and what it
- * costs.
- *
- * @remarks
- * The supplier's part number, unit of measure and conversion factor, minimum
- * order quantity, order multiple, and the price per purchase unit in
- * `currencyCode` (the base currency when empty). One supplier part per item
- * and supplier (`conflict`). `priceBreaks` are saved as Manual Entry price
- * breaks; a failed price break write is logged and does not undo the
- * supplier part.
- *
- * @mcp
- */
 export const createSupplierPart = defineServiceFn({
+  publish: true,
+  title:
+    "Add a supplier part to an item: what the supplier calls it, and what it costs",
+  description: `The supplier's part number, unit of measure and conversion factor, minimum
+order quantity, order multiple, and the price per purchase unit in
+\`currencyCode\` (the base currency when empty). One supplier part per item
+and supplier (\`conflict\`). \`priceBreaks\` are saved as Manual Entry price
+breaks; a failed price break write is logged and does not undo the
+supplier part.`,
   output: rows.supplierPart.pick({ id: true }).meta({ table: "supplierPart" }),
   input: supplierPartInput,
   permission: { create: "parts" },
@@ -967,18 +890,13 @@ export const createSupplierPart = defineServiceFn({
   }
 });
 
-/**
- * Save a supplier part.
- *
- * @remarks
- * A full replace of the supplier part's fields. One supplier part per item and
- * supplier (`conflict`). With `priceBreaks`, the supplier part's price breaks
- * are replaced by them as Manual Entry breaks, in one transaction; without,
- * they are left as they are.
- *
- * @mcp
- */
 export const updateSupplierPart = defineServiceFn({
+  publish: true,
+  title: "Save a supplier part",
+  description: `A full replace of the supplier part's fields. One supplier part per item and
+supplier (\`conflict\`). With \`priceBreaks\`, the supplier part's price breaks
+are replaced by them as Manual Entry breaks, in one transaction; without,
+they are left as they are.`,
   output: rows.supplierPart.pick({ id: true }).meta({ table: "supplierPart" }),
   input: supplierPartInput.extend({ id: z.string() }),
   permission: { update: "parts" },
@@ -1024,21 +942,16 @@ export const updateSupplierPart = defineServiceFn({
 });
 
 // ── Make methods ────────────────────────────────────────────────────────────
-/**
- * Copy one make method onto another: Get Method and Save Method.
- *
- * @remarks
- * `sourceId` and `targetId` are items (their active method) or make method
- * versions (`make_` ids). The target's bill of materials, bill of process,
- * parameters, tools, steps and work instructions are replaced by the source's,
- * each as its flag says (get-method). Refused when the target's revision is
- * released and release control enforces it, or a change notice holds it; with
- * release control on warn the copy goes ahead and `notice` says why it would
- * have been held.
- *
- * @mcp destructive
- */
 export const copyMethod = defineServiceFn({
+  publish: "destructive",
+  title: "Copy one make method onto another: Get Method and Save Method",
+  description: `\`sourceId\` and \`targetId\` are items (their active method) or make method
+versions (\`make_\` ids). The target's bill of materials, bill of process,
+parameters, tools, steps and work instructions are replaced by the source's,
+each as its flag says (get-method). Refused when the target's revision is
+released and release control enforces it, or a change notice holds it; with
+release control on warn the copy goes ahead and \`notice\` says why it would
+have been held.`,
   output: z.object({
     targetId: z.string(),
     notice: z.string().nullable()
@@ -1073,21 +986,16 @@ export const copyMethod = defineServiceFn({
   }
 });
 
-/**
- * Create a new Draft version of an item's make method, copied from one of its
- * versions.
- *
- * @remarks
- * The new version takes `copyFromId`'s header and, through get-method, its
- * whole bill of materials and process. `activeVersionId` must be `copyFromId`:
- * a Draft source is made Active first (the item's only version, when its
- * successor is drafted). With strict backflush on, that activation is refused
- * while a pulled line has no Pull From storage unit, as `methodVersionToActive`
- * refuses it. A failed copy leaves no new version behind.
- *
- * @mcp
- */
 export const createMethodVersion = defineServiceFn({
+  publish: true,
+  title:
+    "Create a new Draft version of an item's make method, copied from one of its versions",
+  description: `The new version takes \`copyFromId\`'s header and, through get-method, its
+whole bill of materials and process. \`activeVersionId\` must be \`copyFromId\`:
+a Draft source is made Active first (the item's only version, when its
+successor is drafted). With strict backflush on, that activation is refused
+while a pulled line has no Pull From storage unit, as \`methodVersionToActive\`
+refuses it. A failed copy leaves no new version behind.`,
   output: z.object({
     id: z.string(),
     itemId: z.string(),
@@ -1233,17 +1141,12 @@ export const syncOnshapeMethod = defineServiceFn({
   }
 });
 
-/**
- * Delete an operation from a make method's bill of process.
- *
- * @remarks
- * Refused when the method's revision is released and release control enforces
- * it, or a change notice holds it; with release control on warn the delete
- * goes ahead and `notice` says why it would have been held.
- *
- * @mcp destructive
- */
 export const deleteMethodOperation = defineServiceFn({
+  publish: "destructive",
+  title: "Delete an operation from a make method's bill of process",
+  description: `Refused when the method's revision is released and release control enforces
+it, or a change notice holds it; with release control on warn the delete
+goes ahead and \`notice\` says why it would have been held.`,
   output: z.object({
     id: z.string(),
     notice: z.string().nullable()
@@ -1330,19 +1233,14 @@ export const deleteMethodOperations = defineServiceFn({
   }
 });
 
-/**
- * Recalculate a made item's unit cost from its make method.
- *
- * @remarks
- * Rolls up the active make method (or the newest Draft) and every sub-method:
- * material costs, and each operation's setup, labor, machine and overhead at
- * its work center's rates (or the rates of the work centers that run its
- * process), spread over each item's batch size, as the bill of materials CSV
- * export does. Overwrites the item's unit cost with the result.
- *
- * @mcp
- */
 export const recalculateItemCost = defineServiceFn({
+  publish: true,
+  title: "Recalculate a made item's unit cost from its make method",
+  description: `Rolls up the active make method (or the newest Draft) and every sub-method:
+material costs, and each operation's setup, labor, machine and overhead at
+its work center's rates (or the rates of the work centers that run its
+process), spread over each item's batch size, as the bill of materials CSV
+export does. Overwrites the item's unit cost with the result.`,
   output: z.object({
     itemId: z.string(),
     unitCost: z.number()
@@ -1466,20 +1364,15 @@ export const recalculateItemCost = defineServiceFn({
 
 // Reason and description arrive as plain text; the columns are tiptap JSON, so
 // non-empty text becomes a one-paragraph doc the detail page's editor can edit.
-/**
- * Create a change notice, with the parts it changes.
- *
- * @remarks
- * The number comes from the change notice sequence unless `changeOrderId` is
- * given; the open date defaults to today in the company's timezone. Each of
- * `affectedItemIds` that is one of the company's parts is added as a Version
- * change (`addChangeNoticeAffectedItem`, which makes a bought part a Revision
- * and creates the notice's draft method). Anything that is not a part is
- * skipped. The notice stays when an item cannot be added: `warning` says so.
- *
- * @mcp
- */
 export const createChangeNotice = defineServiceFn({
+  publish: true,
+  title: "Create a change notice, with the parts it changes",
+  description: `The number comes from the change notice sequence unless \`changeOrderId\` is
+given; the open date defaults to today in the company's timezone. Each of
+\`affectedItemIds\` that is one of the company's parts is added as a Version
+change (\`addChangeNoticeAffectedItem\`, which makes a bought part a Revision
+and creates the notice's draft method). Anything that is not a part is
+skipped. The notice stays when an item cannot be added: \`warning\` says so.`,
   output: z.object({
     id: z.string(),
     warning: z.string().nullable()
@@ -1570,19 +1463,14 @@ export const createChangeNotice = defineServiceFn({
   }
 });
 
-/**
- * Create a change notice for one item.
- *
- * @remarks
- * Named "Change for" the item, opened today in the company's timezone, with
- * the item as its first affected item (`addChangeNoticeAffectedItem`, a
- * Version change unless `changeType` says otherwise; `revision` names a
- * Revision's new revision). The notice stays when the item cannot be added:
- * `warning` says so.
- *
- * @mcp
- */
 export const createChangeNoticeForItem = defineServiceFn({
+  publish: true,
+  title: "Create a change notice for one item",
+  description: `Named "Change for" the item, opened today in the company's timezone, with
+the item as its first affected item (\`addChangeNoticeAffectedItem\`, a
+Version change unless \`changeType\` says otherwise; \`revision\` names a
+Revision's new revision). The notice stays when the item cannot be added:
+\`warning\` says so.`,
   output: z.union([
     z.object({
       id: z.string(),
@@ -1657,24 +1545,19 @@ export const createChangeNoticeForItem = defineServiceFn({
   }
 });
 
-/**
- * Move a change notice to another stage.
- *
- * @remarks
- * `fromStatus` is the stage the caller saw: the move is a compare-and-swap on
- * it, and only the transitions `changeNoticeStatusTransitions` allows are
- * taken. With an approval rule, Engineering Complete → Implementation opens an
- * approval request and notifies the approvers instead of moving
- * (`approvalRequested`); approving it moves the notice. Implementation → Done
- * is the release (`applyChangeNotice`): it activates each affected item's
- * draft method, reveals new revisions and parts, and writes their
- * supersessions. Cancelling, or advancing past the gate after the rule was
- * turned off, withdraws a pending request. Entering Start, Implementation or
- * Done notifies the assignee and the action-task assignees.
- *
- * @mcp
- */
 export const setChangeNoticeStatus = defineServiceFn({
+  publish: true,
+  title: "Move a change notice to another stage",
+  description: `\`fromStatus\` is the stage the caller saw: the move is a compare-and-swap on
+it, and only the transitions \`changeNoticeStatusTransitions\` allows are
+taken. With an approval rule, Engineering Complete → Implementation opens an
+approval request and notifies the approvers instead of moving
+(\`approvalRequested\`); approving it moves the notice. Implementation → Done
+is the release (\`applyChangeNotice\`): it activates each affected item's
+draft method, reveals new revisions and parts, and writes their
+supersessions. Cancelling, or advancing past the gate after the rule was
+turned off, withdraws a pending request. Entering Start, Implementation or
+Done notifies the assignee and the action-task assignees.`,
   output: z.object({
     id: z.string(),
     status: z.enum([
@@ -1809,18 +1692,13 @@ export const setChangeNoticeStatus = defineServiceFn({
   }
 });
 
-/**
- * Approve or reject a change notice's pending approval request.
- *
- * @remarks
- * Approving moves the notice from Engineering Complete to Implementation, in
- * the decision's transaction, and notifies the notice's assignee and
- * action-task assignees as an advance would. Rejecting leaves the stage. The
- * requester is told either way, unless they decided it themselves.
- *
- * @mcp
- */
 export const decideChangeNoticeApproval = defineServiceFn({
+  publish: true,
+  title: "Approve or reject a change notice's pending approval request",
+  description: `Approving moves the notice from Engineering Complete to Implementation, in
+the decision's transaction, and notifies the notice's assignee and
+action-task assignees as an advance would. Rejecting leaves the stage. The
+requester is told either way, unless they decided it themselves.`,
   output: z.object({
     changeNoticeId: z.string(),
     decision: z.enum(["Approved", "Rejected"])
@@ -1893,12 +1771,9 @@ export const decideChangeNoticeApproval = defineServiceFn({
     return { changeNoticeId, decision };
   }
 });
-/**
- * Activate method version
- *
- * @mcp
- */
 export const activateMethodVersion = defineServiceFn({
+  publish: true,
+  title: "Activate method version",
   output: z.union([
     z.object({
       id: z.string(),
@@ -1933,12 +1808,9 @@ export const activateMethodVersion = defineServiceFn({
   }
 });
 
-/**
- * Create revision
- *
- * @mcp
- */
 export const createRevision = defineServiceFn({
+  publish: true,
+  title: "Create revision",
   output: z.object({
     id: z.string()
   }),
@@ -1989,12 +1861,9 @@ export const createRevision = defineServiceFn({
   }
 });
 
-/**
- * Delete configuration parameter
- *
- * @mcp destructive
- */
 export const deleteConfigurationParameter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete configuration parameter",
   output: z.array(
     rows.configurationParameter
       .pick({ id: true })
@@ -2013,12 +1882,9 @@ export const deleteConfigurationParameter = defineServiceFn({
   }
 });
 
-/**
- * Delete configuration rule
- *
- * @mcp destructive
- */
 export const deleteConfigurationRule = defineServiceFn({
+  publish: "destructive",
+  title: "Delete configuration rule",
   output: z.null(),
   input: z.looseObject({ field: z.string(), itemId: z.string() }),
   permission: { delete: "parts" },
@@ -2034,12 +1900,9 @@ export const deleteConfigurationRule = defineServiceFn({
   }
 });
 
-/**
- * Delete item customer part
- *
- * @mcp destructive
- */
 export const deleteItemCustomerPart = defineServiceFn({
+  publish: "destructive",
+  title: "Delete item customer part",
   output: z.array(rows.customer.pick({ id: true }).meta({ table: "customer" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
@@ -2055,12 +1918,9 @@ export const deleteItemCustomerPart = defineServiceFn({
   }
 });
 
-/**
- * Delete supplier part
- *
- * @mcp destructive
- */
 export const deleteSupplierPart = defineServiceFn({
+  publish: "destructive",
+  title: "Delete supplier part",
   output: z.array(
     rows.supplierPart.pick({ id: true }).meta({ table: "supplierPart" })
   ),
@@ -2078,12 +1938,9 @@ export const deleteSupplierPart = defineServiceFn({
   }
 });
 
-/**
- * Delete configuration parameter group
- *
- * @mcp destructive
- */
 export const deleteConfigurationParameterGroup = defineServiceFn({
+  publish: "destructive",
+  title: "Delete configuration parameter group",
   output: z.array(
     rows.configurationParameterGroup
       .pick({ id: true })
@@ -2102,12 +1959,9 @@ export const deleteConfigurationParameterGroup = defineServiceFn({
   }
 });
 
-/**
- * Delete item
- *
- * @mcp destructive
- */
 export const deleteItem = defineServiceFn({
+  publish: "destructive",
+  title: "Delete item",
   output: z.null(),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
@@ -2124,12 +1978,9 @@ export const deleteItem = defineServiceFn({
   }
 });
 
-/**
- * Delete item posting group
- *
- * @mcp destructive
- */
 export const deleteItemPostingGroup = defineServiceFn({
+  publish: "destructive",
+  title: "Delete item posting group",
   output: z.array(
     rows.itemPostingGroup.pick({ id: true }).meta({ table: "itemPostingGroup" })
   ),
@@ -2146,12 +1997,9 @@ export const deleteItemPostingGroup = defineServiceFn({
   }
 });
 
-/**
- * Delete material dimension
- *
- * @mcp destructive
- */
 export const deleteMaterialDimension = defineServiceFn({
+  publish: "destructive",
+  title: "Delete material dimension",
   output: z.array(
     rows.materialDimension
       .pick({ id: true })
@@ -2170,12 +2018,9 @@ export const deleteMaterialDimension = defineServiceFn({
   }
 });
 
-/**
- * Delete material finish
- *
- * @mcp destructive
- */
 export const deleteMaterialFinish = defineServiceFn({
+  publish: "destructive",
+  title: "Delete material finish",
   output: z.array(
     rows.materialFinish.pick({ id: true }).meta({ table: "materialFinish" })
   ),
@@ -2192,12 +2037,9 @@ export const deleteMaterialFinish = defineServiceFn({
   }
 });
 
-/**
- * Delete material form
- *
- * @mcp destructive
- */
 export const deleteMaterialForm = defineServiceFn({
+  publish: "destructive",
+  title: "Delete material form",
   output: z.array(
     rows.materialForm.pick({ id: true }).meta({ table: "materialForm" })
   ),
@@ -2211,12 +2053,9 @@ export const deleteMaterialForm = defineServiceFn({
   }
 });
 
-/**
- * Delete material grade
- *
- * @mcp destructive
- */
 export const deleteMaterialGrade = defineServiceFn({
+  publish: "destructive",
+  title: "Delete material grade",
   output: z.array(
     rows.materialGrade.pick({ id: true }).meta({ table: "materialGrade" })
   ),
@@ -2233,12 +2072,9 @@ export const deleteMaterialGrade = defineServiceFn({
   }
 });
 
-/**
- * Delete material substance
- *
- * @mcp destructive
- */
 export const deleteMaterialSubstance = defineServiceFn({
+  publish: "destructive",
+  title: "Delete material substance",
   output: z.array(
     rows.materialSubstance
       .pick({ id: true })
@@ -2257,12 +2093,9 @@ export const deleteMaterialSubstance = defineServiceFn({
   }
 });
 
-/**
- * Delete method material
- *
- * @mcp destructive
- */
 export const deleteMethodMaterial = defineServiceFn({
+  publish: "destructive",
+  title: "Delete method material",
   output: z.array(
     rows.methodMaterial.pick({ id: true }).meta({ table: "methodMaterial" })
   ),
@@ -2346,12 +2179,9 @@ export const deleteMethodMaterials = defineServiceFn({
   }
 });
 
-/**
- * Assert method operation is draft
- *
- * @mcp
- */
 export const assertMethodOperationIsDraft = defineServiceFn({
+  publish: true,
+  title: "Assert method operation is draft",
   output: z.object({
     operationId: z.string()
   }),
@@ -2373,12 +2203,9 @@ export const assertMethodOperationIsDraft = defineServiceFn({
   }
 });
 
-/**
- * Delete method operation step
- *
- * @mcp destructive
- */
 export const deleteMethodOperationStep = defineServiceFn({
+  publish: "destructive",
+  title: "Delete method operation step",
   output: z.array(
     rows.methodOperationStep
       .pick({ id: true })
@@ -2409,12 +2236,9 @@ export const deleteMethodOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Delete method operation step slide
- *
- * @mcp destructive
- */
 export const deleteMethodOperationStepSlide = defineServiceFn({
+  publish: "destructive",
+  title: "Delete method operation step slide",
   output: z.array(
     rows.methodOperationStepSlide
       .pick({ id: true })
@@ -2439,12 +2263,9 @@ export const deleteMethodOperationStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Delete method operation parameter
- *
- * @mcp destructive
- */
 export const deleteMethodOperationParameter = defineServiceFn({
+  publish: "destructive",
+  title: "Delete method operation parameter",
   output: z.array(
     rows.methodOperationParameter
       .pick({ id: true })
@@ -2472,12 +2293,9 @@ export const deleteMethodOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Delete method operation tool
- *
- * @mcp destructive
- */
 export const deleteMethodOperationTool = defineServiceFn({
+  publish: "destructive",
+  title: "Delete method operation tool",
   output: z.array(
     rows.methodOperationTool
       .pick({ id: true })
@@ -2505,12 +2323,9 @@ export const deleteMethodOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Delete unit of measure
- *
- * @mcp destructive
- */
 export const deleteUnitOfMeasure = defineServiceFn({
+  publish: "destructive",
+  title: "Delete unit of measure",
   output: z.array(
     rows.unitOfMeasure.pick({ id: true }).meta({ table: "unitOfMeasure" })
   ),
@@ -2527,12 +2342,9 @@ export const deleteUnitOfMeasure = defineServiceFn({
   }
 });
 
-/**
- * Get configuration parameters
- *
- * @mcp read
- */
 export const getConfigurationParameters = defineServiceFn({
+  publish: "read",
+  title: "Get configuration parameters",
   output: z.object({
     groups: z.array(
       z.object({
@@ -2581,12 +2393,9 @@ export const getConfigurationParameters = defineServiceFn({
   }
 });
 
-/**
- * Get configuration rules
- *
- * @mcp read
- */
 export const getConfigurationRules = defineServiceFn({
+  publish: "read",
+  title: "Get configuration rules",
   output: z.array(rows.configurationRule),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
@@ -2599,12 +2408,9 @@ export const getConfigurationRules = defineServiceFn({
   }
 });
 
-/**
- * Get consumable
- *
- * @mcp read
- */
 export const getConsumable = defineServiceFn({
+  publish: "read",
+  title: "Get consumable",
   output: z.object({
     active: z.boolean(),
     assignee: z.string(),
@@ -2818,12 +2624,9 @@ export const getConsumable = defineServiceFn({
   }
 });
 
-/**
- * Get consumables
- *
- * @mcp read
- */
 export const getConsumables = defineServiceFn({
+  publish: "read",
+  title: "Get consumables",
   output: z
     .array(
       rows.consumables
@@ -2904,12 +2707,9 @@ export const getConsumables = defineServiceFn({
   }
 });
 
-/**
- * Get item
- *
- * @mcp read
- */
 export const getItem = defineServiceFn({
+  publish: "read",
+  title: "Get item",
   output: rows.item
     .pick({
       active: true,
@@ -3007,12 +2807,9 @@ export const getItem = defineServiceFn({
   }
 });
 
-/**
- * Get item cost
- *
- * @mcp read
- */
 export const getItemCost = defineServiceFn({
+  publish: "read",
+  title: "Get item cost",
   output: rows.itemCost
     .pick({
       companyId: true,
@@ -3101,12 +2898,9 @@ export const getItemCost = defineServiceFn({
   }
 });
 
-/**
- * Get item cost history
- *
- * @mcp read
- */
 export const getItemCostHistory = defineServiceFn({
+  publish: "read",
+  title: "Get item cost history",
   output: z.array(rows.costLedger),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
@@ -3122,12 +2916,9 @@ export const getItemCostHistory = defineServiceFn({
   }
 });
 
-/**
- * Get item customer part
- *
- * @mcp read
- */
 export const getItemCustomerPart = defineServiceFn({
+  publish: "read",
+  title: "Get item customer part",
   output: z.object({
     companyId: z.string(),
     customerId: z.string(),
@@ -3154,12 +2945,9 @@ export const getItemCustomerPart = defineServiceFn({
   }
 });
 
-/**
- * Get item customer parts
- *
- * @mcp read
- */
 export const getItemCustomerParts = defineServiceFn({
+  publish: "read",
+  title: "Get item customer parts",
   output: z.array(
     z.object({
       companyId: z.string(),
@@ -3188,12 +2976,9 @@ export const getItemCustomerParts = defineServiceFn({
   }
 });
 
-/**
- * Get item demand
- *
- * @mcp read
- */
 export const getItemDemand = defineServiceFn({
+  publish: "read",
+  title: "Get item demand",
   output: z.null(),
   input: z.looseObject({
     itemId: z.string(),
@@ -3212,12 +2997,9 @@ export const getItemDemand = defineServiceFn({
   }
 });
 
-/**
- * Get demand forecast sources
- *
- * @mcp read
- */
 export const getDemandForecastSources = defineServiceFn({
+  publish: "read",
+  title: "Get demand forecast sources",
   output: z.array(
     rows.demandForecastSource
       .pick({
@@ -3308,12 +3090,9 @@ export const getDemandForecastSources = defineServiceFn({
   }
 });
 
-/**
- * Get item files
- *
- * @mcp read
- */
 export const getItemFiles = defineServiceFn({
+  publish: "read",
+  title: "Get item files",
   output: z.array(
     z.object({
       name: z.string(),
@@ -3376,12 +3155,9 @@ export const getItemFiles = defineServiceFn({
   }
 });
 
-/**
- * Get item posting group
- *
- * @mcp read
- */
 export const getItemPostingGroup = defineServiceFn({
+  publish: "read",
+  title: "Get item posting group",
   output: rows.itemPostingGroup
     .pick({
       active: true,
@@ -3466,12 +3242,9 @@ export const getItemPostingGroup = defineServiceFn({
   }
 });
 
-/**
- * Get item posting groups
- *
- * @mcp read
- */
 export const getItemPostingGroups = defineServiceFn({
+  publish: "read",
+  title: "Get item posting groups",
   output: z
     .array(
       rows.itemPostingGroup
@@ -3541,12 +3314,9 @@ export const getItemPostingGroups = defineServiceFn({
   }
 });
 
-/**
- * Get item posting groups list
- *
- * @mcp read
- */
 export const getItemPostingGroupsList = defineServiceFn({
+  publish: "read",
+  title: "Get item posting groups list",
   output: z.array(
     rows.itemPostingGroup
       .pick({ id: true, name: true })
@@ -3565,12 +3335,9 @@ export const getItemPostingGroupsList = defineServiceFn({
   }
 });
 
-/**
- * Get item manufacturing
- *
- * @mcp read
- */
 export const getItemManufacturing = defineServiceFn({
+  publish: "read",
+  title: "Get item manufacturing",
   output: z.object({
     companyId: z.string(),
     conversionFactor: z.number(),
@@ -3658,12 +3425,9 @@ export const getItemManufacturing = defineServiceFn({
   }
 });
 
-/**
- * Get item planning
- *
- * @mcp read
- */
 export const getItemPlanning = defineServiceFn({
+  publish: "read",
+  title: "Get item planning",
   output: rows.itemPlanning
     .pick({
       allowCommonSupplyForProjects: true,
@@ -3763,12 +3527,9 @@ export const getItemPlanning = defineServiceFn({
   }
 });
 
-/**
- * Get item quantities
- *
- * @mcp read
- */
 export const getItemQuantities = defineServiceFn({
+  publish: "read",
+  title: "Get item quantities",
   output: z.object({
     active: z.boolean(),
     daysRemaining: z.number(),
@@ -3843,12 +3604,10 @@ export const getItemQuantities = defineServiceFn({
   }
 });
 
-/**
- * On-hand quantity per item for the Item picker's badge, as a plain map
- *
- * @mcp read
- */
 export const getItemStockQuantitiesByLocation = defineServiceFn({
+  publish: "read",
+  title:
+    "On-hand quantity per item for the Item picker's badge, as a plain map",
   output: z.record(z.string(), z.number()),
   input: z.looseObject({ locationId: z.string() }),
   permission: { view: "parts" },
@@ -3864,12 +3623,9 @@ export const getItemStockQuantitiesByLocation = defineServiceFn({
   }
 });
 
-/**
- * Get item replenishment
- *
- * @mcp read
- */
 export const getItemReplenishment = defineServiceFn({
+  publish: "read",
+  title: "Get item replenishment",
   output: rows.itemReplenishment
     .pick({
       companyId: true,
@@ -3961,12 +3717,9 @@ export const getItemReplenishment = defineServiceFn({
   }
 });
 
-/**
- * Get item supersession
- *
- * @mcp read
- */
 export const getItemSupersession = defineServiceFn({
+  publish: "read",
+  title: "Get item supersession",
   output: rows.itemSupersession
     .extend({
       successor: z
@@ -3992,12 +3745,9 @@ export const getItemSupersession = defineServiceFn({
   }
 });
 
-/**
- * Get item supersessions for items
- *
- * @mcp read
- */
 export const getItemSupersessionsForItems = defineServiceFn({
+  publish: "read",
+  title: "Get item supersessions for items",
   output: z.union([
     z.array(z.unknown()),
     z.array(
@@ -4035,12 +3785,9 @@ export const getItemSupersessionsForItems = defineServiceFn({
   }
 });
 
-/**
- * Get supersession chain
- *
- * @mcp read
- */
 export const getSupersessionChain = defineServiceFn({
+  publish: "read",
+  title: "Get supersession chain",
   output: z.object({
     chain: z.array(
       z.object({
@@ -4091,12 +3838,9 @@ export const getSupersessionChain = defineServiceFn({
   }
 });
 
-/**
- * Get item storage unit quantities
- *
- * @mcp read
- */
 export const getItemStorageUnitQuantities = defineServiceFn({
+  publish: "read",
+  title: "Get item storage unit quantities",
   output: z.array(
     z.object({
       itemId: z.string(),
@@ -4123,12 +3867,9 @@ export const getItemStorageUnitQuantities = defineServiceFn({
   }
 });
 
-/**
- * Get item unit sale price
- *
- * @mcp read
- */
 export const getItemUnitSalePrice = defineServiceFn({
+  publish: "read",
+  title: "Get item unit sale price",
   output: rows.itemUnitSalePrice
     .pick({
       allowInvoiceDiscount: true,
@@ -4219,12 +3960,9 @@ export const getItemUnitSalePrice = defineServiceFn({
   }
 });
 
-/**
- * Where a material or consumable is used
- *
- * @mcp read
- */
 export const getMaterialUsedIn = defineServiceFn({
+  publish: "read",
+  title: "Where a material or consumable is used",
   output: z.object({
     issues: z.array(
       z.object({
@@ -4294,12 +4032,9 @@ export const getMaterialUsedIn = defineServiceFn({
   }
 });
 
-/**
- * Get make methods
- *
- * @mcp read
- */
 export const getMakeMethods = defineServiceFn({
+  publish: "read",
+  title: "Get make methods",
   output: z.array(
     rows.makeMethod
       .pick({
@@ -4360,12 +4095,9 @@ export const getMakeMethods = defineServiceFn({
   }
 });
 
-/**
- * Get make method by id
- *
- * @mcp read
- */
 export const getMakeMethodById = defineServiceFn({
+  publish: "read",
+  title: "Get make method by id",
   output: rows.makeMethod
     .pick({
       changeOrderId: true,
@@ -4452,12 +4184,9 @@ export const getMakeMethodById = defineServiceFn({
   }
 });
 
-/**
- * Get material
- *
- * @mcp read
- */
 export const getMaterial = defineServiceFn({
+  publish: "read",
+  title: "Get material",
   output: z.object({
     active: z.boolean(),
     assignee: z.string(),
@@ -4683,12 +4412,9 @@ export const getMaterial = defineServiceFn({
   }
 });
 
-/**
- * Get materials
- *
- * @mcp read
- */
 export const getMaterials = defineServiceFn({
+  publish: "read",
+  title: "Get materials",
   output: z
     .array(
       rows.materials
@@ -4806,12 +4532,9 @@ export const getMaterials = defineServiceFn({
   }
 });
 
-/**
- * Get material dimension
- *
- * @mcp read
- */
 export const getMaterialDimension = defineServiceFn({
+  publish: "read",
+  title: "Get material dimension",
   output: rows.materialDimension,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
@@ -4826,12 +4549,9 @@ export const getMaterialDimension = defineServiceFn({
   }
 });
 
-/**
- * Get material dimensions
- *
- * @mcp read
- */
 export const getMaterialDimensions = defineServiceFn({
+  publish: "read",
+  title: "Get material dimensions",
   output: z.array(rows.materialDimensions).nullable(),
   input: z.looseObject({
     limit: z
@@ -4856,12 +4576,9 @@ export const getMaterialDimensions = defineServiceFn({
   }
 });
 
-/**
- * Get material dimension list
- *
- * @mcp read
- */
 export const getMaterialDimensionList = defineServiceFn({
+  publish: "read",
+  title: "Get material dimension list",
   output: z.array(rows.materialDimension),
   input: z.looseObject({ materialFormId: z.string(), isMetric: z.boolean() }),
   permission: { view: "parts" },
@@ -4878,12 +4595,9 @@ export const getMaterialDimensionList = defineServiceFn({
   }
 });
 
-/**
- * Get material finish
- *
- * @mcp read
- */
 export const getMaterialFinish = defineServiceFn({
+  publish: "read",
+  title: "Get material finish",
   output: rows.materialFinish,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
@@ -4895,12 +4609,9 @@ export const getMaterialFinish = defineServiceFn({
   }
 });
 
-/**
- * Get material finishes
- *
- * @mcp read
- */
 export const getMaterialFinishes = defineServiceFn({
+  publish: "read",
+  title: "Get material finishes",
   output: z.array(rows.materialFinishes).nullable(),
   input: z.looseObject({
     limit: z
@@ -4924,12 +4635,9 @@ export const getMaterialFinishes = defineServiceFn({
   }
 });
 
-/**
- * Get material finish list
- *
- * @mcp read
- */
 export const getMaterialFinishList = defineServiceFn({
+  publish: "read",
+  title: "Get material finish list",
   output: z.array(rows.materialFinish),
   input: z.looseObject({ materialSubstanceId: z.string() }),
   permission: { view: "parts" },
@@ -4945,12 +4653,9 @@ export const getMaterialFinishList = defineServiceFn({
   }
 });
 
-/**
- * Get material form
- *
- * @mcp read
- */
 export const getMaterialForm = defineServiceFn({
+  publish: "read",
+  title: "Get material form",
   output: rows.materialForm
     .pick({
       code: true,
@@ -5031,12 +4736,9 @@ export const getMaterialForm = defineServiceFn({
   }
 });
 
-/**
- * Get material forms
- *
- * @mcp read
- */
 export const getMaterialForms = defineServiceFn({
+  publish: "read",
+  title: "Get material forms",
   output: z
     .array(
       rows.materialForm
@@ -5105,12 +4807,9 @@ export const getMaterialForms = defineServiceFn({
   }
 });
 
-/**
- * Get material forms list
- *
- * @mcp read
- */
 export const getMaterialFormsList = defineServiceFn({
+  publish: "read",
+  title: "Get material forms list",
   output: z.array(
     rows.materialForm
       .pick({ id: true, name: true, code: true, companyId: true })
@@ -5126,12 +4825,9 @@ export const getMaterialFormsList = defineServiceFn({
   }
 });
 
-/**
- * Get material grades
- *
- * @mcp read
- */
 export const getMaterialGrades = defineServiceFn({
+  publish: "read",
+  title: "Get material grades",
   output: z.array(rows.materialGrades).nullable(),
   input: z.looseObject({
     limit: z
@@ -5155,12 +4851,9 @@ export const getMaterialGrades = defineServiceFn({
   }
 });
 
-/**
- * Get material grade
- *
- * @mcp read
- */
 export const getMaterialGrade = defineServiceFn({
+  publish: "read",
+  title: "Get material grade",
   output: rows.materialGrade,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
@@ -5172,12 +4865,9 @@ export const getMaterialGrade = defineServiceFn({
   }
 });
 
-/**
- * Get material grade list
- *
- * @mcp read
- */
 export const getMaterialGradeList = defineServiceFn({
+  publish: "read",
+  title: "Get material grade list",
   output: z.array(rows.materialGrade),
   input: z.looseObject({ materialSubstanceId: z.string() }),
   permission: { view: "parts" },
@@ -5193,12 +4883,9 @@ export const getMaterialGradeList = defineServiceFn({
   }
 });
 
-/**
- * Get material substance
- *
- * @mcp read
- */
 export const getMaterialSubstance = defineServiceFn({
+  publish: "read",
+  title: "Get material substance",
   output: rows.materialSubstance
     .pick({
       code: true,
@@ -5282,12 +4969,9 @@ export const getMaterialSubstance = defineServiceFn({
   }
 });
 
-/**
- * Get material substances
- *
- * @mcp read
- */
 export const getMaterialSubstances = defineServiceFn({
+  publish: "read",
+  title: "Get material substances",
   output: z
     .array(
       rows.materialSubstance
@@ -5356,12 +5040,9 @@ export const getMaterialSubstances = defineServiceFn({
   }
 });
 
-/**
- * Get material substances list
- *
- * @mcp read
- */
 export const getMaterialSubstancesList = defineServiceFn({
+  publish: "read",
+  title: "Get material substances list",
   output: z.array(
     rows.materialSubstance
       .pick({ id: true, name: true, code: true, companyId: true })
@@ -5380,12 +5061,9 @@ export const getMaterialSubstancesList = defineServiceFn({
   }
 });
 
-/**
- * Get method materials
- *
- * @mcp read
- */
 export const getMethodMaterials = defineServiceFn({
+  publish: "read",
+  title: "Get method materials",
   output: z
     .array(
       rows.methodMaterial
@@ -5485,12 +5163,9 @@ export const getMethodMaterials = defineServiceFn({
   }
 });
 
-/**
- * Get method materials by make method
- *
- * @mcp read
- */
 export const getMethodMaterialsByMakeMethod = defineServiceFn({
+  publish: "read",
+  title: "Get method materials by make method",
   output: z.array(
     rows.methodMaterial
       .pick({
@@ -5584,12 +5259,9 @@ export const getMethodMaterialsByMakeMethod = defineServiceFn({
   }
 });
 
-/**
- * Get method operations
- *
- * @mcp read
- */
 export const getMethodOperations = defineServiceFn({
+  publish: "read",
+  title: "Get method operations",
   output: z
     .array(
       rows.methodOperation
@@ -5692,12 +5364,9 @@ export const getMethodOperations = defineServiceFn({
   }
 });
 
-/**
- * Get method operations by make method id
- *
- * @mcp read
- */
 export const getMethodOperationsByMakeMethodId = defineServiceFn({
+  publish: "read",
+  title: "Get method operations by make method id",
   output: z.array(
     rows.methodOperation
       .pick({
@@ -5861,12 +5530,9 @@ export const getMethodOperationsByMakeMethodId = defineServiceFn({
   }
 });
 
-/**
- * Get method tree
- *
- * @mcp read
- */
 export const getMethodTree = defineServiceFn({
+  publish: "read",
+  title: "Get method tree",
   output: z.array(
     z.object({
       id: z.string(),
@@ -5994,12 +5660,9 @@ export const getMethodTree = defineServiceFn({
   }
 });
 
-/**
- * Get bom item attributes
- *
- * @mcp read
- */
 export const getBomItemAttributes = defineServiceFn({
+  publish: "read",
+  title: "Get bom item attributes",
   output: z.record(z.string(), z.unknown()),
   input: z.looseObject({ itemIds: z.array(z.string()) }),
   permission: { view: "parts" },
@@ -6015,12 +5678,9 @@ export const getBomItemAttributes = defineServiceFn({
   }
 });
 
-/**
- * Get open job materials
- *
- * @mcp read
- */
 export const getOpenJobMaterials = defineServiceFn({
+  publish: "read",
+  title: "Get open job materials",
   output: z.array(
     z.object({
       id: z.string().nullable(),
@@ -6047,12 +5707,9 @@ export const getOpenJobMaterials = defineServiceFn({
   }
 });
 
-/**
- * Get open production orders
- *
- * @mcp read
- */
 export const getOpenProductionOrders = defineServiceFn({
+  publish: "read",
+  title: "Get open production orders",
   output: z.array(
     z.object({
       id: z.string(),
@@ -6078,12 +5735,9 @@ export const getOpenProductionOrders = defineServiceFn({
   }
 });
 
-/**
- * Get open purchase order lines
- *
- * @mcp read
- */
 export const getOpenPurchaseOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get open purchase order lines",
   output: z.array(
     rows.openPurchaseOrderLines
       .pick({
@@ -6113,12 +5767,9 @@ export const getOpenPurchaseOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get open sales order lines
- *
- * @mcp read
- */
 export const getOpenSalesOrderLines = defineServiceFn({
+  publish: "read",
+  title: "Get open sales order lines",
   output: z.array(
     z.object({
       id: z.string().nullable(),
@@ -6141,12 +5792,9 @@ export const getOpenSalesOrderLines = defineServiceFn({
   }
 });
 
-/**
- * Get part
- *
- * @mcp read
- */
 export const getPart = defineServiceFn({
+  publish: "read",
+  title: "Get part",
   output: z.object({
     active: z.boolean(),
     assignee: z.string(),
@@ -6359,12 +6007,9 @@ export const getPart = defineServiceFn({
   }
 });
 
-/**
- * Get parts
- *
- * @mcp read
- */
 export const getParts = defineServiceFn({
+  publish: "read",
+  title: "Get parts",
   output: z
     .array(
       rows.parts
@@ -6474,12 +6119,9 @@ export const getParts = defineServiceFn({
   }
 });
 
-/**
- * Get item mpns list
- *
- * @mcp read
- */
 export const getItemMpnsList = defineServiceFn({
+  publish: "read",
+  title: "Get item mpns list",
   output: z.array(
     z.object({
       mpn: z.string()
@@ -6495,12 +6137,9 @@ export const getItemMpnsList = defineServiceFn({
   }
 });
 
-/**
- * Get parts list
- *
- * @mcp read
- */
 export const getPartsList = defineServiceFn({
+  publish: "read",
+  title: "Get parts list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -6518,12 +6157,9 @@ export const getPartsList = defineServiceFn({
   }
 });
 
-/**
- * Where a part, tool or service is used
- *
- * @mcp read
- */
 export const getPartUsedIn = defineServiceFn({
+  publish: "read",
+  title: "Where a part, tool or service is used",
   output: z.object({
     issues: z.array(
       z.object({
@@ -6607,12 +6243,9 @@ export const getPartUsedIn = defineServiceFn({
   }
 });
 
-/**
- * Get pick method
- *
- * @mcp read
- */
 export const getPickMethod = defineServiceFn({
+  publish: "read",
+  title: "Get pick method",
   output: rows.pickMethod
     .pick({
       companyId: true,
@@ -6698,12 +6331,9 @@ export const getPickMethod = defineServiceFn({
   }
 });
 
-/**
- * Get pick methods
- *
- * @mcp read
- */
 export const getPickMethods = defineServiceFn({
+  publish: "read",
+  title: "Get pick methods",
   output: z.array(
     rows.pickMethod
       .pick({
@@ -6762,12 +6392,9 @@ export const getPickMethods = defineServiceFn({
   }
 });
 
-/**
- * Get services
- *
- * @mcp read
- */
 export const getServices = defineServiceFn({
+  publish: "read",
+  title: "Get services",
   output: z
     .array(
       rows.services
@@ -6873,12 +6500,9 @@ export const getServices = defineServiceFn({
   }
 });
 
-/**
- * Get service
- *
- * @mcp read
- */
 export const getService = defineServiceFn({
+  publish: "read",
+  title: "Get service",
   output: z.object({
     active: z.boolean(),
     assignee: z.string(),
@@ -7091,12 +6715,9 @@ export const getService = defineServiceFn({
   }
 });
 
-/**
- * Get services list
- *
- * @mcp read
- */
 export const getServicesList = defineServiceFn({
+  publish: "read",
+  title: "Get services list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -7114,12 +6735,9 @@ export const getServicesList = defineServiceFn({
   }
 });
 
-/**
- * Get supplier parts
- *
- * @mcp read
- */
 export const getSupplierParts = defineServiceFn({
+  publish: "read",
+  title: "Get supplier parts",
   output: z.array(
     rows.supplierPart
       .pick({
@@ -7186,12 +6804,9 @@ export const getSupplierParts = defineServiceFn({
   }
 });
 
-/**
- * Get supplier parts by supplier
- *
- * @mcp read
- */
 export const getSupplierPartsBySupplier = defineServiceFn({
+  publish: "read",
+  title: "Get supplier parts by supplier",
   output: z.array(
     rows.supplierPart
       .pick({
@@ -7273,12 +6888,9 @@ export const getSupplierPartsBySupplier = defineServiceFn({
   }
 });
 
-/**
- * Get tool
- *
- * @mcp read
- */
 export const getTool = defineServiceFn({
+  publish: "read",
+  title: "Get tool",
   output: z.object({
     active: z.boolean(),
     assignee: z.string(),
@@ -7491,12 +7103,9 @@ export const getTool = defineServiceFn({
   }
 });
 
-/**
- * Get tools
- *
- * @mcp read
- */
 export const getTools = defineServiceFn({
+  publish: "read",
+  title: "Get tools",
   output: z
     .array(
       rows.tools
@@ -7605,12 +7214,9 @@ export const getTools = defineServiceFn({
   }
 });
 
-/**
- * Get unit of measure
- *
- * @mcp read
- */
 export const getUnitOfMeasure = defineServiceFn({
+  publish: "read",
+  title: "Get unit of measure",
   output: rows.unitOfMeasure
     .pick({
       active: true,
@@ -7696,12 +7302,10 @@ export const getUnitOfMeasure = defineServiceFn({
   }
 });
 
-/**
- * Which tables still reference a unit of measure, and how many rows each; empty means safe to delete (or id not visible to the caller)
- *
- * @mcp read
- */
 export const getUnitOfMeasureUsage = defineServiceFn({
+  publish: "read",
+  title:
+    "Which tables still reference a unit of measure, and how many rows each; empty means safe to delete (or id not visible to the caller)",
   output: z.array(
     z.object({
       count: z.number(),
@@ -7721,12 +7325,9 @@ export const getUnitOfMeasureUsage = defineServiceFn({
   }
 });
 
-/**
- * Get unit of measures
- *
- * @mcp read
- */
 export const getUnitOfMeasures = defineServiceFn({
+  publish: "read",
+  title: "Get unit of measures",
   output: z
     .array(
       rows.unitOfMeasure
@@ -7796,12 +7397,9 @@ export const getUnitOfMeasures = defineServiceFn({
   }
 });
 
-/**
- * Get unit of measures list
- *
- * @mcp read
- */
 export const getUnitOfMeasuresList = defineServiceFn({
+  publish: "read",
+  title: "Get unit of measures list",
   output: z.array(rows.currencyCode),
   input: z.record(z.string(), z.unknown()),
   permission: { view: "parts" },
@@ -7813,12 +7411,9 @@ export const getUnitOfMeasuresList = defineServiceFn({
   }
 });
 
-/**
- * Update configuration parameter group order
- *
- * @mcp
- */
 export const updateConfigurationParameterGroupOrder = defineServiceFn({
+  publish: true,
+  title: "Update configuration parameter group order",
   output: z.array(
     rows.configurationParameterGroup
       .pick({ id: true })
@@ -7837,12 +7432,9 @@ export const updateConfigurationParameterGroupOrder = defineServiceFn({
   }
 });
 
-/**
- * Update default revision
- *
- * @mcp
- */
 export const updateDefaultRevision = defineServiceFn({
+  publish: true,
+  title: "Update default revision",
   output: z.object({
     id: z.string(),
     readableId: z.string(),
@@ -7870,12 +7462,9 @@ export const updateDefaultRevision = defineServiceFn({
   }
 });
 
-/**
- * Update configuration parameter order
- *
- * @mcp
- */
 export const updateConfigurationParameterOrder = defineServiceFn({
+  publish: true,
+  title: "Update configuration parameter order",
   output: z.array(
     rows.configurationParameter
       .pick({ id: true })
@@ -7898,12 +7487,9 @@ export const updateConfigurationParameterOrder = defineServiceFn({
   }
 });
 
-/**
- * Update item cost
- *
- * @mcp
- */
 export const updateItemCost = defineServiceFn({
+  publish: true,
+  title: "Update item cost",
   output: z.null(),
   input: z.looseObject({
     itemId: z.string(),
@@ -7922,12 +7508,9 @@ export const updateItemCost = defineServiceFn({
   }
 });
 
-/**
- * Update material order
- *
- * @mcp
- */
 export const updateMaterialOrder = defineServiceFn({
+  publish: true,
+  title: "Update material order",
   output: z.object({
     ids: z.array(z.string()),
     notice: z.string().nullable()
@@ -7941,12 +7524,9 @@ export const updateMaterialOrder = defineServiceFn({
   }
 });
 
-/**
- * Update operation order
- *
- * @mcp
- */
 export const updateOperationOrder = defineServiceFn({
+  publish: true,
+  title: "Update operation order",
   output: z.object({
     ids: z.array(z.string()),
     notice: z.string().nullable()
@@ -7960,12 +7540,9 @@ export const updateOperationOrder = defineServiceFn({
   }
 });
 
-/**
- * Update revision
- *
- * @mcp
- */
 export const updateRevision = defineServiceFn({
+  publish: true,
+  title: "Update revision",
   output: z.array(
     z.object({
       id: z.string()
@@ -7984,12 +7561,9 @@ export const updateRevision = defineServiceFn({
   }
 });
 
-/**
- * Upsert configuration parameter
- *
- * @mcp
- */
 export const upsertConfigurationParameter = defineServiceFn({
+  publish: true,
+  title: "Upsert configuration parameter",
   output: z.array(
     rows.configurationParameter
       .pick({ id: true })
@@ -8024,12 +7598,9 @@ export const upsertConfigurationParameter = defineServiceFn({
   }
 });
 
-/**
- * Upsert configuration parameter group
- *
- * @mcp
- */
 export const upsertConfigurationParameterGroup = defineServiceFn({
+  publish: true,
+  title: "Upsert configuration parameter group",
   output: z.array(
     rows.configurationParameterGroup
       .pick({ id: true })
@@ -8048,12 +7619,9 @@ export const upsertConfigurationParameterGroup = defineServiceFn({
   }
 });
 
-/**
- * Upsert configuration rule
- *
- * @mcp
- */
 export const upsertConfigurationRule = defineServiceFn({
+  publish: true,
+  title: "Upsert configuration rule",
   output: z.null(),
   input: z.looseObject({
     field: z.string().min(1),
@@ -8072,12 +7640,10 @@ export const upsertConfigurationRule = defineServiceFn({
   }
 });
 
-/**
- * Return the distinct processIds referenced by methodOperation rows on the item's active makeMethod
- *
- * @mcp read
- */
 export const getRecipeProcessIdsForItem = defineServiceFn({
+  publish: "read",
+  title:
+    "Return the distinct processIds referenced by methodOperation rows on the item's active makeMethod",
   output: z.array(z.string()),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
@@ -8092,12 +7658,9 @@ export const getRecipeProcessIdsForItem = defineServiceFn({
   }
 });
 
-/**
- * Fetch the shelf-life policy for an item
- *
- * @mcp read
- */
 export const getItemShelfLife = defineServiceFn({
+  publish: "read",
+  title: "Fetch the shelf-life policy for an item",
   output: rows.itemShelfLife
     .pick({
       mode: true,
@@ -8120,12 +7683,10 @@ export const getItemShelfLife = defineServiceFn({
   }
 });
 
-/**
- * Returns true when the item's active make-method has at least one BOM input with a managed shelf-life policy
- *
- * @mcp read
- */
 export const getBomHasShelfLifeManagedInput = defineServiceFn({
+  publish: "read",
+  title:
+    "Returns true when the item's active make-method has at least one BOM input with a managed shelf-life policy",
   output: z.boolean().nullable(),
   input: z.looseObject({ itemId: z.string() }),
   permission: { view: "parts" },
@@ -8138,12 +7699,10 @@ export const getBomHasShelfLifeManagedInput = defineServiceFn({
   }
 });
 
-/**
- * Atomic counterpart to {@link upsertPickMethod} + {@link upsertItemShelfLife}
- *
- * @mcp destructive
- */
 export const upsertPickMethodWithShelfLife = defineServiceFn({
+  publish: "destructive",
+  title:
+    "Atomic counterpart to {@link upsertPickMethod} + {@link upsertItemShelfLife}",
   input: z.looseObject({
     itemId: z.string(),
     locationId: z.string(),
@@ -8169,15 +7728,11 @@ export const upsertPickMethodWithShelfLife = defineServiceFn({
   }
 });
 
-/**
- * Create a consumable
- *
- * @remarks
- * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
- *
- * @mcp
- */
 export const createConsumable = defineServiceFn({
+  publish: true,
+  title: "Create a consumable",
+  description:
+    "Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…",
   input: z.looseObject({
     id: z
       .string()
@@ -8219,15 +7774,11 @@ export const createConsumable = defineServiceFn({
   }
 });
 
-/**
- * Update a consumable
- *
- * @remarks
- * Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…
- *
- * @mcp
- */
 export const updateConsumable = defineServiceFn({
+  publish: true,
+  title: "Update a consumable",
+  description:
+    "Creates a consumable (item row and consumable row) or updates one; on update `id` is the item id (uuid) or the consumable's readable id and the write is a full…",
   input: z
     .looseObject({
       id: z
@@ -8276,14 +7827,10 @@ export const updateConsumable = defineServiceFn({
   }
 });
 
-/**
- * Resolve extracted document line text to an item id: first through the
- * party's part mapping (customer part or supplier part), then by an exact
- * match on the item's readable id or name. Null when nothing matches.
- *
- * @mcp
- */
 export const resolveItemIdFromExtractedText = defineServiceFn({
+  publish: true,
+  title:
+    "Resolve extracted document line text to an item id: first through the party's part mapping (customer part or supplier part), then by an exact match on the item's readable id or name. Null when nothing matches",
   output: z.string(),
   input: z.looseObject({
     party: z.union([
@@ -8309,17 +7856,12 @@ export const resolveItemIdFromExtractedText = defineServiceFn({
   }
 });
 
-/**
- * Update item
- *
- * @remarks
- * Writes the item's own fields. Refused when the item is not of `type`, or
- * when `readableId` differs from the item's: change the number with
- * `setItemReadableId`, which also renames the type row keyed by it.
- *
- * @mcp
- */
 export const updateItem = defineServiceFn({
+  publish: true,
+  title: "Update item",
+  description: `Writes the item's own fields. Refused when the item is not of \`type\`, or
+when \`readableId\` differs from the item's: change the number with
+\`setItemReadableId\`, which also renames the type row keyed by it.`,
   output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.looseObject({
     id: z.string().min(1).max(255),
@@ -8366,12 +7908,9 @@ export const updateItem = defineServiceFn({
   }
 });
 
-/**
- * Upsert item cost
- *
- * @mcp
- */
 export const upsertItemCost = defineServiceFn({
+  publish: true,
+  title: "Upsert item cost",
   output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
@@ -8392,15 +7931,10 @@ export const upsertItemCost = defineServiceFn({
   }
 });
 
-/**
- * Create a pick method
- *
- * @remarks
- * Upsert pick method
- *
- * @mcp
- */
 export const createPickMethod = defineServiceFn({
+  publish: true,
+  title: "Create a pick method",
+  description: "Upsert pick method",
   output: z.null(),
   input: z.looseObject({
     itemId: z
@@ -8431,15 +7965,10 @@ export const createPickMethod = defineServiceFn({
   }
 });
 
-/**
- * Update a pick method
- *
- * @remarks
- * Upsert pick method
- *
- * @mcp
- */
 export const updatePickMethod = defineServiceFn({
+  publish: true,
+  title: "Update a pick method",
+  description: "Upsert pick method",
   output: z.null(),
   input: z
     .looseObject({
@@ -8472,12 +8001,9 @@ export const updatePickMethod = defineServiceFn({
   }
 });
 
-/**
- * Upsert item purchasing
- *
- * @mcp
- */
 export const upsertItemPurchasing = defineServiceFn({
+  publish: true,
+  title: "Upsert item purchasing",
   output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
@@ -8498,15 +8024,10 @@ export const upsertItemPurchasing = defineServiceFn({
   }
 });
 
-/**
- * Create a item posting group
- *
- * @remarks
- * Upsert item posting group
- *
- * @mcp
- */
 export const createItemPostingGroup = defineServiceFn({
+  publish: true,
+  title: "Create a item posting group",
+  description: "Upsert item posting group",
   output: rows.itemPostingGroup
     .pick({ id: true })
     .meta({ table: "itemPostingGroup" }),
@@ -8531,15 +8052,10 @@ export const createItemPostingGroup = defineServiceFn({
   }
 });
 
-/**
- * Update a item posting group
- *
- * @remarks
- * Upsert item posting group
- *
- * @mcp
- */
 export const updateItemPostingGroup = defineServiceFn({
+  publish: true,
+  title: "Update a item posting group",
+  description: "Upsert item posting group",
   output: rows.itemPostingGroup
     .pick({ id: true })
     .meta({ table: "itemPostingGroup" }),
@@ -8566,12 +8082,9 @@ export const updateItemPostingGroup = defineServiceFn({
   }
 });
 
-/**
- * Upsert item customer part
- *
- * @mcp
- */
 export const upsertItemCustomerPart = defineServiceFn({
+  publish: true,
+  title: "Upsert item customer part",
   output: rows.customer.pick({ id: true }).meta({ table: "customer" }),
   input: z.looseObject({
     itemId: z.string().min(1),
@@ -8592,17 +8105,12 @@ export const upsertItemCustomerPart = defineServiceFn({
   }
 });
 
-/**
- * Save an item's sales settings.
- *
- * @remarks
- * Its unit sale price, and the labor and parts warranty months a shipped
- * serial gets. A warranty field sent empty (null) is cleared; one not sent
- * is left alone.
- *
- * @mcp
- */
 export const upsertItemUnitSalePrice = defineServiceFn({
+  publish: true,
+  title: "Save an item's sales settings",
+  description: `Its unit sale price, and the labor and parts warranty months a shipped
+serial gets. A warranty field sent empty (null) is cleared; one not sent
+is left alone.`,
   output: z.null(),
   input: z.looseObject({
     itemId: z.string().min(1),
@@ -8625,15 +8133,10 @@ export const upsertItemUnitSalePrice = defineServiceFn({
   }
 });
 
-/**
- * Create a method material
- *
- * @remarks
- * Upsert method material
- *
- * @mcp
- */
 export const createMethodMaterial = defineServiceFn({
+  publish: true,
+  title: "Create a method material",
+  description: "Upsert method material",
   output: rows.methodMaterial
     .pick({ id: true })
     .meta({ table: "methodMaterial" }),
@@ -8681,15 +8184,10 @@ export const createMethodMaterial = defineServiceFn({
   }
 });
 
-/**
- * Update a method material
- *
- * @remarks
- * Upsert method material
- *
- * @mcp
- */
 export const updateMethodMaterial = defineServiceFn({
+  publish: true,
+  title: "Update a method material",
+  description: "Upsert method material",
   output: rows.methodMaterial
     .pick({ id: true })
     .meta({ table: "methodMaterial" }),
@@ -8743,15 +8241,10 @@ export const updateMethodMaterial = defineServiceFn({
   }
 });
 
-/**
- * Create a method operation
- *
- * @remarks
- * Upsert method operation
- *
- * @mcp
- */
 export const createMethodOperation = defineServiceFn({
+  publish: true,
+  title: "Create a method operation",
+  description: "Upsert method operation",
   output: rows.methodOperation
     .pick({ id: true })
     .meta({ table: "methodOperation" }),
@@ -8852,15 +8345,10 @@ export const createMethodOperation = defineServiceFn({
   }
 });
 
-/**
- * Update a method operation
- *
- * @remarks
- * Upsert method operation
- *
- * @mcp
- */
 export const updateMethodOperation = defineServiceFn({
+  publish: true,
+  title: "Update a method operation",
+  description: "Upsert method operation",
   output: rows.methodOperation
     .pick({ id: true })
     .meta({ table: "methodOperation" }),
@@ -8967,25 +8455,23 @@ export const updateMethodOperation = defineServiceFn({
   }
 });
 
-/**
- * Set the work instruction of a method operation.
- *
- * @remarks
- * Replaces the operation's work instruction; the rest of the operation is
- * unchanged. Only a Draft method version can change, and the revision's
- * release lock applies, as in the bill of process editor.
- *
- * @param id - The method operation's id.
- * @param text - The work instruction as Markdown: headings, **bold**,
- *   _italic_, lists, links, quotes and code. Empty text clears it.
- *
- * @mcp
- */
 export const setMethodOperationWorkInstruction = defineServiceFn({
+  publish: true,
+  title: "Set the work instruction of a method operation",
+  description: `Replaces the operation's work instruction; the rest of the operation is
+unchanged. Only a Draft method version can change, and the revision's
+release lock applies, as in the bill of process editor.`,
   output: rows.methodOperation
     .pick({ id: true })
     .meta({ table: "methodOperation" }),
-  input: z.object({ id: z.string().min(1), text: z.string() }),
+  input: z.object({
+    id: z.string().min(1).describe("The method operation's id."),
+    text: z
+      .string()
+      .describe(
+        "The work instruction as Markdown: headings, **bold**, _italic_, lists, links, quotes and code. Empty text clears it."
+      )
+  }),
   permission: { update: "parts" },
 
   async run(ctx, { id, text }) {
@@ -9008,15 +8494,10 @@ export const setMethodOperationWorkInstruction = defineServiceFn({
   }
 });
 
-/**
- * Create a method operation step
- *
- * @remarks
- * Upsert method operation step
- *
- * @mcp
- */
 export const createMethodOperationStep = defineServiceFn({
+  publish: true,
+  title: "Create a method operation step",
+  description: "Upsert method operation step",
   output: rows.methodOperationStep
     .pick({ id: true })
     .meta({ table: "methodOperationStep" }),
@@ -9073,15 +8554,10 @@ export const createMethodOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Update a method operation step
- *
- * @remarks
- * Upsert method operation step
- *
- * @mcp
- */
 export const updateMethodOperationStep = defineServiceFn({
+  publish: true,
+  title: "Update a method operation step",
+  description: "Upsert method operation step",
   output: rows.methodOperationStep
     .pick({ id: true })
     .meta({ table: "methodOperationStep" }),
@@ -9148,12 +8624,9 @@ export const updateMethodOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Duplicate method operation step
- *
- * @mcp
- */
 export const duplicateMethodOperationStep = defineServiceFn({
+  publish: true,
+  title: "Duplicate method operation step",
   output: rows.methodOperationStep
     .pick({ id: true })
     .meta({ table: "methodOperationStep" }),
@@ -9176,15 +8649,10 @@ export const duplicateMethodOperationStep = defineServiceFn({
   }
 });
 
-/**
- * Create a method operation step slide
- *
- * @remarks
- * Upsert method operation step slide
- *
- * @mcp
- */
 export const createMethodOperationStepSlide = defineServiceFn({
+  publish: true,
+  title: "Create a method operation step slide",
+  description: "Upsert method operation step slide",
   output: rows.methodOperationStepSlide
     .pick({ id: true })
     .meta({ table: "methodOperationStepSlide" }),
@@ -9232,15 +8700,10 @@ export const createMethodOperationStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Update a method operation step slide
- *
- * @remarks
- * Upsert method operation step slide
- *
- * @mcp
- */
 export const updateMethodOperationStepSlide = defineServiceFn({
+  publish: true,
+  title: "Update a method operation step slide",
+  description: "Upsert method operation step slide",
   output: rows.methodOperationStepSlide
     .pick({ id: true })
     .meta({ table: "methodOperationStepSlide" }),
@@ -9292,15 +8755,10 @@ export const updateMethodOperationStepSlide = defineServiceFn({
   }
 });
 
-/**
- * Create a method operation parameter
- *
- * @remarks
- * Upsert method operation parameter
- *
- * @mcp
- */
 export const createMethodOperationParameter = defineServiceFn({
+  publish: true,
+  title: "Create a method operation parameter",
+  description: "Upsert method operation parameter",
   output: rows.methodOperationParameter
     .pick({ id: true })
     .meta({ table: "methodOperationParameter" }),
@@ -9335,15 +8793,10 @@ export const createMethodOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Update a method operation parameter
- *
- * @remarks
- * Upsert method operation parameter
- *
- * @mcp
- */
 export const updateMethodOperationParameter = defineServiceFn({
+  publish: true,
+  title: "Update a method operation parameter",
+  description: "Upsert method operation parameter",
   output: rows.methodOperationParameter
     .pick({ id: true })
     .meta({ table: "methodOperationParameter" }),
@@ -9383,15 +8836,10 @@ export const updateMethodOperationParameter = defineServiceFn({
   }
 });
 
-/**
- * Create a method operation tool
- *
- * @remarks
- * Upsert method operation tool
- *
- * @mcp
- */
 export const createMethodOperationTool = defineServiceFn({
+  publish: true,
+  title: "Create a method operation tool",
+  description: "Upsert method operation tool",
   output: rows.methodOperationTool
     .pick({ id: true })
     .meta({ table: "methodOperationTool" }),
@@ -9426,15 +8874,10 @@ export const createMethodOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Update a method operation tool
- *
- * @remarks
- * Upsert method operation tool
- *
- * @mcp
- */
 export const updateMethodOperationTool = defineServiceFn({
+  publish: true,
+  title: "Update a method operation tool",
+  description: "Upsert method operation tool",
   output: rows.methodOperationTool
     .pick({ id: true })
     .meta({ table: "methodOperationTool" }),
@@ -9474,12 +8917,9 @@ export const updateMethodOperationTool = defineServiceFn({
   }
 });
 
-/**
- * Set method material step link
- *
- * @mcp destructive
- */
 export const setMethodMaterialStepLink = defineServiceFn({
+  publish: "destructive",
+  title: "Set method material step link",
   output: z.null(),
   input: z.looseObject({
     methodMaterialId: z.string(),
@@ -9540,12 +8980,9 @@ export const setMethodMaterialStepLink = defineServiceFn({
   }
 });
 
-/**
- * Set method operation tool step link
- *
- * @mcp destructive
- */
 export const setMethodOperationToolStepLink = defineServiceFn({
+  publish: "destructive",
+  title: "Set method operation tool step link",
   output: z.null(),
   input: z.looseObject({
     operationId: z.string(),
@@ -9587,15 +9024,11 @@ export const setMethodOperationToolStepLink = defineServiceFn({
   }
 });
 
-/**
- * Create a material
- *
- * @remarks
- * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
- *
- * @mcp
- */
 export const createMaterial = defineServiceFn({
+  publish: true,
+  title: "Create a material",
+  description:
+    "Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size",
   input: z.looseObject({
     id: z
       .string()
@@ -9645,15 +9078,11 @@ export const createMaterial = defineServiceFn({
   }
 });
 
-/**
- * Update a material
- *
- * @remarks
- * Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size
- *
- * @mcp
- */
 export const updateMaterial = defineServiceFn({
+  publish: true,
+  title: "Update a material",
+  description:
+    "Creates a material or updates one by item id or readable id; an update keeps any optional field it leaves out, and `sizes` adds a revision per new size",
   input: z
     .looseObject({
       id: z
@@ -9710,12 +9139,10 @@ export const updateMaterial = defineServiceFn({
   }
 });
 
-/**
- * Creates a dimension (a named size) for a material shape, or updates the one whose `id` is sent; a new dimension's id is generated
- *
- * @mcp
- */
 export const upsertMaterialDimension = defineServiceFn({
+  publish: true,
+  title:
+    "Creates a dimension (a named size) for a material shape, or updates the one whose `id` is sent; a new dimension's id is generated",
   output: rows.materialDimension
     .pick({ id: true })
     .meta({ table: "materialDimension" }),
@@ -9742,12 +9169,10 @@ export const upsertMaterialDimension = defineServiceFn({
   }
 });
 
-/**
- * Creates a finish for a material substance, or updates the one whose `id` is sent; a new finish's id is generated
- *
- * @mcp
- */
 export const upsertMaterialFinish = defineServiceFn({
+  publish: true,
+  title:
+    "Creates a finish for a material substance, or updates the one whose `id` is sent; a new finish's id is generated",
   output: rows.materialFinish
     .pick({ id: true })
     .meta({ table: "materialFinish" }),
@@ -9771,15 +9196,10 @@ export const upsertMaterialFinish = defineServiceFn({
   }
 });
 
-/**
- * Create a material form
- *
- * @remarks
- * Upsert material form
- *
- * @mcp
- */
 export const createMaterialForm = defineServiceFn({
+  publish: true,
+  title: "Create a material form",
+  description: "Upsert material form",
   output: rows.materialForm.pick({ id: true }).meta({ table: "materialForm" }),
   input: z.looseObject({
     name: z.string().min(1).max(255),
@@ -9802,15 +9222,10 @@ export const createMaterialForm = defineServiceFn({
   }
 });
 
-/**
- * Update a material form
- *
- * @remarks
- * Upsert material form
- *
- * @mcp
- */
 export const updateMaterialForm = defineServiceFn({
+  publish: true,
+  title: "Update a material form",
+  description: "Upsert material form",
   output: rows.materialForm.pick({ id: true }).meta({ table: "materialForm" }),
   input: z
     .looseObject({
@@ -9835,12 +9250,10 @@ export const updateMaterialForm = defineServiceFn({
   }
 });
 
-/**
- * Creates a grade for a material substance, or updates the one whose `id` is sent; a new grade's id is generated
- *
- * @mcp
- */
 export const upsertMaterialGrade = defineServiceFn({
+  publish: true,
+  title:
+    "Creates a grade for a material substance, or updates the one whose `id` is sent; a new grade's id is generated",
   output: rows.materialGrade
     .pick({ id: true })
     .meta({ table: "materialGrade" }),
@@ -9864,12 +9277,9 @@ export const upsertMaterialGrade = defineServiceFn({
   }
 });
 
-/**
- * Delete material type
- *
- * @mcp destructive
- */
 export const deleteMaterialType = defineServiceFn({
+  publish: "destructive",
+  title: "Delete material type",
   output: z.array(
     rows.materialType.pick({ id: true }).meta({ table: "materialType" })
   ),
@@ -9883,12 +9293,9 @@ export const deleteMaterialType = defineServiceFn({
   }
 });
 
-/**
- * Get material types
- *
- * @mcp read
- */
 export const getMaterialTypes = defineServiceFn({
+  publish: "read",
+  title: "Get material types",
   output: z.array(rows.materialTypes).nullable(),
   input: z.looseObject({
     limit: z
@@ -9912,12 +9319,9 @@ export const getMaterialTypes = defineServiceFn({
   }
 });
 
-/**
- * Get material type
- *
- * @mcp read
- */
 export const getMaterialType = defineServiceFn({
+  publish: "read",
+  title: "Get material type",
   output: rows.materialType,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
@@ -9929,12 +9333,9 @@ export const getMaterialType = defineServiceFn({
   }
 });
 
-/**
- * Get material type list
- *
- * @mcp read
- */
 export const getMaterialTypeList = defineServiceFn({
+  publish: "read",
+  title: "Get material type list",
   output: z.array(rows.materialType),
   input: z.looseObject({
     materialSubstanceId: z.string(),
@@ -9954,12 +9355,10 @@ export const getMaterialTypeList = defineServiceFn({
   }
 });
 
-/**
- * Creates a material type for a substance and shape pair, or updates the one whose `id` is sent; a new type's id is generated
- *
- * @mcp
- */
 export const upsertMaterialType = defineServiceFn({
+  publish: true,
+  title:
+    "Creates a material type for a substance and shape pair, or updates the one whose `id` is sent; a new type's id is generated",
   output: rows.materialType.pick({ id: true }).meta({ table: "materialType" }),
   input: z.looseObject({
     materialSubstanceId: z.string().min(1),
@@ -9989,15 +9388,10 @@ export const upsertMaterialType = defineServiceFn({
   }
 });
 
-/**
- * Create a material substance
- *
- * @remarks
- * Upsert material substance
- *
- * @mcp
- */
 export const createMaterialSubstance = defineServiceFn({
+  publish: true,
+  title: "Create a material substance",
+  description: "Upsert material substance",
   output: rows.materialSubstance
     .pick({ id: true })
     .meta({ table: "materialSubstance" }),
@@ -10022,15 +9416,10 @@ export const createMaterialSubstance = defineServiceFn({
   }
 });
 
-/**
- * Update a material substance
- *
- * @remarks
- * Upsert material substance
- *
- * @mcp
- */
 export const updateMaterialSubstance = defineServiceFn({
+  publish: true,
+  title: "Update a material substance",
+  description: "Upsert material substance",
   output: rows.materialSubstance
     .pick({ id: true })
     .meta({ table: "materialSubstance" }),
@@ -10057,15 +9446,10 @@ export const updateMaterialSubstance = defineServiceFn({
   }
 });
 
-/**
- * Create a service
- *
- * @remarks
- * Creates a service (item row and service row) or updates one
- *
- * @mcp
- */
 export const createService = defineServiceFn({
+  publish: true,
+  title: "Create a service",
+  description: "Creates a service (item row and service row) or updates one",
   output: z.union([
     z.object({
       active: z.boolean().nullable(),
@@ -10256,15 +9640,10 @@ export const createService = defineServiceFn({
   }
 });
 
-/**
- * Update a service
- *
- * @remarks
- * Creates a service (item row and service row) or updates one
- *
- * @mcp
- */
 export const updateService = defineServiceFn({
+  publish: true,
+  title: "Update a service",
+  description: "Creates a service (item row and service row) or updates one",
   output: z.union([
     z.object({
       active: z.boolean().nullable(),
@@ -10457,15 +9836,10 @@ export const updateService = defineServiceFn({
   }
 });
 
-/**
- * Create a unit of measure
- *
- * @remarks
- * Upsert unit of measure
- *
- * @mcp
- */
 export const createUnitOfMeasure = defineServiceFn({
+  publish: true,
+  title: "Create a unit of measure",
+  description: "Upsert unit of measure",
   output: rows.unitOfMeasure
     .pick({ id: true })
     .meta({ table: "unitOfMeasure" }),
@@ -10490,15 +9864,10 @@ export const createUnitOfMeasure = defineServiceFn({
   }
 });
 
-/**
- * Update a unit of measure
- *
- * @remarks
- * Upsert unit of measure
- *
- * @mcp
- */
 export const updateUnitOfMeasure = defineServiceFn({
+  publish: true,
+  title: "Update a unit of measure",
+  description: "Upsert unit of measure",
   output: rows.unitOfMeasure
     .pick({ id: true })
     .meta({ table: "unitOfMeasure" }),
@@ -10525,15 +9894,11 @@ export const updateUnitOfMeasure = defineServiceFn({
   }
 });
 
-/**
- * Create a tool
- *
- * @remarks
- * Creates a tool (item row and tool row) or updates one; on update `id` is the item id (uuid) or the tool's readable id and the write is a full replace, so omitt…
- *
- * @mcp
- */
 export const createTool = defineServiceFn({
+  publish: true,
+  title: "Create a tool",
+  description:
+    "Creates a tool (item row and tool row) or updates one; on update `id` is the item id (uuid) or the tool's readable id and the write is a full replace, so omitt…",
   input: z.looseObject({
     id: z
       .string()
@@ -10578,12 +9943,9 @@ export const createTool = defineServiceFn({
   }
 });
 
-/**
- * Batch pre-fetch supplier pricing for multiple items, for costing
- *
- * @mcp read
- */
 export const getSupplierPriceBreaksForItems = defineServiceFn({
+  publish: "read",
+  title: "Batch pre-fetch supplier pricing for multiple items, for costing",
   output: z.record(
     z.string(),
     z.object({
@@ -10606,12 +9968,9 @@ export const getSupplierPriceBreaksForItems = defineServiceFn({
   }
 });
 
-/**
- * Get change notice
- *
- * @mcp read
- */
 export const getChangeNotice = defineServiceFn({
+  publish: "read",
+  title: "Get change notice",
   output: z.object({
     approvalRequirements: z.array(z.string()).nullable(),
     assignee: z.string().nullable(),
@@ -10821,12 +10180,9 @@ export const getChangeNotice = defineServiceFn({
   }
 });
 
-/**
- * Get change notices
- *
- * @mcp read
- */
 export const getChangeNotices = defineServiceFn({
+  publish: "read",
+  title: "Get change notices",
   output: z
     .array(
       z.object({
@@ -10996,12 +10352,9 @@ export const getChangeNotices = defineServiceFn({
   }
 });
 
-/**
- * Update change notice
- *
- * @mcp
- */
 export const updateChangeNotice = defineServiceFn({
+  publish: true,
+  title: "Update change notice",
   output: z.object({
     id: z.string()
   }),
@@ -11044,12 +10397,9 @@ export const updateChangeNotice = defineServiceFn({
   }
 });
 
-/**
- * Delete change notice
- *
- * @mcp destructive
- */
 export const deleteChangeNotice = defineServiceFn({
+  publish: "destructive",
+  title: "Delete change notice",
   output: z.array(
     z.object({
       id: z.string()
@@ -11088,12 +10438,9 @@ export const deleteChangeNotice = defineServiceFn({
   }
 });
 
-/**
- * Get change notice types
- *
- * @mcp read
- */
 export const getChangeNoticeTypes = defineServiceFn({
+  publish: "read",
+  title: "Get change notice types",
   output: z.array(rows.changeOrderType).nullable(),
   input: z.looseObject({
     limit: z
@@ -11117,12 +10464,9 @@ export const getChangeNoticeTypes = defineServiceFn({
   }
 });
 
-/**
- * Get change notice types list
- *
- * @mcp read
- */
 export const getChangeNoticeTypesList = defineServiceFn({
+  publish: "read",
+  title: "Get change notice types list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -11142,12 +10486,9 @@ export const getChangeNoticeTypesList = defineServiceFn({
   }
 });
 
-/**
- * Get change notice type
- *
- * @mcp read
- */
 export const getChangeNoticeType = defineServiceFn({
+  publish: "read",
+  title: "Get change notice type",
   output: rows.changeOrderType,
   input: z.looseObject({ id: z.string() }),
   permission: { view: "parts" },
@@ -11163,15 +10504,10 @@ export const getChangeNoticeType = defineServiceFn({
   }
 });
 
-/**
- * Create a change notice type
- *
- * @remarks
- * Upsert change notice type
- *
- * @mcp
- */
 export const createChangeNoticeType = defineServiceFn({
+  publish: true,
+  title: "Create a change notice type",
+  description: "Upsert change notice type",
   output: z.object({
     id: z.string()
   }),
@@ -11191,15 +10527,10 @@ export const createChangeNoticeType = defineServiceFn({
   }
 });
 
-/**
- * Update a change notice type
- *
- * @remarks
- * Upsert change notice type
- *
- * @mcp
- */
 export const updateChangeNoticeType = defineServiceFn({
+  publish: true,
+  title: "Update a change notice type",
+  description: "Upsert change notice type",
   output: z.object({
     id: z.string()
   }),
@@ -11220,12 +10551,9 @@ export const updateChangeNoticeType = defineServiceFn({
   }
 });
 
-/**
- * Delete change notice type
- *
- * @mcp destructive
- */
 export const deleteChangeNoticeType = defineServiceFn({
+  publish: "destructive",
+  title: "Delete change notice type",
   output: z.array(
     z.object({
       id: z.string()
@@ -11245,12 +10573,9 @@ export const deleteChangeNoticeType = defineServiceFn({
   }
 });
 
-/**
- * Add change notice affected item
- *
- * @mcp destructive
- */
 export const addChangeNoticeAffectedItem = defineServiceFn({
+  publish: "destructive",
+  title: "Add change notice affected item",
   output: z.object({
     id: z.string(),
     draftMakeMethodId: z.string().nullable()
@@ -11294,12 +10619,9 @@ export const addChangeNoticeAffectedItem = defineServiceFn({
   }
 });
 
-/**
- * Update change notice affected item change type
- *
- * @mcp
- */
 export const updateChangeNoticeAffectedItemChangeType = defineServiceFn({
+  publish: true,
+  title: "Update change notice affected item change type",
   output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.looseObject({
     id: z.string(),
@@ -11328,12 +10650,9 @@ export const updateChangeNoticeAffectedItemChangeType = defineServiceFn({
   }
 });
 
-/**
- * Update change notice affected item cutover
- *
- * @mcp
- */
 export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
+  publish: true,
+  title: "Update change notice affected item cutover",
   output: rows.item.pick({ id: true }).meta({ table: "item" }),
   input: z.looseObject({
     id: z.string(),
@@ -11368,12 +10687,9 @@ export const updateChangeNoticeAffectedItemCutover = defineServiceFn({
   }
 });
 
-/**
- * Get change notice affected items
- *
- * @mcp read
- */
 export const getChangeNoticeAffectedItems = defineServiceFn({
+  publish: "read",
+  title: "Get change notice affected items",
   output: z.array(z.unknown()),
   input: z.looseObject({ changeNoticeId: z.string() }),
   permission: { view: "parts" },
@@ -11389,12 +10705,9 @@ export const getChangeNoticeAffectedItems = defineServiceFn({
   }
 });
 
-/**
- * Remove change notice affected item
- *
- * @mcp destructive
- */
 export const removeChangeNoticeAffectedItem = defineServiceFn({
+  publish: "destructive",
+  title: "Remove change notice affected item",
   output: z.array(rows.item.pick({ id: true }).meta({ table: "item" })),
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "parts" },
@@ -11421,12 +10734,9 @@ export const removeChangeNoticeAffectedItem = defineServiceFn({
   }
 });
 
-/**
- * Get change notices for non conformance
- *
- * @mcp read
- */
 export const getChangeNoticesForNonConformance = defineServiceFn({
+  publish: "read",
+  title: "Get change notices for non conformance",
   output: z.array(
     z.object({
       id: z.string(),
@@ -11456,12 +10766,9 @@ export const getChangeNoticesForNonConformance = defineServiceFn({
   }
 });
 
-/**
- * Get change notice actions
- *
- * @mcp read
- */
 export const getChangeNoticeActions = defineServiceFn({
+  publish: "read",
+  title: "Get change notice actions",
   output: z.array(
     z.object({
       linearIssue: z.record(z.string(), z.unknown()).nullable(),
@@ -11524,12 +10831,9 @@ export const getChangeNoticeActions = defineServiceFn({
   }
 });
 
-/**
- * Update change notice action status
- *
- * @mcp
- */
 export const updateChangeNoticeActionStatus = defineServiceFn({
+  publish: true,
+  title: "Update change notice action status",
   output: z.object({
     id: z.string()
   }),
@@ -11559,12 +10863,9 @@ export const updateChangeNoticeActionStatus = defineServiceFn({
   }
 });
 
-/**
- * Delete change notice action
- *
- * @mcp destructive
- */
 export const deleteChangeNoticeAction = defineServiceFn({
+  publish: "destructive",
+  title: "Delete change notice action",
   output: z.array(
     z.object({
       id: z.string()
@@ -11593,12 +10894,9 @@ export const deleteChangeNoticeAction = defineServiceFn({
   }
 });
 
-/**
- * Update change notice action order
- *
- * @mcp
- */
 export const updateChangeNoticeActionOrder = defineServiceFn({
+  publish: true,
+  title: "Update change notice action order",
   input: z.looseObject({
     changeNoticeId: z.string(),
     updates: z.array(z.looseObject({ id: z.string(), sortOrder: z.number() }))
@@ -11624,12 +10922,9 @@ export const updateChangeNoticeActionOrder = defineServiceFn({
   }
 });
 
-/**
- * Get change notice required actions
- *
- * @mcp read
- */
 export const getChangeNoticeRequiredActions = defineServiceFn({
+  publish: "read",
+  title: "Get change notice required actions",
   output: z
     .array(
       z.object({
@@ -11693,12 +10988,9 @@ export const getChangeNoticeRequiredActions = defineServiceFn({
   }
 });
 
-/**
- * Get change notice required actions list
- *
- * @mcp read
- */
 export const getChangeNoticeRequiredActionsList = defineServiceFn({
+  publish: "read",
+  title: "Get change notice required actions list",
   output: z.array(
     z.object({
       id: z.string(),
@@ -11718,12 +11010,9 @@ export const getChangeNoticeRequiredActionsList = defineServiceFn({
   }
 });
 
-/**
- * Get change notice required action
- *
- * @mcp read
- */
 export const getChangeNoticeRequiredAction = defineServiceFn({
+  publish: "read",
+  title: "Get change notice required action",
   output: z.object({
     active: z.boolean(),
     companyId: z.string(),
@@ -11803,12 +11092,9 @@ export const getChangeNoticeRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Upsert change notice required action
- *
- * @mcp
- */
 export const upsertChangeNoticeRequiredAction = defineServiceFn({
+  publish: true,
+  title: "Upsert change notice required action",
   output: z.object({
     id: z.string()
   }),
@@ -11829,12 +11115,9 @@ export const upsertChangeNoticeRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Delete change notice required action
- *
- * @mcp destructive
- */
 export const deleteChangeNoticeRequiredAction = defineServiceFn({
+  publish: "destructive",
+  title: "Delete change notice required action",
   output: z.array(
     z.object({
       id: z.string()
@@ -11854,12 +11137,9 @@ export const deleteChangeNoticeRequiredAction = defineServiceFn({
   }
 });
 
-/**
- * Set change notice action tasks
- *
- * @mcp destructive
- */
 export const setChangeNoticeActionTasks = defineServiceFn({
+  publish: "destructive",
+  title: "Set change notice action tasks",
   output: z.null(),
   input: z.looseObject({
     changeNoticeId: z.string(),
@@ -11886,12 +11166,9 @@ export const setChangeNoticeActionTasks = defineServiceFn({
   }
 });
 
-/**
- * Get change notice diff
- *
- * @mcp read
- */
 export const getChangeNoticeDiff = defineServiceFn({
+  publish: "read",
+  title: "Get change notice diff",
   output: z.object({
     items: z.array(
       z.object({
@@ -11966,12 +11243,10 @@ export const getChangeNoticeDiff = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for an item (part/material/tool/consumable/service) document
- *
- * @mcp
- */
 export const createItemDocumentUploadUrl = defineServiceFn({
+  publish: true,
+  title:
+    "Create a presigned upload URL for an item (part/material/tool/consumable/service) document",
   output: z.object({
     signedUrl: z.string(),
     token: z.string(),
@@ -11990,19 +11265,14 @@ export const createItemDocumentUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for a CAD model
- *
- * @remarks
- * First step of the two-step model upload: PUT the file bytes (STEP or another
- * supported format) to the returned `signedUrl`, then call `insertModelUpload`
- * with the returned `modelId`, `path` and the file's size in bytes. The file is
- * staged in the `temp-staging` bucket, as the browser upload does, so models up
- * to 2.5 GB are accepted.
- *
- * @mcp
- */
 export const createModelUploadUrl = defineServiceFn({
+  publish: true,
+  title: "Create a presigned upload URL for a CAD model",
+  description: `First step of the two-step model upload: PUT the file bytes (STEP or another
+supported format) to the returned \`signedUrl\`, then call \`insertModelUpload\`
+with the returned \`modelId\`, \`path\` and the file's size in bytes. The file is
+staged in the \`temp-staging\` bucket, as the browser upload does, so models up
+to 2.5 GB are accepted.`,
   output: z.object({
     modelId: z.string(),
     path: z.string(),
@@ -12027,23 +11297,18 @@ export const createModelUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Record an uploaded CAD model and attach it
- *
- * @remarks
- * Second step of the model upload, and what the browser's model dropzone calls.
- * Records the model staged at `path` (from `createModelUploadUrl`) and makes it
- * the model of each record named: an item, a job, a sales RFQ line, a quote line
- * and a sales order line. Every record is checked first, so a wrong id leaves no
- * model behind. With none, the model is only recorded; pass its id as
- * `modelUploadId` to a part or a job later. Starts the optimisation, which also
- * renders the thumbnail. Set `convert` for a STEP file whose assembly structure
- * is needed (assembly instructions, step slides); it runs only while the
- * assembler is up.
- *
- * @mcp
- */
 export const insertModelUpload = defineServiceFn({
+  publish: true,
+  title: "Record an uploaded CAD model and attach it",
+  description: `Second step of the model upload, and what the browser's model dropzone calls.
+Records the model staged at \`path\` (from \`createModelUploadUrl\`) and makes it
+the model of each record named: an item, a job, a sales RFQ line, a quote line
+and a sales order line. Every record is checked first, so a wrong id leaves no
+model behind. With none, the model is only recorded; pass its id as
+\`modelUploadId\` to a part or a job later. Starts the optimisation, which also
+renders the thumbnail. Set \`convert\` for a STEP file whose assembly structure
+is needed (assembly instructions, step slides); it runs only while the
+assembler is up.`,
   output: z.object({
     modelUploadId: z.string()
   }),
@@ -12078,17 +11343,12 @@ export const insertModelUpload = defineServiceFn({
   }
 });
 
-/**
- * Create a presigned upload URL for an item's thumbnail
- *
- * @remarks
- * PUT the image (PNG, JPEG or WebP) to the returned `signedUrl`, then call
- * `updateItemThumbnail` with the returned `path`. An item's own thumbnail is
- * shown in place of the one rendered from its model.
- *
- * @mcp
- */
 export const createItemThumbnailUploadUrl = defineServiceFn({
+  publish: true,
+  title: "Create a presigned upload URL for an item's thumbnail",
+  description: `PUT the image (PNG, JPEG or WebP) to the returned \`signedUrl\`, then call
+\`updateItemThumbnail\` with the returned \`path\`. An item's own thumbnail is
+shown in place of the one rendered from its model.`,
   output: z.object({
     path: z.string(),
     signedUrl: z.string(),
@@ -12109,17 +11369,12 @@ export const createItemThumbnailUploadUrl = defineServiceFn({
   }
 });
 
-/**
- * Set or clear an item's thumbnail
- *
- * @remarks
- * Sets the thumbnail to an image uploaded with `createItemThumbnailUploadUrl`,
- * or clears it (`thumbnailPath: null`) to show the one rendered from the item's
- * model.
- *
- * @mcp
- */
 export const updateItemThumbnail = defineServiceFn({
+  publish: true,
+  title: "Set or clear an item's thumbnail",
+  description: `Sets the thumbnail to an image uploaded with \`createItemThumbnailUploadUrl\`,
+or clears it (\`thumbnailPath: null\`) to show the one rendered from the item's
+model.`,
   output: rows.item
     .pick({ id: true, thumbnailPath: true })
     .meta({ table: "item" }),
