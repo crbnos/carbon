@@ -18,6 +18,18 @@ if (VERIFY_JWT && !JWT_SECRET) {
   throw new Error("VERIFY_JWT is on but JWT_SECRET is empty");
 }
 
+// The self-host recipe mounts this file too
+// (contrib/deploying/simple-docker-caddy/docker-compose.prod.yml), with
+// API_URL_FROM_HEADER unset: with it off, this file must behave as it did
+// before the shared runtime.
+//
+// The shared runtime (crbn-shared) serves every worktree. Each worktree's
+// Envoy names its own gateway in x-carbon-api (overwriting any client value),
+// and the function gets it as SUPABASE_URL. A private runtime (`crbn up
+// --full`) keeps the SUPABASE_URL it was started with.
+const API_URL_FROM_HEADER = Deno.env.get("API_URL_FROM_HEADER") === "true";
+const WORKTREE_API = /^http:\/\/[A-Za-z0-9._-]+-api-gw:8000$/;
+
 async function hasValidJwt(req: Request): Promise<boolean> {
   const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return false;
@@ -50,10 +62,35 @@ Deno.serve(async (req: Request) => {
 
   const servicePath = `/home/deno/functions/${fnName}`;
 
+  let envVars = Object.entries(Deno.env.toObject());
+  // The runtime reuses a worker per pool key (default: the service path), env
+  // and all, so a key per worktree keeps one worktree's URL out of another's.
+  let poolKey = servicePath;
+  if (API_URL_FROM_HEADER) {
+    const api = req.headers.get("x-carbon-api") ?? "";
+    if (!WORKTREE_API.test(api)) {
+      return new Response(
+        JSON.stringify({
+          error: "x-carbon-api is missing: call functions through a worktree's gateway"
+        }),
+        {
+          status: STATUS_CODE.BadRequest,
+          headers: { "content-type": "application/json" }
+        }
+      );
+    }
+    envVars = [
+      ...envVars.filter(([name]) => name !== "SUPABASE_URL"),
+      ["SUPABASE_URL", api]
+    ];
+    poolKey = `${api} ${servicePath}`;
+  }
+
   try {
     // @ts-ignore EdgeRuntime is provided by the supabase/edge-runtime image.
     const worker = await EdgeRuntime.userWorkers.create({
       servicePath,
+      poolKey,
       memoryLimitMb: 512,
       workerTimeoutMs: 5 * 60 * 1000,
       // Without explicit budgets the runtime's low defaults (~1s soft / 2s
@@ -65,7 +102,7 @@ Deno.serve(async (req: Request) => {
       cpuTimeSoftLimitMs: 30 * 1000,
       cpuTimeHardLimitMs: 60 * 1000,
       noModuleCache: false,
-      envVars: Object.entries(Deno.env.toObject()),
+      envVars,
     });
     return await worker.fetch(req);
   } catch (err) {

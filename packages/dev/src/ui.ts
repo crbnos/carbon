@@ -311,7 +311,7 @@ export function summaryLines(
   if (sharedDatabase) {
     lines.push(
       `${pc.gray(pc.bold("Pooler".padEnd(8)))}  ${pc.gray(`postgresql://postgres:postgres@localhost:${ports.PORT_POOLER}/${sharedDatabase}`)}`,
-      `${pc.gray(pc.bold("Shared".padEnd(8)))}  ${pc.gray("Postgres, PgBouncer, Storage and Mail run in crbn-shared")}`
+      `${pc.gray(pc.bold("Shared".padEnd(8)))}  ${pc.gray("Postgres, PgBouncer, Storage, Mail, Redis and the edge runtime run in crbn-shared")}`
     );
   }
   return lines;
