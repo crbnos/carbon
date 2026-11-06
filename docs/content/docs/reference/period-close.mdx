@@ -71,7 +71,7 @@ The seeded checks, from `computePeriodReadiness`:
 | Match & eliminate intercompany transactions | Warning | Unmatched intercompany transactions involve this company. |
 | External GL sync complete | Blocker | A posted journal lacks a completed, excluded or skipped sync disposition for an enabled accounting integration. It passes when no integration has sync enabled. |
 | Timesheets complete | Warning | In DCAA timekeeping mode, entries remain unposted or scheduled work days have no time entered. It passes in Standard mode. |
-| Invoice shipped sales orders | Warning | A sales order shipment posted in this period has net shipped quantity not covered by cumulative posted invoice quantity by period end. Partial invoicing leaves the task Open. Posted uninvoiced returns reduce the quantity to bill; invoice coverage applies to the oldest shipments first. |
+| Invoice shipped sales orders | Warning | A sales order shipment posted in this period has net shipped quantity not covered by cumulative posted invoice quantity by period end. Partial invoicing leaves the task Open. Posted uninvoiced returns reduce the quantity to bill, except returns for service or warranty. Those returns do not reduce it, so the warning may remain Open after they post. Invoice coverage applies to the oldest shipments first. |
 
 The remaining three seeded tasks are **Lock the period**, **Review negative on-hand inventory** and **Review financial statements**, all Actions. **Close Period** is the final close action, not a seeded checklist task. Checks that do not apply to the company pass automatically. A run preview error keeps the affected run check Open.
 

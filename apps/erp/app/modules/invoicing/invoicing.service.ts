@@ -16,6 +16,7 @@ import type { Database, Json } from "@carbon/database";
 import {
   fetchAllByIds,
   fetchAllFromTable,
+  fetchAllRecords,
   getCompanyTimeZone,
   journalReference
 } from "@carbon/database";
@@ -5347,11 +5348,21 @@ export async function getDepositDocuments(
       .eq("paymentType", "Receipt")
       .eq("status", "Posted")
       .not("salesOrderId", "is", null),
-    client
-      .from("rentalAgreement")
-      .select("id, rentalAgreementId, customerId, status")
-      .eq("companyId", companyId)
-      .order("rentalAgreementId", { ascending: false }),
+    fetchAllFromTable<
+      Pick<
+        Database["public"]["Tables"]["rentalAgreement"]["Row"],
+        "id" | "rentalAgreementId" | "customerId" | "status"
+      >
+    >(
+      client,
+      "rentalAgreement",
+      "id, rentalAgreementId, customerId, status",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .order("rentalAgreementId", { ascending: false })
+          .order("id")
+    ),
     fetchAllFromTable<{
       id: string;
       salesOrderId: string;
@@ -5364,22 +5375,27 @@ export async function getDepositDocuments(
         .order("salesOrderId", { ascending: false })
     ),
     // A contract deposit receives a progress or performance-based payment.
-    client
-      .from("customerContract")
-      .select("id, customerContractId, customerId, status")
-      .eq("companyId", companyId)
-      .order("customerContractId", { ascending: false }),
-    fetchAllFromTable<FundingPaymentRow & { purchaseOrderId: string | null }>(
+    fetchAllFromTable<
+      Pick<
+        Database["public"]["Tables"]["customerContract"]["Row"],
+        "id" | "customerContractId" | "customerId" | "status"
+      >
+    >(
       client,
-      "payment",
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, purchaseOrderId",
+      "customerContract",
+      "id, customerContractId, customerId, status",
       (query) =>
         query
           .eq("companyId", companyId)
-          .eq("paymentType", "Disbursement")
-          .eq("status", "Posted")
-          .not("purchaseOrderId", "is", null)
+          .order("customerContractId", { ascending: false })
           .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .rpc("get_supplier_prepayment_refund_currencies", {
+          _company_id: companyId
+        })
+        .order("purchaseOrderId")
     ),
     fetchAllFromTable<{
       id: string;
@@ -5405,64 +5421,12 @@ export async function getDepositDocuments(
     prepayments.error ??
     openPurchaseOrders.error;
   if (firstError) throw new Error(firstError.message);
-  const company = await client
-    .from("company")
-    .select("companyGroupId")
-    .eq("id", companyId)
-    .single();
-  if (company.error || !company.data?.companyGroupId)
-    throw new Error("Company currency configuration is missing");
-  const [currencies, consumption] = await Promise.all([
-    client
-      .from("currency")
-      .select("code, decimalPlaces")
-      .eq("companyGroupId", company.data.companyGroupId),
-    fetchAllByIds<
-      FundingConsumptionRow & { payment: { status: string } | null }
-    >(
-      (prepayments.data ?? []).map((payment) => payment.id),
-      (batch) =>
-        client
-          .from("invoiceSettlement")
-          .select(
-            "paymentId, sourcePaymentId, sourceAmount, appliedAmount, fxGainLossAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)"
-          )
-          .eq("companyId", companyId)
-          .eq("payment.companyId", companyId)
-          .eq("payment.status", "Posted")
-          .or(
-            `sourcePaymentId.in.(${batch.join(",")}),and(sourcePaymentId.is.null,paymentId.in.(${batch.join(",")}))`
-          )
-          .order("id")
-    )
-  ]);
-  if (currencies.error) throw new Error(currencies.error.message);
-  if (consumption.error) throw new Error(consumption.error.message);
-  const currencyByPayment = new Map(
-    (prepayments.data ?? []).map((payment) => [
-      payment.id,
-      payment.currencyCode
+  const refundableCurrencies = new Map(
+    (prepayments.data ?? []).map((order) => [
+      order.purchaseOrderId,
+      order.refundableCurrencyCodes
     ])
   );
-  const refundableCurrencies = new Map<string, Set<string>>();
-  for (const source of remainingFundingSources(
-    (prepayments.data ?? []).map((payment) => ({
-      ...payment,
-      scope: fundingScopeOf(payment)
-    })),
-    consumption.data ?? [],
-    new Map(
-      (currencies.data ?? []).map((row) => [row.code, row.decimalPlaces])
-    ),
-    false
-  )) {
-    if (!source.scope) continue;
-    const codes =
-      refundableCurrencies.get(source.scope.id) ?? new Set<string>();
-    const currency = currencyByPayment.get(source.paymentId);
-    if (currency) codes.add(currency);
-    refundableCurrencies.set(source.scope.id, codes);
-  }
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
     ...new Set(
@@ -5545,7 +5509,7 @@ export async function getDepositDocuments(
       kind: "purchaseOrder" as const,
       status: order.status,
       open: listedPurchase.has(order.id),
-      refundableCurrencyCodes: [...(refundableCurrencies.get(order.id) ?? [])]
+      refundableCurrencyCodes: refundableCurrencies.get(order.id) ?? []
     }))
   ];
 }

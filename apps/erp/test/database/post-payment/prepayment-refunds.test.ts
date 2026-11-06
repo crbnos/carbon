@@ -1296,3 +1296,36 @@ postgrestTest("a historical refund fully used for a memo does not reserve a depo
     await f.post(advance,"void");
   }finally{await f.cleanup();}
 });
+
+postgrestTest("supplier refund choices aggregate currencies for closed orders and respect caller scope", async client => {
+  const f = await prepaymentFixture();
+  const other = await prepaymentFixture();
+  try {
+    await f.post(await f.payment(110));
+    const usd = await f.payment(50, false, 1);
+    await f.db.updateTable("payment").set({currencyCode:"USD"}).where("companyId","=",f.companyId).where("id","=",usd).execute();
+    await f.post(usd);
+    await other.post(await other.payment(110));
+    await f.db.updateTable("purchaseOrder").set({status:"Completed"}).where("companyId","=",f.companyId).where("id","=",f.purchaseOrderId).execute();
+    const currencies = async () => {
+      const docs = await getDepositDocuments(client,f.companyId);
+      const order = docs.find(doc => doc.id === f.purchaseOrderId);
+      expect(order?.open).toBe(false);
+      return order?.refundableCurrencyCodes;
+    };
+    expect(await currencies()).toEqual(["EUR","USD"]);
+    const refund = await f.payment(110,true); await f.post(refund);
+    expect(await currencies()).toEqual(["USD"]);
+    await f.post(refund,"void");
+    expect(await currencies()).toEqual(["EUR","USD"]);
+    const rawKey = `crbn_refund_currencies_${crypto.randomUUID()}`;
+    await f.db.insertInto("apiKey").values({name:"Refund currency test",companyId:f.companyId,createdBy:"system",
+      keyHash:createHash("sha256").update(rawKey).digest("hex"),scopes:JSON.stringify({invoicing_view:[f.companyId]})}).execute();
+    const caller = localApiKeyClient(rawKey)!;
+    const own = await caller.rpc("get_supplier_prepayment_refund_currencies",{_company_id:f.companyId});
+    expect(own.error).toBeNull();
+    expect(own.data).toEqual([{purchaseOrderId:f.purchaseOrderId,refundableCurrencyCodes:["EUR","USD"]}]);
+    const foreign = await caller.rpc("get_supplier_prepayment_refund_currencies",{_company_id:other.companyId});
+    expect(foreign.error).toBeNull(); expect(foreign.data).toEqual([]);
+  }finally{await other.cleanup(); await f.cleanup();}
+});

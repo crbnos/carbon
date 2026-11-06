@@ -83,7 +83,9 @@ databaseTest("offsetting control differences cannot hide an unrecorded supplier 
     expect(clearing.total).toBe(0);
     expect(clearing.reconciliationBlockers).toEqual([{accountId:f.account("fixed-assets"),trialBalance:100,carbon:0,difference:100}]);
     const refused = await invokePosting(handlesOf(f.ctx),"activate-accounting",{...args,confirmation:f.companyName},activateAccounting);
-    expect(refused.error).not.toBeNull();
+    expect(refused.error?.message).toBe(
+      "Reconcile supplier prepayments on the trial balance before setting up accounting."
+    );
     expect(await f.db.selectFrom("companySettings").select("accountingCutoverDate").where("id","=",f.companyId).executeTakeFirstOrThrow()).toEqual({accountingCutoverDate:null});
     expect(await f.db.selectFrom("journal").select("status").where("id","=",saved.journalId).where("companyId","=",f.companyId).executeTakeFirstOrThrow()).toEqual({status:"Draft"});
     expect(await f.db.selectFrom("journal").select("id").where("companyId","=",f.companyId).where("status","=","Posted").execute()).toEqual([]);

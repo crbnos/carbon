@@ -132788,6 +132788,63 @@ export default {
         tags: ["(rpc) get_ar_open_by_customer"]
       }
     },
+    "/rpc/get_supplier_prepayment_refund_currencies": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_supplier_prepayment_refund_currencies"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                _company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_supplier_prepayment_refund_currencies"]
+      }
+    },
     "/rpc/verify_employee_pin": {
       get: {
         parameters: [

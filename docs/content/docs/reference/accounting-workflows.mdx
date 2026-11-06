@@ -27,7 +27,7 @@ An order records a commitment. Posting goods, invoices and money moves the ledge
 | --- | --- | --- |
 | Submit or approve a PO; confirm a sales order | No entry | No entry |
 | Supplier advance for a PO | Supplier Prepayments | Bank / Cash |
-| Stock receipt | Inventory | Goods Received Not Invoiced (GR/IR) |
+| Stock receipt | Inventory | GR/IR Clearing |
 | Supplier invoice for received stock | GR/IR | Accounts Payable (AP) |
 | Pay supplier invoice | AP | Bank / Cash |
 | Consume job material | Work in Progress (WIP) | Inventory |
@@ -60,7 +60,7 @@ The order records the commitment. Goods, invoices and cash post separately.
 | Account | DR | CR |
 | --- | ---: | ---: |
 | 1210 Raw Materials | $1,000 | |
-| 2125 Goods Received Not Invoiced | | $1,000 |
+| 2125 GR/IR Clearing | | $1,000 |
 
 Stock increases now. The clearing credit waits for the supplier invoice; AP has not been created yet.
 
@@ -70,7 +70,7 @@ Stock increases now. The clearing credit waits for the supplier invoice; AP has 
 
 | Account | DR | CR |
 | --- | ---: | ---: |
-| 2125 Goods Received Not Invoiced | $1,000 | |
+| 2125 GR/IR Clearing | $1,000 | |
 | 2010 Accounts Payable | | $1,000 |
 
 The invoice clears the receipt accrual and creates the amount owed to the supplier. No cash moves.
@@ -113,7 +113,7 @@ Cash leaves the bank. The advance remains an asset until it is applied or refund
 | Account | DR | CR |
 | --- | ---: | ---: |
 | 1210 Raw Materials | $1,000 | |
-| 2125 Goods Received Not Invoiced | | $1,000 |
+| 2125 GR/IR Clearing | | $1,000 |
 
 </JournalStep>
 
@@ -121,7 +121,7 @@ Cash leaves the bank. The advance remains an asset until it is applied or refund
 
 | Account | DR | CR |
 | --- | ---: | ---: |
-| 2125 Goods Received Not Invoiced | $1,000 | |
+| 2125 GR/IR Clearing | $1,000 | |
 | 2010 Accounts Payable | | $1,000 |
 
 </JournalStep>
@@ -161,7 +161,7 @@ If the supplier bills before you receive the goods, the stock sequence is:
 
 | Account | DR | CR |
 | --- | ---: | ---: |
-| 2125 Goods Received Not Invoiced | $1,000 | |
+| 2125 GR/IR Clearing | $1,000 | |
 | 2010 Accounts Payable | | $1,000 |
 
 </JournalStep>
@@ -180,7 +180,7 @@ If the supplier bills before you receive the goods, the stock sequence is:
 | Account | DR | CR |
 | --- | ---: | ---: |
 | 1210 Raw Materials | $1,000 | |
-| 2125 Goods Received Not Invoiced | | $1,000 |
+| 2125 GR/IR Clearing | | $1,000 |
 
 </JournalStep>
 
@@ -242,7 +242,7 @@ Start with the $1,000 receipt and supplier invoice above, still unpaid. Return *
 
 | Account | DR | CR |
 | --- | ---: | ---: |
-| 2125 Goods Received Not Invoiced | $200 |  |
+| 2125 GR/IR Clearing | $200 |  |
 | 1210 Raw Materials |  | $200 |
 
 </JournalStep>
@@ -253,7 +253,7 @@ Start with the $1,000 receipt and supplier invoice above, still unpaid. Return *
 | --- | ---: | ---: |
 | 2010 Accounts Payable | $180 |  |
 | Purchase Price Variance | $20 |  |
-| 2125 Goods Received Not Invoiced |  | $200 |
+| 2125 GR/IR Clearing |  | $200 |
 
 AP falls by the agreed $180 credit. The $20 shortfall is purchase variance, clearing the full $200 return accrual.
 
@@ -290,7 +290,7 @@ An inspection rejection and a supplier return are separate events. If inspection
 
 | Account | DR | CR |
 | --- | ---: | ---: |
-| 2125 Goods Received Not Invoiced | $200 | |
+| 2125 GR/IR Clearing | $200 | |
 | Inventory | | $200 |
 
 </JournalStep>
@@ -300,7 +300,7 @@ An inspection rejection and a supplier return are separate events. If inspection
 | Account | DR | CR |
 | --- | ---: | ---: |
 | 2010 Accounts Payable | $200 | |
-| 2125 Goods Received Not Invoiced | | $200 |
+| 2125 GR/IR Clearing | | $200 |
 
 </JournalStep>
 

@@ -298,3 +298,91 @@ postgrestTest(
     }
   }
 );
+
+for (const failedCheck of [
+  { table: "shipmentFixedAssetLine", key: "shipped-not-invoiced" },
+  { table: "indirectPool", key: "burden-computed" }
+]) {
+  postgrestTest(
+    `an optional ${failedCheck.key} query failure remains a warning and does not abort closing`,
+    async (client) => {
+      const f = await paymentFixture();
+      try {
+        const args = await prepareClose(f);
+        const definition = await f.db
+          .insertInto("periodCloseTaskDefinition")
+          .values({
+            companyId: f.companyId,
+            name: "Invoice shipped sales orders",
+            taskType: "Auto",
+            autoCheckKey: failedCheck.key,
+            required: false,
+            severity: "Warning",
+            createdBy: "system"
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await f.db
+          .insertInto("periodCloseTaskDefinition")
+          .values({
+            companyId: f.companyId,
+            name: "Close earned value",
+            taskType: "Auto",
+            autoCheckKey: "earned-value-closed",
+            required: true,
+            severity: "Warning",
+            createdBy: "system"
+          })
+          .execute();
+        // Only this connection sees the failing view; company data stays untouched.
+        await sql`CREATE TEMP VIEW ${sql.id(failedCheck.table)} AS
+        SELECT * FROM ${sql.id("public", failedCheck.table)} WHERE 1 / 0 = 0`.execute(
+          f.db
+        );
+        const emptyPreview = { count: 0, amount: 0, error: null };
+        const result = await closeAccountingPeriod(
+          client,
+          f.db,
+          args,
+          async () => ({
+            revenue: emptyPreview,
+            lease: emptyPreview,
+            depreciation: emptyPreview
+          }),
+          { governmentContracting: true }
+        );
+        expect(result).toEqual({ data: { id: args.periodId }, error: null });
+        expect(
+          await f.db
+            .selectFrom("accountingPeriod")
+            .select("closeStatus")
+            .where("id", "=", args.periodId)
+            .where("companyId", "=", f.companyId)
+            .executeTakeFirstOrThrow()
+        ).toEqual({ closeStatus: "Closed" });
+        expect(
+          await f.db
+            .selectFrom("periodCloseTask")
+            .select("status")
+            .where("definitionId", "=", definition.id)
+            .where("companyId", "=", f.companyId)
+            .executeTakeFirstOrThrow()
+        ).toEqual({ status: "Open" });
+        expect(
+          await f.db
+            .selectFrom("accountingPeriodBalance")
+            .select("endingBalance")
+            .where("accountingPeriodId", "=", args.periodId)
+            .where("companyId", "=", f.companyId)
+            .where("accountId", "=", f.account("bank"))
+            .executeTakeFirstOrThrow()
+        ).toEqual({ endingBalance: 0 });
+      } finally {
+        await sql`DROP VIEW IF EXISTS ${sql.id("pg_temp", failedCheck.table)}`.execute(
+          f.db
+        );
+        await f.cleanup();
+      }
+    }
+  );
+}

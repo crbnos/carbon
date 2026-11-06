@@ -4155,6 +4155,24 @@ export function runPreviewer(
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
+// A failed readiness query must not abort the transaction that closes the period.
+async function readPeriodCheck<T>(
+  db: Kysely<KyselyDatabase>,
+  read: () => Promise<T>
+): Promise<T> {
+  if (!db.isTransaction) return read();
+  await sql`SAVEPOINT period_readiness`.execute(db);
+  try {
+    const result = await read();
+    await sql`RELEASE SAVEPOINT period_readiness`.execute(db);
+    return result;
+  } catch (error) {
+    await sql`ROLLBACK TO SAVEPOINT period_readiness`.execute(db);
+    await sql`RELEASE SAVEPOINT period_readiness`.execute(db);
+    throw error;
+  }
+}
+
 /**
  * The "Timesheets complete" close check (Government Contracting 5a). It reads
  * with the privileged Kysely client, so the count does not depend on the
@@ -4168,11 +4186,9 @@ async function getPeriodTimesheetReadiness(
   endDate: string
 ): Promise<{ failing: boolean; count: number }> {
   try {
-    return await getTimesheetCloseReadiness(db, {
-      companyId,
-      startDate,
-      endDate
-    });
+    return await readPeriodCheck(db, () =>
+      getTimesheetCloseReadiness(db, { companyId, startDate, endDate })
+    );
   } catch {
     return { failing: true, count: 1 };
   }
@@ -4268,132 +4284,138 @@ export async function getShippedNotInvoiced(
   endDate: string
 ): Promise<ReturnType<typeof shippedNotInvoicedCheck>> {
   try {
-    const rows = await db
-      .with("returns", (db) =>
-        db
-          .selectFrom("salesReturnOrderLine as r")
-          .innerJoin("receiptLine as rl", (join) =>
-            join
-              .onRef("rl.lineId", "=", "r.id")
-              .onRef("rl.companyId", "=", "r.companyId")
+    return await readPeriodCheck(db, async () => {
+      const rows = await db
+        .with("returns", (db) =>
+          db
+            .selectFrom("salesReturnOrderLine as r")
+            .innerJoin("receiptLine as rl", (join) =>
+              join
+                .onRef("rl.lineId", "=", "r.id")
+                .onRef("rl.companyId", "=", "r.companyId")
+            )
+            .innerJoin("receipt", (join) =>
+              join
+                .onRef("receipt.id", "=", "rl.receiptId")
+                .onRef("receipt.companyId", "=", "rl.companyId")
+            )
+            .select("r.shipmentLineId")
+            .select((eb) =>
+              eb.fn.sum<number>("rl.receivedQuantity").as("quantity")
+            )
+            .where("r.companyId", "=", companyId)
+            .where("r.salesInvoiceLineId", "is", null)
+            .where("r.returnType", "not in", [
+              "Return for Service",
+              "Return for Warranty"
+            ])
+            .where("receipt.status", "=", "Posted")
+            .where("receipt.sourceDocument", "=", "Sales Return Order")
+            .where("receipt.postingDate", "<=", endDate)
+            .groupBy("r.shipmentLineId")
+        )
+        .with("shipped_lines", (db) =>
+          db
+            .selectFrom("shipmentLine as l")
+            .leftJoin("returns as r", "r.shipmentLineId", "l.id")
+            .select(["l.shipmentId", "l.lineId as orderLineId"])
+            .select((eb) =>
+              eb
+                .fn<number>("greatest", [
+                  eb(
+                    "l.shippedQuantity",
+                    "-",
+                    eb.fn.coalesce("r.quantity", eb.val(0))
+                  ),
+                  eb.val(0)
+                ])
+                .as("quantity")
+            )
+            .where("l.companyId", "=", companyId)
+            .where("l.lineId", "is not", null)
+            .unionAll(
+              db
+                .selectFrom("shipmentFixedAssetLine as l")
+                .select(["l.shipmentId", "l.salesOrderLineId as orderLineId"])
+                .select((eb) => eb.val(1).as("quantity"))
+                .where("l.companyId", "=", companyId)
+                .where("l.shipped", "=", true)
+                .where("l.salesOrderLineId", "is not", null)
+            )
+        )
+        .with("shipments", (db) =>
+          db
+            .selectFrom("shipment as s")
+            .innerJoin("shipped_lines as l", "l.shipmentId", "s.id")
+            .select([
+              "s.id",
+              "s.shipmentId",
+              "s.status",
+              "s.postingDate",
+              "l.orderLineId"
+            ])
+            .select((eb) => eb.fn.sum<number>("l.quantity").as("quantity"))
+            .where("s.companyId", "=", companyId)
+            .where("s.status", "=", "Posted")
+            .where("s.sourceDocument", "=", "Sales Order")
+            .where("s.postingDate", "<=", endDate)
+            .groupBy([
+              "s.id",
+              "s.shipmentId",
+              "s.status",
+              "s.postingDate",
+              "l.orderLineId"
+            ])
+        )
+        .with("coverage", (db) =>
+          db
+            .selectFrom("shipments")
+            .selectAll()
+            .select((eb) =>
+              eb.fn
+                .sum<number>("quantity")
+                .over((ob) =>
+                  ob
+                    .partitionBy("orderLineId")
+                    .orderBy("postingDate")
+                    .orderBy("id")
+                )
+                .as("cumulativeQuantity")
+            )
+        )
+        .with("invoiced", (db) =>
+          db
+            .selectFrom("salesInvoiceLine as il")
+            .innerJoin("salesInvoice as i", (join) =>
+              join
+                .onRef("i.id", "=", "il.invoiceId")
+                .onRef("i.companyId", "=", "il.companyId")
+            )
+            .select("il.salesOrderLineId")
+            .select((eb) => eb.fn.sum<number>("il.quantity").as("quantity"))
+            .where("il.companyId", "=", companyId)
+            .where("i.status", "not in", ["Draft", "Pending", "Voided"])
+            .where("i.postingDate", "<=", endDate)
+            .groupBy("il.salesOrderLineId")
+        )
+        .selectFrom("coverage as c")
+        .leftJoin("invoiced as i", "i.salesOrderLineId", "c.orderLineId")
+        .select(["c.id", "c.shipmentId", "c.status"])
+        .distinct()
+        .where("c.postingDate", ">=", startDate)
+        .where("c.quantity", ">", 0)
+        .where((eb) =>
+          eb(
+            "c.cumulativeQuantity",
+            ">",
+            eb.fn.coalesce("i.quantity", eb.val(0))
           )
-          .innerJoin("receipt", (join) =>
-            join
-              .onRef("receipt.id", "=", "rl.receiptId")
-              .onRef("receipt.companyId", "=", "rl.companyId")
-          )
-          .select("r.shipmentLineId")
-          .select((eb) =>
-            eb.fn.sum<number>("rl.receivedQuantity").as("quantity")
-          )
-          .where("r.companyId", "=", companyId)
-          .where("r.salesInvoiceLineId", "is", null)
-          .where("r.returnType", "not in", [
-            "Return for Service",
-            "Return for Warranty"
-          ])
-          .where("receipt.status", "=", "Posted")
-          .where("receipt.sourceDocument", "=", "Sales Return Order")
-          .where("receipt.postingDate", "<=", endDate)
-          .groupBy("r.shipmentLineId")
-      )
-      .with("shipped_lines", (db) =>
-        db
-          .selectFrom("shipmentLine as l")
-          .leftJoin("returns as r", "r.shipmentLineId", "l.id")
-          .select(["l.shipmentId", "l.lineId as orderLineId"])
-          .select((eb) =>
-            eb
-              .fn<number>("greatest", [
-                eb(
-                  "l.shippedQuantity",
-                  "-",
-                  eb.fn.coalesce("r.quantity", eb.val(0))
-                ),
-                eb.val(0)
-              ])
-              .as("quantity")
-          )
-          .where("l.companyId", "=", companyId)
-          .where("l.lineId", "is not", null)
-          .unionAll(
-            db
-              .selectFrom("shipmentFixedAssetLine as l")
-              .select(["l.shipmentId", "l.salesOrderLineId as orderLineId"])
-              .select((eb) => eb.val(1).as("quantity"))
-              .where("l.companyId", "=", companyId)
-              .where("l.shipped", "=", true)
-              .where("l.salesOrderLineId", "is not", null)
-          )
-      )
-      .with("shipments", (db) =>
-        db
-          .selectFrom("shipment as s")
-          .innerJoin("shipped_lines as l", "l.shipmentId", "s.id")
-          .select([
-            "s.id",
-            "s.shipmentId",
-            "s.status",
-            "s.postingDate",
-            "l.orderLineId"
-          ])
-          .select((eb) => eb.fn.sum<number>("l.quantity").as("quantity"))
-          .where("s.companyId", "=", companyId)
-          .where("s.status", "=", "Posted")
-          .where("s.sourceDocument", "=", "Sales Order")
-          .where("s.postingDate", "<=", endDate)
-          .groupBy([
-            "s.id",
-            "s.shipmentId",
-            "s.status",
-            "s.postingDate",
-            "l.orderLineId"
-          ])
-      )
-      .with("coverage", (db) =>
-        db
-          .selectFrom("shipments")
-          .selectAll()
-          .select((eb) =>
-            eb.fn
-              .sum<number>("quantity")
-              .over((ob) =>
-                ob
-                  .partitionBy("orderLineId")
-                  .orderBy("postingDate")
-                  .orderBy("id")
-              )
-              .as("cumulativeQuantity")
-          )
-      )
-      .with("invoiced", (db) =>
-        db
-          .selectFrom("salesInvoiceLine as il")
-          .innerJoin("salesInvoice as i", (join) =>
-            join
-              .onRef("i.id", "=", "il.invoiceId")
-              .onRef("i.companyId", "=", "il.companyId")
-          )
-          .select("il.salesOrderLineId")
-          .select((eb) => eb.fn.sum<number>("il.quantity").as("quantity"))
-          .where("il.companyId", "=", companyId)
-          .where("i.status", "not in", ["Draft", "Pending", "Voided"])
-          .where("i.postingDate", "<=", endDate)
-          .groupBy("il.salesOrderLineId")
-      )
-      .selectFrom("coverage as c")
-      .leftJoin("invoiced as i", "i.salesOrderLineId", "c.orderLineId")
-      .select(["c.id", "c.shipmentId", "c.status"])
-      .distinct()
-      .where("c.postingDate", ">=", startDate)
-      .where("c.quantity", ">", 0)
-      .where((eb) =>
-        eb("c.cumulativeQuantity", ">", eb.fn.coalesce("i.quantity", eb.val(0)))
-      )
-      .orderBy("c.shipmentId")
-      .orderBy("c.id")
-      .execute();
-    return shippedNotInvoicedCheck({ shipments: rows, count: rows.length });
+        )
+        .orderBy("c.shipmentId")
+        .orderBy("c.id")
+        .execute();
+      return shippedNotInvoicedCheck({ shipments: rows, count: rows.length });
+    });
   } catch (error) {
     logger.error("Failed to read shipped-not-invoiced close check", {
       companyId,
@@ -4426,40 +4448,42 @@ async function getPeriodBurdenReadiness(
     });
   }
   try {
-    const pools = await db
-      .selectFrom("indirectPool")
-      .select((eb) => eb.fn.countAll<number>().as("count"))
-      .where("companyId", "=", companyId)
-      .where("active", "=", true)
-      .where("appliesToProjects", "=", true)
-      .executeTakeFirst();
-    const poolCount = Number(pools?.count ?? 0);
-    if (poolCount === 0) {
+    return await readPeriodCheck(db, async () => {
+      const pools = await db
+        .selectFrom("indirectPool")
+        .select((eb) => eb.fn.countAll<number>().as("count"))
+        .where("companyId", "=", companyId)
+        .where("active", "=", true)
+        .where("appliesToProjects", "=", true)
+        .executeTakeFirst();
+      const poolCount = Number(pools?.count ?? 0);
+      if (poolCount === 0) {
+        return burdenComputedCheck({
+          entitled,
+          poolCount,
+          burdenComputedAt: null
+        });
+      }
+      const run = await db
+        .selectFrom("indirectRateRun")
+        .select("burdenComputedAt")
+        .where("companyId", "=", companyId)
+        .where(
+          "accountingPeriodId",
+          "in",
+          db
+            .selectFrom("accountingPeriod")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("startDate", "=", startDate)
+            .where("endDate", "=", endDate)
+        )
+        .executeTakeFirst();
       return burdenComputedCheck({
         entitled,
         poolCount,
-        burdenComputedAt: null
+        burdenComputedAt: run?.burdenComputedAt ?? null
       });
-    }
-    const run = await db
-      .selectFrom("indirectRateRun")
-      .select("burdenComputedAt")
-      .where("companyId", "=", companyId)
-      .where(
-        "accountingPeriodId",
-        "in",
-        db
-          .selectFrom("accountingPeriod")
-          .select("id")
-          .where("companyId", "=", companyId)
-          .where("startDate", "=", startDate)
-          .where("endDate", "=", endDate)
-      )
-      .executeTakeFirst();
-    return burdenComputedCheck({
-      entitled,
-      poolCount,
-      burdenComputedAt: run?.burdenComputedAt ?? null
     });
   } catch {
     return { failing: true, count: 1 };
@@ -4504,41 +4528,43 @@ async function getPeriodEarnedValueReadiness(
     return earnedValueClosedCheck({ entitled, projectsWithoutSnapshot: 0 });
   }
   try {
-    const result = await sql<{ count: number }>`
-      WITH RECURSIVE ancestors AS (
-        SELECT e."projectId", e."parentId" AS "ancestorId"
-        FROM "projectElement" e
-        JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
-        WHERE e."companyId" = ${companyId}
-          AND e."earnedValueTechnique" IS NOT NULL
-          AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
-        UNION
-        SELECT a."projectId", parent."parentId"
-        FROM ancestors a
-        JOIN "projectElement" parent
-          ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
-      ),
-      projects AS (
-        SELECT DISTINCT a."projectId"
-        FROM ancestors a
-        JOIN "projectElement" ca
-          ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
-        WHERE ca."isControlAccount"
-      )
-      SELECT COUNT(*)::int AS "count"
-      FROM projects pr
-      WHERE NOT EXISTS (
-        SELECT 1 FROM "earnedValuePeriod" ev
-        JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
-        WHERE ev."companyId" = ${companyId}
-          AND ev."projectId" = pr."projectId"
-          AND ap."startDate" = ${startDate}::date
-          AND ap."endDate" = ${endDate}::date
-      )
-    `.execute(db);
-    return earnedValueClosedCheck({
-      entitled,
-      projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+    return await readPeriodCheck(db, async () => {
+      const result = await sql<{ count: number }>`
+        WITH RECURSIVE ancestors AS (
+          SELECT e."projectId", e."parentId" AS "ancestorId"
+          FROM "projectElement" e
+          JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
+          WHERE e."companyId" = ${companyId}
+            AND e."earnedValueTechnique" IS NOT NULL
+            AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
+          UNION
+          SELECT a."projectId", parent."parentId"
+          FROM ancestors a
+          JOIN "projectElement" parent
+            ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
+        ),
+        projects AS (
+          SELECT DISTINCT a."projectId"
+          FROM ancestors a
+          JOIN "projectElement" ca
+            ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
+          WHERE ca."isControlAccount"
+        )
+        SELECT COUNT(*)::int AS "count"
+        FROM projects pr
+        WHERE NOT EXISTS (
+          SELECT 1 FROM "earnedValuePeriod" ev
+          JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
+          WHERE ev."companyId" = ${companyId}
+            AND ev."projectId" = pr."projectId"
+            AND ap."startDate" = ${startDate}::date
+            AND ap."endDate" = ${endDate}::date
+        )
+      `.execute(db);
+      return earnedValueClosedCheck({
+        entitled,
+        projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+      });
     });
   } catch {
     return { failing: true, count: 1 };
@@ -4825,23 +4851,36 @@ export async function computePeriodReadiness(
     endDate
   );
   // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
-  const [burden, earnedValue, shippedNotInvoiced] = await Promise.all([
+  const readBurden = () =>
     getPeriodBurdenReadiness(
       db,
       companyId,
       startDate,
       endDate,
       entitlements.governmentContracting === true
-    ),
+    );
+  const readEarnedValue = () =>
     getPeriodEarnedValueReadiness(
       db,
       companyId,
       startDate,
       endDate,
       entitlements.governmentContracting === true
-    ),
-    getShippedNotInvoiced(db, companyId, startDate, endDate)
-  ]);
+    );
+  const readShippedNotInvoiced = () =>
+    getShippedNotInvoiced(db, companyId, startDate, endDate);
+  // A transaction has one connection: recover a failed check before the next runs.
+  const [burden, earnedValue, shippedNotInvoiced] = db.isTransaction
+    ? ([
+        await readBurden(),
+        await readEarnedValue(),
+        await readShippedNotInvoiced()
+      ] as const)
+    : await Promise.all([
+        readBurden(),
+        readEarnedValue(),
+        readShippedNotInvoiced()
+      ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>

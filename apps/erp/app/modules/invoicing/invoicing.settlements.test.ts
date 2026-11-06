@@ -24,6 +24,13 @@ function clientFor(
   return {
     calls,
     client: {
+      rpc(
+        this: { from(table: string): any },
+        name: string,
+        args: { _company_id: string }
+      ) {
+        return this.from(name).eq("companyId", args._company_id);
+      },
       from(table: string) {
         const call = {
           table,
@@ -1403,6 +1410,9 @@ it("a supplier refund removes returned principal from the composer and new refun
         purchaseOrderId: "po"
       }
     ],
+    get_supplier_prepayment_refund_currencies: [
+      { purchaseOrderId: "po", refundableCurrencyCodes: [] }
+    ],
     purchaseOrder: [
       {
         id: "po",
@@ -1446,4 +1456,45 @@ it("a supplier refund removes returned principal from the composer and new refun
       refundableCurrencyCodes: []
     }
   ]);
+});
+
+it("keeps saved rental and contract documents beyond the first response page", async () => {
+  const rentalAgreement = Array.from({ length: 1001 }, (_, index) => ({
+    id: `ra-${index}`,
+    rentalAgreementId: `RA${index}`,
+    customerId: "customer",
+    companyId: "co",
+    status: "Active"
+  }));
+  const customerContract = Array.from({ length: 1001 }, (_, index) => ({
+    id: `contract-${index}`,
+    customerContractId: `C${index}`,
+    customerId: "customer",
+    companyId: "co",
+    status: "Active"
+  }));
+  const { client } = clientFor({
+    ...config,
+    rentalAgreement,
+    customerContract
+  });
+  const documents = await service.getDepositDocuments(client, "co");
+  expect(documents.find((document) => document.id === "ra-1000")).toEqual({
+    id: "ra-1000",
+    readableId: "RA1000",
+    partyId: "customer",
+    kind: "rentalAgreement",
+    status: "Active",
+    open: true
+  });
+  expect(documents.find((document) => document.id === "contract-1000")).toEqual(
+    {
+      id: "contract-1000",
+      readableId: "C1000",
+      partyId: "customer",
+      kind: "customerContract",
+      status: "Active",
+      open: true
+    }
+  );
 });

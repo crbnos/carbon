@@ -194,6 +194,9 @@ guarded by `requireUnlockedBulk`, not validators.
 - `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
   `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
   discounts batch-load their terms in one query, never per invoice.
+- `getDepositDocuments` pages rental agreements and customer contracts with stable id tie-breakers.
+  Supplier refund currencies come from `get_supplier_prepayment_refund_currencies`, a caller-RLS
+  SQL aggregate returning one row per referenced purchase order, including exhausted saved links.
 - `postPaymentTransaction` locks company settings, a linked purchase order, the payment,
   then funding sources; it rechecks the order reference after locking the payment.
   Activation takes the same settings-first order. Journal, normalized settlements and payment

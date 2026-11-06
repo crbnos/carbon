@@ -115,7 +115,7 @@ Until it is done, the **Reporting**, **Journal Entries**, **Intercompany**, **Ac
 
 An import replaces the whole trial balance and saves nothing when a row has an error. **Save Trial Balance** keeps it as a Draft Opening Balance journal, which the opening journal replaces when you enable.
 
-Accounts marked **Control** (receivables, payables, inventory, work in process and the others Carbon opens from its own records) are only compared: the **Migration Clearing** table shows, per control account, the trial balance amount, Carbon's opening total and the difference.
+Accounts marked **Control** (receivables, payables, inventory, work in process and the others Carbon opens from its own records) are only compared: the **Migration Clearing** table shows, per control account, the trial balance amount, Carbon's opening total and the difference. Each supplier-prepayment control account must reconcile with the trial balance before you can enable accounting, even when Migration Clearing totals zero. If a difference remains, the **Enable** page links back to **Trial Balance**.
 </Step>
 <Step>
 **Enable.** The summary lists the documents posted before Carbon kept journals, per type, when there are any (see below). Migration Clearing must total zero and every readiness check must pass. Type the company name and press **Enable accounting**.

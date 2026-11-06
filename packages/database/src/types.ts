@@ -107196,6 +107196,13 @@ export type Database = {
           supplierQuotes: Json
         }[]
       }
+      get_supplier_prepayment_refund_currencies: {
+        Args: { _company_id: string }
+        Returns: {
+          purchaseOrderId: string
+          refundableCurrencyCodes: string[]
+        }[]
+      }
       get_timezone_names: {
         Args: never
         Returns: {
