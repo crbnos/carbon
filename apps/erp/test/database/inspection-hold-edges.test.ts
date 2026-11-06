@@ -1602,6 +1602,340 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     60_000
   );
 
+  // Create Issue from an inspection lot: the units it passes are the row's.
+  const createIssueFor = async (item: string, units: string[]) => {
+    const type = await f.db
+      .selectFrom("nonConformanceType")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .executeTakeFirstOrThrow();
+    const created = await withGuard(() =>
+      quality.createIssue(stackContext(), {
+        name: "Failed units",
+        priority: "Medium",
+        source: "Internal",
+        locationId: f.locationId,
+        nonConformanceTypeId: type.id,
+        openDate: f.today,
+        items: [item],
+        trackedEntityIds: units
+      })
+    );
+    expect(created.error).toBeNull();
+    return created.data!.id;
+  };
+  const scrapAndClose = async (issueId: string) => {
+    await seed(f, (trx) =>
+      trx
+        .updateTable("nonConformanceItem")
+        .set({ disposition: "Scrap" })
+        .where("nonConformanceId", "=", issueId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    );
+    return withGuard(() =>
+      closeIssue(client!, f.db, {
+        nonConformanceId: issueId,
+        companyId: f.companyId,
+        userId: USER
+      })
+    );
+  };
+  const unitStatus = async (unit: string) =>
+    (
+      await f.db
+        .selectFrom("trackedEntity")
+        .select("status")
+        .where("id", "=", unit)
+        .executeTakeFirstOrThrow()
+    ).status;
+
+  it.skipIf(!client)(
+    "an issue created for a serial unit links it to the item's row, so its Scrap writes the unit off",
+    async () => {
+      await ensureIssueType();
+      // On Hold with no open lot (a customer return): free to scrap.
+      const { item, unit } = await heldUnit("ci-free", "Serial", "none");
+      const issueId = await createIssueFor(item, [unit]);
+      expect(
+        await f.db
+          .selectFrom("nonConformanceItemTrackedEntity")
+          .select(["trackedEntityId", "quantity"])
+          .where("nonConformanceId", "=", issueId)
+          .execute()
+      ).toEqual([{ trackedEntityId: unit, quantity: 1 }]);
+
+      const closed = await scrapAndClose(issueId);
+      expect(closed.error).toBeNull();
+      expect(await unitStatus(unit)).toBe("Rejected");
+      expect(
+        (
+          await f.db
+            .selectFrom("itemLedger")
+            .select("quantity")
+            .where("documentType", "=", "Non-Conformance")
+            .where("documentId", "=", issueId)
+            .where("trackedEntityId", "=", unit)
+            .execute()
+        ).map((row) => Number(row.quantity))
+      ).toEqual([-1]);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an issue created for units of two items puts each on its own item's row, a batch at its quantity",
+    async () => {
+      await ensureIssueType();
+      const serial = await heldUnit("ci-two-s", "Serial", "none");
+      const batch = await heldUnit("ci-two-b", "Batch", "none");
+      // Only the serial's item is named; the batch's row is made for it.
+      const issueId = await createIssueFor(serial.item, [
+        serial.unit,
+        batch.unit
+      ]);
+      const rows = await f.db
+        .selectFrom("nonConformanceItem as r")
+        .innerJoin("nonConformanceItemTrackedEntity as l", (join) =>
+          join.onRef("l.nonConformanceItemId", "=", "r.id")
+        )
+        .select(["r.itemId", "r.quantity", "l.trackedEntityId"])
+        .where("r.nonConformanceId", "=", issueId)
+        .execute();
+      expect(
+        rows
+          .map((row) => ({ ...row, quantity: Number(row.quantity) }))
+          .sort((a, b) => a.itemId.localeCompare(b.itemId))
+      ).toEqual(
+        [
+          { itemId: serial.item, quantity: 1, trackedEntityId: serial.unit },
+          { itemId: batch.item, quantity: 5, trackedEntityId: batch.unit }
+        ].sort((a, b) => a.itemId.localeCompare(b.itemId))
+      );
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a unit on two issues' rows is written off once, and a unit out of stock goes on no row",
+    async () => {
+      await ensureIssueType();
+      const { item, unit } = await heldUnit("ci-twice", "Serial", "none");
+      const linkedRows = (issueId: string) =>
+        f.db
+          .selectFrom("nonConformanceItemTrackedEntity")
+          .select("trackedEntityId")
+          .where("nonConformanceId", "=", issueId)
+          .execute();
+      const first = await createIssueFor(item, [unit]);
+      const second = await createIssueFor(item, [unit]);
+      expect(await linkedRows(first)).toEqual([{ trackedEntityId: unit }]);
+      expect(await linkedRows(second)).toEqual([{ trackedEntityId: unit }]);
+      expect((await scrapAndClose(first)).error).toBeNull();
+      // The unit is gone: the second Scrap books nothing and says why.
+      const closedSecond = await scrapAndClose(second);
+      expect(closedSecond.error).toBeNull();
+      expect(closedSecond.data?.warning).toMatch(
+        /^1 tracked unit set to Scrap or Return had less stock than linked: only what was there was written off\./
+      );
+      // Written off once.
+      const writeOffs = async () =>
+        (
+          await f.db
+            .selectFrom("itemLedger")
+            .select("quantity")
+            .where("trackedEntityId", "=", unit)
+            .where("documentType", "=", "Non-Conformance")
+            .execute()
+        ).map((row) => Number(row.quantity));
+      expect(await writeOffs()).toEqual([-1]);
+      // Now out of stock: a third issue takes it as an association only too.
+      const third = await createIssueFor(item, [unit]);
+      expect(await linkedRows(third)).toEqual([]);
+      expect((await scrapAndClose(third)).error).toBeNull();
+      expect(await writeOffs()).toEqual([-1]);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "Use As Is on a second issue leaves a unit another issue scrapped as it is",
+    async () => {
+      await ensureIssueType();
+      const { item, unit } = await heldUnit("ci-keep", "Serial", "none");
+      const first = await createIssueFor(item, [unit]);
+      const second = await createIssueFor(item, [unit]);
+      expect((await scrapAndClose(first)).error).toBeNull();
+      expect(await unitStatus(unit)).toBe("Rejected");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Use As Is" })
+          .where("nonConformanceId", "=", second)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: second,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      // Written off with no stock left: not made Available again.
+      expect(await unitStatus(unit)).toBe("Rejected");
+      expect(closed.data?.warning).toMatch(/left as it was: no stock left/);
+    },
+    60_000
+  );
+
+  const nonConformanceWriteOffs = (unit: string) =>
+    f.db
+      .selectFrom("itemLedger")
+      .select(["quantity", "locationId", "storageUnitId"])
+      .where("trackedEntityId", "=", unit)
+      .where("documentType", "=", "Non-Conformance")
+      .execute()
+      .then((rows) =>
+        rows.map((row) => ({ ...row, quantity: Number(row.quantity) }))
+      );
+
+  it.skipIf(!client)(
+    "a unit in stock that no receipt brought in is written off at its bin, and once",
+    async () => {
+      await ensureIssueType();
+      const { item, unit } = await heldUnit("ci-adjusted", "Serial", "none");
+      // As a unit an adjustment or a count brought in: no receipt line.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("trackedEntity")
+          .set({ attributes: JSON.stringify({}) })
+          .where("id", "=", unit)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const first = await createIssueFor(item, [unit]);
+      const second = await createIssueFor(item, [unit]);
+      expect((await scrapAndClose(first)).error).toBeNull();
+      // Where its stock is, not at the NCR's location with no unit.
+      expect(await nonConformanceWriteOffs(unit)).toEqual([
+        {
+          quantity: -1,
+          locationId: f.locationId,
+          storageUnitId: unitOf("batch")
+        }
+      ]);
+      const closedSecond = await scrapAndClose(second);
+      expect(closedSecond.error).toBeNull();
+      expect(closedSecond.data?.warning).toMatch(
+        /^1 tracked unit set to Scrap or Return had less stock than linked: only what was there was written off\./
+      );
+      expect(await nonConformanceWriteOffs(unit)).toHaveLength(1);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a unit never in stock stays an association, and on a row its Scrap keeps the older rule",
+    async () => {
+      await ensureIssueType();
+      const item = `${f.prefix}-item-ci-wip`;
+      const unit = `${f.prefix}-unit-ci-wip`;
+      // Job work in progress: a unit with no ledger row.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("item")
+          .values({
+            id: item,
+            readableId: `${f.prefix}-CI-WIP`,
+            name: "ci-wip",
+            type: "Part",
+            itemTrackingType: "Serial",
+            replenishmentSystem: "Make",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("trackedEntity")
+          .values({
+            id: unit,
+            readableId: `${f.prefix}-ci-wip-1`,
+            itemId: item,
+            quantity: 1,
+            status: "Reserved",
+            sourceDocument: "Job",
+            sourceDocumentId: `${f.prefix}-job-ci-wip`,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      const issueId = await createIssueFor(item, [unit]);
+      expect(
+        await f.db
+          .selectFrom("nonConformanceItemTrackedEntity")
+          .select("trackedEntityId")
+          .where("nonConformanceId", "=", issueId)
+          .execute()
+      ).toEqual([]);
+      expect(
+        await f.db
+          .selectFrom("nonConformanceTrackedEntity")
+          .select("trackedEntityId")
+          .where("nonConformanceId", "=", issueId)
+          .execute()
+      ).toEqual([{ trackedEntityId: unit }]);
+      // Linked to the row as a job operation's lot is.
+      await seed(f, async (trx) => {
+        const row = await trx
+          .selectFrom("nonConformanceItem")
+          .select("id")
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values({
+            nonConformanceItemId: row.id,
+            nonConformanceId: issueId,
+            trackedEntityId: unit,
+            quantity: 1,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("nonConformanceItem")
+          .set({ quantity: 1 })
+          .where("id", "=", row.id)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const closed = await scrapAndClose(issueId);
+      expect(closed.error).toBeNull();
+      expect(closed.data?.warning).toBeUndefined();
+      expect(await nonConformanceWriteOffs(unit)).toEqual([
+        { quantity: -1, locationId: f.locationId, storageUnitId: null }
+      ]);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "an issue created for a unit of a still-open lot cannot scrap it",
+    async () => {
+      await ensureIssueType();
+      const { item, unit } = await heldUnit("ci-open", "Serial", "open");
+      const issueId = await createIssueFor(item, [unit]);
+      const closed = await scrapAndClose(issueId);
+      expect(closed.error?.message).toMatch(/held for inspection/);
+      expect(await unitStatus(unit)).toBe("On Hold");
+    },
+    60_000
+  );
+
   it.skipIf(!client)(
     "an inspected receipt line refuses a negative received quantity; another line keeps it",
     async () => {

@@ -64,7 +64,7 @@ Each operation is one `defineServiceFn` const in `quality.server.ts`. A route ca
 
 | Operation | Route | What it holds |
 |---|---|---|
-| `createIssue` | `x+/issue+/new.tsx` | Every referenced record (a `supplierId` included, written as the issue's `nonConformanceSupplier`) must be the company's; tracked entities from the query string are linked; a job-operation issue links the operation's lot to its disposition row; tasks are created (a failure deletes the issue); integrations are told; `changeOrderId` links the issue onto the change notice (a failed link is `warning`) |
+| `createIssue` | `x+/issue+/new.tsx` | Every referenced record (a `supplierId` included, written as the issue's `nonConformanceSupplier`) must be the company's; tracked entities from the query string are linked, and each one still in stock goes onto its item's disposition row, at what it holds (`linkIssueTrackedEntities`, under the issue lock; a failed link deletes the issue); a job-operation issue links the operation's lot to its disposition row; tasks are created (a failure deletes the issue); integrations are told; `changeOrderId` links the issue onto the change notice (a failed link is `warning`) |
 | `updateIssueField` | `x+/issue+/update.tsx` | Refused on a closed issue; `requiredActionIds` / `approvalRequirements` reconcile the tasks |
 | `setIssueStatus` / `completeIssue` | `$id.status.tsx`, `$id.close.tsx` | Start and reopen only (reopen refused once the dispositions posted inventory); the issue must be the company's, and the write is scoped to it; close is `closeIssue`, which posts the dispositions |
 | `draftIssueSupplierReturn` | `$id.supplier-return.tsx` | `purchasing` create; idempotent per covered quantity, deletes the draft on a part-way failure |

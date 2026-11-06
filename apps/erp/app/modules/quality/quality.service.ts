@@ -2789,8 +2789,11 @@ async function readRejectWriteOffs(
     );
 }
 
-// Where each tracked unit's balance is (a batch split across bins: its
-// largest), so its Scrap is written off there.
+// Where each tracked unit has stock: every bin with a positive balance,
+// largest first (a tie the same way on every read), so its Scrap is drawn
+// from what is there and never writes off more. `stocked` holds the units
+// with any ledger row: one with none never was in stock (job work in
+// progress) and keeps the close's older rule.
 async function readTrackedEntityBins(
   handle: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2798,9 +2801,14 @@ async function readTrackedEntityBins(
 ) {
   const bins = new Map<
     string,
-    { locationId: string | null; storageUnitId: string | null }
+    {
+      locationId: string | null;
+      storageUnitId: string | null;
+      quantity: number;
+    }[]
   >();
-  if (entityIds.length === 0) return bins;
+  const stocked = new Set<string>();
+  if (entityIds.length === 0) return { bins, stocked };
   const balances = await handle
     .selectFrom("itemLedger")
     .select([
@@ -2812,25 +2820,31 @@ async function readTrackedEntityBins(
     .where("companyId", "=", companyId)
     .where("trackedEntityId", "in", entityIds)
     .groupBy(["trackedEntityId", "locationId", "storageUnitId"])
-    .having(sql<number>`SUM("quantity")`, ">", 0)
-    // A tie between bins goes the same way on every read.
     .orderBy(sql`SUM("quantity")`, "desc")
     .orderBy("locationId")
     .orderBy("storageUnitId")
     .execute();
-  const largest = new Map<string, number>();
   for (const balance of balances) {
     if (!balance.trackedEntityId) continue;
-    const quantity = Number(balance.quantity);
-    if (quantity <= (largest.get(balance.trackedEntityId) ?? 0)) continue;
-    largest.set(balance.trackedEntityId, quantity);
-    bins.set(balance.trackedEntityId, {
+    stocked.add(balance.trackedEntityId);
+    const quantity = round(Number(balance.quantity));
+    if (quantity <= EPSILON) continue;
+    const list = bins.get(balance.trackedEntityId) ?? [];
+    list.push({
       locationId: balance.locationId,
-      storageUnitId: balance.storageUnitId
+      storageUnitId: balance.storageUnitId,
+      quantity
     });
+    bins.set(balance.trackedEntityId, list);
   }
-  return bins;
+  return { bins, stocked };
 }
+
+// What two reads of readTrackedEntityBins compare by.
+const trackedEntityBinsKey = (read: {
+  bins: Map<string, unknown>;
+  stocked: Set<string>;
+}) => readKey(read.bins) + readKey([...read.stocked].sort());
 
 // The lots an NCR holds and their state, in link order; with `lock`, each
 // FOR SHARE (shared locks: a decision's FOR UPDATE waits for them). The plan
@@ -4456,25 +4470,35 @@ export async function closeIssue(
     }
   }
 
-  // A tracked unit is written off where its balance is, not at the NCR's location.
-  const scrappedEntityIds = [
+  // A tracked unit is written off where its stock is, not at the NCR's
+  // location, and kept (Use As Is, Rework) only while it has stock.
+  const linkedEntityIds = [
     ...new Set(
-      plan
-        .filter(
-          (row) =>
-            row.links.length > 0 &&
-            (row.disposition === "Scrap" ||
-              row.disposition === "Return to Supplier")
-        )
-        .flatMap((row) => row.links.map((link) => link.trackedEntityId))
+      plan.flatMap((row) => row.links.map((link) => link.trackedEntityId))
     )
   ];
-  const entityBins = await readTrackedEntityBins(
+  const entityStock = await readTrackedEntityBins(
     db,
     companyId,
-    scrappedEntityIds
+    linkedEntityIds
   );
-  const entityBinsKey = readKey(entityBins);
+  const entityBinsKey = trackedEntityBinsKey(entityStock);
+  // A unit that was in stock and has none left (written off by another
+  // issue, shipped, consumed) is not written off or kept again.
+  const hasNoStockLeft = (trackedEntityId: string) =>
+    entityStock.stocked.has(trackedEntityId) &&
+    !entityStock.bins.has(trackedEntityId);
+  // Drawn down as Scrap and Return rows take stock; `entityStock` stays as read.
+  const drawable = new Map(
+    [...entityStock.bins].map(([id, list]) => [
+      id,
+      list.map((bin) => ({ ...bin }))
+    ])
+  );
+  // Tracked units a Scrap or Return found short of their link, and units a
+  // Use As Is or Rework found with no stock: reported, not booked.
+  const writtenOffShort = new Set<string>();
+  const keptWithoutStock = new Set<string>();
 
   // Build the inventory value movements: tracked Scrap/Return → one −qty per
   // linked entity; non-tracked Inventory → −qty write-off (MES/manual scrap) or
@@ -4510,15 +4534,37 @@ export async function closeIssue(
           ) {
             continue;
           }
-          const bin = entityBins.get(link.trackedEntityId);
-          movements.push({
-            itemId: row.itemId,
-            locationId: bin?.locationId ?? locationId,
-            storageUnitId: bin?.storageUnitId ?? null,
-            trackedEntityId: link.trackedEntityId,
-            quantity: -link.quantity,
-            comment: `NC ${readableNc} ${suffix}`
-          });
+          // Never in stock (job work in progress): the older rule, at the
+          // NCR's location.
+          if (!entityStock.stocked.has(link.trackedEntityId)) {
+            movements.push({
+              itemId: row.itemId,
+              locationId,
+              storageUnitId: null,
+              trackedEntityId: link.trackedEntityId,
+              quantity: -link.quantity,
+              comment: `NC ${readableNc} ${suffix}`
+            });
+            continue;
+          }
+          // From the bins it has stock in, never more than is there: a unit
+          // with none left books nothing.
+          let left = round(link.quantity);
+          for (const bin of drawable.get(link.trackedEntityId) ?? []) {
+            if (left <= EPSILON) break;
+            const take = round(Math.min(left, bin.quantity));
+            bin.quantity = round(bin.quantity - take);
+            left = round(left - take);
+            movements.push({
+              itemId: row.itemId,
+              locationId: bin.locationId ?? locationId,
+              storageUnitId: bin.storageUnitId,
+              trackedEntityId: link.trackedEntityId,
+              quantity: -take,
+              comment: `NC ${readableNc} ${suffix}`
+            });
+          }
+          if (left > EPSILON) writtenOffShort.add(link.trackedEntityId);
         }
       }
       continue;
@@ -4598,7 +4644,8 @@ export async function closeIssue(
         nonConformanceId,
         companyId
       });
-      if (status === "Closed") return { id: nonConformanceId };
+      if (status === "Closed")
+        return { id: nonConformanceId, closedNow: false };
 
       const nowIso = datetime.timestamp();
       const today = nowIso.slice(0, 10);
@@ -4736,22 +4783,23 @@ export async function closeIssue(
       ) {
         throw new Error("Disposition changed while closing; please retry.");
       }
-      if (scrappedEntityIds.length > 0) {
+      if (linkedEntityIds.length > 0) {
         // A move of a unit (a transfer, an adjustment, a count) locks its
         // row first: locked here, none moves before this close commits.
         await trx
           .selectFrom("trackedEntity")
           .select("id")
-          .where("id", "in", scrappedEntityIds)
+          .where("id", "in", linkedEntityIds)
           .where("companyId", "=", companyId)
           .orderBy("id")
           .forUpdate()
           .execute();
-        if (
-          readKey(
-            await readTrackedEntityBins(trx, companyId, scrappedEntityIds)
-          ) !== entityBinsKey
-        ) {
+        const fresh = await readTrackedEntityBins(
+          trx,
+          companyId,
+          linkedEntityIds
+        );
+        if (trackedEntityBinsKey(fresh) !== entityBinsKey) {
           throw new Error("Disposition changed while closing; please retry.");
         }
       }
@@ -4973,8 +5021,16 @@ export async function closeIssue(
           .execute();
 
         if (row.disposition === "Use As Is" || row.disposition === "Rework") {
+          // A unit with no stock left stays as it is.
           const idsToFlip = row.links
-            .filter((l) => l.trackedEntityStatus !== "Available")
+            .filter((l) => {
+              if (l.trackedEntityStatus === "Available") return false;
+              if (hasNoStockLeft(l.trackedEntityId)) {
+                keptWithoutStock.add(l.trackedEntityId);
+                return false;
+              }
+              return true;
+            })
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
             await trx
@@ -5014,10 +5070,29 @@ export async function closeIssue(
         }
       }
 
-      return { id: updated.id };
+      return { id: updated.id, closedNow: true };
     });
 
-    return { data: { ...result, warning }, error: null };
+    const { closedNow, ...closed } = result;
+    if (closedNow) {
+      const notes = [warning];
+      if (writtenOffShort.size > 0) {
+        const n = writtenOffShort.size;
+        notes.push(
+          `${n} tracked ${n === 1 ? "unit" : "units"} set to Scrap or Return had less stock than linked: only what was there was written off.`
+        );
+      }
+      if (keptWithoutStock.size > 0) {
+        const n = keptWithoutStock.size;
+        notes.push(
+          `${n} tracked ${n === 1 ? "unit was" : "units were"} left as ${n === 1 ? "it was" : "they were"}: no stock left (written off, shipped or consumed).`
+        );
+      }
+      warning = notes.filter(Boolean).join(" ") || undefined;
+    } else {
+      warning = undefined;
+    }
+    return { data: { ...closed, warning }, error: null };
   } catch (err) {
     logger.error("closeIssue failed", { companyId, nonConformanceId, err });
     // A deadlock or serialization failure reads as "try again"; a hold
@@ -5435,6 +5510,138 @@ export function createIssueTasks(ctx: ServiceContext, issueId: string) {
     },
     { type: "nonConformanceTasks", id: issueId }
   );
+}
+
+/**
+ * Links tracked units to a new issue: as associations, and onto the
+ * disposition row of each unit's item, so a Scrap or a Use As Is acts on the
+ * units (a row with no links is untracked, and a serial item's untracked row
+ * books nothing). Only a unit still in stock goes on a row, at what it
+ * holds; a unit with none (job work in progress) stays an association, as
+ * before. A unit on two issues' rows is written off once: the close never
+ * takes more than a unit has. One transaction, under the issue lock every disposition writer takes,
+ * set-based.
+ */
+export async function linkIssueTrackedEntities(
+  ctx: ServiceContext,
+  args: { nonConformanceId: string; trackedEntityIds: string[] }
+): Promise<void> {
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { nonConformanceId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return;
+  const nowIso = datetime.timestamp();
+  await withTransaction(ctx.asSystem.pg, async (trx) => {
+    await lockIssueDispositions(trx, { nonConformanceId, companyId });
+    await trx
+      .insertInto("nonConformanceTrackedEntity")
+      .values(
+        trackedEntityIds.map((trackedEntityId) => ({
+          nonConformanceId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    // The units still in stock, with what they hold.
+    const units = await trx
+      .selectFrom("trackedEntity as te")
+      .innerJoin(
+        (eb) =>
+          eb
+            .selectFrom("itemLedger")
+            .select([
+              "trackedEntityId",
+              sql<number>`SUM("quantity")`.as("onHand")
+            ])
+            .where("trackedEntityId", "in", trackedEntityIds)
+            .where("companyId", "=", companyId)
+            .groupBy("trackedEntityId")
+            .as("b"),
+        (join) => join.onRef("b.trackedEntityId", "=", "te.id")
+      )
+      .select([
+        "te.id",
+        "te.itemId",
+        // What it has in stock, never more than the unit itself.
+        sql<number>`LEAST(b."onHand", te."quantity")`.as("quantity")
+      ])
+      .where("te.id", "in", trackedEntityIds)
+      .where("te.companyId", "=", companyId)
+      .where("te.itemId", "is not", null)
+      // A unit with no stock (job work in progress, or gone) stays an
+      // association, as before.
+      .where(sql<boolean>`LEAST(b."onHand", te."quantity") > 0`)
+      .orderBy("te.id")
+      .execute()
+      // A residue that rounds to nothing is not stock.
+      .then((rows) =>
+        rows.filter((row) => round(Number(row.quantity)) > EPSILON)
+      );
+    if (units.length === 0) return;
+
+    // One row per item: the oldest the issue has, else a new one.
+    const itemIds = [...new Set(units.map((u) => u.itemId as string))];
+    const existing = await trx
+      .selectFrom("nonConformanceItem")
+      .select(["id", "itemId"])
+      .where("nonConformanceId", "=", nonConformanceId)
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", itemIds)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    const rowByItem = new Map<string, string>();
+    for (const row of existing) {
+      if (!rowByItem.has(row.itemId)) rowByItem.set(row.itemId, row.id);
+    }
+    const missing = itemIds.filter((itemId) => !rowByItem.has(itemId));
+    if (missing.length > 0) {
+      const inserted = await trx
+        .insertInto("nonConformanceItem")
+        .values(
+          missing.map((itemId) => ({
+            nonConformanceId,
+            itemId,
+            quantity: 0,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .returning(["id", "itemId"])
+        .execute();
+      for (const row of inserted) rowByItem.set(row.itemId, row.id);
+    }
+
+    await trx
+      .insertInto("nonConformanceItemTrackedEntity")
+      .values(
+        units.map((u) => ({
+          nonConformanceItemId: rowByItem.get(u.itemId as string) as string,
+          nonConformanceId,
+          trackedEntityId: u.id,
+          quantity: round(Number(u.quantity)),
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    // Each row's quantity is the sum of its links.
+    await sql`
+      UPDATE "nonConformanceItem" r
+      SET "quantity" = s.total, "updatedBy" = ${userId}, "updatedAt" = ${nowIso}
+      FROM (
+        SELECT "nonConformanceItemId" AS id, SUM("quantity") AS total
+        FROM "nonConformanceItemTrackedEntity"
+        WHERE "nonConformanceId" = ${nonConformanceId} AND "companyId" = ${companyId}
+        GROUP BY "nonConformanceItemId"
+      ) s
+      WHERE r."id" = s.id AND r."companyId" = ${companyId}
+        AND r."id" = ANY(${[...new Set(rowByItem.values())]}::text[])
+    `.execute(trx);
+  });
 }
 
 /**

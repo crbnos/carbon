@@ -83,9 +83,13 @@ const customFieldValues = z.record(
  * @remarks
  * Every record the issue names (location, type, workflow, required actions,
  * items, customer, supplier, `trackedEntityIds`) must be the company's, or nothing is
- * created. The issue is inserted, the tracked entities are linked to it, and
- * an issue filed against a job operation links the lot that operation's make
- * method produced onto the item's disposition row. Its action and approval
+ * created. The issue is inserted and the tracked entities are linked to it;
+ * each one still in stock also goes onto its
+ * item's disposition row, at what it holds, so a Scrap or a Use As Is acts
+ * on it (when that link fails, the
+ * issue is deleted again). An issue filed against a job
+ * operation links the lot that operation's make method produced onto the
+ * item's disposition row. Its action and approval
  * tasks are then created; when that fails the issue is deleted again. The
  * company's integrations are told. With `changeOrderId` the new issue is
  * linked onto that change notice; a failed link comes back as `warning`.
@@ -178,17 +182,30 @@ export const createIssue = defineServiceFn({
     }
     const { id: issueId, nonConformanceId } = created.data;
 
-    // Pre-associate the tracked entities passed in (the "Create Issue from
-    // Inspection" button on inbound inspection lots).
+    // The tracked entities passed in (the "Create Issue" button on an
+    // inspection lot) belong to the issue's disposition rows, so its Scrap or
+    // Use As Is acts on them. A failed link leaves no half-made issue.
     if (trackedEntityIds.length > 0) {
-      await serviceRole.from("nonConformanceTrackedEntity").insert(
-        trackedEntityIds.map((trackedEntityId) => ({
+      try {
+        await service.linkIssueTrackedEntities(ctx, {
           nonConformanceId: issueId,
-          trackedEntityId,
-          companyId,
-          createdBy: userId
-        }))
-      );
+          trackedEntityIds
+        });
+      } catch (err) {
+        const removed = await service.deleteIssue(serviceRole, issueId);
+        if (removed.error) {
+          logger.error("Failed to remove an issue whose units did not link", {
+            companyId,
+            issueId,
+            error: removed.error
+          });
+        }
+        return ctx.error(
+          "internal",
+          "Failed to link the tracked entities to the issue",
+          err
+        );
+      }
     }
 
     // An issue filed against a job operation: surface the tracked entity that
