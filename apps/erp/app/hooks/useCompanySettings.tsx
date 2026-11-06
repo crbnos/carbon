@@ -26,6 +26,7 @@ type CompanySettings = Partial<
     | "allowLowercaseItemIds"
     | "digitalQuoteEnabled"
     | "digitalQuoteIncludesPurchaseOrders"
+    | "includeSupplierPartFiles"
     | "mrpRunTime"
     | "requireBackflushStorageUnit"
     | "requireCustomerContactEmail"

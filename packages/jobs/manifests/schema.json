@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105181112",
+  "schemaVersion": "20261105230630",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-05T19:18:45.087Z",
+  "exportedAt": "2026-11-06T09:31:33.941Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -316,7 +316,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "decisionSignaturePath"
+        "decisionSignaturePath",
+        "hasPriorVersion"
       ]
     },
     {
@@ -495,6 +496,10 @@
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -505,14 +510,11 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
-        "requirePurchaseOrderApprovalSignature",
-        "serialNumberTiming",
-        "useCalendarWeeks",
-        "kanbanLabelSize",
         "serviceLaborCostRate",
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
-        "requireCustomerContactEmail"
+        "requireCustomerContactEmail",
+        "includeSupplierPartFiles"
       ]
     },
     {
@@ -730,6 +732,22 @@
         "updatedAt",
         "sourceDocument",
         "sourceDocumentId"
+      ]
+    },
+    {
+      "name": "documentEdit",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -1231,8 +1249,8 @@
         "companyId",
         "locationId",
         "quantityOnHand",
-        "projectId",
-        "quantityNonNettable"
+        "quantityNonNettable",
+        "projectId"
       ]
     },
     {
@@ -5434,9 +5452,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "projectId",
         "foundDuringCount",
-        "assignedReadableId"
+        "assignedReadableId",
+        "projectId"
       ]
     },
     {
@@ -7445,6 +7463,78 @@
       ]
     },
     {
+      "name": "purchaseOrderVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "approvalRequestId",
+        "purchaseOrderId",
+        "exchangeRate",
+        "hasDelivery",
+        "locationId",
+        "shippingMethodId",
+        "shippingTermId",
+        "receiptRequestedDate",
+        "notes",
+        "trackingNumber",
+        "dropShipment",
+        "customerId",
+        "customerLocationId",
+        "customFields",
+        "supplierShippingCost",
+        "incoterm",
+        "incotermLocation",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "purchaseOrderLineVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderVersionId",
+        "purchaseOrderLineId",
+        "purchaseOrderLineType",
+        "itemId",
+        "description",
+        "purchaseQuantity",
+        "purchaseUnitOfMeasureCode",
+        "inventoryUnitOfMeasureCode",
+        "conversionFactor",
+        "supplierUnitPrice",
+        "supplierShippingCost",
+        "supplierTaxAmount",
+        "taxPercent",
+        "setupPrice",
+        "exchangeRate",
+        "locationId",
+        "storageUnitId",
+        "accountId",
+        "assetId",
+        "costCenterId",
+        "jobId",
+        "jobOperationId",
+        "supplierPartId",
+        "requiredDate",
+        "customFields",
+        "tags",
+        "sortOrder",
+        "externalNotes",
+        "internalNotes",
+        "modelUploadId",
+        "ownerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "purchaseReturnOrderLineTrackedEntity",
       "rows": 0,
       "columns": [
@@ -8809,7 +8899,8 @@
         "updatedBy",
         "supplierInteractionId",
         "supplierQuoteType",
-        "externalLinkId"
+        "externalLinkId",
+        "sharedFilePaths"
       ]
     },
     {

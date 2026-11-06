@@ -582,6 +582,7 @@ function StepForm({
             <Trans>Instruction</Trans>
           </Label>
           <Editor
+            label={t`Instruction`}
             initialValue={(step.description as JSONContent) ?? {}}
             onUpload={onUploadImage}
             onChange={(value) => {

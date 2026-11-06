@@ -12,6 +12,7 @@ import { msg } from "@lingui/core/macro";
 import { lazy, Suspense } from "react";
 import type {
   LoaderFunctionArgs,
+  MetaFunction,
   ShouldRevalidateFunction
 } from "react-router";
 import { useLoaderData } from "react-router";
@@ -26,6 +27,7 @@ import type { InspectionDocumentContent } from "~/modules/quality/types";
 import type { SamplingRule } from "~/modules/quality/ui/InspectionDocument/SamplingRuleModal";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const InspectionDocumentEditor = lazy(
@@ -44,6 +46,9 @@ export const handle: Handle = {
   },
   module: "quality"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.diagram?.name, "Inspection Plan");
 
 // The editor saves itself, and each save's response already carries the
 // saved rows — reloading the plan after every edit would only slow the next

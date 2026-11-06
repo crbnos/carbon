@@ -293,6 +293,7 @@ const MaintenanceSchedulesTable = memo(
             {locationId && (
               <Combobox
                 asButton
+                aria-label={t`Location`}
                 size="sm"
                 value={locationId}
                 options={locationOptions}

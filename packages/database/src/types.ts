@@ -3247,6 +3247,7 @@ export type Database = {
           decisionSignaturePath: string | null
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
+          hasPriorVersion: boolean
           id: string
           requestedAt: string
           requestedBy: string
@@ -3265,6 +3266,7 @@ export type Database = {
           decisionSignaturePath?: string | null
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
+          hasPriorVersion?: boolean
           id?: string
           requestedAt?: string
           requestedBy: string
@@ -3283,6 +3285,7 @@ export type Database = {
           decisionSignaturePath?: string | null
           documentId?: string
           documentType?: Database["public"]["Enums"]["approvalDocumentType"]
+          hasPriorVersion?: boolean
           id?: string
           requestedAt?: string
           requestedBy?: string
@@ -8471,6 +8474,7 @@ export type Database = {
           id: string
           includeMaterialsOnTraveler: boolean
           includeOperationsOnTraveler: boolean
+          includeSupplierPartFiles: boolean
           incompletePickingListPolicy: string
           inventoryJobCompletedNotificationGroup: string[]
           inventoryShelfLife: Json
@@ -8565,6 +8569,7 @@ export type Database = {
           id: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
+          includeSupplierPartFiles?: boolean
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
@@ -8659,6 +8664,7 @@ export type Database = {
           id?: string
           includeMaterialsOnTraveler?: boolean
           includeOperationsOnTraveler?: boolean
+          includeSupplierPartFiles?: boolean
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
@@ -17474,6 +17480,144 @@ export type Database = {
           },
           {
             foreignKeyName: "document_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      documentEdit: {
+        Row: {
+          blocks: Json
+          companyId: string
+          createdAt: string
+          createdBy: string
+          documentId: string
+          documentType: string
+          id: string
+          settings: Json
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          blocks?: Json
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          documentId: string
+          documentType: string
+          id?: string
+          settings?: Json
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          blocks?: Json
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          documentId?: string
+          documentType?: string
+          id?: string
+          settings?: Json
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentEdit_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "documentEdit_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "documentEdit_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "documentEdit_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentEdit_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -57732,6 +57876,477 @@ export type Database = {
           }
         ]
       }
+      purchaseOrderLineVersion: {
+        Row: {
+          accountId: string | null
+          assetId: string | null
+          companyId: string
+          conversionFactor: number | null
+          costCenterId: string | null
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          description: string | null
+          exchangeRate: number
+          externalNotes: Json | null
+          id: string
+          internalNotes: Json | null
+          inventoryUnitOfMeasureCode: string | null
+          itemId: string | null
+          jobId: string | null
+          jobOperationId: string | null
+          locationId: string | null
+          modelUploadId: string | null
+          ownerId: string | null
+          purchaseOrderLineId: string | null
+          purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
+          purchaseOrderVersionId: string
+          purchaseQuantity: number | null
+          purchaseUnitOfMeasureCode: string | null
+          requiredDate: string | null
+          setupPrice: number | null
+          sortOrder: number
+          storageUnitId: string | null
+          supplierPartId: string | null
+          supplierShippingCost: number
+          supplierTaxAmount: number
+          supplierUnitPrice: number | null
+          tags: string[] | null
+          taxPercent: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountId?: string | null
+          assetId?: string | null
+          companyId: string
+          conversionFactor?: number | null
+          costCenterId?: string | null
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          description?: string | null
+          exchangeRate?: number
+          externalNotes?: Json | null
+          id?: string
+          internalNotes?: Json | null
+          inventoryUnitOfMeasureCode?: string | null
+          itemId?: string | null
+          jobId?: string | null
+          jobOperationId?: string | null
+          locationId?: string | null
+          modelUploadId?: string | null
+          ownerId?: string | null
+          purchaseOrderLineId?: string | null
+          purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
+          purchaseOrderVersionId: string
+          purchaseQuantity?: number | null
+          purchaseUnitOfMeasureCode?: string | null
+          requiredDate?: string | null
+          setupPrice?: number | null
+          sortOrder?: number
+          storageUnitId?: string | null
+          supplierPartId?: string | null
+          supplierShippingCost?: number
+          supplierTaxAmount?: number
+          supplierUnitPrice?: number | null
+          tags?: string[] | null
+          taxPercent?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountId?: string | null
+          assetId?: string | null
+          companyId?: string
+          conversionFactor?: number | null
+          costCenterId?: string | null
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          description?: string | null
+          exchangeRate?: number
+          externalNotes?: Json | null
+          id?: string
+          internalNotes?: Json | null
+          inventoryUnitOfMeasureCode?: string | null
+          itemId?: string | null
+          jobId?: string | null
+          jobOperationId?: string | null
+          locationId?: string | null
+          modelUploadId?: string | null
+          ownerId?: string | null
+          purchaseOrderLineId?: string | null
+          purchaseOrderLineType?: Database["public"]["Enums"]["purchaseOrderLineType"]
+          purchaseOrderVersionId?: string
+          purchaseQuantity?: number | null
+          purchaseUnitOfMeasureCode?: string | null
+          requiredDate?: string | null
+          setupPrice?: number | null
+          sortOrder?: number
+          storageUnitId?: string | null
+          supplierPartId?: string | null
+          supplierShippingCost?: number
+          supplierTaxAmount?: number
+          supplierUnitPrice?: number | null
+          tags?: string[] | null
+          taxPercent?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchaseOrderLineVersion_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_accountId_fkey"
+            columns: ["accountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_assetId_fkey"
+            columns: ["assetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_assetId_fkey"
+            columns: ["assetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_costCenterId_fkey"
+            columns: ["costCenterId"]
+            isOneToOne: false
+            referencedRelation: "costCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_inventoryUnitOfMeasureCode_fkey"
+            columns: ["inventoryUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationQueueTime"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "openPurchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_purchaseOrderVersionId_fkey"
+            columns: ["purchaseOrderVersionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderVersion"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_purchaseUnitOfMeasureCode_fkey"
+            columns: ["purchaseUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_storageUnitId_fkey"
+            columns: ["storageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_supplierPartId_fkey"
+            columns: ["supplierPartId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplierPart"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLineVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       purchaseOrderPayment: {
         Row: {
           companyId: string
@@ -58059,6 +58674,274 @@ export type Database = {
           {
             foreignKeyName: "purchaseOrderTransaction_userId_fkey"
             columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      purchaseOrderVersion: {
+        Row: {
+          approvalRequestId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerId: string | null
+          customerLocationId: string | null
+          customFields: Json | null
+          dropShipment: boolean | null
+          exchangeRate: number | null
+          hasDelivery: boolean
+          id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
+          locationId: string | null
+          notes: string | null
+          purchaseOrderId: string
+          receiptRequestedDate: string | null
+          shippingMethodId: string | null
+          shippingTermId: string | null
+          supplierShippingCost: number | null
+          trackingNumber: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          approvalRequestId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerId?: string | null
+          customerLocationId?: string | null
+          customFields?: Json | null
+          dropShipment?: boolean | null
+          exchangeRate?: number | null
+          hasDelivery?: boolean
+          id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
+          locationId?: string | null
+          notes?: string | null
+          purchaseOrderId: string
+          receiptRequestedDate?: string | null
+          shippingMethodId?: string | null
+          shippingTermId?: string | null
+          supplierShippingCost?: number | null
+          trackingNumber?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          approvalRequestId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerId?: string | null
+          customerLocationId?: string | null
+          customFields?: Json | null
+          dropShipment?: boolean | null
+          exchangeRate?: number | null
+          hasDelivery?: boolean
+          id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
+          locationId?: string | null
+          notes?: string | null
+          purchaseOrderId?: string
+          receiptRequestedDate?: string | null
+          shippingMethodId?: string | null
+          shippingTermId?: string | null
+          supplierShippingCost?: number | null
+          trackingNumber?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchaseOrderVersion_approvalRequestId_fkey"
+            columns: ["approvalRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "approvalRequest"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_approvalRequestId_fkey"
+            columns: ["approvalRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "approvalRequests"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLinesToReceive"
+            referencedColumns: ["purchaseOrderId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_shippingTermId_fkey"
+            columns: ["shippingTermId"]
+            isOneToOne: false
+            referencedRelation: "shippingTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderVersion_updatedBy_fkey"
+            columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -77084,6 +77967,7 @@ export type Database = {
           internalNotes: Json | null
           quotedDate: string
           revisionId: number
+          sharedFilePaths: string[]
           status: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId: string | null
           supplierId: string
@@ -77112,6 +77996,7 @@ export type Database = {
           internalNotes?: Json | null
           quotedDate?: string
           revisionId?: number
+          sharedFilePaths?: string[]
           status?: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId?: string | null
           supplierId: string
@@ -77140,6 +78025,7 @@ export type Database = {
           internalNotes?: Json | null
           quotedDate?: string
           revisionId?: number
+          sharedFilePaths?: string[]
           status?: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId?: string | null
           supplierId?: string
@@ -108880,6 +109766,62 @@ export type Database = {
   }
   storage: {
     Tables: {
+      bucket_lifecycle_states: {
+        Row: {
+          bucket_id: string
+          claim_id: string | null
+          claim_until: string | null
+          continuation: Json | null
+          failure_count: number
+          generation: string | null
+          last_completed_at: string | null
+          last_error: Json | null
+          last_result: Json | null
+          last_started_at: string | null
+          last_success_at: string | null
+          next_run_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          bucket_id: string
+          claim_id?: string | null
+          claim_until?: string | null
+          continuation?: Json | null
+          failure_count?: number
+          generation?: string | null
+          last_completed_at?: string | null
+          last_error?: Json | null
+          last_result?: Json | null
+          last_started_at?: string | null
+          last_success_at?: string | null
+          next_run_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bucket_id?: string
+          claim_id?: string | null
+          claim_until?: string | null
+          continuation?: Json | null
+          failure_count?: number
+          generation?: string | null
+          last_completed_at?: string | null
+          last_error?: Json | null
+          last_result?: Json | null
+          last_started_at?: string | null
+          last_success_at?: string | null
+          next_run_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bucket_lifecycle_states_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: true
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       buckets: {
         Row: {
           allowed_mime_types: string[] | null
@@ -108887,12 +109829,15 @@ export type Database = {
           created_at: string | null
           file_size_limit: number | null
           id: string
+          lifecycle_configuration: Json | null
+          lifecycle_configuration_generation: string | null
           name: string
           owner: string | null
           owner_id: string | null
           public: boolean | null
           type: Database["storage"]["Enums"]["buckettype"]
           updated_at: string | null
+          versioning_status: string
         }
         Insert: {
           allowed_mime_types?: string[] | null
@@ -108900,12 +109845,15 @@ export type Database = {
           created_at?: string | null
           file_size_limit?: number | null
           id: string
+          lifecycle_configuration?: Json | null
+          lifecycle_configuration_generation?: string | null
           name: string
           owner?: string | null
           owner_id?: string | null
           public?: boolean | null
           type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
+          versioning_status?: string
         }
         Update: {
           allowed_mime_types?: string[] | null
@@ -108913,12 +109861,15 @@ export type Database = {
           created_at?: string | null
           file_size_limit?: number | null
           id?: string
+          lifecycle_configuration?: Json | null
+          lifecycle_configuration_generation?: string | null
           name?: string
           owner?: string | null
           owner_id?: string | null
           public?: boolean | null
           type?: Database["storage"]["Enums"]["buckettype"]
           updated_at?: string | null
+          versioning_status?: string
         }
         Relationships: []
       }
@@ -108973,100 +109924,29 @@ export type Database = {
         }
         Relationships: []
       }
-      iceberg_namespaces: {
+      lifecycle_abandoned_artifacts: {
         Row: {
-          bucket_name: string
-          catalog_id: string
-          created_at: string
-          id: string
-          metadata: Json
+          attempted_at: string
+          bucket_id: string
+          key: string
           name: string
-          updated_at: string
+          version: string | null
         }
         Insert: {
-          bucket_name: string
-          catalog_id: string
-          created_at?: string
-          id?: string
-          metadata?: Json
+          attempted_at?: string
+          bucket_id: string
+          key: string
           name: string
-          updated_at?: string
+          version?: string | null
         }
         Update: {
-          bucket_name?: string
-          catalog_id?: string
-          created_at?: string
-          id?: string
-          metadata?: Json
+          attempted_at?: string
+          bucket_id?: string
+          key?: string
           name?: string
-          updated_at?: string
+          version?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "iceberg_namespaces_catalog_id_fkey"
-            columns: ["catalog_id"]
-            isOneToOne: false
-            referencedRelation: "buckets_analytics"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      iceberg_tables: {
-        Row: {
-          bucket_name: string
-          catalog_id: string
-          created_at: string
-          id: string
-          location: string
-          name: string
-          namespace_id: string
-          remote_table_id: string | null
-          shard_id: string | null
-          shard_key: string | null
-          updated_at: string
-        }
-        Insert: {
-          bucket_name: string
-          catalog_id: string
-          created_at?: string
-          id?: string
-          location: string
-          name: string
-          namespace_id: string
-          remote_table_id?: string | null
-          shard_id?: string | null
-          shard_key?: string | null
-          updated_at?: string
-        }
-        Update: {
-          bucket_name?: string
-          catalog_id?: string
-          created_at?: string
-          id?: string
-          location?: string
-          name?: string
-          namespace_id?: string
-          remote_table_id?: string | null
-          shard_id?: string | null
-          shard_key?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "iceberg_tables_catalog_id_fkey"
-            columns: ["catalog_id"]
-            isOneToOne: false
-            referencedRelation: "buckets_analytics"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "iceberg_tables_namespace_id_fkey"
-            columns: ["namespace_id"]
-            isOneToOne: false
-            referencedRelation: "iceberg_namespaces"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       migrations: {
         Row: {
@@ -109091,9 +109971,12 @@ export type Database = {
       }
       objects: {
         Row: {
+          archived_at: string | null
           bucket_id: string | null
           created_at: string | null
           id: string
+          is_delete_marker: boolean
+          is_versioned: boolean
           last_accessed_at: string | null
           metadata: Json | null
           name: string | null
@@ -109105,9 +109988,12 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          archived_at?: string | null
           bucket_id?: string | null
           created_at?: string | null
           id?: string
+          is_delete_marker?: boolean
+          is_versioned?: boolean
           last_accessed_at?: string | null
           metadata?: Json | null
           name?: string | null
@@ -109119,9 +110005,12 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          archived_at?: string | null
           bucket_id?: string | null
           created_at?: string | null
           id?: string
+          is_delete_marker?: boolean
+          is_versioned?: boolean
           last_accessed_at?: string | null
           metadata?: Json | null
           name?: string | null
@@ -109304,6 +110193,14 @@ export type Database = {
         Args: { bucketid: string; metadata: Json; name: string; owner: string }
         Returns: undefined
       }
+      delete_lifecycle_objects: {
+        Args: { object_ids: string[] }
+        Returns: {
+          id: string
+          is_delete_marker: boolean
+          metadata: Json
+        }[]
+      }
       extension: { Args: { name: string }; Returns: string }
       filename: { Args: { name: string }; Returns: string }
       foldername: { Args: { name: string }; Returns: string[] }
@@ -109312,7 +110209,7 @@ export type Database = {
         Returns: string
       }
       get_size_by_bucket: {
-        Args: never
+        Args: { delete_markers?: string; noncurrent_versions?: string }
         Returns: {
           bucket_id: string
           size: number
@@ -109326,6 +110223,7 @@ export type Database = {
           next_key_token?: string
           next_upload_token?: string
           prefix_param: string
+          raw_prefix_param?: string
         }
         Returns: {
           created_at: string
@@ -109336,28 +110234,42 @@ export type Database = {
       list_objects_with_delimiter: {
         Args: {
           _bucket_id: string
+          delete_markers?: string
           delimiter_param: string
           max_keys?: number
           next_token?: string
+          next_token_archived_at?: string
+          next_token_version?: string
+          noncurrent_versions?: string
           prefix_param: string
           sort_order?: string
           start_after?: string
         }
         Returns: {
+          archived_at: string
           created_at: string
           id: string
+          is_delete_marker: boolean
+          is_versioned: boolean
           last_accessed_at: string
           metadata: Json
           name: string
           updated_at: string
+          version: string
         }[]
       }
       operation: { Args: never; Returns: string }
+      reconcile_lifecycle_state: {
+        Args: { policy_changed: boolean; target_bucket_id: string }
+        Returns: undefined
+      }
       search: {
         Args: {
           bucketname: string
+          delete_markers?: string
           levels?: number
           limits?: number
+          noncurrent_versions?: string
           offsets?: number
           prefix: string
           search?: string
@@ -109365,16 +110277,22 @@ export type Database = {
           sortorder?: string
         }
         Returns: {
+          archived_at: string
           created_at: string
           id: string
+          is_delete_marker: boolean
+          is_versioned: boolean
           last_accessed_at: string
           metadata: Json
           name: string
           updated_at: string
+          version: string
         }[]
       }
       search_by_timestamp: {
         Args: {
+          delete_markers?: string
+          noncurrent_versions?: string
           p_bucket_id: string
           p_level: number
           p_limit: number
@@ -109383,36 +110301,50 @@ export type Database = {
           p_sort_column_after: string
           p_sort_order: string
           p_start_after: string
+          p_start_after_version?: string
         }
         Returns: {
+          archived_at: string
           created_at: string
           id: string
+          is_delete_marker: boolean
+          is_versioned: boolean
           key: string
           last_accessed_at: string
           metadata: Json
           name: string
           updated_at: string
+          version: string
         }[]
       }
       search_v2: {
         Args: {
           bucket_name: string
+          delete_markers?: string
           levels?: number
           limits?: number
+          noncurrent_versions?: string
           prefix: string
           sort_column?: string
           sort_column_after?: string
           sort_order?: string
           start_after?: string
+          start_after_archived_at?: string
+          start_after_is_continuation?: boolean
+          start_after_version?: string
         }
         Returns: {
+          archived_at: string
           created_at: string
           id: string
+          is_delete_marker: boolean
+          is_versioned: boolean
           key: string
           last_accessed_at: string
           metadata: Json
           name: string
           updated_at: string
+          version: string
         }[]
       }
     }

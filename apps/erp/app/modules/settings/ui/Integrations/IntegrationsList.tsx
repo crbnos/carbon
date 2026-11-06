@@ -121,7 +121,7 @@ const IntegrationsList = ({
               setFilter(value as "all" | "installed" | "available")
             }
           >
-            <SelectTrigger size="sm">
+            <SelectTrigger size="sm" aria-label={t`Integration status`}>
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>

@@ -159,6 +159,9 @@ export default function ScanInspectionSample({
                       <InputGroup className="w-full">
                         <Input
                           autoFocus
+                          aria-label={t`Tracked entity, serial or batch`}
+                          // The ✓/✗ beside the field is the only other cue.
+                          aria-invalid={serial && !selected ? true : undefined}
                           placeholder={t`Scan or enter tracked entity ID, serial, or batch`}
                           value={serial}
                           onChange={(e) => setSerial(e.target.value)}

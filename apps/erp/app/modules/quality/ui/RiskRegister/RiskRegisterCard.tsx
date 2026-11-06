@@ -223,6 +223,7 @@ function RiskRegisterCardItem({
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const riskTitle = risk.title;
 
   return (
     <div
@@ -243,9 +244,9 @@ function RiskRegisterCardItem({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity">
           <IconButton
-            aria-label={t`Edit`}
+            aria-label={t`Edit ${riskTitle}`}
             icon={<LuSettings2 className="h-4 w-4" />}
             variant="secondary"
             size="sm"

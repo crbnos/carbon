@@ -153,7 +153,7 @@ export default function RuleBuilder({
           value={kind}
           onChange={setKind}
           options={matchOptions}
-          aria-label={t`Match`}
+          aria-label={t`Conditions to match`}
           align="end"
           className="w-[180px]"
         />

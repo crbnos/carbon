@@ -192,7 +192,7 @@ const RentalAgreementHeader = ({
               variant="ghost"
             />
             <Link to={path.to.rentalAgreementDetails(id)}>
-              <Heading size="h4" className="flex items-center gap-2">
+              <Heading as="h1" size="h4" className="flex items-center gap-2">
                 <span>{readableId}</span>
               </Heading>
             </Link>

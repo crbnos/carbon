@@ -6,6 +6,7 @@ export { packingSlipBlockRegistry } from "./registry";
 export type {
   BlockRenderer,
   PackingSlipData,
+  PackingSlipDocumentType,
   PackingSlipRentalUnit
 } from "./types";
 export { buildPackingSlipVars } from "./vars";

@@ -480,7 +480,10 @@ export const ProductionPlanningOrderDrawer = memo(
                 // @ts-expect-error
                 to={getLinkToItemPlanning(row.type, row.id)}
               >
-                <LuExternalLink />
+                <LuExternalLink aria-hidden />
+                <span className="sr-only">
+                  <Trans>Open item planning</Trans>
+                </span>
               </Link>
             </DrawerTitle>
             <DrawerDescription>{row.name}</DrawerDescription>

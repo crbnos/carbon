@@ -24,8 +24,8 @@ const UserTreeSelect = () => {
   } = useUserSelectContext();
 
   return (
-    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: suppressed due to migration
     <div
+      role="tree"
       {...listBoxProps}
       aria-multiselectable={isMulti}
       ref={listBoxRef}
@@ -176,6 +176,7 @@ const GroupRow = ({
       className="rounded-md outline-none"
     >
       {/* Group Header */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the parent role="treeitem"; Enter/Space/arrows are handled by the Combobox wrapper via the focused id */}
       <div
         onClick={handleRowClick}
         onMouseEnter={() => {
@@ -189,9 +190,13 @@ const GroupRow = ({
         )}
       >
         {canExpand ? (
+          // Pointer-only: the treeitem exposes aria-expanded and the
+          // combobox expands it with ArrowRight/ArrowLeft, so a name here
+          // would be read into the row's.
           <button
             type="button"
-            aria-label={expanded ? "Collapse group" : "Expand group"}
+            tabIndex={-1}
+            aria-hidden
             onClick={(e) => {
               e.stopPropagation();
               expanded ? onGroupCollapse(uid) : onGroupExpand(uid);
@@ -365,6 +370,7 @@ const Option = ({
   const fullName = "fullName" in item ? item.fullName : null;
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Enter/Space for this treeitem are handled by the Combobox wrapper via the focused id; a local handler would toggle twice
     <li
       id={id}
       className={cn(
@@ -398,7 +404,7 @@ const Option = ({
           <LuUsers className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       ) : (
-        <Avatar name={fullName ?? name} path={avatarUrl} size="sm" />
+        <Avatar name={fullName ?? name} path={avatarUrl} size="sm" decorative />
       )}
 
       {/* Content */}

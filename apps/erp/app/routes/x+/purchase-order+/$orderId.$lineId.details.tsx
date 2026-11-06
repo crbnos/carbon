@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -24,14 +25,12 @@ import {
   getLineChargeNumber
 } from "~/modules/projects/projects.service";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing/purchasing.models";
 import {
-  getPurchaseOrder,
   getPurchaseOrderLine,
-  getSupplierInteractionLineDocuments,
-  upsertPurchaseOrderLine
+  getSupplierInteractionLineDocuments
 } from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import {
@@ -40,7 +39,6 @@ import {
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchase-order-line-details");
@@ -98,45 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  // First check with view permission to get the PO status
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "purchasing"
-  });
-
-  // Get PO status and current line data
-  const [purchaseOrder, currentLine] = await Promise.all([
-    getPurchaseOrder(viewClient, orderId),
-    getPurchaseOrderLine(viewClient, lineId)
-  ]);
-
-  if (purchaseOrder.error) {
-    throw redirect(
-      path.to.purchaseOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(purchaseOrder.error, "Failed to load purchase order")
-      )
-    );
-  }
-
-  if (currentLine.error || !currentLine.data) {
-    throw redirect(
-      path.to.purchaseOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(currentLine.error, "Failed to load purchase order line")
-      )
-    );
-  }
-
-  await requireUnlocked({
-    request,
-    isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
-    redirectTo: path.to.purchaseOrderLine(orderId, lineId),
-    message: "Cannot modify a confirmed purchase order."
-  });
-
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -169,6 +129,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // own commitment is left out and replaced by its open quantity at the new
   // price, so an edit never counts twice. Block refuses the save; Warn saves
   // and flashes the overrun.
+  const currentLine = d.projectId
+    ? await getPurchaseOrderLine(client, lineId)
+    : null;
+  if (currentLine?.error) {
+    throw redirect(
+      path.to.purchaseOrderLine(orderId, lineId),
+      await flash(
+        request,
+        error(currentLine.error, "Failed to load purchase order line")
+      )
+    );
+  }
   const budget = d.projectId
     ? await checkProjectBudget(getDatabaseClient(), client, {
         companyId,
@@ -181,7 +153,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
               Math.max(
                 0,
                 (d.purchaseQuantity ?? 0) -
-                  (currentLine.data.quantityReceived ?? 0)
+                  (currentLine?.data?.quantityReceived ?? 0)
               ) *
               ((d.supplierUnitPrice ?? 0) / (d.exchangeRate || 1)),
             excludePurchaseOrderLineIds: [lineId]
@@ -195,35 +167,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
-    id: lineId,
+  // The operation refuses an order in approval or finished, keeps a released
+  // order's lines above what was received, and sends an order whose total
+  // goes above its approved amount back for approval.
+  const api = await carbon(request);
+  const result = await api.purchasing.updatePurchaseOrderLine({
     ...d,
-    companyId,
-    updatedBy: userId,
+    id: lineId,
+    purchaseOrderId: orderId,
     customFields: setCustomFields(formData)
   });
 
-  if (updatePurchaseOrderLine.error) {
-    throw redirect(
-      path.to.purchaseOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(
-          updatePurchaseOrderLine.error,
-          "Failed to update purchase order line"
-        )
-      )
-    );
-  }
-
-  if (budget?.status === "warn") {
-    throw redirect(
-      path.to.purchaseOrderLine(orderId, lineId),
-      await flash(request, success(`Line saved. ${budget.message}`))
-    );
-  }
-
-  throw redirect(path.to.purchaseOrderLine(orderId, lineId));
+  return respond(request, result).redirect(
+    path.to.purchaseOrderLine(orderId, lineId),
+    budget?.status === "warn"
+      ? { message: `Line saved. ${budget.message}` }
+      : undefined
+  );
 }
 
 export default function EditPurchaseOrderLineRoute() {
@@ -235,7 +195,9 @@ export default function EditPurchaseOrderLineRoute() {
   const routeData = useRouteData<{
     purchaseOrder: { status: string };
   }>(path.to.purchaseOrder(orderId));
-  const isReadOnly = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isReadOnly = isPurchaseOrderEditLocked(
+    routeData?.purchaseOrder?.status
+  );
 
   const { line, chargeNumber, files } = useLoaderData<typeof loader>();
 
@@ -274,6 +236,10 @@ export default function EditPurchaseOrderLineRoute() {
       <PurchaseOrderLineForm
         key={initialValues.id}
         initialValues={initialValues}
+        isReceived={
+          Number(line.quantityReceived ?? 0) > 0 ||
+          Number(line.quantityInvoiced ?? 0) > 0
+        }
         lineDates={{
           receivedComplete: line.receivedComplete ?? false,
           requiredDate: line.requiredDate,

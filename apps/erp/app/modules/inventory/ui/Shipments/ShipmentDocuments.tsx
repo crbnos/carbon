@@ -9,6 +9,7 @@ import {
   LuBarcode,
   LuContainer,
   LuCreditCard,
+  LuFilePen,
   LuFolderKanban,
   LuKeyRound,
   LuShoppingCart,
@@ -19,6 +20,7 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Await, useParams } from "react-router";
 import { Empty } from "~/components";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import {
   RelatedDocument,
   RelatedDocumentGroup,
@@ -171,6 +173,7 @@ const ShipmentDocuments = () => {
   const { t } = useLingui();
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
+  const documentEdit = useDocumentEditModal("packingSlip", shipmentId);
 
   const permissions = usePermissions();
   const routeData = useRouteData<{
@@ -207,13 +210,24 @@ const ShipmentDocuments = () => {
     shipment.sourceDocumentId &&
     shipment.sourceDocument &&
     PACKING_SLIP_SOURCES.has(shipment.sourceDocument) ? (
-      <RelatedDocument
-        to={path.to.file.shipment(shipmentId)}
-        external
-        icon={<LuBarcode />}
-        title={t`Packing Slip`}
-        description={t`PDF`}
-      />
+      <>
+        <RelatedDocument
+          to={path.to.file.shipment(shipmentId)}
+          external
+          icon={<LuBarcode />}
+          title={t`Packing Slip`}
+          description={t`PDF`}
+        />
+        {documentEdit.canEdit && (
+          <RelatedDocument
+            onClick={documentEdit.openEditor}
+            icon={<LuFilePen />}
+            title={t`Edit document`}
+            description={t`Packing Slip`}
+          />
+        )}
+        {documentEdit.modal}
+      </>
     ) : null;
 
   const hasRows = Boolean(partyRow || sourceRow || packingSlipRow);

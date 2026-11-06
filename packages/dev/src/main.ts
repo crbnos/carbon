@@ -90,6 +90,12 @@ const main = defineCommand({
           description:
             "Also skip Inbucket, for headless/CI builds that sign in by bypass"
         },
+        isolated: {
+          type: "boolean",
+          default: false,
+          description:
+            "Run a private stack with its own Postgres, PgBouncer, Storage and Inbucket instead of the shared containers (for a branch that changes their images)"
+        },
         hibernate: {
           type: "boolean",
           default: true,
@@ -110,7 +116,8 @@ const main = defineCommand({
           volumes: args.volumes === true,
           full: args.full === true,
           minimal: args.minimal === true,
-          hibernate: args.hibernate !== false
+          hibernate: args.hibernate !== false,
+          isolated: args.isolated === true
         })
     }),
     down: defineCommand({
@@ -149,13 +156,13 @@ const main = defineCommand({
     reload: defineCommand({
       meta: {
         description:
-          "Recreate specific compose services to apply docker-compose/.env.local edits (memory, env, image, ports) WITHOUT restarting the app dev servers — `crbn reload <service...>` (e.g. storage kong)"
+          "Recreate specific compose services to apply docker-compose/.env.local edits (memory, env, image, ports) WITHOUT restarting the app dev servers — `crbn reload <service...>` (e.g. storage api-gw)"
       },
       args: {
         service: {
           type: "positional",
           required: true,
-          description: "Service name(s) to recreate, e.g. storage kong"
+          description: "Service name(s) to recreate, e.g. storage api-gw"
         }
       },
       run: ({ rawArgs }) =>

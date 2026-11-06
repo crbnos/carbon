@@ -17,7 +17,10 @@ import { upsertSupplier } from "~/modules/purchasing/purchasing.service";
 import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Supplier");
 
 export const handle: Handle = {
   breadcrumb: msg`Suppliers`,

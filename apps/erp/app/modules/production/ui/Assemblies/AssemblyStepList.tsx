@@ -863,6 +863,7 @@ function SubAssemblyRow({
   const name = title || t`Sub-Assembly`;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -871,7 +872,10 @@ function SubAssemblyRow({
         isSelected && "bg-accent/40 hover:bg-accent/40",
         sortable.isDragging && "opacity-40"
       )}
-      onClick={onSelect}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        onSelect();
+      }}
       onDoubleClick={onOpen}
       title={t`Double-click to open this sub-assembly`}
     >
@@ -905,7 +909,12 @@ function SubAssemblyRow({
         {info.number}
       </span>
       <LuBoxes className="size-3.5 shrink-0 text-muted-foreground" />
-      <div className="min-w-0 flex-1">
+      <button
+        type="button"
+        aria-current={isSelected ? "true" : undefined}
+        className="min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onSelect}
+      >
         <TruncatedTooltipText
           tooltip={name}
           className="block w-full truncate text-sm font-medium text-foreground"
@@ -917,7 +926,7 @@ function SubAssemblyRow({
             ? t`Sub-Assembly · used in ${usedInNumber}`
             : t`Sub-Assembly · joins main build`}
         </span>
-      </div>
+      </button>
       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
         ×{partCount}
       </span>
@@ -1004,6 +1013,7 @@ function StepRow({
   const displayTitle = title || t`Untitled step`;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the row selects it; the name button is the keyboard/AT control
     <div
       ref={sortable.setNodeRef}
       style={sortable.style}
@@ -1013,7 +1023,10 @@ function StepRow({
         isSelected && "bg-accent/40 hover:bg-accent/40",
         sortable.isDragging && "opacity-40"
       )}
-      onClick={onSelect}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        onSelect();
+      }}
       onDoubleClick={onPreview}
       title={t`Double-click to play this step`}
     >
@@ -1040,12 +1053,19 @@ function StepRow({
           className="size-3.5 shrink-0 text-muted-foreground"
         />
       )}
-      <TruncatedTooltipText
-        tooltip={displayTitle}
-        className="min-w-0 flex-1 truncate text-sm text-foreground"
+      <button
+        type="button"
+        aria-current={isSelected ? "true" : undefined}
+        className="min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onSelect}
       >
-        {displayTitle}
-      </TruncatedTooltipText>
+        <TruncatedTooltipText
+          tooltip={displayTitle}
+          className="block w-full truncate text-sm text-foreground"
+        >
+          {displayTitle}
+        </TruncatedTooltipText>
+      </button>
       {flagged && (
         <RowIcon label={t`No collision-free path`}>
           <LuTriangleAlert className="size-3.5 text-amber-500" />

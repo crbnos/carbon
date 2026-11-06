@@ -189,6 +189,7 @@ import {
   checkProjectBudget,
   insertTimesheetDraft
 } from "~/modules/projects/projects.service";
+import { copyDocumentEdit } from "~/modules/settings/settings.service";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -21740,6 +21741,7 @@ export async function getMethod(
       let newQuoteId = "";
 
       const oldLineToNewLineMap: Record<string, string> = {};
+      const newLineIds = new Map<string, string>();
 
       const [
         sourceQuote,
@@ -21916,6 +21918,8 @@ export async function getMethod(
             throw new Error("Failed to insert quote line");
           }
 
+          newLineIds.set(id, newLine.id);
+
           if (line.methodType === "Make to Order") {
             // we only need further processing on make lines
             oldLineToNewLineMap[id] = newLine.id;
@@ -21957,6 +21961,18 @@ export async function getMethod(
               )
               .execute();
           }
+        }
+
+        // A revision prints like the quote it revises; a new quote starts clean.
+        if (asRevision) {
+          await copyDocumentEdit(trx, {
+            companyId,
+            documentType: "quote",
+            fromId: sourceQuoteId,
+            toId: newQuoteId,
+            userId,
+            rowIds: newLineIds
+          });
         }
       });
 

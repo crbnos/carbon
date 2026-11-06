@@ -158,7 +158,7 @@ function LineRow({
 }) {
   return (
     <HStack spacing={3} className="items-center">
-      <svg width={36} height={6} className="shrink-0">
+      <svg width={36} height={6} className="shrink-0" aria-hidden="true">
         <line
           x1={0}
           y1={3}

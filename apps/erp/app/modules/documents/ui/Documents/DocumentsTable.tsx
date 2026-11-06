@@ -282,6 +282,7 @@ const DocumentsTable = memo(
                 >
                   {label}
                   <BadgeCloseButton
+                    aria-label={t`Remove label ${label}`}
                     onClick={(e) => onDeleteLabel(e, row.original, label)}
                   />
                 </Badge>

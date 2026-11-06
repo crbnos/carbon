@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { planPrune } from "./prune.js";
+import { planPrune, planSharedPrune } from "./prune.js";
 
 const slots = {
   live: { worktreeRoot: "/work/live" },
@@ -41,5 +41,45 @@ describe("planPrune", () => {
       deadSlugs: [],
       projects: []
     });
+  });
+});
+
+describe("planSharedPrune", () => {
+  const isShared = (slug: string) => slug !== "carbon-iso";
+
+  it("drops only the wt_ databases no live slot owns", () => {
+    const plan = planSharedPrune(
+      ["carbon-a"],
+      ["wt_carbon_a", "wt_carbon_gone"],
+      [],
+      { isShared }
+    );
+    expect(plan.databases).toEqual(["wt_carbon_gone"]);
+  });
+
+  it("drops every wt_ database with --all", () => {
+    const plan = planSharedPrune(["carbon-a"], ["wt_carbon_a"], [], {
+      all: true,
+      isShared
+    });
+    expect(plan.databases).toEqual(["wt_carbon_a"]);
+  });
+
+  it("removes old private volumes of shared worktrees, never of an isolated one", () => {
+    const plan = planSharedPrune(
+      ["carbon-a", "carbon-iso"],
+      [],
+      [
+        "carbon-carbon-a_pgdata",
+        "carbon-carbon-a_storage",
+        "carbon-carbon-iso_pgdata",
+        "carbon-postgres-data"
+      ],
+      { isShared }
+    );
+    expect(plan.volumes).toEqual([
+      "carbon-carbon-a_pgdata",
+      "carbon-carbon-a_storage"
+    ]);
   });
 });

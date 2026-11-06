@@ -9,6 +9,9 @@ paths:
 
 # Dev shared Redis
 
+Postgres, PgBouncer, Storage, imgproxy and Inbucket are shared too, in the
+`crbn-shared` project: see [dev-shared-services.md](dev-shared-services.md).
+
 ## Client (`@carbon/kv`)
 
 - Library is **`ioredis`** (`packages/kv/package.json`; `ioredis-mock` for tests).
@@ -40,7 +43,7 @@ paths:
 ## Dev: one shared container, per-worktree logical DB
 
 Dev uses a **single `redis:7-alpine` container per host**, reused across all
-worktrees; each worktree is isolated by a **logical DB index (0–15)**, not its
+worktrees; each worktree is isolated by a **logical DB index (0–24)**, not its
 own container.
 
 - **Not a compose service.** `packages/dev/docker/docker-compose.dev.yml`
@@ -50,11 +53,13 @@ own container.
   `docker run` of container **`carbon-redis`** (volume `carbon-redis-data`,
   `-p ${SHARED_REDIS_PORT}:6379`, `--restart unless-stopped`, healthcheck
   `redis-cli ping`, `redis-server --appendonly yes`). Idempotent: reuse running,
-  start stopped, else recreate. Constants `REDIS_CONTAINER` / `REDIS_VOLUME` are
-  at the top of that file.
-- `SHARED_REDIS_PORT = 6379` and `REDIS_DB_MAX = 16` live in
+  start stopped, else recreate. It starts redis with `--databases ${REDIS_DB_MAX}`
+  and recreates an older container (redis's default 16) on the same volume.
+  Constants `REDIS_CONTAINER` / `REDIS_VOLUME` are at the top of that file.
+- `SHARED_REDIS_PORT = 6379` and `REDIS_DB_MAX = 25` live in
   `packages/dev/src/worktree.ts`; `pickRedisDb` allocates a free DB index per
-  worktree.
+  worktree. A slot keeps its index until `crbn down --purge`, `crbn remove`, or
+  `crbn prune` (folder gone) releases it.
 - Wired into `crbn up` at `packages/dev/src/commands/up.ts` ("shared redis" task).
 - The env writer `packages/dev/src/env.ts` emits
   `REDIS_URL=redis://localhost:${SHARED_REDIS_PORT}/${redisDb}` — so dev apps

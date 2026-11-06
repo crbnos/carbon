@@ -46,6 +46,10 @@ import { Link, useFetcher, useNavigation, useParams } from "react-router";
 import { RevisionSuffix } from "~/components";
 import type { ResolvedAttachmentItem } from "~/components/AttachmentsList";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
@@ -100,6 +104,7 @@ function RelatedDocsErrorTooltip({
 const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
+  const documentEdit = useDocumentEditModal("purchaseOrder", orderId);
 
   const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -224,6 +229,15 @@ const PurchaseOrderHeader = () => {
   const isInvoiceStep = ["To Invoice", "To Receive and Invoice"].includes(
     status
   );
+  // A closed order still bills what it received; it is just not the next
+  // step. One closed with nothing received (cancelled before release) has
+  // nothing to bill.
+  const canInvoice =
+    isInvoiceStep ||
+    (status === "Closed" &&
+      (routeData?.lines ?? []).some(
+        (line) => Number(line.quantityReceived ?? 0) > 0
+      ));
   const finalizeSlot = isFinalizable ? "primary" : "overflow";
   const shipSlot = isReceiveStep && requiresShipment ? "primary" : "overflow";
   const receiveSlot =
@@ -357,6 +371,9 @@ const PurchaseOrderHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -579,7 +596,7 @@ const PurchaseOrderHeader = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          disabled={!isInvoiceStep || isInvoicing}
+                          disabled={!canInvoice || isInvoicing}
                           onClick={() => {
                             invoice(routeData?.purchaseOrder);
                           }}
@@ -615,7 +632,7 @@ const PurchaseOrderHeader = () => {
                         leftIcon={<LuCreditCard />}
                         isLoading={isInvoicing}
                         isDisabled={
-                          relatedDocsError || !isInvoiceStep || isInvoicing
+                          relatedDocsError || !canInvoice || isInvoicing
                         }
                         variant={invoiceVariant}
                         onClick={() => {
@@ -753,6 +770,7 @@ const PurchaseOrderHeader = () => {
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

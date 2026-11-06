@@ -163,7 +163,9 @@ function OperationCard({
           )}
           {showStatus && operation.operationStatus && (
             <HStack className="justify-start space-x-2">
-              <OperationStatusIcon status={operation.operationStatus} />
+              <span className="inline-flex" aria-hidden="true">
+                <OperationStatusIcon status={operation.operationStatus} />
+              </span>
               <span className="text-sm">{operation.operationStatus}</span>
             </HStack>
           )}
@@ -178,19 +180,26 @@ function OperationCard({
                   overdue={isOverdue}
                 />
                 <Tooltip>
-                  <TooltipTrigger>
-                    <span
-                      className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                    >
-                      {["ASAP", "No Deadline"].includes(
-                        operation.jobDeadlineType
-                      )
-                        ? operation.jobDeadlineType
-                        : operation.jobDueDate
-                          ? t`Due ${formatRelativeTime(
-                              convertDateStringToIsoString(operation.jobDueDate)
-                            )}`
-                          : "–"}
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <span
+                        className={cn(
+                          "text-sm",
+                          isOverdue ? "text-red-500" : ""
+                        )}
+                      >
+                        {["ASAP", "No Deadline"].includes(
+                          operation.jobDeadlineType
+                        )
+                          ? operation.jobDeadlineType
+                          : operation.jobDueDate
+                            ? t`Due ${formatRelativeTime(
+                                convertDateStringToIsoString(
+                                  operation.jobDueDate
+                                )
+                              )}`
+                            : "–"}
+                      </span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="right">
@@ -200,8 +209,9 @@ function OperationCard({
               </HStack>
               {operation.jobDueDate && (
                 <HStack className="justify-start space-x-2">
-                  <LuCalendarDays />
+                  <LuCalendarDays aria-hidden />
                   <span className="text-sm">
+                    <span className="sr-only">{t`Job due`} </span>
                     <DateTime value={operation.jobDueDate} variant="date" />
                   </span>
                 </HStack>

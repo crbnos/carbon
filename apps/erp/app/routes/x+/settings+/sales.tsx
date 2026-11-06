@@ -270,6 +270,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Customer Contact and Location`}
                 checked={requireCustomerContactAndLocation}
                 onCheckedChange={handleRequireCustomerContactToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -303,6 +304,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require an Email on Customer Contacts`}
                 checked={requireCustomerContactEmail}
                 onCheckedChange={handleRequireCustomerContactEmailToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -352,6 +354,7 @@ export default function SalesSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Customer IDs`}
                 checked={showCustomerReadableIdEnabled}
                 onCheckedChange={handleShowCustomerReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -620,7 +623,7 @@ function CategoryMarkupsCard({
       >
         <input type="hidden" name="intent" value="categoryMarkups" />
         <CardHeader>
-          <CardTitle>
+          <CardTitle id="quote-markups-title">
             <Trans>Quote Markups</Trans>
           </CardTitle>
           <CardDescription>
@@ -642,10 +645,16 @@ function CategoryMarkupsCard({
                 )}
               >
                 <VStack spacing={0} className="flex flex-1">
-                  <span className="text-sm font-medium">
+                  <span
+                    id={`${key}-markup-label`}
+                    className="text-sm font-medium"
+                  >
                     {categoryLabels[key].label}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span
+                    id={`${key}-markup-description`}
+                    className="text-xs text-muted-foreground"
+                  >
                     {categoryLabels[key].description}
                   </span>
                 </VStack>
@@ -653,6 +662,8 @@ function CategoryMarkupsCard({
                   <Number
                     name={key}
                     label=""
+                    aria-labelledby={`${key}-markup-label quote-markups-title`}
+                    aria-describedby={`${key}-markup-description`}
                     formatOptions={INPUT_FORMAT.percent}
                     minValue={0}
                   />

@@ -143,10 +143,15 @@ function computeLayout(
 
   const edges: Edge[] = dependencies.map((dep) => {
     const upstream = opsById.get(dep.dependsOnId);
+    const downstream = opsById.get(dep.operationId);
     return {
       id: `${dep.dependsOnId}-${dep.operationId}`,
       source: dep.dependsOnId,
       target: dep.operationId,
+      // React Flow's default names the edge by raw operation ids.
+      ariaLabel: `${upstream?.description ?? dep.dependsOnId} → ${
+        downstream?.description ?? dep.operationId
+      }`,
       type: "jobOperationEdge",
       data: {
         quantity: Number(upstream?.quantityComplete ?? 0)
@@ -243,6 +248,8 @@ function JobDagInner({ operations, dependencies }: Props) {
           fitViewOptions={fitViewOptions}
           nodesDraggable={false}
           nodesConnectable={false}
+          // The link inside each node is the one tab stop.
+          nodesFocusable={false}
           edgesFocusable={false}
           minZoom={0.1}
           maxZoom={2}
@@ -270,6 +277,7 @@ export function JobDag(props: Props) {
 }
 
 function DagLegend() {
+  const { t } = useLingui();
   const entries = [
     { label: "Done", className: "border-green-500 bg-green-500" },
     { label: "In Progress", className: "border-blue-500 bg-blue-500" },
@@ -286,7 +294,7 @@ function DagLegend() {
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label="Show legend"
+            aria-label={t`Show legend`}
             className={cn(
               "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
               "border border-border bg-card/90 backdrop-blur shadow-sm",

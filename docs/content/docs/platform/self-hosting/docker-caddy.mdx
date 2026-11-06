@@ -17,9 +17,10 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
 | --- | --- |
 | `caddy` | Reverse proxy + automatic HTTPS. The only service that publishes ports (80/443). |
 | `erp`, `mes` | The Carbon apps, built from the repo. Reached at `erp.<domain>` and `mes.<domain>`. |
-| `postgres` | Supabase Postgres, tuned on first boot (`pg_stat_statements`, connection limits). |
-| `gotrue`, `postgrest`, `realtime`, `storage`, `meta`, `kong` | The Supabase data plane, fronted by Kong at `api.<domain>`. |
-| `studio` | Supabase Studio (DB admin), internal-only by default. |
+| `postgres` | Supabase Postgres 17, tuned on first boot (`pg_stat_statements`, connection limits). |
+| `gotrue`, `postgrest`, `realtime`, `storage`, `gateway` | The Supabase data plane, fronted by the Envoy gateway at `api.<domain>`. Protected routes need the anon or service-role key. |
+| `supavisor` | Connection pooler in transaction mode, as in production. The apps' database pool goes through it. |
+| `studio`, `meta` | Supabase Studio (DB admin) and postgres-meta. Off by default; `STUDIO_REPLICAS=1` runs both, internal-only. |
 | `edge-runtime` | Supabase Edge Functions. |
 | `redis` | Cache, rate limiting, session state. |
 | `inngest` | Background jobs for both apps. |
@@ -120,17 +121,17 @@ GOTRUE_JWT_SECRET: __JWT_SECRET__
 | --- | --- |
 | Status | `./deploy.sh status` |
 | Follow logs | `./deploy.sh logs <service>` (e.g. `erp`, `caddy`) |
-| Update to a new release | `git pull && ./deploy.sh build && ./deploy.sh deploy && ./deploy.sh migrate` |
+| Update to a new release | `git pull && ./deploy.sh init && ./deploy.sh build && ./deploy.sh deploy && ./deploy.sh migrate` |
 | Back up | `./scripts/backup.sh` (Postgres dump + storage archive) |
 | Stop | `./deploy.sh down` (add `--volumes` to also wipe data) |
 
-**Database admin.** Studio is internal-only by default. Reach the database over SSH with:
+**Database admin.** Studio is off by default. Reach the database over SSH with:
 
 ```bash
 docker exec -it $(docker ps -qf name=carbon_postgres.1) psql -U postgres
 ```
 
-The `.1` avoids also matching `carbon_postgrest`. Or expose Studio behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
+The `.1` avoids also matching `carbon_postgrest`. Or run Studio (`STUDIO_REPLICAS=1`) and expose it behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
 
 **Database events.** Postgres delivers its events (the event queue behind webhooks, workflows and search, part embeddings, job notifications) straight to Inngest, at a URL `./deploy.sh migrate` stores in the database once the `erp` service is running. If `migrate` warns that it could not wire them, run it again once the stack is up. After rotating `inngest_event_key`, run `./deploy.sh migrate` again.
 
@@ -141,6 +142,22 @@ The `.1` avoids also matching `carbon_postgrest`. Or expose Studio behind HTTP b
 ./deploy.sh secret <name> 'new-value'
 ./deploy.sh up
 ```
+
+**Upgrade from Postgres 15.** The stack runs Postgres 17, and `./deploy.sh deploy` stops on a data volume from Postgres 15. Move the data with a dump and restore:
+
+```bash
+./scripts/backup.sh
+set -a; . ./.env; set +a
+docker stack rm "$STACK_NAME"
+while docker ps -q --filter "label=com.docker.stack.namespace=$STACK_NAME" | grep -q .; do sleep 2; done
+docker volume rm "${STACK_NAME}_pgdata" "${STACK_NAME}_pgconfig"
+git pull && ./deploy.sh build && ./deploy.sh deploy
+gunzip -c backups/carbon-<timestamp>/db.sql.gz \
+  | docker exec -i "$(docker ps -qf name=${STACK_NAME}_postgres.1)" psql -U supabase_admin postgres
+./deploy.sh migrate
+```
+
+Restore as `supabase_admin`: `postgres` may not change the auth and storage schemas. The restore reports "already exists" errors for the auth, storage and realtime schemas, which their services create on boot; the rows still load. The storage volume is not touched. `init` only creates the secrets the stack is missing (here Supavisor's two).
 
 <Callout type="warn">
 Schedule `backup.sh`, copy its output **offsite**, and enable provider volume snapshots. Backups stored only on the VPS do not protect against host loss.

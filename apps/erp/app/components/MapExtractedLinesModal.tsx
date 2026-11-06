@@ -23,7 +23,7 @@ import {
   SelectValue,
   toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
@@ -55,6 +55,7 @@ export default function MapExtractedLinesModal({
   renderSummary,
   onClose
 }: MapExtractedLinesModalProps) {
+  const { t } = useLingui();
   const fetcher = useFetcher<any>();
   const [mappings, setMappings] = useState<any[]>([]);
   const [items] = useItems();
@@ -177,76 +178,84 @@ export default function MapExtractedLinesModal({
                 </div>
               )}
 
-              {mappings.map((map) => (
-                <div
-                  key={map.lineId}
-                  className="rounded-lg border border-border bg-card transition-colors hover:border-foreground/20"
-                >
-                  <div className="flex items-start justify-between gap-4 px-4 py-3">
-                    {renderSummary(map)}
-                  </div>
+              {mappings.map((map) => {
+                const lineLabel =
+                  map.customerPartId ?? map.description ?? map.lineId;
+                return (
+                  <div
+                    key={map.lineId}
+                    className="rounded-lg border border-border bg-card transition-colors hover:border-foreground/20"
+                  >
+                    <div className="flex items-start justify-between gap-4 px-4 py-3">
+                      {renderSummary(map)}
+                    </div>
 
-                  <div className="grid grid-cols-1 gap-3 border-t border-border px-4 py-3 sm:grid-cols-[minmax(0,200px)_1fr] sm:items-center">
-                    <CarbonSelect
-                      value={map.action}
-                      onValueChange={(val) =>
-                        handleActionChange(map.lineId, val)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="map">
-                          Select existing item
-                        </SelectItem>
-                        <SelectItem value="create">Create new item</SelectItem>
-                        <SelectItem value="ignore">Leave unmapped</SelectItem>
-                      </SelectContent>
-                    </CarbonSelect>
+                    <div className="grid grid-cols-1 gap-3 border-t border-border px-4 py-3 sm:grid-cols-[minmax(0,200px)_1fr] sm:items-center">
+                      <CarbonSelect
+                        value={map.action}
+                        onValueChange={(val) =>
+                          handleActionChange(map.lineId, val)
+                        }
+                      >
+                        <SelectTrigger aria-label={t`Action for ${lineLabel}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="map">
+                            Select existing item
+                          </SelectItem>
+                          <SelectItem value="create">
+                            Create new item
+                          </SelectItem>
+                          <SelectItem value="ignore">Leave unmapped</SelectItem>
+                        </SelectContent>
+                      </CarbonSelect>
 
-                    <div className="min-w-0">
-                      {map.action === "map" && (
-                        <>
-                          <Combobox
-                            options={itemOptions}
-                            value={map.itemId}
-                            onChange={(val) =>
-                              handleItemSelect(map.lineId, val)
+                      <div className="min-w-0">
+                        {map.action === "map" && (
+                          <>
+                            <Combobox
+                              aria-label={t`Item for ${lineLabel}`}
+                              options={itemOptions}
+                              value={map.itemId}
+                              onChange={(val) =>
+                                handleItemSelect(map.lineId, val)
+                              }
+                              placeholder="Select item"
+                              isClearable
+                            />
+                            <input
+                              type="hidden"
+                              name={`item-${map.lineId}`}
+                              value={map.itemId ?? ""}
+                            />
+                          </>
+                        )}
+                        {map.action === "create" && (
+                          <Input
+                            aria-label={t`New item name for ${lineLabel}`}
+                            placeholder="New item name"
+                            value={
+                              map.createName ??
+                              map.customerPartId ??
+                              map.description ??
+                              ""
                             }
-                            placeholder="Select item"
-                            isClearable
+                            onChange={(e) =>
+                              handleCreateNameChange(map.lineId, e.target.value)
+                            }
                           />
-                          <input
-                            type="hidden"
-                            name={`item-${map.lineId}`}
-                            value={map.itemId ?? ""}
-                          />
-                        </>
-                      )}
-                      {map.action === "create" && (
-                        <Input
-                          placeholder="New item name"
-                          value={
-                            map.createName ??
-                            map.customerPartId ??
-                            map.description ??
-                            ""
-                          }
-                          onChange={(e) =>
-                            handleCreateNameChange(map.lineId, e.target.value)
-                          }
-                        />
-                      )}
-                      {map.action === "ignore" && (
-                        <p className="text-sm text-muted-foreground">
-                          <Trans>Will remain as a comment line</Trans>
-                        </p>
-                      )}
+                        )}
+                        {map.action === "ignore" && (
+                          <p className="text-sm text-muted-foreground">
+                            <Trans>Will remain as a comment line</Trans>
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ModalBody>
           <ModalFooter>

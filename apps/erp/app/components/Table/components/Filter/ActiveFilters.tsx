@@ -147,6 +147,9 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
     }
   };
 
+  const filterName = filter.header;
+  const valueLabel = makeLabel(value);
+
   return (
     <HStack spacing={0}>
       <Button
@@ -183,7 +186,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
             }}
             size="sm"
           >
-            <span className="truncate">{makeLabel(value)}</span>
+            <span className="truncate">{valueLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -250,7 +253,11 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                       }}
                     >
                       <HStack spacing={2}>
-                        <Checkbox isChecked={isChecked} tabIndex={-1} />
+                        <Checkbox
+                          aria-hidden
+                          isChecked={isChecked}
+                          tabIndex={-1}
+                        />
                         <span>{option.label}</span>
                       </HStack>
                     </CommandItem>
@@ -262,7 +269,11 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
         </PopoverContent>
       </Popover>
       <Button
-        aria-label={t`Remove filter`}
+        aria-label={
+          valueLabel
+            ? t`Remove filter ${filterName}: ${valueLabel}`
+            : t`Remove filter ${filterName}`
+        }
         className="rounded-l-none border-l-0 px-1 w-6"
         size="sm"
         variant="secondary"

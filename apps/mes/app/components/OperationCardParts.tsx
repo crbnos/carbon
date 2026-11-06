@@ -35,11 +35,13 @@ export function QuantityStat({
   className?: string;
 }) {
   return (
+    // A stat, not a heading: as an h2 the card's outline read "2", "4", …
+    // The caption is spoken at every size, so the number reads "2 Quantity".
     <div className="flex flex-col items-end">
-      <Heading size="h4" className={className}>
+      <Heading as="span" size="h4" className={className}>
         {children}
       </Heading>
-      <span className="text-xs text-muted-foreground md:hidden">
+      <span className="text-xs text-muted-foreground md:sr-only">
         <Trans>Quantity</Trans>
       </span>
     </div>
@@ -70,7 +72,15 @@ export function AssigneeTags({
 }) {
   return (
     <>
-      {assignee && <EmployeeAvatar size="xs" employeeId={assignee} />}
+      {assignee && (
+        <>
+          {/* Inside a card link the bare name read as noise. */}
+          <span className="sr-only">
+            <Trans>Assigned to</Trans>
+          </span>
+          <EmployeeAvatar size="xs" employeeId={assignee} />
+        </>
+      )}
       {tags?.map((tag) => (
         <Badge
           key={tag}

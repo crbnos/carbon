@@ -89,6 +89,8 @@ type AccountControlledProps = {
   size?: "sm" | "md" | "lg";
   placeholder?: string;
   isReadOnly?: boolean;
+  /** The picker's name when no FormControl labels it (a table cell). */
+  "aria-label"?: string;
 };
 
 export const AccountControlled = ({

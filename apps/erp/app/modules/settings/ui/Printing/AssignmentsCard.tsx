@@ -283,6 +283,7 @@ function AssignmentRow({
   onPrinterChange: (printerRouteId: string) => void;
   onAutoPrintChange: (autoPrint: boolean) => void;
 }) {
+  const { t } = useLingui();
   const displayState = printerRouteId
     ? ("assigned" as const)
     : inheritedName
@@ -324,12 +325,14 @@ function AssignmentRow({
             onChange={(selected) => onPrinterChange(selected)}
             isClearable
             placeholder={placeholder}
+            aria-label={t`Printer for ${label}`}
           />
         </div>
 
         <div className="flex items-center gap-1.5 max-md:shrink-0">
           <Switch
             variant="small"
+            aria-label={t`Auto-print ${label}`}
             checked={autoPrint}
             onCheckedChange={onAutoPrintChange}
           />

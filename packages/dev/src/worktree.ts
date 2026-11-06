@@ -2,15 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import {
   existsSync,
+  linkSync,
   mkdirSync,
   readFileSync,
   realpathSync,
   renameSync,
   rmdirSync,
+  rmSync,
   statSync,
+  unlinkSync,
   writeFileSync
 } from "node:fs";
 import net from "node:net";
@@ -31,11 +34,12 @@ export const PORT_NAMES = [
   "PORT_ERP",
   "PORT_MES",
   "PORT_ASSEMBLER",
-  "PORT_EMAIL"
+  "PORT_EMAIL",
+  "PORT_POOLER"
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
 
-const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL"];
+const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL", "PORT_POOLER"];
 
 export type PortMap = Record<PortName, number>;
 export type JwtCreds = { secret: string; anonKey: string; serviceKey: string };
@@ -48,9 +52,118 @@ type RegistryEntry = {
 type Registry = Record<string, RegistryEntry>;
 
 export const SHARED_REDIS_PORT = 6379;
-const REDIS_DB_MAX = 16;
+// The shared containers' host ports (packages/dev/docker/docker-compose.shared.yml).
+// The Postgres and pooler ports match config.toml's [db] and [db.pooler].
+export const SHARED_DB_PORT = 54322;
+export const SHARED_POOLER_PORT = 54329;
+export const SHARED_INBUCKET_PORT = 54324;
+export const SHARED_STORAGE_ADMIN_PORT = 54326;
+// One logical DB per worktree slot on the shared redis, which `bootSharedRedis`
+// starts with this many. Redis's own default (16) filled up: a slot is held
+// until `crbn remove`, `crbn down --purge` or `crbn prune` releases it, and a
+// worktree kept on disk keeps its slot.
+export const REDIS_DB_MAX = 25;
 const SLUG_FILE = ".carbon-worktree";
 const REGISTRY_PATH = join(homedir(), ".carbon", "dev-ports.json");
+
+// ---------------------------------------------------------------------------
+// Shared dev stack: the machine-wide JWT, the worktree database, the mode
+// ---------------------------------------------------------------------------
+// None of these live in the registry's own fields. Older crbn versions in
+// other worktrees rewrite ~/.carbon/dev-ports.json: they drop an entry without
+// `jwt` and write back only the fields they know.
+
+export type StackMode = "shared" | "isolated";
+
+// Postgres caps identifiers at 63 bytes.
+const MAX_DB_NAME = 63;
+
+export function worktreeDatabaseName(slug: string): string {
+  const name = `wt_${slug.replace(/[^a-z0-9]/g, "_")}`;
+  // A slug from `slugify` maps to a unique name. Anything else, or a name
+  // that is too long, gets a hash so two slugs can't share a database.
+  if (/^[a-z0-9-]+$/.test(slug) && name.length <= MAX_DB_NAME) return name;
+  const hash = createHash("sha1").update(slug).digest("hex").slice(0, 6);
+  return `${name.slice(0, MAX_DB_NAME - hash.length - 1)}_${hash}`;
+}
+
+/** The database a stack runs: the worktree's own in shared mode. */
+export function stackDatabase(slug: string, mode: StackMode): string {
+  return mode === "shared" ? worktreeDatabaseName(slug) : "postgres";
+}
+
+/** The ports a stack uses: the shared containers own 3 of them. */
+export function stackPorts(ports: PortMap, mode: StackMode): PortMap {
+  return mode === "shared"
+    ? {
+        ...ports,
+        PORT_DB: SHARED_DB_PORT,
+        PORT_POOLER: SHARED_POOLER_PORT,
+        PORT_INBUCKET: SHARED_INBUCKET_PORT
+      }
+    : ports;
+}
+
+const devJwtPath = () => join(homedir(), ".carbon", "dev-jwt.json");
+
+// One JWT secret and key pair for every worktree, so the shared Storage
+// registers each tenant with the same keys. 2 first boots may both mint a
+// pair: the hard link publishes only the first, and both return it.
+export function readDevJwt(): JwtCreds {
+  const path = devJwtPath();
+  if (!existsSync(path)) {
+    const creds = generateJwtCreds();
+    mkdirSync(dirname(path), { recursive: true });
+    const tmp = `${path}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(creds, null, 2), { mode: 0o600 });
+    try {
+      linkSync(tmp, path);
+    } catch (err) {
+      if ((err as { code?: string }).code !== "EEXIST") throw err;
+    } finally {
+      unlinkSync(tmp);
+    }
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    parsed = null;
+  }
+  // New keys would sign every worktree's users out, so never replace a file
+  // we can't read.
+  if (!isJwtCreds(parsed)) {
+    throw new Error(`${path} is not valid JWT creds. Fix it or delete it.`);
+  }
+  return parsed;
+}
+
+const stackModePath = (slug: string) =>
+  join(homedir(), ".carbon", "stacks", slug, "mode");
+
+export function readStackMode(slug: string): StackMode {
+  return recordedStackMode(slug) ?? "shared";
+}
+
+/** The mode `crbn up` last wrote. null when no version with modes ran `up`
+ *  here (such a worktree has no wt_ database, and its volumes are live), or
+ *  when the file holds neither mode: commands that delete data need a mode. */
+export function recordedStackMode(slug: string): StackMode | null {
+  try {
+    const mode = readFileSync(stackModePath(slug), "utf8").trim();
+    return mode === "isolated" || mode === "shared" ? mode : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeStackMode(slug: string, mode: StackMode): void {
+  const path = stackModePath(slug);
+  mkdirSync(dirname(path), { recursive: true });
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, `${mode}\n`);
+  renameSync(tmp, path);
+}
 
 // ---------------------------------------------------------------------------
 // Worktree identity (slug)
@@ -176,29 +289,29 @@ async function resolveSlotLocked(
 ): Promise<{ ports: PortMap; redisDb: number; jwt: JwtCreds }> {
   const registry = readRegistry();
   const existing = registry[slug];
+  // The entry keeps a copy of the machine-wide creds: older crbn versions
+  // drop an entry without `jwt`.
+  const jwt = readDevJwt();
 
   // Fast path: registry entry is valid, points at this worktree, and all
   // ports are still available (no stale processes holding them).
   if (existing && sameWorktreePath(existing.worktreeRoot, worktreeRoot)) {
     await backfillMissingPorts(registry, slug, existing);
+    if (existing.jwt.secret !== jwt.secret) {
+      existing.jwt = jwt;
+      writeRegistry(registry);
+    }
     const allFree = await portsAvailable(Object.values(existing.ports));
     if (allFree) {
-      return {
-        ports: existing.ports,
-        redisDb: existing.redisDb,
-        jwt: existing.jwt
-      };
+      return { ports: existing.ports, redisDb: existing.redisDb, jwt };
     }
     // Some cached ports are taken — fall through to re-allocate.
   }
 
   // Slug collision (different path) or no entry — allocate fresh.
-  // JWT creds tie to data signed/stored in postgres; reuse when present so
-  // existing sessions stay valid.
   const { claimedPorts, claimedDbs } = collectClaims(registry, slug);
   const ports = await pickPorts(claimedPorts);
   const redisDb = pickRedisDb(claimedDbs);
-  const jwt = existing?.jwt ?? generateJwtCreds();
 
   registry[slug] = { worktreeRoot, ports, redisDb, jwt };
   writeRegistry(registry);
@@ -259,6 +372,14 @@ export function slugForWorktreePath(
 }
 
 export function removeSlot(slug: string) {
+  // The mode goes with the slot: a stale `shared` would make a later prune
+  // treat a private stack an older crbn starts here as an old volume.
+  rmSync(stackModePath(slug), { force: true });
+  try {
+    rmdirSync(dirname(stackModePath(slug)));
+  } catch {
+    // Not empty (hibernation state) or already gone.
+  }
   const unlock = lockRegistry();
   try {
     const registry = readRegistry();
@@ -393,7 +514,7 @@ function pickRedisDb(taken: Set<number>): number {
     if (!taken.has(i)) return i;
   }
   throw new Error(
-    `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot via \`crbn remove\`.`
+    `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot with \`crbn down --purge\` in a worktree you no longer use, \`crbn remove\`, or \`crbn prune\` (worktrees whose folder is gone).`
   );
 }
 
@@ -450,7 +571,7 @@ async function pickFreePort(taken: Set<number>): Promise<number> {
 
 // Mint a fresh JWT_SECRET + the matching `anon` and `service_role` HS256 JWTs.
 // Mirrors supabase's well-known dev token shape so all downstream services
-// (gotrue, postgrest, kong, storage, studio) accept them without further config.
+// (gotrue, postgrest, the API gateway, storage, studio) accept them without further config.
 function generateJwtCreds(): JwtCreds {
   // 32-byte (256-bit) secret, hex-encoded — matches HS256 key strength.
   const secret = randomBytes(32).toString("hex");

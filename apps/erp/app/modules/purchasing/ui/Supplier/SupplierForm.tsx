@@ -130,7 +130,9 @@ const SupplierForm = ({
               fetcher={fetcher}
             >
               <ModalCardHeader>
-                <ModalCardTitle>
+                <ModalCardTitle
+                  aria-level={type === "card" && !isEditing ? 1 : undefined}
+                >
                   {isEditing ? (
                     <Trans>Supplier Overview</Trans>
                   ) : (

@@ -7,6 +7,7 @@ import {
   BLOCK_META,
   DEFAULT_SALES_INVOICE_TEMPLATE,
   documentThemeColors,
+  keepSummaryWithLineItems,
   resolveTemplate
 } from "./defaults";
 import { interpolateContent } from "./merge";
@@ -44,8 +45,8 @@ describe("resolveTemplate", () => {
 
   it("preserves stored block order and visibility", () => {
     const stored = [
-      { id: "summary", type: "summary" as const, visible: true },
       { id: "lineItems", type: "lineItems" as const, visible: true },
+      { id: "summary", type: "summary" as const, visible: true },
       { id: "header", type: "header" as const, visible: false },
       { id: "parties", type: "parties" as const, visible: true },
       { id: "notes", type: "notes" as const, visible: true },
@@ -53,8 +54,8 @@ describe("resolveTemplate", () => {
     ];
     const { blocks } = resolveTemplate("salesInvoice", { blocks: stored });
     expect(blocks.map((b) => b.type)).toEqual([
-      "summary",
       "lineItems",
+      "summary",
       "header",
       "parties",
       "notes",
@@ -152,6 +153,28 @@ describe("schema validation", () => {
     expect(lineItems).toMatchObject({ options: { zebra: false } });
   });
 
+  // The preview route and the save validator parse blocks with this schema; an
+  // option the schema does not know is stripped and silently ignored.
+  it("keeps a hidden supplier part number and shows it on templates saved before the option", () => {
+    const parseLineItems = (options: object) =>
+      blockSchema.parse({ id: "lineItems", type: "lineItems", options });
+
+    expect(parseLineItems({ showSupplierPartId: false })).toEqual({
+      id: "lineItems",
+      type: "lineItems",
+      visible: true,
+      options: {
+        showThumbnails: true,
+        zebra: true,
+        textOverflow: "truncate",
+        showSupplierPartId: false
+      }
+    });
+    expect(
+      parseLineItems({ zebra: false, textOverflow: "wrap" })
+    ).toMatchObject({ options: { showSupplierPartId: true } });
+  });
+
   it("rejects unknown block types", () => {
     expect(() => blockSchema.parse({ id: "x", type: "bogus" })).toThrow();
   });
@@ -160,6 +183,37 @@ describe("schema validation", () => {
     expect(
       documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE)
     ).toEqual(DEFAULT_SALES_INVOICE_TEMPLATE);
+  });
+});
+
+describe("block text overrides", () => {
+  it("keeps a block's changed texts and hidden fields", () => {
+    const parsed = blockSchema.parse({
+      id: "p",
+      type: "parties",
+      visible: true,
+      text: { taxId: "GST:" },
+      hidden: ["eori"]
+    });
+    expect(parsed.text).toEqual({ taxId: "GST:" });
+    expect(parsed.hidden).toEqual(["eori"]);
+  });
+
+  it("leaves both unset when the block has none", () => {
+    const parsed = blockSchema.parse({ id: "p", type: "parties" });
+    expect(parsed.text).toBeUndefined();
+    expect(parsed.hidden).toBeUndefined();
+  });
+
+  it("keeps the document texts in settings", () => {
+    const parsed = documentTemplateSchema.parse({
+      ...DEFAULT_SALES_INVOICE_TEMPLATE,
+      settings: {
+        ...DEFAULT_SALES_INVOICE_TEMPLATE.settings,
+        text: { page: "Seite" }
+      }
+    });
+    expect(parsed.settings.text).toEqual({ page: "Seite" });
   });
 });
 
@@ -210,5 +264,49 @@ describe("interpolateContent", () => {
       content: [{ type: "listItem", content: [approvalLine] }]
     };
     expect(interpolateContent(doc(list), {})).toEqual(doc());
+  });
+});
+
+describe("keepSummaryWithLineItems", () => {
+  const order = (types: string[]) =>
+    keepSummaryWithLineItems(types.map((type) => ({ type }))).map(
+      (block) => block.type
+    );
+
+  it("moves a block out from between the table and its totals", () => {
+    expect(
+      order(["parties", "lineItems", "richText", "summary", "terms"])
+    ).toEqual(["parties", "lineItems", "summary", "richText", "terms"]);
+  });
+
+  it("brings the Summary along when Line Items moved down", () => {
+    expect(order(["parties", "summary", "terms", "lineItems"])).toEqual([
+      "parties",
+      "terms",
+      "lineItems",
+      "summary"
+    ]);
+  });
+
+  it("leaves a block above the table and a document without both alone", () => {
+    expect(order(["richText", "lineItems", "summary"])).toEqual([
+      "richText",
+      "lineItems",
+      "summary"
+    ]);
+    expect(order(["lineItems", "terms"])).toEqual(["lineItems", "terms"]);
+    expect(order(["summary", "terms"])).toEqual(["summary", "terms"]);
+  });
+
+  it("corrects a saved template when it resolves", () => {
+    const { blocks } = resolveTemplate("salesInvoice", {
+      blocks: [
+        { id: "lineItems", type: "lineItems", visible: true },
+        { id: "note", type: "spacer", visible: true, variant: "space" },
+        { id: "summary", type: "summary", visible: true }
+      ]
+    });
+    const types = blocks.map((block) => block.type);
+    expect(types.indexOf("summary")).toBe(types.indexOf("lineItems") + 1);
   });
 });

@@ -4,18 +4,16 @@
 
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Production" }];
-};
+export const meta = moduleMeta("Production");
 
 function ProductionSidebar() {
   const { groups } = useProductionSubmodules();
