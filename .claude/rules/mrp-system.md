@@ -414,10 +414,13 @@ one gate in this package (`packages/planning/AGENTS.md`). The posting side
 - **Apply.** An Order or Make in a group segment creates a PO line or job with
   `planningGroupId` and no project (`getPlanningSegmentOwners`). The order
   operation (`orderPlannedPurchases` in `purchasing.server.ts`, `orderPlannedJobs`
-  in `production.server.ts`) matches each settled action to its new supply and calls
-  `moveActionPegsToSupply` (`projects.service.ts`): one transaction supersedes
-  the action's pegs and copies them onto the PO line or job. If it fails, the
-  order stands and the next run re-pegs.
+  in `production.server.ts`) passes each settled action the supplies that
+  answered it (`orderIndexes`, below) to `moveActionPegsToSupply`
+  (`projects.service.ts`): one transaction supersedes the action's pegs and
+  splits them across those PO lines or jobs by quantity (`planPegTransfer`,
+  `projects/peg-transfer-plan.ts`, earliest need first). What they do not cover
+  stays on an action still open for a remainder, and goes to the last supply of
+  one settled in full. If it fails, the order stands and the next run re-pegs.
 - **History.** Every peg row stays. The pegs current at an instant are
   `createdAt <= t AND (supersededAt IS NULL OR supersededAt > t)`, which the
   project's Pegging tab reads (`getProjectPegs`).
@@ -924,7 +927,7 @@ never offered a Cancel, Defer or Expedite.
     included; unit-tested). Sort and filter therefore use the SAVED horizon —
     an on-screen override changes what a row shows, not which rows match.
   - Inside the fence: the Actions chips, the expanded row, **Apply Suggested
-    Changes**, the row's Order/Make quantity, and a bulk **Order Parts /
+    Changes**, the row's Order/Make quantity, and a bulk **Order Items /
     Create Jobs** on rows never opened in the drawer. The drawer opens on the
     suggested orders REQUIRED on or before the fence. A "N More After <date>"
     button EXTENDS the row's fence to the last suggested order rather than
@@ -945,7 +948,11 @@ never offered a Cancel, Defer or Expedite.
     revalidate it) and are dropped only when the page scope changes (the
     search params), MRP recalculates, or an order is placed — clearing on
     every `data` change wiped the planner's edits mid-task. The Order By
-    / Start By column is derived (due date less lead time).
+    / Start By column is the order's `startDate`, editable like the due
+    date; editing either moves the other so they stay a lead time apart
+    (`withDatesInStep`, `ui/Planning/suggested-order-dates.ts`). A late one
+    shows a "Reschedule from today" button (start today, due today + lead
+    time).
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
     at the page's location (both drawer reads filter on `locationId`, and
     `updateLine` / `updateJob` refuse another location's record with 409).
@@ -1009,10 +1016,12 @@ never offered a Cancel, Defer or Expedite.
   the row's `suggestedQuantity` and `suggestedDate`, and Apply writes THOSE —
   an MRP run between the page's read and the claim can move an Open action in
   place, and the page's values would be the stale suggestion. A date apply
-  (`applyProductionPlanningDateActions`, `updatePlanningJob`) also restates a
-  "No Deadline" job as `Soft Deadline` (`deadlineTypeForPlanningDate`): the job
-  form hides the due-date field for No Deadline, and `nextJobPriority` would
-  rank the dated job with the undated weight.
+  (`applyProductionPlanningDateActions`) also restates a "No Deadline" job as
+  `Soft Deadline` (`deadlineTypeForPlanningDate`): the job form hides the
+  due-date field for No Deadline, and `nextJobPriority` would rank the dated
+  job with the undated weight. The drawer's due-date edit (`updatePlanningJob`)
+  follows the job panel's rule instead (`deadlineTypeForDueDate`): an ASAP job
+  becomes `Soft Deadline` too, since a planner typed the date.
   - Purchasing quantities are in PURCHASE units (the line's
     `purchaseQuantity`; the open-lines view reports inventory units), and an
     action's suggested quantity is converted and rounded up as Apply does. The
@@ -1054,9 +1063,39 @@ never offered a Cancel, Defer or Expedite.
   filters, read on page 1 only (`getPurchasingPlanningSuppliers`); a failed
   read falls back to every supplier.
 - **Create planned orders** — `planning.update.tsx` in each module:
-  - production (`orderPlannedJobs`, `create: "production"`): inserts jobs +
-    job methods, upserts `supplyForecast` (`'Production Order'`), then
-    `recalculateJobRequirements()`.
+  - Both refuse an order that starts before the location's today
+    (`planningOrderStartsInPast`, `production.models.ts`): its start date,
+    else its due date less the item's lead time (`planningOrderStart`, the
+    date `insertJob` would give it, which `orderPlannedJobs` then passes it).
+    Nothing can start in the past. The item's other orders are still placed;
+    the refused ones come back as `refusedOrders` (item, segment, index in
+    the item's `orders`) plus an `errors` line. The drawers' and grids'
+    success handlers run after the loaders reload, so they drop the row's
+    draft and re-seed from the suggestions as they now are: a refused order's
+    action is untouched and shows again (late, with its reschedule button),
+    a drawer with refusals stays open and reloads its Open Jobs / Open Orders,
+    and the toast (`usePastStartToast`) counts the orders placed. When every
+    order was refused the call fails with only that message.
+  - Both then settle the Order / Make actions they answered BY QUANTITY
+    (`settleNewSupplyPlanningActions`, `production.service.ts`): an action is
+    Actioned only when what was ordered against it covers it; otherwise it
+    keeps its status and drops to the remainder, so the part of a week not
+    ordered (removed, lowered or refused) stays a saved suggestion. Each
+    suggested order carries its action's id (`planningActionId`, set by
+    `productionOrdersFromActions` / `plannedOrdersFromActions` and kept
+    through drawer edits) and settles that action even when moved to another
+    week; an order without one, or with an id MRP has replaced, settles its
+    (item, week, segment) action. A PO line counts in inventory units
+    (purchase quantity after the supplier minimum × the conversion factor of
+    the line it lands on, a merged line's own). The settle returns, per
+    action, the indexes of the orders that answered it (`orderIndexes`), for
+    the peg move. `orderPlannedJobs` settles right after the job rows are
+    inserted, before Get Method: an MRP run that reads a job in between would
+    net it and the settle would take it off again. A job whose method fails is
+    still supply and still settles.
+  - production (`orderPlannedJobs`, `create: "production"`): inserts the jobs,
+    settles, then the job methods, upserts `supplyForecast`
+    (`'Production Order'`), then `recalculateJobRequirements()`.
   - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier
     per WEEK (`planningPurchaseOrderWeek`: Sunday-start, as the grid's
     periods; a late or undated order is in the current week). It reuses the

@@ -24,10 +24,14 @@ import {
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
-import type { ProductionOrder } from "~/modules/production/production.models";
+import type {
+  ProductionOrder,
+  RefusedPlanningOrder
+} from "~/modules/production/production.models";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
 
 type NewSupplyActionFields = {
+  id: string;
   type: Database["public"]["Enums"]["planningActionType"];
   status: Database["public"]["Enums"]["planningActionStatus"];
   purchaseOrderLineId: string | null;
@@ -147,6 +151,7 @@ export function productionOrdersFromActions(
       periodId: action.periodId,
       quantity: batch.quantity,
       isASAP: batch.isASAP,
+      planningActionId: action.id,
       policyName: action.policyName ?? undefined,
       reason: action.reason ?? undefined,
       triggerValues: triggerValuesOf(action.triggerValues)
@@ -184,6 +189,7 @@ export function plannedOrdersFromActions(
           ? round(batch.quantity / conversionFactor, 0, RoundingMode.Up)
           : batch.quantity,
       supplierId: context.supplierId ?? action.supplierId ?? undefined,
+      planningActionId: action.id,
       itemReadableId: context.itemReadableId,
       description: context.description,
       unitOfMeasureCode: context.unitOfMeasureCode,
@@ -223,4 +229,17 @@ export function supplierConversionFactor(
     parts.data?.find((part) => part.supplierId === supplierId)
       ?.conversionFactor ?? 1
   );
+}
+
+/** How many of a planning row's orders Make / Order refused for starting in
+ *  the past (`refusedOrders`). */
+export function refusedOrderCount(
+  refused: RefusedPlanningOrder[] | null | undefined,
+  row: { id: string; planningSegmentId?: string | null }
+): number {
+  return (refused ?? []).filter(
+    (order) =>
+      order.itemId === row.id &&
+      order.planningSegmentId === (row.planningSegmentId ?? "")
+  ).length;
 }

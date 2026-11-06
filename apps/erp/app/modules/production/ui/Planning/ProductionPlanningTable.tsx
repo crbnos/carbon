@@ -80,6 +80,7 @@ import {
   planningColumns
 } from "~/modules/production/ui/Planning/planningColumns";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
@@ -206,12 +207,18 @@ const ProductionPlanningTable = ({
   );
   // Create Jobs: the order's created jobs, and the parts it skipped. A refusal
   // is toasted by useAction.
+  const pastStartToast = usePastStartToast();
   const bulkUpdateFetcher = useAction<typeof bulkUpdateAction>({
     onSuccess: (result) => {
       const data = "data" in result ? result.data : null;
       if (!data || !("jobs" in data)) return;
-      // The drafts became jobs; the next open re-seeds from the new split.
+      // The next open re-seeds from the suggestions as they are now: what an
+      // order left unordered, a refused late order included, is still there.
       setOrdersMap({});
+      const refusedCount = data.refusedOrders.length;
+      if (refusedCount > 0) {
+        toast.error(pastStartToast(data.jobs.length, refusedCount));
+      }
       const { jobs, alreadyPlannedItemCount, noDemandItemCount } = data;
 
       const skipped: string[] = [];
@@ -231,9 +238,11 @@ const ProductionPlanningTable = ({
       }
 
       if (jobs.length === 0) {
-        toast.info(
-          skipped.length > 0 ? skipped.join(" · ") : t`No jobs were created`
-        );
+        if (refusedCount === 0 || skipped.length > 0) {
+          toast.info(
+            skipped.length > 0 ? skipped.join(" · ") : t`No jobs were created`
+          );
+        }
         return;
       }
 
@@ -430,13 +439,14 @@ const ProductionPlanningTable = ({
     []
   );
 
-  // Planning a Draft job re-runs MRP: the item's draft list is stale, so the
-  // drawer re-seeds from the new suggestions.
+  // After a Draft job is planned (MRP re-runs) or an order is placed, the
+  // row's draft is stale: drop it so the drawer re-seeds.
   const dropOrders = useCallback((item: ProductionPlanningItem) => {
     if (!item.id) return;
+    const key = planningRowKey(item);
     setOrdersMap((prev) => {
-      if (!(item.id! in prev)) return prev;
-      const { [item.id!]: _dropped, ...rest } = prev;
+      if (!(key in prev)) return prev;
+      const { [key]: _dropped, ...rest } = prev;
       return rest;
     });
   }, []);

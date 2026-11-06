@@ -117,6 +117,54 @@ export function isJobEditableFromPlanning(
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
 
+/**
+ * The day a suggested job or purchase order starts: its start (order-by)
+ * date, else its due date less the lead time, as `insertJob` fills it.
+ */
+export function planningOrderStart(
+  order: { startDate?: string | null; dueDate?: string | null },
+  leadTime: number
+): string | null {
+  if (order.startDate) return order.startDate;
+  return order.dueDate
+    ? parseDate(order.dueDate).subtract({ days: leadTime }).toString()
+    : null;
+}
+
+/**
+ * Whether the order starts before `today`, the location's `YYYY-MM-DD`.
+ * Planning's Make / Order refuses such an order, since nothing can start in
+ * the past.
+ */
+export function planningOrderStartsInPast(
+  order: { startDate?: string | null; dueDate?: string | null },
+  today: string,
+  leadTime: number
+): boolean {
+  const start = planningOrderStart(order, leadTime);
+  // ISO dates order as strings
+  return start !== null && start < today;
+}
+
+/** A suggested order planning's Make / Order did not create because it
+ *  starts in the past: its item's row and its place in that row's orders. */
+export type RefusedPlanningOrder = {
+  itemId: string;
+  planningSegmentId: string;
+  index: number;
+};
+
+/** The `errors` line for an item's orders that start in the past. */
+export function pastStartRefusalMessage(
+  itemReadableId: string,
+  count: number,
+  today: string
+): string {
+  return count === 1
+    ? `1 order for ${itemReadableId} starts before today (${today}) and was not created. Reschedule it from today.`
+    : `${count} orders for ${itemReadableId} start before today (${today}) and were not created. Reschedule them from today.`;
+}
+
 // The one definition lives in @carbon/utils, shared with the OEE sync.
 export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
@@ -1204,6 +1252,8 @@ export const productionOrderValidator = z.object({
   existingReadableId: zfd.text(z.string().optional()),
   existingStatus: zfd.text(z.enum(jobStatus).optional()),
   isASAP: z.boolean().optional(),
+  // The Make action this suggestion came from, which Make settles
+  planningActionId: zfd.text(z.string().optional()),
   // Reorder-policy attribution, copied from the Make action (absent on a job
   // the planner added): the chart's order popover explains the suggestion
   // from it, as it does for a purchase order.

@@ -46,7 +46,9 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { refusedOrderCount } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
@@ -115,12 +117,27 @@ export const ProductionPlanningOrderDrawer = memo(
   }: ProductionPlanningOrderDrawerProps) => {
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
-    // Order: a refusal is toasted by useAction.
+    const pastStartToast = usePastStartToast();
+    // A refusal is toasted by useAction. Success runs after the loaders have
+    // reloaded, so the drawer re-seeds from the suggestions as they are now:
+    // a week ordered in part, or refused for starting in the past, keeps
+    // what was not ordered.
     const fetcher = useAction<typeof bulkUpdateAction>({
-      onSuccess: () => {
-        toast.success(t`Orders submitted`);
-        setOrders(row, []);
-        onClose();
+      onSuccess: (result) => {
+        const data = "data" in result ? result.data : null;
+        const refused = refusedOrderCount(
+          data && "refusedOrders" in data ? data.refusedOrders : [],
+          row
+        );
+        onSuggestionsStale(row);
+        if (refused === 0) {
+          toast.success(t`Orders submitted`);
+          onClose();
+          return;
+        }
+        const created = data && "jobs" in data ? data.jobs.length : 0;
+        setOpenJobsVersion((version) => version + 1);
+        toast.error(pastStartToast(created, refused));
       }
     });
     const { locale } = useLocale();

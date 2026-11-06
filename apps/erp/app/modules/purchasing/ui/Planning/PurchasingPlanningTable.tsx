@@ -58,7 +58,8 @@ import {
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
-  PLANNING_DRAWER_PARAM
+  PLANNING_DRAWER_PARAM,
+  type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
@@ -84,6 +85,7 @@ import {
   type PlanningSegmentProject,
   planningColumns
 } from "~/modules/production/ui/Planning/planningColumns";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
@@ -171,6 +173,7 @@ const PlanningTable = memo(
     });
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+    const pastStartToast = usePastStartToast();
 
     // Every loaded row, each with its own actions. The open drawer's param
     // does not change the list.
@@ -256,14 +259,23 @@ const PlanningTable = memo(
       }
 
       if (bulkUpdateFetcher.data?.success === true) {
-        // The drafts became PO lines; the next open re-seeds from the new split.
+        // The next open re-seeds from the suggestions as they are now: what
+        // an order left unordered, a refused late order included, is still
+        // there.
         setOrdersMap({});
-        const purchaseOrders =
-          (
-            bulkUpdateFetcher.data as {
-              purchaseOrders?: { id: string; readableId: string }[];
-            }
-          )?.purchaseOrders ?? [];
+        const {
+          purchaseOrders = [],
+          refusedOrders = [],
+          processedItems = 0
+        } = bulkUpdateFetcher.data as {
+          purchaseOrders?: { id: string; readableId: string }[];
+          refusedOrders?: RefusedPlanningOrder[];
+          processedItems?: number;
+        };
+        if (refusedOrders.length > 0) {
+          toast.error(pastStartToast(processedItems, refusedOrders.length));
+          if (processedItems === 0) return;
+        }
 
         if (purchaseOrders.length === 0) {
           toast.success(t`Orders submitted`);
@@ -536,6 +548,17 @@ const PlanningTable = memo(
       },
       []
     );
+
+    // After an order the row's draft is stale: drop it so the drawer re-seeds.
+    const dropOrders = useCallback((item: PurchasingPlanningItem) => {
+      if (!item.id) return;
+      const key = planningRowKey(item);
+      setOrdersMap((prev) => {
+        if (!(key in prev)) return prev;
+        const { [key]: _dropped, ...rest } = prev;
+        return rest;
+      });
+    }, []);
 
     // The drawer's own Planning Horizon control: the same on-screen override
     // as the grid cell, for the row the drawer is open on.
@@ -1014,6 +1037,7 @@ const PlanningTable = memo(
             actionHandlers={actionHandlers}
             ordersVersion={ordersVersion}
             setOrders={setOrders}
+            onSuggestionsStale={dropOrders}
             periods={periods}
             isOpen={isDrawerOpen}
             onClose={closeDrawer}

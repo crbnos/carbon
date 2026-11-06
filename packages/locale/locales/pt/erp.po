@@ -916,6 +916,9 @@ msgstr "{counted} contado"
 msgid "{created} created, {updated} updated."
 msgstr "{created} criado(s), {updated} atualizado(s)."
 
+msgid "{created} created."
+msgstr "{created} criados."
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -1197,6 +1200,9 @@ msgstr "{received} de {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} não encontrado"
 
+msgid "{refused} orders start before today and were not created. Reschedule them from today."
+msgstr "{refused} ordens começam antes de hoje e não foram criadas. Reagende-as a partir de hoje."
+
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} está concluído. # unidade não foi entregue} other {{jobId} está concluído. # unidades não foram entregues}}"
 
@@ -1395,6 +1401,9 @@ msgstr "1 operação agrupável não está em um lote de produção — ela é e
 msgid "1 check"
 msgstr "1 verificação"
 
+msgid "1 created."
+msgstr "1 criado."
+
 msgid "1 day"
 msgstr "1 dia"
 
@@ -1421,6 +1430,9 @@ msgstr "1 trabalho criado"
 
 msgid "1 line"
 msgstr "1 linha"
+
+msgid "1 order starts before today and was not created. Reschedule it from today."
+msgstr "1 ordem começa antes de hoje e não foi criada. Reagende-a a partir de hoje."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 peça ignorada — ela já tem um trabalho aberto"
@@ -24850,6 +24862,12 @@ msgstr "Requer Reparo"
 
 msgid "Requires staffing"
 msgstr "Exige pessoal"
+
+msgid "Reschedule from today"
+msgstr "Reagendar a partir de hoje"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Reagendar a partir de hoje, vencimento em {rescheduledDue}"
 
 msgid "Reschedule tolerance"
 msgstr "Tolerância de reagendamento"

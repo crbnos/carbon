@@ -56,6 +56,7 @@ import {
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
+  getLocationTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import {
@@ -89,6 +90,7 @@ import {
   jobValidator,
   makeToAssetItemError,
   PLANNING_EDITABLE_JOB_STATUSES,
+  pastStartRefusalMessage,
   peopleAbsenceRangeValidator,
   peopleAbsenceValidator,
   peopleAssignmentValidator,
@@ -100,10 +102,13 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  planningOrderStart,
+  planningOrderStartsInPast,
   procedureStatus,
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  type RefusedPlanningOrder,
   SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
@@ -4386,8 +4391,11 @@ export const markPersonAbsentRange = defineServiceFn({
  * `updatePlannedJob` or Apply. The location and every item must
  * be this company's. Per item: one whose manufacturing is blocked, needs
  * configuration or is held by an unreleased change notice is skipped and
- * named in `errors`; each order becomes a
- * Planned job (ASAP or Soft Deadline) at the location with the item's method.
+ * named in `errors`. An order that starts (else is due) before the location's
+ * today is refused and listed in `refusedOrders` (item, segment and its index
+ * in the item's `orders`) and in `errors`; the item's other orders are still
+ * made. Each becomes a Planned job (ASAP or Soft Deadline) at the location
+ * with the item's method.
  * Then the Make suggestions those orders answer are settled, the jobs' supply
  * is recorded per week (`supplyForecast`) and their requirements are
  * recalculated. An item with no orders is counted as already planned (it has
@@ -4436,7 +4444,7 @@ export const orderPlannedJobs = defineServiceFn({
         .maybeSingle(),
       client
         .from("item")
-        .select("id")
+        .select("id, readableId, readableIdWithRevision")
         .in("id", itemIds)
         .eq("companyId", companyId)
     ]);
@@ -4454,6 +4462,17 @@ export const orderPlannedJobs = defineServiceFn({
       });
       return ctx.error("notFound", "Not found");
     }
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const today = datetime
+      .today(await getLocationTimeZone(client, locationId, companyId))
+      .toString();
+    const refusedOrders: RefusedPlanningOrder[] = [];
+    let pastStartErrorCount = 0;
 
     // A job in a project segment is charged to that project and receives
     // its output into the project's stock. A job in a planning group
@@ -4498,13 +4517,16 @@ export const orderPlannedJobs = defineServiceFn({
       periodId: string;
       planningSegmentId: string;
       jobId: string;
+      quantity: number;
+      planningActionId?: string;
     }[] = [];
     const errors: string[] = [];
-    let processedItems = 0;
+    // The jobs made, before their methods.
+    const inserted: { itemId: string; id: string; readableId: string }[] = [];
 
     const manufacturingRows = await client
       .from("itemReplenishment")
-      .select("itemId, manufacturingBlocked, requiresConfiguration")
+      .select("itemId, manufacturingBlocked, requiresConfiguration, leadTime")
       .in(
         "itemId",
         items.flatMap((item) => (item.orders.length > 0 ? [item.id] : []))
@@ -4558,15 +4580,40 @@ export const orderPlannedJobs = defineServiceFn({
         continue;
       }
 
-      let itemProcessed = false;
-      for (const order of item.orders) {
+      // insertJob's own default when the item has no lead time
+      const leadTime = manufacturing.leadTime ?? 7;
+      const pastIndexes = new Set(
+        item.orders.flatMap((order, index) =>
+          planningOrderStartsInPast(order, today, leadTime) ? [index] : []
+        )
+      );
+      if (pastIndexes.size > 0) {
+        for (const index of pastIndexes) {
+          refusedOrders.push({
+            itemId: item.id,
+            planningSegmentId: item.planningSegmentId,
+            index
+          });
+        }
+        errors.push(
+          pastStartRefusalMessage(
+            readableIdByItem.get(item.id) ?? item.id,
+            pastIndexes.size,
+            today
+          )
+        );
+        pastStartErrorCount++;
+      }
+
+      for (const [index, order] of item.orders.entries()) {
+        if (pastIndexes.has(index)) continue;
         const created = await service.insertJob(
           client,
           db,
           {
             itemId: item.id,
             quantity: order.quantity,
-            startDate: order.startDate ?? undefined,
+            startDate: planningOrderStart(order, leadTime) ?? undefined,
             dueDate: order.dueDate ?? undefined,
             deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
             status: "Planned",
@@ -4594,27 +4641,19 @@ export const orderPlannedJobs = defineServiceFn({
           continue;
         }
         const id = created.data.id;
-
-        const method = await service.upsertJobMethod(client, db, "itemToJob", {
-          sourceId: item.id,
-          targetId: id,
-          companyId,
-          userId
+        inserted.push({
+          itemId: item.id,
+          id,
+          readableId: created.data.jobId ?? ""
         });
-        if (method.error) {
-          errors.push(
-            `Failed to create job method for item ${item.id}: ${method.error.message}`
-          );
-          continue;
-        }
-
-        createdJobs.push({ id, readableId: created.data.jobId ?? "" });
-        itemProcessed = true;
+        // the job is supply from here on, with or without its method
         ordered.push({
           itemId: item.id,
           periodId: order.periodId,
           planningSegmentId: item.planningSegmentId,
-          jobId: id
+          jobId: id,
+          quantity: order.quantity,
+          planningActionId: order.planningActionId
         });
         const key = [item.id, order.periodId, item.planningSegmentId].join(
           "\u001f"
@@ -4635,10 +4674,11 @@ export const orderPlannedJobs = defineServiceFn({
           });
         }
       }
-      if (itemProcessed) processedItems++;
     }
-    for (const error of errors) logger.error(error, { companyId, locationId });
 
+    // Settled as soon as the jobs exist, before their methods: an MRP run
+    // that reads a job between its insert and the settle would net it, and
+    // the settle would take it off the suggestion a second time.
     const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
@@ -4654,38 +4694,44 @@ export const orderPlannedJobs = defineServiceFn({
         error: settled.error
       });
     } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Make's pegs move to the job it created. A failure
-      // leaves them on the action; the next MRP run re-pegs.
-      const jobByOrder = new Map<string, string>();
-      for (const entry of ordered) {
-        const key = [
-          entry.itemId,
-          entry.periodId,
-          entry.planningSegmentId
-        ].join("\u0000");
-        if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
-      }
-      const moves = (settled.data ?? []).flatMap((action) => {
-        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
-          return [];
-        }
-        const supplyId = jobByOrder.get(
-          [action.itemId, action.periodId, action.planningSegmentId].join(
-            "\u0000"
-          )
-        );
-        return supplyId
+      // A grouped Make's pegs move to the jobs that answered it.
+      const moves = (settled.data ?? []).flatMap((action) =>
+        segments.planningGroupIds.has(action.planningSegmentId)
           ? [
               {
                 planningActionId: action.id,
                 supplyType: "Job" as const,
-                supplyId
+                supplies: action.orderIndexes.map((index) => ({
+                  supplyId: ordered[index]!.jobId,
+                  quantity: ordered[index]!.quantity
+                })),
+                keepRemainder: action.status !== "Actioned"
               }
             ]
-          : [];
-      });
+          : []
+      );
       await moveActionPegsToSupply(db, { companyId, userId, moves });
     }
+
+    const processedItemIds = new Set<string>();
+    for (const job of inserted) {
+      const method = await service.upsertJobMethod(client, db, "itemToJob", {
+        sourceId: job.itemId,
+        targetId: job.id,
+        companyId,
+        userId
+      });
+      if (method.error) {
+        errors.push(
+          `Failed to create job method for item ${job.itemId}: ${method.error.message}`
+        );
+        continue;
+      }
+      createdJobs.push({ id: job.id, readableId: job.readableId });
+      processedItemIds.add(job.itemId);
+    }
+    const processedItems = processedItemIds.size;
+    for (const error of errors) logger.error(error, { companyId, locationId });
 
     if (supplyByKey.size > 0) {
       const forecasts = await client
@@ -4737,9 +4783,13 @@ export const orderPlannedJobs = defineServiceFn({
     if (errors.length > 0 && processedItems === 0) {
       return ctx.error(
         "rule",
-        `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-          errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
-        }`
+        errors.length === pastStartErrorCount
+          ? `No jobs were created. ${errors.slice(0, 3).join(" ")}${
+              errors.length > 3 ? ` And ${errors.length - 3} more.` : ""
+            }`
+          : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
+              errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+            }`
       );
     }
 
@@ -4749,6 +4799,7 @@ export const orderPlannedJobs = defineServiceFn({
       noDemandItemCount: itemsWithoutOrders.length - alreadyPlannedItemIds.size,
       processedItems,
       totalItems: items.length,
+      refusedOrders,
       errors
     };
   }

@@ -48,6 +48,7 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
+import type { RefusedPlanningOrder } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   type PlanningActionHandlers,
@@ -68,7 +69,9 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
+import { refusedOrderCount } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
+import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { path } from "~/utils/path";
 import type {
@@ -129,6 +132,8 @@ type PurchasingPlanningOrderDrawerProps = {
   onClose: () => void;
   onSupplierChange: (itemId: string, supplierId: string) => void;
   setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
+  /** Drop the item's draft list so the drawer re-seeds from the suggestions. */
+  onSuggestionsStale: (item: PurchasingPlanningItem) => void;
   setSelectedItem: (item: PurchasingPlanningItem) => void;
 };
 
@@ -145,6 +150,7 @@ export const PurchasingPlanningOrderDrawer = memo(
     actionHandlers,
     ordersVersion = 0,
     setOrders,
+    onSuggestionsStale,
     locationId,
     periods,
     selectedSupplier,
@@ -159,6 +165,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       ? formatDate(timeFenceDate, undefined, locale)
       : null;
     const fetcher = useFetcher<typeof bulkUpdateAction>();
+    const pastStartToast = usePastStartToast();
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
@@ -177,6 +184,8 @@ export const PurchasingPlanningOrderDrawer = memo(
 
     // Re-read when the item's actions change: applying one rewrites its line.
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
+    // ...and after an order that left the drawer open placed new lines.
+    const [openLinesVersion, setOpenLinesVersion] = useState(0);
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -277,7 +286,8 @@ export const PurchasingPlanningOrderDrawer = memo(
       selectedItem.id,
       locationId,
       actionsKey,
-      ordersVersion
+      ordersVersion,
+      openLinesVersion
     ]);
 
     const openOrderRows = useMemo<OpenOrderRow[] | null | Error>(() => {
@@ -574,6 +584,20 @@ export const PurchasingPlanningOrderDrawer = memo(
               purchaseOrders?: { id: string; readableId: string }[];
             }
           )?.purchaseOrders ?? [];
+        const { refusedOrders, processedItems = 0 } = fetcher.data as {
+          refusedOrders?: RefusedPlanningOrder[];
+          processedItems?: number;
+        };
+        const refused = refusedOrderCount(refusedOrders, selectedItem);
+        // This runs once the loaders have reloaded: re-seed from the
+        // suggestions as they are now. A week ordered in part, or refused for
+        // starting in the past, keeps what was not ordered.
+        onSuggestionsStale(selectedItem);
+        if (refused > 0) {
+          setOpenLinesVersion((version) => version + 1);
+          toast.error(pastStartToast(processedItems, refused));
+          return;
+        }
 
         if (purchaseOrders.length === 0) {
           toast.success(t`Orders submitted`);
@@ -597,7 +621,6 @@ export const PurchasingPlanningOrderDrawer = memo(
           );
         }
 
-        setOrders(selectedItem, []);
         onClose();
       }
     }, [fetcher.state, fetcher.data]);
