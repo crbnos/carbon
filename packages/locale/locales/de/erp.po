@@ -837,9 +837,6 @@ msgstr "{complete} von {quantity}"
 msgid "{completed} of {0} done"
 msgstr "{completed} von {0} erledigt"
 
-msgid "{completedLines} of {lines} lines complete"
-msgstr "{completedLines} von {lines} Positionen abgeschlossen"
-
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# Komponente} other {# Komponenten}}"
 
