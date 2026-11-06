@@ -1,9 +1,10 @@
 # CodeRabbit configuration for Carbon.
 #
-# On demand and quiet. CodeRabbit reviews a PR only when asked
-# (`@coderabbitai review` in a comment, or `@coderabbitai` in the PR
-# description), posts only the important comments, and skips the walkthrough
-# extras. /self-review is the default review; this is a second opinion.
+# On demand and quiet. CodeRabbit reviews a PR only when asked: comment
+# `@coderabbitai review`, or open the PR with `@coderabbitai` in its
+# description (adding it to an open PR's description triggers nothing). It
+# posts only the important comments and skips the walkthrough extras.
+# /self-review is the default review; this is a second opinion.
 #
 # Repo conventions come from AGENTS.md, CLAUDE.md and .claude/rules/**, which
 # CodeRabbit reads by default (knowledge_base.code_guidelines). Do not copy them

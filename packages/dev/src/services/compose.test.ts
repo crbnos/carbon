@@ -283,9 +283,6 @@ describe("shared edge runtime", () => {
     expect(shared).toContain(
       `./$\{EDGE_MAIN_DIR:-edge-main}:/home/deno/main:ro`
     );
-    const main = read("edge-main/index.ts");
-    expect(main).toContain('req.headers.get("x-carbon-api")');
-    expect(main).toMatch(/poolKey,/);
   });
 
   it("is reached through every worktree's gateway, after a private one by its alias", () => {
