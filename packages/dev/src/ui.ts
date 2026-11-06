@@ -117,6 +117,7 @@ export function worktreesTable(
     current: boolean;
     slug: string | null;
     dockerState: string | null;
+    mode?: string | null;
   }[],
   // Columns the table may use; clack's gutter takes four. A pipe has no width
   // and is never narrowed.
@@ -132,7 +133,9 @@ export function worktreesTable(
     const path = r.path.startsWith(`${home}/`)
       ? `~${r.path.slice(home.length)}`
       : r.path;
-    const project = r.slug ? projectName(r.slug) : "—";
+    const project = r.slug
+      ? `${projectName(r.slug)}${r.mode ? ` · ${r.mode}` : ""}`
+      : "—";
     const stack = !r.slug
       ? pc.gray("not initialized")
       : r.dockerState === "running"
@@ -196,12 +199,14 @@ export function summaryLines(
   /** When provided, show portless hostnames; otherwise show localhost URLs. */
   branchPrefix?: string,
   /** False when the boot left Studio out; the row then says how to start it. */
-  studioRunning = true
+  studioRunning = true,
+  /** Shared mode: the worktree database in the shared Postgres. */
+  sharedDatabase?: string
 ): string[] {
   const url = branchPrefix
     ? (sub: string, _port?: number) => `https://${sub}.${branchPrefix}.${TLD}`
     : (sub: string, port: number) => `http://localhost:${port}`;
-  const dbUrl = `postgresql://postgres:postgres@localhost:${ports.PORT_DB}/postgres`;
+  const dbUrl = `postgresql://postgres:postgres@localhost:${ports.PORT_DB}/${sharedDatabase ?? "postgres"}`;
   const lines: string[] = [];
   if (apps.includes("erp"))
     lines.push(row(pc.cyan, "ERP", url("erp", ports.PORT_ERP)));
@@ -256,6 +261,12 @@ export function summaryLines(
       : []),
     `${pc.gray(pc.bold("Postgres".padEnd(8)))}  ${pc.gray(dbUrl)}`
   );
+  if (sharedDatabase) {
+    lines.push(
+      `${pc.gray(pc.bold("Pooler".padEnd(8)))}  ${pc.gray(`postgresql://postgres:postgres@localhost:${ports.PORT_POOLER}/${sharedDatabase}`)}`,
+      `${pc.gray(pc.bold("Shared".padEnd(8)))}  ${pc.gray("Postgres, PgBouncer, Storage and Mail run in crbn-shared")}`
+    );
+  }
   return lines;
 }
 

@@ -12,11 +12,17 @@ import { confirmRestore } from "../prompts.js";
 import { wakeIfAsleep } from "../services/hibernate.js";
 import {
   applyMigrations,
+  type DbTarget,
+  ensureConfigRow,
+  modeOf,
   serviceSchemasReady,
-  syncAuthz
+  stackHosts,
+  syncAuthz,
+  worktreeDbTarget
 } from "../services/migrations.js";
+import { syncWorktreeCron } from "../services/shared-db.js";
 import { tasks } from "../ui.js";
-import { getWorktreeRoot, resolveSlug } from "../worktree.js";
+import { getWorktreeRoot, readDevJwt, resolveSlug } from "../worktree.js";
 
 export type RestoreMode = "local" | "prod";
 
@@ -50,11 +56,18 @@ export function buildRestoreEnv(
     | "adminPassword"
     | "mode"
     | "keepStorageObjects"
-  >
+  >,
+  db?: DbTarget
 ): Record<string, string> {
   const env: Record<string, string> = {
     RESTORE_MODE: opts.mode ?? "local"
   };
+  // The worktree's database: in shared mode its wt_ database on the shared
+  // Postgres, which the registry's PORT_DB does not name.
+  if (db) {
+    env.PORT_DB = String(db.port);
+    env.DB_NAME = db.database;
+  }
   if (opts.scrubEmails !== false) env.SCRUB_EMAILS = "1";
   if (opts.adminEmail) env.ADMIN_EMAIL = opts.adminEmail;
   if (opts.adminPassword) env.ADMIN_PASSWORD = opts.adminPassword;
@@ -117,34 +130,51 @@ export async function restore(opts: RestoreOptions) {
   // postgres-only stack the dump's `CREATE TABLE auth.users` no-ops onto the
   // image's stub, and the restore fails late — after the data has landed but
   // before the email scrub — leaving unscrubbed production addresses on disk.
-  await wakeIfAsleep(resolveSlug(root));
+  const slug = resolveSlug(root);
+  await wakeIfAsleep(slug);
+  const db = worktreeDbTarget(slug, portDb);
   if (!(await tryConnect("127.0.0.1", portDb, 500))) {
     cancel("postgres is not reachable — run `crbn up` first, then retry");
     process.exit(1);
   }
-  if (!(await serviceSchemasReady(portDb))) {
+  if (!(await serviceSchemasReady(db).catch(() => false))) {
     cancel(
       "the auth/storage schemas are not initialized (postgres is up but GoTrue/Storage are not) — run `crbn up` so the full stack boots once, then retry"
     );
     process.exit(1);
   }
 
-  await runRestore(root, backup, portDb, opts);
+  await runRestore(root, slug, backup, db, opts);
   outro("done");
 }
 
 async function runRestore(
   root: string,
+  slug: string,
   backup: string,
-  portDb: number,
+  db: DbTarget,
   opts: RestoreOptions
 ) {
   // stdio inherit: the script streams its own progress and can run for minutes.
   await execa("bash", [join(root, SCRIPT), backup], {
     cwd: root,
     stdio: "inherit",
-    env: buildRestoreEnv(opts)
+    env: buildRestoreEnv(opts, db)
   });
+  // The script restores with triggers off, so the cron forwarding saw none
+  // of the restored jobs.
+  if (modeOf(db) === "shared") {
+    await syncWorktreeCron(db.database, db.port);
+    // The script writes the private stack's hostnames, which a shared
+    // worktree's database must not send its HTTP requests and events to.
+    if ((opts.mode ?? "local") === "local") {
+      await ensureConfigRow(
+        db,
+        readDevJwt().anonKey,
+        stackHosts("shared", slug)
+      );
+    }
+  }
 
   const shouldMigrate = opts.migrate !== false;
   const shouldRegen = opts.regen !== false;
@@ -159,7 +189,7 @@ async function runRestore(
             // migration state and app code compiled from newer types breaks.
             title: "Apply migrations the backup predates",
             task: async () => {
-              const r = await applyMigrations(root, portDb);
+              const r = await applyMigrations(root, db);
               return r.applied
                 ? "migrations applied"
                 : "schema already up to date";
@@ -184,7 +214,7 @@ async function runRestore(
             // The snapshot carries the source environment's policies; the
             // manifest is what this branch expects.
             title: "Sync RLS policies with the authz manifest",
-            task: () => syncAuthz(root, portDb)
+            task: () => syncAuthz(root, db)
           }
         ]
       : [])

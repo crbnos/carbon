@@ -6,7 +6,18 @@ import { mkdtempSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterAll, describe, expect, it } from "vitest";
-import { canonicalSlug, sameWorktreePath, slugify } from "./worktree.js";
+import type { PortMap } from "./worktree.js";
+import {
+  canonicalSlug,
+  readStackMode,
+  recordedStackMode,
+  sameWorktreePath,
+  slugify,
+  stackDatabase,
+  stackPorts,
+  worktreeDatabaseName,
+  writeStackMode
+} from "./worktree.js";
 
 describe("slugify", () => {
   it("lowercases", () => {
@@ -115,5 +126,68 @@ describe("sameWorktreePath", () => {
 
   it("distinguishes unrelated paths", () => {
     expect(sameWorktreePath(real, tmpdir())).toBe(false);
+  });
+});
+
+describe("worktreeDatabaseName", () => {
+  it("maps a slug to wt_ plus snake case", () => {
+    expect(worktreeDatabaseName("carbon-chore-dev-supabase-parity")).toBe(
+      "wt_carbon_chore_dev_supabase_parity"
+    );
+  });
+
+  it("cuts a long name to 63 characters and adds a hash", () => {
+    const name = worktreeDatabaseName("a".repeat(80));
+    expect(name).toHaveLength(63);
+    expect(name).toMatch(/_[0-9a-f]{6}$/);
+  });
+
+  it("gives slugs that differ only outside [a-z0-9-] different names", () => {
+    expect(worktreeDatabaseName("a.b")).not.toBe(worktreeDatabaseName("a_b"));
+    expect(worktreeDatabaseName("a_b")).not.toBe(worktreeDatabaseName("a-b"));
+  });
+});
+
+describe("stack mode", () => {
+  const home = process.env.HOME;
+  const tmpHome = mkdtempSync(join(tmpdir(), "crbn-mode-"));
+  afterAll(() => {
+    process.env.HOME = home;
+    rmSync(tmpHome, { recursive: true, force: true });
+  });
+
+  it("defaults to shared, and keeps what writeStackMode wrote", () => {
+    process.env.HOME = tmpHome;
+    expect(readStackMode("some-slug")).toBe("shared");
+    // An older crbn wrote no mode: its volumes are live, never "old".
+    expect(recordedStackMode("some-slug")).toBeNull();
+    writeStackMode("some-slug", "isolated");
+    expect(readStackMode("some-slug")).toBe("isolated");
+    writeStackMode("some-slug", "shared");
+    expect(readStackMode("some-slug")).toBe("shared");
+  });
+});
+
+describe("stackDatabase and stackPorts", () => {
+  const ports = {
+    PORT_DB: 54000,
+    PORT_POOLER: 54001,
+    PORT_INBUCKET: 54002,
+    PORT_API: 54003
+  } as unknown as PortMap;
+
+  it("gives a shared stack the worktree database and the shared ports", () => {
+    expect(stackDatabase("carbon-a", "shared")).toBe("wt_carbon_a");
+    expect(stackPorts(ports, "shared")).toMatchObject({
+      PORT_DB: 54322,
+      PORT_POOLER: 54329,
+      PORT_INBUCKET: 54324,
+      PORT_API: 54003
+    });
+  });
+
+  it("leaves a private stack on postgres and the slot's ports", () => {
+    expect(stackDatabase("carbon-a", "isolated")).toBe("postgres");
+    expect(stackPorts(ports, "isolated")).toBe(ports);
   });
 });

@@ -81,6 +81,8 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
       SUPABASE_JWT_SECRET: __JWT_SECRET__
       SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres?sslmode=disable
+      # The app's pool, through Supavisor in transaction mode as in production.
+      SUPABASE_DB_POOLER_URL: postgresql://postgres.carbon:__POSTGRES_PASSWORD__@supavisor:6543/postgres?sslmode=disable
       REDIS_URL: redis://redis:6379
       SESSION_SECRET: __SESSION_SECRET__
       INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
@@ -133,6 +135,8 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
       SUPABASE_JWT_SECRET: __JWT_SECRET__
       SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres?sslmode=disable
+      # The app's pool, through Supavisor in transaction mode as in production.
+      SUPABASE_DB_POOLER_URL: postgresql://postgres.carbon:__POSTGRES_PASSWORD__@supavisor:6543/postgres?sslmode=disable
       REDIS_URL: redis://redis:6379
       SESSION_SECRET: __SESSION_SECRET__
       INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
@@ -203,7 +207,7 @@ services:
 
   # ──────────────────────────── Data plane ───────────────────────────────────
   postgres:
-    image: supabase/postgres:15.14.1.112
+    image: supabase/postgres:17.6.1.173
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     # Image's own entrypoint+cmd. Do NOT override shared_preload_libraries here:
     # the image's postgresql.conf already preloads the full set Carbon needs
@@ -250,6 +254,10 @@ services:
         source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/postgres/02-performance.sh
         target: /docker-entrypoint-initdb.d/zz-carbon-02-performance.sh
         read_only: true
+      - type: bind
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/postgres/03-pooler.sh
+        target: /docker-entrypoint-initdb.d/zz-carbon-03-pooler.sh
+        read_only: true
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
       interval: 5s
@@ -265,7 +273,7 @@ services:
           memory: 512M
 
   gotrue:
-    image: supabase/gotrue:v2.189.0
+    image: supabase/gotrue:v2.196.0
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     command: ["auth"]
     networks: [internal]
@@ -324,7 +332,7 @@ services:
           memory: 256M
 
   postgrest:
-    image: postgrest/postgrest:v13.0.8
+    image: postgrest/postgrest:v14.17
     # PostgREST's image is FROM scratch (no shell), so it can't run the
     # secrets-entrypoint shim the other services use. Instead it reads each value
     # straight from its secret file via PostgREST's native @file syntax.
@@ -348,7 +356,7 @@ services:
           memory: 512M
 
   realtime:
-    image: supabase/realtime:v2.89.0
+    image: supabase/realtime:v2.134.10
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     command: ["/usr/bin/tini", "-s", "-g", "--", "/app/run.sh", "/app/bin/server"]
     networks:
@@ -386,7 +394,7 @@ services:
           memory: 512M
 
   storage:
-    image: supabase/storage-api:v1.58.4
+    image: supabase/storage-api:v1.74.0
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     command: ["docker-entrypoint.sh", "node", "dist/start/server.js"]
     networks: [internal]
@@ -432,7 +440,7 @@ services:
   # Internal only — never publish a port: direct imgproxy access reads the
   # storage volume with no RLS.
   imgproxy:
-    image: darthsim/imgproxy:v3.8.0
+    image: darthsim/imgproxy:v3.31.4
     networks: [internal]
     environment:
       IMGPROXY_BIND: ":5001"
@@ -470,9 +478,12 @@ services:
       PG_META_DB_PASSWORD: __POSTGRES_PASSWORD__
     volumes:
       - *shim
+    # Off unless STUDIO_REPLICAS=1 (with studio): postgres-meta runs SQL as
+    # supabase_admin and has no auth of its own. Internal network only; the
+    # gateway has no route to it.
     deploy:
       <<: *restart
-      replicas: 1
+      replicas: ${STUDIO_REPLICAS:-0}
       resources:
         limits:
           memory: 256M
@@ -489,13 +500,13 @@ services:
     environment:
       # Next.js standalone binds to $HOSTNAME, which Docker sets to the container ID
       # (→ the overlay IP only). Force 0.0.0.0 so it also listens on 127.0.0.1 for the
-      # healthcheck and on the service VIP for kong/caddy.
+      # healthcheck and on the service VIP for the gateway and caddy.
       HOSTNAME: 0.0.0.0
       STUDIO_PG_META_URL: http://meta:8080
       POSTGRES_PASSWORD: __POSTGRES_PASSWORD__
       DEFAULT_ORGANIZATION_NAME: Carbon
       DEFAULT_PROJECT_NAME: Carbon
-      SUPABASE_URL: http://kong:8000
+      SUPABASE_URL: http://gateway:8000
       SUPABASE_PUBLIC_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: __ANON_KEY__
       SUPABASE_SERVICE_KEY: __SERVICE_ROLE_KEY__
@@ -514,11 +525,12 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
-    # Internal admin UI. Not published. Reach it via the optional studio.* route
-    # in the Caddyfile (behind basic_auth) or an SSH tunnel — never expose openly.
+    # Internal admin UI, off unless STUDIO_REPLICAS=1 (with meta). Not published.
+    # Reach it via the optional studio.* route in the Caddyfile (behind
+    # basic_auth) or an SSH tunnel — never expose openly.
     deploy:
       <<: *restart
-      replicas: ${STUDIO_REPLICAS:-1}
+      replicas: ${STUDIO_REPLICAS:-0}
       resources:
         limits:
           memory: 512M
@@ -536,7 +548,7 @@ services:
     environment:
       TZ: UTC
       JWT_SECRET: __JWT_SECRET__
-      SUPABASE_URL: http://kong:8000
+      SUPABASE_URL: http://gateway:8000
       SUPABASE_ANON_KEY: __ANON_KEY__
       SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
       VERIFY_JWT: ${EDGE_VERIFY_JWT:-true}
@@ -557,30 +569,86 @@ services:
         limits:
           memory: 512M
 
-  kong:
-    image: kong:2.8.1
+  # The connection pooler, as BYOC and hosted Supabase run it: Supavisor in
+  # transaction mode on 6543. The apps' pool connects here as postgres.carbon
+  # (user.tenant); the services that need session state connect directly.
+  supavisor:
+    image: supabase/supavisor:2.9.12
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command:
+      - /bin/sh
+      - -c
+      - /app/bin/migrate && /app/bin/supavisor eval "$$(cat /etc/pooler/pooler.exs)" && exec /app/bin/server
     networks: [internal]
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - supavisor_secret_key_base
+      - supavisor_vault_enc_key
     environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
-      KONG_DNS_ORDER: LAST,A,CNAME
-      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+      PORT: "4000"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: __POSTGRES_PASSWORD__
+      DATABASE_URL: ecto://supabase_admin:__POSTGRES_PASSWORD__@postgres:5432/_supabase
+      CLUSTER_POSTGRES: "true"
+      REGION: local
+      ERL_AFLAGS: -proto_dist inet_tcp
+      SECRET_KEY_BASE: __SUPAVISOR_SECRET_KEY_BASE__
+      VAULT_ENC_KEY: __SUPAVISOR_VAULT_ENC_KEY__
+      API_JWT_SECRET: __JWT_SECRET__
+      METRICS_JWT_SECRET: __JWT_SECRET__
+      POOLER_TENANT_ID: carbon
+      # Postgres connections for the apps; with the other services' it stays
+      # under PG_MAX_CONNECTIONS.
+      POOLER_DEFAULT_POOL_SIZE: ${SUPAVISOR_POOL_SIZE:-20}
+      POOLER_MAX_CLIENT_CONN: ${SUPAVISOR_MAX_CLIENT_CONN:-100}
+      POOLER_POOL_MODE: transaction
+      DB_POOL_SIZE: "5"
     volumes:
+      - *shim
       - type: bind
-        source: ${CARBON_REPO}/packages/dev/docker/kong.yml
-        target: /home/kong/kong.yml
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/supavisor/pooler.exs
+        target: /etc/pooler/pooler.exs
         read_only: true
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
     deploy:
       <<: *restart
       replicas: 1
       resources:
         limits:
           memory: 512M
+
+  # The Supabase API gateway: Envoy with BYOC's config (envoy/, from
+  # infra/helm/carbon/charts/supabase/files/envoy in the BYOC repo), as Supabase
+  # self-hosting uses since it replaced Kong. Protected routes need the anon or
+  # service-role key. There is no route to postgres-meta (/pg/) or Studio.
+  gateway:
+    image: envoyproxy/envoy:v1.39.1
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["/etc/envoy/docker-entrypoint.sh"]
+    networks: [internal]
+    secrets:
+      - anon_key
+      - service_role_key
+    environment:
+      ANON_KEY: __ANON_KEY__
+      SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
+    volumes:
+      - *shim
+      - type: bind
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/envoy
+        target: /etc/envoy
+        read_only: true
+      # docker-entrypoint.sh writes the keyed lds.yaml here.
+      - type: tmpfs
+        target: /etc/envoy-generated
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
 
   redis:
     image: redis:7-alpine
@@ -665,4 +733,8 @@ secrets:
   smtp_password:
     external: true
   saml_private_key:
+    external: true
+  supavisor_secret_key_base:
+    external: true
+  supavisor_vault_enc_key:
     external: true

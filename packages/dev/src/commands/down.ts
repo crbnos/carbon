@@ -9,6 +9,7 @@ import { currentBranch } from "../git.js";
 import { killOrphanedApps, killOrphanedStripe } from "../services/apps.js";
 import { flushDb, stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
+import { tryDropWorktreeData } from "../services/shared-db.js";
 import { tasks } from "../ui.js";
 import {
   getSlot,
@@ -54,6 +55,24 @@ export async function down(
         return withVolumes ? "stack stopped, volumes removed" : "stack stopped";
       }
     },
+    // Shared mode keeps the data in the shared Postgres and Storage, not in
+    // the project's volumes.
+    ...(withVolumes
+      ? [
+          {
+            title: "Drop the worktree database",
+            task: async () => {
+              // The slot stays, so prune would keep the database: fail, and
+              // let the user run `down --volumes` again.
+              const msg = await tryDropWorktreeData(slug);
+              if (msg?.startsWith("could not")) {
+                throw new Error(`${msg}. Run \`crbn down --volumes\` again.`);
+              }
+              return msg ?? "isolated stack: nothing shared to drop";
+            }
+          }
+        ]
+      : []),
     {
       title: "Kill orphaned dev servers & stripe listener",
       task: async () => {
@@ -122,6 +141,13 @@ async function runPlain(
     );
   }
   done(withVolumes ? "stack stopped, volumes removed" : "stack stopped");
+
+  if (withVolumes) {
+    const msg = await tryDropWorktreeData(slug);
+    if (msg?.startsWith("could not")) {
+      process.stderr.write(`${pc.yellow("!")} ${msg}\n`);
+    } else if (msg) done(msg);
+  }
 
   step("killing orphaned dev servers & stripe listener");
   const slot = getSlot(slug);
