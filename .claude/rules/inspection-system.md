@@ -328,18 +328,23 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `inspection_hold_idx`), under the guard's advisory lock, that its untracked
   on-hand still covers what the open lots hold (`held > 0`, as the guard). A
   return from any other bin posts even when it leaves the bin below zero; a
-  Partial lot's remainder may ship to the supplier while its NCR is open. A lot
+  Partial lot's remainder may ship to the supplier while its NCR is open, but
+  not to a customer: a return-to-customer shipment passes `includePartial`,
+  which counts it (`inspection_held_quantity`'s `p_open_lots_only` is false).
+  Untracked on-hand at an (item, unit) has one definition,
+  `inspection_untracked_on_hand`, which the guard and every pre-check call. A lot
   holds untracked stock only in a non-nettable unit: lots open before the hold
   existed were left without a `storageUnitId`, and the roll-up counts only
   such lots (`20261106020122`). Its on-hand read is served by the partial
   index `itemLedger_untracked_storageUnit_item_idx` (`storageUnitId, itemId,
   companyId` INCLUDE `quantity`, untracked rows only), an index-only scan.
 - **No release by a direct edit.** Six BEFORE interceptors (the generated
-  handlers migration, `20261106020150`) refuse, with a plain `RAISE`, what
+  handlers migration, `20261106052823`) refuse, with a plain `RAISE`, what
   would release held stock without moving it, unless `app.inspection_release`
   is on or `app.sync_in_progress` is set: `check_inspection_lot_release` on
   `inspection` (a Receipt lot's `status`, except Pending ↔ In Progress, which
-  samples drive; while it holds stock — open or Partial — its
+  samples drive; while it holds stock — open, or Partial until its NCR
+  closes (`inspection_lot_holds`) — its
   `storageUnitId`, `acceptedQuantity`, `lotSize`, `itemId` and
   `sourceDocumentLineId`; and a DELETE of a lot that holds stock, per
   `inspection_lot_holds`: a lot from before the hold, with no `storageUnitId`,
@@ -453,7 +458,10 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   project stripe. On a receipt lot it restores no more than the write-off, so a
   lot counted short gets back only what its Reject wrote off; a job operation
   lot's NCR, which has no write-off, restores at the NCR's location, as
-  before. A tracked Scrap posts
+  before. An NCR can hold several lots: the restore reads every linked lot's
+  write-off, and a Partial receipt lot among them decides how the NCR closes.
+  The write-off posts inside the status-flip transaction, so it never commits
+  while the NCR stays open. A tracked Scrap posts
   against each entity's current storage unit. A voided receipt's lot answers
   "The receipt of this inspection was voided" before "closed".
 - **Roll-up.** `receipt.inspectionStatus` (`receiptInspectionStatus`) is kept by
@@ -479,7 +487,9 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   its source unit is refused inside the pick's transaction
   (`putAwayPickShortfall`, single pick and Pick All); an ordinary transfer
   pick is not checked.
-- **Void.** A receipt void sets its open lots `Cancelled`.
+- **Void.** A receipt void sets its open lots `Cancelled`. It refuses a receipt
+  with an untracked lot that is Failed (written off) or Partial (its remainder
+  is held under its NCR, which a void cannot close).
 - **Counts.** `postInventoryCount` returns `heldStockWarnings`; a serial or
   batch unit On Hold before the count whose receipt lot is still open is
   flagged `awaitingInspection` (an On Hold unit with no open lot, such as an
@@ -490,7 +500,8 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   there", with the unit's `onHand` and the lots' `held` quantity), otherwise it
   was found elsewhere ("Move it back").
 - **Adjustments.** `adjustInventory` asks `inspectionHoldAdjustmentRefusal`
-  before the storage rules, so a warning rule is not acknowledged for an
+  before the storage rules (a Set Quantity sets one project stripe, so the
+  other stripes stay in the count), so a warning rule is not acknowledged for an
   adjustment the hold refuses; `post-inventory-adjustment` refuses any
   adjustment of a serial or batch unit On Hold under its open receipt lot (an
   increase would add units the decision then moves).

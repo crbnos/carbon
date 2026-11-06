@@ -86,9 +86,11 @@ in the migrations — **newest wins**; core tables created in
   `accountDefault.scrapAccount` for every company — Provisional before the accounting
   cutover, when an empty `scrapAccount` becomes a stand-in line on retained earnings;
   after it an empty one falls back to `inventoryAdjustmentVarianceAccount`), **not** raw `itemLedger`
-  inserts. `closeIssue` builds `movements[]` and invokes it BEFORE the status-flip
-  transaction (idempotent per `(documentType,documentId)`, so a retry is safe; a GL
-  failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per
+  inserts. `closeIssue` builds `movements[]` and invokes it INSIDE the status-flip
+  transaction, after the plan is re-read and checked, so a write-off never commits
+  while the NCR stays open (idempotent per `(documentType,documentId)`; a GL failure
+  rolls the close back). An NCR can hold several inspection lots: every linked lot's
+  write-off is restored on Use As Is / Rework. Movement rules: tracked Scrap/Return → `-link.qty` per
   entity; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
   (undoing the reject write-off); inspection-originated Return to Supplier → nothing, because

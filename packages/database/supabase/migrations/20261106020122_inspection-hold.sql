@@ -103,8 +103,12 @@ AS $$
     );
 $$;
 
+-- What lots hold of an untracked item in a unit: an open lot its lot size, a
+-- Partial lot its remainder until its NCR closes. With p_open_lots_only, open
+-- lots only (a supplier return may ship a Partial lot's remainder).
 CREATE OR REPLACE FUNCTION public.inspection_held_quantity(
-  p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT
+  p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT,
+  p_open_lots_only BOOLEAN DEFAULT false
 ) RETURNS NUMERIC
 LANGUAGE sql STABLE
 SET search_path TO 'public'
@@ -122,7 +126,24 @@ AS $$
     AND i."storageUnitId" = p_storage_unit_id
     AND it."itemTrackingType" = 'Inventory'
     AND i."status" IN ('Pending', 'In Progress', 'Partial')
+    AND (NOT p_open_lots_only OR i."status" IN ('Pending', 'In Progress'))
     AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
+$$;
+
+-- Untracked on-hand of an item in a unit: the one definition the hold guard
+-- and every pre-check read (serial and batch stock is held by its status).
+-- An index-only scan of itemLedger_untracked_storageUnit_item_idx.
+CREATE OR REPLACE FUNCTION public.inspection_untracked_on_hand(
+  p_company_id TEXT, p_item_id TEXT, p_storage_unit_id TEXT
+) RETURNS NUMERIC
+LANGUAGE sql STABLE
+AS $$
+  SELECT COALESCE(SUM(il."quantity"), 0)
+  FROM public."itemLedger" il
+  WHERE il."storageUnitId" = p_storage_unit_id
+    AND il."itemId" = p_item_id
+    AND il."companyId" = p_company_id
+    AND il."trackedEntityId" IS NULL;
 $$;
 
 -- 6. The receipt's inspection roll-up ------------------------------------------

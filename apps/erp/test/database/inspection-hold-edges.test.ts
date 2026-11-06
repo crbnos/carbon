@@ -5,7 +5,9 @@
 // Goods-in inspection hold, the edges: what a count reports, a putaway pick
 // after the stock left, an adjustment of a held batch, a repeated Reject, the
 // restore of a rejected lot kept as is, a Partial whose NCR fails after the
-// decision, and a negative received quantity.
+// decision, a negative received quantity, and a Partial lot's remainder
+// (void, return to a customer, its NCR closed), an NCR holding two lots and a
+// Set Quantity of one stripe.
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
@@ -14,9 +16,11 @@ import * as inventory from "../../app/modules/inventory/inventory.server";
 import {
   heldStockMovedByCount,
   insertReceiptPutAway,
+  inspectionHoldAdjustmentRefusal,
   pickUntrackedStockTransferLines,
   postInventoryAdjustment,
   postReceipt,
+  refuseShippingOpenLotStock,
   StockTransferPickRefusal
 } from "../../app/modules/inventory/inventory.service";
 import * as quality from "../../app/modules/quality/quality.server";
@@ -45,7 +49,13 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "reject",
     "keep",
     "short",
-    "serial"
+    "serial",
+    "vpart",
+    "two-a",
+    "two-b",
+    "rma",
+    "stripe",
+    "closed"
   ];
 
   beforeAll(async () => {
@@ -813,6 +823,243 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
             .execute()
         ).map((row) => ({ ...row, quantity: Number(row.quantity) }))
       ).toEqual([{ storageUnitId: unitOf("short"), quantity: 6 }]);
+    },
+    60_000
+  );
+
+  // With no rejected unit, a Partial lot's remainder stays held where it was
+  // received.
+  const withoutRejectedUnit = async <T>(run: () => Promise<T>): Promise<T> => {
+    const setRejected = (unit: string | null) =>
+      seed(f, (trx) =>
+        trx
+          .updateTable("location")
+          .set({ rejectedStorageUnitId: unit })
+          .where("id", "=", f.locationId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+    await setRejected(null);
+    try {
+      return await run();
+    } finally {
+      await setRejected(rejectedUnit);
+    }
+  };
+
+  /** A lot of 10 in its own unit, 6 accepted, 4 held under an open NCR. */
+  const partialLot = async (key: string) => {
+    await ensureIssueType();
+    const received = await receiveInto(key);
+    const partial = await withoutRejectedUnit(() =>
+      withGuard(() =>
+        quality.partialInspection(stackContext(), {
+          id: received.lotId,
+          acceptedQuantity: 6,
+          createNcr: true
+        })
+      )
+    );
+    expect(partial.error).toBeNull();
+    return { ...received, issueId: partial.data!.issueId! };
+  };
+
+  it.skipIf(!client)(
+    "a receipt void refuses an untracked Partial lot",
+    async () => {
+      const { receiptId } = await partialLot("vpart");
+      const voided = await withGuard(() =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-receipt",
+          { type: "void", receiptId },
+          postReceipt
+        )
+      );
+      expect(voided.error).not.toBeNull();
+      expect(await untrackedAt(unitOf("vpart"))).toBe(10);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a return to a customer cannot ship a Partial lot's held remainder; a supplier return can",
+    async () => {
+      await partialLot("rma");
+      class Rollback extends Error {}
+      // Ship 7 of the 10: 3 stay, below the 4 the Partial lot holds.
+      const outcome = async (includePartial: boolean) => {
+        try {
+          await f.db.transaction().execute(async (trx) => {
+            const row = {
+              itemId: f.partId,
+              storageUnitId: unitOf("rma"),
+              quantity: -7
+            };
+            await trx
+              .insertInto("itemLedger")
+              .values({
+                ...row,
+                entryType: "Negative Adjmt.",
+                documentType: "Inventory Count",
+                documentId: `${f.prefix}-rma-ship`,
+                locationId: f.locationId,
+                companyId: f.companyId,
+                createdBy: USER
+              })
+              .execute();
+            await refuseShippingOpenLotStock(trx, f.companyId, [row], {
+              includePartial
+            });
+            throw new Rollback();
+          });
+        } catch (error) {
+          return error instanceof Rollback ? "ships" : "refused";
+        }
+        return "committed";
+      };
+      expect(await outcome(true)).toBe("refused");
+      expect(await outcome(false)).toBe("ships");
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a Partial lot keeps its storage unit while its NCR is open, and lets it go once the NCR closes",
+    async () => {
+      const { lotId, issueId } = await partialLot("closed");
+      const clearUnit = () =>
+        withGuard(() =>
+          f.db
+            .updateTable("inspection")
+            .set({ storageUnitId: null })
+            .where("id", "=", lotId)
+            .where("companyId", "=", f.companyId)
+            .execute()
+        );
+      await expect(clearUnit()).rejects.toThrow();
+
+      await seed(f, (trx) =>
+        trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Use As Is" })
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      await expect(clearUnit()).resolves.toBeDefined();
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "Use As Is on an NCR holding two rejected lots restores both",
+    async () => {
+      await ensureIssueType();
+      const a = await receiveInto("two-a");
+      const b = await receiveInto("two-b");
+      const ctx = stackContext();
+      const rejectedA = await withGuard(() =>
+        quality.rejectInspection(ctx, {
+          id: a.lotId,
+          createNcr: true,
+          reason: "Transit damage"
+        })
+      );
+      expect(rejectedA.error).toBeNull();
+      const rejectedB = await withGuard(() =>
+        quality.rejectInspection(ctx, {
+          id: b.lotId,
+          createNcr: false,
+          reason: "Transit damage"
+        })
+      );
+      expect(rejectedB.error).toBeNull();
+      const issueId = rejectedA.data!.issueId!;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("nonConformanceInspection")
+          .values({
+            nonConformanceId: issueId,
+            inspectionId: b.lotId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("nonConformanceItem")
+          .set({ disposition: "Use As Is", quantity: 20 })
+          .where("nonConformanceId", "=", issueId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+
+      const closed = await withGuard(() =>
+        closeIssue(client!, f.db, {
+          nonConformanceId: issueId,
+          companyId: f.companyId,
+          userId: USER
+        })
+      );
+      expect(closed.error).toBeNull();
+      expect(await untrackedAt(unitOf("two-a"))).toBe(10);
+      expect(await untrackedAt(unitOf("two-b"))).toBe(10);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "a Set Quantity of one stripe counts the other stripes left in the unit",
+    async () => {
+      await receiveInto("stripe");
+      const projectId = `${f.prefix}-stripe-project`;
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("project")
+          .values({
+            id: projectId,
+            name: projectId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            entryType: "Positive Adjmt.",
+            documentType: "Inventory Count",
+            documentId: `${f.prefix}-stripe-count`,
+            locationId: f.locationId,
+            itemId: f.partId,
+            storageUnitId: unitOf("stripe"),
+            projectId,
+            quantity: 5,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      // The unit holds 10 common (all held by the open lot) and 5 of the project.
+      const setTo = (quantity: number, stripe: string | null) =>
+        inspectionHoldAdjustmentRefusal(f.db, f.companyId, {
+          itemId: f.partId,
+          storageUnitId: unitOf("stripe"),
+          adjustmentType: "Set Quantity",
+          quantity,
+          projectId: stripe
+        });
+      // The project stripe to 3 leaves 13, still above the 10 held.
+      expect(await setTo(3, projectId)).toBeNull();
+      // The common stripe to 3 leaves 8.
+      expect(await setTo(3, null)).not.toBeNull();
     },
     60_000
   );

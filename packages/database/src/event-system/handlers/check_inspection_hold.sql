@@ -94,14 +94,7 @@ BEGIN
   CROSS JOIN LATERAL (
     SELECT
       public.inspection_held_quantity(k.c, k.i, k.u) AS held,
-      COALESCE((
-        SELECT SUM(il."quantity")
-        FROM "itemLedger" il
-        WHERE il."storageUnitId" = k.u
-          AND il."itemId" = k.i
-          AND il."companyId" = k.c
-          AND il."trackedEntityId" IS NULL
-      ), 0) AS on_hand
+      public.inspection_untracked_on_hand(k.c, k.i, k.u) AS on_hand
   ) s
   WHERE s.held > 0 AND s.on_hand < s.held
   ORDER BY k.c, k.i, k.u

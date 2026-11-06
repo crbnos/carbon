@@ -6934,12 +6934,13 @@ export async function refuseUnheldInspectedReceiptLines(
 }
 
 /**
- * Refuses a return shipment that takes stock an open receipt inspection lot
- * holds. The return posting runs under the release flag (it puts back and
- * ships a rejected lot's write-off), so the hold guard steps aside: this is
- * its check for the lots still open. A Partial lot's remainder is not
- * refused: shipping it to the supplier is how its NCR returns it. Call after
- * the shipment's ledger rows are written, before units change status.
+ * Refuses a return shipment that takes stock a receipt inspection lot holds.
+ * The return posting runs under the release flag (it puts back and ships a
+ * rejected lot's write-off), so the hold guard steps aside: this is its check.
+ * A supplier return checks open lots only: shipping a Partial lot's remainder
+ * to the supplier is how its NCR returns it. A return to a customer
+ * (`includePartial`) may not ship that remainder either. Call after the
+ * shipment's ledger rows are written, before units change status.
  */
 export async function refuseShippingOpenLotStock(
   trx: Transaction<KyselyDatabase>,
@@ -6949,7 +6950,8 @@ export async function refuseShippingOpenLotStock(
     storageUnitId?: string | null;
     trackedEntityId?: string | null;
     quantity?: number | string | null;
-  }>
+  }>,
+  { includePartial }: { includePartial: boolean }
 ): Promise<void> {
   const out = rows.filter(
     (row) => !!row.itemId && Number(row.quantity ?? 0) < 0
@@ -6993,8 +6995,8 @@ export async function refuseShippingOpenLotStock(
     `${a.itemId}:${a.unitId}`.localeCompare(`${b.itemId}:${b.unitId}`)
   );
   let short: { itemId: string; unitId: string } | undefined;
-  // Only where an open lot holds stock (inspection_hold_idx), as the guard
-  // reads it: a return from any other bin may leave it at or below zero.
+  // Only where a lot holds stock (inspection_hold_idx), as the guard reads
+  // it: a return from any other bin may leave it at or below zero.
   const heldPairs =
     pairs.length > 0
       ? (
@@ -7006,7 +7008,7 @@ export async function refuseShippingOpenLotStock(
               WHERE h."storageUnitId" = k.u
                 AND h."itemId" = k.i
                 AND h."companyId" = ${companyId}
-                AND h."status" IN ('Pending', 'In Progress')
+                AND h."status" IN ('Pending', 'In Progress', 'Partial')
             )
             ORDER BY k.i, k.u`.execute(trx)
         ).rows
@@ -7022,24 +7024,8 @@ export async function refuseShippingOpenLotStock(
       FROM unnest(${heldPairs.map((p) => p.itemId)}::text[], ${heldPairs.map((p) => p.unitId)}::text[]) AS k(i, u)
       CROSS JOIN LATERAL (
         SELECT
-          (
-            SELECT COALESCE(SUM(i."lotSize"), 0)
-            FROM "inspection" i
-            JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
-            WHERE i."companyId" = ${companyId}
-              AND i."itemId" = k.i
-              AND i."storageUnitId" = k.u
-              AND i."status" IN ('Pending', 'In Progress')
-              AND it."itemTrackingType" = 'Inventory'
-          ) AS held,
-          (
-            SELECT COALESCE(SUM(il."quantity"), 0)
-            FROM "itemLedger" il
-            WHERE il."storageUnitId" = k.u
-              AND il."itemId" = k.i
-              AND il."companyId" = ${companyId}
-              AND il."trackedEntityId" IS NULL
-          ) AS on_hand
+          public.inspection_held_quantity(${companyId}, k.i, k.u, ${!includePartial}) AS held,
+          public.inspection_untracked_on_hand(${companyId}, k.i, k.u) AS on_hand
       ) s
       WHERE s.held > 0 AND s.held > s.on_hand + ${EPSILON}
       ORDER BY k.i, k.u
@@ -7090,6 +7076,8 @@ export async function inspectionHoldAdjustmentRefusal(
     trackedEntityId?: string | null;
     adjustmentType: string;
     quantity: number;
+    /** The stripe a Set Quantity sets; unassigned stock when empty. */
+    projectId?: string | null;
   }
 ): Promise<string | null> {
   const partName = async () => {
@@ -7127,16 +7115,23 @@ export async function inspectionHoldAdjustmentRefusal(
   }
 
   if (!args.storageUnitId) return null;
-  const row = await sql<{ held: number; onHand: number; name: string }>`
+  const row = await sql<{
+    held: number;
+    onHand: number;
+    stripeOnHand: number;
+    name: string;
+  }>`
     SELECT
       public.inspection_held_quantity(${companyId}, ${args.itemId}, ${args.storageUnitId}) AS "held",
+      public.inspection_untracked_on_hand(${companyId}, ${args.itemId}, ${args.storageUnitId}) AS "onHand",
       COALESCE((
         SELECT SUM(il."quantity") FROM "itemLedger" il
         WHERE il."companyId" = ${companyId}
           AND il."itemId" = ${args.itemId}
           AND il."storageUnitId" = ${args.storageUnitId}
           AND il."trackedEntityId" IS NULL
-      ), 0) AS "onHand",
+          AND il."projectId" IS NOT DISTINCT FROM ${args.projectId || null}
+      ), 0) AS "stripeOnHand",
       (SELECT su."name" FROM "storageUnit" su WHERE su."id" = ${args.storageUnitId}) AS "name"
     WHERE EXISTS (
       SELECT 1 FROM "inspection" h
@@ -7149,9 +7144,10 @@ export async function inspectionHoldAdjustmentRefusal(
   const hold = row.rows[0];
   if (!hold || Number(hold.held) <= EPSILON) return null;
   const onHand = Number(hold.onHand);
+  // A Set Quantity sets one stripe; the others stay in the unit.
   const after =
     args.adjustmentType === "Set Quantity"
-      ? args.quantity
+      ? onHand - Number(hold.stripeOnHand) + args.quantity
       : args.adjustmentType === "Negative Adjmt." ||
           args.adjustmentType === "Scrap"
         ? onHand - args.quantity
@@ -7375,13 +7371,9 @@ export async function heldStockMovedByCount(
           AND found."quantity" > 0
           AND found."storageUnitId" IS DISTINCT FROM il."storageUnitId"
       )) AS "countedShort",
-      CASE WHEN il."trackedEntityId" IS NULL THEN (
-        SELECT COALESCE(SUM(x."quantity"), 0) FROM "itemLedger" x
-        WHERE x."companyId" = il."companyId"
-          AND x."itemId" = il."itemId"
-          AND x."storageUnitId" = il."storageUnitId"
-          AND x."trackedEntityId" IS NULL
-      ) END AS "onHand",
+      CASE WHEN il."trackedEntityId" IS NULL THEN
+        public.inspection_untracked_on_hand(il."companyId", il."itemId", il."storageUnitId")
+      END AS "onHand",
       CASE WHEN il."trackedEntityId" IS NULL THEN
         public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId")
       END AS "held"
@@ -7415,15 +7407,9 @@ export async function heldStockMovedByCount(
             WHERE h."storageUnitId" = il."storageUnitId"
               AND h."itemId" = il."itemId"
               AND h."status" IN ('Pending', 'In Progress', 'Partial')
-          ) THEN public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId") > (
-            -- Untracked stock only, as check_inspection_hold sums it: a
-            -- tracked unit is held by its own status, not by this quantity.
-            SELECT COALESCE(SUM(x."quantity"), 0) FROM "itemLedger" x
-            WHERE x."companyId" = il."companyId"
-              AND x."itemId" = il."itemId"
-              AND x."storageUnitId" = il."storageUnitId"
-              AND x."trackedEntityId" IS NULL
-          ) ELSE false END)
+          ) THEN public.inspection_held_quantity(il."companyId", il."itemId", il."storageUnitId")
+            > public.inspection_untracked_on_hand(il."companyId", il."itemId", il."storageUnitId")
+          ELSE false END)
       )
     ORDER BY 1, 2
   `.execute(db);
@@ -7584,13 +7570,7 @@ export async function getReceiptPutAwayLines(
       quantity: number;
     }>`
       SELECT p."itemId", p."storageUnitId",
-        COALESCE((
-          SELECT SUM(il."quantity") FROM "itemLedger" il
-          WHERE il."companyId" = ${companyId}
-            AND il."itemId" = p."itemId"
-            AND il."storageUnitId" = p."storageUnitId"
-            AND il."trackedEntityId" IS NULL
-        ), 0)
+        public.inspection_untracked_on_hand(${companyId}, p."itemId", p."storageUnitId")
         - public.inspection_held_quantity(${companyId}, p."itemId", p."storageUnitId")
         AS "quantity"
       FROM jsonb_to_recordset(${JSON.stringify(pairs)}::jsonb)
@@ -8474,13 +8454,8 @@ export async function putAwayPickShortfall(
     unitId: string;
     quantity: number;
   }>`
-    SELECT k.i AS "itemId", k.u AS "unitId", COALESCE((
-      SELECT SUM(il."quantity") FROM "itemLedger" il
-      WHERE il."companyId" = ${companyId}
-        AND il."itemId" = k.i
-        AND il."storageUnitId" = k.u
-        AND il."trackedEntityId" IS NULL
-    ), 0) AS "quantity"
+    SELECT k.i AS "itemId", k.u AS "unitId",
+      public.inspection_untracked_on_hand(${companyId}, k.i, k.u) AS "quantity"
     FROM unnest(${pairs.map((p) => p.itemId)}::text[], ${pairs.map((p) => p.unitId)}::text[]) AS k(i, u)
   `.execute(trx);
   const there = new Map(
@@ -13808,8 +13783,9 @@ export async function lockPostedReceipt(
 
 /**
  * Refuses the void when an inspection of the receipt rejected an untracked
- * lot. The reject route writes that lot off; the void would then take the same
- * stock out a second time.
+ * lot, or marked one Partial. The reject route writes that lot off; the void
+ * would then take the same stock out a second time. A Partial lot's remainder
+ * stays under its NCR, which a void cannot close.
  */
 export async function assertNoRejectedUntrackedLot(
   trx: VoidGuardDb,
@@ -13823,13 +13799,19 @@ export async function assertNoRejectedUntrackedLot(
         .onRef("item.id", "=", "inspection.itemId")
         .onRef("item.companyId", "=", "inspection.companyId")
     )
-    .select("inspection.inspectionId")
+    .select(["inspection.inspectionId", "inspection.status"])
     .where("inspection.companyId", "=", companyId)
     .where("inspection.sourceDocument", "=", "Receipt")
     .where("inspection.sourceDocumentId", "=", receiptId)
-    .where("inspection.status", "=", "Failed")
+    .where("inspection.status", "in", ["Failed", "Partial"])
     .where("item.itemTrackingType", "=", "Inventory")
+    .orderBy("inspection.inspectionId")
     .executeTakeFirst();
+  if (rejected?.status === "Partial") {
+    throw new InvalidInputError(
+      `Cannot void: inspection ${rejected.inspectionId} accepted part of this stock and holds the rest under its NCR. Correct the stock with an inventory adjustment instead.`
+    );
+  }
   if (rejected) {
     throw new InvalidInputError(
       `Cannot void: inspection ${rejected.inspectionId} rejected this stock and wrote it off. Correct the remainder with an inventory adjustment instead.`
@@ -20814,7 +20796,8 @@ export async function postShipment(
                 await refuseShippingOpenLotStock(
                   trx,
                   companyId,
-                  itemLedgerInserts
+                  itemLedgerInserts,
+                  { includePartial: true }
                 );
               }
 
@@ -21521,7 +21504,8 @@ export async function postShipment(
                 await refuseShippingOpenLotStock(
                   trx,
                   companyId,
-                  itemLedgerInserts
+                  itemLedgerInserts,
+                  { includePartial: false }
                 );
               }
 

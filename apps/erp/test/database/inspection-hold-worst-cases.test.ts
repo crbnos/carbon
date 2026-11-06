@@ -840,7 +840,10 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
             createdBy: USER
           };
           await trx.insertInto("itemLedger").values(row).execute();
-          await refuseShippingOpenLotStock(trx, f.companyId, [row]);
+          // A supplier return may ship a Partial lot's remainder.
+          await refuseShippingOpenLotStock(trx, f.companyId, [row], {
+            includePartial: false
+          });
           throw rollback;
         });
       } catch (error) {

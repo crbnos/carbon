@@ -4224,7 +4224,8 @@ export async function closeIssue(
         )
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
-        .limit(1)
+        .order("createdAt")
+        .order("id")
     ]);
     if (trackingRes.error || inspectionRes.error) {
       return errResult("Failed to load the disposition origin");
@@ -4232,12 +4233,18 @@ export async function closeIssue(
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    const link = inspectionRes.data?.[0] ?? null;
+    // An NCR can hold several lots. A Partial receipt lot's held remainder
+    // decides how it closes; otherwise every linked lot's write-off counts.
+    const links = inspectionRes.data ?? [];
+    const link =
+      links.find(
+        (row) =>
+          row.inspection?.sourceDocument === "Receipt" &&
+          row.inspection?.status === "Partial"
+      ) ?? null;
     const linkedLot = link?.inspection ?? null;
-    fromPartialReceiptLot =
-      linkedLot?.sourceDocument === "Receipt" &&
-      linkedLot?.status === "Partial";
-    if (fromPartialReceiptLot && link && linkedLot) {
+    fromPartialReceiptLot = !!linkedLot;
+    if (link && linkedLot) {
       // The stock sits where it was received, not at the NCR's location.
       const lotLocationId = await inspectionReceiptLocationId(
         db,
@@ -4258,10 +4265,11 @@ export async function closeIssue(
           : []
       };
     }
-    inspectionOriginated =
-      (inspectionRes.data?.length ?? 0) > 0 && !fromPartialReceiptLot;
-    if (inspectionOriginated && link) {
-      restoreCappedAtWriteOff = linkedLot?.sourceDocument === "Receipt";
+    inspectionOriginated = links.length > 0 && !fromPartialReceiptLot;
+    if (inspectionOriginated) {
+      restoreCappedAtWriteOff = links.every(
+        (row) => row.inspection?.sourceDocument === "Receipt"
+      );
       // The reject wrote the lot off from where it was held: a restore puts
       // it back there, on the stripe it left.
       const rows = await db
@@ -4275,7 +4283,11 @@ export async function closeIssue(
         ])
         .where("companyId", "=", companyId)
         .where("documentType", "=", "Inbound Inspection")
-        .where("documentId", "=", link.inspectionId)
+        .where(
+          "documentId",
+          "in",
+          links.map((row) => row.inspectionId)
+        )
         .where("trackedEntityId", "is", null)
         .groupBy(["itemId", "locationId", "storageUnitId", "projectId"])
         .execute();
@@ -4460,32 +4472,10 @@ export async function closeIssue(
     }
   }
 
-  // Post the inventory value movements (itemLedger + cost relief + GL) through
-  // the operation BEFORE flipping statuses / closing. Idempotent per NCR, so
-  // a retry after a later failure is safe; a posting failure aborts the close.
-  if (movements.length > 0) {
-    const post = await invokePosting(
-      { db, companyId, userId },
-      "post-nonconformance",
-      {
-        documentType: "Non-Conformance",
-        documentId: nonConformanceId,
-        description: `NC ${readableNc} disposition`,
-        movements
-      },
-      postNonconformance
-    );
-    if (post.error) {
-      return errResult(
-        post.error.message || "Failed to post disposition to the ledger"
-      );
-    }
-  }
-
   try {
     const result = await db.transaction().execute(async (trx) => {
       // Closing releases a Partial receipt lot's held remainder, which the
-      // write-off above already took out of its unit.
+      // write-off below takes out of its unit in this transaction.
       await setInspectionRelease(trx);
       const issue = await trx
         .selectFrom("nonConformance")
@@ -4619,10 +4609,30 @@ export async function closeIssue(
         }
       }
 
-      // Inventory value movements (write-offs / restores) were already posted by
-      // post-nonconformance above. Here we only write disposition genealogy and
-      // flip tracked-entity statuses; non-tracked rows have no entities, so they
-      // need nothing further.
+      // The inventory value movements post with the close, so a write-off never
+      // commits while the NCR stays open (its lot would still count as held).
+      // Idempotent per NCR.
+      if (movements.length > 0) {
+        const post = await invokePosting(
+          { db: trx, companyId, userId },
+          "post-nonconformance",
+          {
+            documentType: "Non-Conformance",
+            documentId: nonConformanceId,
+            description: `NC ${readableNc} disposition`,
+            movements
+          },
+          postNonconformance
+        );
+        if (post.error) {
+          throw new Error(
+            post.error.message || "Failed to post disposition to the ledger"
+          );
+        }
+      }
+
+      // Disposition genealogy and tracked-entity statuses; non-tracked rows
+      // have no entities, so they need nothing further.
       for (const row of freshPlan) {
         if (row.links.length === 0) continue;
 
@@ -6197,6 +6207,21 @@ class LotHasNcrError extends Error {
   }
 }
 
+/** The NCR a lot is linked to (the first link, when it has several), or undefined. */
+export async function getInspectionNcrLink(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string
+) {
+  return db
+    .selectFrom("nonConformanceInspection")
+    .select("nonConformanceId")
+    .where("inspectionId", "=", inspectionId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .executeTakeFirst();
+}
 /**
  * Opens the NCR of a rejected or partly rejected receipt inspection lot, with a
  * Scrap row for `quantity` and `trackedEntityIds` (null: the whole lot). A
@@ -6387,12 +6412,7 @@ export async function openInspectionNcr(
           .where("companyId", "=", companyId)
           .forUpdate()
           .executeTakeFirst();
-        const existing = await trx
-          .selectFrom("nonConformanceInspection")
-          .select("nonConformanceId")
-          .where("inspectionId", "=", id)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
+        const existing = await getInspectionNcrLink(trx, companyId, id);
         if (existing) throw new LotHasNcrError();
       }
       await lockIssueDispositions(trx, {

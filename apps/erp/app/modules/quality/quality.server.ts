@@ -1385,13 +1385,7 @@ export const rejectInspection = defineServiceFn({
     // A repeated Reject (double submit, a second tab, the write-off retry)
     // keeps the NCR the lot already has.
     const existingNcr = () =>
-      ctx.asSystem.pg
-        .selectFrom("nonConformanceInspection")
-        .select("nonConformanceId")
-        .where("inspectionId", "=", id)
-        .where("companyId", "=", companyId)
-        .orderBy("createdAt")
-        .executeTakeFirst();
+      service.getInspectionNcrLink(ctx.asSystem.pg, companyId, id);
     const linked = await existingNcr();
     if (linked) return { id, issueId: linked.nonConformanceId };
 
@@ -1545,12 +1539,11 @@ export const partialInspection = defineServiceFn({
             .where("companyId", "=", companyId)
             .executeTakeFirst();
           if (now?.status === "Partial") {
-            const link = await ctx.asSystem.pg
-              .selectFrom("nonConformanceInspection")
-              .select("nonConformanceId")
-              .where("inspectionId", "=", id)
-              .where("companyId", "=", companyId)
-              .executeTakeFirst();
+            const link = await service.getInspectionNcrLink(
+              ctx.asSystem.pg,
+              companyId,
+              id
+            );
             return { id, issueId: link?.nonConformanceId ?? null };
           }
         }
@@ -1609,12 +1602,11 @@ export const partialInspection = defineServiceFn({
     if (opened instanceof CarbonError) {
       if (opened.category === "conflict") {
         // A concurrent call opened it first.
-        const link = await ctx.asSystem.pg
-          .selectFrom("nonConformanceInspection")
-          .select("nonConformanceId")
-          .where("inspectionId", "=", id)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
+        const link = await service.getInspectionNcrLink(
+          ctx.asSystem.pg,
+          companyId,
+          id
+        );
         if (link) return { id, issueId: link.nonConformanceId };
       }
       // The decision committed; only its NCR is missing, and Open NCR opens it.

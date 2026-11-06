@@ -56,8 +56,14 @@ BEGIN
       COALESCE(p_old->>'inspectionId', p_old->>'id');
   END IF;
 
-  -- What the hold reads while the lot holds stock (open, or Partial).
-  v_holds := p_old->>'status' IN ('Pending', 'In Progress', 'Partial');
+  -- What the hold reads while the lot holds stock: open, or Partial until its
+  -- NCR closes (a storage unit's delete may then clear the lot's unit).
+  v_holds := p_old->>'status' IN ('Pending', 'In Progress', 'Partial')
+    AND public.inspection_lot_holds(
+      p_old->>'id',
+      (p_old->>'status')::"inspectionStatusType",
+      (p_old->>'acceptedQuantity')::numeric
+    );
   IF (p_new->'status') IS NOT DISTINCT FROM (p_old->'status')
      AND (p_new->'sourceDocument') IS NOT DISTINCT FROM (p_old->'sourceDocument')
      AND (NOT v_holds OR (

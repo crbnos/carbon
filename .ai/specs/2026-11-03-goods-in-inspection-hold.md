@@ -680,7 +680,7 @@ These came out of the research and are not part of this spec:
     and every MES Remove Inventory. A tracked lot's Open NCR is a secondary
     action with neutral wording. The picking list marks a non-nettable source
     unit.
-  - The handler migration was generated again as `20261106020150`. The PR
+  - The handler migration was generated again as `20261106052823`. The PR
     still has three migrations.
 - 2026-11-06: Browser round 2 fixes:
   - Use As Is or Rework on a receipt lot's NCR restores no more than the
@@ -690,3 +690,15 @@ These came out of the research and are not part of this spec:
   - The count warning for stock counted short names the quantity left in the
     unit and the quantity the lots hold.
   - A repeated Reject or Partial says it opened an NCR only when it did.
+- 2026-11-06: Code review fixes:
+  - A receipt void refuses an untracked Partial lot. Its remainder stays held
+    under its NCR, which the void cannot close.
+  - A return to a customer cannot ship a Partial lot's held remainder. A
+    supplier return still can.
+  - `closeIssue` posts the write-off inside its status-flip transaction. It
+    restores the write-off of every lot the NCR holds.
+  - A Set Quantity of one project stripe counts the other stripes in the unit.
+  - A Partial lot whose NCR is closed no longer blocks edits of its storage
+    unit, such as the unit's delete.
+  - `inspection_untracked_on_hand` is the one untracked on-hand read.
+    `inspection_held_quantity` takes `p_open_lots_only`.
