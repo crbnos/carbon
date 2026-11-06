@@ -3,11 +3,11 @@ set -e
 
 pnpm exec lint-staged
 
-# Extract only for catalogs or changed source files that contain messages.
+# Extract for config, catalogs, or changed source files that contain messages.
 # Inspect both versions so edits inside multiline messages and removals count.
 needs_lingui() {
-    git diff --cached --name-only | grep -q '\.po$' && return 0
-    message_markers='<(Trans|Plural|Select)([[:space:]>]|$)|(^|[^A-Za-z0-9_])(t|msg)[[:space:]]*[`(]|(^|[^A-Za-z0-9_])(plural|select|selectOrdinal)[[:space:]]*\(|@lingui/(core|react)/macro'
+    git diff --cached --name-only | grep -qE '\.po$|^lingui\.config\.js$' && return 0
+    message_markers='<(Trans|Plural|Select)([[:space:]>]|$)|(^|[^A-Za-z0-9_])(t|msg)[[:space:]]*[`(]|(^|[^A-Za-z0-9_])(plural|select|selectOrdinal)[[:space:]]*\(|@lingui/(core|react)/macro|/\*+[[:space:]]*i18n[[:space:]]*\*/'
     git diff --cached --name-only -- '*.ts' '*.tsx' '*.js' '*.jsx' | (
         while IFS= read -r file; do
             if {
