@@ -863,7 +863,7 @@ function ReceiptLineItem({
         </HStack>
         <div className="flex flex-wrap @3xl:flex-nowrap items-start gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
           <HStack spacing={4} className="items-start">
-            <VStack spacing={1}>
+            <VStack spacing={1} className="w-28 shrink-0 max-md:w-auto">
               <label className="text-xs text-muted-foreground">
                 <Trans>Received</Trans>
               </label>
@@ -897,7 +897,7 @@ function ReceiptLineItem({
                 }}
               >
                 <NumberInput
-                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px] max-md:w-full"
+                  className="disabled:bg-transparent disabled:opacity-100 w-full min-w-[100px]"
                   isDisabled={isReadOnly}
                   min={0}
                 />
@@ -905,7 +905,10 @@ function ReceiptLineItem({
             </VStack>
             {/* Fixed widths keep every line's columns aligned, a Surplus
                 line's alert icon included. */}
-            <VStack spacing={1} className="text-center items-center w-16">
+            <VStack
+              spacing={1}
+              className="text-center items-center w-16 shrink-0"
+            >
               <label className="text-xs text-muted-foreground">
                 <Trans>Ordered</Trans>
               </label>
@@ -914,7 +917,10 @@ function ReceiptLineItem({
               </span>
             </VStack>
 
-            <VStack spacing={1} className="text-center items-center w-24">
+            <VStack
+              spacing={1}
+              className="text-center items-center w-24 shrink-0"
+            >
               <label className="text-xs text-muted-foreground">
                 {isSurplus ? (
                   <Trans>Surplus</Trans>
