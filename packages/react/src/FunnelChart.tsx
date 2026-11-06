@@ -118,7 +118,16 @@ function FunnelChartContent({
 
   return (
     <div className="relative">
-      <svg width={width} height={height}>
+      <svg
+        width={width}
+        height={height}
+        role="img"
+        aria-label={steps
+          .map(
+            ({ label, value }) => `${label}: ${numberFormatter.format(value)}`
+          )
+          .join(", ")}
+      >
         {steps.map(({ id, value, colorClassName }, idx) => {
           const stepCenterX = (xScale(idx) + xScale(idx + 1)) / 2;
           return (

@@ -9,6 +9,7 @@ import {
   VStack
 } from "@carbon/react";
 import { formatAddressLines, formatCityStatePostalCode } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import { LuMapPin } from "react-icons/lu";
 import type { Action } from "~/types";
 
@@ -31,6 +32,7 @@ type LocationProps = {
 };
 
 const Location = ({ location, actions }: LocationProps) => {
+  const { t } = useLingui();
   if (!location.address) {
     return null;
   }
@@ -65,7 +67,7 @@ const Location = ({ location, actions }: LocationProps) => {
         )}
       </VStack>
       {actions.length > 0 && (
-        <ActionMenu>
+        <ActionMenu label={t`Actions for ${locationName}`}>
           {actions.map((action) => (
             <DropdownMenuItem key={action.label} onClick={action.onClick}>
               {action.icon && <DropdownMenuIcon icon={action.icon} />}

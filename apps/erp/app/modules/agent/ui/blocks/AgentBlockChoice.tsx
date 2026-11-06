@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import { Fragment, useState } from "react";
 import { LuArrowUp, LuCheck } from "react-icons/lu";
 import { choiceBlock } from "../../agent.blocks";
@@ -10,6 +11,7 @@ import { useAgentActions } from "../AgentActionsContext";
 const JOIN = ", ";
 
 export function AgentBlockChoice({ input }: { input: unknown }) {
+  const { t } = useLingui();
   const { sendMessage } = useAgentActions();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [freeText, setFreeText] = useState("");
@@ -92,6 +94,7 @@ export function AgentBlockChoice({ input }: { input: unknown }) {
       {block.allowFreeText && (
         <div className="flex items-center gap-1 border-t px-2 py-1.5">
           <input
+            aria-label={t`Your own answer`}
             type="text"
             value={freeText}
             disabled={answered}

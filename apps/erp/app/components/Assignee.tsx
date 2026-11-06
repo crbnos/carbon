@@ -117,6 +117,12 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       ];
     }, [people, user, t]);
 
+    // The trigger shows only an avatar or "Unassigned", and a combobox takes
+    // no name from its content: name it by the field and its value.
+    const assigneeName =
+      (value && people.find((person) => person.id === value)?.name?.trim()) ||
+      options.find((option) => option.value === (value ?? ""))?.label.trim() ||
+      t`Unassigned`;
     // Inline, as Linear's properties: an empty assignee the user can set
     // reads "Add assignee" with no label above it.
     const canAssign = !isReadOnly && permissions.is("employee");
@@ -144,6 +150,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                     })
                   )}
                   role="combobox"
+                  aria-label={t`Assignee: ${assigneeName}`}
                   aria-expanded={open}
                   aria-controls="assignee-options"
                   ref={ref}
@@ -169,6 +176,8 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                 </button>
               ) : (
                 <InlineTrigger
+                  // The avatar alone names no one: "Edit Assignee: Ana Ruiz".
+                  aria-label={`${t`Edit Assignee`}: ${assigneeName}`}
                   ref={ref}
                   isEmpty={!value}
                   placeholder={canAssign ? t`Add assignee` : t`Unassigned`}
@@ -183,9 +192,10 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
             </PopoverTrigger>
             <PopoverContent
               align="start"
+              aria-label={t`Assignee`}
               className="min-w-[var(--radix-popover-trigger-width)] p-0"
             >
-              <Command id="assignee-options">
+              <Command id="assignee-options" label={t`Search assignees`}>
                 <CommandInput placeholder={t`Search...`} className="h-9" />
                 <CommandList>
                   <CommandEmpty>

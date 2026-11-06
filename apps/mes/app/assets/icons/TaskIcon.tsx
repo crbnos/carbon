@@ -5,6 +5,7 @@
 export function TaskIcon({ className }: { className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={className}
       width="16"
       height="16"

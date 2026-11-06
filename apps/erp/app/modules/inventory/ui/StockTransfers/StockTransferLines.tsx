@@ -118,6 +118,7 @@ function StockTransferLineComponent({
   const formatQuantity = useQuantityFormatter();
 
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const isTracked = line.requiresSerialTracking || line.requiresBatchTracking;
   const quantity = line.quantity ?? 0;
   // Pick moves what is left, so a partly picked line is never over-picked.
@@ -250,7 +251,7 @@ function StockTransferLineComponent({
                   variant="secondary"
                   isDisabled={!isEditable}
                   icon={<LuEllipsisVertical />}
-                  aria-label={t`Line options`}
+                  aria-label={t`Line options for ${itemName}`}
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>

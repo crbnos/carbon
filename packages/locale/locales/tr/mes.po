@@ -12,6 +12,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid ", not running"
+msgstr ", çalışmıyor"
+
+msgid ", running"
+msgstr ", çalışıyor"
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" gereklidir."
 
@@ -30,6 +36,10 @@ msgstr "{0} Aktif"
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
 msgstr "{0} önce"
+
+#. placeholder {0}: workCenter.name
+msgid "{0} current work display"
+msgstr "{0} mevcut iş ekranı"
 
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
@@ -61,6 +71,10 @@ msgstr "{0} stok kartı"
 msgid "{0} jobs"
 msgstr "{0} iş emri"
 
+#. placeholder {0}: workCenter.name
+msgid "{0} maintenance display"
+msgstr "{0} bakım ekranı"
+
 #. placeholder {0}: counts.recorded
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -71,7 +85,9 @@ msgid "{0} of {1}"
 msgstr "{0} adet {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
+#. placeholder {0}: item.quantityCompleted
 #. placeholder {1}: attributes.length
+#. placeholder {1}: item.targetQuantity
 msgid "{0} of {1} complete"
 msgstr "{0} adet / {1} adet tamamlandı"
 
@@ -92,14 +108,26 @@ msgstr "{0} kaydedildi"
 msgid "{0} running"
 msgstr "{0} çalışıyor"
 
+#. placeholder {0}: workTypeLabels[runningType]
+#. placeholder {1}: formatDurationMilliseconds( progress[runningType], { style: "short" } )
+msgid "{0} running: {1}"
+msgstr "{0} çalışıyor: {1}"
+
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
 msgstr "{0} çalıştırma Parti {1} içinde"
 
+#. placeholder {0}: d.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} hurda edildi"
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Hurdaya Çıkarılmış"
+
+msgid "{characteristic}, sample {sample}"
+msgstr "{characteristic}, örnek {sample}"
 
 msgid "{columns} does not match an existing \"{target}\"."
 msgstr "{columns} mevcut bir \"{target}\" ile eşleşmiyor."
@@ -113,11 +141,20 @@ msgstr "{completed} / {quantity}"
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} geçti birim(ler) tamamlanacak."
 
+msgid "{days, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{days, plural, one {Hedeften # gün geride} other {Hedeften # gün geride}}"
+
 msgid "{failedReadings} failed"
 msgstr "{failedReadings} başarısız"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
+
+msgid "{fieldLabel} country code"
+msgstr "{fieldLabel} ülke kodu"
+
+msgid "{fieldLabel} hex value"
+msgstr "{fieldLabel} onaltılık değeri"
 
 msgid "{hour} h"
 msgstr "{hour} s"
@@ -125,12 +162,28 @@ msgstr "{hour} s"
 msgid "{hours} h"
 msgstr "{hours} s"
 
+msgid "{label}, overdue"
+msgstr "{label}, gecikmiş"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
+
+#. placeholder {0}: d.status
+msgid "{name}, {0}, {percent}% complete"
+msgstr "{name}, {0}, %{percent} tamamlandı"
+
+msgid "{name}: {value}"
+msgstr "{name}: {value}"
+
+msgid "{numerator} of {denominator}"
+msgstr "{denominator} içinde {numerator}"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
+
+msgid "{workTypeLabel} timer started"
+msgstr "{workTypeLabel} zamanlayıcısı başlatıldı"
 
 #. placeholder {0}: formatHours(preview - selectedHours)
 msgid "+{0} h"
@@ -191,12 +244,22 @@ msgstr "Hesap ayarları"
 msgid "Account Settings"
 msgstr "Hesap Ayarları"
 
+#. placeholder {0}: displayName.trim()
+msgid "Account: {0}"
+msgstr "Hesap: {0}"
+
 msgid "Acknowledge & finish"
 msgstr "Onayla ve bitir"
 
 #. placeholder {0}: members.length
 msgid "across {0} jobs"
 msgstr "{0} İş emri arasında"
+
+msgid "Action"
+msgstr "İşlem"
+
+msgid "Action Menu"
+msgstr "İşlem Menüsü"
 
 msgid "Active"
 msgstr "Aktif"
@@ -207,6 +270,12 @@ msgstr "Gerçek"
 msgid "Add"
 msgstr "Ekle"
 
+msgid "Add {fieldLabel}"
+msgstr "{fieldLabel} Ekle"
+
+msgid "Add {label}"
+msgstr "{label} ekle"
+
 msgid "Add {phrase}"
 msgstr "Ekle {phrase}"
 
@@ -216,11 +285,23 @@ msgstr "Ekle ve Çıkış Yap"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
+msgid "Add another option"
+msgstr "Başka bir seçenek ekle"
+
 msgid "Add Authenticator App"
 msgstr "Doğrulayıcı Uygulaması Ekle"
 
+msgid "Add filter"
+msgstr "Filtre ekle"
+
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
+
+msgid "Add option"
+msgstr "Seçenek ekle"
+
+msgid "Add Option"
+msgstr "Seçenek Ekle"
 
 msgid "Add Part"
 msgstr "Parça Ekle"
@@ -248,6 +329,9 @@ msgstr "İmzanızı ekleyin"
 
 msgid "Added"
 msgstr "Eklendi"
+
+msgid "Adjustment Type"
+msgstr "Düzeltme türü"
 
 msgid "All"
 msgstr "Tümü"
@@ -283,6 +367,9 @@ msgstr "Birimleri tahsis et"
 msgid "Appearance"
 msgstr "Görünüm"
 
+msgid "Apply link"
+msgstr "Bağlantıyı uygula"
+
 msgid "Approvals"
 msgstr "Onaylar"
 
@@ -310,8 +397,14 @@ msgstr "Yöneticinizden profilinize {processName} yetkinliğini eklemesini istey
 msgid "Assembly steps"
 msgstr "Montaj adımları"
 
+msgid "Assembly view"
+msgstr "Montaj görünümü"
+
 msgid "Assigned"
 msgstr "Atanmış"
+
+msgid "Assigned to"
+msgstr "Atanan"
 
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
@@ -319,11 +412,17 @@ msgstr "Bana Atananlar"
 msgid "Assignee"
 msgstr "Atanan"
 
+msgid "Attach file"
+msgstr "Dosya ekle"
+
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
 
 msgid "Authenticator app"
 msgstr "Doğrulayıcı uygulaması"
+
+msgid "Authenticator code"
+msgstr "Doğrulayıcı kodu"
 
 msgid "Authenticator QR code"
 msgstr "Doğrulayıcı QR kodu"
@@ -355,6 +454,10 @@ msgstr "Arka plan"
 msgid "Batch"
 msgstr "Parti"
 
+#. placeholder {0}: d.batchReadableId
+msgid "Batch {0}"
+msgstr "Parti {0}"
+
 msgid "Batch Details"
 msgstr "Parti Detayları"
 
@@ -363,6 +466,10 @@ msgstr "Parti kullanılabilir değil"
 
 msgid "Batch notes"
 msgstr "Parti Notları"
+
+#. placeholder {0}: index + 1
+msgid "Batch number {0}"
+msgstr "Parti numarası {0}"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -374,11 +481,12 @@ msgstr "Lot numarası zorunludur"
 msgid "Batch quantity"
 msgstr "Parti miktarı"
 
+#. placeholder {0}: index + 1
+msgid "Batch to unconsume {0}"
+msgstr "Tüketimi geri alınacak parti {0}"
+
 msgid "batch total"
 msgstr "parti toplamı"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Hedeften {daysBehindTarget} gün geride"
 
 msgid "Below the lower limit"
 msgstr "Alt sınırın altında"
@@ -401,6 +509,9 @@ msgstr "Bloklayıcı"
 
 msgid "Board view"
 msgstr "Pano görünümü"
+
+msgid "Bold"
+msgstr "Kalın"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifremi unuttum akışını kullanabilirsiniz."
@@ -464,6 +575,12 @@ msgstr "Masraf Kodu"
 msgid "Charge numbers"
 msgstr "Masraf numaraları"
 
+msgid "Chart"
+msgstr "Grafik"
+
+msgid "Chart of {series}"
+msgstr "{series} grafiği"
+
 msgid "Chat"
 msgstr "Sohbet"
 
@@ -487,6 +604,12 @@ msgstr "Carbon'un sizi nasıl ulaştığını seçin."
 
 msgid "Clear"
 msgstr "Temizle"
+
+msgid "Clear {clearTarget}"
+msgstr "{clearTarget} temizle"
+
+msgid "Clear {fieldLabel}"
+msgstr "{fieldLabel} alanını temizle"
 
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
@@ -523,6 +646,9 @@ msgstr "Zaman kartınızda kaydedildi"
 
 msgid "Close"
 msgstr "Kapat"
+
+msgid "Code"
+msgstr "Kod"
 
 msgid "Collapse characteristics table"
 msgstr "Özellikler tablosunu daralt"
@@ -571,10 +697,16 @@ msgstr "Şirket"
 msgid "Complete"
 msgstr "Tamamla"
 
+msgid "Complete ({count} passed)"
+msgstr "Tamamla ({count} geçti)"
+
 #. placeholder {0}: dispatch.maintenanceDispatchId
 #. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "Tamamla {0}?"
+
+msgid "Complete {stepLabel}"
+msgstr "{stepLabel} tamamla"
 
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
@@ -584,9 +716,6 @@ msgstr "Partiyi tamamla"
 
 msgid "Complete Batch"
 msgstr "Partiyi Tamamla"
-
-msgid "Complete passed"
-msgstr "Tamamlanan geçti"
 
 msgid "Complete the {trainingName} training to get the {processName} ability."
 msgstr "{processName} yetkinliğini almak için {trainingName} eğitimini tamamlayın."
@@ -615,11 +744,17 @@ msgstr "Devam Et"
 msgid "Contract"
 msgstr "Sözleşme"
 
+msgid "Copied"
+msgstr "Kopyalandı"
+
 msgid "Copied!"
 msgstr "Kopyalandı!"
 
 msgid "Copy"
 msgstr "Kopyala"
+
+msgid "Copy secret"
+msgstr "Gizli anahtarı kopyala"
 
 msgid "Copy to clipboard"
 msgstr "Panoya kopyala"
@@ -627,6 +762,9 @@ msgstr "Panoya kopyala"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
+
+msgid "Country code"
+msgstr "Ülke kodu"
 
 msgid "Coverage"
 msgstr "Kapsam"
@@ -659,14 +797,23 @@ msgstr "Müşteri"
 msgid "Customer Site"
 msgstr "Müşteri Yeri"
 
+msgid "Customer:"
+msgstr "Müşteri:"
+
 msgid "Dark"
 msgstr "Koyu"
 
 msgid "Date"
 msgstr "Tarih"
 
+msgid "Date range"
+msgstr "Tarih aralığı"
+
 msgid "Deadline"
 msgstr "Son Teslim Tarihi"
+
+msgid "Decrease {fieldLabel}"
+msgstr "{fieldLabel} alanını azalt"
 
 msgid "Default"
 msgstr "Varsayılan"
@@ -676,6 +823,9 @@ msgstr "Varsayılan Depolama Birimi"
 
 msgid "Delete"
 msgstr "Sil"
+
+msgid "Delete {stepLabel}"
+msgstr "{stepLabel} sil"
 
 msgid "Delete passkey"
 msgstr "Geçiş anahtarını sil"
@@ -719,6 +869,9 @@ msgstr "Görüntüleme"
 msgid "Displays"
 msgstr "Ekranlar"
 
+msgid "Displays (opens in new tab)"
+msgstr "Ekranlar (yeni sekmede açılır)"
+
 msgid "Done"
 msgstr "Bitti"
 
@@ -737,6 +890,9 @@ msgstr "Planlı bakım için kapalı"
 
 msgid "Download"
 msgstr "İndir"
+
+msgid "Download {fileName}"
+msgstr "{fileName} dosyasını indir"
 
 msgid "Download Labels"
 msgstr "Etiketleri İndir"
@@ -768,7 +924,7 @@ msgstr "Vade"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 msgid "Due {0}"
 msgstr "Süresi dolacak {0}"
 
@@ -800,6 +956,9 @@ msgstr "Her iş emrinin çıktısı kendi Lotu — her iş emrinin parçaların�
 msgid "Edit"
 msgstr "Düzenle"
 
+msgid "Edit {fieldLabel}"
+msgstr "{fieldLabel} Düzenle"
+
 msgid "Edit Passkey"
 msgstr "Geçiş Anahtarını Düzenle"
 
@@ -817,6 +976,9 @@ msgstr "E-posta Adresi"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-posta tercihleri etkinleştirilirse uygulanacaktır."
+
+msgid "Emoji: {emoji}"
+msgstr "Emoji: {emoji}"
 
 msgid "Employee"
 msgstr "Çalışan"
@@ -881,6 +1043,9 @@ msgstr "Yüz {0}"
 msgid "Fail"
 msgstr "Uygun değil"
 
+msgid "Fail (out of tolerance)"
+msgstr "Uygun değil (tolerans dışı)"
+
 msgid "Failed"
 msgstr "Başarısız"
 
@@ -944,6 +1109,9 @@ msgstr "İmzayı yüklemede başarısız oldu"
 msgid "Failure Mode"
 msgstr "Arıza Modu"
 
+msgid "File"
+msgstr "Dosya"
+
 msgid "File size exceeds 10MB limit"
 msgstr "Dosya boyutu 10MB sınırını aşıyor"
 
@@ -958,6 +1126,9 @@ msgstr "Filtrele"
 
 msgid "Filter by location"
 msgstr "Konuma göre filtrele"
+
+msgid "Filter steps"
+msgstr "Adımları filtrele"
 
 msgid "Findings"
 msgstr "Bulgular"
@@ -984,6 +1155,9 @@ msgstr "Uydu"
 msgid "Fix the highlighted quantities before completing."
 msgstr "Tamamlamadan önce vurgulanan miktarları düzeltin."
 
+msgid "Flag issue"
+msgstr "Sorunu işaretle"
+
 msgid "Forgot to Clock Out?"
 msgstr "İş bitişini unutmuş musunuz?"
 
@@ -1002,14 +1176,30 @@ msgstr "İşleme geri dön"
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
 
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1}"
+msgstr "{0}. adıma git: {1}"
+
+#. placeholder {0}: i + 1
+#. placeholder {1}: s.name ?? ""
+msgid "Go to step {0}: {1} (done)"
+msgstr "{0}. adıma git: {1} (bitti)"
+
 msgid "Gradient"
 msgstr "Gradyan"
 
 msgid "Grid layout"
 msgstr "Tablo düzeni"
 
+msgid "Hard deadline"
+msgstr "Kesin son tarih"
+
 msgid "Heading {level}"
 msgstr "Başlık {level}"
+
+msgid "Hex value"
+msgstr "Onaltılık değer"
 
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
@@ -1047,6 +1237,9 @@ msgstr "Boş"
 msgid "Idle for"
 msgstr "Boş olma süresi"
 
+msgid "Image"
+msgstr "Görsel"
+
 msgid "Impact"
 msgstr "Etki"
 
@@ -1071,6 +1264,12 @@ msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
 msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size e-posta aracılığıyla ulaşacağını seçin."
+
+msgid "Inactive"
+msgstr "Pasif"
+
+msgid "Increase {fieldLabel}"
+msgstr "{fieldLabel} alanını artır"
 
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
@@ -1105,6 +1304,15 @@ msgstr "herhangi biri"
 msgid "Issue"
 msgstr "Çıkart"
 
+msgid "Issue {item}"
+msgstr "Malzeme çıkışı {item}"
+
+msgid "Issue {partName}"
+msgstr "{partName} için malzeme çıkışı"
+
+msgid "Issue another material"
+msgstr "Başka malzeme çıkışı yap"
+
 msgid "Issue Material"
 msgstr "Malzeme Çıkart"
 
@@ -1123,6 +1331,9 @@ msgstr "Çıkış Yapılan {issuedQuantity} / {lotLabel} — {remainingQuantity}
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Hala bir \"{table}\" kaydı tarafından kullanılıyor; önce bunu kaldırın."
 
+msgid "Italic"
+msgstr "İtalik"
+
 msgid "Item"
 msgstr "Ürün"
 
@@ -1137,6 +1348,9 @@ msgstr "İş Emri"
 
 msgid "Job Details"
 msgstr "İş Detayları"
+
+msgid "Job due"
+msgstr "İş emri son tarihi"
 
 msgid "Job Traveler"
 msgstr "İş emri takip kartı"
@@ -1170,6 +1384,9 @@ msgstr "İşçilik oranları ayarlanmamıştır. Zaman ayarlanana kadar kaydedil
 
 msgid "Labor until <0/>"
 msgstr "İşçilik <0/> kadar"
+
+msgid "Labor, timer running"
+msgstr "İşçilik, zamanlayıcı çalışıyor"
 
 msgid "Large"
 msgstr "Büyük"
@@ -1210,8 +1427,14 @@ msgstr "Açık"
 msgid "Light, dark, or follow your system setting."
 msgstr "Açık, koyu veya sistem ayarınızı takip edin."
 
+msgid "Line"
+msgstr "Satır"
+
 msgid "lines"
 msgstr "satırlar"
+
+msgid "Link URL"
+msgstr "Bağlantı URL'si"
 
 msgid "List view"
 msgstr "Liste görünümü"
@@ -1279,6 +1502,9 @@ msgstr "Makine"
 msgid "Machine down for maintenance now?"
 msgstr "Makine şu anda bakım için kapalı mı?"
 
+msgid "Machine, timer running"
+msgstr "Makine, zamanlayıcı çalışıyor"
+
 msgid "Main"
 msgstr "Ana"
 
@@ -1304,6 +1530,9 @@ msgstr "Envanterden stok kartlarını manuel kaldır"
 msgid "Mark {0} as Done"
 msgstr "{0} öğesini Tamamlandı Olarak İşaretle"
 
+msgid "Mark {itemName} short"
+msgstr "{itemName} eksik olarak işaretle"
+
 msgid "Mark as Done"
 msgstr "Tamamlandı Olarak İşaretle"
 
@@ -1315,6 +1544,9 @@ msgstr "Kısa Teslim Et"
 
 msgid "Mark the step done / record"
 msgstr "Adımı tamamlandı olarak işaretle / kaydet"
+
+msgid "Match found: {matchedId}"
+msgstr "Eşleşme bulundu: {matchedId}"
 
 msgid "matches"
 msgstr "eşleşir"
@@ -1328,6 +1560,9 @@ msgstr "Verilen Malzemeler"
 msgid "Maximum number of records reached"
 msgstr "Maksimum kayıt sayısına ulaşıldı"
 
+msgid "Message"
+msgstr "Mesaj"
+
 msgid "Metric"
 msgstr "Metrik"
 
@@ -1340,6 +1575,9 @@ msgstr "Model"
 msgid "More"
 msgstr "Daha Fazla"
 
+msgid "More {children} options"
+msgstr "{children} için daha fazla seçenek"
+
 msgid "More actions"
 msgstr "Daha fazla işlem"
 
@@ -1348,6 +1586,10 @@ msgstr "Daha Fazla İşlem"
 
 msgid "More options"
 msgstr "Daha fazla seçenek"
+
+#. placeholder {0}: formatDateTime(entry.clockIn, locale)
+msgid "More options for {0}"
+msgstr "{0} için diğer seçenekler"
 
 msgid "More than one unit has this serial. Choose one."
 msgstr "Birden fazla adet bu seri numarasına sahip. Birini seçin."
@@ -1434,6 +1676,12 @@ msgstr "Yapıştırılan değerleri hiçbir hücre alamadı"
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
+msgid "No color"
+msgstr "Renk yok"
+
+msgid "No country found."
+msgstr "Ülke bulunamadı."
+
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
 msgstr "Hiçbir müşteri varlığı {0} seri numarasına sahip değil. Müşteri seçin."
@@ -1461,6 +1709,9 @@ msgstr "Henüz izin ayarlanmadı. Yöneticinizden ERP'de bir tane ayarlamasını
 
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
+
+msgid "No match"
+msgstr "Eşleşme yok"
 
 msgid "No matches. Type to create one."
 msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
@@ -1656,8 +1907,14 @@ msgstr "MRB kararı için NCR aç"
 msgid "Open at this location"
 msgstr "Bu lokasyonda açık"
 
+msgid "Open calendar"
+msgstr "Takvimi aç"
+
 msgid "Open ERP"
 msgstr "ERP'yi aç"
+
+msgid "Open item image"
+msgstr "Stok kartı görselini aç"
 
 msgid "Open Jobs"
 msgstr "Açık İş emirleri"
@@ -1667,10 +1924,16 @@ msgstr "Açık İş emirleri"
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Alt derlemeyi aç {0}: {1}"
 
+msgid "Operation due"
+msgstr "Operasyon son tarihi"
+
 #. placeholder {0}: formatDate( operation.operationDueDate )
 #. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Operasyon için gereken tarih: {0}"
+
+msgid "Operation sections"
+msgstr "Operasyon bölümleri"
 
 msgid "Operations"
 msgstr "Operasyonlar"
@@ -1751,8 +2014,18 @@ msgstr "Geçiş anahtarları devre dışı"
 msgid "Pause"
 msgstr "Duraklat"
 
-msgid "Pause timer"
-msgstr "Zamanlayıcıyı Duraklat"
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Pause {0} timer"
+msgstr "{0} zamanlayıcısını duraklat"
+
+msgid "Pause {workType}"
+msgstr "{workType} duraklat"
+
+msgid "Pause {workTypeLabel} timer"
+msgstr "{workTypeLabel} zamanlayıcısını duraklat"
+
+msgid "Pause maintenance"
+msgstr "Bakımı duraklat"
 
 msgid "Phone"
 msgstr "Telefon"
@@ -1773,6 +2046,9 @@ msgstr "Topla"
 msgid "Pick {0}"
 msgstr "Toplama {0}"
 
+msgid "Pick {itemName}"
+msgstr "{itemName} topla"
+
 msgid "Pick a style, a color and a face."
 msgstr "Bir stil, renk ve yüz seçin."
 
@@ -1790,6 +2066,19 @@ msgstr "Çalıştığınız işi, ardından işçilik kategorisini seçin."
 
 msgid "Picked"
 msgstr "Alındı"
+
+msgid "Picked (short): {quantityPicked}{unitSuffix} of {quantityToPick}{unitSuffix}"
+msgstr "Toplandı (eksik): {quantityPicked}{unitSuffix} / {quantityToPick}{unitSuffix}"
+
+#. placeholder {0}: selection.quantity
+msgid "Picked {0}{unitSuffix} {itemName}"
+msgstr "{0}{unitSuffix} {itemName} toplandı"
+
+msgid "Picked {quantity}{unitSuffix} {itemName}"
+msgstr "{quantity}{unitSuffix} {itemName} toplandı"
+
+msgid "Picked {quantityPicked} of {quantityToPick}{unitSuffix}"
+msgstr "{quantityPicked} / {quantityToPick}{unitSuffix} toplandı"
 
 msgid "Picked as"
 msgstr "Toplandı olarak"
@@ -1823,6 +2112,9 @@ msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için 
 
 msgid "Planned"
 msgstr "Planlı"
+
+msgid "Planned duration:"
+msgstr "Planlanan süre:"
 
 msgid "Please record all steps for this operation before closing."
 msgstr "Bu işlemi kapatmadan önce tüm adımları kaydetmeniz gerekmektedir."
@@ -1899,6 +2191,9 @@ msgstr "İlerleme"
 msgid "Project"
 msgstr "Proje"
 
+msgid "Projected completion:"
+msgstr "Tahmini tamamlanma:"
+
 msgid "PTO"
 msgstr "İzin"
 
@@ -1917,8 +2212,15 @@ msgstr "Kalite sorunu oluşturuldu"
 msgid "Quantity"
 msgstr "Miktar"
 
+#. placeholder {0}: index + 1
+msgid "Quantity {0}"
+msgstr "Miktar {0}"
+
 msgid "Quantity must be greater than 0"
 msgstr "Miktar 0'dan büyük olmalıdır"
+
+msgid "Quantity:"
+msgstr "Miktar:"
 
 msgid "Queue empty"
 msgstr "Kuyruk boş"
@@ -1928,6 +2230,9 @@ msgstr "Teklifler"
 
 msgid "Reason for change"
 msgstr "Değişiklik Nedeni"
+
+msgid "Reason for issuing expired stock"
+msgstr "Süresi dolmuş stok çıkışının nedeni"
 
 msgid "Reason for late entry"
 msgstr "Geç Giriş Nedeni"
@@ -1952,11 +2257,17 @@ msgstr "Kayıt {0}"
 msgid "Record {0} jobs"
 msgstr "{0} iş emrini kaydet"
 
+msgid "Record {stepLabel}"
+msgstr "{stepLabel} kaydet"
+
 msgid "Record only"
 msgstr "Yalnızca kaydet"
 
 msgid "Record Partial"
 msgstr "Kısmi Kaydı"
+
+msgid "Record sections"
+msgstr "Kayıt bölümleri"
 
 msgid "Recorded"
 msgstr "Kaydedildi"
@@ -1979,11 +2290,19 @@ msgstr "Serbest bırakıldı"
 msgid "Remove"
 msgstr "Kaldır"
 
+#. placeholder {0}: attachment.name
+msgid "Remove {0}"
+msgstr "{0} kaldır"
+
+#. placeholder {0}: index + 1
+msgid "Remove {itemLabel} {0}"
+msgstr "{itemLabel} {0} kaldır"
+
 msgid "Remove authenticator app"
 msgstr "Kimlik doğrulayıcı uygulamayı kaldır"
 
-msgid "Remove filter"
-msgstr "Filtreyi kaldır"
+msgid "Remove filter {filterHeader}: {filterValue}"
+msgstr "{filterHeader} filtresini kaldır: {filterValue}"
 
 msgid "Remove Inventory"
 msgstr "Envanter Kaldır"
@@ -2015,6 +2334,12 @@ msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod i
 msgid "Required"
 msgstr "Gerekli"
 
+msgid "Required: {quantityToPick}{unitSuffix}"
+msgstr "Gerekli: {quantityToPick}{unitSuffix}"
+
+msgid "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuffix}"
+msgstr "Gerekli: {quantityToPick}{unitSuffix}, toplanan: {quantityPicked}{unitSuffix}"
+
 msgid "Resolution"
 msgstr "Çözüm"
 
@@ -2041,6 +2366,9 @@ msgstr "Yeniden işleme başarıyla oluşturuldu"
 
 msgid "Rework quantity"
 msgstr "Yeniden işleme miktarı"
+
+msgid "Rich text"
+msgstr "Zengin metin"
 
 msgid "Running"
 msgstr "Çalışıyor"
@@ -2080,6 +2408,12 @@ msgstr "Kaydediliyor {0}/{1}"
 
 msgid "Scan"
 msgstr "Tarama"
+
+msgid "Scan {itemName}"
+msgstr "{itemName} tara"
+
+msgid "Scan {partName}"
+msgstr "{partName} tara"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
@@ -2147,17 +2481,44 @@ msgstr "Ara"
 msgid "Search {gaugeTypeName}..."
 msgstr "Ara {gaugeTypeName}..."
 
+msgid "Search {label}"
+msgstr "{label} ara"
+
+msgid "Search active operations"
+msgstr "Aktif operasyonlarda ara"
+
+msgid "Search assigned operations"
+msgstr "Atanan operasyonlarda ara"
+
 msgid "Search by job or item ID"
 msgstr "İş veya ürün kimliği ile ara"
 
+msgid "Search country..."
+msgstr "Ülke ara..."
+
+msgid "Search filters"
+msgstr "Filtrelerde ara"
+
+msgid "Search gauges"
+msgstr "Ölçüm aletlerinde ara"
+
 msgid "Search gauges..."
 msgstr "Ölçüm aletlerini ara..."
+
+msgid "Search jobs"
+msgstr "İş emirlerinde ara"
+
+msgid "Search operators"
+msgstr "Operatörlerde Ara"
 
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
 msgid "Search projects and tasks"
 msgstr "Projeleri ve Görevleri Arayın"
+
+msgid "Search recent operations"
+msgstr "Son operasyonlarda ara"
 
 msgid "Search..."
 msgstr "Ara..."
@@ -2233,6 +2594,13 @@ msgstr "Ayrı Lotlar"
 msgid "Serial"
 msgstr "Seri"
 
+msgid "Serial number"
+msgstr "Seri numarası"
+
+#. placeholder {0}: index + 1
+msgid "Serial number {0}"
+msgstr "Seri numarası {0}"
+
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
 msgstr "Seri Numarası {0}"
@@ -2285,6 +2653,9 @@ msgstr "Parti planlandığında ayarlandı."
 msgid "Setup"
 msgstr "Kurulum"
 
+msgid "Setup, timer running"
+msgstr "Hazırlık, zamanlayıcı çalışıyor"
+
 msgid "short"
 msgstr "kısa"
 
@@ -2302,6 +2673,9 @@ msgstr "Teknik resmi göster"
 
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
+
+msgid "Show legend"
+msgstr "Açıklamayı göster"
 
 msgid "Shuffle"
 msgstr "Karıştır"
@@ -2366,6 +2740,9 @@ msgstr "Küçük"
 msgid "Smaller"
 msgstr "Daha küçük"
 
+msgid "Soft deadline"
+msgstr "Esnek son tarih"
+
 msgid "Solid"
 msgstr "Düz"
 
@@ -2385,17 +2762,27 @@ msgstr "Başlat"
 msgid "Start {0}"
 msgstr "Başlat {0}"
 
+#. placeholder {0}: workTypeLabels[workType]
+msgid "Start {0} timer"
+msgstr "{0} zamanlayıcısını başlat"
+
+msgid "Start {workType}"
+msgstr "{workType} başlat"
+
+msgid "Start {workTypeLabel} timer"
+msgstr "{workTypeLabel} zamanlayıcısını başlat"
+
 msgid "Start clock"
 msgstr "Saati Başlat"
 
 msgid "Start Job"
 msgstr "İş emrini Başlat"
 
+msgid "Start maintenance"
+msgstr "Bakımı başlat"
+
 msgid "Start or pause the operation"
 msgstr "Operasyonu başlat veya duraklat"
-
-msgid "Start timer"
-msgstr "Zamanlayıcıyı Başlat"
 
 msgid "Start work"
 msgstr "İşe Başla"
@@ -2419,6 +2806,9 @@ msgstr "Durumlar"
 msgid "Stay on this page"
 msgstr "Bu sayfada kal"
 
+msgid "step {stepNumber}: {name}"
+msgstr "adım {stepNumber}: {name}"
+
 msgid "Steps"
 msgstr "Adımlar"
 
@@ -2427,6 +2817,9 @@ msgstr "Adımlar eksik"
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
+
+msgid "Strikethrough"
+msgstr "Üstü çizili"
 
 msgid "Style"
 msgstr "Stil"
@@ -2487,6 +2880,9 @@ msgstr "İş merkezini çevrimdışı alır"
 
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Bir gün seçerek {selectedLabel} için süre ekleyin. Bir çubuğun alt kenarını sürükleyerek saatlerini değiştirin."
+
+msgid "Text color"
+msgstr "Metin rengi"
 
 msgid "Text size"
 msgstr "Metin boyutu"
@@ -2613,6 +3009,16 @@ msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında b�
 msgid "Time Entries"
 msgstr "Zaman Girişleri"
 
+#. placeholder {0}: operation.itemUnitOfMeasure
+msgid "Time per {0}:"
+msgstr "{0} başına süre:"
+
+msgid "Time per piece:"
+msgstr "Parça başına süre:"
+
+msgid "Time type"
+msgstr "Süre türü"
+
 msgid "Time Worked"
 msgstr "Çalışılan Zaman"
 
@@ -2625,14 +3031,8 @@ msgstr "Çalıştırılacak"
 msgid "Today"
 msgstr "Bugün"
 
-msgid "Toggle labor"
-msgstr "İşçiliği Aç/Kapat"
-
-msgid "Toggle machine"
-msgstr "Makineyi Aç/Kapat"
-
-msgid "Toggle setup"
-msgstr "Hazırlığı Aç/Kapat"
+msgid "Toggle sidebar"
+msgstr "Kenar çubuğunu aç/kapat"
 
 msgid "Toggle the sidebar"
 msgstr "Kenar çubuğunu aç/kapat"
@@ -2676,11 +3076,17 @@ msgstr "Toplam: {0}"
 msgid "Tracked Entity"
 msgstr "İzlenen Varlık"
 
+msgid "Tracked entity, serial or batch"
+msgstr "İzlenen varlık, seri veya parti"
+
 msgid "tracked lines"
 msgstr "izlenen Satırlar"
 
 msgid "Tracking"
 msgstr "Takip"
+
+msgid "Tracking number"
+msgstr "İzleme numarası"
 
 msgid "Training"
 msgstr "Eğitim"
@@ -2708,6 +3114,9 @@ msgstr "Kilit açılamıyor"
 
 msgid "Unassigned"
 msgstr "Atanmamış"
+
+msgid "Underline"
+msgstr "Altı çizili"
 
 msgid "Undo"
 msgstr "Geri al"
@@ -2737,6 +3146,12 @@ msgstr "Çıkart"
 msgid "Unpick {0}"
 msgstr "Çıkart {0}"
 
+msgid "Unpick {itemName}"
+msgstr "{itemName} toplamasını geri al"
+
+msgid "Unpicked {itemName}"
+msgstr "Toplanmamış {itemName}"
+
 msgid "Unplanned downtime"
 msgstr "Planlanmamış Duruş"
 
@@ -2758,6 +3173,9 @@ msgstr "En fazla {maxAllocatable} adet tahsis edilebilir; geri kalanı muhasebel
 
 msgid "Update"
 msgstr "Güncelle"
+
+msgid "Update {stepLabel}"
+msgstr "{stepLabel} güncelle"
 
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
@@ -2808,6 +3226,9 @@ msgstr "Doğrulama başarısız"
 
 msgid "Verify"
 msgstr "Doğrula"
+
+msgid "View"
+msgstr "Görüntüle"
 
 msgid "View maintenance dispatch"
 msgstr "Bakım emrini Görüntüle"

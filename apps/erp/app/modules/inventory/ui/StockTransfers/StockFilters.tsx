@@ -98,6 +98,7 @@ function OptionList({
             >
               <HStack spacing={2} className="w-full">
                 <Checkbox
+                  aria-hidden="true"
                   isChecked={selected.includes(option.value)}
                   tabIndex={-1}
                 />

@@ -190,10 +190,13 @@ const DateTime = ({
           <time
             dateTime={value}
             suppressHydrationWarning
+            // Hover only shows the same instant in other time zones; the
+            // date itself is the content, so it is not a control (no pointer
+            // cursor, no tab stop for every date in a list).
             className={cn(
-              "cursor-pointer whitespace-nowrap underline decoration-muted-foreground/50 decoration-dotted underline-offset-[3px] transition-colors hover:decoration-foreground/70",
+              "whitespace-nowrap underline decoration-muted-foreground/50 decoration-dotted underline-offset-[3px] transition-colors hover:decoration-foreground/70",
               // Phones: the hover tooltip is off, so nothing hints it is interactive.
-              "max-md:no-underline max-md:cursor-auto",
+              "max-md:no-underline",
               className
             )}
           >

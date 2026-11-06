@@ -900,6 +900,7 @@ const SalesOrderLineForm = ({
                                   ))}
 
                                 <IconButton
+                                  aria-expanded={costsDisclosure.isOpen}
                                   icon={<LuChevronRight />}
                                   aria-label={
                                     costsDisclosure.isOpen
@@ -1072,6 +1073,7 @@ const SalesOrderLineForm = ({
                                 </Badge>
                               )}
                               <IconButton
+                                aria-expanded={assetCostsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   assetCostsDisclosure.isOpen

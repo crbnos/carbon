@@ -421,7 +421,7 @@ function TrainingQuestionItem({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label={t`More`}
-                className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                 icon={<LuEllipsisVertical />}
                 variant="solid"
                 onClick={(e) => e.stopPropagation()}
@@ -649,6 +649,7 @@ function TrainingQuestionForm({
                   {matchingPairs.map((pair, index) => (
                     <HStack key={index} className="w-full">
                       <Input
+                        aria-label={t`Left item ${index + 1}`}
                         name={`pair-left-${index}`}
                         placeholder={t`Left item`}
                         value={pair.left}
@@ -657,6 +658,7 @@ function TrainingQuestionForm({
                         }
                       />
                       <Input
+                        aria-label={t`Right item ${index + 1}`}
                         name={`pair-right-${index}`}
                         placeholder={t`Right item`}
                         value={pair.right}

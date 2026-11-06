@@ -42,12 +42,13 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   type ComponentProps,
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 import {
@@ -59,7 +60,7 @@ import {
   LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
@@ -74,6 +75,7 @@ import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -86,6 +88,9 @@ export const handle: Handle = {
     }
   ]
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.pickingList?.pickingListId, "Picking List");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});
@@ -181,7 +186,9 @@ export default function PickingExecutionRoute() {
         <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card max-md:hidden">
           <div className="flex items-center gap-2 px-2">
             <SidebarTrigger />
-            <Heading size="h4">{pickingList.pickingListId}</Heading>
+            <Heading as="h1" size="h4">
+              {pickingList.pickingListId}
+            </Heading>
             <PickingListStatus status={pickingList.status} />
           </div>
           <div className="flex items-center gap-3 px-3">
@@ -196,7 +203,7 @@ export default function PickingExecutionRoute() {
         </header>
       )}
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
         <div className="w-full max-w-5xl mx-auto pb-16">
           <VStack spacing={4} className="w-full">
             {kits.map((kit, index) => (
@@ -212,7 +219,7 @@ export default function PickingExecutionRoute() {
             ))}
           </VStack>
         </div>
-      </main>
+      </div>
       {isPhone && (
         <div
           ref={bottomBarRef}
@@ -472,7 +479,10 @@ function PickingKitCard({
       </CardHeader>
       <CardContent>
         <BarProgress progress={progress} className="mb-4" />
-        <div className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0">
+        <div
+          role="list"
+          className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0"
+        >
           {kit.lines.map((line, index) => (
             <PickLineItem
               key={line.id}
@@ -505,6 +515,7 @@ function PickLineItem({
   isLocked: boolean;
   recommendations: RecommendationsPromise;
 }) {
+  const { t } = useLingui();
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const isSubmitting = fetcher.state !== "idle";
@@ -524,6 +535,38 @@ function PickLineItem({
       toast.error(fetcher.data.message ?? "Failed to update pick line");
     }
   }, [fetcher.data]);
+
+  // Pick and Unpick swap the line's buttons (and disable them mid-submit), so
+  // keyboard focus would fall to <body>. Once the submission settles, put focus
+  // back on the line's primary control and announce the result.
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const pendingResultRef = useRef<{
+    message: string;
+    refocus: boolean;
+  } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const expectResult = (message: string, refocus?: boolean) => {
+    pendingResultRef.current = {
+      message,
+      refocus:
+        refocus ??
+        !!controlsRef.current?.contains(document.activeElement ?? null)
+    };
+  };
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !pendingResultRef.current) return;
+    const { message, refocus } = pendingResultRef.current;
+    pendingResultRef.current = null;
+    if (fetcher.data?.success === false) return;
+    setAnnouncement(message);
+    if (refocus) {
+      // The primary action (Pick / Scan / Unpick) is the line's last button.
+      const buttons = controlsRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not(:disabled)"
+      );
+      buttons?.[buttons.length - 1]?.focus();
+    }
+  }, [fetcher.state, fetcher.data]);
 
   const lineItem = line.item as {
     name: string;
@@ -602,6 +645,11 @@ function PickLineItem({
   const isResolved = isFullyPicked || isShort || isCancelled;
 
   const pick = (quantity: number) => {
+    expectResult(
+      quantity > 0
+        ? t`Picked ${quantity}${unitSuffix} ${itemName}`
+        : t`Unpicked ${itemName}`
+    );
     const formData = new FormData();
     formData.append("pickingListLineId", line.id);
     formData.append("quantity", String(quantity));
@@ -617,6 +665,12 @@ function PickLineItem({
   };
 
   const pickTracked = (selection: TrackedEntitySelection) => {
+    // The picker dialog had focus; its Scan trigger may be gone once the line
+    // is fully picked, so always land back on the line's controls.
+    expectResult(
+      t`Picked ${selection.quantity}${unitSuffix} ${itemName}`,
+      true
+    );
     const formData = new FormData();
     formData.append("trackedEntityId", selection.trackedEntityId);
     formData.append("quantity", String(selection.quantity));
@@ -631,6 +685,7 @@ function PickLineItem({
   };
 
   const unpickTracked = (trackedEntityId: string) => {
+    expectResult(t`Unpicked ${itemName}`, true);
     const formData = new FormData();
     formData.append("trackedEntityId", trackedEntityId);
     formData.append("unpick", "true");
@@ -651,8 +706,13 @@ function PickLineItem({
             : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
-      {quantityPicked}/{quantityToPick}
-      {unitSuffix}
+      <span className="sr-only">
+        {t`Picked ${quantityPicked} of ${quantityToPick}${unitSuffix}`}
+      </span>
+      <span aria-hidden="true">
+        {quantityPicked}/{quantityToPick}
+        {unitSuffix}
+      </span>
     </Badge>
   ) : (
     <Badge
@@ -665,13 +725,23 @@ function PickLineItem({
             : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
-      {isShort ? quantityPicked : quantityToPick}
-      {unitSuffix}
+      <span className="sr-only">
+        {isShort
+          ? t`Picked (short): ${quantityPicked}${unitSuffix} of ${quantityToPick}${unitSuffix}`
+          : isFullyPicked
+            ? t`Required: ${quantityToPick}${unitSuffix}, picked: ${quantityPicked}${unitSuffix}`
+            : t`Required: ${quantityToPick}${unitSuffix}`}
+      </span>
+      <span aria-hidden="true">
+        {isShort ? quantityPicked : quantityToPick}
+        {unitSuffix}
+      </span>
     </Badge>
   );
 
   return (
     <div
+      role="listitem"
       className={cn(
         "flex flex-col gap-4 p-4 border-b transition-opacity duration-150",
         "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
@@ -683,6 +753,9 @@ function PickLineItem({
       <div className="flex items-start justify-between gap-4 min-w-0 sm:flex-1">
         <HStack spacing={4} className="min-w-0 flex-1 max-md:space-x-3">
           <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+            {lineNumber != null ? (
+              <span className="sr-only">{t`Line`} </span>
+            ) : null}
             {lineNumber}
           </span>
           <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
@@ -722,8 +795,15 @@ function PickLineItem({
         <div className="shrink-0 sm:hidden">{quantityBadge}</div>
       </div>
 
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
+
       {/* Controls — source, count (desktop), and pick actions */}
-      <div className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0">
+      <div
+        ref={controlsRef}
+        className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0"
+      >
         {source ? (
           <div className="text-base font-medium whitespace-nowrap">
             {source}
@@ -826,6 +906,7 @@ function PickLineItem({
                 onClick={openPicker}
                 isDisabled={isSubmitting}
                 className="flex-1 sm:flex-none"
+                aria-label={t`Scan ${itemName}`}
               >
                 <Trans>Scan</Trans>
               </Button>
@@ -840,6 +921,7 @@ function PickLineItem({
             isLoading={isSubmitting}
             isDisabled={isSubmitting}
             className="flex-1 sm:flex-none"
+            aria-label={t`Unpick ${itemName}`}
           >
             <Trans>Unpick</Trans>
           </Button>
@@ -851,6 +933,7 @@ function PickLineItem({
               onClick={() => setShortOpen(true)}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
+              aria-label={t`Mark ${itemName} short`}
             >
               <Trans>Short</Trans>
             </Button>
@@ -861,6 +944,7 @@ function PickLineItem({
               isLoading={isSubmitting}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
+              aria-label={t`Pick ${itemName}`}
             >
               <Trans>Pick</Trans>
             </Button>

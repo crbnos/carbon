@@ -168,6 +168,7 @@ export function VariableTreeMenu({
     >
       {onQueryChange && (
         <input
+          aria-label={t`Search variables`}
           className="h-10 w-full border-b border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
           placeholder={t`Search variables…`}
           value={query}
@@ -284,6 +285,7 @@ export function VariableTreeMenu({
                                 preventDefault on mousedown stops the icon click from
                                 blurring the search field. stopPropagation keeps it from
                                 triggering the row button's own select handler. */}
+                            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: tooltip trigger that only stops mousedown/click from reaching the row button; not a control itself */}
                             <span
                               tabIndex={-1}
                               className="inline-flex shrink-0 cursor-default text-muted-foreground"

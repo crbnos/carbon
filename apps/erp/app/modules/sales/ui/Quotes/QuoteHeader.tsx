@@ -530,6 +530,7 @@ function ShareQuoteModal({
   externalLinkId?: string;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   if (!externalLinkId) return null;
   if (typeof window === "undefined") return null;
 
@@ -556,7 +557,7 @@ function ShareQuoteModal({
         </ModalHeader>
         <ModalBody>
           <InputGroup>
-            <Input value={digitalQuoteUrl} />
+            <Input aria-label={t`Share link`} value={digitalQuoteUrl} />
             <InputRightElement>
               <Copy text={digitalQuoteUrl} />
             </InputRightElement>

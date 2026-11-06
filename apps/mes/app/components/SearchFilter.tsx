@@ -58,6 +58,10 @@ const SearchFilter = ({
           debounceQuery(e.target.value);
         }}
         className={cn("w-[100px] sm:w-[200px] text-sm", className)}
+        // No visible label: the placeholder ("Search…") names the field.
+        aria-label={
+          typeof props.placeholder === "string" ? props.placeholder : undefined
+        }
         {...props}
       />
     </InputGroup>

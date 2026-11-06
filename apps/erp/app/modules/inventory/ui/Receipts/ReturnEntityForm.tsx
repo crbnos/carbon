@@ -166,6 +166,7 @@ export function ReturnEntityForm({
           {t`Returned batch`}
         </label>
         <Combobox
+          aria-label={t`Returned batch`}
           size="sm"
           value={current ?? ""}
           options={options}
@@ -196,6 +197,7 @@ export function ReturnEntityForm({
       </label>
       {Array.from({ length: slots }, (_, index) => {
         const current = assignedByIndex.get(index);
+        const slotNumber = index + 1;
         const usedElsewhere = new Set(
           [...assignedByIndex.entries()]
             .filter(([i]) => i !== index)
@@ -207,6 +209,7 @@ export function ReturnEntityForm({
               {index + 1}
             </span>
             <Combobox
+              aria-label={t`Returned serial number ${slotNumber}`}
               size="sm"
               value={current ?? ""}
               options={options.filter((o) => !usedElsewhere.has(o.value))}

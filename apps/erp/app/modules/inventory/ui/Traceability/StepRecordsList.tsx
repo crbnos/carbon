@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Checkbox, cn, PrefetchLink } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { LuPaperclip } from "react-icons/lu";
 import { DateTime } from "~/components";
@@ -103,7 +104,13 @@ function StepValue({
   switch (record.type) {
     case "Task":
     case "Checkbox":
-      return <Checkbox checked={record.booleanValue ?? false} disabled />;
+      return (
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          disabled
+          aria-label={record.name}
+        />
+      );
     case "Value":
     case "List":
       return <span className="font-medium">{record.value ?? "—"}</span>;
@@ -162,10 +169,17 @@ function StepValue({
               className="inline-flex items-center gap-1 hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
-              <LuPaperclip className="size-3" />
+              <LuPaperclip className="size-3" aria-hidden />
+              <span className="sr-only">
+                <Trans>Inspection file</Trans>
+              </span>
             </a>
           )}
-          <Checkbox checked={record.booleanValue ?? false} disabled />
+          <Checkbox
+            checked={record.booleanValue ?? false}
+            disabled
+            aria-label={record.name}
+          />
         </span>
       );
     default:

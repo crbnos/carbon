@@ -677,6 +677,7 @@ function SplitLineModal({
                         className="flex items-center gap-2 text-sm px-3 py-2"
                       >
                         <Checkbox
+                          aria-labelledby={`split-entity-${link.id}`}
                           checked={!!selected[link.trackedEntityId]}
                           onCheckedChange={(checked) =>
                             setSelected((prev) => ({
@@ -685,7 +686,10 @@ function SplitLineModal({
                             }))
                           }
                         />
-                        <div className="text-xs flex-1 min-w-0">
+                        <div
+                          id={`split-entity-${link.id}`}
+                          className="text-xs flex-1 min-w-0"
+                        >
                           <EntityLabel link={link} />
                         </div>
                         <TrackedEntityStatus
@@ -802,10 +806,14 @@ function MoveEntitiesModal({
                 value={JSON.stringify(selectedAssignments)}
               />
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">
+                <label
+                  htmlFor="move-target-disposition-row"
+                  className="text-sm font-medium"
+                >
                   <Trans>Target disposition row</Trans>
                 </label>
                 <select
+                  id="move-target-disposition-row"
                   className="border border-border rounded-md px-3 py-2 text-sm bg-background"
                   value={targetItemId}
                   onChange={(e) => setTargetItemId(e.target.value)}
@@ -828,6 +836,7 @@ function MoveEntitiesModal({
                       className="flex items-center gap-2 text-sm px-3 py-2"
                     >
                       <Checkbox
+                        aria-labelledby={`move-entity-${link.id}`}
                         checked={!!selected[link.trackedEntityId]}
                         onCheckedChange={(checked) =>
                           setSelected((prev) => ({
@@ -836,7 +845,10 @@ function MoveEntitiesModal({
                           }))
                         }
                       />
-                      <div className="text-xs flex-1 min-w-0">
+                      <div
+                        id={`move-entity-${link.id}`}
+                        className="text-xs flex-1 min-w-0"
+                      >
                         <EntityLabel link={link} />
                       </div>
                       <TrackedEntityStatus

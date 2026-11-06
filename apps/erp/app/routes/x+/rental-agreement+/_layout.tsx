@@ -4,13 +4,11 @@
 
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Rental Agreement" }];
-};
+export const meta = moduleMeta("Rental Agreement");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,

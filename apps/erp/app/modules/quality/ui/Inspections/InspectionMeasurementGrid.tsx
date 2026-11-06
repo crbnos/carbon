@@ -1500,11 +1500,26 @@ const InspectionMeasurementGrid = ({
         cols.push({
           accessorKey: featureKey(characteristicIndex),
           header: () => (
+            // Keyboard twin of the click. Not role="button": the header also
+            // holds the gauge picker, which a button would hide from
+            // assistive tech.
+            // biome-ignore lint/a11y/noStaticElementInteractions: focusable header that shows its characteristic on the drawing; the gauge picker inside is its own control
             <div
               data-feature-header={characteristic.featureId}
+              tabIndex={hasFeatures ? 0 : undefined}
               onClick={() =>
                 hasFeatures && onActiveFeatureChange(characteristic.featureId)
               }
+              onKeyDown={(event) => {
+                if (
+                  hasFeatures &&
+                  event.target === event.currentTarget &&
+                  (event.key === "Enter" || event.key === " ")
+                ) {
+                  event.preventDefault();
+                  onActiveFeatureChange(characteristic.featureId);
+                }
+              }}
               className="flex w-full min-w-[180px] flex-col gap-1.5 whitespace-normal py-1 font-normal"
             >
               {renderCharacteristic(characteristic, characteristicIndex)}

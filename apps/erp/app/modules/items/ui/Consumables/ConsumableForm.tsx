@@ -122,7 +122,9 @@ const ConsumableForm = ({
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle
+                aria-level={type === "card" && !isEditing ? 1 : undefined}
+              >
                 {isEditing ? t`Consumable Details` : t`New Consumable`}
               </ModalCardTitle>
               {!isEditing && (

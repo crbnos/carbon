@@ -257,6 +257,7 @@ const JobBillOfMaterial = ({
 
   const fetcher = useAction();
   const permissions = usePermissions();
+  const { t } = useLingui();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
   const { isPhone } = useViewport();
@@ -570,6 +571,7 @@ const JobBillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Materials`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -937,6 +939,7 @@ function MaterialForm({
               </Badge>
             )}
             <IconButton
+              aria-expanded={sourceDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 sourceDisclosure.isOpen ? "Collapse Source" : "Expand Source"
@@ -1009,6 +1012,7 @@ function MaterialForm({
                 : t`First Operation`}
             </Badge>
             <IconButton
+              aria-expanded={backflushDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen

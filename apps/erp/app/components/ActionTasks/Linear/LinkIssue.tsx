@@ -88,6 +88,7 @@ export const LinkIssue = (props: Props) => {
         <VStack spacing={4}>
           <div className="w-full flex items-center gap-x-2 relative">
             <Input
+              aria-label={t`Search Linear issues`}
               name="query"
               type="search"
               className="w-full"

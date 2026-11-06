@@ -39,6 +39,7 @@ export function ColorCell({
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: only stops the click reaching the table row; the colour picker inside is the control
     <div className="w-36" onClick={(event) => event.stopPropagation()}>
       <ColorPicker
         value={picked ?? value}

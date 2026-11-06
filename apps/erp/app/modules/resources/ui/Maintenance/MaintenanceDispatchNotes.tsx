@@ -69,6 +69,7 @@ export function MaintenanceDispatchNotes({
   content: JSONContent;
   isDisabled: boolean;
 }) {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -104,6 +105,7 @@ export function MaintenanceDispatchNotes({
       <CardContent>
         {permissions.can("update", "resources") && !isDisabled ? (
           <Editor
+            label={t`Notes`}
             initialValue={(content ?? {}) as JSONContent}
             onUpload={onUploadImage}
             onChange={(value) => {
@@ -289,23 +291,30 @@ function MaintenanceFilesContent({
         <Tbody>
           {files.map((file) => {
             const type = getDocumentType(file.name);
+            const openFile = () => {
+              if (isPreviewableDocumentType(type)) {
+                window.open(
+                  path.to.file.previewFile(`private/${getFilePath(file.name)}`),
+                  "_blank"
+                );
+              } else {
+                download(file);
+              }
+            };
             return (
               <Tr key={file.id}>
                 <Td>
                   <HStack>
                     <DocumentIcon type={type} />
                     <span
+                      role="button"
+                      tabIndex={0}
                       className="font-medium cursor-pointer"
-                      onClick={() => {
-                        if (isPreviewableDocumentType(type)) {
-                          window.open(
-                            path.to.file.previewFile(
-                              `private/${getFilePath(file.name)}`
-                            ),
-                            "_blank"
-                          );
-                        } else {
-                          download(file);
+                      onClick={openFile}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openFile();
                         }
                       }}
                     >

@@ -213,8 +213,23 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
             <HStack spacing={1} className="flex-shrink-0 -mr-2">
               {hasConflict && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-red-500 flex-shrink-0"
+                      />
+                      {/* The tooltip is pointer-only; this reads the warning
+                          as part of the card for keyboard and screen readers. */}
+                      <span className="sr-only">
+                        {conflictedMembers
+                          .map(
+                            (m) =>
+                              `${m.jobReadableId}: ${m.conflictReason ?? t`Scheduling conflict`}`
+                          )
+                          .join("; ")}
+                      </span>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent>
                     {conflictedMembers.map((m) => (
@@ -377,7 +392,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                     icon={<LuX />}
                     variant="ghost"
                     size="sm"
-                    className="md:opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                    className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-destructive"
                     onClick={() => setRemoving(m)}
                   />
                 )}

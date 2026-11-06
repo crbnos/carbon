@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import type { AriaAttributes } from "react";
+import { useRef, useState } from "react";
+import { useIsomorphicLayoutEffect } from "../hooks/useIsomorphicLayoutEffect";
 import { ariaAttr } from "../utils/dom";
 import { useOptionalFormControlContext } from "./FormControl";
 
@@ -36,6 +39,9 @@ export function useFormControl(props: UseFormControlProps) {
   if (field?.hasHelpText) {
     describedBy.push(field.helpTextId);
   }
+  if (field?.hasDefinition) {
+    describedBy.push(field.definitionId);
+  }
 
   // Only the attributes that are set: an explicit `undefined` would replace a
   // value the control sets itself (Radix Select sets `aria-required`).
@@ -66,4 +72,67 @@ export function useFormControlLabelledBy(props: {
     return props["aria-labelledby"];
   }
   return field?.renderedLabelId;
+}
+
+/**
+ * A combobox takes no name from its content, so a select or combobox trigger
+ * outside a FormControl (a table filter, a toolbar picker) would have none.
+ * When it has no label of its own this returns its shown text — the current
+ * value or the placeholder — to use as its `aria-label`, kept in sync as the
+ * text changes. Attach `ref` to the trigger.
+ */
+export function useContentLabel<T extends HTMLElement>(enabled: boolean) {
+  const ref = useRef<T | null>(null);
+  const [label, setLabel] = useState<string>();
+  useIsomorphicLayoutEffect(() => {
+    const node = ref.current;
+    if (!enabled || !node) {
+      setLabel(undefined);
+      return;
+    }
+    const sync = () =>
+      setLabel(node.textContent?.replace(/\s+/g, " ").trim() || undefined);
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(node, {
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+    return () => observer.disconnect();
+  }, [enabled]);
+  return { ref, label: enabled ? label : undefined };
+}
+
+/**
+ * The name of an inline field's icon-only trigger: "Edit Customer" or
+ * "Add Customer", after the FormControl's label. Pass `label` when the
+ * field renders its own label outside a FormControl.
+ */
+export function useInlineTriggerLabel(hasValue: boolean, label?: string) {
+  const { t } = useLingui();
+  const field = useOptionalFormControlContext();
+  const fieldLabel = label || field?.labelText;
+  if (hasValue) return fieldLabel ? t`Edit ${fieldLabel}` : t`Edit`;
+  return fieldLabel ? t`Add ${fieldLabel}` : t`Add`;
+}
+
+/**
+ * The name of a picker's popup and of the search box inside it: the caller's
+ * `aria-label`, else the FormControl's label. Undefined outside both.
+ */
+export function usePickerLabel(ariaLabel?: string) {
+  const field = useOptionalFormControlContext();
+  return ariaLabel || field?.labelText || undefined;
+}
+
+/**
+ * The name of a field's clear button: "Clear Customer" after the caller's
+ * `aria-label` or the FormControl's label, so a form's several clear buttons
+ * are told apart. Plain "Clear" outside both.
+ */
+export function useClearLabel(ariaLabel?: string) {
+  const { t } = useLingui();
+  const fieldLabel = usePickerLabel(ariaLabel);
+  return fieldLabel ? t`Clear ${fieldLabel}` : t`Clear`;
 }

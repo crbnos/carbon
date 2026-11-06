@@ -481,6 +481,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Supplier Contact and Location`}
                 checked={requireSupplierContactAndLocation}
                 onCheckedChange={handleRequireSupplierContactToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -514,6 +515,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require an Email on Supplier Contacts`}
                 checked={requireSupplierContactEmail}
                 onCheckedChange={handleRequireSupplierContactEmailToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -560,6 +562,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Signature to Approve Purchase Orders`}
                 checked={requireApprovalSignature}
                 onCheckedChange={handleRequireApprovalSignatureToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -604,6 +607,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Centralized Billing Address`}
                 checked={apAddressEnabled}
                 onCheckedChange={handleApAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -762,6 +766,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Automatic Lead Time Updates`}
                 checked={leadTimesOnReceiptEnabled}
                 onCheckedChange={handleLeadTimesOnReceiptToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -811,6 +816,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Supplier IDs`}
                 checked={showSupplierReadableIdEnabled}
                 onCheckedChange={handleShowSupplierReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}

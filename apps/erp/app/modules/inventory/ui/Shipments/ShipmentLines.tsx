@@ -385,8 +385,11 @@ function ShipmentFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -407,6 +410,7 @@ function ShipmentFixedAssetLineItem({
       )}
     >
       <Checkbox
+        aria-label={t`Shipped: ${assetName}`}
         isChecked={line.shipped}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -425,6 +429,7 @@ function ShipmentFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
         className="w-48 max-md:w-full"
@@ -522,6 +527,7 @@ function ShipmentLineItem({
   // typed (the job consumed the part to the project, so no tracked entity).
   const isContractDelivery = shipment?.sourceDocument === "Customer Contract";
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -544,7 +550,7 @@ function ShipmentLineItem({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
-                aria-label={t`Line options`}
+                aria-label={t`Line options for ${itemName}`}
                 variant="secondary"
                 icon={<LuEllipsisVertical />}
                 size="sm"
@@ -630,6 +636,7 @@ function ShipmentLineItem({
                 )}
               </div>
               <NumberField
+                aria-label={t`Shipped quantity for ${itemName}`}
                 value={line.shippedQuantity || 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -822,6 +829,8 @@ function BatchForm({
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   // A refused assignment (wrong item, not available) is toasted.
   const assign = useAction();
   const [values, setValues] = useState<{
@@ -1064,6 +1073,7 @@ function BatchForm({
             <InputGroup isDisabled={isReadOnly}>
               <Input
                 placeholder={t`Batch number`}
+                aria-label={t`Batch number for ${itemReadableId}`}
                 value={values.number}
                 onChange={(e) => {
                   setValues({
@@ -1167,6 +1177,8 @@ function SerialForm({
   ) => void;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
@@ -1394,6 +1406,7 @@ function SerialForm({
               <InputGroup isDisabled={isReadOnly}>
                 <Input
                   placeholder={t`Serial Number ${index + 1}`}
+                  aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
                   value={serialNumber.id}
                   onChange={(e) => {
                     const newValue = e.target.value;
@@ -1562,6 +1575,7 @@ function StorageUnit({
     locationId ?? undefined,
     itemId ?? undefined
   );
+  const { t } = useLingui();
 
   if (!locationId) return null;
 
@@ -1572,6 +1586,7 @@ function StorageUnit({
       </label>
       <div className="py-1">
         <Combobox
+          aria-label={t`Storage unit`}
           value={storageUnitId ?? undefined}
           onChange={(newValue) => {
             onChange(newValue);

@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { forwardRef, useRef } from "react";
 import * as ReactAria from "react-aria-components";
+import { useOptionalFormControlContext } from "./Form/FormControl";
 import type { InputProps } from "./Input";
 import { Input } from "./Input";
 import { cn } from "./utils/cn";
@@ -48,10 +50,20 @@ const NumberField = ({
   formatOptions,
   ...props
 }: ReactAria.NumberFieldProps) => {
+  const { t } = useLingui();
   const stableFormatOptions = useStableFormatOptions(formatOptions);
+  // The label is drawn by the FormControl, so react-aria would name the
+  // steppers only "Increase" / "Decrease". Give them the field's label.
+  const field = useOptionalFormControlContext();
+  const fieldLabel =
+    props["aria-label"] || props["aria-labelledby"]
+      ? undefined
+      : field?.labelText;
   return (
     <ReactAria.NumberField
       className={cn("w-full", className)}
+      incrementAriaLabel={fieldLabel ? t`Increase ${fieldLabel}` : undefined}
+      decrementAriaLabel={fieldLabel ? t`Decrease ${fieldLabel}` : undefined}
       {...props}
       formatOptions={stableFormatOptions}
     />

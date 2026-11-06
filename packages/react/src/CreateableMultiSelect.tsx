@@ -4,8 +4,9 @@
 
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useId, useMemo, useState } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import { CommandTrigger } from "./Command";
+import { useInlineTriggerLabel, usePickerLabel } from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { InlineTrigger } from "./InlineTrigger";
 import type { PickerListOption } from "./PickerList";
@@ -88,9 +89,9 @@ const CreatableMultiSelect = forwardRef<
     const [search, setSearch] = useState("");
     const openAutoFocus = usePhoneOpenAutoFocus();
 
-    const id = useId();
-
     const hasSelections = value.length > 0;
+    const inlineTriggerLabel = useInlineTriggerLabel(hasSelections);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
     const isInlinePreview = !!inline;
 
     const selectedLabels = value
@@ -122,6 +123,12 @@ const CreatableMultiSelect = forwardRef<
           <PopoverTrigger asChild>
             {inline ? (
               <InlineTrigger
+                // The field and its values: "Edit Tags: Urgent, Export".
+                aria-label={
+                  hasSelections && selectedLabelText
+                    ? `${inlineTriggerLabel}: ${selectedLabelText}`
+                    : inlineTriggerLabel
+                }
                 ref={ref}
                 isEmpty={!hasSelections}
                 placeholder={
@@ -139,8 +146,6 @@ const CreatableMultiSelect = forwardRef<
               </InlineTrigger>
             ) : (
               <CommandTrigger
-                aria-controls={id}
-                aria-expanded={open}
                 role="combobox"
                 size={size}
                 className={cn("min-w-[160px]", className)}
@@ -166,6 +171,7 @@ const CreatableMultiSelect = forwardRef<
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="end"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -184,6 +190,7 @@ const CreatableMultiSelect = forwardRef<
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filterCreatableMultiSelectOptions}
                 selectionMode="multiple"
