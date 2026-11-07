@@ -385,7 +385,10 @@ export function StepMedia({
                 />
               </button>
               {slide.caption && (
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p
+                  aria-hidden="true"
+                  className="mt-1 text-sm text-muted-foreground"
+                >
                   {slide.caption}
                 </p>
               )}
@@ -479,8 +482,10 @@ export function PreviewStepRecord({
   const record = step.jobOperationStepRecord.find(
     (r) => r.index === activeStep
   );
-  if (step.type === "Task" && !record?.booleanValue) return null;
-  if (step.type === "Checkbox" && !record) return null;
+  // A Task record exists only once the task is done; a Checkbox with no
+  // answer yet (null) is neither Yes nor No.
+  if (step.type === "Task" && !record) return null;
+  if (step.type === "Checkbox" && record?.booleanValue == null) return null;
 
   return (
     <div className="min-w-[200px] truncate text-right font-medium">

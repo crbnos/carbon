@@ -2465,7 +2465,7 @@ export const JobOperation = ({
                                     );
 
                                   return (
-                                    <div className="flex items-end justify-between gap-1 w-full px-4 pb-2 border-b">
+                                    <div className="flex flex-wrap items-end justify-between gap-1 w-full px-4 pb-2 border-b">
                                       <div className="flex items-center gap-1">
                                         {showNavigation && !parentIsSerial && (
                                           <>
@@ -2532,9 +2532,9 @@ export const JobOperation = ({
                                         )}
                                       </div>
 
-                                      <div className="flex flex-col justify-center items-end gap-1">
+                                      <div className="ml-auto flex min-w-0 max-w-full flex-col justify-center items-end gap-1">
                                         <BarProgress
-                                          className="w-40"
+                                          className="w-40 max-w-full"
                                           label={t`Steps`}
                                           gradient
                                           invertGradient
