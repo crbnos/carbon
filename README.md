@@ -265,7 +265,7 @@ carbon
 
 ## Local Development
 
-**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 22 and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 24.22.1+ and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
 
 ```bash
 git clone https://github.com/crbnos/carbon.git && cd carbon

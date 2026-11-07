@@ -87,7 +87,6 @@
     "authz": "tsx src/authz/cli.ts",
     "db:check:datasets": "tsx src/check-datasets.ts",
     "db:function:new": "supabase functions new",
-    "db:init": "supabase init",
     "db:migrate:new": "supabase migration new",
     "db:seed": "tsx src/seed.ts",
     "db:seed:dev": "tsx src/seed-dev.ts",

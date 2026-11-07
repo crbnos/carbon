@@ -7,21 +7,17 @@ import pc from "picocolors";
 import { listWorktrees as gitListWorktrees } from "../git.js";
 import { dockerProjectStates } from "../services/compose.js";
 import { isAsleep } from "../services/hibernate.js";
+import { stackAt } from "../stack.js";
+import { projectName } from "../topology.js";
 import { worktreesTable } from "../ui.js";
-import {
-  listSlugs,
-  projectName,
-  recordedStackMode,
-  slugForWorktreePath,
-  stackDatabase
-} from "../worktree.js";
+import { listSlugs, slugForWorktreePath } from "../worktree.js";
 
 export async function listWorktrees(opts: { json?: boolean } = {}) {
   if (!opts.json) intro("Carbon · worktrees");
 
   const [wtsAll, registry, dockerStates] = await Promise.all([
     gitListWorktrees(),
-    Promise.resolve(listSlugs()),
+    listSlugs(),
     dockerProjectStates()
   ]);
   const wts = wtsAll.filter((w) => !w.bare);
@@ -33,7 +29,8 @@ export async function listWorktrees(opts: { json?: boolean } = {}) {
       : isAsleep(slug)
         ? "hibernated"
         : (dockerStates.get(projectName(slug)) ?? null);
-    const mode = slug ? recordedStackMode(slug) : null;
+    const stack = slug ? stackAt(w.path, slug) : null;
+    const mode = stack?.recordedMode ?? null;
     return {
       path: w.path,
       branch: w.branch,
@@ -41,7 +38,7 @@ export async function listWorktrees(opts: { json?: boolean } = {}) {
       slug,
       dockerState,
       mode,
-      database: slug && mode ? stackDatabase(slug, mode) : null
+      database: mode ? (stack?.db?.database ?? null) : null
     };
   });
 
