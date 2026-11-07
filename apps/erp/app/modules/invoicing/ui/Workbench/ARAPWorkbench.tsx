@@ -28,22 +28,16 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuScale,
   LuTriangleAlert,
   LuUser
 } from "react-icons/lu";
-import { Link, useFetcher, useNavigate } from "react-router";
-import {
-  CustomerAvatar,
-  DateTime,
-  exportOnlyColumn,
-  SupplierAvatar,
-  Table
-} from "~/components";
+import { Link, useFetcher } from "react-router";
+import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
-import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -79,6 +73,7 @@ type OpenInvoiceRow = {
   openInBase: number;
   customerId?: string;
   supplierId?: string;
+  supplierReference?: string | null;
 };
 
 type ARAPWorkbenchProps = {
@@ -120,23 +115,10 @@ export function ARAPWorkbench({
 }: ARAPWorkbenchProps) {
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
-  const navigate = useNavigate();
   const adjustFetcher = useFetcher();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
   const [b1, b2, b3] = bucketDays;
-  const [customers] = useCustomers();
-  const [suppliers] = useSuppliers();
-
-  // The CSV reads a counterparty's name, not its id: the grid shows it through
-  // the avatar, which the export cannot see.
-  const partyNameById = useMemo(
-    () =>
-      new Map(
-        (side === "ar" ? customers : suppliers).map((p) => [p.id, p.name])
-      ),
-    [side, customers, suppliers]
-  );
 
   const money = useCallback(
     (n: number) => currencyFormatter.format(Number(n)),
@@ -227,32 +209,34 @@ export function ARAPWorkbench({
   // The selected invoices, and whether they can become one payment. A payment
   // has one counterparty and one currency, so the action is enabled only when
   // the selection is homogeneous on both.
-  const selectedInvoices = useMemo(
-    () => open.filter((inv) => selectedIds.has(inv.invoiceId)),
-    [open, selectedIds]
-  );
-  const selectedPartyIds = useMemo(
-    () => new Set(selectedInvoices.map((inv) => partyIdOf(inv))),
-    [selectedInvoices, partyIdOf]
-  );
-  const selectedCurrencies = useMemo(
-    () => new Set(selectedInvoices.map((inv) => inv.currencyCode)),
-    [selectedInvoices]
-  );
-  const sameParty = selectedPartyIds.size === 1;
-  const sameCurrency = selectedCurrencies.size === 1;
-  const canPay = selectedInvoices.length > 0 && sameParty && sameCurrency;
+  const { selectedInvoices, sameParty, payHref } = useMemo(() => {
+    const selectedInvoices = open.filter((inv) =>
+      selectedIds.has(inv.invoiceId)
+    );
+    const selectedPartyIds = new Set(selectedInvoices.map(partyIdOf));
+    const selectedCurrencies = new Set(
+      selectedInvoices.map((inv) => inv.currencyCode)
+    );
+    const sameParty = selectedPartyIds.size === 1;
+    const sameCurrency = selectedCurrencies.size === 1;
+    const partyId = [...selectedPartyIds][0];
+    let payHref: string | null = null;
+    if (sameParty && sameCurrency && partyId) {
+      const params = new URLSearchParams();
+      params.set(side === "ar" ? "customerId" : "supplierId", partyId);
+      for (const inv of selectedInvoices)
+        params.append("invoiceId", inv.invoiceId);
+      payHref = `${path.to.paymentNew}?${params.toString()}`;
+    }
+    return { selectedInvoices, sameParty, payHref };
+  }, [open, selectedIds, partyIdOf, side]);
 
-  const payHref = useMemo(() => {
-    if (!canPay) return null;
-    const pid = [...selectedPartyIds][0];
-    if (!pid) return null;
-    const params = new URLSearchParams();
-    params.set(side === "ar" ? "customerId" : "supplierId", pid);
-    for (const inv of selectedInvoices)
-      params.append("invoiceId", inv.invoiceId);
-    return `${path.to.paymentNew}?${params.toString()}`;
-  }, [canPay, selectedPartyIds, selectedInvoices, side]);
+  const exportParams = new URLSearchParams({
+    asOfDate,
+    agingMethod,
+    bucketDays: bucketDays.join(",")
+  });
+  const exportHref = `${side === "ar" ? path.to.arAgingCsv : path.to.apAgingCsv}?${exportParams.toString()}`;
 
   const columns = useMemo<ColumnDef<WorkbenchRow>[]>(() => {
     return [
@@ -368,29 +352,28 @@ export function ARAPWorkbench({
         },
         meta: {
           icon: <LuUser />,
-          mobile: "P1",
-          exportValue: (r) =>
-            r.kind === "counterparty"
-              ? (partyNameById.get(r.partyId) ?? r.partyId)
-              : r.invoiceNumber
+          mobile: "P1"
         }
       },
-      exportOnlyColumn<WorkbenchRow>({
-        id: "dateDue",
-        header: t`Due Date`,
-        value: (r) => (r.kind === "invoice" ? r.dateDue : null)
-      }),
+      ...(side === "ap"
+        ? [
+            {
+              id: "supplierReference",
+              header: t`Supplier Invoice Number`,
+              cell: ({ row }) =>
+                row.original.kind === "invoice"
+                  ? (row.original.supplierReference ?? "")
+                  : null
+            } satisfies ColumnDef<WorkbenchRow>
+          ]
+        : []),
       {
         id: "paymentTerm",
         header: t`Payment Term`,
         cell: ({ row }) =>
           row.original.kind === "counterparty" ? (
             <Enumerable value={row.original.paymentTerm ?? null} />
-          ) : null,
-        meta: {
-          exportValue: (r) =>
-            r.kind === "counterparty" ? (r.paymentTerm ?? null) : null
-        }
+          ) : null
       },
       // Aging buckets only carry a value on counterparty rows. They aren't
       // common to both union members, so they use `id` + `cell` (not
@@ -411,10 +394,7 @@ export function ARAPWorkbench({
           cell: ({ row }) =>
             row.original.kind === "counterparty" ? (
               <span className="tabular-nums">{money(row.original[key])}</span>
-            ) : null,
-          meta: {
-            exportValue: (r) => (r.kind === "counterparty" ? r[key] : null)
-          }
+            ) : null
         })
       ),
       {
@@ -433,10 +413,6 @@ export function ARAPWorkbench({
               {money(value)}
             </span>
           );
-        },
-        meta: {
-          exportValue: (r) =>
-            r.kind === "counterparty" ? r.total : r.openInBase
         }
       }
     ];
@@ -447,7 +423,6 @@ export function ARAPWorkbench({
     b2,
     b3,
     money,
-    partyNameById,
     childrenByParty,
     expandedIds,
     selectedIds,
@@ -535,13 +510,17 @@ export function ARAPWorkbench({
           </PopoverContent>
         </Popover>
       ) : null}
-      {canPay && payHref ? (
-        <Button variant="primary" onClick={() => navigate(payHref)}>
-          {side === "ar" ? (
-            <Trans>Receive Payment · {selectedInvoices.length} invoices</Trans>
-          ) : (
-            <Trans>Make Payment · {selectedInvoices.length} invoices</Trans>
-          )}
+      {payHref ? (
+        <Button asChild variant="primary">
+          <Link to={payHref}>
+            {side === "ar" ? (
+              <Trans>
+                Receive Payment · {selectedInvoices.length} invoices
+              </Trans>
+            ) : (
+              <Trans>Make Payment · {selectedInvoices.length} invoices</Trans>
+            )}
+          </Link>
         </Button>
       ) : selectedInvoices.length > 0 ? (
         <Tooltip>
@@ -563,6 +542,11 @@ export function ARAPWorkbench({
           </TooltipContent>
         </Tooltip>
       ) : null}
+      <Button asChild variant="secondary" leftIcon={<LuDownload />}>
+        <a href={exportHref} download>
+          <Trans>Export</Trans>
+        </a>
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" rightIcon={<LuChevronDown />}>
@@ -609,6 +593,7 @@ export function ARAPWorkbench({
       <div className="flex-1 w-full">
         <Table<WorkbenchRow>
           data={displayRows}
+          withCsvExport={false}
           columns={columns}
           count={displayRows.length}
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
