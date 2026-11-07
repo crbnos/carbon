@@ -362,7 +362,16 @@ export function StepMedia({
           )}
         >
           {imageSlides.map((slide, i) => (
-            <div key={slide.id} className="min-w-0">
+            <div
+              key={slide.id}
+              className={cn(
+                "min-w-0",
+                imageSlides.length > 1 &&
+                  imageSlides.length % 2 === 1 &&
+                  i === imageSlides.length - 1 &&
+                  "md:col-span-2"
+              )}
+            >
               <button
                 type="button"
                 aria-label={slide.caption || `${t`Reference image`} ${i + 1}`}
