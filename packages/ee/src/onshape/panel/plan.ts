@@ -2278,6 +2278,8 @@ export type ReleasePlanItem = MappedRowPlan & {
   changes?: OwnedFieldChange[];
   /** Released assemblies only; a reused item's Active method is refused. */
   methodStatus: "draft" | "active" | "new" | "missing" | null;
+  /** Reuse only: why a change notice keeps the push from writing this revision. */
+  locked?: string;
   /**
    * Drawings only: the release's model item with the drawing's number, else
    * the model the package lists, with `itemId` when Carbon has it outside the

@@ -317,6 +317,133 @@ describe("parseBomTree", () => {
   });
 });
 
+describe("parseBomTree with a chosen Item or Quantity column", () => {
+  const headers = [
+    ...H,
+    { id: "c-find", name: "Find" },
+    { id: "c-count", name: "Count" }
+  ];
+  const chosenRow = (
+    own: string,
+    pn: string,
+    cells: { find?: unknown; count?: unknown } = {}
+  ) => ({
+    headerIdToValue: {
+      "h-item": own,
+      "h-pn": pn,
+      "h-qty": 1,
+      "c-find": cells.find,
+      "c-count": cells.count
+    }
+  });
+  const chosenItem = {
+    identity: {},
+    bomLine: { item: { headerId: "c-find", name: "Find" } }
+  };
+  const chosenQuantity = {
+    identity: {},
+    bomLine: { quantity: { headerId: "c-count", name: "Count" } }
+  };
+
+  it("refuses a chosen Item column that is blank on a line, instead of reading the line as the root", () => {
+    const { missingColumns, blankColumns } = parseBomTree(
+      {
+        headers,
+        rows: [chosenRow("0", "ASM-1"), chosenRow("1", "P-1")]
+      },
+      chosenItem
+    );
+    expect(missingColumns).toEqual(["Find"]);
+    expect(blankColumns).toEqual(["Find"]);
+  });
+
+  it("finds the assembly's row by Onshape's own Item column when the chosen one is blank there", () => {
+    const { root, lines, missingColumns } = parseBomTree(
+      {
+        headers,
+        rows: [
+          chosenRow("0", "ASM-1"),
+          chosenRow("1", "P-1", { find: "10" }),
+          chosenRow("2", "P-2", { find: "20" })
+        ]
+      },
+      chosenItem
+    );
+    expect(root?.partNumber).toBe("ASM-1");
+    expect(lines.map((line) => [line.index, line.partNumber])).toEqual([
+      ["10", "P-1"],
+      ["20", "P-2"]
+    ]);
+    expect(missingColumns).toEqual([]);
+  });
+
+  it("takes the first row as the assembly when the BOM has no Item column of Onshape's", () => {
+    const { root, lines, missingColumns } = parseBomTree(
+      {
+        headers: headers.filter((header) => header.id !== "h-item"),
+        rows: [chosenRow("", "ASM-1"), chosenRow("", "P-1", { find: "10" })]
+      },
+      chosenItem
+    );
+    expect(root?.partNumber).toBe("ASM-1");
+    expect(lines.map((line) => line.partNumber)).toEqual(["P-1"]);
+    expect(missingColumns).toEqual([]);
+  });
+
+  it("refuses a line whose chosen Item reads 0, which would replace the root", () => {
+    const { blankColumns } = parseBomTree(
+      {
+        headers,
+        rows: [chosenRow("0", "ASM-1"), chosenRow("1", "P-1", { find: "0" })]
+      },
+      chosenItem
+    );
+    expect(blankColumns).toEqual(["Find"]);
+  });
+
+  it.each([null, "", "N/A", "several", 0, -2])(
+    "refuses a chosen Quantity of %s on a line, instead of writing 1",
+    (count) => {
+      const { missingColumns, blankColumns } = parseBomTree(
+        {
+          headers,
+          rows: [chosenRow("0", "ASM-1"), chosenRow("1", "P-1", { count })]
+        },
+        chosenQuantity
+      );
+      expect(missingColumns).toEqual(["Count"]);
+      expect(blankColumns).toEqual(["Count"]);
+    }
+  );
+
+  it("reads a chosen Quantity and ignores it on the assembly's own row", () => {
+    const { lines, missingColumns } = parseBomTree(
+      {
+        headers,
+        rows: [chosenRow("0", "ASM-1"), chosenRow("1", "P-1", { count: 3 })]
+      },
+      chosenQuantity
+    );
+    expect(lines[0]?.quantity).toBe(3);
+    expect(missingColumns).toEqual([]);
+  });
+
+  it("reads a part number Onshape fills with N/A as no part number", () => {
+    const { root, lines } = parseBomTree(
+      {
+        headers,
+        rows: [chosenRow("0", "N/A"), chosenRow("1", "N/A")]
+      },
+      {
+        identity: { partNumber: { propertyId: "h-pn", name: "Method type" } },
+        bomLine: {}
+      }
+    );
+    expect(root?.partNumber).toBeNull();
+    expect(lines[0]?.partNumber).toBeNull();
+  });
+});
+
 describe("parseBomTree Subassembly BOM behavior", () => {
   const headers = [...H, { id: "h-sbb", name: "Subassembly BOM behavior" }];
   const withBehavior = (item: string, pn: string, behavior: string) => {

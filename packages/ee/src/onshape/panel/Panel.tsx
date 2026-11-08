@@ -35,16 +35,32 @@ import {
   SelectValue,
   Skeleton,
   Status,
+  Table,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  Tr,
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
 import { datetime, formatDate } from "@carbon/utils";
-import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode, RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuArrowRight,
   LuChevronRight,
@@ -68,7 +84,6 @@ import { isPanelSessionMessage, postApplicationInit } from "./messages";
 import type {
   AssemblyPlan,
   AssemblyPlanDepth,
-  AssemblyRowAssets,
   AssemblyRowDrawing,
   ItemFieldSnapshot,
   MappedRowPlan,
@@ -118,20 +133,31 @@ import {
   assetCounts,
   assetOffers,
   CARBON_ONLY_NOTE,
+  canRepushRelease,
+  changedPartNumbers,
   clearFieldErrors,
   createReview,
   customFieldChangeText,
   describeMethod,
+  drawingsSummary,
   indexFieldErrors,
   itemFieldChangeText,
   keptDifferenceText,
   mappedValueText,
+  methodBomChanges,
   normalizeWarnings,
   patchPartStatuses,
   releaseResultText,
   replenishmentMismatches,
   setAssetRows
 } from "./review";
+import type { ReviewTreeRow } from "./review-tree";
+import {
+  assemblyReviewTree,
+  rowsWithAncestors,
+  subtreePartNumbers,
+  visibleReviewRows
+} from "./review-tree";
 import {
   clearPanelSessionToken,
   getPanelSessionToken,
@@ -503,6 +529,8 @@ type PushOutcome = {
   diagnostics?: unknown;
   /** Done, but worth knowing: a new Draft version, lines taken over. */
   notes?: string[];
+  /** The review never opened, so nothing was attempted. */
+  reviewRefused?: true;
 };
 
 function plural(count: number, noun: string) {
@@ -606,7 +634,24 @@ function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
 }
 
 function failedOutcome(message: string, diagnostics?: unknown): PushOutcome {
-  return { text: "", skipped: [], errors: [message], diagnostics };
+  return {
+    text: "",
+    skipped: [],
+    errors: [message],
+    diagnostics,
+    reviewRefused: true
+  };
+}
+
+/** A refused review that repeats the failed re-read shown above it says nothing new. */
+function repeatsRefreshFailure(
+  outcome: PushOutcome,
+  failure: LoadFailure | undefined
+): boolean {
+  return (
+    !!outcome.reviewRefused &&
+    outcome.errors.every((error) => error === failure?.message)
+  );
 }
 
 function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
@@ -657,9 +702,11 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
         <Alert variant="destructive">
           <LuTriangleAlert />
           <AlertTitle>
-            {outcome.errors.length === 1
-              ? "1 problem — the push was not complete"
-              : `${outcome.errors.length} problems — the push was not complete`}
+            {outcome.reviewRefused
+              ? "Couldn't prepare the review"
+              : outcome.errors.length === 1
+                ? "1 problem — the push was not complete"
+                : `${outcome.errors.length} problems — the push was not complete`}
           </AlertTitle>
           <AlertDescription>
             <ul className="list-disc space-y-1 pl-4">
@@ -1017,6 +1064,9 @@ export function OnshapePanel({
   const [tab, setTab] = useState<PanelTab>("push");
 
   const [fields, setFields] = useState<PanelFieldsState>({ status: "closed" });
+  // Manual Mapping changes every push for the company: its fields show only
+  // after "I understand", once per page load. Here because a tab unmounts.
+  const [manualConfirmed, setManualConfirmed] = useState(false);
 
   const [switchingCompany, setSwitchingCompany] = useState(false);
   const [companySwitchError, setCompanySwitchError] = useState<string | null>(
@@ -1074,6 +1124,11 @@ export function OnshapePanel({
     async (token: string) => {
       if (!canLoadParts) return;
       setAssemblyTooLarge(null);
+      // A refused review described the BOM or parts this read replaces.
+      const withoutRefusal = (outcome: PushOutcome | null) =>
+        outcome?.reviewRefused ? null : outcome;
+      setAssemblyOutcome(withoutRefusal);
+      setPartsOutcome(withoutRefusal);
       const fail = (
         message: string,
         forbidden: boolean,
@@ -2045,14 +2100,12 @@ export function OnshapePanel({
       className="flex h-full min-h-0 flex-col"
     >
       {/*
-        The company tells a user in several companies where a push lands. Its
-        selector can't shrink and stay readable, so a narrow panel wraps it.
+        The company tells a user where a push lands. Beside the tabs a narrow
+        panel has no room for it, so the company and Sign out wrap below them.
       */}
       <HStack
         className={`w-full shrink-0 justify-between gap-2 border-b border-border px-4 py-2 ${
-          session.status === "signed-in" && session.me.companies.length > 1
-            ? "flex-wrap"
-            : ""
+          session.status === "signed-in" ? "flex-wrap" : ""
         }`}
       >
         {tabsPending ? (
@@ -2111,13 +2164,18 @@ export function OnshapePanel({
               </Select>
             ) : (
               <span
-                className="truncate text-xs text-muted-foreground"
+                className="min-w-0 truncate text-xs text-muted-foreground"
                 title={session.me.email}
               >
                 {session.me.company?.name ?? session.me.email}
               </span>
             )}
-            <Button variant="ghost" size="sm" onClick={signOut}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={signOut}
+            >
               Sign out
             </Button>
           </HStack>
@@ -2295,12 +2353,18 @@ export function OnshapePanel({
               onEdit={editFieldsEntry}
               onDescriptionMode={setDescriptionMode}
               onPushDefaults={setPushDefaults}
+              manualConfirmed={manualConfirmed}
+              onConfirmManual={() => setManualConfirmed(true)}
               onRefresh={() => loadFields(session.token)}
               onSave={async () => {
-                // A chosen column can clear the status error it was chosen for.
+                // A saved source changes what the push page reads, and a
+                // chosen column can clear the status error it was chosen for.
+                const mapChanged =
+                  fields.status === "ready" &&
+                  !propertyMapEqual(fields.entries, fields.data.map);
                 if (
                   (await saveFields(session.token)) &&
-                  parts.status === "error"
+                  (mapChanged || parts.status === "error")
                 ) {
                   void loadParts(session.token);
                 }
@@ -2436,7 +2500,9 @@ function AssemblySection({
         </Alert>
       ) : null}
 
-      {outcome ? <PushOutcomeView outcome={outcome} /> : null}
+      {outcome && !repeatsRefreshFailure(outcome, refreshFailure) ? (
+        <PushOutcomeView outcome={outcome} />
+      ) : null}
 
       {assembly.lines.length === 0 ? (
         <PanelEmpty>The BOM is empty</PanelEmpty>
@@ -2674,7 +2740,13 @@ function PartsSection({
         />
       ) : null}
 
-      {outcome ? <PushOutcomeView outcome={outcome} /> : null}
+      {outcome &&
+      !repeatsRefreshFailure(
+        outcome,
+        parts.status === "ready" ? parts.refreshFailure : undefined
+      ) ? (
+        <PushOutcomeView outcome={outcome} />
+      ) : null}
 
       {parts.status === "ready" && rows.length === 0 ? (
         <PanelEmpty>This element has no parts</PanelEmpty>
@@ -2931,6 +3003,8 @@ function FieldsSection({
   onEdit,
   onDescriptionMode,
   onPushDefaults,
+  manualConfirmed,
+  onConfirmManual,
   onRefresh,
   onSave
 }: {
@@ -2946,15 +3020,14 @@ function FieldsSection({
   ) => void;
   onDescriptionMode: (field: keyof DescriptionModes, mode: MappingMode) => void;
   onPushDefaults: (patch: Partial<OnshapePushDefaults>) => void;
+  manualConfirmed: boolean;
+  onConfirmManual: () => void;
   onRefresh: () => void;
   onSave: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [confirmingRefresh, setConfirmingRefresh] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  // Manual Mapping changes every push for the company: its fields show only
-  // after "I understand", once per page load.
-  const [manualConfirmed, setManualConfirmed] = useState(false);
   // Closed by the user while a refused save kept it open; the next save reopens it.
   const [manualDismissed, setManualDismissed] = useState(false);
   // Item and Quantity rows the user opened to change the column found.
@@ -3338,7 +3411,7 @@ function FieldsSection({
                     >
                       Back
                     </Button>
-                    <Button size="sm" onClick={() => setManualConfirmed(true)}>
+                    <Button size="sm" onClick={onConfirmManual}>
                       I understand
                     </Button>
                   </HStack>
@@ -3642,6 +3715,7 @@ function defaultPatch(
 }
 
 function FieldRow({
+  rowRef,
   source,
   carbon,
   required = false,
@@ -3649,6 +3723,7 @@ function FieldRow({
   action,
   notes
 }: {
+  rowRef?: RefObject<HTMLLIElement>;
   source: ReactNode;
   carbon: ReactNode;
   /** Marked as the custom fields list marks a required field. */
@@ -3658,7 +3733,7 @@ function FieldRow({
   notes?: ReactNode;
 }) {
   return (
-    <li className="flex w-full flex-col gap-1 px-3 py-1.5">
+    <li ref={rowRef} className="flex w-full flex-col gap-1 px-3 py-1.5">
       <div className={FIELD_ROW_GRID}>
         <div className="min-w-0 text-sm">{source}</div>
         <LuArrowRight
@@ -4149,6 +4224,11 @@ function BomLineRow({
 }) {
   // The column a typed name matched while another field reads it.
   const [typedTaken, setTypedTaken] = useState<string | null>(null);
+  // Change sits in Manual Mapping, far above this row.
+  const rowRef = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (changing) rowRef.current?.scrollIntoView({ block: "center" });
+  }, [changing]);
   const own = ONSHAPE_PROPERTIES[field].label;
   const carbon = STANDARD_TARGET_LABEL[field];
   const found = detected
@@ -4196,6 +4276,7 @@ function BomLineRow({
   const nameKey = (name: string) => name.trim().toLowerCase();
   return (
     <FieldRow
+      rowRef={rowRef}
       source={
         <SourceSelect
           value={
@@ -4940,26 +5021,44 @@ function ReviewActionBar({
   review,
   replanning,
   pushTarget,
-  onApply
+  onApply,
+  onCancel
 }: {
   review: ReviewState;
   replanning: boolean;
   pushTarget: string;
   onApply: () => void;
+  onCancel: () => void;
 }) {
   const count = applyCount(review);
+  const repush = count === 0 && canRepushRelease(review);
   return (
     <PanelActionBar>
-      <Button
-        className="w-full"
-        onClick={onApply}
-        isDisabled={review.applying || review.expired || count === 0}
-        isLoading={review.applying || replanning}
-      >
-        <span className="truncate">
-          {count === 0 ? "Nothing to push" : `Push ${count} to ${pushTarget}`}
-        </span>
-      </Button>
+      <HStack spacing={2} className="w-full">
+        <Button
+          variant="secondary"
+          onClick={onCancel}
+          isDisabled={review.applying || replanning}
+        >
+          Cancel
+        </Button>
+        <Button
+          className="min-w-0 flex-1"
+          onClick={onApply}
+          isDisabled={
+            review.applying || review.expired || (count === 0 && !repush)
+          }
+          isLoading={review.applying || replanning}
+        >
+          <span className="truncate">
+            {repush
+              ? `Re-push to ${pushTarget}`
+              : count === 0
+                ? "Nothing to push"
+                : `Push ${count} to ${pushTarget}`}
+          </span>
+        </Button>
+      </HStack>
     </PanelActionBar>
   );
 }
@@ -4996,21 +5095,9 @@ function ReviewError({
   );
 }
 
-function ReviewHeader({
-  busy,
-  onCancel
-}: {
-  busy: boolean;
-  onCancel: () => void;
-}) {
-  return (
-    <HStack className="w-full justify-between">
-      <span className="text-sm font-medium">Review → Carbon</span>
-      <Button variant="ghost" size="sm" onClick={onCancel} isDisabled={busy}>
-        Cancel
-      </Button>
-    </HStack>
-  );
+// Cancel sits beside the push in the action bar, as in Carbon's modals.
+function ReviewHeader() {
+  return <span className="w-full text-sm font-medium">Review → Carbon</span>;
 }
 
 function ReviewSummary({ counts }: { counts: Array<[number, string]> }) {
@@ -5067,15 +5154,14 @@ function TextChanges({ changes }: { changes: OwnedFieldChange[] | undefined }) {
   );
 }
 
-function RowMappedFields({
-  isCreate,
-  row
-}: {
-  isCreate: boolean;
-  row: MappedRowPlan;
-}) {
-  const lines: Array<{ key: string; text: string; tone: "muted" | "warn" }> =
-    [];
+type MappedFieldLine = { key: string; text: string; tone: "muted" | "warn" };
+
+/** What a push writes from Onshape's properties onto a row's item, and what it can't. */
+function mappedFieldLines(
+  isCreate: boolean,
+  row: MappedRowPlan
+): MappedFieldLine[] {
+  const lines: MappedFieldLine[] = [];
   if (isCreate) {
     for (const field of row.itemFields ?? []) {
       lines.push({
@@ -5115,6 +5201,17 @@ function RowMappedFields({
   for (const problem of row.mappedFieldProblems ?? []) {
     lines.push({ key: `problem:${problem}`, text: problem, tone: "warn" });
   }
+  return lines;
+}
+
+function RowMappedFields({
+  isCreate,
+  row
+}: {
+  isCreate: boolean;
+  row: MappedRowPlan;
+}) {
+  const lines = mappedFieldLines(isCreate, row);
   if (lines.length === 0) return null;
   return (
     <div className="mt-1 w-full">
@@ -5211,7 +5308,7 @@ function PartReviewSection({
 
   return (
     <VStack spacing={2} className="w-full">
-      <ReviewHeader busy={busy} onCancel={onCancel} />
+      <ReviewHeader />
       <ReviewError
         review={review}
         replanning={replanning}
@@ -5319,6 +5416,7 @@ function PartReviewSection({
             replanning={replanning}
             pushTarget={pushTarget}
             onApply={onApply}
+            onCancel={onCancel}
           />
         </>
       )}
@@ -5341,12 +5439,10 @@ function AssemblyReviewSection({
   const { plan } = review;
   const busy = review.applying || replanning;
   const offers = assetOffers(plan, review.excluded);
+  const [changedOnly, setChangedOnly] = useState(false);
   const skippedDrawings = (plan.skippedDrawings ?? []).map(skippedDrawingText);
   const fileWarnings = plan.fileWarnings ?? [];
 
-  const created =
-    plan.items.filter((item) => item.action === "create").length +
-    (plan.root.action === "create" ? 1 : 0);
   const conflicts = [
     ...(plan.root.conflict
       ? [`${plan.root.partNumber} · ${plan.root.name ?? "this assembly"}`]
@@ -5357,9 +5453,6 @@ function AssemblyReviewSection({
         item.name ? `${item.partNumber} · ${item.name}` : item.partNumber
       )
   ];
-  const reused =
-    plan.items.filter((item) => item.action === "reuse" && !item.conflict)
-      .length + (plan.root.action === "reuse" && !plan.root.conflict ? 1 : 0);
 
   const described = plan.methods.map((method) =>
     describeMethod(method, review.excluded)
@@ -5392,6 +5485,34 @@ function AssemblyReviewSection({
             : ` → ×${line.onshapeQuantity}`)
       )
   );
+  const bomChanges = writtenMethods.map((method) => ({
+    parent: method.parentPartNumber,
+    isNew: method.status === "new",
+    changes: methodBomChanges(method, review.excluded)
+  }));
+  const removedLines = bomChanges.flatMap(({ parent, changes }) =>
+    changes.removed.map(
+      (line) => `${parent}: ${line.readableId} ×${line.quantity}`
+    )
+  );
+  const changedLines = bomChanges.flatMap(({ parent, isNew, changes }) => [
+    ...changes.quantities.map(
+      (line) => `${parent}: ${line.partNumber} ×${line.from} → ×${line.to}`
+    ),
+    // Every line of a new method is an addition; its rows show them.
+    ...(isNew
+      ? []
+      : changes.added.map(
+          (line) => `${parent}: adds ${line.partNumber} ×${line.quantity}`
+        ))
+  ]);
+  const files = assetCounts(review);
+  const exported = [
+    files.models > 0 ? plural(files.models, "STEP model") : null,
+    files.drawings > 0 ? plural(files.drawings, "drawing") : null
+  ]
+    .filter(Boolean)
+    .join(" and ");
   const textChanges = [
     ...(plan.root.changes?.length && !review.excluded.has(plan.root.partNumber)
       ? [`${plan.root.partNumber}: ${textChangeLine(plan.root.changes)}`]
@@ -5421,20 +5542,11 @@ function AssemblyReviewSection({
 
   return (
     <VStack spacing={2} className="w-full">
-      <ReviewHeader busy={busy} onCancel={onCancel} />
+      <ReviewHeader />
       <ReviewError
         review={review}
         replanning={replanning}
         onReplan={onReplan}
-      />
-
-      <ReviewSummary
-        counts={[
-          [created, "created"],
-          [conflicts.length, "matched by part number"],
-          [reused, "already in Carbon"],
-          [plan.methods.length, plan.methods.length === 1 ? "BOM" : "BOMs"]
-        ]}
       />
 
       {conflicts.length > 0 ? (
@@ -5503,6 +5615,29 @@ function AssemblyReviewSection({
         />
       ) : null}
 
+      {removedLines.length > 0 ? (
+        <CappedWarningList
+          title={(n) =>
+            n === 1
+              ? "1 BOM line will be removed"
+              : `${n} BOM lines will be removed`
+          }
+          description="An earlier push wrote these, and this push doesn't."
+          lines={removedLines}
+        />
+      ) : null}
+
+      {changedLines.length > 0 ? (
+        <MutedList
+          title={
+            changedLines.length === 1
+              ? "1 BOM line changes"
+              : `${changedLines.length} BOM lines change`
+          }
+          lines={changedLines}
+        />
+      ) : null}
+
       {takenOver.length > 0 ? (
         <CappedWarningList
           title={(n) =>
@@ -5550,14 +5685,12 @@ function AssemblyReviewSection({
         />
       ) : null}
 
-      {offers.model.length > 0 || offers.drawing.length > 0 ? (
-        <AssetPicker
-          offers={offers}
-          picked={assetCounts(review)}
-          disabled={busy}
-          onSetAssets={onSetAssets}
-        />
-      ) : null}
+      <ChangedOnlyFilter
+        hasOffers={offers.model.length > 0 || offers.drawing.length > 0}
+        changedOnly={changedOnly}
+        disabled={busy}
+        onChangedOnly={setChangedOnly}
+      />
 
       {skippedDrawings.length > 0 ? (
         <MutedList
@@ -5570,291 +5703,822 @@ function AssemblyReviewSection({
         />
       ) : null}
 
-      <ul className="w-full divide-y divide-border rounded-md border border-border">
-        <li className="bg-card px-3 py-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p
-                className="truncate text-sm font-medium"
-                title={plan.root.name ?? plan.root.partNumber}
-              >
-                {plan.root.name ?? plan.root.partNumber}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {plan.root.partNumber}
-                {plan.root.revision ? ` · Rev ${plan.root.revision}` : ""}
-                {" · this assembly"}
-              </p>
-            </div>
-            {/* Create/Reuse is not actionable, so it is not shown. */}
-            {plan.root.conflict ? (
-              <div className="shrink-0">
-                <ItemActionBadge action="reuse" conflict />
-              </div>
-            ) : plan.root.released ? (
-              <div className="shrink-0">
-                <PartStateBadge state="released" />
-              </div>
-            ) : null}
-          </div>
-          {plan.root.released ? null : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {plan.root.modelCurrent
-                ? "STEP model · current"
-                : "STEP model · exports with this push"}
-            </p>
-          )}
-          <RowAssetToggles
-            row={plan.root}
-            review={review}
-            disabled={busy}
-            onSetAssets={onSetAssets}
-          />
-          {plan.root.released ? (
-            <ReleasedNote revision={plan.root.released.revision} />
-          ) : null}
-          {(() => {
-            const baseline = fieldBaseline(plan.root);
-            return baseline ? (
-              <ItemFieldSelects
-                baseline={baseline}
-                existing={!!plan.root.current}
-                edit={review.edits[plan.root.partNumber]}
-                disabled={busy}
-                onChange={(patch) => onEditItem(plan.root.partNumber, patch)}
-              />
-            ) : null;
-          })()}
-          <TextChanges changes={plan.root.changes} />
-          <RowMappedFields
-            isCreate={plan.root.action === "create"}
-            row={plan.root}
-          />
-        </li>
-        {plan.items.map((item) => (
-          <li key={item.partNumber} className="bg-card px-3 py-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p
-                  className="truncate text-sm"
-                  title={item.name ?? item.partNumber}
-                >
-                  {item.name ?? item.partNumber}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {item.partNumber}
-                  {item.revision ? ` · Rev ${item.revision}` : ""}
-                  {item.shownAsUnit ? " · one unit in Onshape" : ""}
-                  {item.isAssembly ? " · assembly" : ""}
-                </p>
-              </div>
-              {item.conflict ? (
-                <div className="shrink-0">
-                  <ItemActionBadge action="reuse" conflict />
-                </div>
-              ) : item.released ? (
-                <div className="shrink-0">
-                  <PartStateBadge state="released" />
-                </div>
-              ) : null}
-            </div>
-            <RowAssetToggles
-              row={item}
-              review={review}
-              disabled={busy}
-              onSetAssets={onSetAssets}
-            />
-            {item.released ? (
-              <ReleasedNote revision={item.released.revision} />
-            ) : null}
-            <TextChanges changes={item.changes} />
-            {(() => {
-              const baseline = fieldBaseline(item);
-              return baseline ? (
-                <ItemFieldSelects
-                  baseline={baseline}
-                  existing={!!item.current}
-                  edit={review.edits[item.partNumber]}
-                  disabled={busy}
-                  onChange={(patch) => onEditItem(item.partNumber, patch)}
-                />
-              ) : null;
-            })()}
-            <RowMappedFields isCreate={item.action === "create"} row={item} />
-          </li>
-        ))}
-      </ul>
+      <AssemblyReviewTable
+        review={review}
+        busy={busy}
+        changedOnly={changedOnly}
+        onEditItem={onEditItem}
+        onSetAssets={onSetAssets}
+      />
 
       <CarbonOnlyNote />
+      {exported || files.current > 0 ? (
+        <p className="w-full text-xs text-muted-foreground">
+          {exported ? `Exports ${exported}` : "Exports no picked files"}
+          {files.current > 0 ? ` · ${files.current} already current` : ""}
+        </p>
+      ) : null}
       <ReviewActionBar
         review={review}
         replanning={replanning}
         pushTarget={pushTarget}
         onApply={onApply}
+        onCancel={onCancel}
       />
     </VStack>
   );
 }
 
-const ASSET_LABELS: Record<AssetKind, string> = {
-  model: "STEP models",
-  drawing: "Drawings"
-};
+const FILE_STATE_HELP =
+  "Current: Carbon already has the file from the document as it is now. Out of date: Carbon has it from before a change. Editing a Part Studio, Variable Studio or Feature Studio makes every model in the document out of date; editing an assembly, only assembly models; editing a drawing, only that drawing.";
 
-/** All and None per kind, and what the push will export. Nothing starts picked. */
-function AssetPicker({
-  offers,
-  picked,
+/** The changed-only filter, and what "current" and "out of date" mean. */
+function ChangedOnlyFilter({
+  hasOffers,
+  changedOnly,
   disabled,
+  onChangedOnly
+}: {
+  hasOffers: boolean;
+  changedOnly: boolean;
+  disabled: boolean;
+  onChangedOnly: (next: boolean) => void;
+}) {
+  return (
+    <HStack spacing={2} className="w-full justify-end">
+      {hasOffers ? (
+        <Tooltip>
+          <TooltipTrigger
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="What current and out of date mean"
+          >
+            <LuInfo className="size-3.5" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            {FILE_STATE_HELP}
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
+      <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+        <Checkbox
+          checked={changedOnly}
+          disabled={disabled}
+          onCheckedChange={(next) => onChangedOnly(next === true)}
+        />
+        Changed only
+      </label>
+    </HStack>
+  );
+}
+
+type ReviewRowPlan = AssemblyPlan["root"] | AssemblyPlan["items"][number];
+
+// A long review opens on its modules; a short one shows every row.
+const COLLAPSE_ABOVE_ROWS = 30;
+
+// Narrower than this, the columns leave the part number too little room, so
+// each row stacks its settings and files under the part, as the BOM list does.
+const REVIEW_TABLE_MIN_WIDTH = 880;
+
+// Indent per tree level, as the BOM list indents; deeper levels stay at the last step.
+const REVIEW_INDENT_PX = 14;
+const REVIEW_INDENT_MAX_DEPTH = 5;
+
+// The items table's header and cells, in the panel's padding. The Table
+// primitive drops the right padding of a cell holding a checkbox; these keep it.
+const REVIEW_TH =
+  "h-10 whitespace-nowrap bg-card px-3 py-0 text-sm font-medium text-foreground/80 [&:has([role=checkbox])]:pr-3";
+const REVIEW_TD =
+  "h-auto whitespace-nowrap px-3 py-2 text-sm [&:has([role=checkbox])]:pr-3";
+
+/** An element's width, read before the first paint and again on every resize. */
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    setWidth(element.clientWidth);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setWidth(entry.contentRect.width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
+
+/** The assembly review as Onshape's tree: a table, or a stacked list when the panel is narrow. */
+function AssemblyReviewTable({
+  review,
+  busy,
+  changedOnly,
+  onEditItem,
   onSetAssets
 }: {
-  offers: Record<AssetKind, string[]>;
-  picked: { models: number; drawings: number; current: number };
-  disabled: boolean;
+  review: AssemblyReview;
+  busy: boolean;
+  changedOnly: boolean;
+  onEditItem: ReviewSectionProps<AssemblyReview>["onEditItem"];
   onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
 }) {
-  const kinds = (["model", "drawing"] as const).filter(
-    (kind) => offers[kind].length > 0
+  const { plan } = review;
+  const tree = useMemo(() => assemblyReviewTree(plan), [plan]);
+  const rowByPart = useMemo(
+    () =>
+      new Map<string, ReviewRowPlan>([
+        [plan.root.partNumber, plan.root],
+        ...plan.items.map((item) => [item.partNumber, item] as const)
+      ]),
+    [plan]
   );
+  const [containerRef, width] = useElementWidth<HTMLDivElement>();
+  const stacked = width !== null && width < REVIEW_TABLE_MIN_WIDTH;
+
+  // The rows the user opened or closed against the default.
+  const [toggled, setToggled] = useState<Set<string>>(new Set());
+  const collapseByDefault = tree.length > COLLAPSE_ABOVE_ROWS;
+  const isOpen = (row: ReviewTreeRow) =>
+    row.depth === 0
+      ? !toggled.has(row.key)
+      : collapseByDefault === toggled.has(row.key);
+  const toggle = (key: string) =>
+    setToggled((current) => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+
+  const offers = assetOffers(plan, review.excluded);
+  const changed = useMemo(() => changedPartNumbers(review), [review]);
+  const rows = changedOnly
+    ? rowsWithAncestors(tree, (row) => changed.has(row.partNumber))
+    : visibleReviewRows(
+        tree,
+        new Set(tree.filter(isOpen).map((row) => row.key))
+      );
+
+  const modelPick = (
+    <ColumnPick
+      label="STEP"
+      what="STEP model"
+      offered={offers.model}
+      picked={review.modelRows}
+      disabled={busy}
+      onPick={(on) => onSetAssets("model", offers.model, on)}
+    />
+  );
+  const drawingPick = (
+    <ColumnPick
+      label="Drawings"
+      what="drawing"
+      offered={offers.drawing}
+      picked={review.drawingRows}
+      disabled={busy}
+      onPick={(on) => onSetAssets("drawing", offers.drawing, on)}
+    />
+  );
+  const renderRow = (row: ReviewTreeRow) => {
+    const item = rowByPart.get(row.partNumber);
+    if (!item) return null;
+    return (
+      <AssemblyReviewRow
+        key={row.key}
+        stacked={stacked}
+        row={row}
+        item={item}
+        isRoot={row.depth === 0}
+        open={changedOnly || isOpen(row)}
+        canToggle={!changedOnly && row.childKeys.length > 0}
+        groupPartNumbers={
+          row.depth > 0 && row.childKeys.length > 0
+            ? subtreePartNumbers(tree, row.key)
+            : null
+        }
+        offers={offers}
+        review={review}
+        busy={busy}
+        onToggle={() => toggle(row.key)}
+        onEditItem={onEditItem}
+        onSetAssets={onSetAssets}
+      />
+    );
+  };
+
   return (
-    <div className="w-full rounded-md border border-border bg-card px-3 py-2">
-      <p className="text-sm font-medium">Files from Onshape</p>
-      {kinds.map((kind) => (
-        <div
-          key={kind}
-          className="mt-1 flex items-center justify-between gap-2 text-xs"
-        >
-          <span className="text-muted-foreground">{ASSET_LABELS[kind]}</span>
-          <span className="flex items-center gap-1">
-            <Button
-              variant="link"
-              size="sm"
-              className="h-auto p-0"
-              isDisabled={disabled}
-              onClick={() => onSetAssets(kind, offers[kind], true)}
-            >
-              All
-            </Button>
-            <span className="text-muted-foreground">·</span>
-            <Button
-              variant="link"
-              size="sm"
-              className="h-auto p-0"
-              isDisabled={disabled}
-              onClick={() => onSetAssets(kind, offers[kind], false)}
-            >
-              None
-            </Button>
-          </span>
-        </div>
-      ))}
-      <p className="mt-1 text-xs text-muted-foreground">
-        {assetSummaryText(picked)}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Current: Carbon already has the file from the document as it is now. Out
-        of date: Carbon has it from before a change. Editing a Part Studio,
-        Variable Studio or Feature Studio makes every model in the document out
-        of date; editing an assembly, only assembly models; editing a drawing,
-        only that drawing.
-      </p>
+    <div
+      ref={containerRef}
+      className="w-full overflow-x-auto rounded-md border border-border"
+    >
+      {rows.length === 0 ? (
+        <p className="px-3 py-6 text-center text-xs text-muted-foreground">
+          Nothing here changes. Untick Changed only to see every part.
+        </p>
+      ) : stacked ? (
+        <>
+          <div className="flex h-10 items-center justify-between gap-3 border-b border-border px-3 text-sm font-medium text-foreground/80">
+            <span>Part</span>
+            <span className="flex items-center gap-4">
+              {modelPick}
+              {drawingPick}
+            </span>
+          </div>
+          <ul className="divide-y divide-border">{rows.map(renderRow)}</ul>
+        </>
+      ) : (
+        <Table full>
+          <Thead>
+            <Tr>
+              <Th className={cn(REVIEW_TH, "w-full")}>Part</Th>
+              <Th className={REVIEW_TH}>Item</Th>
+              <Th className={REVIEW_TH}>Settings</Th>
+              <Th className={REVIEW_TH}>{modelPick}</Th>
+              <Th className={REVIEW_TH}>{drawingPick}</Th>
+            </Tr>
+          </Thead>
+          <Tbody>{rows.map(renderRow)}</Tbody>
+        </Table>
+      )}
     </div>
   );
 }
 
-/** A row's STEP model and Drawings checkboxes; nothing on a row that offers neither. */
-function RowAssetToggles({
+/** A file column's header: its name, and a checkbox that picks or clears every row. */
+function ColumnPick({
+  label,
+  what,
+  offered,
+  picked,
+  disabled,
+  onPick
+}: {
+  label: string;
+  what: string;
+  offered: string[];
+  picked: ReadonlySet<string>;
+  disabled: boolean;
+  onPick: (on: boolean) => void;
+}) {
+  const count = offered.filter((partNumber) => picked.has(partNumber)).length;
+  const all = offered.length > 0 && count === offered.length;
+  return (
+    <span className="flex items-center gap-1.5 whitespace-nowrap">
+      {offered.length > 0 ? (
+        <Checkbox
+          aria-label={all ? `Clear every ${what}` : `Pick every ${what}`}
+          checked={all ? true : count > 0 ? "indeterminate" : false}
+          isIndeterminate={count > 0 && !all}
+          disabled={disabled}
+          onCheckedChange={() => onPick(!all)}
+        />
+      ) : null}
+      {label}
+    </span>
+  );
+}
+
+type AssemblyReviewRowProps = {
+  /** Stacked: a list row with its settings and files under the part. */
+  stacked: boolean;
+  row: ReviewTreeRow;
+  item: ReviewRowPlan;
+  isRoot: boolean;
+  open: boolean;
+  canToggle: boolean;
+  /** A sub-assembly: every part number in it, for "Pick all files". */
+  groupPartNumbers: string[] | null;
+  offers: Record<AssetKind, string[]>;
+  review: AssemblyReview;
+  busy: boolean;
+  onToggle: () => void;
+  onEditItem: ReviewSectionProps<AssemblyReview>["onEditItem"];
+  onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
+};
+
+function AssemblyReviewRow({
+  stacked,
   row,
+  item,
+  isRoot,
+  open,
+  canToggle,
+  groupPartNumbers,
+  offers,
+  review,
+  busy,
+  onToggle,
+  onEditItem,
+  onSetAssets
+}: AssemblyReviewRowProps) {
+  const baseline = fieldBaseline(item);
+  const indent = {
+    paddingLeft: `${Math.min(row.depth, REVIEW_INDENT_MAX_DEPTH) * REVIEW_INDENT_PX}px`
+  };
+  const toggleButton = (
+    <ReviewTreeToggle
+      partNumber={item.partNumber}
+      canToggle={canToggle}
+      open={open}
+      onToggle={onToggle}
+    />
+  );
+  const pickAll = groupPartNumbers ? (
+    <GroupFilesPick
+      partNumbers={groupPartNumbers}
+      hiddenBelow={open ? null : item.partNumber}
+      offers={offers}
+      review={review}
+      disabled={busy}
+      onSetAssets={onSetAssets}
+    />
+  ) : null;
+  const settings = baseline ? (
+    <ItemFieldSelects
+      className="mt-0"
+      baseline={baseline}
+      existing={!!item.current}
+      edit={review.edits[item.partNumber]}
+      disabled={busy}
+      onChange={(patch) => onEditItem(item.partNumber, patch)}
+    />
+  ) : null;
+  const model = (
+    <ModelCell
+      item={item}
+      isRoot={isRoot}
+      labelled={stacked}
+      picked={review.modelRows.has(item.partNumber)}
+      disabled={busy}
+      onPick={(on) => onSetAssets("model", [item.partNumber], on)}
+    />
+  );
+  const drawings = (
+    <DrawingsCell
+      item={item}
+      labelled={stacked}
+      picked={review.drawingRows.has(item.partNumber)}
+      disabled={busy}
+      onPick={(on) => onSetAssets("drawing", [item.partNumber], on)}
+    />
+  );
+
+  if (stacked) {
+    return (
+      <li className="px-3 py-2">
+        <div className="flex items-start gap-1.5" style={indent}>
+          {toggleButton}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <ReviewPartText row={row} item={item} isRoot={isRoot} />
+              <span className="shrink-0">
+                <ReviewItemStatus item={item} />
+              </span>
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {settings}
+              {model}
+              {drawings}
+            </div>
+            {pickAll}
+          </div>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <Tr className="border-b border-border last:border-0">
+      <Td className={cn(REVIEW_TD, "w-full max-w-0")}>
+        <div className="flex items-start gap-1.5" style={indent}>
+          {toggleButton}
+          <div className="min-w-0 flex-1">
+            <ReviewPartText row={row} item={item} isRoot={isRoot} />
+            {pickAll}
+          </div>
+        </div>
+      </Td>
+      <Td className={REVIEW_TD}>
+        <ReviewItemStatus item={item} />
+      </Td>
+      <Td className={REVIEW_TD}>{settings ?? <NoFile />}</Td>
+      <Td className={REVIEW_TD}>{model}</Td>
+      <Td className={REVIEW_TD}>{drawings}</Td>
+    </Tr>
+  );
+}
+
+function ReviewTreeToggle({
+  partNumber,
+  canToggle,
+  open,
+  onToggle
+}: {
+  partNumber: string;
+  canToggle: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  // A spacer keeps leaf rows aligned with the rows that can open.
+  if (!canToggle) return <span className="size-3.5 shrink-0" aria-hidden />;
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={`${open ? "Collapse" : "Expand"} ${partNumber}`}
+      className="mt-[3px] shrink-0 text-muted-foreground transition-transform hover:text-foreground active:scale-[0.96] active:duration-75"
+    >
+      <LuChevronRight
+        className={cn("size-3.5 transition-transform", open && "rotate-90")}
+      />
+    </button>
+  );
+}
+
+/** As Carbon writes a revision into an item's id: `P-100.A`; revision 0 adds nothing. */
+function readableIdWithRevision(
+  partNumber: string,
+  revision: string | null | undefined
+): string {
+  return revision && revision !== "0"
+    ? `${partNumber}.${revision}`
+    : partNumber;
+}
+
+/** The part as the items table shows it: the id, then its name in muted text. */
+function ReviewPartText({
+  row,
+  item,
+  isRoot
+}: {
+  row: ReviewTreeRow;
+  item: ReviewRowPlan;
+  isRoot: boolean;
+}) {
+  const id = readableIdWithRevision(item.partNumber, item.revision);
+  const details = [
+    item.name && item.name !== item.partNumber && item.name !== id
+      ? item.name
+      : null,
+    isRoot ? "This assembly" : null,
+    "shownAsUnit" in item && item.shownAsUnit ? "One unit in Onshape" : null
+  ].filter(Boolean);
+  return (
+    <div className="min-w-0">
+      <p className="flex min-w-0 items-baseline gap-1.5">
+        <span className="truncate font-medium text-foreground">{id}</span>
+        {row.quantity !== null && row.quantity !== 1 ? (
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+            ×{row.quantity}
+          </span>
+        ) : null}
+      </p>
+      {details.length > 0 ? (
+        <p className="truncate text-xs text-muted-foreground">
+          {details.join(" · ")}
+        </p>
+      ) : null}
+      <RowNotes item={item} />
+    </div>
+  );
+}
+
+/** A sub-assembly's "Pick all files": every file offered in it; once all are picked, clears them. */
+function GroupFilesPick({
+  partNumbers,
+  hiddenBelow,
+  offers,
   review,
   disabled,
   onSetAssets
 }: {
-  row: { partNumber: string; assets?: AssemblyRowAssets };
+  partNumbers: string[];
+  /** Collapsed: this row's part number, whose own picks stay on screen. */
+  hiddenBelow: string | null;
+  offers: Record<AssetKind, string[]>;
   review: AssemblyReview;
   disabled: boolean;
   onSetAssets: (kind: AssetKind, partNumbers: string[], on: boolean) => void;
 }) {
-  const assets = row.assets;
-  if (!assets || (!assets.model && assets.drawings.length === 0)) return null;
+  const inGroup = new Set(partNumbers);
+  const models = offers.model.filter((partNumber) => inGroup.has(partNumber));
+  const drawings = offers.drawing.filter((partNumber) =>
+    inGroup.has(partNumber)
+  );
+  if (models.length + drawings.length === 0) return null;
+  const all =
+    models.every((partNumber) => review.modelRows.has(partNumber)) &&
+    drawings.every((partNumber) => review.drawingRows.has(partNumber));
+  const pickedBelow =
+    hiddenBelow === null
+      ? 0
+      : models.filter(
+          (partNumber) =>
+            partNumber !== hiddenBelow && review.modelRows.has(partNumber)
+        ).length +
+        drawings.filter(
+          (partNumber) =>
+            partNumber !== hiddenBelow && review.drawingRows.has(partNumber)
+        ).length;
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-      {assets.model ? (
-        <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
-          <Checkbox
-            checked={review.modelRows.has(row.partNumber)}
-            disabled={disabled}
-            onCheckedChange={(next) =>
-              onSetAssets("model", [row.partNumber], next === true)
-            }
-          />
-          {assets.modelCurrent
-            ? "STEP model · current"
-            : assets.modelOutOfDate
-              ? "STEP model · out of date"
-              : "STEP model"}
-        </label>
+    <span className="flex items-baseline gap-1.5">
+      <Button
+        variant="link"
+        size="sm"
+        className="h-auto p-0 text-xs font-normal text-muted-foreground hover:text-foreground"
+        isDisabled={disabled}
+        onClick={() => {
+          onSetAssets("model", models, !all);
+          onSetAssets("drawing", drawings, !all);
+        }}
+      >
+        {all ? "Clear files" : "Pick all files"}
+      </Button>
+      {pickedBelow > 0 ? (
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {pickedBelow} picked below
+        </span>
       ) : null}
-      {assets.drawings.length > 0 ? (
-        <label
-          className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
-          title={assets.drawings
-            .map((drawing) =>
-              drawing.current
-                ? `${drawing.name} (current)`
-                : drawing.outOfDate
-                  ? `${drawing.name} (out of date)`
-                  : drawing.name
-            )
-            .join(", ")}
-        >
-          <Checkbox
-            checked={review.drawingRows.has(row.partNumber)}
-            disabled={disabled}
-            onCheckedChange={(next) =>
-              onSetAssets("drawing", [row.partNumber], next === true)
-            }
-          />
-          {drawingToggleLabel(assets.drawings)}
-        </label>
+    </span>
+  );
+}
+
+function NoFile() {
+  return <span className="text-xs text-muted-foreground">—</span>;
+}
+
+// disableTooltip: a review can run to hundreds of rows.
+function ReviewItemStatus({ item }: { item: ReviewRowPlan }) {
+  if (item.conflict) {
+    return (
+      <Status
+        color="red"
+        tooltip="Carbon already has an item with this part number, not linked to this one in Onshape. The push uses that item; renumber it if it is a different part."
+      >
+        Conflict
+      </Status>
+    );
+  }
+  if (item.released) {
+    return (
+      <Status
+        color="purple"
+        tooltip={`Released in Onshape as Rev ${item.released.revision}. Its fields change only through a release.`}
+      >
+        Released
+      </Status>
+    );
+  }
+  return item.action === "create" ? (
+    <Status color="gray" disableTooltip>
+      New
+    </Status>
+  ) : (
+    <Status color="green" disableTooltip>
+      In Carbon
+    </Status>
+  );
+}
+
+type FileState = "current" | "out-of-date" | "exports";
+
+/** A file's state, in the same pill as the item's. */
+function FileStateStatus({
+  state,
+  label
+}: {
+  state: FileState;
+  label?: string;
+}) {
+  return state === "current" ? (
+    <Status color="green" disableTooltip>
+      {label ?? "Current"}
+    </Status>
+  ) : state === "exports" ? (
+    <Status color="blue" disableTooltip>
+      {label ?? "Exports"}
+    </Status>
+  ) : (
+    <Status color="orange" disableTooltip>
+      {label ?? "Out of date"}
+    </Status>
+  );
+}
+
+/** A file pick; stacked rows name the file beside the checkbox, as no header does. */
+function FilePick({
+  label,
+  ariaLabel,
+  labelled,
+  picked,
+  disabled,
+  onPick,
+  children
+}: {
+  label: ReactNode;
+  ariaLabel: string;
+  labelled: boolean;
+  picked: boolean;
+  disabled: boolean;
+  onPick: (on: boolean) => void;
+  children?: ReactNode;
+}) {
+  return (
+    <span className="flex items-center gap-1.5 whitespace-nowrap">
+      <Checkbox
+        aria-label={ariaLabel}
+        checked={picked}
+        disabled={disabled}
+        onCheckedChange={(next) => onPick(next === true)}
+      />
+      {labelled ? (
+        <span className="text-xs text-muted-foreground">{label}</span>
+      ) : null}
+      {children}
+    </span>
+  );
+}
+
+function ModelCell({
+  item,
+  isRoot,
+  labelled,
+  picked,
+  disabled,
+  onPick
+}: {
+  item: ReviewRowPlan;
+  isRoot: boolean;
+  labelled: boolean;
+  picked: boolean;
+  disabled: boolean;
+  onPick: (on: boolean) => void;
+}) {
+  // The pushed assembly's own model goes with every push: no pick.
+  if (isRoot) {
+    if (item.released) return labelled ? null : <NoFile />;
+    const current = "modelCurrent" in item && item.modelCurrent === true;
+    return (
+      <span className="flex items-center gap-1.5 whitespace-nowrap">
+        {labelled ? (
+          <span className="text-xs text-muted-foreground">STEP</span>
+        ) : null}
+        <FileStateStatus state={current ? "current" : "exports"} />
+      </span>
+    );
+  }
+  const assets = item.assets;
+  if (!assets?.model) return labelled ? null : <NoFile />;
+  return (
+    <FilePick
+      label="STEP"
+      ariaLabel={`Export the STEP model of ${item.partNumber}`}
+      labelled={labelled}
+      picked={picked}
+      disabled={disabled}
+      onPick={onPick}
+    >
+      {assets.modelCurrent ? (
+        <FileStateStatus state="current" />
+      ) : assets.modelOutOfDate ? (
+        <FileStateStatus state="out-of-date" />
+      ) : null}
+    </FilePick>
+  );
+}
+
+function DrawingsCell({
+  item,
+  labelled,
+  picked,
+  disabled,
+  onPick
+}: {
+  item: ReviewRowPlan;
+  labelled: boolean;
+  picked: boolean;
+  disabled: boolean;
+  onPick: (on: boolean) => void;
+}) {
+  const drawings = item.assets?.drawings ?? [];
+  if (drawings.length === 0) return labelled ? null : <NoFile />;
+  const summary = drawingsSummary(drawings);
+  return (
+    <FilePick
+      label={null}
+      ariaLabel={`Export the drawings of ${item.partNumber}`}
+      labelled={false}
+      picked={picked}
+      disabled={disabled}
+      onPick={onPick}
+    >
+      <Tooltip>
+        <TooltipTrigger className="text-xs tabular-nums text-muted-foreground hover:text-foreground">
+          {labelled ? plural(drawings.length, "drawing") : drawings.length}
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          {drawings.map((drawing) => (
+            <p key={drawing.elementId}>{drawingStateLine(drawing)}</p>
+          ))}
+        </TooltipContent>
+      </Tooltip>
+      {summary?.state === "current" ? (
+        <FileStateStatus state="current" />
+      ) : summary?.state === "out-of-date" ? (
+        <FileStateStatus
+          state="out-of-date"
+          label={
+            summary.count === summary.total
+              ? undefined
+              : `${summary.count} of ${summary.total} out of date`
+          }
+        />
+      ) : summary ? (
+        <FileStateStatus
+          state="exports"
+          label={`${summary.count} of ${summary.total} current`}
+        />
+      ) : null}
+    </FilePick>
+  );
+}
+
+function drawingStateLine(drawing: AssemblyRowDrawing): string {
+  if (drawing.current) return `${drawing.name}: current`;
+  if (drawing.outOfDate) return `${drawing.name}: out of date`;
+  return `${drawing.name}: not in Carbon`;
+}
+
+/** One muted line per kind of detail; the details themselves in a tooltip. */
+function RowNotes({ item }: { item: ReviewRowPlan }) {
+  const lines = mappedFieldLines(item.action === "create", item);
+  const values = lines.filter((line) => line.tone === "muted");
+  const problems = lines.filter((line) => line.tone === "warn");
+  const descriptions = item.changes?.length
+    ? textChangeLine(item.changes)
+    : null;
+  if (values.length === 0 && problems.length === 0 && !descriptions) {
+    return null;
+  }
+  return (
+    <div className="flex min-w-0 flex-wrap gap-x-2">
+      {values.length > 0 ? (
+        <NoteWithDetails
+          text={
+            values.length === 1
+              ? "1 value from Onshape"
+              : `${values.length} values from Onshape`
+          }
+          lines={values.map((line) => line.text)}
+        />
+      ) : null}
+      {descriptions ? (
+        <NoteWithDetails text="Descriptions change" lines={[descriptions]} />
+      ) : null}
+      {problems.length > 0 ? (
+        <NoteWithDetails
+          warn
+          text={
+            problems.length === 1
+              ? "1 value can't be written"
+              : `${problems.length} values can't be written`
+          }
+          lines={problems.map((line) => line.text)}
+        />
       ) : null}
     </div>
   );
 }
 
-/** What the picks export; files already current are named apart. */
-function assetSummaryText(picked: {
-  models: number;
-  drawings: number;
-  current: number;
-}): string {
-  const exporting = [
-    ...(picked.models > 0 ? [plural(picked.models, "STEP model")] : []),
-    ...(picked.drawings > 0 ? [plural(picked.drawings, "drawing")] : [])
-  ];
-  const current =
-    picked.current === 0
-      ? ""
-      : picked.current === 1
-        ? "1 picked file is already current, so it isn't exported again."
-        : `${picked.current} picked files are already current, so they aren't exported again.`;
-  if (exporting.length === 0) {
-    return current || "Nothing picked, so no files export from Onshape.";
-  }
-  const exportText = `${exporting.join(" and ")} will export from Onshape.`;
-  return current ? `${exportText} ${current}` : exportText;
-}
-
-function drawingToggleLabel(drawings: AssemblyRowDrawing[]): string {
-  const label = `Drawings (${drawings.length})`;
-  const current = drawings.filter((drawing) => drawing.current).length;
-  const outOfDate = drawings.filter((drawing) => drawing.outOfDate).length;
-  if (current === drawings.length) return `${label} · current`;
-  if (outOfDate === drawings.length) return `${label} · out of date`;
-  const parts = [
-    ...(current > 0 ? [`${current} current`] : []),
-    ...(outOfDate > 0 ? [`${outOfDate} out of date`] : [])
-  ];
-  return parts.length > 0 ? `${label} · ${parts.join(", ")}` : label;
+function NoteWithDetails({
+  text,
+  lines,
+  warn = false
+}: {
+  text: string;
+  lines: string[];
+  warn?: boolean;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        className={cn(
+          "text-xs underline decoration-dotted underline-offset-2",
+          warn
+            ? "text-amber-600 dark:text-amber-400"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        {text}
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm">
+        {lines.map((line, index) => (
+          // Two values can read the same, so the text is not a key.
+          <p key={index}>{line}</p>
+        ))}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 function MutedList({ title, lines }: { title: string; lines: string[] }) {
@@ -5969,7 +6633,7 @@ function ReleaseReviewSection({
 
   return (
     <VStack spacing={2} className="w-full">
-      <ReviewHeader busy={busy} onCancel={onCancel} />
+      <ReviewHeader />
       <ReviewError
         review={review}
         replanning={replanning}
@@ -6061,8 +6725,13 @@ function ReleaseReviewSection({
                 Released — BOM lines won't change
               </p>
             ) : null}
+            {item.locked ? (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                The push leaves this revision as it is: {item.locked}
+              </p>
+            ) : null}
             {(() => {
-              const baseline = fieldBaseline(item);
+              const baseline = item.locked ? null : fieldBaseline(item);
               return baseline ? (
                 <ItemFieldSelects
                   baseline={baseline}
@@ -6073,10 +6742,11 @@ function ReleaseReviewSection({
                 />
               ) : null;
             })()}
-            <TextChanges changes={item.changes} />
-            {item.action === "create" ||
-            item.action === "reuse" ||
-            item.action === "revision" ? (
+            <TextChanges changes={item.locked ? undefined : item.changes} />
+            {!item.locked &&
+            (item.action === "create" ||
+              item.action === "reuse" ||
+              item.action === "revision") ? (
               <RowMappedFields isCreate={item.action === "create"} row={item} />
             ) : null}
             {item.action === "revision" &&
@@ -6150,6 +6820,7 @@ function ReleaseReviewSection({
         replanning={replanning}
         pushTarget={pushTarget}
         onApply={onApply}
+        onCancel={onCancel}
       />
     </VStack>
   );

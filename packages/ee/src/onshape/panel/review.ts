@@ -5,12 +5,17 @@
 import type {
   AssemblyPlan,
   AssemblyPlanMethod,
+  AssemblyRowDrawing,
   ChangeNoticeEdit,
   ItemEdit,
   ItemFieldChange,
+  ItemFieldSnapshot,
   KeptDifference,
+  MappedRowPlan,
+  OwnedFieldChange,
   PartPlan,
   PartPlanRow,
+  PlanLine,
   ProposedItem,
   ReleasePlan
 } from "./plan";
@@ -457,30 +462,251 @@ export function applyRequestBody(
   }
 }
 
+/** What a push changes in one method's BOM. */
+export type MethodBomChanges = {
+  added: Array<{ partNumber: string; quantity: number }>;
+  removed: PlanLine[];
+  quantities: Array<{ partNumber: string; from: number; to: number }>;
+  reordered: boolean;
+};
+
+/** An excluded part is not written, so a line the last push wrote for it goes. */
+export function methodBomChanges(
+  method: AssemblyPlanMethod,
+  excluded: ReadonlySet<string>
+): MethodBomChanges {
+  const changes: MethodBomChanges = {
+    added: [],
+    removed: [],
+    quantities: [],
+    reordered: false
+  };
+  if (method.status === "missing" || excluded.has(method.parentPartNumber)) {
+    return changes;
+  }
+  // Each line pairs once, so a part listed twice keeps two lines.
+  const unpaired = method.replaces.map((line, position) => ({
+    line,
+    position
+  }));
+  const takenOver = method.takesOver.map((line) => line.readableId);
+  let lastPosition = -1;
+  for (const write of method.writes) {
+    if (excluded.has(write.partNumber)) continue;
+    const at = unpaired.findIndex(
+      ({ line }) => line.readableId === write.partNumber
+    );
+    if (at === -1) {
+      const manual = takenOver.indexOf(write.partNumber);
+      if (manual === -1) {
+        changes.added.push({
+          partNumber: write.partNumber,
+          quantity: write.quantity
+        });
+      } else {
+        takenOver.splice(manual, 1);
+      }
+      continue;
+    }
+    const [paired] = unpaired.splice(at, 1);
+    if (!paired) continue;
+    if (paired.position < lastPosition) changes.reordered = true;
+    lastPosition = paired.position;
+    if (paired.line.quantity !== write.quantity) {
+      changes.quantities.push({
+        partNumber: write.partNumber,
+        from: paired.line.quantity,
+        to: write.quantity
+      });
+    }
+  }
+  changes.removed = unpaired.map(({ line }) => line);
+  return changes;
+}
+
+function methodWrites(
+  method: AssemblyPlanMethod,
+  excluded: ReadonlySet<string>
+): boolean {
+  const changes = methodBomChanges(method, excluded);
+  return (
+    changes.added.length > 0 ||
+    changes.removed.length > 0 ||
+    changes.quantities.length > 0 ||
+    changes.reordered ||
+    (method.status !== "missing" &&
+      !excluded.has(method.parentPartNumber) &&
+      method.takesOver.some((line) => !excluded.has(line.readableId)))
+  );
+}
+
+type WritableRow = MappedRowPlan & {
+  changes?: OwnedFieldChange[];
+  current?: ItemFieldSnapshot | null;
+};
+
+/** An existing item takes only its manufacturing choices, and only what differs. */
+function editChangesItem(
+  row: WritableRow,
+  edit: ItemEdit | undefined
+): boolean {
+  if (!edit) return false;
+  const baseline = row.target ?? row.current;
+  return (
+    ["replenishmentSystem", "defaultMethodType", "itemTrackingType"] as const
+  ).some(
+    (field) => edit[field] !== undefined && edit[field] !== baseline?.[field]
+  );
+}
+
+function writesExistingItem(
+  row: WritableRow,
+  edit: ItemEdit | undefined
+): boolean {
+  return (
+    (row.changes?.length ?? 0) > 0 ||
+    (row.itemFieldChanges?.length ?? 0) > 0 ||
+    (row.customFields?.length ?? 0) > 0 ||
+    editChangesItem(row, edit)
+  );
+}
+
+type AssemblyRow = AssemblyPlan["root"] | AssemblyPlan["items"][number];
+
+/** Files aside: the push creates this row's item, links it, or writes its fields or BOM. */
+function assemblyRowWrites(
+  review: AssemblyReview,
+  row: AssemblyRow,
+  changedMethods: ReadonlySet<string>
+): boolean {
+  if (row.action === "create" || changedMethods.has(row.partNumber)) {
+    return true;
+  }
+  // A release made a revision of this part: no fields, link or model.
+  if (row.released) return false;
+  return (
+    !!row.conflict || writesExistingItem(row, review.edits[row.partNumber])
+  );
+}
+
+function changedMethodParents(review: AssemblyReview): Set<string> {
+  return new Set(
+    review.plan.methods
+      .filter((method) => methodWrites(method, review.excluded))
+      .map((method) => method.parentPartNumber)
+  );
+}
+
+function assemblyRows(review: AssemblyReview): AssemblyRow[] {
+  return [
+    review.plan.root,
+    ...review.plan.items.filter((item) => !review.excluded.has(item.partNumber))
+  ];
+}
+
+/** The root's own model goes with every push, unless a release holds the root. */
+function rootModelExports(root: AssemblyPlan["root"]): boolean {
+  return !root.released && !root.modelCurrent;
+}
+
+/** The rows "Changed only" keeps: the push writes to them, or they offer a file Carbon lacks. */
+export function changedPartNumbers(review: AssemblyReview): Set<string> {
+  const changedMethods = changedMethodParents(review);
+  const { root } = review.plan;
+  return new Set(
+    assemblyRows(review)
+      .filter((row) => {
+        const assets = row.assets;
+        return (
+          assemblyRowWrites(review, row, changedMethods) ||
+          !!row.conflict ||
+          (row === root && rootModelExports(root)) ||
+          (!!assets?.model && !assets.modelCurrent) ||
+          (assets?.drawings ?? []).some((drawing) => !drawing.current)
+        );
+      })
+      .map((row) => row.partNumber)
+  );
+}
+
+function picksFileToExport(review: AssemblyReview, row: AssemblyRow): boolean {
+  const assets = row.assets;
+  if (!assets) return false;
+  return (
+    (review.modelRows.has(row.partNumber) &&
+      !!assets.model &&
+      !assets.modelCurrent) ||
+    (review.drawingRows.has(row.partNumber) &&
+      assets.drawings.some((drawing) => !drawing.current))
+  );
+}
+
 export function applyCount(review: ReviewState): number {
   switch (review.kind) {
     case "part":
       return review.selected.size;
-    case "assembly":
-      return (
-        1 +
-        review.plan.items.filter(
-          (item) => !review.excluded.has(item.partNumber)
-        ).length
+    case "assembly": {
+      const changedMethods = changedMethodParents(review);
+      const { root } = review.plan;
+      return assemblyRows(review).filter(
+        (row) =>
+          assemblyRowWrites(review, row, changedMethods) ||
+          (row === root && rootModelExports(root)) ||
+          picksFileToExport(review, row)
+      ).length;
+    }
+    case "release": {
+      const { plan, edits } = review;
+      const items = plan.items.filter((item) => {
+        // An attached drawing is uploaded to its model, so a release of
+        // drawings alone still has something to push.
+        if (item.action !== "reuse") return item.action !== "drawing-unmatched";
+        if (item.locked) return false;
+        // A released assembly's BOM is rewritten unless Carbon released it too.
+        const rewritesBom =
+          item.elementType === 1 && item.methodStatus !== "active";
+        return rewritesBom || writesExistingItem(item, edits[item.partNumber]);
+      });
+      const children = plan.children.filter(
+        (child) =>
+          child.action === "create" ||
+          writesExistingItem(child, edits[child.partNumber])
       );
-    case "release":
-      // An attached drawing is uploaded to its model, so a release of
-      // drawings alone still has something to push.
-      return (
-        review.plan.items.filter(
-          (item) =>
-            item.action === "reuse" ||
-            item.action === "revision" ||
-            item.action === "create" ||
-            item.action === "drawing"
-        ).length + review.plan.children.length
-      );
+      return items.length + children.length;
+    }
   }
+}
+
+/**
+ * Each push re-checks a reused revision's model, so a release with nothing to
+ * write can still export one that never landed.
+ */
+export function canRepushRelease(review: ReviewState): boolean {
+  return (
+    review.kind === "release" &&
+    review.plan.items.some((item) => item.action === "reuse" && !item.locked)
+  );
+}
+
+export type DrawingsSummary = {
+  state: "current" | "out-of-date" | "partly-current";
+  count: number;
+  total: number;
+};
+
+/** A row's drawings in one badge; null when none of them is in Carbon yet. */
+export function drawingsSummary(
+  drawings: readonly AssemblyRowDrawing[]
+): DrawingsSummary | null {
+  const total = drawings.length;
+  const current = drawings.filter((drawing) => drawing.current).length;
+  const outOfDate = drawings.filter((drawing) => drawing.outOfDate).length;
+  if (total === 0) return null;
+  if (current === total) return { state: "current", count: current, total };
+  if (outOfDate > 0) return { state: "out-of-date", count: outOfDate, total };
+  return current > 0
+    ? { state: "partly-current", count: current, total }
+    : null;
 }
 
 export type ApplyFieldError = { key: string; errors: string[] };

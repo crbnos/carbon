@@ -144,7 +144,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return data(failure.body, { status: failure.status });
     }
 
-    const { root: bomRoot, lines, missingColumns } = parseBomTree(bom, sources);
+    const {
+      root: bomRoot,
+      lines,
+      missingColumns,
+      blankColumns
+    } = parseBomTree(bom, sources);
     // Without its required columns every line would read "Not in Carbon".
     if (missingColumns.length > 0) {
       const diagnostics = {
@@ -158,7 +163,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ...diagnostics
       });
       return data(
-        { error: missingBomColumnsMessage(missingColumns), diagnostics },
+        {
+          error: missingBomColumnsMessage(missingColumns, blankColumns),
+          diagnostics
+        },
         { status: 422 }
       );
     }

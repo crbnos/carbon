@@ -4975,6 +4975,69 @@ export type OpenReleaseNotice = {
 };
 
 /**
+ * Revisions a change notice holds with its engineering content locked
+ * (Implementation onward, or awaiting approval), by item id, with the reason
+ * they take no writes. A method's changeOrderId is cleared at release, so a set
+ * one means a notice holds the item now.
+ */
+export async function loadLockedRevisions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+): Promise<
+  { data: Map<string, string>; error: null } | { data: null; error: string }
+> {
+  const lockedByItemId = new Map<string, string>();
+  if (itemIds.length === 0) return { data: lockedByItemId, error: null };
+  const held = await selectInBatches(itemIds, (batch) =>
+    client
+      .from("makeMethod")
+      .select("itemId, changeOrderId, changeOrder(changeOrderId)")
+      .eq("companyId", companyId)
+      .in("itemId", batch)
+      .not("changeOrderId", "is", null)
+  );
+  if (held.error) return { data: null, error: held.error.message };
+  const noticeIds = [
+    ...new Set(
+      held.data.flatMap((method) =>
+        method.changeOrderId ? [method.changeOrderId] : []
+      )
+    )
+  ];
+  // One check per notice; a release's revisions share one or two.
+  const lockByNoticeId = new Map(
+    await Promise.all(
+      noticeIds.map(
+        async (changeNoticeId) =>
+          [
+            changeNoticeId,
+            (
+              await requireChangeNoticeEditable(client, {
+                changeNoticeId,
+                companyId,
+                scope: "engineering"
+              })
+            )?.error.message ?? null
+          ] as const
+      )
+    )
+  );
+  for (const method of held.data) {
+    const lock = method.changeOrderId
+      ? lockByNoticeId.get(method.changeOrderId)
+      : null;
+    if (!lock || lockedByItemId.has(method.itemId)) continue;
+    const notice = method.changeOrder?.changeOrderId;
+    lockedByItemId.set(
+      method.itemId,
+      notice ? `change notice ${notice}: ${lock}` : lock
+    );
+  }
+  return { data: lockedByItemId, error: null };
+}
+
+/**
  * The notice an earlier push of this release made, while it still takes items:
  * a release spanning two documents is pushed once per document into one notice.
  * Fails closed: a read that fails is an error, never "no open notice", which
@@ -7999,68 +8062,24 @@ export async function pushOnshapeRelease(
     }
   }
 
-  // A reused revision held by a change notice whose engineering content is
-  // locked (Implementation onward, or awaiting approval) takes no writes: not
-  // its fields, not its BOM. A method's changeOrderId is cleared at release, so
-  // a set one means a notice holds the item now.
-  const lockedByItemId = new Map<string, string>();
-  const reusedItemIds = decisions.flatMap((decision) =>
-    decision.kind === "reuse" ? [decision.row.id] : []
+  // A reused revision held by a locked change notice takes no writes: not its
+  // fields, not its BOM.
+  const lockedRevisions = await loadLockedRevisions(
+    client,
+    companyId,
+    decisions.flatMap((decision) =>
+      decision.kind === "reuse" ? [decision.row.id] : []
+    )
   );
-  if (reusedItemIds.length > 0) {
-    const held = await selectInBatches(reusedItemIds, (batch) =>
-      client
-        .from("makeMethod")
-        .select("itemId, changeOrderId, changeOrder(changeOrderId)")
-        .eq("companyId", companyId)
-        .in("itemId", batch)
-        .not("changeOrderId", "is", null)
+  if (lockedRevisions.error !== null) {
+    return panelReply(
+      {
+        error: `Couldn't check the change notices that hold the existing revisions (${lockedRevisions.error}); nothing was written. Try again.`
+      },
+      { status: 500 }
     );
-    if (held.error) {
-      return panelReply(
-        {
-          error: `Couldn't check the change notices that hold the existing revisions (${held.error.message}); nothing was written. Try again.`
-        },
-        { status: 500 }
-      );
-    }
-    const noticeIds = [
-      ...new Set(
-        held.data.flatMap((method) =>
-          method.changeOrderId ? [method.changeOrderId] : []
-        )
-      )
-    ];
-    // One check per notice; a release's revisions share one or two.
-    const lockByNoticeId = new Map(
-      await Promise.all(
-        noticeIds.map(
-          async (changeNoticeId) =>
-            [
-              changeNoticeId,
-              (
-                await requireChangeNoticeEditable(client, {
-                  changeNoticeId,
-                  companyId,
-                  scope: "engineering"
-                })
-              )?.error.message ?? null
-            ] as const
-        )
-      )
-    );
-    for (const method of held.data) {
-      const lock = method.changeOrderId
-        ? lockByNoticeId.get(method.changeOrderId)
-        : null;
-      if (!lock || lockedByItemId.has(method.itemId)) continue;
-      const notice = method.changeOrder?.changeOrderId;
-      lockedByItemId.set(
-        method.itemId,
-        notice ? `change notice ${notice}: ${lock}` : lock
-      );
-    }
   }
+  const lockedByItemId = lockedRevisions.data;
 
   // The notice exists before the first item write, so each item is staged as it
   // is written. A second document of the same release reuses the open notice.

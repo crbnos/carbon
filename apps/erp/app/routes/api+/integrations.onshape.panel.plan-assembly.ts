@@ -149,7 +149,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Element metadata names the assembly; the BOM's top row is the fallback.
-  const { root: bomRoot, lines, missingColumns } = parseBomTree(bom, sources);
+  const {
+    root: bomRoot,
+    lines,
+    missingColumns,
+    blankColumns
+  } = parseBomTree(bom, sources);
   // An empty plan from an unreadable tree would drop every Onshape line.
   if (missingColumns.length > 0) {
     const diagnostics = {
@@ -163,7 +168,10 @@ export async function action({ request }: ActionFunctionArgs) {
       ...diagnostics
     });
     return data(
-      { error: missingBomColumnsMessage(missingColumns), diagnostics },
+      {
+        error: missingBomColumnsMessage(missingColumns, blankColumns),
+        diagnostics
+      },
       { status: 422 }
     );
   }

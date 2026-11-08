@@ -43,7 +43,10 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { findOpenReleaseNotice } from "~/modules/settings/settings.service";
+import {
+  findOpenReleaseNotice,
+  loadLockedRevisions
+} from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"
@@ -252,7 +255,10 @@ export async function action({ request }: ActionFunctionArgs) {
         item.elementId,
         item.configuration ?? null
       );
-      const { lines, missingColumns } = parseBomTree(bom, sources);
+      const { lines, missingColumns, blankColumns } = parseBomTree(
+        bom,
+        sources
+      );
       if (missingColumns.length > 0) {
         bomLinesByElementId[bomKey] = null;
         const unread = {
@@ -277,7 +283,8 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         warnings.push(
           `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(
-            missingColumns
+            missingColumns,
+            blankColumns
           )}`
         );
         continue;
@@ -435,9 +442,36 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
-  const plan = openNotice.data
-    ? { ...built, existingChangeNotice: openNotice.data.changeNoticeId }
-    : built;
+  // For the review only: the push checks again, so a failed read marks nothing.
+  const locks = await loadLockedRevisions(
+    client,
+    companyId,
+    built.items.flatMap((item) =>
+      item.action === "reuse" && item.existingItemId
+        ? [item.existingItemId]
+        : []
+    )
+  );
+  if (locks.error !== null) {
+    logger.warn("Couldn't read the change notices holding reused revisions", {
+      companyId,
+      releaseId,
+      error: locks.error
+    });
+  }
+  const plan = {
+    ...built,
+    items: built.items.map((item) => {
+      const locked =
+        item.action === "reuse" && item.existingItemId
+          ? locks.data?.get(item.existingItemId)
+          : undefined;
+      return locked ? { ...item, locked } : item;
+    }),
+    ...(openNotice.data
+      ? { existingChangeNotice: openNotice.data.changeNoticeId }
+      : {})
+  };
 
   // Only the stored copy carries the BOM lines the apply walks, minus cells.
   const stored: StoredReleasePlan = {

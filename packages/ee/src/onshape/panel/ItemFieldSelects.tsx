@@ -3,10 +3,14 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import {
+  cn,
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger
+  SelectTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
@@ -78,6 +82,11 @@ function trackingIcon(value: string): ReactNode {
   }
 }
 
+// The items table's secondary Badge as a select trigger: the value's icon,
+// with the field and its value in the tooltip.
+const FIELD_PILL =
+  "inline-flex h-6 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-transparent px-2 text-foreground/70 outline-none transition-[background-color,box-shadow] hover:bg-accent focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:bg-accent dark:border-border dark:text-secondary-foreground";
+
 function FieldSelect<T extends string>({
   label,
   value,
@@ -99,15 +108,22 @@ function FieldSelect<T extends string>({
       onValueChange={(next) => onChange(next as T)}
       disabled={disabled}
     >
-      <SelectTrigger
-        size="sm"
-        hideIcon
-        aria-label={`${label}: ${value}`}
-        title={`${label}: ${value}`}
-        className="h-7 w-auto shrink-0 gap-0 px-1.5 max-md:h-7 max-md:text-xs"
-      >
-        {icon(value)}
-      </SelectTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex shrink-0">
+            <SelectTrigger
+              inline
+              aria-label={`${label}: ${value}`}
+              className={FIELD_PILL}
+            >
+              {icon(value)}
+            </SelectTrigger>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {label}: {value}
+        </TooltipContent>
+      </Tooltip>
       <SelectContent>
         {options.map((option) => (
           <SelectItem key={option} value={option}>
@@ -122,14 +138,19 @@ function FieldSelect<T extends string>({
   );
 }
 
-/** Icon-only Replenishment, Method and Tracking selects; onChange reports only what the user changes. */
+/**
+ * Replenishment, Method and Tracking selects as icon pills; each names its
+ * field and value in a tooltip. onChange reports only what the user changes.
+ */
 export function ItemFieldSelects({
   baseline,
   existing,
   edit,
   disabled,
+  className,
   onChange
 }: {
+  className?: string;
   /** The create proposal, the "everyPush" target, or the item's current values. */
   baseline: ItemFieldSnapshot;
   /** In Carbon: a Replenishment change sets the method as the item page does; else as the Part form does. */
@@ -149,7 +170,7 @@ export function ItemFieldSelects({
     baseline.itemTrackingType;
 
   return (
-    <div className="mt-1.5 flex items-center gap-1">
+    <div className={cn("mt-1.5 flex items-center gap-1", className)}>
       <FieldSelect
         label="Replenishment"
         value={replenishmentSystem}

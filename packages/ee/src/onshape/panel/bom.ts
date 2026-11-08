@@ -85,8 +85,10 @@ export function parseBomTree(
   /** The assembly's own row (index "0"), when the export included it. */
   root: OnshapeBomNode | null;
   lines: OnshapeBomNode[];
-  /** Labels of the required columns not found; non-empty: callers refuse to plan. */
+  /** Labels of the required columns not found or `blankColumns`; non-empty: callers refuse to plan. */
   missingColumns: string[];
+  /** Labels of the chosen Item and Quantity columns a line has no usable value in. */
+  blankColumns: string[];
 } {
   const bom = (payload ?? {}) as {
     headers?: BomHeader[];
@@ -104,13 +106,40 @@ export function parseBomTree(
         );
   const get = (row: BomRow, field: keyof typeof columns) => {
     const id = columns[field];
-    return id ? cell(row.headerIdToValue?.[id]) : null;
+    const text = id ? cell(row.headerIdToValue?.[id]) : null;
+    return isNotApplicable(text) ? null : text;
   };
 
+  // Onshape's own columns always hold a value; a chosen one may hold nothing.
+  const own = bomColumnIds(headers);
+  const chosenItem = columns.item !== own.item;
+  const chosenQuantity = columns.quantity !== own.quantity;
+  const readsAsRoot = (index: string | null) => index === null || index === "0";
+  // A chosen Item column says nothing about the assembly's own row. Onshape's
+  // column finds it; a BOM without that column lists it first.
+  const chosenRootRow = !chosenItem
+    ? undefined
+    : own.item
+      ? rows.find((row) =>
+          readsAsRoot(cell(row.headerIdToValue?.[own.item as string]))
+        )
+      : rows[0] && readsAsRoot(get(rows[0], "item"))
+        ? rows[0]
+        : undefined;
+  const blank = new Set<"item" | "quantity">();
+
   const nodes: OnshapeBomNode[] = rows.map((row) => {
-    const index = get(row, "item") ?? "";
+    const itemText = get(row, "item");
+    const index = row === chosenRootRow ? "0" : (itemText ?? "");
     const quantityText = get(row, "quantity");
     const quantity = quantityText ? Number(quantityText) : Number.NaN;
+    const validQuantity = Number.isFinite(quantity) && quantity > 0;
+    const isRoot =
+      row === chosenRootRow || (!chosenItem && readsAsRoot(itemText));
+    if (!isRoot) {
+      if (chosenItem && readsAsRoot(itemText)) blank.add("item");
+      if (chosenQuantity && !validQuantity) blank.add("quantity");
+    }
     const source = row.itemSource ?? null;
     const shownAsUnit =
       get(row, "bomBehavior")?.toLowerCase() === SHOWN_AS_UNIT;
@@ -135,7 +164,7 @@ export function parseBomTree(
       revision: get(row, "revision"),
       name: get(row, "name"),
       description: get(row, "description"),
-      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+      quantity: validQuantity ? quantity : 1,
       ...(shownAsUnit ? { shownAsUnit: true as const } : {}),
       ...(standardContent ? { standardContent: true as const } : {}),
       ...(properties.length > 0 ? { properties } : {}),
@@ -185,7 +214,13 @@ export function parseBomTree(
   };
   sortRec(lines);
 
-  return { root, lines, missingColumns };
+  const blankColumns = [...blank].map((field) => sourceLabel(field, sources));
+  return {
+    root,
+    lines,
+    missingColumns: [...missingColumns, ...blankColumns],
+    blankColumns
+  };
 }
 
 export type AssemblyPartSource = {
@@ -246,17 +281,34 @@ export function withoutProperties(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
   }));
 }
 
-export function missingBomColumnsMessage(missingColumns: string[]): string {
-  const names = new Intl.ListFormat("en", {
-    style: "long",
-    type: "conjunction"
-  }).format(missingColumns.map((name) => `"${name}"`));
-  const plural = missingColumns.length > 1;
-  return `Onshape's BOM for this assembly has no ${names} column${
+export function missingBomColumnsMessage(
+  missingColumns: string[],
+  blankColumns: string[] = []
+): string {
+  const quoted = (columns: string[]) =>
+    new Intl.ListFormat("en", {
+      style: "long",
+      type: "conjunction"
+    }).format(columns.map((name) => `"${name}"`));
+  const absent = missingColumns.filter((name) => !blankColumns.includes(name));
+  const plural = absent.length > 1;
+  const absentText = `Onshape's BOM for this assembly has no ${quoted(absent)} column${
     plural ? "s" : ""
   }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, or choose the column${
     plural ? "s" : ""
   } on the Fields page, then try again.`;
+  const blankPlural = blankColumns.length > 1;
+  const blankText = `${quoted(blankColumns)} ${
+    blankPlural ? "are" : "is"
+  } blank or unreadable on some rows of this assembly's BOM, so the BOM can't be read. Fill ${
+    blankPlural ? "them" : "it"
+  } in Onshape, or choose another column on the Fields page, then try again.`;
+  return [
+    absent.length > 0 ? absentText : null,
+    blankColumns.length > 0 ? blankText : null
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 /** At most this many headers go into a diagnostics report. */
