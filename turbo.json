@@ -59,17 +59,6 @@
       "dependsOn": ["^build"],
       "cache": false
     },
-    "db:types": {
-      "outputs": [],
-      "cache": true
-    },
-    "db:init": {
-      "outputs": []
-    },
-    "db:migrate": {
-      "outputs": [],
-      "cache": false
-    },
     "db:seed": {
       "outputs": [],
       "cache": false
@@ -86,6 +75,7 @@
         "apps/erp/app/types/**",
         "apps/erp/app/utils/**",
         "apps/erp/tsconfig.json",
+        "packages/*/package.json",
         "packages/{account,api,auth,database,documents,ee,env,files,form,jobs,kv,lib,locale,logger,notifications,onboarding,planning,printing,react,stripe,utils}/src/**",
         "packages/database/supabase/migrations/**",
         "scripts/generate-mcp.ts",

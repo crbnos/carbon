@@ -123,7 +123,11 @@ export const attachments = {
   },
   inventoryCountLine: { events: true, statement: ["broadcast_table_changes"] },
   invite: { events: true },
-  invoiceSettlement: { events: true, statement: ["broadcast_table_changes"] },
+  invoiceSettlement: {
+    before: ["prevent_invalid_deposit_refund"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
   itarCertification: { events: true },
   item: {
     after: [
@@ -277,6 +281,7 @@ export const attachments = {
   notification: { statement: ["broadcast_user_changes"] },
   part: { statement: ["broadcast_table_changes"] },
   payment: {
+    before: ["prevent_invalid_deposit_refund"],
     after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -323,6 +328,7 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   purchaseOrder: {
+    before: ["prevent_prepaid_purchase_order_deletion"],
     after: ["sync_advance_document_sequence"],
     events: true,
     statement: ["broadcast_table_changes"]

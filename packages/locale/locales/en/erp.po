@@ -662,6 +662,10 @@ msgstr "{0} suppliers with a balance"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} uninvoiced shipments"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1468,6 +1472,9 @@ msgstr "1 suggested batch"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 target is committed — review on the order"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 uninvoiced shipment"
 
 msgid "1 unit"
 msgstr "1 unit"
@@ -22458,6 +22465,9 @@ msgstr "Posting date"
 msgid "Posting Date"
 msgstr "Posting Date"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Posting refunds the advances held for this document."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 
@@ -22490,6 +22500,15 @@ msgstr "Prefix"
 
 msgid "Preparing the backup for restore…"
 msgstr "Preparing the backup for restore…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Prepayment (its order's invoices only)"
+
+msgid "Prepayment for"
+msgstr "Prepayment for"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "Prepayment for {document} (its invoices only)"
 
 msgid "Prepayments"
 msgstr "Prepayments"
@@ -24180,6 +24199,9 @@ msgstr "Refund from Supplier"
 
 msgid "Refund memos"
 msgstr "Refund memos"
+
+msgid "Refund prepayment for"
+msgstr "Refund prepayment for"
 
 msgid "Refund to Customer"
 msgstr "Refund to Customer"
@@ -28885,6 +28907,9 @@ msgstr "Supplier Payment Discounts (default)"
 msgid "Supplier Prepayments"
 msgstr "Supplier Prepayments"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+
 msgid "supplier process"
 msgstr "supplier process"
 
@@ -29166,6 +29191,9 @@ msgstr "Takes Effect"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Takes effect {effectiveDate}."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Takes the prepayment held for this order back out of supplier prepayments."
 
 msgid "Takes work center offline"
 msgstr "Takes work center offline"
@@ -31045,6 +31073,9 @@ msgstr "These rows link to data outside this company, so a safety copy of your c
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 
@@ -32323,6 +32354,12 @@ msgstr "Unapplied"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Unapplied cash is held as an advance for this document."
+
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"
 
@@ -32416,6 +32453,9 @@ msgstr "Uninstall {0} first"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Uninstall {conflictsWith} first"
+
+msgid "Uninvoiced Shipments"
+msgstr "Uninvoiced Shipments"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, uppercase, without spaces (max 10 characters)"

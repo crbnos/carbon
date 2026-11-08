@@ -662,6 +662,10 @@ msgstr "잔액이 있는 공급업체 {0}곳"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}개의 미검사 항목이 가용으로 릴리스됩니다. 검사 합격 항목은 가용으로 유지되고 검사 불합격 항목은 거부됨으로 유지됩니다."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "미청구 출하 {0}건"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1468,6 +1472,9 @@ msgstr "제안된 배치 1개"
 
 msgid "1 target is committed — review on the order"
 msgstr "1개 목표가 커밋됨 — 주문에서 검토"
+
+msgid "1 uninvoiced shipment"
+msgstr "미청구 출하 1건"
 
 msgid "1 unit"
 msgstr "1개"
@@ -22458,6 +22465,9 @@ msgstr "전기 날짜"
 msgid "Posting Date"
 msgstr "전기일"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "전기하면 이 문서에 대해 보유한 선급금이 환불됩니다."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "송장을 전기하고 연결된 Stripe 계정을 통해 지불 링크와 함께 전송합니다. 연결된 Stripe 고객이 없는 고객의 송장은 전기되고 미발송으로 표시됩니다."
 
@@ -22490,6 +22500,15 @@ msgstr "접두사"
 
 msgid "Preparing the backup for restore…"
 msgstr "복원을 위해 백업 준비 중…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "선급금 (해당 수주의 송장만)"
+
+msgid "Prepayment for"
+msgstr "선급금:"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "{document} 선급금 (해당 송장만)"
 
 msgid "Prepayments"
 msgstr "선급금"
@@ -24180,6 +24199,9 @@ msgstr "공급업체 환불"
 
 msgid "Refund memos"
 msgstr "환불 메모"
+
+msgid "Refund prepayment for"
+msgstr "선급금 환불:"
 
 msgid "Refund to Customer"
 msgstr "고객 환불"
@@ -28885,6 +28907,9 @@ msgstr "공급업체 지불 할인 (기본값)"
 msgid "Supplier Prepayments"
 msgstr "공급업체 선급금"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "공급업체 선급금은 시산표와 대사하여 일치해야 합니다. <0>시산표로 이동</0>"
+
 msgid "supplier process"
 msgstr "공급업체 공법"
 
@@ -29166,6 +29191,9 @@ msgstr "발효됨"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate}에 발효됩니다."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "이 수주에 보유된 선급금을 공급업체 선급금에서 다시 차감합니다."
 
 msgid "Takes work center offline"
 msgstr "작업장을 오프라인으로 전환"
@@ -31045,6 +31073,9 @@ msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있으므�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원할 수 없습니다. 그 외 모든 것은 백업되었습니다."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "이 출하의 원가는 이 기간에 기록되었지만 일부 수량은 기간 말까지 청구되지 않았습니다. 새 매출 송장은 오늘 날짜로 전기되므로 기간 종료 후 청구해도 이 경고는 해제되지 않습니다. 시점 차이와 필요한 회계 조정을 검토하고, 경고가 남아 있으면 처리 내용을 설명하는 사유를 입력하여 작업을 건너뛰세요."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자산에서 제거하고 개시 전표를 전기합니다."
 
@@ -32323,6 +32354,12 @@ msgstr "미적용"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "미적용 현금은 계정 대변 대신 이 문서에 대한 고객 선급금으로 유지됩니다."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "미적용 현금은 외상대금 대변 잔액이 아니라 이 수주의 공급업체 선급금으로 보유됩니다."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "미적용 현금은 이 문서의 선수금으로 보유됩니다."
+
 msgid "Unapproved Supplier"
 msgstr "미승인 공급업체"
 
@@ -32416,6 +32453,9 @@ msgstr "먼저 {0}을(를) 제거하세요"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "먼저 {conflictsWith}를 제거하세요"
+
+msgid "Uninvoiced Shipments"
+msgstr "미청구 출하"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "고유하고 대문자이며 공백 없이(최대 10자)"

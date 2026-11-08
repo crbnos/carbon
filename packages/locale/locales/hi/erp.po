@@ -662,6 +662,10 @@ msgstr "{0} आपूर्तिकर्ता शेष राशि के �
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} नमूना न किए गए इकाइयों को उपलब्ध में जारी किया जाएगा। नमूना किए गए पास उपलब्ध रहेंगे और नमूना किए गए विफलताएं अस्वीकृत रहेंगी।"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} बिना चालान वाले शिपमेंट"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1468,6 +1472,9 @@ msgstr "1 सुझाया गया बैच"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 लक्ष्य प्रतिबद्ध है — आदेश पर समीक्षा करें"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 बिना चालान वाला शिपमेंट"
 
 msgid "1 unit"
 msgstr "1 इकाई"
@@ -22458,6 +22465,9 @@ msgstr "पोस्टिंग तारीख"
 msgid "Posting Date"
 msgstr "पोस्टिंग तारीख"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "पोस्टिंग पर इस दस्तावेज़ के लिए रखे गए अग्रिम वापस किए जाते हैं।"
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "चालान पोस्ट करता है और इसे आपके जुड़े हुए Stripe खाते के माध्यम से भुगतान लिंक के साथ भेजता है। एक ग्राहक के लिए बिना लिंक किए गए Stripe ग्राहक के साथ एक चालान पोस्ट किया जाता है और अनभेजा के रूप में चिह्नित किया जाता है।"
 
@@ -22490,6 +22500,15 @@ msgstr "उपसर्ग"
 
 msgid "Preparing the backup for restore…"
 msgstr "पुनः स्थापन के लिए बैकअप तैयार किया जा रहा है…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "अग्रिम भुगतान (केवल इसके आदेश के चालान)"
+
+msgid "Prepayment for"
+msgstr "के लिए अग्रिम भुगतान"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "{document} के लिए अग्रिम भुगतान (केवल इसके चालान)"
 
 msgid "Prepayments"
 msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
@@ -24180,6 +24199,9 @@ msgstr "आपूर्तिकर्ता से धनवापसी"
 
 msgid "Refund memos"
 msgstr "धनवापसी ज्ञापन"
+
+msgid "Refund prepayment for"
+msgstr "के लिए अग्रिम भुगतान की वापसी"
 
 msgid "Refund to Customer"
 msgstr "ग्राहक को धनवापसी"
@@ -28885,6 +28907,9 @@ msgstr "आपूर्तिकर्ता भुगतान छूट (ड�
 msgid "Supplier Prepayments"
 msgstr "आपूर्तिकर्ता अग्रिम भुगतान"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "आपूर्तिकर्ताओं को किए गए अग्रिम भुगतान का परीक्षण शेष से मिलान होना चाहिए। <0>परीक्षण शेष पर जाएँ</0>"
+
 msgid "supplier process"
 msgstr "आपूर्तिकर्ता प्रक्रिया"
 
@@ -29166,6 +29191,9 @@ msgstr "प्रभावी होता है"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate} प्रभावी होता है।"
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "इस आदेश के लिए रखे गए अग्रिम भुगतान को आपूर्तिकर्ता के अग्रिम भुगतानों से वापस निकालता है।"
 
 msgid "Takes work center offline"
 msgstr "वर्क सेंटर को ऑफलाइन ले जाता है"
@@ -31045,6 +31073,9 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "इन शिपमेंट की लागत इस अवधि में दर्ज हुई, लेकिन अवधि के अंत तक कुछ मात्राओं का चालान नहीं बना था। नए विक्रय चालान आज की तारीख से पोस्ट होते हैं, इसलिए अवधि समाप्त होने के बाद चालान बनाने से यह चेतावनी नहीं हटेगी। समय के इस अंतर और किसी आवश्यक लेखांकन समायोजन की समीक्षा करें। यदि चेतावनी बनी रहती है, तो किए गए उपचार का विवरण देने वाला कारण लिखकर कार्य छोड़ दें।"
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "इन इकाइयों को बिक्री के रूप में माना जाता है। सक्रिय करने से प्रत्येक को अस्वीकार किया जाता है और इसकी शुरुआती जर्नल पोस्ट की जाती है:"
 
@@ -32323,6 +32354,12 @@ msgstr "अप्रयुक्त"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "अप्रयुक्त नकद इस दस्तावेज़ के लिए ग्राहक अग्रिम भुगतान के रूप में रखा जाता है न कि खाते पर जमा क्रेडिट के रूप में।"
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "लागू न की गई नकदी को खाते के क्रेडिट के बजाय इस आदेश के लिए आपूर्तिकर्ता के अग्रिम भुगतान के रूप में रखा जाता है।"
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "लागू न की गई नकदी को इस दस्तावेज़ के लिए अग्रिम राशि के रूप में रखा जाता है।"
+
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
 
@@ -32416,6 +32453,9 @@ msgstr "पहले {0} को अनइंस्टॉल करें"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "पहले {conflictsWith} को अनइंस्टॉल करें"
+
+msgid "Uninvoiced Shipments"
+msgstr "बिना चालान वाले शिपमेंट"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "अद्वितीय, बड़े अक्षरों में, बिना स्थान के (अधिकतम 10 वर्ण)"

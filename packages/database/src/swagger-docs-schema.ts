@@ -19468,13 +19468,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/select"
@@ -19593,13 +19593,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -19672,13 +19672,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inventoryCountLine.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLine.assignedReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inventoryCountLine.projectId"
           },
           {
             $ref: "#/parameters/body.inventoryCountLine"
@@ -24034,13 +24034,13 @@ export default {
             $ref: "#/parameters/rowFilter.inventoryCountLines.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.inventoryCountLines.projectId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inventoryCountLines.foundDuringCount"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLines.assignedReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.inventoryCountLines.projectId"
           },
           {
             $ref: "#/parameters/rowFilter.inventoryCountLines.itemName"
@@ -25759,6 +25759,9 @@ export default {
             $ref: "#/parameters/rowFilter.payment.customerContractId"
           },
           {
+            $ref: "#/parameters/rowFilter.payment.purchaseOrderId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -25905,6 +25908,9 @@ export default {
             $ref: "#/parameters/rowFilter.payment.customerContractId"
           },
           {
+            $ref: "#/parameters/rowFilter.payment.purchaseOrderId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -26003,6 +26009,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.payment.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.payment.purchaseOrderId"
           },
           {
             $ref: "#/parameters/body.payment"
@@ -36874,10 +36883,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
             $ref: "#/parameters/select"
@@ -36951,10 +36960,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -36982,10 +36991,10 @@ export default {
             $ref: "#/parameters/rowFilter.itemStockQuantities.quantityOnHand"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
           },
           {
-            $ref: "#/parameters/rowFilter.itemStockQuantities.projectId"
+            $ref: "#/parameters/rowFilter.itemStockQuantities.quantityNonNettable"
           },
           {
             $ref: "#/parameters/body.itemStockQuantities"
@@ -101023,6 +101032,9 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.targetReimbursementId"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.targetPaymentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -101145,6 +101157,9 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.targetReimbursementId"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.targetPaymentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -101219,6 +101234,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.invoiceSettlement.targetReimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.targetPaymentId"
           },
           {
             $ref: "#/parameters/body.invoiceSettlement"
@@ -117301,18 +117319,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117341,6 +117347,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
@@ -117639,18 +117657,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117679,6 +117685,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
@@ -117931,18 +117949,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -117971,6 +117977,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.postAppliedBurden"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useCalendarWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanLabelSize"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.serviceLaborCostRate"
@@ -123814,6 +123832,51 @@ export default {
           }
         },
         tags: ["(rpc) sync_delete_unlinked_contact"]
+      }
+    },
+    "/rpc/prevent_prepaid_purchase_order_deletion": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) prevent_prepaid_purchase_order_deletion"]
       }
     },
     "/rpc/get_ar_aging": {
@@ -133250,6 +133313,63 @@ export default {
         tags: ["(rpc) get_ar_open_by_customer"]
       }
     },
+    "/rpc/get_supplier_prepayment_refund_currencies": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_supplier_prepayment_refund_currencies"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                _company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_supplier_prepayment_refund_currencies"]
+      }
+    },
     "/rpc/verify_employee_pin": {
       get: {
         parameters: [
@@ -135237,6 +135357,51 @@ export default {
           }
         },
         tags: ["(rpc) purchaseLinePivotLines"]
+      }
+    },
+    "/rpc/prevent_invalid_deposit_refund": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) prevent_invalid_deposit_refund"]
       }
     },
     "/rpc/sync_storage_type_nettable": {
@@ -145994,16 +146159,16 @@ export default {
         customFields: {
           format: "jsonb"
         },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
         foundDuringCount: {
           default: false,
           format: "boolean",
           type: "boolean"
         },
         assignedReadableId: {
-          format: "text",
-          type: "string"
-        },
-        projectId: {
           format: "text",
           type: "string"
         }
@@ -148103,15 +148268,15 @@ export default {
         customFields: {
           format: "jsonb"
         },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
         foundDuringCount: {
           format: "boolean",
           type: "boolean"
         },
         assignedReadableId: {
-          format: "text",
-          type: "string"
-        },
-        projectId: {
           format: "text",
           type: "string"
         },
@@ -149036,6 +149201,10 @@ export default {
           type: "string"
         },
         customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderId: {
           format: "text",
           type: "string"
         }
@@ -154220,8 +154389,8 @@ export default {
         "companyId",
         "locationId",
         "quantityOnHand",
-        "quantityNonNettable",
-        "projectId"
+        "projectId",
+        "quantityNonNettable"
       ],
       properties: {
         itemId: {
@@ -154245,16 +154414,16 @@ export default {
           format: "numeric",
           type: "number"
         },
-        quantityNonNettable: {
-          default: 0,
-          format: "numeric",
-          type: "number"
-        },
         projectId: {
           default: "",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string"
+        },
+        quantityNonNettable: {
+          default: 0,
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -184638,6 +184807,10 @@ export default {
         targetReimbursementId: {
           format: "text",
           type: "string"
+        },
+        targetPaymentId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -192519,10 +192692,6 @@ export default {
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero",
-        "requirePurchaseOrderApprovalSignature",
-        "serialNumberTiming",
-        "useCalendarWeeks",
-        "kanbanLabelSize",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "timekeepingControls",
@@ -192531,6 +192700,10 @@ export default {
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
         "includeSupplierPartFiles"
@@ -192937,27 +193110,6 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        requirePurchaseOrderApprovalSignature: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        serialNumberTiming: {
-          default: "jobCreation",
-          format: "text",
-          type: "string"
-        },
-        useCalendarWeeks: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        kanbanLabelSize: {
-          default: "letter",
-          enum: ["letter", "label4x2", "label3x2"],
-          format: 'public."kanbanLabelSize"',
-          type: "string"
-        },
         timesheetApprovalRequired: {
           default: false,
           format: "boolean",
@@ -193007,6 +193159,27 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        requirePurchaseOrderApprovalSignature: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        serialNumberTiming: {
+          default: "jobCreation",
+          format: "text",
+          type: "string"
+        },
+        useCalendarWeeks: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        kanbanLabelSize: {
+          default: "letter",
+          enum: ["letter", "label4x2", "label3x2"],
+          format: 'public."kanbanLabelSize"',
+          type: "string"
         },
         serviceLaborCostRate: {
           format: "numeric",
@@ -204000,6 +204173,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inventoryCountLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.inventoryCountLine.foundDuringCount": {
       name: "foundDuringCount",
       required: false,
@@ -204008,12 +204187,6 @@ export default {
     },
     "rowFilter.inventoryCountLine.assignedReadableId": {
       name: "assignedReadableId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inventoryCountLine.projectId": {
-      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -206429,6 +206602,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inventoryCountLines.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.inventoryCountLines.foundDuringCount": {
       name: "foundDuringCount",
       required: false,
@@ -206437,12 +206616,6 @@ export default {
     },
     "rowFilter.inventoryCountLines.assignedReadableId": {
       name: "assignedReadableId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.inventoryCountLines.projectId": {
-      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -207457,6 +207630,12 @@ export default {
     },
     "rowFilter.payment.customerContractId": {
       name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.payment.purchaseOrderId": {
+      name: "purchaseOrderId",
       required: false,
       in: "query",
       type: "string"
@@ -213331,14 +213510,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.itemStockQuantities.quantityNonNettable": {
-      name: "quantityNonNettable",
+    "rowFilter.itemStockQuantities.projectId": {
+      name: "projectId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.itemStockQuantities.projectId": {
-      name: "projectId",
+    "rowFilter.itemStockQuantities.quantityNonNettable": {
+      name: "quantityNonNettable",
       required: false,
       in: "query",
       type: "string"
@@ -247130,6 +247309,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.invoiceSettlement.targetPaymentId": {
+      name: "targetPaymentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.printerRoute": {
       name: "printerRoute",
       description: "printerRoute",
@@ -256303,30 +256488,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
-      name: "requirePurchaseOrderApprovalSignature",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.serialNumberTiming": {
-      name: "serialNumberTiming",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.useCalendarWeeks": {
-      name: "useCalendarWeeks",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.kanbanLabelSize": {
-      name: "kanbanLabelSize",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.timesheetApprovalRequired": {
       name: "timesheetApprovalRequired",
       required: false,
@@ -256383,6 +256544,30 @@ export default {
     },
     "rowFilter.companySettings.postAppliedBurden": {
       name: "postAppliedBurden",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
+      name: "requirePurchaseOrderApprovalSignature",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serialNumberTiming": {
+      name: "serialNumberTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.useCalendarWeeks": {
+      name: "useCalendarWeeks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.kanbanLabelSize": {
+      name: "kanbanLabelSize",
       required: false,
       in: "query",
       type: "string"

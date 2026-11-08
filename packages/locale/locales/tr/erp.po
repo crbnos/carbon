@@ -662,6 +662,10 @@ msgstr "{0} bakiyesi olan tedarikçi"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örneklenen başarılılar Kullanılabilir ve örneklenen başarısızlar Reddedilmiş olarak kalır."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} faturalanmamış sevkiyat"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1468,6 +1472,9 @@ msgstr "1 önerilen parti"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 hedef kaydedildi — sipariş üzerinde kontrol edin"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 faturalanmamış sevkiyat"
 
 msgid "1 unit"
 msgstr "1 adet"
@@ -22458,6 +22465,9 @@ msgstr "Muhasebeleştirme tarihi"
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Muhasebeleştirme, bu belge için tutulan avansları iade eder."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Faturayı muhasebeleştirir ve bağlı Stripe hesabınız üzerinden bir ödeme linki ile gönderir. Bağlı Stripe müşterisi olmayan bir müşteri için fatura muhasebeleştirilir ve gönderilmedi olarak işaretlenir."
 
@@ -22490,6 +22500,15 @@ msgstr "Ön Ek"
 
 msgid "Preparing the backup for restore…"
 msgstr "Yedek geri yükleme için hazırlanıyor…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Avans (yalnızca kendi siparişinin faturaları)"
+
+msgid "Prepayment for"
+msgstr "Şunun için avans:"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "{document} için avans (yalnızca kendi faturaları)"
 
 msgid "Prepayments"
 msgstr "Avanslar"
@@ -24180,6 +24199,9 @@ msgstr "Tedarikçiden İade"
 
 msgid "Refund memos"
 msgstr "İade Muhasebe Notları"
+
+msgid "Refund prepayment for"
+msgstr "Şunun için avans iadesi:"
 
 msgid "Refund to Customer"
 msgstr "Müşteriye İade"
@@ -28885,6 +28907,9 @@ msgstr "Tedarikçi ödeme iskontoları (varsayılan)"
 msgid "Supplier Prepayments"
 msgstr "Tedarikçi avansları"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Tedarikçilere verilen avanslar mizanla mutabık olmalıdır. <0>Mizana git</0>"
+
 msgid "supplier process"
 msgstr "tedarikçi prosesi"
 
@@ -29166,6 +29191,9 @@ msgstr "Yürürlüğe Girer"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Yürürlüğe {effectiveDate} tarihinde girer."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Bu sipariş için tutulan avansı tedarikçi avansları hesabından geri çıkarır."
 
 msgid "Takes work center offline"
 msgstr "İş merkezini çevrimdışı alır"
@@ -31045,6 +31073,9 @@ msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcu
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Bu sevkiyatların maliyetleri bu dönemde kaydedildi, ancak bazı miktarlar dönem sonuna kadar faturalanmadı. Yeni satış faturaları bugünün tarihiyle muhasebeleştirilir; bu nedenle dönem sonundan sonra faturalamak bu uyarıyı kaldırmaz. Tarih farkını ve gerekli muhasebe düzeltmelerini inceleyin. Uyarı devam ederse uygulanan işlemi açıklayan bir gerekçe yazarak görevi atlayın."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayıttan çıkarır ve başlangıç muhasebe fişi'ni muhasebeleştirir:"
 
@@ -32323,6 +32354,12 @@ msgstr "Uygulanmamış"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Uygulanmamış nakit, bu belge için müşteri avansı olarak tutuluyor, hesapta alacak yerine."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Uygulanmamış nakit, cari hesap alacağı olarak değil, bu sipariş için tedarikçi avansı olarak tutulur."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Uygulanmamış nakit, bu belge için avans olarak tutulur."
+
 msgid "Unapproved Supplier"
 msgstr "Onaylanmamış Tedarikçi"
 
@@ -32416,6 +32453,9 @@ msgstr "Önce {0} kaldırın"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Önce {conflictsWith} kaldırın"
+
+msgid "Uninvoiced Shipments"
+msgstr "Faturalanmamış sevkiyatlar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"

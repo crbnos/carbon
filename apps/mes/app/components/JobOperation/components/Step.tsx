@@ -331,6 +331,7 @@ export function StepMedia({
   slides: StepSlide[];
   showDescription: boolean;
 }) {
+  const { t } = useLingui();
   const imageSlides = slides
     .filter((slide) => !!slide.imagePath)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -354,32 +355,50 @@ export function StepMedia({
   return (
     <>
       {imageSlides.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div
+          className={cn(
+            "mt-4 grid min-w-0 gap-2",
+            imageSlides.length > 1 && "md:grid-cols-2"
+          )}
+        >
           {imageSlides.map((slide, i) => (
-            <button
+            <div
               key={slide.id}
-              type="button"
-              aria-label={slide.caption || `Reference image ${i + 1}`}
-              title={slide.caption ?? undefined}
-              onClick={() => setViewerIndex(i)}
               className={cn(
-                "relative flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40",
-                "transition-transform active:scale-[0.96]"
+                "min-w-0",
+                imageSlides.length > 1 &&
+                  imageSlides.length % 2 === 1 &&
+                  i === imageSlides.length - 1 &&
+                  "md:col-span-2"
               )}
             >
-              <img
-                src={slide.url}
-                alt={slide.caption || ""}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </button>
+              <button
+                type="button"
+                aria-label={slide.caption || `${t`Reference image`} ${i + 1}`}
+                onClick={() => setViewerIndex(i)}
+                className="w-full min-w-0 overflow-hidden rounded-lg border bg-muted/40 text-left transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <img
+                  src={slide.url}
+                  alt={slide.caption || ""}
+                  className="block max-h-[65vh] w-full object-contain"
+                />
+              </button>
+              {slide.caption && (
+                <p
+                  aria-hidden="true"
+                  className="mt-1 text-sm text-muted-foreground"
+                >
+                  {slide.caption}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}
       {showDescription && (
         <div
-          className="my-4 text-sm prose prose-sm dark:prose-invert"
+          className="my-4 max-w-none text-sm prose prose-sm dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
           dangerouslySetInnerHTML={{
             __html: generateHTML(description as JSONContent)
           }}
@@ -463,20 +482,23 @@ export function PreviewStepRecord({
   const record = step.jobOperationStepRecord.find(
     (r) => r.index === activeStep
   );
+  // A Task record exists only once the task is done; a Checkbox with no
+  // answer yet (null) is neither Yes nor No.
+  if (step.type === "Task" && !record) return null;
+  if (step.type === "Checkbox" && record?.booleanValue == null) return null;
 
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {step.type === "Task" && (
-        <Checkbox
-          aria-label={step.name}
-          checked={record?.booleanValue ?? false}
-        />
+        <span className="inline-flex items-center gap-1 text-sm text-emerald-500">
+          <LuCircleCheck aria-hidden="true" />
+          <Trans>Completed</Trans>
+        </span>
       )}
       {step.type === "Checkbox" && (
-        <Checkbox
-          aria-label={step.name}
-          checked={record?.booleanValue ?? false}
-        />
+        <span className="text-sm">
+          {record?.booleanValue ? <Trans>Yes</Trans> : <Trans>No</Trans>}
+        </span>
       )}
       {step.type === "Value" && <p className="text-sm">{record?.value}</p>}
       {step.type === "Measurement" &&

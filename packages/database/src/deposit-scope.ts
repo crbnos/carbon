@@ -144,8 +144,48 @@ export async function loadContractInvoiceIds(
 }
 
 /**
- * The document a customer deposit secures, with its readable id (RA000001,
- * SO000123) for the refusal message; null for an ordinary payment.
+ * The purchase orders each purchase invoice bills, read from its lines in one
+ * query for every target. An invoice with no such line maps to an empty list,
+ * which no prepayment covers.
+ */
+export async function loadPurchaseInvoiceDocumentIds(
+  db: Db,
+  companyId: string,
+  invoiceIds: readonly string[]
+): Promise<Map<string, { purchaseOrderIds: string[] }>> {
+  const byInvoice = new Map<string, { purchaseOrderIds: string[] }>(
+    invoiceIds.map((id) => [id, { purchaseOrderIds: [] }])
+  );
+  if (!invoiceIds.length) return byInvoice;
+  const lines = await db
+    .selectFrom("purchaseInvoiceLine as invoiceLine")
+    .leftJoin("purchaseOrderLine as orderLine", (join) =>
+      join
+        .onRef("orderLine.id", "=", "invoiceLine.purchaseOrderLineId")
+        .onRef("orderLine.companyId", "=", "invoiceLine.companyId")
+    )
+    .select([
+      "invoiceLine.invoiceId",
+      (eb) =>
+        eb.fn
+          .coalesce("invoiceLine.purchaseOrderId", "orderLine.purchaseOrderId")
+          .as("purchaseOrderId")
+    ])
+    .where("invoiceLine.companyId", "=", companyId)
+    .where("invoiceLine.invoiceId", "in", [...invoiceIds])
+    .execute();
+  for (const line of lines) {
+    const ids = byInvoice.get(line.invoiceId);
+    if (!ids || !line.purchaseOrderId) continue;
+    if (!ids.purchaseOrderIds.includes(line.purchaseOrderId))
+      ids.purchaseOrderIds.push(line.purchaseOrderId);
+  }
+  return byInvoice;
+}
+
+/**
+ * The document a deposit secures, with its readable id (RA000001, SO000123,
+ * PO000012) for the refusal message; null for an ordinary payment.
  */
 export async function loadDepositScope(
   db: Db,
@@ -154,9 +194,10 @@ export async function loadDepositScope(
     rentalAgreementId: string | null;
     salesOrderId: string | null;
     customerContractId?: string | null;
+    purchaseOrderId?: string | null;
   }
 ): Promise<{
-  type: "rentalAgreement" | "salesOrder" | "customerContract";
+  type: "rentalAgreement" | "salesOrder" | "customerContract" | "purchaseOrder";
   id: string;
   readableId: string | null;
 } | null> {
@@ -197,6 +238,19 @@ export async function loadDepositScope(
       type: "customerContract",
       id: payment.customerContractId,
       readableId: contract?.customerContractId ?? null
+    };
+  }
+  if (payment.purchaseOrderId) {
+    const order = await db
+      .selectFrom("purchaseOrder")
+      .select("purchaseOrderId")
+      .where("id", "=", payment.purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    return {
+      type: "purchaseOrder",
+      id: payment.purchaseOrderId,
+      readableId: order?.purchaseOrderId ?? null
     };
   }
   return null;

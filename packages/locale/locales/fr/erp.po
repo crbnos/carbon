@@ -662,6 +662,10 @@ msgstr "{0} fournisseurs avec un solde"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entités non échantillonnées seront libérées en Disponible. Les passes échantillonnées restent Disponible et les défaillances échantillonnées restent Rejetées."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} expéditions non facturées"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1468,6 +1472,9 @@ msgstr "1 lot de production suggéré"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 cible est engagée — examinez la commande"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 expédition non facturée"
 
 msgid "1 unit"
 msgstr "1 unité"
@@ -22458,6 +22465,9 @@ msgstr "Date de comptabilisation"
 msgid "Posting Date"
 msgstr "Date de comptabilisation"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "La comptabilisation rembourse les avances détenues pour ce document."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Comptabilise la facture et l'envoie via votre compte Stripe connecté avec un lien de paiement. Une facture pour un client sans client Stripe lié est comptabilisée et marquée comme non envoyée."
 
@@ -22490,6 +22500,15 @@ msgstr "Préfixe"
 
 msgid "Preparing the backup for restore…"
 msgstr "Préparation de la sauvegarde pour la restauration…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Acompte (factures de sa commande uniquement)"
+
+msgid "Prepayment for"
+msgstr "Acompte pour"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "Acompte pour {document} (factures associées uniquement)"
 
 msgid "Prepayments"
 msgstr "Acomptes (par défaut)"
@@ -24180,6 +24199,9 @@ msgstr "Remboursement du fournisseur"
 
 msgid "Refund memos"
 msgstr "Mémos de remboursement"
+
+msgid "Refund prepayment for"
+msgstr "Rembourser l’acompte pour"
 
 msgid "Refund to Customer"
 msgstr "Remboursement au client"
@@ -28885,6 +28907,9 @@ msgstr "Remises de paiement fournisseur (par défaut)"
 msgid "Supplier Prepayments"
 msgstr "Acomptes fournisseur"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Les acomptes fournisseurs doivent être rapprochés de la balance de vérification. <0>Accéder à la balance de vérification</0>"
+
 msgid "supplier process"
 msgstr "Processus Fournisseur"
 
@@ -29166,6 +29191,9 @@ msgstr "Prend effet"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Prend effet {effectiveDate}."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Retire des acomptes fournisseur l’acompte détenu pour cette commande."
 
 msgid "Takes work center offline"
 msgstr "Met le poste de travail hors ligne"
@@ -31045,6 +31073,9 @@ msgstr "Ces lignes sont liées à des données en dehors de cette Société, c'e
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Ces lignes sont liées à des données en dehors de cette société, donc elles ne pourraient jamais être restaurées. Tout le reste a été sauvegardé."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Ces expéditions ont enregistré des coûts dans cette période, mais certaines quantités n’étaient pas facturées à la fin de la période. Les nouvelles factures de vente sont comptabilisées à la date du jour ; une facturation après la fin de la période ne supprimera donc pas cet avertissement. Examinez le décalage et tout ajustement comptable nécessaire, puis ignorez la tâche en indiquant un motif qui documente le traitement si l’avertissement persiste."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Ces unités sont traitées comme des ventes. L'activation retire chacune d'elles et comptabilise son écriture de démarrage :"
 
@@ -32323,6 +32354,12 @@ msgstr "Non appliqué"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "La trésorerie non appliquée est conservée comme acompte client pour ce document au lieu d'un crédit au compte."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Les sommes non affectées sont conservées comme acompte fournisseur pour cette commande plutôt que comme crédit en compte."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Les sommes non affectées sont conservées comme avance pour ce document."
+
 msgid "Unapproved Supplier"
 msgstr "Fournisseur non approuvé"
 
@@ -32416,6 +32453,9 @@ msgstr "Désinstallez d'abord {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Désinstallez {conflictsWith} d'abord"
+
+msgid "Uninvoiced Shipments"
+msgstr "Expéditions non facturées"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, en majuscules, sans espaces (10 caractères max.)"

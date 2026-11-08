@@ -4697,3 +4697,39 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
+
+## The edge runtime reuses a worker, env and all, per pool key
+
+**Context:** One shared `supabase/edge-runtime` serving every worktree, with the
+dispatcher (`packages/dev/docker/edge-main/index.ts`) passing each request's
+worktree API as `SUPABASE_URL` in `EdgeRuntime.userWorkers.create({ envVars })`.
+
+**Problem:** The runtime keeps a live worker per pool key and returns it for the
+next `create` with the same key (`crates/base/src/worker/pool.rs`). The key
+defaults to the service path, so a worker created with worktree A's env would
+serve worktree B's next request with A's `SUPABASE_URL`. Nothing errors.
+
+**Rule:** A dispatcher that varies `envVars` per request must pass `poolKey` that
+includes every value that varies (here `${api} ${servicePath}`).
+
+**Applies to:** `packages/dev/docker/edge-main/index.ts` and any other
+`--main-service` dispatcher.
+
+## On carbon-shared, a shared service's bare name answers in every worktree
+
+**Context:** Envoy's `functions` cluster listed the worktree's private
+`edge-runtime` first and the shared `carbon-edge-runtime` second.
+
+**Problem:** crbn-shared's service is also called `edge-runtime` and joins
+`carbon-shared`, which every worktree's gateway joins too. With no private runtime
+the bare name resolved to the shared one; with one, Docker happened to answer with
+the private one only. "Private first" depended on Docker's DNS order, and the
+fallback was never used.
+
+**Rule:** A worktree container on `carbon-shared` reaches its own services by a
+`local-*` alias on its default network (`local-meta`, `local-edge-runtime`), and
+shared ones by `container_name` (`carbon-*`). Check a new name with
+`docker exec <api-gw> getent ahostsv4 <name>` with and without the other side up.
+
+**Applies to:** `packages/dev/docker/envoy/cds.template.yaml`,
+`packages/dev/docker/docker-compose.dev.yml`, `.claude/rules/dev-shared-services.md`.

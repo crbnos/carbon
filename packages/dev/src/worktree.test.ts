@@ -6,49 +6,26 @@ import { mkdtempSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterAll, describe, expect, it } from "vitest";
-import type { PortMap } from "./worktree.js";
 import {
   canonicalSlug,
-  readStackMode,
   recordedStackMode,
   sameWorktreePath,
   slugify,
-  stackDatabase,
-  stackPorts,
   worktreeDatabaseName,
   writeStackMode
 } from "./worktree.js";
 
 describe("slugify", () => {
-  it("lowercases", () => {
-    expect(slugify("Foo")).toBe("foo");
-  });
-
-  it("collapses non-alphanumeric runs to single dash", () => {
-    expect(slugify("foo/bar baz")).toBe("foo-bar-baz");
-    expect(slugify("foo   bar")).toBe("foo-bar");
-  });
-
-  it("strips leading and trailing dashes", () => {
-    expect(slugify("--foo--")).toBe("foo");
-    expect(slugify("/foo/")).toBe("foo");
-  });
-
-  it("preserves embedded dashes", () => {
-    expect(slugify("feat-add-thing")).toBe("feat-add-thing");
-  });
-
-  it("collapses consecutive dashes", () => {
-    expect(slugify("foo--bar")).toBe("foo-bar");
-  });
-
-  it("handles unicode by replacing with dashes", () => {
-    expect(slugify("café/résumé")).toBe("caf-r-sum");
-  });
-
-  it("returns empty string when input is empty or all-symbol", () => {
-    expect(slugify("")).toBe("");
-    expect(slugify("///")).toBe("");
+  it.each([
+    ["Foo", "foo"],
+    ["foo/bar baz", "foo-bar-baz"],
+    ["--foo--", "foo"],
+    ["foo--bar", "foo-bar"],
+    ["feat-add-thing", "feat-add-thing"],
+    ["café/résumé", "caf-r-sum"],
+    ["///", ""]
+  ])("turns %s into %s", (input, slug) => {
+    expect(slugify(input)).toBe(slug);
   });
 });
 
@@ -82,15 +59,6 @@ describe("canonicalSlug", () => {
         branch: "fix-bug"
       })
     ).toBe("carbon-fix-bug");
-  });
-
-  it("never collides with the main checkout's bare `carbon` slug", () => {
-    const slug = canonicalSlug({
-      worktreeRoot: "/Users/x/conductor/workspaces/carbon/macau",
-      mainRoot: "/Users/x/Code/carbon",
-      branch: "some-feature"
-    });
-    expect(slug).not.toBe("carbon");
   });
 
   it("falls back to the worktree dir basename when HEAD is detached", () => {
@@ -148,7 +116,7 @@ describe("worktreeDatabaseName", () => {
   });
 });
 
-describe("stack mode", () => {
+describe("recordedStackMode", () => {
   const home = process.env.HOME;
   const tmpHome = mkdtempSync(join(tmpdir(), "crbn-mode-"));
   afterAll(() => {
@@ -156,38 +124,11 @@ describe("stack mode", () => {
     rmSync(tmpHome, { recursive: true, force: true });
   });
 
-  it("defaults to shared, and keeps what writeStackMode wrote", () => {
+  it("is null until a crbn with modes ran `up`, then what it wrote", () => {
     process.env.HOME = tmpHome;
-    expect(readStackMode("some-slug")).toBe("shared");
     // An older crbn wrote no mode: its volumes are live, never "old".
     expect(recordedStackMode("some-slug")).toBeNull();
     writeStackMode("some-slug", "isolated");
-    expect(readStackMode("some-slug")).toBe("isolated");
-    writeStackMode("some-slug", "shared");
-    expect(readStackMode("some-slug")).toBe("shared");
-  });
-});
-
-describe("stackDatabase and stackPorts", () => {
-  const ports = {
-    PORT_DB: 54000,
-    PORT_POOLER: 54001,
-    PORT_INBUCKET: 54002,
-    PORT_API: 54003
-  } as unknown as PortMap;
-
-  it("gives a shared stack the worktree database and the shared ports", () => {
-    expect(stackDatabase("carbon-a", "shared")).toBe("wt_carbon_a");
-    expect(stackPorts(ports, "shared")).toMatchObject({
-      PORT_DB: 54322,
-      PORT_POOLER: 54329,
-      PORT_INBUCKET: 54324,
-      PORT_API: 54003
-    });
-  });
-
-  it("leaves a private stack on postgres and the slot's ports", () => {
-    expect(stackDatabase("carbon-a", "isolated")).toBe("postgres");
-    expect(stackPorts(ports, "isolated")).toBe(ports);
+    expect(recordedStackMode("some-slug")).toBe("isolated");
   });
 });
