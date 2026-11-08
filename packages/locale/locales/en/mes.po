@@ -456,6 +456,9 @@ msgstr "Appearance"
 msgid "Apply link"
 msgstr "Apply link"
 
+msgid "Approval needed"
+msgstr "Approval needed"
+
 msgid "Approvals"
 msgstr "Approvals"
 
@@ -464,6 +467,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Lvl {level} · {severity}"
+msgid "Approve and Complete"
+msgstr "Approve and Complete"
+
+msgid "Approve and Log Scrap"
+msgstr "Approve and Log Scrap"
+
+msgid "Approve and Scrap"
+msgstr "Approve and Scrap"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
@@ -1150,6 +1161,7 @@ msgstr "End Operations"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Enter PIN for {0}"
@@ -1954,6 +1966,9 @@ msgstr "No active operations"
 msgid "No active work centers at this location."
 msgstr "No active work centers at this location."
 
+msgid "No approver available"
+msgstr "No approver available"
+
 msgid "No assigned operations"
 msgstr "No assigned operations"
 
@@ -2041,6 +2056,8 @@ msgstr "No materials on this batch."
 
 msgid "No open inspections"
 msgstr "No open inspections"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 
 msgid "No open jobs"
 msgstr "No open jobs"
@@ -3567,6 +3584,9 @@ msgstr "This posts the job's time. The job can no longer change."
 
 msgid "This sample was removed"
 msgstr "This sample was removed"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "This stops your clock and posts the job's time. The job can no longer change."

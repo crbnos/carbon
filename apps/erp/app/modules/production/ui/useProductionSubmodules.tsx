@@ -12,6 +12,7 @@ import {
   LuLayers,
   LuListChecks,
   LuListTodo,
+  LuShieldCheck,
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
@@ -59,6 +60,12 @@ export default function useProductionSubmodules() {
           name: t`Time Analysis`,
           to: path.to.timeAnalysis,
           icon: <LuChartCandlestick />
+        },
+        {
+          name: t`Scrap Approvals`,
+          to: path.to.scrapApprovals,
+          icon: <LuShieldCheck />,
+          role: "employee" as const
         },
         ...(hasOeeProvider
           ? [

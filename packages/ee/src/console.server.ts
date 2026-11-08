@@ -117,6 +117,21 @@ export async function verifyEmployeePin(
   return { hasPin: row?.hasPin === true, valid: row?.valid === true };
 }
 
+/** The employees among `employeeIds` who have a console PIN, in one query. */
+export async function employeesWithPin(
+  db: Kysely<KyselyDatabase>,
+  { companyId, employeeIds }: { companyId: string; employeeIds: string[] }
+): Promise<Set<string>> {
+  if (employeeIds.length === 0) return new Set();
+  const rows = await db
+    .selectFrom("employeePin")
+    .select("employeeId")
+    .where("companyId", "=", companyId)
+    .where("employeeId", "in", employeeIds)
+    .execute();
+  return new Set(rows.map((row) => row.employeeId));
+}
+
 /**
  * Commercial (Enterprise) console / kiosk mode. Enabling it provisions the
  * protected "Console Operator" employee type (MES-only permissions) and a PIN

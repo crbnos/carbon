@@ -7172,6 +7172,29 @@
       ]
     },
     {
+      "name": "scrapRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobOperationId",
+        "jobOperationBatchId",
+        "jobMaterialId",
+        "trackedEntityId",
+        "itemId",
+        "scrapReasonId",
+        "quantity",
+        "estimatedValue",
+        "notes",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "timesheetEntry",
       "rows": 0,
       "columns": [

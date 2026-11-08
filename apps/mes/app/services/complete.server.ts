@@ -19,6 +19,7 @@ import { data } from "react-router";
 import type { erpPosting } from "~/services/erp";
 import {
   completeQuantityValidator,
+  scrapApproverValidator,
   scrapQuantityValidator
 } from "~/services/models";
 import {
@@ -30,6 +31,7 @@ import {
 } from "~/services/operations.service";
 import { autoPrintOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
+import type { postScrapWithApproval } from "~/services/scrap-approval.server";
 import { resolveWorkUnit } from "~/services/work-unit.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
@@ -493,14 +495,29 @@ export async function completeOperationQuantity(
   }
 }
 
-/** A scrap quantity at an operation (`x+/scrap.tsx`). The route authenticates. */
+/**
+ * A scrap quantity at an operation (`x+/scrap.tsx`). The route authenticates.
+ * A scrap approval rule puts an approver's PIN in front of the posting
+ * (`postWithApproval`).
+ */
 export async function scrapOperationQuantity(
-  deps: { client: SupabaseClient<Database>; post: typeof erpPosting },
+  deps: {
+    client: SupabaseClient<Database>;
+    post: typeof erpPosting;
+    postWithApproval: typeof postScrapWithApproval;
+  },
   {
     request,
     companyId,
-    userId
-  }: { request: Request; companyId: string; userId: string }
+    userId,
+    sessionUserId
+  }: {
+    request: Request;
+    companyId: string;
+    userId: string;
+    /** The signed-in account of the tablet, for the terminal PIN budget. */
+    sessionUserId: string;
+  }
 ) {
   const formData = await request.formData();
   const validation = await validator(scrapQuantityValidator).validate(formData);
@@ -519,6 +536,7 @@ export async function scrapOperationQuantity(
     laborProductionEventId,
     machineProductionEventId
   } = validation.data;
+  const approver = await validator(scrapApproverValidator).validate(formData);
 
   const serviceRole = deps.client;
   // A serial scrap names the unit the operator scanned or picked, open here.
@@ -532,6 +550,7 @@ export async function scrapOperationQuantity(
   if (work.kind === "refuse") {
     return data({}, await flash(request, error(null, work.message)));
   }
+  const scrapEntityId = work.kind === "unit" ? work.unitId : undefined;
 
   const refusal = await abilityBlockRefusal(serviceRole, {
     operationId: jobOperationId,
@@ -545,29 +564,55 @@ export async function scrapOperationQuantity(
   // One transactional posting: Scrap productionQuantity row, BOM
   // backflush, tracked-entity terminal status + replacement serial spawn
   // (serial parents), Done-operation reopen / capacity top-up beyond the
-  // planned allowance, and the WIP→scrap journal.
-  const issued = await deps.post(
-    "issue",
-    { companyId, userId },
-    {
-      type: "jobOperationScrap",
+  // planned allowance, and the WIP→scrap journal. A scrap approval rule puts
+  // an approver's PIN in front of it.
+  const outcome = await deps.postWithApproval({
+    request,
+    companyId,
+    userId,
+    sessionUserId,
+    subject: {
+      type: "operation",
       jobOperationId,
       quantity,
+      trackedEntityId: scrapEntityId,
       scrapReasonId,
-      notes,
-      setupProductionEventId,
-      laborProductionEventId,
-      machineProductionEventId,
-      trackedEntityId: work.kind === "unit" ? work.unitId : undefined
-    }
-  );
+      notes
+    },
+    approver: approver.error ? {} : approver.data,
+    post: () =>
+      deps.post(
+        "issue",
+        { companyId, userId },
+        {
+          type: "jobOperationScrap",
+          jobOperationId,
+          quantity,
+          scrapReasonId,
+          notes,
+          setupProductionEventId,
+          laborProductionEventId,
+          machineProductionEventId,
+          trackedEntityId: scrapEntityId
+        }
+      )
+  });
 
-  if (issued.error) {
+  if (outcome.status === "approval-required") {
+    return { scrapApproval: outcome.prompt };
+  }
+
+  if (outcome.status === "refused") {
     return data(
       {},
       await flash(
         request,
-        error(issued.error, "Failed to record scrap quantity")
+        error(
+          outcome.error ?? null,
+          // A posting failure keeps the fixed headline and reports its cause;
+          // an approval refusal has no cause and its message is the reason.
+          outcome.error ? "Failed to record scrap quantity" : outcome.message
+        )
       )
     );
   }
@@ -575,7 +620,7 @@ export async function scrapOperationQuantity(
   // The client (useOperation / AssemblyView) advances to the spawned
   // replacement serial the same way the complete flow does.
   return data(
-    { scrapped: true, newTrackedEntityId: issued.data?.newTrackedEntityId },
+    { scrapped: true, newTrackedEntityId: outcome.data?.newTrackedEntityId },
     await flash(request, success("Scrap quantity recorded successfully"))
   );
 }

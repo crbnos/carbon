@@ -16,6 +16,7 @@ import {
 import { issueScannedItem, unconsumeFromUnit } from "./issue.server";
 import { endOperationByScan, startOperationByScan } from "./kanban-scan.server";
 import { productionEventAction } from "./production-event.server";
+import type { postScrapWithApproval } from "./scrap-approval.server";
 import { completeAllSteps, recordStep } from "./step-record.server";
 import { issueTravelerUnit } from "./traveler.server";
 import { SELECT_UNIT_FIRST } from "./work-unit.server";
@@ -468,16 +469,31 @@ describe("Complete all steps (steps.complete-all route)", () => {
 });
 
 describe("Scrap (scrap route)", () => {
+  // No scrap approval rule: the posting runs as before.
+  const postWithApproval = (async ({ post: postScrap }) => {
+    const posted = await postScrap();
+    return posted.error
+      ? {
+          status: "refused",
+          message: posted.error.message,
+          error: posted.error
+        }
+      : { status: "posted", data: posted.data };
+  }) as typeof postScrapWithApproval;
   const scrap = (fake: ReturnType<typeof floor>, fields = {}) =>
-    scrapOperationQuantity(fake, {
-      ...caller,
-      request: post("/x/scrap", {
-        jobOperationId: op,
-        quantity: "1",
-        scrapReasonId: "reason",
-        ...fields
-      })
-    });
+    scrapOperationQuantity(
+      { ...fake, postWithApproval },
+      {
+        ...caller,
+        sessionUserId: caller.userId,
+        request: post("/x/scrap", {
+          jobOperationId: op,
+          quantity: "1",
+          scrapReasonId: "reason",
+          ...fields
+        })
+      }
+    );
 
   it("scraps nothing on a later operation with no unit named", async () => {
     const fake = floor();

@@ -8,12 +8,20 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { scrapOperationQuantity } from "~/services/complete.server";
 import { erpPosting } from "~/services/erp";
+import { postScrapWithApproval } from "~/services/scrap-approval.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
   return scrapOperationQuantity(
-    { client: getCarbonServiceRole(), post: erpPosting },
-    { request, companyId, userId }
+    {
+      client: getCarbonServiceRole(),
+      post: erpPosting,
+      postWithApproval: postScrapWithApproval
+    },
+    { request, companyId, userId, sessionUserId }
   );
 }
