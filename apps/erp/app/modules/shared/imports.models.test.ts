@@ -27,6 +27,26 @@ describe("importSchemas covers every mappable field", () => {
   });
 });
 
+// An enum field's `default` presets the wizard's Default row, and the import
+// validates it like any other value. A preset that is not one of the options
+// refuses every row of a file that has no value for the field.
+describe("enum presets are valid options", () => {
+  const presets = Object.entries(fieldMappings).flatMap(([table, fields]) =>
+    Object.entries(fields).flatMap(([field, mapping]) => {
+      const { enumData } = mapping as {
+        enumData?: { options?: readonly string[]; default?: string };
+      };
+      return enumData?.options && enumData.default
+        ? [{ name: `${table}.${field}`, ...enumData }]
+        : [];
+    })
+  );
+
+  it.each(presets)("$name", ({ options, default: preset }) => {
+    expect(options).toContain(preset);
+  });
+});
+
 describe("item revision survives route validation", () => {
   const itemTables = [
     "part",

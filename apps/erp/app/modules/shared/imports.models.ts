@@ -611,7 +611,7 @@ const partImportFields = {
       description:
         "How a part should be produced when it is required in production",
       options: methodType,
-      default: "Make"
+      default: "Pull from Inventory"
     }
   },
   itemTrackingType: {
@@ -678,7 +678,8 @@ const partnerLocationImportFields = {
     required: false,
     type: "enum",
     enumData: {
-      description: "Country — match by full name (e.g., United States)",
+      description:
+        "Country — match by full name or code (e.g., United States or US)",
       fetcher: async (client: SupabaseClient<Database>, _companyId: string) => {
         const { data, error } = await client
           .from("country")
@@ -1151,7 +1152,7 @@ export const fieldMappings = {
         description:
           "How a part should be produced when it is required in production",
         options: methodType,
-        default: "Make"
+        default: "Purchase to Order"
       }
     },
     itemTrackingType: {
@@ -1248,7 +1249,7 @@ export const fieldMappings = {
         description:
           "How a part should be produced when it is required in production",
         options: methodType,
-        default: "Make"
+        default: "Purchase to Order"
       }
     },
     itemTrackingType: {
@@ -1345,7 +1346,7 @@ export const fieldMappings = {
         description:
           "How a part should be produced when it is required in production",
         options: methodType,
-        default: "Make"
+        default: "Purchase to Order"
       }
     },
     itemTrackingType: {

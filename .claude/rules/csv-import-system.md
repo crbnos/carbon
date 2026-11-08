@@ -82,7 +82,9 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 > by the user, submitted, and silently dropped before `importCsvTable` sees it. That is
 > what made every CSV-imported item land at revision `"0"` while the wizard marked the
 > Revision column required. `apps/erp/app/modules/shared/imports.models.test.ts` asserts
-> the invariant per table; add the field to BOTH maps when adding one.
+> the invariant per table; add the field to BOTH maps when adding one. The same file
+> asserts that an enum field's `default` is one of its `options`: the import validates
+> the preset like any other value, so a stale one refuses every row without that column.
 
 ### Tables & permissions
 
