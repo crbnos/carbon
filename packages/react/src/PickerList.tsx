@@ -74,6 +74,8 @@ export type PickerListProps = {
   /** The create row's text for a search, in place of "Create …". */
   createText?: (search: string) => string;
   showCreateOptionOnEmpty?: boolean;
+  /** The field the picker fills; names the search box "Search {label}". */
+  label?: string;
 };
 
 const COMPACT_ITEM_HEIGHT = 44;
@@ -103,7 +105,8 @@ function PickerList({
   creatable = false,
   createLabel,
   createText: createTextFor,
-  showCreateOptionOnEmpty = false
+  showCreateOptionOnEmpty = false,
+  label
 }: PickerListProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -191,6 +194,12 @@ function PickerList({
       <CommandItem
         key={item.value}
         value={itemValue}
+        // Only the options in view render: each says where it sits in the
+        // whole list, and whether it is chosen (cmdk's aria-selected marks
+        // the highlighted option, not the chosen one).
+        aria-setsize={filteredOptions.length}
+        aria-posinset={virtualRow.index + 1}
+        aria-checked={isCreateOption ? undefined : checked}
         onSelect={() => {
           onSelect(item, { search, setSearch, isCreateOption });
         }}
@@ -325,7 +334,10 @@ function PickerList({
   const emptyInsideScroller = creatable && selectionMode === "multiple";
 
   return (
-    <Command shouldFilter={false}>
+    <Command
+      shouldFilter={false}
+      label={label ? t`Search ${label}` : t`Search`}
+    >
       <CommandInput
         value={search}
         onValueChange={setSearch}

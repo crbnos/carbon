@@ -339,6 +339,74 @@ databaseTest(
   }
 );
 
+databaseTest(
+  "a batch counted short in two bins posts both lines, and keeps its quantity equal to its ledger",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const units = await countUnits(f);
+      const lot = units.entity("LOT-1");
+      // 6 of the lot in bin A and 4 in bin B, so the count has a line in each.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values(
+            [
+              { storageUnitId: units.binA, quantity: -4 },
+              { storageUnitId: units.binB, quantity: 4 }
+            ].map((row) => ({
+              ...row,
+              postingDate: f.today,
+              entryType: "Transfer" as const,
+              itemId: units.batchItemId,
+              locationId: f.locationId,
+              trackedEntityId: lot,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+      const countId = await draftCount(f, "1", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      for (const [storageUnitId, countedQuantity] of [
+        [units.binA, 5],
+        [units.binB, 3]
+      ] as const) {
+        await f.db
+          .updateTable("inventoryCountLine")
+          .set({ countedQuantity })
+          .where("inventoryCountId", "=", countId)
+          .where("trackedEntityId", "=", lot)
+          .where("storageUnitId", "=", storageUnitId)
+          .execute();
+      }
+
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      const ledger = await f.db
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("trackedEntityId", "=", lot)
+        .executeTakeFirstOrThrow();
+      expect(Number(ledger.quantity)).toBe(8);
+      expect(await countLedger(f, countId, lot)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ storageUnitId: units.binA, quantity: -1 }),
+          expect.objectContaining({ storageUnitId: units.binB, quantity: -1 })
+        ])
+      );
+      expect(await entity(f, lot)).toMatchObject({
+        quantity: 8,
+        status: "Available"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
 /** 5 serial units with no serial number in bin B2, oldest first. */
 async function unnumberedUnits(f: Fixture, units: CountUnits) {
   const ids = [1, 2, 3, 4, 5].map((n) => `${f.prefix}-nonum-${n}`);
@@ -508,6 +576,266 @@ databaseTest(
         .where("trackedEntityId", "is", null)
         .execute();
       expect(ledger).toEqual([{ entryType: "Negative Adjmt.", quantity: -1 }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a batch whose own quantity drifted below its ledger posts and takes the ledger total",
+  async () => {
+    const { f, units, countId } = await setup();
+    try {
+      // The ledger holds 10 of LOT-1 in A1; the unit says 0. Nothing moved.
+      await seed(f, (trx) =>
+        trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 0 })
+          .where("id", "=", units.entity("LOT-1"))
+          .execute()
+      );
+      await countLine(f, countId, units.entity("LOT-1"), 4);
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect(await entity(f, units.entity("LOT-1"))).toMatchObject({
+        quantity: 4,
+        status: "Available"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a count below what the ledger still holds after a movement is refused on its line",
+  async () => {
+    const { f, units, countId } = await setup();
+    try {
+      // After the snapshot, 8 of the 10 are used: unit and ledger both drop.
+      await seed(f, async (trx) => {
+        await trx
+          .insertInto("itemLedger")
+          .values({
+            postingDate: f.today,
+            entryType: "Negative Adjmt.",
+            itemId: units.batchItemId,
+            locationId: f.locationId,
+            storageUnitId: units.binA,
+            trackedEntityId: units.entity("LOT-1"),
+            quantity: -8,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+        await trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 2 })
+          .where("id", "=", units.entity("LOT-1"))
+          .execute();
+      });
+      await countLine(f, countId, units.entity("LOT-1"), 0);
+      const result = await post(f, countId);
+      const line = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("id")
+        .where("inventoryCountId", "=", countId)
+        .where("trackedEntityId", "=", units.entity("LOT-1"))
+        .executeTakeFirstOrThrow();
+      expect(result.error?.body?.invalidLineIds).toEqual([line.id]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** A Non-Inventory item with 22 in the ledger from when it was stocked. */
+async function nonInventoryItem(f: Fixture) {
+  const itemId = `${f.prefix}-non`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("item")
+      .values({
+        id: itemId,
+        readableId: `${f.prefix}-NON`,
+        name: "Fixings kit",
+        type: "Part",
+        itemTrackingType: "Non-Inventory",
+        replenishmentSystem: "Buy",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("itemLedger")
+      .values({
+        postingDate: f.today,
+        entryType: "Positive Adjmt.",
+        itemId,
+        locationId: f.locationId,
+        quantity: 22,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return itemId;
+}
+
+databaseTest(
+  "a Non-Inventory item with ledger history is left out of the snapshot",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const itemId = await nonInventoryItem(f);
+      const countId = await draftCount(f, "non", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const lines = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("id")
+        .where("inventoryCountId", "=", countId)
+        .where("itemId", "=", itemId)
+        .execute();
+      expect(lines).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "posting books nothing for a Non-Inventory line an older count holds",
+  async () => {
+    const { f, countId } = await setup();
+    try {
+      const itemId = await nonInventoryItem(f);
+      await seed(f, (trx) =>
+        trx
+          .insertInto("inventoryCountLine")
+          .values({
+            inventoryCountId: countId,
+            companyId: f.companyId,
+            itemId,
+            locationId: f.locationId,
+            systemQuantity: 22,
+            countedQuantity: 55,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      const booked = await f.db
+        .selectFrom("itemLedger")
+        .select("id")
+        .where("documentId", "=", countId)
+        .where("itemId", "=", itemId)
+        .execute();
+      expect(booked).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** Writes a ledger row for a serial in bin B and marks it Consumed. */
+async function breakSerial(
+  f: Fixture,
+  units: CountUnits,
+  key: string,
+  quantities: number[]
+) {
+  await seed(f, async (trx) => {
+    if (quantities.length > 0) await trx
+      .insertInto("itemLedger")
+      .values(
+        quantities.map((quantity) => ({
+          postingDate: f.today,
+          entryType: (quantity < 0 ? "Consumption" : "Positive Adjmt.") as
+            | "Consumption"
+            | "Positive Adjmt.",
+          itemId: units.serialItemId,
+          locationId: f.locationId,
+          storageUnitId: units.binB,
+          trackedEntityId: units.entity(key),
+          quantity,
+          companyId: f.companyId,
+          createdBy: USER
+        }))
+      )
+      .execute();
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Consumed", quantity: 0 })
+      .where("id", "=", units.entity(key))
+      .execute();
+  });
+}
+
+async function binOnHand(f: Fixture, units: CountUnits) {
+  const row = await f.db
+    .selectFrom("itemLedger")
+    .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+    .where("itemId", "=", units.serialItemId)
+    .where("storageUnitId", "=", units.binB)
+    .executeTakeFirstOrThrow();
+  return Number(row.quantity ?? 0);
+}
+
+databaseTest(
+  "a Consumed serial issued twice is listed at -1 and a count of 0 brings on-hand to 0",
+  async () => {
+    const f = await alwaysPostFixture();
+    const units = await countUnits(f);
+    try {
+      // SN-3 (1 in B2) is issued to a job twice: the ledger says -1.
+      await breakSerial(f, units, "SN-3", [-1, -1]);
+      const countId = await draftCount(f, "twice", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      const line = await f.db
+        .selectFrom("inventoryCountLine")
+        .select("systemQuantity")
+        .where("inventoryCountId", "=", countId)
+        .where("trackedEntityId", "=", units.entity("SN-3"))
+        .executeTakeFirstOrThrow();
+      expect(Number(line.systemQuantity)).toBe(-1);
+
+      await countLine(f, countId, units.entity("SN-3"), 0);
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect(await binOnHand(f, units)).toBe(0);
+      expect(await entity(f, units.entity("SN-3"))).toMatchObject({
+        quantity: 0,
+        status: "Consumed"
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a serial marked Consumed with stock left is listed, and a count of 0 clears it",
+  async () => {
+    const f = await alwaysPostFixture();
+    const units = await countUnits(f);
+    try {
+      // SN-3 is marked Consumed but its +1 was never taken out.
+      await breakSerial(f, units, "SN-3", []);
+      const countId = await draftCount(f, "left", (args) =>
+        generateInventoryCountLines(f.db, args)
+      );
+      await countLine(f, countId, units.entity("SN-3"), 0);
+      const result = await post(f, countId);
+      expect(result.error).toBeNull();
+      expect(await binOnHand(f, units)).toBe(0);
+      expect(await entity(f, units.entity("SN-3"))).toMatchObject({
+        quantity: 0,
+        status: "Consumed"
+      });
     } finally {
       await f.cleanup();
     }

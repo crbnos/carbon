@@ -9,7 +9,7 @@ import type {
   StandardSources
 } from "@carbon/ee";
 import {
-  assemblyAssetRows,
+  assemblyCurrentFileRows,
   buildAssemblyPlan,
   describeBomPayload,
   externalIdForAssembly,
@@ -459,7 +459,7 @@ export async function action({ request }: ActionFunctionArgs) {
     [refused.root.partNumber, refused.root.itemId],
     ...refused.items.map((item) => [item.partNumber, item.itemId] as const)
   ]);
-  const rows = assemblyAssetRows({
+  const rows = assemblyCurrentFileRows({
     plan: placed.plan,
     ties: placed.ties,
     itemIdFor: (partNumber) => itemIdByPartNumber.get(partNumber) ?? null
@@ -515,9 +515,20 @@ export async function action({ request }: ActionFunctionArgs) {
     const drawingKeys = (fileKeys: string[]) => {
       const held = new Set(fileKeys);
       return new Set(
-        rows.drawings
-          .filter((row) => held.has(drawingFileKey(row)))
-          .map((row) => rowDrawingKey(row.partNumber, row.drawingElementId))
+        rows.drawings.flatMap((drawing) =>
+          drawing.targets
+            .filter((target) =>
+              held.has(
+                drawingFileKey({
+                  itemId: target.itemId,
+                  drawingElementId: drawing.drawingElementId
+                })
+              )
+            )
+            .map((target) =>
+              rowDrawingKey(target.partNumber, drawing.drawingElementId)
+            )
+        )
       );
     };
     current = {
@@ -552,11 +563,9 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   // The apply walks the stored BOM structure; the property cells are dropped.
-  // The panel gets each drawing's name; the stored plan keeps the ties.
   const stored: StoredAssemblyPlan = {
     ...plan,
-    nodes: withoutProperties(lines),
-    drawingTies: placed.ties
+    nodes: withoutProperties(lines)
   };
   const created = await createPanelPlan({ companyId, userId, plan: stored });
   if (!created) {

@@ -48,7 +48,7 @@ import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { supplierStatusType } from "~/modules/purchasing/purchasing.models";
 import type {
-  Supplier,
+  SupplierListItem,
   SupplierReportContacts
 } from "~/modules/purchasing/types";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
@@ -57,7 +57,9 @@ import { path } from "~/utils/path";
 import { SUPPLIER_CONTACT_VALUES } from "./supplier-list-export";
 
 // A row of the suppliers list, with the contacts the loader adds per page.
-type SupplierRow = Supplier & { reportContacts: SupplierReportContacts };
+type SupplierRow = SupplierListItem & {
+  reportContacts: SupplierReportContacts;
+};
 
 type SuppliersTableProps = {
   data: SupplierRow[];
@@ -77,9 +79,8 @@ const SuppliersTable = memo(function SuppliersTable({
   const permissions = usePermissions();
   const [people] = usePeople();
   const deleteModal = useDisclosure();
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
-    null
-  );
+  const [selectedSupplier, setSelectedSupplier] =
+    useState<SupplierListItem | null>(null);
   const supplierTypes = useSupplierTypes();
   const companySettings = useCompanySettings();
   const showSupplierReadableId =
@@ -425,6 +426,7 @@ const SuppliersTable = memo(function SuppliersTable({
   return (
     <>
       <Table<SupplierRow>
+        getRowLabel={(row) => row.name ?? undefined}
         count={count}
         columns={columns}
         data={data}

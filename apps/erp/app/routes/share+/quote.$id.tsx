@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
+import { downloadUrl } from "@carbon/files";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -19,6 +20,7 @@ import {
   generateHTML,
   Heading,
   HStack,
+  IconButton,
   isRichTextEmpty,
   Modal,
   ModalBody,
@@ -37,6 +39,9 @@ import {
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   TruncatedTooltipText,
   toast,
@@ -48,7 +53,7 @@ import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -56,6 +61,7 @@ import {
   LuChevronRight,
   LuCircleX,
   LuCreditCard,
+  LuDownload,
   LuImage,
   LuTruck,
   LuUpload
@@ -77,13 +83,15 @@ import {
 import { getShippingMethodsList } from "~/modules/inventory/inventory.service";
 import { externalQuoteValidator } from "~/modules/sales/sales.models";
 import {
+  getFinalizedQuotePdf,
   getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
-  getSalesTerms
+  getSalesTerms,
+  isExternalQuoteExpired
 } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
@@ -128,11 +136,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  if (
-    quote.data.expirationDate &&
-    new Date(quote.data.expirationDate) < new Date() &&
-    quote.data.status === "Sent"
-  ) {
+  if (isExternalQuoteExpired(quote.data)) {
     return {
       state: QuoteState.Expired,
       data: null
@@ -150,7 +154,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     paymentTerms,
     terms,
     shippingMethods,
-    opportunity
+    opportunity,
+    finalizedPdf
   ] = await Promise.all([
     getCompany(serviceRole, quote.data.companyId),
     getCompanySettings(serviceRole, quote.data.companyId),
@@ -162,7 +167,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getPaymentTermsList(serviceRole, quote.data.companyId),
     getSalesTerms(serviceRole, quote.data.companyId),
     getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunity(serviceRole, quote.data.opportunityId)
+    getOpportunity(serviceRole, quote.data.opportunityId),
+    getFinalizedQuotePdf(serviceRole, quote.data)
   ]);
 
   // A No Quote line is the company's own decision not to bid — the customer
@@ -271,6 +277,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             leadTime: price.leadTime
           })) ?? null,
       customerDetails: customerDetails.data,
+      hasFinalizedPdf: finalizedPdf !== null,
       quotePayment: quotePayment.data,
       quoteShipment: quoteShipment.data,
       paymentTerm: paymentTerms.data?.find(
@@ -289,25 +296,64 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   };
 }
 
+const DownloadPdfButton = ({
+  url,
+  fileName
+}: {
+  url: string;
+  fileName: string;
+}) => {
+  const { t } = useLingui();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          aria-label={t`Download PDF`}
+          icon={<LuDownload />}
+          variant="ghost"
+          onClick={() =>
+            downloadUrl(url, fileName).catch(() =>
+              toast.error(t`Error downloading file`)
+            )
+          }
+        />
+      </TooltipTrigger>
+      <TooltipContent>
+        <Trans>Download PDF</Trans>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 const Header = ({
   company,
   quote,
   customer,
-  locale
+  locale,
+  pdfUrl
 }: {
   company: QuoteData["company"];
   quote: QuoteData["quote"];
   customer: QuoteData["customerDetails"];
   locale: string;
+  pdfUrl: string | null;
 }) => (
   <div className="flex justify-between">
     <div className="flex items-center space-x-4 tracking-tight">
       <div>
         <CardTitle className="text-3xl">{company?.name ?? ""}</CardTitle>
         {quote?.quoteId && (
-          <p className="text-lg text-muted-foreground">
-            {getQuoteDisplayId(quote)}
-          </p>
+          <HStack spacing={1}>
+            <p className="text-lg text-muted-foreground">
+              {getQuoteDisplayId(quote)}
+            </p>
+            {pdfUrl && (
+              <DownloadPdfButton
+                url={pdfUrl}
+                fileName={`${getQuoteDisplayId(quote)}.pdf`}
+              />
+            )}
+          </HStack>
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
@@ -398,6 +444,7 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
+  const { t } = useLingui();
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
@@ -454,14 +501,10 @@ const LineItems = ({
           return null;
         }
 
+        const lineName = line.itemReadableId ?? "";
+
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id!] ? (
                 <img
@@ -480,9 +523,13 @@ const LineItems = ({
                   thumbnail beside it, pushing the description and price
                   past the card edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  onClick={() => toggleOpen(line.id!)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
@@ -526,14 +573,28 @@ const LineItems = ({
                         currency={currencyCode}
                         decimalPlaces={currencyDecimals}
                       />
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id)}
+                        aria-controls={
+                          openItems.includes(line.id)
+                            ? `quote-line-details-${line.id}`
+                            : undefined
+                        }
+                        aria-label={
+                          openItems.includes(line.id)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
                         }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                      </motion.div>
+                        <LuChevronRight size={24} aria-hidden />
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText
@@ -553,29 +614,32 @@ const LineItems = ({
               </VStack>
             </HStack>
 
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
-            >
-              <LinePricingOptions
-                formatter={formatter}
-                line={line}
-                options={pricingByLine[line.id!]}
-                quoteCurrency={quote.currencyCode ?? "USD"}
-                quoteExchangeRate={quote.exchangeRate ?? 1}
-                shouldConvertCurrency={shouldConvertCurrency}
-                locale={locale}
-                selectedLine={selectedLines[line.id!]}
-                setSelectedLines={setSelectedLines}
-              />
-            </motion.div>
-          </motion.div>
+            <AnimatePresence initial={false}>
+              {openItems.includes(line.id) ? (
+                <motion.div
+                  id={`quote-line-details-${line.id}`}
+                  key="panel"
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full overflow-hidden"
+                >
+                  <LinePricingOptions
+                    formatter={formatter}
+                    line={line}
+                    options={pricingByLine[line.id!]}
+                    quoteCurrency={quote.currencyCode ?? "USD"}
+                    quoteExchangeRate={quote.exchangeRate ?? 1}
+                    shouldConvertCurrency={shouldConvertCurrency}
+                    locale={locale}
+                    selectedLine={selectedLines[line.id!]}
+                    setSelectedLines={setSelectedLines}
+                  />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         );
       })}
     </VStack>
@@ -1034,6 +1098,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
     company,
     companySettings,
     customerDetails,
+    hasFinalizedPdf,
     paymentTerm,
     quote,
     quoteLines,
@@ -1272,6 +1337,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
             quote={quote}
             customer={customerDetails}
             locale={locale}
+            pdfUrl={hasFinalizedPdf ? path.to.externalQuotePdf(id) : null}
           />
         </CardHeader>
         <CardContent>
@@ -1381,38 +1447,36 @@ const Quote = ({ data }: { data: QuoteData }) => {
               />
             </HStack>
           </VStack>
-          <div className="flex flex-col gap-2">
-            {companySettings?.digitalQuoteEnabled &&
-              quote?.status === "Sent" && (
-                <>
-                  <DisabledReason
-                    className="w-full mt-8"
-                    reason={
-                      hasSelectedItem
-                        ? undefined
-                        : t`Select at least one item to accept the quote`
-                    }
-                  >
-                    <Button
-                      onClick={confirmQuoteModal.onOpen}
-                      size="lg"
-                      variant="primary"
-                      isDisabled={!hasSelectedItem}
-                      className="w-full text-lg"
-                    >
-                      <Trans>Accept Quote</Trans>
-                    </Button>
-                  </DisabledReason>
-                  <Button
-                    onClick={rejectQuoteModal.onOpen}
-                    size="lg"
-                    variant="link"
-                  >
-                    <Trans>Reject Quote</Trans>
-                  </Button>
-                </>
-              )}
-          </div>
+          {companySettings?.digitalQuoteEnabled && quote?.status === "Sent" && (
+            <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                onClick={rejectQuoteModal.onOpen}
+                size="lg"
+                variant="secondary"
+                className="w-full sm:w-auto"
+              >
+                <Trans>Reject Quote</Trans>
+              </Button>
+              <DisabledReason
+                className="w-full sm:w-auto"
+                reason={
+                  hasSelectedItem
+                    ? undefined
+                    : t`Select at least one item to accept the quote`
+                }
+              >
+                <Button
+                  onClick={confirmQuoteModal.onOpen}
+                  size="lg"
+                  variant="primary"
+                  isDisabled={!hasSelectedItem}
+                  className="w-full sm:w-auto"
+                >
+                  <Trans>Accept Quote</Trans>
+                </Button>
+              </DisabledReason>
+            </div>
+          )}
         </CardContent>
       </Card>
       {/* generateHTML returns nothing on the server, so the server never
@@ -1635,6 +1699,7 @@ export const ErrorMessage = ({
           variants={itemVariants}
         >
           <svg
+            aria-hidden="true"
             className="absolute inset-0"
             viewBox="0 0 100 100"
             fill="none"

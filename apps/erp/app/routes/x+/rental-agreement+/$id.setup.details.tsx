@@ -15,10 +15,12 @@ import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { rentalAgreementValidator } from "~/modules/sales/sales.models";
 import {
   getRentalAgreement,
+  saveRentalAgreementContacts,
   updateRentalAgreement
 } from "~/modules/sales/sales.service";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import { RentalAgreementDetailsForm } from "~/modules/sales/ui/Rentals";
+import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -51,6 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const {
     id: _id,
     rentalAgreementId: _rentalAgreementId,
+    contacts,
     ...data
   } = validation.data;
 
@@ -73,6 +76,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Refuses an agreement that is no longer a Draft.
   const update = await updateRentalAgreement(client, {
     ...data,
+    // The primary contact is saved with the list below, which checks it.
+    customerContactId: current.data.customerContactId ?? undefined,
     ...(exchangeRate !== undefined ? { exchangeRate } : {}),
     id,
     companyId,
@@ -96,6 +101,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // After the update: a new customer has just cleared the old list.
+  if (contacts) {
+    const saved = await saveRentalAgreementContacts(getDatabaseClient(), {
+      rentalAgreementId: id,
+      primaryId: data.customerContactId ?? null,
+      contacts,
+      companyId,
+      userId
+    }).catch((err: unknown) => ({ data: null, error: err }));
+    if (saved.error) {
+      throw redirect(
+        path.to.rentalAgreementSetup(id, "details"),
+        await flash(request, error(saved.error, "Failed to save the contacts"))
+      );
+    }
+  }
+
   throw redirect(path.to.rentalAgreementSetup(id, "units"));
 }
 
@@ -107,7 +129,7 @@ export default function RentalAgreementSetupDetailsRoute() {
     path.to.rentalAgreement(id)
   );
   if (!routeData) return null;
-  const { rentalAgreement: agreement } = routeData;
+  const { rentalAgreement: agreement, contacts } = routeData;
 
   return (
     <RentalAgreementDetailsForm
@@ -119,6 +141,11 @@ export default function RentalAgreementSetupDetailsRoute() {
         customerId: agreement.customerId ?? "",
         customerLocationId: agreement.customerLocationId ?? undefined,
         customerContactId: agreement.customerContactId ?? undefined,
+        // Only a Draft reaches setup, and its contacts always load.
+        contacts: (contacts ?? []).map((row) => ({
+          customerContactId: row.customerContactId,
+          role: row.role
+        })),
         salesPersonId: agreement.salesPersonId ?? undefined,
         locationId: agreement.locationId ?? "",
         startDate: agreement.startDate ?? "",

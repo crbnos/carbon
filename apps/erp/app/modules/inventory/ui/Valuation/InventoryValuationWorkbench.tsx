@@ -194,7 +194,8 @@ export function InventoryValuationWorkbench({
         for (const r of childrenByGroup[g.id] ?? []) {
           out.push({
             kind: "detail",
-            rowId: `${r.locationId}:${r.itemId}`,
+            // One row per stock stripe (Projects Phase 2a).
+            rowId: `${r.locationId}:${r.itemId}:${r.projectId ?? ""}`,
             groupId: g.id,
             pctOfTotal:
               grandTotal === 0 ? 0 : Number(r.totalValue) / grandTotal,
@@ -242,6 +243,7 @@ export function InventoryValuationWorkbench({
                 <div className="w-5 shrink-0 flex items-center justify-center self-center">
                   {kids.length > 0 ? (
                     <button
+                      aria-expanded={isExpanded}
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
                       className="text-muted-foreground hover:text-foreground max-md:hit-area"
@@ -646,6 +648,7 @@ export function InventoryValuationWorkbench({
         <Trans>As of:</Trans>
       </span>
       <DatePicker
+        aria-label={t`As of date`}
         size="sm"
         value={parseDate(asOfDate)}
         onChange={(value) =>

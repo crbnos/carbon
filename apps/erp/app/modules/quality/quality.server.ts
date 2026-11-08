@@ -3216,7 +3216,7 @@ export const insertGauge = defineServiceFn({
       "In-Calibration",
       "Out-of-Calibration"
     ]),
-    supplierId: z.string().optional(),
+    manufacturer: z.string().optional(),
     modelNumber: z.string().optional(),
     serialNumber: z.string().optional(),
     description: z.string().optional(),
@@ -3254,7 +3254,7 @@ export const updateGauge = defineServiceFn({
     gaugeCalibrationStatus: z
       .enum(["Pending", "In-Calibration", "Out-of-Calibration"])
       .optional(),
-    supplierId: z.string().nullable().optional(),
+    manufacturer: z.string().nullable().optional(),
     modelNumber: z.string().nullable().optional(),
     serialNumber: z.string().nullable().optional(),
     description: z.string().nullable().optional(),

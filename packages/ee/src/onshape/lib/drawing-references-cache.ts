@@ -30,8 +30,8 @@ export type DrawingCacheKey = {
 export function drawingReferencesKey(key: DrawingCacheKey): string | null {
   if (!key.state) return null;
   return [
-    // v2: references carry the part from `idTag`.
-    "onshape-drawing-refs:v2",
+    // v3: references carry the version of another document they show.
+    "onshape-drawing-refs:v3",
     key.companyId,
     key.documentId,
     key.elementId,

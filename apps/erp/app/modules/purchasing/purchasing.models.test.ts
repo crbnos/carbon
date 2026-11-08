@@ -20,13 +20,17 @@ import {
   leaseTerminateValidator,
   leaseValidator,
   lockedReturnLineField,
+  orderItemSupplierFiles,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
   purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
-  splitRfqModelAttachments,
+  shortClosePurchaseOrderLineRefusal,
+  splitRfqFileAttachments,
+  supplierContactEmailRequiredValidator,
+  supplierContactValidator,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -455,6 +459,102 @@ describe("isPurchaseOrderBulkDeletable", () => {
   });
 });
 
+describe("shortClosePurchaseOrderLineRefusal", () => {
+  const receivable = {
+    purchaseOrderLineType: "Part",
+    quantityToReceive: 6,
+    receivedComplete: false
+  };
+
+  it("refuses every unreleased status, so stopping receiving never releases an order", () => {
+    // A Draft with every line closed recomputes to Completed: the bypass TCK-31 reported.
+    for (const status of [
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "Rejected",
+      "Closed",
+      null
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+    }
+  });
+
+  it("allows a receivable line on every released status", () => {
+    for (const status of [
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Completed"
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBeNull();
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBeNull();
+    }
+  });
+
+  it("refuses a line that is never received", () => {
+    for (const purchaseOrderLineType of ["Comment", "G/L Account"]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          purchaseOrderLineType
+        })
+      ).toBe("This line cannot be received");
+    }
+  });
+
+  it("refuses a line with nothing left to receive", () => {
+    for (const quantityToReceive of [0, -1, null]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          quantityToReceive
+        })
+      ).toBe("This line has no outstanding quantity to receive");
+    }
+  });
+
+  it("refuses the intent the line is already in", () => {
+    expect(
+      shortClosePurchaseOrderLineRefusal("close", {
+        ...receivable,
+        status: "To Receive",
+        receivedComplete: true
+      })
+    ).toBe("Receiving is already closed for this line");
+    expect(
+      shortClosePurchaseOrderLineRefusal("reopen", {
+        ...receivable,
+        status: "To Receive"
+      })
+    ).toBe("Receiving is not closed for this line");
+  });
+});
+
 describe("purchaseOrderDeleteRefusal", () => {
   it("allows a Draft or Planned order whoever asks", () => {
     for (const status of ["Draft", "Planned"]) {
@@ -534,11 +634,54 @@ describe("lockedReturnLineField", () => {
   });
 });
 
-describe("splitRfqModelAttachments", () => {
+describe("orderItemSupplierFiles", () => {
+  const file = (itemId: string, path: string) => ({ itemId, path });
+
+  it("orders by first appearance of each item, keeping each item's order", () => {
+    const files = [
+      file("b", "b/model.step"),
+      file("a", "a/model.step"),
+      file("b", "b/drawing.pdf"),
+      file("a", "a/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a", "b", "a"], files).map((f) => f.path)
+    ).toEqual([
+      "a/model.step",
+      "a/drawing.pdf",
+      "b/model.step",
+      "b/drawing.pdf"
+    ]);
+  });
+
+  it("keeps only the ticked paths of the items asked for", () => {
+    const files = [
+      file("a", "a/model.step"),
+      file("a", "a/drawing.pdf"),
+      file("c", "c/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a"], files, [
+        "a/drawing.pdf",
+        // Another item's file, or any other path, is never shared.
+        "c/drawing.pdf",
+        "other-company/secret.pdf"
+      ]).map((f) => f.path)
+    ).toEqual(["a/drawing.pdf"]);
+  });
+
+  it("shares nothing when nothing is ticked", () => {
+    expect(
+      orderItemSupplierFiles(["a"], [file("a", "a/model.step")], [])
+    ).toEqual([]);
+  });
+});
+
+describe("splitRfqFileAttachments", () => {
   const model = (id: string, size: number) => ({ id, size });
 
   it("attaches what fits in line order and links the rest", () => {
-    const { attach, link } = splitRfqModelAttachments(
+    const { attach, link } = splitRfqFileAttachments(
       [model("a", 10), model("big", 30), model("b", 5)],
       20
     );
@@ -547,7 +690,7 @@ describe("splitRfqModelAttachments", () => {
   });
 
   it("links every model when documents already use the budget", () => {
-    const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
+    const { attach, link } = splitRfqFileAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
   });
@@ -585,12 +728,14 @@ describe("purchaseOrderLineDateRefusal", () => {
         null
     );
 
-  it("fixes the required date once the order is released", () => {
+  it("fixes the required date while in approval and once complete", () => {
     expect(editable("requiredDate")).toEqual([
       "Draft",
       "Planned",
-      "Needs Approval",
       "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
       "Rejected"
     ]);
   });
@@ -615,5 +760,48 @@ describe("purchaseOrderLineDateRefusal", () => {
     expect(editable("receivedDate", true)).toEqual([
       ...purchaseOrderStatusType
     ]);
+  });
+});
+
+describe("supplierContactValidator", () => {
+  it("accepts a contact with a name and no email", () => {
+    const result = supplierContactValidator.safeParse({ firstName: "Test" });
+    expect(result.success).toBe(true);
+  });
+  it("turns an empty email into undefined", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: ""
+    });
+    expect(result.success && result.data.email).toBe(undefined);
+  });
+  it("refuses a contact with no name and no email", () => {
+    const result = supplierContactValidator.safeParse({});
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["firstName"]);
+  });
+  it("refuses an invalid email", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: "not-an-email"
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("supplierContactEmailRequiredValidator", () => {
+  it("refuses a contact with a name and no email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+  it("accepts a contact with an email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test",
+      email: "test@example.com"
+    });
+    expect(result.success).toBe(true);
   });
 });

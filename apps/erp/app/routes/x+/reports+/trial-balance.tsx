@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { datetime, defaultReportRange, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -15,8 +16,8 @@ import { financialReportParamsValidator } from "~/modules/accounting/accounting.
 import {
   getCompaniesInGroup,
   getConsolidatedBalancesForReport,
-  getFinancialStatementBalances,
-  getFiscalYearSettings,
+  getReportFiscalStartMonth,
+  getTrialBalance,
   translateCompanyBalances
 } from "~/modules/accounting/accounting.service";
 import { selectReportCompanyIds } from "~/modules/accounting/accounting.utils";
@@ -24,9 +25,8 @@ import type { Chart } from "~/modules/accounting/types";
 import {
   exportTrialBalance,
   ReportFilters,
-  TrialBalanceTree
+  TrialBalanceList
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared/shared.models";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -64,12 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? parsed.data.showTranslated
     : false;
 
-  const [companies, fiscalYearSettings] = await Promise.all([
-    getCompaniesInGroup(client, companyGroupId),
-    getFiscalYearSettings(client, companyId)
-  ]);
-  const fiscalStartMonth =
-    months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
+  const companies = await getCompaniesInGroup(client, companyGroupId);
   if (companies.error) {
     throw redirect(
       path.to.accounting,
@@ -92,6 +87,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw new Response("Company not found", { status: 404 });
   }
   const isMultiCompany = selectedCompanyIds.length > 1;
+
+  // The selected company's year: one company's balances close on its own
+  // fiscal year end, and the date presets follow the same year.
+  const fiscalYear = await getReportFiscalStartMonth(
+    companyGroupId,
+    isMultiCompany ? companyId : selectedCompanyIds[0]!
+  );
+  if (fiscalYear.error) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(fiscalYear.error, "Failed to load fiscal year settings")
+      )
+    );
+  }
+  const fiscalStartMonth = fiscalYear.data;
 
   // Default to the trailing six months, matching every other range report
   // (previously trial balance alone defaulted to all-time).
@@ -142,11 +154,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Single company
   const selectedCompanyId = selectedCompanyIds[0];
-  const balances = await getFinancialStatementBalances(
+  const balances = await getTrialBalance(
     client,
     companyGroupId,
-    selectedCompanyId,
-    { startDate, endDate }
+    selectedCompanyId!,
+    { startDate, endDate, fiscalStartMonth }
   );
 
   if (balances.error) {
@@ -165,7 +177,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     !!selectedCompany?.baseCurrencyCode &&
     selectedCompany.baseCurrencyCode !== parentCurrency;
 
-  let accounts = (balances.data ?? []) as (Chart & {
+  let accounts = (balances.data ?? []) as (Omit<
+    Chart,
+    "allowability" | "elementOfCost" | "unallowableReason"
+  > & {
     translatedBalance?: number;
     exchangeRate?: number;
   })[];
@@ -239,6 +254,9 @@ export default function TrialBalanceRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Trial Balance</Trans>
+      </h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}
@@ -258,7 +276,7 @@ export default function TrialBalanceRoute() {
         search={search}
         onSearchChange={setSearch}
       />
-      <TrialBalanceTree
+      <TrialBalanceList
         data={trialBalance}
         showTranslated={showTranslated}
         parentCurrency={parentCurrency}

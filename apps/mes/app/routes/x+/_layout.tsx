@@ -7,7 +7,6 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getCompanies,
   getUser,
   hasPermission,
@@ -16,7 +15,10 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  getCarbonForRequest,
+  getCarbonServiceRole
+} from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -25,6 +27,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { isConsoleModeEnabledForCompany } from "@carbon/ee/console.server";
+import { getLogger } from "@carbon/logger";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
@@ -38,16 +41,19 @@ import {
   ItarEntityPendingBlock,
   ItarUserCertification,
   SidebarProvider,
+  ThemeStyleProvider,
   TooltipProvider,
   toast,
   useKeyboardWedge,
+  useMode,
   useNProgress,
   useScanPending,
+  useThemeStyle,
   VStack
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
+  deferRootActionPost,
   Edition,
   formatDate,
   redirect,
@@ -63,7 +69,8 @@ import { Suspense, useEffect, useState } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
-  ShouldRevalidateFunction
+  ShouldRevalidateFunction,
+  ShouldRevalidateFunctionArgs
 } from "react-router";
 import {
   Await,
@@ -93,48 +100,53 @@ import {
   getLocationsByCompany
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
+import { getOpenServiceJobsCount } from "~/services/service.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+const log = getLogger("mes", "auth");
 
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
 let shellLoadedAt = Date.now();
 
-export const shouldRevalidate: ShouldRevalidateFunction = ({
-  currentUrl,
-  formMethod,
-  formAction,
-  defaultShouldRevalidate
-}) => {
-  // The refreshed session reaches the client through this loader.
-  if (formAction === path.to.refreshSession) return true;
+export const shouldRevalidate: ShouldRevalidateFunction = deferRootActionPost(
+  ({
+    currentUrl,
+    formMethod,
+    formAction,
+    defaultShouldRevalidate
+  }: ShouldRevalidateFunctionArgs) => {
+    // The refreshed session reaches the client through this loader.
+    if (formAction === path.to.refreshSession) return true;
 
-  if (
-    currentUrl.pathname.startsWith("/refresh-session") ||
-    currentUrl.pathname.startsWith("/switch-company") ||
-    currentUrl.pathname.startsWith("/x/acknowledge")
-  ) {
-    return true;
+    if (
+      currentUrl.pathname.startsWith("/refresh-session") ||
+      currentUrl.pathname.startsWith("/switch-company") ||
+      currentUrl.pathname.startsWith("/x/acknowledge")
+    ) {
+      return true;
+    }
+
+    // Console mode + pin-in/out live in this shell loader (via userMiddleware).
+    // Those actions set cookies, so the shell MUST re-run for the change to show —
+    // without this, the overlay/console state only updated on a full page refresh.
+    if (
+      formAction === path.to.consolePinIn ||
+      formAction === path.to.consolePinOut ||
+      formAction === path.to.consoleToggle
+    ) {
+      return true;
+    }
+
+    // Only a mutation can change what the shell returns, so a GET re-runs it
+    // only once the data has aged out — that covers out-of-band changes.
+    if (!formMethod || formMethod === "GET") {
+      return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
+    }
+
+    return defaultShouldRevalidate;
   }
-
-  // Console mode + pin-in/out live in this shell loader (via userMiddleware).
-  // Those actions set cookies, so the shell MUST re-run for the change to show —
-  // without this, the overlay/console state only updated on a full page refresh.
-  if (
-    formAction === path.to.consolePinIn ||
-    formAction === path.to.consolePinOut ||
-    formAction === path.to.consoleToggle
-  ) {
-    return true;
-  }
-
-  // Only a mutation can change what the shell returns, so a GET re-runs it
-  // only once the data has aged out — that covers out-of-band changes.
-  if (!formMethod || formMethod === "GET") {
-    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
-  }
-
-  return defaultShouldRevalidate;
-};
+);
 
 export const middleware: MiddlewareFunction[] = [userMiddleware];
 
@@ -142,8 +154,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
   const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
-  // share a client between requests
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
@@ -164,7 +175,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     companySettings,
     openClockEntry,
     locationEmployees,
-    printerRoutes
+    printerRoutes,
+    openServiceJobCount
   ] = await Promise.all([
     getCompanies(client, userId),
     getUser(client, userId),
@@ -191,10 +203,24 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           .eq("locationId", locationId)
           .eq("companyId", companyId)
       : Promise.resolve({ data: [] as { id: string }[] }),
-    getPrinterRoutes(serviceRole, companyId)
+    getPrinterRoutes(serviceRole, companyId),
+    getOpenServiceJobsCount(client, companyId, locationId)
   ]);
 
-  if (user.error || !user.data) {
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — so it is an error to retry, not a sign-out. Only a
+  // missing user row ends the session.
+  if (user.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error.message
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+  if (!user.data) {
     throw await destroyAuthSession(request);
   }
 
@@ -291,6 +317,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       },
       activeEvents: activeEvents.data ?? 0,
       activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
+      openServiceJobCount: openServiceJobCount.count ?? 0,
       company,
       companies: companies.data ?? [],
       consoleEnabled,
@@ -337,6 +364,7 @@ export default function AuthenticatedRoute() {
     session,
     activeEvents,
     activeMaintenanceCount,
+    openServiceJobCount,
     company,
     companies,
     consoleEnabled,
@@ -394,6 +422,8 @@ export default function AuthenticatedRoute() {
   }, [consoleIsIdle]);
 
   useNProgress();
+  const themeStyle = useThemeStyle();
+  const mode = useMode();
 
   const userId = user?.id;
   const { t } = useLingui();
@@ -535,101 +565,107 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               {company?.id && <RouteRealtime companyId={company.id} />}
-              <SidebarProvider defaultOpen={false}>
-                <TooltipProvider delayDuration={0}>
-                  <AppSidebar
-                    activeEvents={activeEvents}
-                    activeMaintenanceCount={activeMaintenanceCount}
-                    company={company}
-                    companies={companies}
-                    consoleEnabled={
-                      consoleEnabled && (consoleMode || canEnterConsoleMode)
-                    }
-                    consoleMode={consoleMode}
-                    location={location}
-                    locations={locations}
-                    openClockEntry={openClockEntry}
-                    pinnedInUser={pinnedInUser}
-                    timeCardEnabled={timeCardEnabled}
-                    moreOpen={moreOpen}
-                    onMoreOpenChange={setMoreOpen}
-                  />
-                  {/* From lg the shell does not scroll, so the page area stops at the
-                      screen and each page's own scroller takes the overflow. */}
-                  <div
-                    data-app-card
-                    className={cn(
-                      "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
-                      showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+              <ThemeStyleProvider value={themeStyle}>
+                <SidebarProvider
+                  defaultOpen={false}
+                  style={themeStyle?.frame[mode]}
+                >
+                  <TooltipProvider delayDuration={0}>
+                    <AppSidebar
+                      activeEvents={activeEvents}
+                      activeMaintenanceCount={activeMaintenanceCount}
+                      openServiceJobCount={openServiceJobCount}
+                      company={company}
+                      companies={companies}
+                      consoleEnabled={
+                        consoleEnabled && (consoleMode || canEnterConsoleMode)
+                      }
+                      consoleMode={consoleMode}
+                      location={location}
+                      locations={locations}
+                      openClockEntry={openClockEntry}
+                      pinnedInUser={pinnedInUser}
+                      timeCardEnabled={timeCardEnabled}
+                      moreOpen={moreOpen}
+                      onMoreOpenChange={setMoreOpen}
+                    />
+                    {/* From lg the shell does not scroll, so the page area stops at the
+                        screen and each page's own scroller takes the overflow. It is the
+                        one <main> landmark: pages render no <main> of their own. */}
+                    <main
+                      data-app-card
+                      className={cn(
+                        "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
+                        showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
+                      )}
+                    >
+                      {/* A company switch stays on the same page. Without the key the page
+                          keeps its state, so a form still held the previous company's
+                          values and saving wrote them to the new one. */}
+                      <AnnouncementBar
+                        announcement={announcement}
+                        // The pinned-in operator on a console, so one
+                        // operator's dismissal is not everyone's.
+                        userId={loaderData.effectiveUserId ?? user?.id ?? ""}
+                        dismissLabel={t`Dismiss`}
+                        defaultLinkLabel={t`Learn more`}
+                      />
+                      <Outlet key={companyId} />
+                    </main>
+                    <MesTabBar
+                      activeEvents={activeEvents}
+                      activeMaintenanceCount={activeMaintenanceCount}
+                      openServiceJobCount={openServiceJobCount}
+                      moreOpen={moreOpen}
+                      onMoreOpenChange={setMoreOpen}
+                    />
+                    <ShortcutHelp />
+                    {user && company?.id && (
+                      <AccountSettings
+                        api={path.to.erpApi}
+                        user={user}
+                        companyId={company.id}
+                        themePresets
+                      />
                     )}
-                  >
-                    {/* A company switch stays on the same page. Without the key the page
-                        keeps its state, so a form still held the previous company's
-                        values and saving wrote them to the new one. */}
-                    <AnnouncementBar
-                      announcement={announcement}
-                      // The pinned-in operator on a console, so one
-                      // operator's dismissal is not everyone's.
-                      userId={loaderData.effectiveUserId ?? user?.id ?? ""}
-                      dismissLabel={t`Dismiss`}
-                      defaultLinkLabel={t`Learn more`}
-                    />
-                    <Outlet key={companyId} />
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
-                  </div>
-                  <MesTabBar
-                    activeEvents={activeEvents}
-                    activeMaintenanceCount={activeMaintenanceCount}
-                    moreOpen={moreOpen}
-                    onMoreOpenChange={setMoreOpen}
-                  />
-                  <ShortcutHelp />
-                  {user && company?.id && (
-                    <AccountSettings
-                      api={path.to.erpApi}
-                      user={user}
-                      companyId={company.id}
-                    />
-                  )}
-                  {timeCardEnabled && (
-                    <Suspense fallback={null}>
-                      <Await resolve={openClockEntry}>
-                        {(resolved) => (
-                          <TimeCardWarning
-                            openClockEntry={
-                              resolved?.data
-                                ? {
-                                    id: resolved.data.id,
-                                    clockIn: resolved.data.clockIn
-                                  }
-                                : null
-                            }
-                          />
-                        )}
-                      </Await>
-                    </Suspense>
-                  )}
-                  {scanPending && <ScanPendingOverlay />}
-                  {consoleMode && !pinnedInUser && (
-                    <PinInOverlay
-                      companyId={company.companyId!}
-                      locationEmployeeIds={locationEmployeeIds}
-                      sessionUserId={user?.id ?? ""}
-                      hasPinnedUser={false}
-                    />
-                  )}
-                  {consoleMode && pinnedInUser && (
-                    <ConsolePill
-                      user={pinnedInUser}
-                      companyId={company.companyId!}
-                      locationEmployeeIds={locationEmployeeIds}
-                      sessionUserId={user?.id ?? ""}
-                    />
-                  )}
-                </TooltipProvider>
-              </SidebarProvider>
+                    {timeCardEnabled && (
+                      <Suspense fallback={null}>
+                        <Await resolve={openClockEntry}>
+                          {(resolved) => (
+                            <TimeCardWarning
+                              openClockEntry={
+                                resolved?.data
+                                  ? {
+                                      id: resolved.data.id,
+                                      clockIn: resolved.data.clockIn
+                                    }
+                                  : null
+                              }
+                            />
+                          )}
+                        </Await>
+                      </Suspense>
+                    )}
+                    {scanPending && <ScanPendingOverlay />}
+                    {consoleMode && !pinnedInUser && (
+                      <PinInOverlay
+                        companyId={company.companyId!}
+                        locationEmployeeIds={locationEmployeeIds}
+                        sessionUserId={user?.id ?? ""}
+                        hasPinnedUser={false}
+                      />
+                    )}
+                    {consoleMode && pinnedInUser && (
+                      <ConsolePill
+                        user={pinnedInUser}
+                        companyId={company.companyId!}
+                        locationEmployeeIds={locationEmployeeIds}
+                        sessionUserId={user?.id ?? ""}
+                      />
+                    )}
+                  </TooltipProvider>
+                </SidebarProvider>
+              </ThemeStyleProvider>
             </RealtimeDataProvider>
           </PrintingProvider>
         </CarbonProvider>

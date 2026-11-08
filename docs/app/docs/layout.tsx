@@ -98,6 +98,11 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     ],
   },
   {
+    label: "Projects",
+    slugs: ["projects", "project-billing", "government-contracting"],
+  },
+  { label: "Service", slugs: ["service-jobs", "customer-assets"] },
+  {
     label: "Inventory",
     slugs: [
       "inventory",
@@ -125,6 +130,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Accounting",
     slugs: [
       "accounting",
+      "accounting-workflows",
       "financial-reports",
       "period-close",
       "dimensions",

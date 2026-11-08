@@ -2,8 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { APP_ENV } from "@carbon/env";
-import { SenseProvider } from "../sense/provider";
+import { createSenseProvider } from "../sense/provider";
 import {
   DEFAULT_MINIMUM_STATE_SECONDS,
   type OeeProvider,
@@ -20,24 +19,24 @@ type OeeProviderFactory = (args: {
  * everything else finds OEE integrations through `getIntegrationIdsByRole("oee")`.
  */
 export const OEE_PROVIDERS: Record<OeeProviderId, OeeProviderFactory> = {
-  sense: (args) => {
-    // Sense staging has no HTTPS endpoint, so its bearer key would travel in
-    // plain text. Testing only: never in a production deployment.
-    if (args.environment === "staging" && APP_ENV === "production") {
-      throw new Error(SENSE_STAGING_REFUSED);
-    }
-    return new SenseProvider({
-      apiKey: args.apiKey,
-      environment: args.environment === "staging" ? "staging" : "production"
-    });
-  }
+  sense: createSenseProvider
 };
-
-export const SENSE_STAGING_REFUSED =
-  "Sense staging uses plain HTTP and is not available in production. Choose Production.";
 
 export function isOeeProviderId(id: string): id is OeeProviderId {
   return Object.hasOwn(OEE_PROVIDERS, id);
+}
+
+/**
+ * A provider's connection settings from its metadata (with the vaulted `apiKey`
+ * already resolved). Throws when the API key is empty.
+ */
+export function oeeProviderSettings(metadata: Record<string, unknown>) {
+  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
+  if (!apiKey) throw new Error("No API key");
+  return {
+    apiKey,
+    environment: String(metadata.environment ?? "production")
+  };
 }
 
 /**
@@ -52,13 +51,7 @@ export function createOeeProvider(
   if (!isOeeProviderId(integrationId)) {
     throw new Error(`${integrationId} is not an OEE provider`);
   }
-  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
-  if (!apiKey) throw new Error("No API key");
-
-  const provider = OEE_PROVIDERS[integrationId]({
-    apiKey,
-    environment: String(metadata.environment ?? "production")
-  });
+  const provider = OEE_PROVIDERS[integrationId](oeeProviderSettings(metadata));
 
   const minimum = Number(metadata.minimumStateSeconds);
   return {

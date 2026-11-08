@@ -119,7 +119,13 @@ export function MaterialRowTitle({
             onClick={(e) => e.stopPropagation()}
             className="max-md:hit-area shrink-0"
           >
-            <LuExternalLink className="h-4 w-4 md:opacity-0 group-hover:opacity-100" />
+            <LuExternalLink
+              aria-hidden
+              className="h-4 w-4 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            />
+            <span className="sr-only">
+              <Trans>Open {readableId ?? ""} details</Trans>
+            </span>
           </Link>
         )}
       </div>

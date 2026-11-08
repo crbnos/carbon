@@ -5,6 +5,8 @@
 import type { OnshapeElementPart } from "../lib/client";
 import type { OnshapeBomNode } from "./bom";
 import type {
+  DrawingDocument,
+  DrawingSource,
   DrawingTarget,
   DrawingTie,
   OnshapeDrawing,
@@ -1078,7 +1080,8 @@ export function buildPartPlan({
   mapping,
   propertiesByPartId,
   released = new Map(),
-  sourceState
+  sourceState,
+  versionId
 }: {
   documentId: string;
   elementId: string;
@@ -1089,6 +1092,11 @@ export function buildPartPlan({
    * exports every part). Absent on a version: the part microversion stands.
    */
   sourceState?: string | null;
+  /**
+   * On a version, its id. A link whose model an assembly push exported from
+   * this version (`metadata.modelVersionId`) is unchanged: a version never changes.
+   */
+  versionId?: string;
   requestedPartIds: string[];
   mappings: PlanMappingRow[];
   items: PlanItemRow[];
@@ -1184,9 +1192,10 @@ export function buildPartPlan({
     if (mapped && linked) {
       const lastMicroversion = mapped.metadata?.microversionId;
       const unchanged =
-        !!base.microversionId &&
-        typeof lastMicroversion === "string" &&
-        base.microversionId === lastMicroversion;
+        (!!base.microversionId &&
+          typeof lastMicroversion === "string" &&
+          base.microversionId === lastMicroversion) ||
+        (!!versionId && mapped.metadata?.modelVersionId === versionId);
       const planned = existingPlan(linked, part);
       const writes =
         planned.changes.length > 0 ||
@@ -1868,6 +1877,12 @@ export function buildAssemblyPlan({
   };
 }
 
+/** `externalId`: the key of the item's link to the row's source. */
+export type ModelExportRow = ModelExport & {
+  itemId: string;
+  externalId: string;
+};
+
 /**
  * Every row a drawing can tie to: the root, then the first BOM row of each part
  * number in the whole tree. Rows the review lists no files for are targets too,
@@ -1880,7 +1895,7 @@ export function assemblyDrawingTargets(
 ): DrawingTarget[] {
   const targets: DrawingTarget[] = [
     {
-      partNumber: plan.root.partNumber,
+      id: plan.root.partNumber,
       kind: "assembly",
       documentId: plan.documentId,
       wvm: plan.wv,
@@ -1896,7 +1911,7 @@ export function assemblyDrawingTargets(
     const source = modelExportFor(node);
     if (!source) continue;
     targets.push({
-      partNumber: source.partNumber,
+      id: source.partNumber,
       kind: source.kind,
       documentId: source.documentId,
       wvm: source.wvm,
@@ -1908,12 +1923,6 @@ export function assemblyDrawingTargets(
   }
   return targets;
 }
-
-export type DrawingDocument = {
-  documentId: string;
-  wvm: "w" | "v";
-  wvmId: string;
-};
 
 /** The documents whose drawings the review reads: the root's and each row's that takes files. */
 export function assemblyDrawingDocuments(
@@ -1943,9 +1952,10 @@ export function assemblyDrawingDocuments(
 }
 
 /**
- * Puts each tied drawing on its row. A drawing tied to a row that takes no
- * files is dropped: that item's own push brings its drawings. Returns the
- * ties the apply can queue, for the stored plan.
+ * Puts each tied drawing on the rows it shows (`targetIds` are part numbers).
+ * A drawing tied to a row that takes no files is dropped there: that item's
+ * own push brings its drawings. Returns the ties to the rows that kept them,
+ * for the review's current-file check.
  */
 export function withAssemblyDrawings(
   plan: AssemblyPlan,
@@ -1954,11 +1964,13 @@ export function withAssemblyDrawings(
 ): { plan: AssemblyPlan; ties: DrawingTie[] } {
   const byPartNumber = new Map<string, OnshapeDrawing[]>();
   for (const tie of tied.ties) {
-    const list = byPartNumber.get(tie.partNumber) ?? [];
-    list.push(tie.drawing);
-    byPartNumber.set(tie.partNumber, list);
+    for (const partNumber of tie.targetIds) {
+      const list = byPartNumber.get(partNumber) ?? [];
+      list.push(tie.drawing);
+      byPartNumber.set(partNumber, list);
+    }
   }
-  const kept: DrawingTie[] = [];
+  const kept = new Map<OnshapeDrawing, string[]>();
   const withDrawings = <
     T extends { partNumber: string; assets?: AssemblyRowAssets }
   >(
@@ -1972,7 +1984,7 @@ export function withAssemblyDrawings(
         index
     );
     for (const drawing of drawings) {
-      kept.push({ partNumber: row.partNumber, drawing });
+      kept.set(drawing, [...(kept.get(drawing) ?? []), row.partNumber]);
     }
     return {
       ...row,
@@ -1993,7 +2005,7 @@ export function withAssemblyDrawings(
       ...nonEmpty("skippedDrawings", tied.skipped),
       ...nonEmpty("fileWarnings", warnings)
     },
-    ties: kept
+    ties: [...kept].map(([drawing, targetIds]) => ({ drawing, targetIds }))
   };
 }
 
@@ -2060,142 +2072,150 @@ export function withCurrentFiles(
   };
 }
 
-/** Where a row's file comes from in Onshape. */
-export type AssetSourceRef = {
-  kind: "partstudio" | "assembly";
-  documentId: string;
-  wvm: "w" | "v";
-  wvmId: string;
-  elementId: string;
-  partId?: string;
-  /** Normalized: null is the default configuration. */
-  configuration: string | null;
-};
-
-export type ModelExportRow = AssetSourceRef & {
+/** A row that takes a drawing's PDF: its item and the Onshape source it shows. */
+export type DrawingTargetRow = DrawingSource & {
   itemId: string;
   partNumber: string;
-};
-
-export type DrawingExportRow = {
-  itemId: string;
-  partNumber: string;
-  documentId: string;
-  wvm: "w" | "v";
-  wvmId: string;
-  drawingElementId: string;
-  drawingMicroversionId: string | null;
-  /** The row the drawing shows; its state is part of the drawing's key. */
-  target: AssetSourceRef;
 };
 
 /**
- * The files of the rows that take them, on the items they go to: STEP models
- * of parts and sub-assemblies, drawings of every row. `modelRows` and
- * `drawingRows` pick rows (absent: every row). `itemIdFor` names a row's item,
- * or null when the row has no item linked to that source: its picked files
- * count as `unlinked`. `current` counts the picked files the review marked
- * current, by kind.
+ * The picked rows' exports on the items they go to: STEP models of parts and
+ * sub-assemblies, and the rows whose drawings the push finds and attaches.
+ * `modelRows` and `drawingRows` pick rows by part number (absent: every row).
+ * `root` is the assembly itself when the push linked it: it takes drawings
+ * only, since its model goes with every push. `linkFor` names a row's item and
+ * the key of its link to that source, or null when the row has no item linked
+ * to it: its picked files count as `unlinked`. `drawings` counts the PDFs the
+ * picked rows offer, `current` the picked files the review marked current.
  */
 export function assemblyAssetRows(input: {
   plan: AssemblyPlan;
-  ties: DrawingTie[];
   modelRows?: ReadonlySet<string>;
   drawingRows?: ReadonlySet<string>;
   excluded?: ReadonlySet<string>;
-  itemIdFor: (partNumber: string, source: AssetSourceRef) => string | null;
+  root?: DrawingTargetRow | null;
+  linkFor: (
+    partNumber: string,
+    source: ModelExport
+  ) => { itemId: string; externalId: string } | null;
 }): {
   models: ModelExportRow[];
-  drawings: DrawingExportRow[];
+  drawingTargets: DrawingTargetRow[];
+  drawings: number;
   unlinked: number;
   current: { models: number; drawings: number };
 } {
-  const { plan } = input;
   const models: ModelExportRow[] = [];
-  const drawings: DrawingExportRow[] = [];
-  let unlinked = 0;
+  const drawingTargets: DrawingTargetRow[] = [];
   const current = { models: 0, drawings: 0 };
-  const tiesByPartNumber = new Map<string, DrawingTie[]>();
-  for (const tie of input.ties) {
-    const list = tiesByPartNumber.get(tie.partNumber) ?? [];
-    list.push(tie);
-    tiesByPartNumber.set(tie.partNumber, list);
-  }
-  const picksDrawings = (partNumber: string) =>
-    !input.drawingRows || input.drawingRows.has(partNumber);
-  const addDrawings = (
-    row: { partNumber: string; assets?: AssemblyRowAssets },
-    itemId: string,
-    target: AssetSourceRef
+  let drawings = 0;
+  let unlinked = 0;
+  const pickedDrawings = (row: {
+    partNumber: string;
+    assets?: AssemblyRowAssets;
+  }) =>
+    !input.drawingRows || input.drawingRows.has(row.partNumber)
+      ? (row.assets?.drawings ?? [])
+      : [];
+  const takeDrawings = (
+    offered: AssemblyRowDrawing[],
+    target: DrawingTargetRow
   ) => {
-    for (const { drawing } of tiesByPartNumber.get(row.partNumber) ?? []) {
-      if (
-        row.assets?.drawings.some(
-          (entry) => entry.elementId === drawing.elementId && entry.current
-        )
-      ) {
-        current.drawings++;
-      }
-      drawings.push({
-        itemId,
-        partNumber: row.partNumber,
-        documentId: drawing.documentId,
-        wvm: drawing.wvm,
-        wvmId: drawing.wvmId,
-        drawingElementId: drawing.elementId,
-        drawingMicroversionId: drawing.microversionId,
-        target
-      });
-    }
+    if (offered.length === 0) return;
+    drawingTargets.push(target);
+    drawings += offered.length;
+    current.drawings += offered.filter((drawing) => drawing.current).length;
   };
 
-  const root = plan.root;
-  const rootTies = picksDrawings(root.partNumber)
-    ? (tiesByPartNumber.get(root.partNumber) ?? []).length
-    : 0;
-  if (root.assets && rootTies > 0) {
-    const source: AssetSourceRef = {
+  const rootOffered = pickedDrawings(input.plan.root);
+  if (input.root) takeDrawings(rootOffered, input.root);
+  else unlinked += rootOffered.length;
+
+  for (const item of input.plan.items) {
+    const model = item.assets?.model;
+    if (!model || input.excluded?.has(item.partNumber)) continue;
+    const wantsModel = !input.modelRows || input.modelRows.has(item.partNumber);
+    const offered = pickedDrawings(item);
+    if (!wantsModel && offered.length === 0) continue;
+    const link = input.linkFor(item.partNumber, model);
+    if (!link) {
+      unlinked += (wantsModel ? 1 : 0) + offered.length;
+      continue;
+    }
+    if (wantsModel) {
+      if (item.assets?.modelCurrent) current.models++;
+      models.push({ ...model, ...link });
+    }
+    takeDrawings(offered, { ...model, itemId: link.itemId });
+  }
+  return { models, drawingTargets, drawings, unlinked, current };
+}
+
+/**
+ * What the review checks for current files, on the items the rows have now:
+ * every row's model, and each tied drawing on the rows it goes to. A row with
+ * no item yet holds no file, so it is left out.
+ */
+export function assemblyCurrentFileRows(input: {
+  plan: AssemblyPlan;
+  ties: DrawingTie[];
+  itemIdFor: (partNumber: string) => string | null;
+}): {
+  models: Array<ModelExport & { itemId: string }>;
+  drawings: Array<
+    DrawingDocument & {
+      drawingElementId: string;
+      name: string;
+      microversionId: string | null;
+      targets: DrawingTargetRow[];
+    }
+  >;
+} {
+  const { plan } = input;
+  const rows = new Map<string, DrawingTargetRow>();
+  const rootItemId = input.itemIdFor(plan.root.partNumber);
+  if (plan.root.assets && rootItemId) {
+    rows.set(plan.root.partNumber, {
       kind: "assembly",
       documentId: plan.documentId,
       wvm: plan.wv,
       wvmId: plan.wvId,
       elementId: plan.elementId,
-      configuration: normalizeConfiguration(plan.configuration)
-    };
-    const itemId = input.itemIdFor(root.partNumber, source);
-    if (itemId) addDrawings(root, itemId, source);
-    else unlinked += rootTies;
+      configuration: normalizeConfiguration(plan.configuration),
+      itemId: rootItemId,
+      partNumber: plan.root.partNumber
+    });
   }
-
+  const models: Array<ModelExport & { itemId: string }> = [];
   for (const item of plan.items) {
     const model = item.assets?.model;
-    if (!model || input.excluded?.has(item.partNumber)) continue;
-    const wantsModel = !input.modelRows || input.modelRows.has(item.partNumber);
-    const ties = picksDrawings(item.partNumber)
-      ? (tiesByPartNumber.get(item.partNumber) ?? []).length
-      : 0;
-    if (!wantsModel && ties === 0) continue;
-    const source: AssetSourceRef = {
-      kind: model.kind,
-      documentId: model.documentId,
-      wvm: model.wvm,
-      wvmId: model.wvmId,
-      elementId: model.elementId,
-      ...(model.partId ? { partId: model.partId } : {}),
-      configuration: model.configuration
-    };
-    const itemId = input.itemIdFor(item.partNumber, source);
-    if (!itemId) {
-      unlinked += (wantsModel ? 1 : 0) + ties;
-      continue;
-    }
-    if (wantsModel) {
-      if (item.assets?.modelCurrent) current.models++;
-      models.push({ itemId, partNumber: item.partNumber, ...source });
-    }
-    if (ties > 0) addDrawings(item, itemId, source);
+    const itemId = input.itemIdFor(item.partNumber);
+    if (!model || !itemId) continue;
+    models.push({ ...model, itemId });
+    rows.set(item.partNumber, { ...model, itemId });
   }
-  return { models, drawings, unlinked, current };
+  return {
+    models,
+    drawings: input.ties.flatMap(({ drawing, targetIds }) => {
+      const targets = targetIds.flatMap((id) => {
+        const row = rows.get(id);
+        return row ? [row] : [];
+      });
+      return targets.length === 0
+        ? []
+        : [
+            {
+              documentId: drawing.documentId,
+              wvm: drawing.wvm,
+              wvmId: drawing.wvmId,
+              drawingElementId: drawing.elementId,
+              name: drawing.name,
+              microversionId: drawing.microversionId,
+              targets
+            }
+          ];
+    })
+  };
 }
 
 /**

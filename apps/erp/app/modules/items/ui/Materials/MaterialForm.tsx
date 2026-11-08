@@ -178,7 +178,7 @@ const MaterialForm = ({
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle aria-level={type === "card" ? 1 : undefined}>
                 <Trans>New Material</Trans>
               </ModalCardTitle>
               <ModalCardDescription>

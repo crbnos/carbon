@@ -4,7 +4,7 @@
 #   ./scripts/backup.sh                # -> ./backups/carbon-<timestamp>/
 #   BACKUP_DIR=/mnt/backups ./scripts/backup.sh
 #
-# Restore (DB):  gunzip -c db.sql.gz | docker exec -i <pg> psql -U postgres postgres
+# Restore (DB):  gunzip -c db.sql.gz | docker exec -i <pg> psql -U supabase_admin postgres
 # Restore (storage): untar into the `<stack>_storage` volume with a helper container.
 #
 # Run from cron for regular backups, and ship ./backups offsite (S3/Spaces/rclone)

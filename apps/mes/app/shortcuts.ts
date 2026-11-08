@@ -23,7 +23,8 @@ export const MES_NAV_SHORTCUTS = {
   recent: "alt+4",
   jobs: "alt+5",
   maintenance: "alt+6",
-  picking: "alt+7"
+  picking: "alt+7",
+  service: "alt+8"
 } as const satisfies Record<string, ShortcutInput>;
 
 /** Start/Pause the job operation (the big round button). */

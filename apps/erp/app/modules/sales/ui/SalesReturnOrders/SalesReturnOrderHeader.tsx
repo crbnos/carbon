@@ -15,6 +15,7 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
   LuPackageCheck,
@@ -28,12 +29,14 @@ import {
   useParams,
   useSubmit
 } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { isServiceReturnLine, liveServiceJob } from "../../sales.models";
 import SalesReturnOrderCreditModal from "./SalesReturnOrderCreditModal";
 import SalesReturnOrderStatus from "./SalesReturnOrderStatus";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
@@ -42,6 +45,7 @@ const SalesReturnOrderHeader = () => {
   const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const documentEdit = useDocumentEditModal("salesReturnOrder", id);
 
   const { toggleExplorer, toggleProperties } = usePanels();
 
@@ -79,9 +83,23 @@ const SalesReturnOrderHeader = () => {
     submit(formData, { method: "post", action: path.to.newShipment });
   };
 
-  const hasReturnToCustomerLine = routeData.lines.some(
-    (line) => line.disposition === "Return to Customer"
-  );
+  // What can go back out: a Return to Customer line, or a received serviced
+  // unit whose job is done or cancelled and that has not shipped or been
+  // scrapped.
+  const hasReturnToCustomerLine = routeData.lines.some((line) => {
+    if (!isServiceReturnLine(line.returnType)) {
+      return line.disposition === "Return to Customer";
+    }
+    const job = liveServiceJob(line.serviceJob);
+    return (
+      (job?.status === "Completed" ||
+        job?.status === "Invoiced" ||
+        job?.status === "Cancelled") &&
+      Number(line.quantityReceived ?? 0) > 0 &&
+      Number(line.quantityShipped ?? 0) === 0 &&
+      line.disposition !== "Scrap"
+    );
+  });
   // Credit is capped at received quantity — the button is useless before
   // anything has been received.
   const hasReceivedQuantity = routeData.lines.some(
@@ -154,6 +172,17 @@ const SalesReturnOrderHeader = () => {
                   >
                     <Trans>PDF</Trans>
                   </a>
+                </Button>
+              </RecordAction>
+            )}
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
                 </Button>
               </RecordAction>
             )}
@@ -322,6 +351,7 @@ const SalesReturnOrderHeader = () => {
           }}
         />
       )}
+      {documentEdit.modal}
     </>
   );
 };

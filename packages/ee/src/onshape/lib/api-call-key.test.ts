@@ -3,7 +3,25 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { apiCallPathKey } from "./api-call-key";
+import { apiCallPathKey, isBilledCall } from "./api-call-key";
+
+describe("isBilledCall", () => {
+  it("bills 2xx and 3xx answers only", () => {
+    expect(isBilledCall(200)).toBe(true);
+    expect(isBilledCall(204)).toBe(true);
+    expect(isBilledCall(307)).toBe(true);
+    expect(isBilledCall(199)).toBe(false);
+    expect(isBilledCall(400)).toBe(false);
+    expect(isBilledCall(401)).toBe(false);
+    expect(isBilledCall(404)).toBe(false);
+    expect(isBilledCall(429)).toBe(false);
+    expect(isBilledCall(500)).toBe(false);
+  });
+
+  it("does not bill a call that got no answer", () => {
+    expect(isBilledCall(undefined)).toBe(false);
+  });
+});
 
 describe("apiCallPathKey", () => {
   it("counts every call to one endpoint under one key", () => {

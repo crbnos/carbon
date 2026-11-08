@@ -125,7 +125,7 @@ const BottomSheetContent = forwardRef<
               "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg duration-300",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
               // Phones: a sheet settles in on the iOS curve and leaves faster.
-              "max-md:ease-[cubic-bezier(0.32,0.72,0,1)] max-md:data-[state=open]:[animation-duration:300ms] max-md:data-[state=closed]:[animation-duration:200ms]",
+              "max-md:ease-drawer max-md:data-[state=open]:[animation-duration:300ms] max-md:data-[state=closed]:[animation-duration:200ms]",
               "max-md:max-h-[88dvh] max-md:rounded-t-[14px] max-md:bg-popover max-md:pb-safe",
               size === "full" &&
                 "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none",

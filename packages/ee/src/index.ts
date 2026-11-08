@@ -124,16 +124,16 @@ export {
   withoutProperties
 } from "./onshape/panel/bom";
 export type {
+  DrawingDocument,
   DrawingReference,
+  DrawingSource,
   DrawingTarget,
   DrawingTie,
-  ElementPartsRequest,
   OnshapeDrawing,
-  SkippedDrawing,
-  SkippedDrawingReason
+  SkippedDrawing
 } from "./onshape/panel/drawings";
 export {
-  elementPartsKey,
+  bomAssemblySources,
   parseDrawingReferences,
   skippedDrawingText,
   tieDrawings
@@ -156,10 +156,8 @@ export type {
   AssemblyPlanRoot,
   AssemblyRowAssets,
   AssemblyRowDrawing,
-  AssetSourceRef,
   ChangeNoticeEdit,
-  DrawingDocument,
-  DrawingExportRow,
+  DrawingTargetRow,
   ItemEdit,
   ItemFieldChange,
   ItemFieldSnapshot,
@@ -192,6 +190,7 @@ export type {
 } from "./onshape/panel/plan";
 export {
   assemblyAssetRows,
+  assemblyCurrentFileRows,
   assemblyDrawingDocuments,
   assemblyDrawingTargets,
   BOM_LINE_ITEM_TYPES,

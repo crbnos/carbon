@@ -45,6 +45,8 @@ type DimensionSelectorProps = {
   onChange: (dimensions: JournalLineDimensionValue[]) => void;
   /** When true, changes are also persisted immediately via fetcher (for posted entries) */
   autoSave?: boolean;
+  /** Accessible name for the "Dimension +" menu button, e.g. "Add dimension to line 3". */
+  triggerLabel?: string;
 };
 
 const entityTypeColors: Record<string, string> = {
@@ -80,8 +82,8 @@ const entityTypeColors: Record<string, string> = {
 
 // Exported so a read-only dimension badge outside this file (the reimbursement
 // and charge detail pages) can tint by entity type exactly as the editor does.
-// Two independent colour maps for the same dimension types is how the read and
-// edit views of one document start disagreeing about what colour a Project is.
+// Two independent color maps for the same dimension types is how the read and
+// edit views of one document start disagreeing about what color a Project is.
 export function getColor(entityType: string) {
   return entityTypeColors[entityType] ?? "";
 }
@@ -91,7 +93,8 @@ const DimensionSelector = ({
   availableDimensions,
   currentDimensions,
   onChange,
-  autoSave = false
+  autoSave = false,
+  triggerLabel
 }: DimensionSelectorProps) => {
   const { t } = useLingui();
   const fetcher = useFetcher();
@@ -223,6 +226,9 @@ const DimensionSelector = ({
   const dimensionEntityTypeMap = new Map(
     availableDimensions.map((d) => [d.dimensionId, d.entityType])
   );
+  const dimensionNameMap = new Map(
+    availableDimensions.map((d) => [d.dimensionId, d.dimensionName])
+  );
 
   // Low-cardinality dimensions live in the "Dimension +" dropdown. High-
   // cardinality ones are offered in the dropdown too, but selecting one reveals
@@ -256,15 +262,18 @@ const DimensionSelector = ({
       {showDropdown && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Badge
-              variant="secondary"
-              className="inline-flex items-center cursor-pointer gap-1"
+            {/* A real button (styled as the secondary badge) so the menu is
+                focusable and announced; a Badge is a plain div. */}
+            <button
+              type="button"
+              aria-label={triggerLabel ?? t`Add dimension`}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 min-h-6 text-sm leading-5 font-medium tracking-tight whitespace-nowrap border border-black/[0.08] bg-transparent text-foreground/70 dark:text-secondary-foreground dark:border-border cursor-pointer outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <span>
                 <Trans>Dimension</Trans>
               </span>
-              <LuPlus />
-            </Badge>
+              <LuPlus aria-hidden />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel>
@@ -338,6 +347,7 @@ const DimensionSelector = ({
           className="w-44"
           isClearable
           placeholder={dim.dimensionName}
+          aria-label={dim.dimensionName}
           value=""
           options={
             optionsByEntityType[
@@ -350,10 +360,12 @@ const DimensionSelector = ({
       {currentDimensions.map((dim) => {
         const entityType = dimensionEntityTypeMap.get(dim.dimensionId) ?? "";
         const label = resolveValueLabel(entityType, dim.valueId, dim.valueName);
+        const dimensionName = dimensionNameMap.get(dim.dimensionId) ?? "";
         return (
           <Badge
             key={dim.dimensionId}
             role="group"
+            aria-label={t`Dimension ${dimensionName}: ${label}`}
             tabIndex={0}
             variant="outline"
             className={cn(

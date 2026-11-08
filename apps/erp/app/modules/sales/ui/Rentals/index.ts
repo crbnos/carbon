@@ -6,6 +6,7 @@ import RentalAgreementAccounting from "./RentalAgreementAccounting";
 import RentalAgreementBilling from "./RentalAgreementBilling";
 import RentalAgreementChargeForm from "./RentalAgreementChargeForm";
 import RentalAgreementCharges from "./RentalAgreementCharges";
+import RentalAgreementContacts from "./RentalAgreementContacts";
 import RentalAgreementDetailsForm from "./RentalAgreementDetailsForm";
 import RentalAgreementExplorer from "./RentalAgreementExplorer";
 import RentalAgreementHeader from "./RentalAgreementHeader";
@@ -45,6 +46,7 @@ export {
   RentalAgreementBilling,
   RentalAgreementChargeForm,
   RentalAgreementCharges,
+  RentalAgreementContacts,
   RentalAgreementDetailsForm,
   RentalAgreementExplorer,
   RentalAgreementHeader,

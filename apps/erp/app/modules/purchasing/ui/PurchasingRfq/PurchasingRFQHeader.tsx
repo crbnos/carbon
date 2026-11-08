@@ -28,6 +28,7 @@ import {
   LuCircleX,
   LuEye,
   LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
   LuSend,
@@ -36,11 +37,11 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { isRfqLocked } from "../../purchasing.models";
 import type { PurchasingRFQ, PurchasingRFQLine } from "../../types";
@@ -51,6 +52,7 @@ import PurchasingRFQStatus from "./PurchasingRFQStatus";
 const PurchasingRFQHeader = () => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
+  const documentEdit = useDocumentEditModal("purchasingRfq", rfqId);
 
   const { t } = useLingui();
   const finalizeModal = useDisclosure();
@@ -61,9 +63,6 @@ const PurchasingRFQHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const permissions = usePermissions();
-  const integrations = useIntegrations();
-  const canEmail = integrations.has("email");
-  const finalizeFetcher = useFetcher<{ error: string | null }>();
 
   const routeData = useRouteData<{
     rfqSummary: PurchasingRFQ;
@@ -165,6 +164,17 @@ const PurchasingRFQHeader = () => {
                 </a>
               </Button>
             </RecordAction>
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
+                </Button>
+              </RecordAction>
+            )}
 
             {/* Share Dropdown - for Requested status with external links */}
             {status === "Requested" && hasSuppliers && (
@@ -216,60 +226,21 @@ const PurchasingRFQHeader = () => {
             )}
 
             {hasSuppliers ? (
-              canEmail ? (
-                // With Resend: Open modal for contact selection
-                <RecordAction slot={finalizeSlot}>
-                  <Button
-                    isDisabled={
-                      status !== "Draft" ||
-                      routeData?.lines?.length === 0 ||
-                      !permissions.can("create", "purchasing")
-                    }
-                    leftIcon={<LuSend />}
-                    variant={status === "Draft" ? "primary" : "secondary"}
-                    onClick={finalizeModal.onOpen}
-                  >
-                    <Trans>Finalize</Trans>
-                  </Button>
-                </RecordAction>
-              ) : (
-                // Without Resend: Submit directly
-                <RecordAction slot={finalizeSlot}>
-                  <finalizeFetcher.Form
-                    method="post"
-                    action={path.to.purchasingRfqFinalize(rfqId)}
-                  >
-                    {routeData?.suppliers?.map((supplier, index) => (
-                      <span key={supplier.id}>
-                        <input
-                          type="hidden"
-                          name={`suppliers[${index}].supplierId`}
-                          value={supplier.supplierId}
-                        />
-                        <input
-                          type="hidden"
-                          name={`suppliers[${index}].rfqSupplierId`}
-                          value={supplier.id}
-                        />
-                      </span>
-                    ))}
-                    <Button
-                      type="submit"
-                      isDisabled={
-                        status !== "Draft" ||
-                        routeData?.lines?.length === 0 ||
-                        !permissions.can("create", "purchasing") ||
-                        finalizeFetcher.state !== "idle"
-                      }
-                      isLoading={finalizeFetcher.state !== "idle"}
-                      leftIcon={<LuSend />}
-                      variant={status === "Draft" ? "primary" : "secondary"}
-                    >
-                      <Trans>Finalize</Trans>
-                    </Button>
-                  </finalizeFetcher.Form>
-                </RecordAction>
-              )
+              // The dialog picks the part files to share, with or without email.
+              <RecordAction slot={finalizeSlot}>
+                <Button
+                  isDisabled={
+                    status !== "Draft" ||
+                    routeData?.lines?.length === 0 ||
+                    !permissions.can("create", "purchasing")
+                  }
+                  leftIcon={<LuSend />}
+                  variant={status === "Draft" ? "primary" : "secondary"}
+                  onClick={finalizeModal.onOpen}
+                >
+                  <Trans>Finalize</Trans>
+                </Button>
+              </RecordAction>
             ) : (
               <RecordAction slot={finalizeSlot}>
                 <Button
@@ -364,6 +335,7 @@ const PurchasingRFQHeader = () => {
           purchasingRfqId={rfqId}
         />
       )}
+      {documentEdit.modal}
     </>
   );
 };

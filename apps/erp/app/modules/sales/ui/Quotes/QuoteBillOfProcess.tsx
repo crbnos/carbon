@@ -525,15 +525,7 @@ const QuoteBillOfProcess = ({
         label: t`Details`,
         content: (
           <div className="flex w-full flex-col pr-2 py-2">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0,
-                duration: 0.3
-              }}
-            >
+            <div>
               <OperationForm
                 item={item}
                 itemId={itemId}
@@ -552,7 +544,7 @@ const QuoteBillOfProcess = ({
                   });
                 }}
               />
-            </motion.div>
+            </div>
           </div>
         )
       },
@@ -590,6 +582,7 @@ const QuoteBillOfProcess = ({
             <div>
               {permissions.can("update", "parts") ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -813,6 +806,7 @@ const QuoteBillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Process`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -977,6 +971,7 @@ function AttributesForm({
             >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -1230,6 +1225,7 @@ function AttributesListItem({
             >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -2041,6 +2037,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -2122,6 +2119,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -2205,6 +2203,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -2281,6 +2280,7 @@ function OperationForm({
                 <Label>Costing</Label>
               </HStack>
               <IconButton
+                aria-expanded={costingDisclosure.isOpen}
                 icon={<LuChevronRight />}
                 aria-label={
                   costingDisclosure.isOpen
@@ -2374,6 +2374,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -2434,6 +2435,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -2509,16 +2511,7 @@ function OperationForm({
           )}
         </>
       )}
-      <motion.div
-        className="flex w-full items-center justify-end p-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex w-full items-center justify-end p-2">
         <motion.div layout className="ml-auto mr-1 pt-2">
           <Submit
             isDisabled={isDisabled || fetcher.state !== "idle"}
@@ -2527,7 +2520,7 @@ function OperationForm({
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }

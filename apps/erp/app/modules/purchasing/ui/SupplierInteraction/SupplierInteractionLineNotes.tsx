@@ -21,7 +21,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -46,6 +46,7 @@ const SupplierInteractionLineNotes = ({
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;
 }) => {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -126,6 +127,7 @@ const SupplierInteractionLineNotes = ({
             <TabsContent value="internal">
               {!isReadOnly && permissions.can("update", "purchasing") ? (
                 <Editor
+                  label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -148,6 +150,7 @@ const SupplierInteractionLineNotes = ({
               <TabsContent value="external">
                 {!isReadOnly && permissions.can("update", "purchasing") ? (
                   <Editor
+                    label={t`External notes`}
                     initialValue={(externalNotes ?? {}) as JSONContent}
                     onUpload={onUploadImage}
                     onChange={(value) => {

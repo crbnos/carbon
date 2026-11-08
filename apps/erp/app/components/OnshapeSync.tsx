@@ -243,6 +243,7 @@ export const OnshapeSync = ({
         <div className="flex items-center w-full justify-between">
           <OnshapeLogo className="h-5 w-auto" />
           <IconButton
+            aria-expanded={disclosure.isOpen}
             aria-label={t`Show sync options`}
             variant="ghost"
             size="sm"
@@ -260,6 +261,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape document`}
                   isLoading={documentsFetcher.state === "loading"}
                   options={documentOptions}
                   isReadOnly={isDisabled}
@@ -281,6 +283,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape version`}
                   isLoading={versionsFetcher.state === "loading"}
                   isReadOnly={isDisabled}
                   options={versionOptions}
@@ -301,6 +304,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape assembly`}
                   isLoading={elementsFetcher.state === "loading"}
                   options={elementOptions}
                   isReadOnly={isDisabled}
@@ -467,7 +471,9 @@ export const OnshapeSync = ({
                         <Trans>No part ID</Trans>
                       </Status>
                     )}
-                    {!isSynced && partId && <PulsingDot className="mt-0.5" />}
+                    {!isSynced && partId && (
+                      <PulsingDot label={t`Not synced`} className="mt-0.5" />
+                    )}
                     {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                     {row.data["State"] && (
                       // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration

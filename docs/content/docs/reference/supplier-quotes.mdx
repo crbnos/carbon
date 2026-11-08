@@ -9,7 +9,7 @@ Each RFQ exchange stores one quote per supplier. You can compare the responses a
 
 ## Where a quote comes from
 
-Most quotes are the response half of an RFQ. You send a purchasing RFQ to several suppliers, and each supplier's reply becomes its own supplier quote, all hanging off the same request. The RFQ email carries the files attached to the RFQ and its lines, plus each part's original CAD file (the file you uploaded or pushed from CAD). Models go in as attachments while the email stays under 25 MB; the rest are download links in the email that work for 7 days. A quote can also be entered directly, without a preceding RFQ, when you already have pricing to record.
+Most quotes are the response half of an RFQ. You send a purchasing RFQ to several suppliers, and each supplier's reply becomes its own supplier quote, all hanging off the same request. The RFQ email, and the email you send from a supplier quote, carry the files attached to the request and its lines, plus the part files you pick. The send dialog lists each part's original CAD file (the file you uploaded or pushed from CAD) and every file on the part's Files tab, such as drawing PDFs; only the files you tick are shared. Whether they start ticked is the **Attach Part Files Automatically** setting under Settings → Purchasing (on by default). Files go in as attachments while the email stays under 25 MB; the rest are download links in the email that work for 7 days. The supplier's quote page lists the same part files on each line. A quote can also be entered directly, without a preceding RFQ, when you already have pricing to record.
 
 Either way the quote lives under a **supplier interaction**, the umbrella record that ties this supplier's quote, RFQ, and any resulting purchase order together so you can trace the whole exchange in one place.
 
@@ -69,6 +69,12 @@ The quantity-break prices land on the supplier part as the supplier quoted them:
 For the full narrative, from sending the RFQ through comparing quotes to raising the order, see the [RFQ to PO guide](/guides/rfq-to-po). For what happens to the order once it exists, see [purchase orders](/docs/reference/purchase-orders).
 
 <AgentContext>
+## Lines and search
+
+Each quote with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the supplier uses, the description and the quantity. Every row starts closed.
+
+The search box on **Purchasing → Supplier Quotes** also finds a quote by a value on its lines: the part number or name, the supplier's part number, or the line description. It also matches the quote number, the supplier and the supplier's reference. Every word must match, and case, spaces and punctuation are ignored. While you search, each quote with a matching line opens and shows the lines that matched.
+
 ## Troubleshooting
 
 Exact errors and gates for supplier quotes, finalizing, and converting to a purchase order.

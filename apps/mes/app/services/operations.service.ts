@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import {
+  activeJobStatuses,
+  fetchAllByIds,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import {
@@ -584,6 +588,60 @@ export async function getJobOperationBatchMembers(
     .eq("companyId", companyId);
 }
 
+export type JobProject = {
+  projectId: string;
+  projectElementId: string | null;
+  // The element's readable id when the job is charged to one, else the
+  // project's identifier
+  projectReadableId: string;
+  projectName: string;
+};
+
+/**
+ * The charge number of each job that has one, keyed by job id — what the
+ * schedule cards show beside the sales order. The ERP twin is
+ * `getJobProjects` in `production.service.ts`.
+ */
+export async function getJobProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Record<string, JobProject>;
+  error: PostgrestError | null;
+}> {
+  if (jobIds.length === 0) return { data: {}, error: null };
+
+  const result = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("job")
+      .select(
+        "id, projectId, projectElementId, project:project!job_project_fkey(identifier, name), projectElement:projectElement!job_projectElement_fkey(readableId, name)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+
+  if (result.error) return { data: {}, error: result.error };
+
+  const data: Record<string, JobProject> = {};
+  for (const job of result.data ?? []) {
+    const readableId =
+      job.projectElement?.readableId ?? job.project?.identifier;
+    if (!job.projectId || !job.project || !readableId) continue;
+    data[job.id] = {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId,
+      projectReadableId: readableId,
+      projectName: job.projectElement?.name ?? job.project.name
+    };
+  }
+
+  return { data, error: null };
+}
+
 export async function getActiveJobCount(
   client: SupabaseClient<Database>,
   args: {
@@ -775,26 +833,17 @@ export async function getJobOperationForCompany(
 ) {
   return client
     .from("jobOperation")
-    .select("id, jobId")
+    .select("id, jobId, jobMakeMethodId, jobOperationBatchId, operationType")
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
 }
 
-export async function getJobByOperationId(
-  client: SupabaseClient<Database>,
-  operationId: string
-) {
-  const operation = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", operationId)
-    .single();
-  if (operation.error) return operation;
+export async function getJob(client: SupabaseClient<Database>, jobId: string) {
   return client
     .from("jobs")
     .select("*, customer(name)")
-    .eq("id", operation.data.jobId)
+    .eq("id", jobId)
     .single();
 }
 
@@ -2483,6 +2532,64 @@ export async function insertProductionQuantity(
   }
 
   return result;
+}
+
+/**
+ * Records one completion only while the operation's completed quantity is
+ * still `expectedQuantityComplete`, read under the operation's row lock, so
+ * two requests for one unit record it once. Kysely bypasses RLS: the caller
+ * checks `create: production` (the productionQuantity insert policy) first.
+ */
+export async function insertProductionQuantityIfCurrent(
+  db: Kysely<KyselyDatabase>,
+  data: z.infer<typeof nonScrapQuantityValidator> & {
+    companyId: string;
+    createdBy: string;
+  },
+  expectedQuantityComplete: number
+): Promise<{ id: string } | null> {
+  const inserted = await db.transaction().execute(async (trx) => {
+    const operation = await trx
+      .selectFrom("jobOperation")
+      .select("quantityComplete")
+      .where("id", "=", data.jobOperationId)
+      .where("companyId", "=", data.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (
+      !operation ||
+      Number(operation.quantityComplete ?? 0) !== expectedQuantityComplete
+    ) {
+      return null;
+    }
+    return trx
+      .insertInto("productionQuantity")
+      .values({
+        jobOperationId: data.jobOperationId,
+        type: "Production",
+        quantity: data.quantity,
+        notes: data.notes ?? null,
+        setupProductionEventId: data.setupProductionEventId ?? null,
+        laborProductionEventId: data.laborProductionEventId ?? null,
+        machineProductionEventId: data.machineProductionEventId ?? null,
+        companyId: data.companyId,
+        createdBy: data.createdBy
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  });
+
+  if (inserted) {
+    trackWorkEvent("production_quantity_reported", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionQuantityId: inserted.id,
+      jobOperationId: data.jobOperationId,
+      quantity: data.quantity,
+      source: "mes"
+    });
+  }
+  return inserted;
 }
 
 export async function insertScrapQuantity(

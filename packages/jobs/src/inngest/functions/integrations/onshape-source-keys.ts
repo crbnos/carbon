@@ -6,7 +6,8 @@ import { createHash } from "node:crypto";
 import type { SyncOnshapeElementInput } from "./onshape-sync-element";
 
 // What names an Onshape export, so a sync can tell an unchanged source from a
-// changed one. Free of the Inngest client: the panel's review reads them too.
+// changed one. Free of the Inngest client: the assembly push's current-model
+// check (`onshape-asset-state.ts`) reads them too.
 
 // An assembly's last export is recorded per item as a mapping row, so a push of
 // an unchanged assembly reuses its model instead of exporting it again.

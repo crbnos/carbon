@@ -12,7 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
@@ -21,11 +21,14 @@ import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
 import { getAssignedPickingLists } from "~/services/picking.service";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   realtime: ["pickingList"]
 };
+
+export const meta: MetaFunction = () => pageMeta("Picking");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
@@ -46,7 +49,7 @@ export default function PickingIndexRoute() {
       <MesAppBar title={<Trans>Picking</Trans>} />
       <MesQueueHeader title={<Trans>Picking</Trans>} />
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         {pickingLists.length > 0 ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
             {pickingLists.map((pl) => {
@@ -63,7 +66,7 @@ export default function PickingIndexRoute() {
                   to={path.to.pickingDetail(pl.id!)}
                   className="no-underline"
                 >
-                  <Card className="hover:border-primary transition-colors cursor-pointer">
+                  <Card className="cursor-pointer">
                     <CardHeader className="pb-2">
                       <HStack className="justify-between">
                         <CardTitle className="text-base">
@@ -111,7 +114,7 @@ export default function PickingIndexRoute() {
             title={<Trans>No picking lists assigned</Trans>}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 }

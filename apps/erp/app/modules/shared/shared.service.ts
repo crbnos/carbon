@@ -30,6 +30,10 @@ import {
   type ServiceContext
 } from "@carbon/api/service-fn.server";
 import { attempt, serverFnRefusal } from "@carbon/api/service-tools.server";
+import {
+  itemLedgerInStripes,
+  type StockStripe
+} from "@carbon/api/stock-stripes";
 import { error, getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -39,8 +43,7 @@ import {
   getLocationOwnTimeZone,
   isKysely,
   type Json,
-  getCompanyTimeZone as resolveCompanyTimeZone,
-  type Tables
+  getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -71,6 +74,11 @@ import {
 import { toJson } from "@carbon/database/json";
 import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
+import {
+  type BinStock,
+  chooseSourceBin,
+  untrackedDrawLockKey
+} from "@carbon/database/picked-consumption";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
 import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
@@ -83,9 +91,11 @@ import {
   many,
   maybeSingle,
   neq,
+  newIds,
   rpcValue,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
@@ -97,11 +107,7 @@ import {
   ImplementationHubEmail,
   SalesOrderEmail
 } from "@carbon/documents/email";
-import {
-  type ActionTaskEntityType,
-  actionTaskEntities,
-  actionTaskParentId
-} from "@carbon/ee/action-task-entity";
+import { type SyncedEntityType, syncedEntities } from "@carbon/ee/issue-sync";
 import {
   ERP_URL,
   SESSION_SECRET,
@@ -130,12 +136,15 @@ import {
   datetime,
   debit,
   deriveRate,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escapeLike,
   generateLeasePayments,
   getReadableIdWithRevision,
-  getRemainingQuantityToInvoice,
+  groupBy,
+  indexByMapped,
   type LeasePaymentRowInput,
+  pluckUnique,
   redirect,
   remainingLeasePayments,
   requireAffected,
@@ -167,6 +176,10 @@ import {
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
 import {
+  loadReturnLineJobs,
+  SHIP_BACK_JOB_STATUSES
+} from "~/modules/inventory/shipment-service-return";
+import {
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage
 } from "~/modules/items/items.models";
@@ -177,24 +190,31 @@ import {
   type ReleaseControl
 } from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
+import {
+  purchaseOrderLineRemainingToInvoice,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED
+} from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
+import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
   getSalesOrder,
   getSalesOrderCustomerDetails,
   getSalesOrderLines
 } from "~/modules/sales/sales.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import type { Paging } from "~/utils/query";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
   listCount,
+  type Paging,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import { importPayrollTotals } from "./payroll-total-import";
 import {
   type assignableTables,
   methodItemType,
@@ -209,6 +229,25 @@ import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
+
+/**
+ * Whether Settings require an email on every supplier or customer contact
+ * ("Require an Email on Supplier / Customer Contacts").
+ */
+export async function isContactEmailRequired(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  party: "supplier" | "customer"
+): Promise<boolean> {
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["requireSupplierContactEmail", "requireCustomerContactEmail"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return party === "supplier"
+    ? settings?.requireSupplierContactEmail === true
+    : settings?.requireCustomerContactEmail === true;
+}
 
 export async function deleteNote(
   client: SupabaseClient<Database>,
@@ -506,24 +545,6 @@ export async function getCustomerPortals(
   }
 
   return query;
-}
-
-export async function getCustomerPortal(
-  client: SupabaseClient<Database>,
-  id: string
-): Promise<
-  PostgrestSingleResponse<
-    Tables<"externalLink"> & {
-      customer: Pick<Tables<"customer">, "id" | "name">;
-    }
-  >
-> {
-  return client
-    .from("externalLink")
-    .select("*, customer(id, name)")
-    .eq("id", id)
-    .eq("documentType", "Customer")
-    .single();
 }
 
 export async function updateModelThumbnail(
@@ -1215,6 +1236,12 @@ export async function sendSalesOrderEmail(args: {
   if (!customer?.data?.contact) {
     return { success: false, message: "Failed to get customer contact" };
   }
+  if (!isEmailableContact(customer.data.contact)) {
+    return {
+      success: false,
+      message: "The customer contact has no email address"
+    };
+  }
   if (!company.data) {
     return { success: false, message: "Failed to get company" };
   }
@@ -1265,7 +1292,7 @@ export async function sendSalesOrderEmail(args: {
   const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
-    .createSignedUrl(documentFilePath, 3600);
+    .createSignedUrl(documentFilePath, EMAIL_ATTACHMENT_URL_SECONDS);
 
   await trigger("send-email", {
     document: true,
@@ -1469,6 +1496,24 @@ export async function refuseUnlessOwned(
 }
 
 /**
+ * For a write gated on company membership (`permission: {}`): a person logs
+ * their own time, but that gate admits an API key holding any scope, even a
+ * read-only one. A key also needs `required`.
+ */
+export function refuseKeyWithout(
+  ctx: ServiceContext,
+  required: RequiredPermissions
+): CarbonError | null {
+  if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
+  return ctx.error(
+    "forbidden",
+    `This API key needs ${Object.entries(required)
+      .map(([action, module]) => `${action}: ${module}`)
+      .join(", ")} to do this`
+  );
+}
+
+/**
  * Whether `userId` is an ACTIVE employee of `companyId` — the check every
  * user-id field that names a person in the company needs before it is saved
  * (a planning action's assignee, a responsible employee). Those columns
@@ -1610,21 +1655,83 @@ export async function getImplementationSignals(
   return signals;
 }
 
-// The readable identifier on each action task's parent, used for the Linear
-// attachment / Jira remote-link title.
-const actionTaskParents: Record<
-  ActionTaskEntityType,
-  { parentTable: string; readableColumn: string }
-> = {
-  nonConformanceActionTask: {
-    parentTable: "nonConformance",
-    readableColumn: "nonConformanceId"
-  },
-  changeOrderActionTask: {
-    parentTable: "changeOrder",
-    readableColumn: "changeOrderId"
-  }
-};
+/**
+ * A record's Linear and Jira links (the link's `metadata`, or null), for the
+ * issue dialogs. One query for both trackers.
+ */
+export async function getRecordIssueLinks(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  entityId: string,
+  companyId: string
+): Promise<{ linearIssue: unknown; jiraIssue: unknown }> {
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("integration, metadata")
+    .eq("companyId", companyId)
+    .eq("entityType", entityType)
+    .eq("entityId", entityId)
+    .in("integration", ["linear", "jira"]);
+  const linkOf = (integration: string) =>
+    links.data?.find((link) => link.integration === integration)?.metadata ??
+    null;
+  return { linearIssue: linkOf("linear"), jiraIssue: linkOf("jira") };
+}
+
+/**
+ * The title and description a new Linear or Jira issue starts from: the
+ * record's description as Markdown, and an element's name. The form shows
+ * them so the user creates the issue from the record, not from a blank page.
+ */
+export async function getNewIssueDefaults(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  id: string,
+  companyId: string
+): Promise<{ title: string; description: string }> {
+  const [task, element] = await Promise.all([
+    getActionTaskWithParent(client, entityType, id, companyId),
+    entityType === "projectElement"
+      ? client
+          .from("projectElement")
+          .select("name")
+          .eq("id", id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+
+  return {
+    title: element.data?.name ?? "",
+    description: TiptapText(task.notes).toMarkdown()
+  };
+}
+
+/**
+ * Why a project element cannot link to an issue, or null. A Closed project
+ * refuses every change, so it refuses a link too.
+ */
+export async function projectElementLinkRefusal(
+  client: SupabaseClient<Database>,
+  elementId: string,
+  companyId: string
+): Promise<string | null> {
+  const element = await client
+    .from("projectElement")
+    .select("projectId")
+    .eq("id", elementId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!element.data) return "Could not find the element";
+
+  const project = await client
+    .from("project")
+    .select("status")
+    .eq("id", element.data.projectId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return project.data?.status === "Closed" ? "The project is closed" : null;
+}
 
 export type ActionTaskWithParent = {
   id: string | null;
@@ -1637,19 +1744,27 @@ export type ActionTaskWithParent = {
 // task and its parent's readable id from whichever table the entity type names.
 export async function getActionTaskWithParent(
   client: SupabaseClient<Database>,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   taskId: string,
   companyId: string
 ): Promise<ActionTaskWithParent> {
-  const { table, parentColumn } = actionTaskEntities[entityType];
-  const { parentTable, readableColumn } = actionTaskParents[entityType];
+  // The registry names the parent and its readable id (the Linear attachment /
+  // Jira remote-link title) and the rich-text column, read here as `notes`.
+  const { table, parentColumn, parentTable, readableColumn, textColumn } =
+    syncedEntities[entityType];
 
   const result = await client
     .from(table)
-    .select(`id, notes, ${parentColumn}, ${parentTable}(${readableColumn})`)
+    .select(
+      `id, notes:${textColumn}, ${parentColumn}, ${parentTable}(${readableColumn})`
+    )
     .eq("id", taskId)
     .eq("companyId", companyId)
     .maybeSingle();
+
+  if (result.error) {
+    throw new Error(`Failed to read the ${table}: ${result.error.message}`);
+  }
 
   // The select string is built from the entity map, which erases Supabase's row typing
   const row = result.data as Record<string, any> | null;
@@ -1854,12 +1969,13 @@ export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
 }
 
 /**
- * The action task an integration acts on, or a refusal when it hangs off a
- * change notice whose workflow can no longer change.
+ * The record an issue integration acts on (an action task or a project
+ * element), or a refusal: a change notice's task once the notice's workflow
+ * can no longer change, an element of a Closed project.
  */
 export async function editableActionTask(
   ctx: ServiceContext,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   actionId: string
 ): Promise<ActionTaskWithParent | CarbonError> {
   const client = ctx.asCaller.supabase;
@@ -1869,6 +1985,15 @@ export async function editableActionTask(
     actionId,
     ctx.company.id
   );
+
+  if (entityType === "projectElement") {
+    const refusal = await projectElementLinkRefusal(
+      client,
+      actionId,
+      ctx.company.id
+    );
+    return refusal ? ctx.error("rule", refusal) : task;
+  }
   if (entityType !== "changeOrderActionTask") return task;
 
   const notFound = ctx.error("notFound", "Could not find change notice");
@@ -1886,13 +2011,29 @@ export async function editableActionTask(
   return task;
 }
 
-/** Where the action task's parent opens in Carbon, for the link back. */
+/** Queue the record's push to its issue, under the per-company sync key. */
+export async function pushToIssue(
+  companyId: string,
+  entityType: SyncedEntityType,
+  actionId: string,
+  initial: boolean
+) {
+  await trigger("issue-sync-push", {
+    companyId,
+    ...(initial ? { initial: true } : {}),
+    records: [
+      { table: entityType, recordId: actionId, operation: "UPDATE", old: null }
+    ]
+  });
+}
+
+/** Where the record opens in Carbon, for the link back from the issue. */
 export function actionTaskUrl(
-  rows: unknown,
-  entityType: ActionTaskEntityType
+  entityType: SyncedEntityType,
+  parentId: string,
+  actionId: string
 ): string {
-  const parentId = actionTaskParentId(rows, entityType) ?? "";
-  return `${getAppUrl()}${actionTaskEntities[entityType].detailPath(parentId)}/details`;
+  return `${getAppUrl()}${syncedEntities[entityType].detailPath(parentId, actionId)}`;
 }
 // Timezones change only when someone edits Settings → Company or a location, so
 // a long TTL is fine — writes invalidate the key explicitly (below). The
@@ -4522,55 +4663,55 @@ async function writeGroup(
           reason: `Material ${text(r.componentId)} rev ${text(r.componentRevision) || "0"} is already on the BOM of ${partLabel}; skipped`
         });
       }
-      for (const { index, order } of materialPlan.insert) {
+      const insertedComponents = materialPlan.insert.map(
+        ({ index }) => components.get(index)!
+      );
+      const makeMethodIdByItem = await currentMakeMethodIds(
+        trx,
+        insertedComponents
+          .filter((c) => c.defaultMethodType === "Make to Order")
+          .map((c) => c.id),
+        companyId
+      );
+      const storageUnitIdsByItem = await seedStorageUnitIdsByItem(
+        trx,
+        insertedComponents.map((c) => c.id),
+        companyId
+      );
+      const materialRows = materialPlan.insert.map(({ index, order }) => {
         const r = bomByIndex.get(index)!;
         const component = components.get(index)!;
         const methodType = component.defaultMethodType ?? "Pull from Inventory";
         const sourcingType = component.sourcingType ?? "Specified";
-
-        let materialMakeMethodId: string | null = null;
-        if (methodType === "Make to Order") {
-          materialMakeMethodId = await currentMakeMethodId(
-            trx,
-            component.id,
-            companyId
-          );
-        }
-
-        const storageUnitIds = await seedStorageUnitIds(
-          trx,
-          component.id,
-          companyId
-        );
-
-        await trx
-          .insertInto("methodMaterial")
-          .values([
-            {
-              makeMethodId,
-              itemId: component.id,
-              itemType: component.type,
-              methodType,
-              sourcingType,
-              materialMakeMethodId,
-              quantity: num(r.quantity) ?? 1,
-              // The BOM editor starts a line in the material's own unit.
-              unitOfMeasureCode:
-                text(r.unitOfMeasureCode) ||
-                component.unitOfMeasureCode ||
-                "EA",
-              order,
-              kit: bool(r.kit),
-              storageUnitIds,
-              customFields: {},
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.materials += 1;
-      }
+        const materialMakeMethodId =
+          methodType === "Make to Order"
+            ? (makeMethodIdByItem.get(component.id) ?? null)
+            : null;
+        const storageUnitIds = storageUnitIdsByItem.get(component.id) ?? {};
+        return {
+          makeMethodId,
+          itemId: component.id,
+          itemType: component.type,
+          methodType,
+          sourcingType,
+          materialMakeMethodId,
+          quantity: num(r.quantity) ?? 1,
+          // The BOM editor starts a line in the material's own unit.
+          unitOfMeasureCode:
+            text(r.unitOfMeasureCode) || component.unitOfMeasureCode || "EA",
+          order,
+          kit: bool(r.kit),
+          storageUnitIds,
+          customFields: {},
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never;
+      });
+      await inChunks(materialRows, (rows) =>
+        trx.insertInto("methodMaterial").values(rows).execute()
+      );
+      added.materials += materialRows.length;
 
       // --- operations (BOP), keyed by Op No ---
       const opIdByNo = new Map(opPlan.existingIdByOpNo);
@@ -4581,6 +4722,7 @@ async function writeGroup(
         });
       }
       const bopByIndex = new Map(bucket.bop.map((e) => [e.index, e.record]));
+      const operationRows: { opNo: string; row: never }[] = [];
       for (const { index, opNo, order } of opPlan.insert) {
         const r = bopByIndex.get(index)!;
         const processId = ctx.processMap.get(text(r.process).toLowerCase())!;
@@ -4599,43 +4741,55 @@ async function writeGroup(
           );
         }
 
-        const inserted = await trx
-          .insertInto("methodOperation")
-          .values([
-            {
-              makeMethodId,
-              order,
-              operationOrder: text(r.operationOrder) || "After Previous",
-              operationType: opType,
-              processId,
-              workCenterId,
-              // The editor names a new operation after its process.
-              description:
-                text(r.operationDescription) ||
-                ctx.processById.get(processId)?.name ||
-                "",
-              setupUnit: text(r.setupUnit) || undefined,
-              setupTime: num(r.setupTime) ?? 0,
-              laborUnit: text(r.laborUnit) || undefined,
-              laborTime: num(r.laborTime) ?? 0,
-              machineUnit: text(r.machineUnit) || undefined,
-              machineTime: num(r.machineTime) ?? 0,
-              operationSupplierProcessId,
-              operationMinimumCost: num(r.operationMinimumCost),
-              operationUnitCost: num(r.operationUnitCost),
-              operationLeadTime: num(r.operationLeadTime),
-              workInstruction: {},
-              customFields: {},
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .returning(["id"])
-          .execute();
-        opIdByNo.set(opKey(opNo), inserted[0]!.id);
-        added.operations += 1;
+        operationRows.push({
+          opNo,
+          row: {
+            makeMethodId,
+            order,
+            operationOrder: text(r.operationOrder) || "After Previous",
+            operationType: opType,
+            processId,
+            workCenterId,
+            // The editor names a new operation after its process.
+            description:
+              text(r.operationDescription) ||
+              ctx.processById.get(processId)?.name ||
+              "",
+            setupUnit: text(r.setupUnit) || undefined,
+            setupTime: num(r.setupTime) ?? 0,
+            laborUnit: text(r.laborUnit) || undefined,
+            laborTime: num(r.laborTime) ?? 0,
+            machineUnit: text(r.machineUnit) || undefined,
+            machineTime: num(r.machineTime) ?? 0,
+            operationSupplierProcessId,
+            operationMinimumCost: num(r.operationMinimumCost),
+            operationUnitCost: num(r.operationUnitCost),
+            operationLeadTime: num(r.operationLeadTime),
+            workInstruction: {},
+            customFields: {},
+            companyId,
+            createdBy: userId,
+            createdAt: now()
+          } as never
+        });
       }
+      // The ids are drawn first: RETURNING carries no promise of order, and
+      // the steps, tools and parameters below need each operation's id.
+      for (const chunk of chunked(operationRows)) {
+        const ids = await newIds(trx, "mop", chunk.length);
+        await trx
+          .insertInto("methodOperation")
+          .values(
+            chunk.map(
+              (o, i) => ({ ...(o.row as object), id: ids[i]! }) as never
+            )
+          )
+          .execute();
+        for (const [i, o] of chunk.entries()) {
+          opIdByNo.set(opKey(o.opNo), ids[i]!);
+        }
+      }
+      added.operations += operationRows.length;
 
       // --- steps / tools / parameters per operation ---
       // An existing operation keeps what it has: a step with the same name, a
@@ -4648,6 +4802,7 @@ async function writeGroup(
       );
 
       const sortByOp = new Map(children.maxStepSortOrder);
+      const stepRows: never[] = [];
       for (const e of bucket.step) {
         const r = e.record;
         const opNo = text(r.opNo);
@@ -4663,33 +4818,32 @@ async function writeGroup(
         const sortOrder = (sortByOp.get(operationId) ?? 0) + 1;
         sortByOp.set(operationId, sortOrder);
         const stepType = text(r.stepType) || "Task";
-        await trx
-          .insertInto("methodOperationStep")
-          .values([
-            {
-              operationId,
-              name,
-              description: stepDescription(text(r.stepDescription)),
-              type: stepType,
-              required: bool(r.stepRequired),
-              sortOrder,
-              unitOfMeasureCode:
-                stepType === "Measurement"
-                  ? text(r.stepUnitOfMeasureCode) || undefined
-                  : undefined,
-              minValue: num(r.stepMinValue),
-              maxValue: num(r.stepMaxValue),
-              listValues:
-                stepType === "List" ? listValues(r.stepListValues) : undefined,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.steps += 1;
+        stepRows.push({
+          operationId,
+          name,
+          description: stepDescription(text(r.stepDescription)),
+          type: stepType,
+          required: bool(r.stepRequired),
+          sortOrder,
+          unitOfMeasureCode:
+            stepType === "Measurement"
+              ? text(r.stepUnitOfMeasureCode) || undefined
+              : undefined,
+          minValue: num(r.stepMinValue),
+          maxValue: num(r.stepMaxValue),
+          listValues:
+            stepType === "List" ? listValues(r.stepListValues) : undefined,
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(stepRows, (rows) =>
+        trx.insertInto("methodOperationStep").values(rows).execute()
+      );
+      added.steps += stepRows.length;
 
+      const toolRows: never[] = [];
       for (const e of bucket.tool) {
         const r = e.record;
         const opNo = text(r.opNo);
@@ -4708,22 +4862,21 @@ async function writeGroup(
           });
           continue;
         }
-        await trx
-          .insertInto("methodOperationTool")
-          .values([
-            {
-              operationId,
-              toolId: tool.id,
-              quantity: num(r.toolQuantity) ?? 1,
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.tools += 1;
+        toolRows.push({
+          operationId,
+          toolId: tool.id,
+          quantity: num(r.toolQuantity) ?? 1,
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(toolRows, (rows) =>
+        trx.insertInto("methodOperationTool").values(rows).execute()
+      );
+      added.tools += toolRows.length;
 
+      const paramRows: never[] = [];
       for (const e of bucket.param) {
         const r = e.record;
         const opNo = text(r.opNo);
@@ -4736,21 +4889,19 @@ async function writeGroup(
           });
           continue;
         }
-        await trx
-          .insertInto("methodOperationParameter")
-          .values([
-            {
-              operationId,
-              key: paramKey,
-              value: text(r.paramValue),
-              companyId,
-              createdBy: userId,
-              createdAt: now()
-            } as never
-          ])
-          .execute();
-        added.parameters += 1;
+        paramRows.push({
+          operationId,
+          key: paramKey,
+          value: text(r.paramValue),
+          companyId,
+          createdBy: userId,
+          createdAt: now()
+        } as never);
       }
+      await inChunks(paramRows, (rows) =>
+        trx.insertInto("methodOperationParameter").values(rows).execute()
+      );
+      added.parameters += paramRows.length;
 
       // The editors write into a released revision under release control
       // "warn" and say so; the import says so for each part it wrote into.
@@ -4826,26 +4977,36 @@ async function resolveItem(
 
 // The part's current (active, else highest non-archived) make method id —
 // mirrors the activeMakeMethods view ranking.
-async function currentMakeMethodId(
+/** Each item's current make method: the Active one, else the newest
+ *  version that is not Archived. An item with none is absent. */
+async function currentMakeMethodIds(
   trx: Transaction<KyselyDatabase>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<string | null> {
+): Promise<Map<string, string>> {
+  const current = new Map<string, string>();
+  if (itemIds.length === 0) return current;
   const rows = await trx
     .selectFrom("makeMethod")
-    .select(["id", "version", "status"])
-    .where("itemId", "=", itemId)
+    .select(["id", "itemId", "version", "status"])
+    .where(
+      "itemId",
+      "in",
+      pluckUnique(itemIds, (id) => id)
+    )
     .where("companyId", "=", companyId)
     .where("status", "!=", "Archived")
     .execute();
-  if (rows.length === 0) return null;
   rows.sort((a, b) => {
     const aActive = a.status === "Active" ? 0 : 1;
     const bActive = b.status === "Active" ? 0 : 1;
     if (aActive !== bActive) return aActive - bActive;
     return Number(b.version) - Number(a.version);
   });
-  return rows[0]!.id;
+  for (const row of rows) {
+    if (!current.has(row.itemId)) current.set(row.itemId, row.id);
+  }
+  return current;
 }
 
 // Why each change notice that owns a Draft of these items locks it, or null:
@@ -4990,12 +5151,13 @@ async function loadOperationChildren(
 
 // Seed storageUnitIds from the component's pickMethod default bins (mirrors
 // resolveMethodMaterialStorageUnitIds in items.service.ts).
-async function seedStorageUnitIds(
+async function seedStorageUnitIdsByItem(
   trx: Transaction<KyselyDatabase>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
-): Promise<Record<string, string>> {
-  const current: Record<string, string> = {};
+): Promise<Map<string, Record<string, string>>> {
+  const byItem = new Map<string, Record<string, string>>();
+  if (itemIds.length === 0) return byItem;
   // A non-nettable (quarantine) default is not seeded: the line would then
   // name it, and jobs would consume quarantined stock as named.
   const rows = await trx
@@ -5005,12 +5167,21 @@ async function seedStorageUnitIds(
         .onRef("storageUnit.id", "=", "pickMethod.defaultStorageUnitId")
         .onRef("storageUnit.companyId", "=", "pickMethod.companyId")
     )
-    .select(["pickMethod.locationId", "pickMethod.defaultStorageUnitId"])
-    .where("pickMethod.itemId", "=", itemId)
+    .select([
+      "pickMethod.itemId",
+      "pickMethod.locationId",
+      "pickMethod.defaultStorageUnitId"
+    ])
+    .where(
+      "pickMethod.itemId",
+      "in",
+      pluckUnique(itemIds, (id) => id)
+    )
     .where("pickMethod.companyId", "=", companyId)
     .where("storageUnit.effectiveNettable", "=", true)
     .execute();
   for (const row of rows) {
+    const current = byItem.get(row.itemId) ?? {};
     if (
       row.locationId &&
       row.defaultStorageUnitId &&
@@ -5018,8 +5189,9 @@ async function seedStorageUnitIds(
     ) {
       current[row.locationId] = row.defaultStorageUnitId;
     }
+    byItem.set(row.itemId, current);
   }
-  return current;
+  return byItem;
 }
 
 // Optional supplier-process link for an Outside Processing operation (by supplier + process).
@@ -5552,7 +5724,8 @@ export const importCsvInput = z.object({
     "materialDimension",
     "inventoryQuantity",
     "batchQuantity",
-    "serialQuantity"
+    "serialQuantity",
+    "payrollPeriodTotal"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -6250,174 +6423,200 @@ async function preloadPrimaryLocationAddressIds(
   return map;
 }
 
-async function writeSupplierExtensions(
+type PartnerExtensionWrite = {
+  entityId: string;
+  ext: PartnerExtensionData;
+  // addressId of the partner's existing primary location, bulk-loaded by
+  // preloadPrimaryLocationAddressIds. undefined means "no location → insert".
+  existingAddressId?: string;
+};
+
+const PARTNER_ADDRESS_KEYS = [
+  "locationName",
+  "addressLine1",
+  "addressLine2",
+  "city",
+  "state",
+  "postalCode",
+  "countryCode"
+] as const;
+
+/**
+ * The address, location, payment term and (supplier) shipping columns of the
+ * partner CSV import, written for every row of the file in a few statements.
+ * A partner listed twice gets what writing the rows one by one gave: the
+ * address of its last row with an address, as a whole, and each other column
+ * from its last row with that cell filled.
+ */
+async function writePartnerExtensions(
   trx: Kysely<KyselyDatabase>,
-  supplierId: string,
-  ext: PartnerExtensionData,
+  partner: "customer" | "supplier",
+  writes: PartnerExtensionWrite[],
   companyId: string,
-  userId: string,
-  // Pre-fetched addressId of the supplier's existing primary location, if
-  // any. Caller bulk-loads these for the whole batch to avoid an N+1
-  // SELECT per supplier. undefined means "no existing location → insert".
-  existingAddressId: string | undefined
+  userId: string
 ): Promise<void> {
   const now = datetime.timestamp();
-
-  if (hasAnyAddressField(ext)) {
-    const addressFields = buildAddressFields(ext);
-
-    if (existingAddressId) {
-      await trx
-        .updateTable("address")
-        .set(addressFields)
-        .where("id", "=", existingAddressId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      const inserted = await trx
-        .insertInto("address")
-        .values({ ...addressFields, companyId })
-        .returning(["id"])
-        .executeTakeFirst();
-      if (inserted?.id) {
-        await trx
-          .insertInto("supplierLocation")
-          .values({
-            supplierId,
-            companyId,
-            addressId: inserted.id,
-            // supplierLocation.name is NOT NULL. Prefer the user's
-            // Location Name column; fall back to Address Line 1 so the row
-            // always has a recognizable label.
-            name: (ext.locationName || ext.addressLine1)!
-          })
-          .execute();
-      }
-    }
-  }
-
-  if (ext.paymentTermId) {
-    // The sync_create_supplier_entries interceptor creates the supplierPayment
-    // row on supplier INSERT; UPSERT here makes us resilient to edge cases
-    // where that row is somehow missing.
-    await trx
-      .insertInto("supplierPayment")
-      .values({
-        supplierId,
-        paymentTermId: ext.paymentTermId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .onConflict((oc) =>
-        oc.column("supplierId").doUpdateSet({
-          paymentTermId: ext.paymentTermId,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
-  }
-
-  if (ext.shippingMethodId || ext.incoterm || ext.incotermLocation) {
-    // Build the conditional update separately from the always-set fields so
-    // ON CONFLICT only touches columns the user provided in the CSV — blank
-    // cells don't overwrite existing values on re-import. The incoterm cast
-    // narrows `string` to the Postgres enum union; Postgres rejects invalid
-    // values at insert time as a safety net.
-    const partialUpdate = {
-      ...(ext.shippingMethodId
-        ? { shippingMethodId: ext.shippingMethodId }
-        : {}),
-      ...(ext.incoterm
-        ? {
-            incoterm: ext.incoterm as Database["public"]["Enums"]["incoterm"]
+  const latest = Object.values(groupBy(writes, (w) => w.entityId)).map(
+    (rows) => {
+      const filled: PartnerExtensionData = {};
+      for (const row of rows) {
+        for (const [key, value] of Object.entries(row.ext)) {
+          if (value !== undefined && value !== null && value !== "") {
+            filled[key as keyof PartnerExtensionData] = value;
           }
-        : {}),
-      ...(ext.incotermLocation
-        ? { incotermLocation: ext.incotermLocation }
-        : {})
-    };
+        }
+      }
+      const address = rows.filter((row) => hasAnyAddressField(row.ext)).at(-1);
+      if (address) {
+        for (const key of PARTNER_ADDRESS_KEYS) filled[key] = address.ext[key];
+      }
+      return { ...rows.at(-1)!, ext: filled };
+    }
+  );
+
+  const withAddress = latest.filter((w) => hasAnyAddressField(w.ext));
+  await updateRowsById(
+    trx,
+    "address",
+    companyId,
+    withAddress
+      .filter((w) => w.existingAddressId)
+      .map((w) => ({
+        id: w.existingAddressId!,
+        data: buildAddressFields(w.ext)
+      }))
+  );
+
+  const newLocations = withAddress.filter((w) => !w.existingAddressId);
+  for (const chunk of chunked(newLocations)) {
+    const ids = await newIds(trx, "addr", chunk.length);
     await trx
-      .insertInto("supplierShipping")
-      .values({
-        supplierId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId,
-        ...partialUpdate
-      })
-      .onConflict((oc) =>
-        oc.column("supplierId").doUpdateSet({
-          updatedAt: now,
-          updatedBy: userId,
-          ...partialUpdate
-        })
+      .insertInto("address")
+      .values(
+        chunk.map((w, i) => ({
+          id: ids[i]!,
+          ...buildAddressFields(w.ext),
+          companyId
+        }))
       )
       .execute();
-  }
-}
-
-async function writeCustomerExtensions(
-  trx: Kysely<KyselyDatabase>,
-  customerId: string,
-  ext: PartnerExtensionData,
-  companyId: string,
-  userId: string,
-  existingAddressId: string | undefined
-): Promise<void> {
-  const now = datetime.timestamp();
-
-  if (hasAnyAddressField(ext)) {
-    const addressFields = buildAddressFields(ext);
-
-    if (existingAddressId) {
+    const locations = chunk.map((w, i) => ({
+      companyId,
+      addressId: ids[i]!,
+      // The location name is NOT NULL. Prefer the user's Location Name
+      // column; fall back to Address Line 1.
+      name: (w.ext.locationName || w.ext.addressLine1)!
+    }));
+    if (partner === "customer") {
       await trx
-        .updateTable("address")
-        .set(addressFields)
-        .where("id", "=", existingAddressId)
-        .where("companyId", "=", companyId)
+        .insertInto("customerLocation")
+        .values(
+          locations.map((l, i) => ({ ...l, customerId: chunk[i]!.entityId }))
+        )
         .execute();
     } else {
-      const inserted = await trx
-        .insertInto("address")
-        .values({ ...addressFields, companyId })
-        .returning(["id"])
-        .executeTakeFirst();
-      if (inserted?.id) {
-        await trx
-          .insertInto("customerLocation")
-          .values({
-            customerId,
-            companyId,
-            addressId: inserted.id,
-            // customerLocation.name is NOT NULL. Prefer the user's
-            // Location Name column; fall back to Address Line 1.
-            name: (ext.locationName || ext.addressLine1)!
-          })
-          .execute();
-      }
+      await trx
+        .insertInto("supplierLocation")
+        .values(
+          locations.map((l, i) => ({ ...l, supplierId: chunk[i]!.entityId }))
+        )
+        .execute();
     }
   }
 
-  if (ext.paymentTermId) {
-    await trx
-      .insertInto("customerPayment")
-      .values({
-        customerId,
-        paymentTermId: ext.paymentTermId,
-        companyId,
-        updatedAt: now,
-        updatedBy: userId
-      })
-      .onConflict((oc) =>
-        oc.column("customerId").doUpdateSet({
-          paymentTermId: ext.paymentTermId,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
+  const payments = latest.filter((w) => w.ext.paymentTermId);
+  for (const chunk of chunked(payments)) {
+    const values = chunk.map((w) => ({
+      paymentTermId: w.ext.paymentTermId!,
+      companyId,
+      updatedAt: now,
+      updatedBy: userId
+    }));
+    if (partner === "customer") {
+      await trx
+        .insertInto("customerPayment")
+        .values(
+          values.map((v, i) => ({ ...v, customerId: chunk[i]!.entityId }))
+        )
+        .onConflict((oc) =>
+          oc.column("customerId").doUpdateSet((eb) => ({
+            paymentTermId: eb.ref("excluded.paymentTermId"),
+            updatedAt: now,
+            updatedBy: userId
+          }))
+        )
+        .execute();
+    } else {
+      // The sync_create_supplier_entries interceptor creates the
+      // supplierPayment row on supplier INSERT; the upsert covers a row that
+      // is somehow missing.
+      await trx
+        .insertInto("supplierPayment")
+        .values(
+          values.map((v, i) => ({ ...v, supplierId: chunk[i]!.entityId }))
+        )
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet((eb) => ({
+            paymentTermId: eb.ref("excluded.paymentTermId"),
+            updatedAt: now,
+            updatedBy: userId
+          }))
+        )
+        .execute();
+    }
+  }
+
+  if (partner !== "supplier") return;
+
+  // ON CONFLICT touches only the columns the CSV gave, so a blank cell keeps
+  // the stored value on re-import. Rows are grouped by the columns they give.
+  const shippingRows = latest.flatMap((w) => {
+    const partial: Record<string, string> = {};
+    if (w.ext.shippingMethodId)
+      partial.shippingMethodId = w.ext.shippingMethodId;
+    if (w.ext.incoterm) partial.incoterm = w.ext.incoterm;
+    if (w.ext.incotermLocation)
+      partial.incotermLocation = w.ext.incotermLocation;
+    const key = Object.keys(partial).join(",");
+    return key ? [{ key, supplierId: w.entityId, partial }] : [];
+  });
+  for (const [key, group] of Object.entries(
+    groupBy(shippingRows, (row) => row.key)
+  )) {
+    const columns = key.split(",") as (
+      | "shippingMethodId"
+      | "incoterm"
+      | "incotermLocation"
+    )[];
+    for (const chunk of chunked(group)) {
+      // The incoterm cast narrows `string` to the Postgres enum union;
+      // Postgres rejects an invalid value at insert time.
+      await trx
+        .insertInto("supplierShipping")
+        .values(
+          chunk.map((g) => ({
+            supplierId: g.supplierId,
+            companyId,
+            updatedAt: now,
+            updatedBy: userId,
+            ...(g.partial as {
+              shippingMethodId?: string;
+              incoterm?: Database["public"]["Enums"]["incoterm"];
+              incotermLocation?: string;
+            })
+          }))
+        )
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet((eb) => ({
+            updatedAt: now,
+            updatedBy: userId,
+            ...Object.fromEntries(
+              columns.map((column) => [column, eb.ref(`excluded.${column}`)])
+            )
+          }))
+        )
+        .execute();
+    }
   }
 }
 
@@ -6936,27 +7135,19 @@ export async function importCsvTable(
             companyId,
             userId
           );
-          for (let i = 0; i < inserted.length; i++) {
-            // Newly-inserted customers can't have an existing location yet.
-            await writeCustomerExtensions(
-              trx,
-              inserted[i]!.id!,
-              extForInserts[i] ?? {},
-              companyId,
-              userId,
-              undefined
-            );
-          }
+          await writePartnerExtensions(
+            trx,
+            "customer",
+            inserted.map((row, i) => ({
+              entityId: row.id!,
+              ext: extForInserts[i] ?? {}
+            })),
+            companyId,
+            userId
+          );
         }
         if (customerUpdates.length > 0) {
-          for (const update of customerUpdates) {
-            await trx
-              .updateTable(table)
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, table, companyId, customerUpdates);
           await upsertTaxIdentifiers(
             trx,
             "customerTax",
@@ -6970,16 +7161,17 @@ export async function importCsvTable(
               "customer",
               extForUpdates.map((u) => u.entityId)
             );
-          for (const { entityId, ext } of extForUpdates) {
-            await writeCustomerExtensions(
-              trx,
+          await writePartnerExtensions(
+            trx,
+            "customer",
+            extForUpdates.map(({ entityId, ext }) => ({
               entityId,
               ext,
-              companyId,
-              userId,
-              customerAddressByEntity.get(entityId)
-            );
-          }
+              existingAddressId: customerAddressByEntity.get(entityId)
+            })),
+            companyId,
+            userId
+          );
         }
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
@@ -7145,27 +7337,19 @@ export async function importCsvTable(
             companyId,
             userId
           );
-          for (let i = 0; i < inserted.length; i++) {
-            // Newly-inserted suppliers can't have an existing location yet.
-            await writeSupplierExtensions(
-              trx,
-              inserted[i]!.id!,
-              extForInserts[i] ?? {},
-              companyId,
-              userId,
-              undefined
-            );
-          }
+          await writePartnerExtensions(
+            trx,
+            "supplier",
+            inserted.map((row, i) => ({
+              entityId: row.id!,
+              ext: extForInserts[i] ?? {}
+            })),
+            companyId,
+            userId
+          );
         }
         if (supplierUpdates.length > 0) {
-          for (const update of supplierUpdates) {
-            await trx
-              .updateTable(table)
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, table, companyId, supplierUpdates);
           await upsertTaxIdentifiers(
             trx,
             "supplierTax",
@@ -7179,16 +7363,17 @@ export async function importCsvTable(
               "supplier",
               extForUpdates.map((u) => u.entityId)
             );
-          for (const { entityId, ext } of extForUpdates) {
-            await writeSupplierExtensions(
-              trx,
+          await writePartnerExtensions(
+            trx,
+            "supplier",
+            extForUpdates.map(({ entityId, ext }) => ({
               entityId,
               ext,
-              companyId,
-              userId,
-              supplierAddressByEntity.get(entityId)
-            );
-          }
+              existingAddressId: supplierAddressByEntity.get(entityId)
+            })),
+            companyId,
+            userId
+          );
         }
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
@@ -7838,14 +8023,7 @@ export async function importCsvTable(
             currentItems.map((i) => [i.id, i.readableId])
           );
 
-          for (const update of itemUpdates) {
-            await trx
-              .updateTable("item")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
 
           for (const update of itemUpdates) {
             const oldReadableId = currentReadableIdMap.get(update.id);
@@ -7865,14 +8043,7 @@ export async function importCsvTable(
           }
 
           if (materialUpdates.length > 0) {
-            for (const update of materialUpdates) {
-              await trx
-                .updateTable("material")
-                .set(update.data)
-                .where("id", "=", update.id)
-                .where("companyId", "=", companyId)
-                .execute();
-            }
+            await updateRowsById(trx, "material", companyId, materialUpdates);
           }
         }
 
@@ -7915,6 +8086,37 @@ export async function importCsvTable(
         companyId
       );
 
+      // With "Require email on customer contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "customer"
+      );
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
+              )
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -7926,19 +8128,40 @@ export async function importCsvTable(
         const customerContactInserts: Database["public"]["Tables"]["customerContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: customerId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
+          const existingContactId = externalContactIdMap.get(id!);
+          if (
+            requireEmail &&
+            !contactData.email &&
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: CUSTOMER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -8007,14 +8230,7 @@ export async function importCsvTable(
         }
 
         if (contactUpdates.length > 0) {
-          for (const update of contactUpdates) {
-            await trx
-              .updateTable("contact")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "contact", companyId, contactUpdates);
         }
 
         if (customerContactInserts.length > 0) {
@@ -8038,6 +8254,37 @@ export async function importCsvTable(
         companyId
       );
 
+      // With "Require email on supplier contacts" on, a row with no email is
+      // refused unless it updates a contact that already has one.
+      const requireEmail = await isContactEmailRequired(
+        db,
+        companyId,
+        "supplier"
+      );
+      const existingContactIds = [
+        ...new Set(
+          mappedRecords
+            .map((record) => externalContactIdMap.get(record.id!))
+            .filter((contactId): contactId is string => !!contactId)
+        )
+      ];
+      const contactIdsWithEmail = new Set(
+        requireEmail
+          ? (
+              await inChunks(existingContactIds, (contactIds) =>
+                db
+                  .selectFrom("contact")
+                  .select(["id", "email"])
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", contactIds)
+                  .execute()
+              )
+            )
+              .filter((row) => !!row.email?.trim())
+              .map((row) => row.id)
+          : []
+      );
+
       await db.transaction().execute(async (trx) => {
         const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
           [];
@@ -8049,19 +8296,40 @@ export async function importCsvTable(
         const supplierContactInserts: Database["public"]["Tables"]["supplierContact"]["Insert"][] =
           [];
 
+        // A contact needs a first name, a last name or an email.
         const isContactValid = (record: {
+          firstName?: string | null;
+          lastName?: string | null;
           email?: string | null;
-        }): record is {
-          email: string;
-        } => {
-          return typeof record.email === "string" && record.email.trim() !== "";
-        };
+        }) =>
+          Boolean(
+            record.firstName?.trim() ||
+              record.lastName?.trim() ||
+              record.email?.trim()
+          );
 
         for (const [rowIndex, record] of mappedRecords.entries()) {
           // `companyId` here is the parent's External Company ID; only
           // contact columns are written.
           const { id, companyId: supplierId } = record;
           const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
+          // A blank cell is left out: a new contact gets NULL, and an
+          // updated contact keeps the value it has.
+          for (const key of ["firstName", "lastName", "email"] as const) {
+            if (!contactData[key]?.trim()) delete contactData[key];
+          }
+          const existingContactId = externalContactIdMap.get(id!);
+          if (
+            requireEmail &&
+            !contactData.email &&
+            !(existingContactId && contactIdsWithEmail.has(existingContactId))
+          ) {
+            summary.errors.push({
+              row: rowIndex,
+              reason: SUPPLIER_CONTACT_EMAIL_REQUIRED
+            });
+            continue;
+          }
 
           if (externalContactIdMap.has(id!)) {
             const existingEntityId = externalContactIdMap.get(id!)!;
@@ -8129,14 +8397,7 @@ export async function importCsvTable(
         }
 
         if (contactUpdates.length > 0) {
-          for (const update of contactUpdates) {
-            await trx
-              .updateTable("contact")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "contact", companyId, contactUpdates);
         }
 
         if (supplierContactInserts.length > 0) {
@@ -8244,14 +8505,7 @@ export async function importCsvTable(
           );
         }
         if (workCenterUpdates.length > 0) {
-          for (const update of workCenterUpdates) {
-            await trx
-              .updateTable("workCenter")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "workCenter", companyId, workCenterUpdates);
         }
       });
       break;
@@ -8353,14 +8607,7 @@ export async function importCsvTable(
           );
         }
         if (processUpdates.length > 0) {
-          for (const update of processUpdates) {
-            await trx
-              .updateTable("process")
-              .set(update.data)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(trx, "process", companyId, processUpdates);
         }
       });
       break;
@@ -8679,14 +8926,7 @@ export async function importCsvTable(
             userId
           );
         }
-        for (const update of updates) {
-          await trx
-            .updateTable("storageUnit")
-            .set(update.data)
-            .where("id", "=", update.id)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
+        await updateRowsById(trx, "storageUnit", companyId, updates);
         if (csvIdsForNameMatchedUpdates.length > 0) {
           await upsertCsvMappings(
             trx,
@@ -8791,6 +9031,15 @@ export async function importCsvTable(
     case "serialQuantity": {
       await importStockQuantities(db, client, {
         table,
+        mappedRecords,
+        companyId,
+        userId,
+        summary
+      });
+      break;
+    }
+    case "payrollPeriodTotal": {
+      await importPayrollTotals(db, {
         mappedRecords,
         companyId,
         userId,
@@ -9244,17 +9493,18 @@ export async function convertDocument(
       if (!purchaseOrderDelivery.data)
         throw new NotFoundError("Purchase order delivery not found");
 
-      // Short-closed lines ("Stop Receiving") only bill what was received,
-      // so quantities go through getRemainingQuantityToInvoice rather than
-      // the generated quantityToInvoice column (ordered - invoiced).
+      // Short-closed lines ("Stop Receiving") and every line of a Closed
+      // order only bill what was received, so quantities go through
+      // purchaseOrderLineRemainingToInvoice rather than the generated
+      // quantityToInvoice column (ordered - invoiced).
+      const orderStatus = purchaseOrder.data.status;
+      const remainingToInvoice = (
+        line: NonNullable<(typeof purchaseOrderLines)["data"]>[number]
+      ) => purchaseOrderLineRemainingToInvoice(orderStatus, line);
       const uninvoicedLines = purchaseOrderLines?.data?.reduce<
         (typeof purchaseOrderLines)["data"]
       >((acc, line) => {
-        if (
-          line &&
-          !line.invoicedComplete &&
-          getRemainingQuantityToInvoice(line) > 0
-        ) {
+        if (line && !line.invoicedComplete && remainingToInvoice(line) > 0) {
           acc.push(line);
         }
 
@@ -9269,7 +9519,7 @@ export async function convertDocument(
 
       const uninvoicedSubtotal = uninvoicedLines.reduce((acc, line) => {
         if (line?.unitPrice) {
-          acc += getRemainingQuantityToInvoice(line) * line.unitPrice;
+          acc += remainingToInvoice(line) * line.unitPrice;
         }
 
         return acc;
@@ -9355,7 +9605,7 @@ export async function convertDocument(
         const purchaseInvoiceLines: Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][] =
           uninvoicedLines.map((line) => {
             const lineBilled = billed.lines.get(line.id) ?? {};
-            const quantity = getRemainingQuantityToInvoice(line);
+            const quantity = remainingToInvoice(line);
             const share = (charge: number | null, field: string) =>
               flatChargeShare({
                 charge: charge ?? 0,
@@ -9376,6 +9626,8 @@ export async function convertDocument(
               storageUnitId: line.storageUnitId,
               accountId: line.accountId,
               costCenterId: line.costCenterId,
+              projectId: line.projectId,
+              projectElementId: line.projectElementId,
               assetId: line.assetId,
               description: line.description,
               quantity,
@@ -9644,6 +9896,27 @@ export async function convertDocument(
               null
           ])
         );
+        // With no default bin, a line ships from the bin that holds the stock,
+        // as the order line form fills it.
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: pickedLines.filter(
+            (line) => !pickMethodDefaultsByLineId.get(line.id)
+          )
+        });
+        const sourceStorageUnitId = (
+          line: (typeof selectedQuoteLines)[number],
+          quantity: number
+        ) =>
+          pickMethodDefaultsByLineId.get(line.id!) ??
+          (pickMethodDefaultsByLineId.has(line.id!)
+            ? chooseSourceStorageUnit({
+                itemId: line.itemId!,
+                locationId: line.locationId ?? locationId,
+                storageUnitId: null,
+                quantity
+              })
+            : null);
 
         const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
           selectedQuoteLines.map((line) => {
@@ -9670,7 +9943,7 @@ export async function convertDocument(
               itemId: line.itemId,
               locationId: line.locationId ?? locationId,
               methodType: line.methodType,
-              storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
+              storageUnitId: sourceStorageUnitId(line, price.quantity),
               internalNotes: toJson(line.internalNotes),
               externalNotes: toJson(line.externalNotes),
               saleQuantity: price.quantity,
@@ -9803,14 +10076,14 @@ export async function convertDocument(
           }));
 
         if (updatedItemModels.length > 0) {
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
           for await (const update of updatedItemModels) {
-            await trx
-              .updateTable("item")
-              .set(update)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            itemUpdates.push({ id: update.id, data: update });
           }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
         }
       });
 
@@ -10190,14 +10463,15 @@ export async function convertDocument(
               itemId: item.id!,
               id: readableIdToLineIdMapping.get(item.readableId!)!
             }));
-          for await (const update of salesRfqLineUpdates) {
-            await trx
-              .updateTable("salesRfqLine")
-              .set({ itemId: update.itemId })
-              .where("id", "=", update.id!)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesRfqLine",
+            companyId,
+            salesRfqLineUpdates.map((update) => ({
+              id: update.id!,
+              data: { itemId: update.itemId }
+            }))
+          );
         }
 
         // Create the quote
@@ -10370,14 +10644,14 @@ export async function convertDocument(
           }));
 
         if (updatedItemModels.length > 0) {
+          const itemUpdates: {
+            id: string;
+            data: Database["public"]["Tables"]["item"]["Update"];
+          }[] = [];
           for await (const update of updatedItemModels) {
-            await trx
-              .updateTable("item")
-              .set(update)
-              .where("id", "=", update.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            itemUpdates.push({ id: update.id, data: update });
           }
+          await updateRowsById(trx, "item", companyId, itemUpdates);
         }
 
         insertedQuoteId = quote.id!;
@@ -11251,6 +11525,7 @@ export const createDocumentPermission = {
     shipmentLineSplit: { create: "inventory" },
     shipmentFromRentalAgreement: { create: "inventory" },
     receiptFromRentalAgreement: { create: "inventory" },
+    shipmentFromCustomerContract: { create: "inventory" },
     journalEntry: { create: "accounting" }
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
@@ -11954,8 +12229,6 @@ export async function createDocument(
             many(db, "purchaseOrderLine", {
               companyId,
               purchaseOrderId,
-              // The `purchaseOrderLinesToReceive` view (Inventory →
-              // Receiving) lists the same types: change both together.
               purchaseOrderLineType: [
                 "Part",
                 "Material",
@@ -12819,6 +13092,12 @@ export async function createDocument(
           newReceiptLineId &&
           trackedEntities.data?.length
         ) {
+          const splitEntities: Database["public"]["Tables"]["trackedEntity"]["Insert"][] =
+            [];
+          const shrunkEntities: {
+            id: string;
+            data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+          }[] = [];
           for (const entity of trackedEntities.data) {
             const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
             const { "Receipt Line Index": _ignored, ...rest } = attrs;
@@ -12827,41 +13106,38 @@ export async function createDocument(
               "Receipt Line": newReceiptLineId
             };
 
-            await trx
-              .insertInto("trackedEntity")
-              .values({
-                id: nanoid(),
-                quantity: round(quantity),
-                status: entity.status,
-                sourceDocument: entity.sourceDocument,
-                sourceDocumentId: entity.sourceDocumentId,
-                sourceDocumentReadableId: entity.sourceDocumentReadableId,
-                readableId: entity.readableId,
-                attributes: newAttributes,
-                companyId: entity.companyId,
-                createdBy: userId,
-                itemId: entity.itemId,
-                expirationDate: entity.expirationDate
-              })
-              .execute();
+            splitEntities.push({
+              id: nanoid(),
+              quantity: round(quantity),
+              status: entity.status,
+              sourceDocument: entity.sourceDocument,
+              sourceDocumentId: entity.sourceDocumentId,
+              sourceDocumentReadableId: entity.sourceDocumentReadableId,
+              readableId: entity.readableId,
+              attributes: newAttributes,
+              companyId: entity.companyId,
+              createdBy: userId,
+              itemId: entity.itemId,
+              expirationDate: entity.expirationDate
+            });
 
-            await trx
-              .updateTable("trackedEntity")
+            shrunkEntities.push({
+              id: entity.id,
               // A parent drained to zero by the split is Consumed, not a
               // zero-quantity Available husk; a Scrapped parent stays so.
               // The Math.max clamp is kept deliberately: a receipt-line
               // split over the parent's quantity has always clamped here
               // rather than refused, and that is not this change to make.
-              .set(
-                settleQuantity({
-                  quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
-                  status: entity.status
-                })
-              )
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
+              data: settleQuantity({
+                quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
+                status: entity.status
+              })
+            });
           }
+          for (const rows of chunked(splitEntities)) {
+            await trx.insertInto("trackedEntity").values(rows).execute();
+          }
+          await updateRowsById(trx, "trackedEntity", companyId, shrunkEntities);
         }
       });
 
@@ -13065,8 +13341,9 @@ export async function createDocument(
     }
     case "shipmentFromSalesReturnOrder": {
       // Return-to-customer shipment: ships back RECEIVED quantity on lines
-      // dispositioned "Return to Customer", minus what earlier posted
-      // shipments of this source already sent back.
+      // dispositioned "Return to Customer", and the serviced unit of a
+      // Return for Service / Warranty line whose job is done, minus what
+      // earlier posted shipments of this source already sent back.
       const {
         salesReturnOrderId,
         shipmentId: existingShipmentId,
@@ -13107,8 +13384,13 @@ export async function createDocument(
       if (salesReturnOrderLines.error)
         throw new Error(salesReturnOrderLines.error.message);
       // Goods can only go back out once they came in: the return must be
-      // confirmed (To Receive) or already Completed — never Draft/Cancelled.
-      if (!["To Receive", "Completed"].includes(salesReturnOrder.data.status))
+      // confirmed (To Receive, In Progress) or already Completed — never
+      // Draft/Cancelled.
+      if (
+        !["To Receive", "In Progress", "Completed"].includes(
+          salesReturnOrder.data.status
+        )
+      )
         throw new Error(
           `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
         );
@@ -13117,11 +13399,39 @@ export async function createDocument(
         userLocationId ?? salesReturnOrder.data.locationId ?? null;
       if (!locationId) throw new Error("The return order has no location");
 
-      const returnLines = salesReturnOrderLines.data.filter(
-        (d) => d.disposition === "Return to Customer"
+      // A Service or Warranty line ships its unit back once its job (the
+      // live one, else the latest Cancelled one) is Completed, Invoiced or
+      // Cancelled, unless the unit is to be scrapped.
+      const serviceLines = salesReturnOrderLines.data.filter(
+        (d) =>
+          (d.returnType === "Return for Service" ||
+            d.returnType === "Return for Warranty") &&
+          d.disposition !== "Scrap"
+      );
+      const doneServiceLineIds = new Set<string>();
+      if (serviceLines.length > 0) {
+        const lineJobs = await loadReturnLineJobs(
+          db,
+          companyId,
+          serviceLines.map((d) => d.id)
+        );
+        for (const [lineId, job] of lineJobs) {
+          if (
+            (SHIP_BACK_JOB_STATUSES as readonly string[]).includes(job.status)
+          )
+            doneServiceLineIds.add(lineId);
+        }
+      }
+
+      const returnLines = salesReturnOrderLines.data.filter((d) =>
+        d.returnType === "Return to Stock"
+          ? d.disposition === "Return to Customer"
+          : doneServiceLineIds.has(d.id)
       );
       if (returnLines.length === 0)
-        throw new Error('No lines are dispositioned "Return to Customer"');
+        throw new Error(
+          'No lines are dispositioned "Return to Customer" or have a completed service job'
+        );
 
       // Quantity already shipped back by earlier posted shipments
       const priorShipments = await many(
@@ -13509,6 +13819,10 @@ export async function createDocument(
           .execute();
 
         // Strip the shipment tag off entities left over from a prior source.
+        const staleEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const entity of staleEntities.data ?? []) {
           const attrs = {
             ...((entity.attributes as Record<string, unknown> | null) ?? {})
@@ -13516,19 +13830,27 @@ export async function createDocument(
           delete attrs.Shipment;
           delete attrs["Shipment Line"];
           delete attrs["Shipment Line Index"];
-          await trx
-            .updateTable("trackedEntity")
-            .set({ attributes: attrs as Json })
-            .where("id", "=", entity.id)
-            .where("companyId", "=", companyId)
-            .execute();
+          staleEntityUpdates.push({
+            id: entity.id,
+            data: { attributes: attrs as Json }
+          });
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          staleEntityUpdates
+        );
 
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
         // batch when the shipped quantity is less than the entity's quantity.
         // The index puts each serial in its own box on the shipment page,
         // which shows a serial only at the index it was assigned to.
+        const shipmentEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const shipmentLine of insertedLines) {
           const entities = shipmentLine.lineId
             ? entitiesByReturnLine.get(shipmentLine.lineId)
@@ -13540,14 +13862,18 @@ export async function createDocument(
               "Shipment Line": shipmentLine.id,
               "Shipment Line Index": index
             };
-            await trx
-              .updateTable("trackedEntity")
-              .set({ attributes: attrs as Json })
-              .where("id", "=", entity.id)
-              .where("companyId", "=", companyId)
-              .execute();
+            shipmentEntityUpdates.push({
+              id: entity.id,
+              data: { attributes: attrs as Json }
+            });
           }
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          shipmentEntityUpdates
+        );
 
         return { id };
       });
@@ -13697,6 +14023,8 @@ export async function createDocument(
         }
 
         // Process each sales order line
+        const shipmentLineInserts: Database["public"]["Tables"]["shipmentLine"]["Insert"][] =
+          [];
         for await (const purchaseOrderLine of purchaseOrderLines.data) {
           if (
             !purchaseOrderLine.itemId ||
@@ -13720,26 +14048,25 @@ export async function createDocument(
               (purchaseOrderLine.unitPrice ?? 0)) *
             (1 + (purchaseOrderLine.taxPercent ?? 0));
 
-          await trx
-            .insertInto("shipmentLine")
-            .values({
-              shipmentId: shipmentId,
-              lineId: purchaseOrderLine.id,
-              companyId: companyId,
-              itemId: purchaseOrderLine.itemId,
-              orderQuantity: purchaseOrderLine.purchaseQuantity,
-              outstandingQuantity: outstandingQuantity,
-              shippedQuantity: outstandingQuantity ?? 0,
-              requiresSerialTracking: isSerial && !isOutsideOperation,
-              requiresBatchTracking: isBatch && !isOutsideOperation,
-              unitPrice: shippingAndTaxUnitCost,
-              unitOfMeasure:
-                purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
-              locationId: purchaseOrderLine.locationId,
-              storageUnitId: purchaseOrderLine.storageUnitId,
-              createdBy: userId ?? ""
-            })
-            .execute();
+          shipmentLineInserts.push({
+            shipmentId: shipmentId,
+            lineId: purchaseOrderLine.id,
+            companyId: companyId,
+            itemId: purchaseOrderLine.itemId,
+            orderQuantity: purchaseOrderLine.purchaseQuantity,
+            outstandingQuantity: outstandingQuantity,
+            shippedQuantity: outstandingQuantity ?? 0,
+            requiresSerialTracking: isSerial && !isOutsideOperation,
+            requiresBatchTracking: isBatch && !isOutsideOperation,
+            unitPrice: shippingAndTaxUnitCost,
+            unitOfMeasure: purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
+            locationId: purchaseOrderLine.locationId,
+            storageUnitId: purchaseOrderLine.storageUnitId,
+            createdBy: userId ?? ""
+          });
+        }
+        for (const rows of chunked(shipmentLineInserts)) {
+          await trx.insertInto("shipmentLine").values(rows).execute();
         }
       });
 
@@ -13922,6 +14249,26 @@ export async function createDocument(
 
         const shipmentLineItems: ShipmentLineItem[] = [];
 
+        const untrackedItemIds = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Inventory")
+            .map((d) => d.id)
+        );
+        const chooseSourceStorageUnit = await shipmentSourceBinChooser(trx, {
+          companyId,
+          lines: salesOrderLines.data
+            .filter(
+              (line) =>
+                !!line.itemId &&
+                untrackedItemIds.has(line.itemId) &&
+                line.methodType !== "Make to Order"
+            )
+            .map((line) => ({
+              itemId: line.itemId!,
+              locationId: line.locationId
+            }))
+        });
+
         // Process each sales order line
         for await (const salesOrderLine of salesOrderLines.data) {
           if (
@@ -14015,11 +14362,15 @@ export async function createDocument(
                     );
 
                     let index = 0;
+                    const trackedEntityUpdates: {
+                      id: string;
+                      data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+                    }[] = [];
                     for await (const trackedEntity of trackedEntities?.data ??
                       []) {
-                      await trx
-                        .updateTable("trackedEntity")
-                        .set({
+                      trackedEntityUpdates.push({
+                        id: trackedEntity.id,
+                        data: {
                           attributes: {
                             ...(trackedEntity.attributes as Record<
                               string,
@@ -14029,12 +14380,16 @@ export async function createDocument(
                             "Shipment Line": shipmentLineId,
                             "Shipment Line Index": index
                           }
-                        })
-                        .where("id", "=", trackedEntity.id)
-                        .where("companyId", "=", companyId)
-                        .execute();
+                        }
+                      });
                       index++;
                     }
+                    await updateRowsById(
+                      trx,
+                      "trackedEntity",
+                      companyId,
+                      trackedEntityUpdates
+                    );
                   }
                 }
               }
@@ -14065,7 +14420,14 @@ export async function createDocument(
                 unitPrice: shippingAndTaxUnitCost,
                 unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
                 locationId: salesOrderLine.locationId,
-                storageUnitId: salesOrderLine.storageUnitId,
+                storageUnitId: untrackedItemIds.has(salesOrderLine.itemId)
+                  ? chooseSourceStorageUnit({
+                      itemId: salesOrderLine.itemId,
+                      locationId: salesOrderLine.locationId,
+                      storageUnitId: salesOrderLine.storageUnitId,
+                      quantity: outstandingQuantity ?? 0
+                    })
+                  : salesOrderLine.storageUnitId,
                 createdBy: userId ?? ""
               })
               .execute();
@@ -14311,11 +14673,15 @@ export async function createDocument(
                   );
 
                   let index = 0;
+                  const trackedEntityUpdates: {
+                    id: string;
+                    data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+                  }[] = [];
                   for await (const trackedEntity of trackedEntities?.data ??
                     []) {
-                    await trx
-                      .updateTable("trackedEntity")
-                      .set({
+                    trackedEntityUpdates.push({
+                      id: trackedEntity.id,
+                      data: {
                         attributes: {
                           ...(trackedEntity.attributes as Record<
                             string,
@@ -14325,12 +14691,16 @@ export async function createDocument(
                           "Shipment Line": shipmentLineId,
                           "Shipment Line Index": index
                         }
-                      })
-                      .where("id", "=", trackedEntity.id)
-                      .where("companyId", "=", companyId)
-                      .execute();
+                      }
+                    });
                     index++;
                   }
+                  await updateRowsById(
+                    trx,
+                    "trackedEntity",
+                    companyId,
+                    trackedEntityUpdates
+                  );
                 }
               }
             }
@@ -14347,6 +14717,26 @@ export async function createDocument(
               (salesOrderLine.data.unitPrice ?? 0)) *
             (1 + salesOrderLine.data.taxPercent);
 
+          const storageUnitId =
+            item.data.itemTrackingType === "Inventory"
+              ? (
+                  await shipmentSourceBinChooser(trx, {
+                    companyId,
+                    lines: [
+                      {
+                        itemId: salesOrderLine.data.itemId!,
+                        locationId: salesOrderLine.data.locationId
+                      }
+                    ]
+                  })
+                )({
+                  itemId: salesOrderLine.data.itemId!,
+                  locationId: salesOrderLine.data.locationId,
+                  storageUnitId: salesOrderLine.data.storageUnitId,
+                  quantity: outstandingQuantity
+                })
+              : salesOrderLine.data.storageUnitId;
+
           await trx
             .insertInto("shipmentLine")
             .values({
@@ -14362,7 +14752,7 @@ export async function createDocument(
               unitPrice: shippingAndTaxUnitCost,
               unitOfMeasure: salesOrderLine.data.unitOfMeasureCode ?? "EA",
               locationId: salesOrderLine.data.locationId!,
-              storageUnitId: salesOrderLine.data.storageUnitId!,
+              storageUnitId,
               createdBy: userId ?? ""
             })
             .execute();
@@ -14572,6 +14962,223 @@ export async function createDocument(
           )
           .execute();
         return { id: header.id };
+      });
+    }
+    case "shipmentFromCustomerContract": {
+      // A contract delivery (spec section 10.4): one Draft shipment per
+      // contract holds its part CLINs, each at what its jobs completed and
+      // it has not delivered yet. The part moves no stock: the job consumed
+      // it to the project. A per-CLIN shortcut adds its line to the Draft.
+      const { customerContractId, customerContractLineId } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        customerContractId,
+        customerContractLineId,
+        userId
+      });
+
+      return db.transaction().execute(async (trx) => {
+        const contract = await trx
+          .selectFrom("customerContract")
+          .select([
+            "id",
+            "customerContractId",
+            "status",
+            "billingBasis",
+            "customerId"
+          ])
+          .where("id", "=", customerContractId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!contract) throw new NotFoundError("Contract not found");
+        if (contract.status !== "Active") {
+          throw new InvalidInputError(
+            `Contract ${contract.customerContractId} is ${contract.status}; parts are delivered on an Active contract`
+          );
+        }
+
+        // The contract's current part CLINs (a line an amendment replaced
+        // is not current).
+        let linesQuery = trx
+          .selectFrom("customerContractLine as l")
+          .innerJoin("item as i", (join) =>
+            join
+              .onRef("i.id", "=", "l.itemId")
+              .onRef("i.companyId", "=", "l.companyId")
+          )
+          .select([
+            "l.id",
+            "l.itemId",
+            "l.quantity",
+            "l.rate",
+            "l.billingMethod",
+            "i.unitOfMeasureCode"
+          ])
+          .where("l.customerContractId", "=", contract.id)
+          .where("l.companyId", "=", companyId)
+          .where("i.type", "=", "Part")
+          .where((eb) =>
+            eb.not(
+              eb.exists(
+                eb
+                  .selectFrom("customerContractLine as a")
+                  .select("a.id")
+                  .whereRef("a.amendsLineId", "=", "l.id")
+                  .whereRef("a.companyId", "=", "l.companyId")
+              )
+            )
+          );
+        if (customerContractLineId) {
+          linesQuery = linesQuery.where("l.id", "=", customerContractLineId);
+        }
+        const lines = await linesQuery.orderBy("l.sortOrder").execute();
+        if (customerContractLineId && lines.length === 0) {
+          throw new InvalidInputError(
+            "Only a contract line that names a part is delivered"
+          );
+        }
+        const lineIds = lines.map((line) => line.id);
+        if (lineIds.length === 0) {
+          throw new InvalidInputError("Nothing to deliver");
+        }
+
+        const [jobs, shipped, draft] = await Promise.all([
+          trx
+            .selectFrom("job")
+            .select([
+              "customerContractLineId",
+              "quantityComplete",
+              "locationId"
+            ])
+            .where("customerContractLineId", "in", lineIds)
+            .where("companyId", "=", companyId)
+            .where("status", "<>", "Cancelled")
+            .orderBy("createdAt")
+            .execute(),
+          trx
+            .selectFrom("shipmentLine as sl")
+            .innerJoin("shipment as s", (join) =>
+              join
+                .onRef("s.id", "=", "sl.shipmentId")
+                .onRef("s.companyId", "=", "sl.companyId")
+            )
+            .select(["sl.lineId", "sl.shippedQuantity", "s.status"])
+            .where("s.sourceDocument", "=", "Customer Contract")
+            .where("s.sourceDocumentId", "=", contract.id)
+            .where("s.status", "in", ["Draft", "Pending", "Posted"])
+            .where("sl.companyId", "=", companyId)
+            .execute(),
+          trx
+            .selectFrom("shipment")
+            .select("id")
+            .where("sourceDocument", "=", "Customer Contract")
+            .where("sourceDocumentId", "=", contract.id)
+            .where("status", "=", "Draft")
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst()
+        ]);
+
+        const completed = new Map<string, number>();
+        const locationByLine = new Map<string, string>();
+        for (const job of jobs) {
+          const lineId = job.customerContractLineId as string;
+          completed.set(
+            lineId,
+            (completed.get(lineId) ?? 0) + Number(job.quantityComplete)
+          );
+          if (!locationByLine.has(lineId)) {
+            locationByLine.set(lineId, job.locationId);
+          }
+        }
+        const delivered = new Map<string, number>();
+        const onOpenDocument = new Set<string>();
+        for (const row of shipped) {
+          if (!row.lineId) continue;
+          if (row.status === "Posted") {
+            delivered.set(
+              row.lineId,
+              (delivered.get(row.lineId) ?? 0) + Number(row.shippedQuantity)
+            );
+          } else {
+            onOpenDocument.add(row.lineId);
+          }
+        }
+        const openQuantity = (line: (typeof lines)[number]) => {
+          const done = delivered.get(line.id) ?? 0;
+          return Math.max(
+            0,
+            Math.min(
+              (completed.get(line.id) ?? 0) - done,
+              Number(line.quantity) - done
+            )
+          );
+        };
+        const toDeliver = lines.filter(
+          (line) => !onOpenDocument.has(line.id) && openQuantity(line) > 0
+        );
+
+        if (draft && (!customerContractLineId || toDeliver.length === 0)) {
+          if (
+            customerContractLineId &&
+            !onOpenDocument.has(customerContractLineId)
+          ) {
+            throw new InvalidInputError("Nothing to deliver");
+          }
+          return { id: draft.id };
+        }
+        if (toDeliver.length === 0) {
+          throw new InvalidInputError(
+            customerContractLineId && onOpenDocument.has(customerContractLineId)
+              ? "The line is already on an open delivery"
+              : "Nothing to deliver"
+          );
+        }
+
+        const firstLocation = locationByLine.get(toDeliver[0]!.id);
+        const shipmentId =
+          draft?.id ??
+          (
+            await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: await getNextSequence(trx, "shipment", companyId),
+                sourceDocument: "Customer Contract",
+                sourceDocumentId: contract.id,
+                sourceDocumentReadableId: contract.customerContractId,
+                customerId: contract.customerId,
+                locationId: firstLocation ?? null,
+                status: "Draft",
+                companyId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .executeTakeFirstOrThrow()
+          ).id;
+        await trx
+          .insertInto("shipmentLine")
+          .values(
+            toDeliver.map((line) => ({
+              shipmentId,
+              lineId: line.id,
+              itemId: line.itemId,
+              orderQuantity: openQuantity(line),
+              outstandingQuantity: openQuantity(line),
+              // Filled in, as a sales order shipment is: Deliver, then Post.
+              shippedQuantity: openQuantity(line),
+              locationId: locationByLine.get(line.id) ?? firstLocation ?? null,
+              unitOfMeasure: line.unitOfMeasureCode ?? "EA",
+              unitPrice: line.billingMethod === "Fixed" ? Number(line.rate) : 0,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+        return { id: shipmentId };
       });
     }
     case "receiptFromRentalAgreement": {
@@ -14967,7 +15574,8 @@ export async function calculateCOGS(
     itemId,
     quantity,
     companyId,
-    trackedEntityIds
+    trackedEntityIds,
+    projectId
   }: {
     itemId: string;
     quantity: number;
@@ -14976,6 +15584,10 @@ export async function calculateCOGS(
     // from the layer booked for it (specific identification) before the
     // FIFO / LIFO layers (`orderLayersForConsumption`).
     trackedEntityIds?: readonly string[];
+    // The stock stripe the quantity is drawn from: a project id for that
+    // project's stock, or null / undefined for common stock. Layers of any
+    // other stripe are never relieved.
+    projectId?: string | null;
   }
 ): Promise<COGSResult> {
   const itemCost = await trx
@@ -15017,7 +15629,13 @@ export async function calculateCOGS(
         .where("itemId", "=", itemId)
         .where("companyId", "=", companyId)
         .where("remainingQuantity", ">", 0)
-        .where(isCostLayer);
+        .where(isCostLayer)
+        // only the stripe the quantity leaves from
+        .where((eb) =>
+          projectId
+            ? eb("projectId", "=", projectId)
+            : eb("projectId", "is", null)
+        );
       const layers = await openLayers
         .select([
           "id",
@@ -15747,6 +16365,42 @@ export async function allocateJournalLineIds(
   }
   return allocated.rows.map((row) => row.id);
 }
+
+/**
+ * Gives each reversing journal line the dimensions of the line it negates, so
+ * a void nets to zero in every report by dimension. One read and one insert.
+ */
+export async function copyJournalLineDimensions(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    reversals: { originalLineId: string; reversingLineId: string }[];
+  }
+): Promise<void> {
+  if (args.reversals.length === 0) return;
+  const reversingLineId = new Map(
+    args.reversals.map((row) => [row.originalLineId, row.reversingLineId])
+  );
+  const dimensions = await trx
+    .selectFrom("journalLineDimension")
+    .select(["journalLineId", "dimensionId", "valueId"])
+    .where("companyId", "=", args.companyId)
+    .where("journalLineId", "in", [...reversingLineId.keys()])
+    .execute();
+  if (dimensions.length === 0) return;
+  await trx
+    .insertInto("journalLineDimension")
+    .values(
+      dimensions.map((dimension) => ({
+        journalLineId: reversingLineId.get(dimension.journalLineId)!,
+        dimensionId: dimension.dimensionId,
+        valueId: dimension.valueId,
+        companyId: args.companyId
+      }))
+    )
+    .execute();
+}
+
 type Enums = Database["public"]["Enums"];
 
 /** The lease terms a payment row is cut from. */
@@ -15983,7 +16637,10 @@ export const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Non-Conformance",
   "Inbound Inspection",
   "Scrap",
-  "Asset Transfer"
+  "Asset Transfer",
+  "Project Issue",
+  "Project Transfer",
+  "Service Job Consumption"
 ]);
 
 export function toJournalLineDocumentType(
@@ -16014,6 +16671,8 @@ export function buildItemLedgerRow(args: {
   quantity: number;
   comment?: string | null;
   scrapReasonId?: string | null;
+  // The stock stripe: a project id, or null for common stock.
+  projectId?: string | null;
   companyId: string;
   createdBy: string;
 }): ItemLedgerInsert {
@@ -16030,6 +16689,7 @@ export function buildItemLedgerRow(args: {
     quantity: round(args.quantity),
     comment: args.comment ?? null,
     scrapReasonId: args.scrapReasonId ?? null,
+    projectId: args.projectId ?? null,
     companyId: args.companyId,
     createdBy: args.createdBy
   };
@@ -16049,6 +16709,8 @@ export function buildCostLedgerRow(args: {
   postingDate: string;
   // A serial unit's own layer (specific identification); null for FIFO/LIFO.
   trackedEntityId?: string | null;
+  // The stock stripe: a project id, or null for common stock.
+  projectId?: string | null;
   companyId: string;
 }): CostLedgerInsert {
   const quantity = round(args.quantity);
@@ -16064,6 +16726,7 @@ export function buildCostLedgerRow(args: {
     remainingQuantity: quantity > 0 ? quantity : 0,
     postingDate: args.postingDate,
     trackedEntityId: args.trackedEntityId ?? null,
+    projectId: args.projectId ?? null,
     companyId: args.companyId
   };
 }
@@ -16492,6 +17155,9 @@ export interface BookAdjustmentArgs {
     // every other adjustment. MES production scrap keeps its reason on
     // productionQuantity.scrapReasonId.
     scrapReasonId?: string | null;
+    // The stock stripe the movement creates or draws: a project id, or
+    // null / undefined for common stock. Its cost layers use the same stripe.
+    projectId?: string | null;
     companyId: string;
     createdBy: string;
   };
@@ -16555,6 +17221,13 @@ export interface BookAdjustmentArgs {
 export interface BookAdjustmentResult {
   itemLedgerId: string;
   journalId: string | null;
+  // The journal line on the offset account (the project account for a
+  // Project Issue), or null when no journal was written. A projectLedger row
+  // stores it so the revenue run can find the account it charged.
+  offsetJournalLineId: string | null;
+  // The journal line on the inventory account, or null with no journal. A
+  // Charge at receipt relocation row points at it.
+  inventoryJournalLineId: string | null;
   cost: number;
 }
 
@@ -16701,6 +17374,7 @@ export async function bookAdjustment(
         quantity: ledger.quantity,
         comment: ledger.comment,
         scrapReasonId: ledger.scrapReasonId,
+        projectId: ledger.projectId,
         companyId: ledger.companyId,
         createdBy: ledger.createdBy
       })
@@ -16709,28 +17383,42 @@ export async function bookAdjustment(
     .executeTakeFirstOrThrow();
 
   if (skipValuation) {
-    return { itemLedgerId: inserted.id, journalId: null, cost: 0 };
+    return {
+      itemLedgerId: inserted.id,
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost: 0
+    };
   }
 
-  const { journalId, cost } = await valueMovement(trx, {
-    movement: {
-      postingDate: ledger.postingDate,
-      itemId: ledger.itemId,
-      quantity: ledger.quantity,
-      locationId: ledger.locationId,
-      entryType: ledger.entryType,
-      documentType: ledger.documentType,
-      documentId: ledger.documentId ?? inserted.id,
-      trackedEntityId: ledger.trackedEntityId,
-      companyId: ledger.companyId
-    },
-    item,
-    itemCost,
-    accounting,
-    fixedUnitCost: args.fixedUnitCost
-  });
+  const { journalId, offsetJournalLineId, inventoryJournalLineId, cost } =
+    await valueMovement(trx, {
+      movement: {
+        postingDate: ledger.postingDate,
+        itemId: ledger.itemId,
+        quantity: ledger.quantity,
+        locationId: ledger.locationId,
+        entryType: ledger.entryType,
+        documentType: ledger.documentType,
+        documentId: ledger.documentId ?? inserted.id,
+        trackedEntityId: ledger.trackedEntityId,
+        projectId: ledger.projectId,
+        companyId: ledger.companyId
+      },
+      item,
+      itemCost,
+      accounting,
+      fixedUnitCost: args.fixedUnitCost
+    });
 
-  return { itemLedgerId: inserted.id, journalId, cost };
+  return {
+    itemLedgerId: inserted.id,
+    journalId,
+    offsetJournalLineId,
+    inventoryJournalLineId,
+    cost
+  };
 }
 
 export interface ValueMovementArgs {
@@ -16746,6 +17434,8 @@ export interface ValueMovementArgs {
     documentId: string;
     // The moved unit or batch; only a serial unit's is used for costing.
     trackedEntityId?: string | null;
+    // The stock stripe: a project id, or null / undefined for common stock.
+    projectId?: string | null;
     companyId: string;
   };
   item: BookAdjustmentArgs["item"];
@@ -16764,12 +17454,22 @@ export interface ValueMovementArgs {
 export async function valueMovement(
   trx: Transaction<DB>,
   args: ValueMovementArgs
-): Promise<{ journalId: string | null; cost: number }> {
+): Promise<{
+  journalId: string | null;
+  offsetJournalLineId: string | null;
+  inventoryJournalLineId: string | null;
+  cost: number;
+}> {
   const { movement, item, itemCost, accounting } = args;
   const { companyId, documentId } = movement;
 
   if (!carriesAdjustmentValue(movement.quantity, item.itemTrackingType)) {
-    return { journalId: null, cost: 0 };
+    return {
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost: 0
+    };
   }
 
   const absQuantity = Math.abs(movement.quantity);
@@ -16790,7 +17490,8 @@ export async function valueMovement(
       itemId: movement.itemId,
       quantity: absQuantity,
       companyId,
-      trackedEntityIds: serialId ? [serialId] : []
+      trackedEntityIds: serialId ? [serialId] : [],
+      projectId: movement.projectId ?? null
     });
     cost = cogs.totalCost;
 
@@ -16806,6 +17507,7 @@ export async function valueMovement(
           cost: -cogs.totalCost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -16827,6 +17529,7 @@ export async function valueMovement(
           cost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -16855,6 +17558,7 @@ export async function valueMovement(
           cost,
           postingDate: movement.postingDate,
           trackedEntityId: serialId,
+          projectId: movement.projectId ?? null,
           companyId
         })
       )
@@ -16868,7 +17572,12 @@ export async function valueMovement(
   // of the document that day, neither the legacy backfill (which skips a
   // document-day that has a journal) nor the re-cost could book the cost.
   if (!accounting || (cost === 0 && movement.quantity > 0)) {
-    return { journalId: null, cost };
+    return {
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost
+    };
   }
 
   const journalId = accounting.getJournalId
@@ -16919,7 +17628,13 @@ export async function valueMovement(
       .execute();
   }
 
-  return { journalId, cost };
+  return {
+    journalId,
+    // Inserted in the order [inventoryLine, offsetLine].
+    offsetJournalLineId: journalLines[1]?.id ?? null,
+    inventoryJournalLineId: journalLines[0]?.id ?? null,
+    cost
+  };
 }
 type PostableTable =
   | "receipt"
@@ -17118,12 +17833,23 @@ export function serialUnitCost(args: {
 }
 export async function getStorageUnitId(
   trx: Transaction<DB>,
-  itemId: string,
-  locationId: string,
-  companyId: string,
-  storageUnitId?: string,
-  /** False under strict backflush: the fullest bin is a guess, not a choice. */
-  allowFullestBin = true
+  {
+    companyId,
+    itemId,
+    locationId,
+    storageUnitId,
+    stripes = [null],
+    allowFullestBin = true
+  }: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    storageUnitId?: string;
+    // The stripes the demand may draw; common stock by default.
+    stripes?: readonly StockStripe[];
+    /** False under strict backflush: the fullest bin is a guess, not a choice. */
+    allowFullestBin?: boolean;
+  }
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
@@ -17137,9 +17863,14 @@ export async function getStorageUnitId(
   if (!allowFullestBin) return undefined;
 
   const storageUnitWithHighestQuantity =
-    await getStorageUnitWithHighestQuantity(trx, itemId, locationId, companyId);
+    await getStorageUnitWithHighestQuantity(trx, {
+      companyId,
+      itemId,
+      locationId,
+      stripes
+    });
 
-  return storageUnitWithHighestQuantity ?? undefined;
+  return storageUnitWithHighestQuantity?.storageUnitId ?? undefined;
 }
 
 /**
@@ -17226,18 +17957,30 @@ export async function getTrackedEntityOnHandInBin(
 }
 
 /**
- * The nettable storage unit holding the most of an item at a location: the
- * guess a consumption (issue, backflush, maintenance) or a new job material
- * falls back to when no bin was chosen. A non-nettable unit (quarantine) is
- * never guessed, so its stock is only consumed when someone names it.
+ * The nettable storage unit holding the most of an item at a location, within
+ * the stripes a demand may draw (stock-stripes.ts): the guess a consumption
+ * (issue, backflush, maintenance) or a new job material falls back to when no
+ * bin was chosen. A non-nettable unit (quarantine) is never guessed, so its
+ * stock is only consumed when someone names it. The first stripe that holds
+ * stock in any bin wins, so a project demand prefers its project's stock;
+ * within a stripe, the bin with the highest quantity wins. Returns the bin and
+ * its stripe, or null when no nettable bin of those stripes holds stock.
  */
 export async function getStorageUnitWithHighestQuantity(
   trx: Transaction<DB>,
-  itemId: string,
-  locationId: string,
-  companyId: string
-): Promise<string | null> {
-  const storageUnitWithHighestQuantity = await trx
+  {
+    companyId,
+    itemId,
+    locationId,
+    stripes
+  }: {
+    companyId: string;
+    itemId: string;
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<{ storageUnitId: string; projectId: StockStripe } | null> {
+  const bins = await trx
     .selectFrom("itemLedger")
     .innerJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
     .where("itemLedger.itemId", "=", itemId)
@@ -17245,16 +17988,185 @@ export async function getStorageUnitWithHighestQuantity(
     .where("itemLedger.companyId", "=", companyId)
     .where("storageUnit.companyId", "=", companyId)
     .where("storageUnit.effectiveNettable", "=", true)
-    .groupBy("itemLedger.storageUnitId")
+    .where((eb) => itemLedgerInStripes(eb, stripes))
+    .groupBy(["itemLedger.storageUnitId", "itemLedger.projectId"])
     .select([
       "itemLedger.storageUnitId",
+      "itemLedger.projectId",
       (eb) => eb.fn.sum("itemLedger.quantity").as("totalQuantity")
     ])
     .having((eb) => eb.fn.sum("itemLedger.quantity"), ">", 0)
     .orderBy("totalQuantity", "desc")
-    .executeTakeFirst();
+    .execute();
 
-  return storageUnitWithHighestQuantity?.storageUnitId ?? null;
+  for (const stripe of stripes) {
+    const bin = bins.find((row) => (row.projectId ?? null) === stripe);
+    if (bin?.storageUnitId) {
+      return { storageUnitId: bin.storageUnitId, projectId: stripe };
+    }
+  }
+  return null;
+}
+
+/**
+ * Locks each (location, item) in key-hash order, as SQL
+ * `backflush_job_materials` does, so two draws cannot plan from the same
+ * on-hand. Read the bins after this.
+ */
+export async function lockUntrackedDraws(
+  db: Kysely<DB>,
+  args: { companyId: string; locationId: string; itemIds: string[] }
+): Promise<void> {
+  const keys = [
+    ...new Set(
+      args.itemIds.map((itemId) =>
+        untrackedDrawLockKey(args.companyId, args.locationId, itemId)
+      )
+    )
+  ];
+  if (keys.length === 0) return;
+  await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+    db
+  );
+}
+
+// Each item's untracked on-hand per bin and stripe at a location. `nettable`:
+// a guess may take from it (active, nettable, not lineside; no storage unit
+// always is).
+export async function getUntrackedBinStock(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    locationId: string;
+    stripes: readonly StockStripe[];
+  }
+): Promise<Map<string, BinStock[]>> {
+  const bins = new Map<string, BinStock[]>();
+  if (args.itemIds.length === 0) return bins;
+  const rows = await trx
+    .selectFrom("itemLedger")
+    .leftJoin("storageUnit", (join) =>
+      join
+        .onRef("storageUnit.id", "=", "itemLedger.storageUnitId")
+        .onRef("storageUnit.companyId", "=", "itemLedger.companyId")
+    )
+    .select([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.active",
+      // A child of a lineside unit is lineside too.
+      sql<
+        string | null
+      >`get_effective_work_center_id(${sql.ref("itemLedger.storageUnitId")})`.as(
+        "workCenterId"
+      ),
+      (eb) => eb.fn.sum("itemLedger.quantity").as("quantity")
+    ])
+    .where("itemLedger.itemId", "in", args.itemIds)
+    .where("itemLedger.locationId", "=", args.locationId)
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.trackedEntityId", "is", null)
+    .where((eb) => itemLedgerInStripes(eb, args.stripes))
+    .groupBy([
+      "itemLedger.itemId",
+      "itemLedger.storageUnitId",
+      "itemLedger.projectId",
+      "storageUnit.effectiveNettable",
+      "storageUnit.active"
+    ])
+    .execute();
+  for (const row of rows) {
+    const list = bins.get(row.itemId) ?? [];
+    list.push({
+      storageUnitId: row.storageUnitId,
+      projectId: row.projectId ?? null,
+      nettable:
+        row.storageUnitId === null ||
+        (row.effectiveNettable === true &&
+          row.active === true &&
+          !row.workCenterId),
+      quantity: Number(row.quantity ?? 0)
+    });
+    bins.set(row.itemId, list);
+  }
+  return bins;
+}
+
+/**
+ * The bin each untracked shipment line ships from. A bin the order line names
+ * is kept, even when short: posting warns about it (`shipmentStockWarnings`),
+ * so a user's choice never changes silently. A line with no bin takes one that
+ * holds the stock (`chooseSourceBin`). Lines are planned in order, so two lines
+ * of one item do not count the same stock. Shipments draw common stock only.
+ */
+export async function shipmentSourceBinChooser(
+  db: Kysely<DB>,
+  args: {
+    companyId: string;
+    lines: { itemId: string; locationId: string | null }[];
+  }
+): Promise<
+  (line: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    quantity: number;
+  }) => string | null
+> {
+  const locationIds = [
+    ...new Set(
+      args.lines
+        .map((line) => line.locationId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const stockByLocation = new Map<string, Map<string, BinStock[]>>();
+  for (const locationId of locationIds) {
+    stockByLocation.set(
+      locationId,
+      await getUntrackedBinStock(db, {
+        companyId: args.companyId,
+        itemIds: [
+          ...new Set(
+            args.lines
+              .filter((line) => line.locationId === locationId)
+              .map((line) => line.itemId)
+          )
+        ],
+        locationId,
+        stripes: [null]
+      })
+    );
+  }
+  const assigned = new Map<string, number>();
+  const key = (itemId: string, locationId: string, bin: string | null) =>
+    `${locationId}\u0000${itemId}\u0000${bin ?? ""}`;
+
+  return (line) => {
+    if (!line.locationId) return line.storageUnitId;
+    const locationId = line.locationId;
+    const chosen =
+      line.storageUnitId ??
+      chooseSourceBin({
+        bins: (stockByLocation.get(locationId)?.get(line.itemId) ?? []).map(
+          (bin) => ({
+            ...bin,
+            quantity:
+              bin.quantity -
+              (assigned.get(key(line.itemId, locationId, bin.storageUnitId)) ??
+                0)
+          })
+        ),
+        preferredStorageUnitId: null,
+        quantity: line.quantity
+      });
+    const k = key(line.itemId, locationId, chosen);
+    assigned.set(k, (assigned.get(k) ?? 0) + line.quantity);
+    return chosen;
+  };
 }
 
 // Utility function to update pickMethod defaultStorageUnitId if this is the only non-null storage unit
@@ -17266,66 +18178,65 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
   companyId: string,
   userId: string
 ): Promise<void> {
-  // Only proceed if storageUnitId and locationId are not null
-  if (!storageUnitId || !locationId) return;
+  await updatePickMethodDefaultStorageUnits(
+    trx,
+    [{ itemId, locationId, storageUnitId }],
+    companyId,
+    userId
+  );
+}
 
-  // Never a non-nettable (quarantine) unit: nobody chose it as the default.
-  const unit = await trx
-    .selectFrom("storageUnit")
-    .where("id", "=", storageUnitId)
-    .where("companyId", "=", companyId)
-    .select("effectiveNettable")
-    .executeTakeFirst();
-  if (unit && !unit.effectiveNettable) return;
-
-  // Check if there are other non-null storage units for this item/location
-  const otherStorageUnits = await trx
-    .selectFrom("itemLedger")
-    .where("itemId", "=", itemId)
-    .where("locationId", "=", locationId)
-    .where("storageUnitId", "is not", null)
-    .where("storageUnitId", "!=", storageUnitId)
-    .select("storageUnitId")
-    .executeTakeFirst();
-
-  // If there are no other non-null storage units, update or insert pickMethod
-  if (!otherStorageUnits) {
-    const existingPickMethod = await trx
-      .selectFrom("pickMethod")
-      .where("itemId", "=", itemId)
-      .where("locationId", "=", locationId)
-      .where("companyId", "=", companyId)
-      .select("defaultStorageUnitId")
-      .executeTakeFirst();
-
-    if (existingPickMethod) {
-      // Update existing pickMethod
-      await trx
-        .updateTable("pickMethod")
-        .set({
-          defaultStorageUnitId: storageUnitId,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("itemId", "=", itemId)
-        .where("locationId", "=", locationId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      // Insert new pickMethod
-      await trx
-        .insertInto("pickMethod")
-        .values({
-          itemId,
-          locationId,
-          defaultStorageUnitId: storageUnitId,
-          companyId,
-          createdBy: userId,
-          createdAt: datetime.timestamp()
-        })
-        .execute();
-    }
-  }
+/**
+ * Makes a bin the item's default at its location when the item's ledger at
+ * that location names no other bin, for every row in one statement. Call it
+ * after the rows' item ledger entries are inserted. A non-nettable
+ * (quarantine) bin is never made the default: nobody chose it.
+ */
+export async function updatePickMethodDefaultStorageUnits(
+  trx: Transaction<DB>,
+  rows: {
+    itemId: string;
+    locationId?: string | null;
+    storageUnitId?: string | null;
+  }[],
+  companyId: string,
+  userId: string
+): Promise<void> {
+  const candidates = [
+    ...indexByMapped(
+      rows.filter((row) => row.storageUnitId && row.locationId),
+      (row) => `${row.itemId}:${row.locationId}:${row.storageUnitId}`,
+      ({ itemId, locationId, storageUnitId }) => ({
+        itemId,
+        locationId,
+        storageUnitId
+      })
+    ).values()
+  ];
+  if (candidates.length === 0) return;
+  const now = datetime.timestamp();
+  await sql`
+    INSERT INTO "pickMethod" ("itemId", "locationId", "defaultStorageUnitId", "companyId", "createdBy", "createdAt")
+    SELECT c."itemId", c."locationId", c."storageUnitId", ${companyId}, ${userId}, ${now}
+    FROM jsonb_to_recordset(${JSON.stringify(candidates)}::jsonb)
+      AS c("itemId" text, "locationId" text, "storageUnitId" text)
+    WHERE (
+        SELECT s."effectiveNettable" FROM "storageUnit" s
+        WHERE s.id = c."storageUnitId" AND s."companyId" = ${companyId}
+      ) IS DISTINCT FROM false
+      AND NOT EXISTS (
+        SELECT 1 FROM "itemLedger" l
+        WHERE l."companyId" = ${companyId}
+          AND l."itemId" = c."itemId"
+          AND l."locationId" = c."locationId"
+          AND l."storageUnitId" IS NOT NULL
+          AND l."storageUnitId" <> c."storageUnitId"
+      )
+    ON CONFLICT ("itemId", "locationId") DO UPDATE SET
+      "defaultStorageUnitId" = EXCLUDED."defaultStorageUnitId",
+      "updatedBy" = ${userId},
+      "updatedAt" = ${now}
+  `.execute(trx);
 }
 export type SupplierPartPriceConverter = {
   /** The currency a supplier part's price is in (NULL = base). */
@@ -17512,10 +18423,12 @@ export async function insertNegatedJournal(
 type CompanyRecordTable =
   | "inspection"
   | "inspectionSample"
+  | "item"
   | "jobOperationStep"
   | "location"
   | "nonConformance"
   | "productionEvent"
+  | "project"
   | "purchaseOrder"
   | "scrapReason"
   | "storageUnit"

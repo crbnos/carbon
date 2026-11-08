@@ -162,6 +162,7 @@ export default function RuleAssignmentsList({
       <div className="flex shrink-0 items-center gap-2">
         {availableOptions.length > 0 && (
           <Combobox
+            aria-label={t`Add rule from library`}
             size="md"
             value=""
             options={availableOptions}
@@ -427,6 +428,7 @@ function EmptyState({
           {availableOptions.length > 0 ? (
             <>
               <Combobox
+                aria-label={t`Add rule from library`}
                 value=""
                 options={availableOptions}
                 onChange={onAssign}

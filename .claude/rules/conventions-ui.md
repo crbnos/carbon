@@ -46,7 +46,14 @@ variant rather than styling a bare element.
 
 `shortcut` binds a hotkey that ref-clicks the button and renders a keycap badge
 (`ShortcutKey`); it is inert while disabled/loading and while a dialog the
-button isn't inside is open. `shortcutGuard` AND-composes an extra guard.
+button isn't inside is open. A bare Enter or Space binding also stands down
+while focus is on another control that acts on that key itself (a button, a
+link, a switch, a `role="button"` element: `isBareKeyForAnotherControl`,
+`@carbon/react`), so Enter on a dialog's Cancel never also presses the page's
+Enter-bound button. A shortcut bound with `useShortcutKeys` directly (MES
+Start/Pause on Space) needs the same check in its `guard`. The button exposes
+its combo as `aria-keyshortcuts` (`ariaKeyShortcuts`). `shortcutGuard`
+AND-composes an extra guard.
 **Every combo is a named constant** — shared ones in
 `packages/react/src/shortcuts.ts` (`SHORTCUTS`), app ones in
 `apps/erp/app/shortcuts.ts` / `apps/mes/app/shortcuts.ts`. Never write a combo
@@ -155,6 +162,36 @@ grids) come from `@carbon/react`. `Card` supports `isCollapsible`. It already
 applies `rounded-2xl` + layered shadow on the outer shell and `rounded-2xl` on
 `CardContent`, so don't re-add borders/radius — compose with the subcomponents.
 
+## Accessibility tree
+
+Biome enforces `useKeyWithClickEvents`, `noStaticElementInteractions`,
+`useButtonType` and `noSvgWithoutTitle` (`biome.jsonc`). The patterns the
+codebase settled on:
+
+- **One control per action.** A clickable row is a link stretched over the
+  row (`after:absolute after:inset-0` on the name's `Link`), with its buttons
+  and menus beside it at `relative z-10`, never inside it. Anything else in the
+  row that needs the pointer (a tooltip trigger) needs `relative z-10` too, or
+  the link covers it.
+- **A `role="button"` element never contains a link, a button or a field.**
+  Its children are presentational to assistive tech, so they cannot be reached.
+  When a row toggles and also holds controls (the document line summaries),
+  the row is a pointer-only target (a `biome-ignore` with the reason, and a
+  click handler that ignores clicks on `a, button`) and the chevron is the
+  `<button aria-expanded>` (see §7 below). A `role="button"` element that handles
+  Enter/Space checks `e.target === e.currentTarget` first.
+- **Name every control.** Icon-only buttons use `IconButton` (its
+  `aria-label` is required); decorative SVGs get `aria-hidden`. A name says
+  what the control acts on ("Actions for SO000001", `getRowLabel`), not just
+  the verb, when many share a page.
+- **Popover focus.** A custom `onCloseAutoFocus` that refocuses the trigger
+  must skip a close caused by an outside interaction: the user's click or
+  focus has already gone where they wanted it.
+- **Page identity.** Record routes export `meta` built with `recordMeta`,
+  new-record routes `newRecordMeta`, module layouts `moduleMeta`
+  (`apps/erp/app/utils/meta.ts`; MES `apps/mes/app/utils/meta.ts`), and every
+  page has one `<h1>` (`RecordHeader`'s title is it on record pages).
+
 ## Popovers inside Drawers / Dialogs
 
 `Combobox`, `CreatableCombobox`, `CreatableMultiSelect`, `MultiSelect`, and
@@ -234,8 +271,16 @@ pseudo-element if the visual is smaller.
   sequences.
 - Prefer scoping transitions to specific properties (e.g. `transition-transform`,
   or `transition-[background-color,color,transform]` as `Button` does) over
-  `transition-all`. <!-- UNVERIFIED: this is a guideline, not absolute — `transition-all` does appear in a few components (Accordion, Switch, InputOTP), so it is tolerated, not banned -->
+  `transition-all`. <!-- UNVERIFIED: this is a guideline, not absolute — `transition-all` still appears in `InputOTP`, so it is tolerated, not banned -->
 - Stagger enter animations (~100ms); keep exit animations subtle.
+- Easing comes from the theme tokens in `packages/config/tailwind/theme.css`:
+  `ease-out` is the strong UI curve `cubic-bezier(0.23, 1, 0.32, 1)`,
+  `ease-in-out` is `cubic-bezier(0.77, 0, 0.175, 1)` and `ease-drawer` is the
+  drawer curve `cubic-bezier(0.32, 0.72, 0, 1)` (`Drawer`, `BottomSheet`). Each
+  class sets both `transition-timing-function` and, through
+  `tailwindcss-animate`, `animation-timing-function`. Don't hand-type
+  `ease-[cubic-bezier(...)]`. Motion props take the array form,
+  `ease: [0.23, 1, 0.32, 1]`.
 
 ```typescript
 // Preferred
@@ -247,14 +292,31 @@ className="transition-all"
 ### 7. AnimatePresence
 
 Motion uses `motion` (imported as `from "motion/react"`; `framer-motion` is no longer a dependency), e.g.
-`apps/erp/app/components/DirectionAwareTabs.tsx`. Skip animation on page load with
+`apps/erp/app/components/SortableList.tsx`. Skip animation on page load with
 `initial={false}`:
 
 ```typescript
 <AnimatePresence initial={false}>
-  ...
+  {isOpen ? (
+    <motion.div
+      key="panel"
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+    >
+      ...
+    </motion.div>
+  ) : null}
 </AnimatePresence>
 ```
+
+A collapsed panel must leave the tab order. Render it only while open, as
+above (the document summaries do). When the panel holds state that must survive
+a collapse (the supplier's typed prices on `share+/supplier-quote.$id.tsx`),
+keep it mounted and end the collapsed variant with
+`transitionEnd: { display: "none" }`. Either way the toggle must be a real
+`<button aria-expanded>`, or a keyboard user cannot reopen the panel (the
+summaries' chevron is a `motion.button` inside the clickable row).
 
 ### 8. Font Smoothing
 

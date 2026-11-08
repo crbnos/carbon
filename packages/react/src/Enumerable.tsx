@@ -16,7 +16,7 @@ type EnumerableProps = BadgeProps & {
 
 /**
  * Phones: inside a compact row's context line, enumerated values read as plain
- * text instead of colour badges (the row's status pills stay badges).
+ * text instead of color badges (the row's status pills stay badges).
  */
 const EnumerableAsTextContext = createContext(false);
 const EnumerableAsText = EnumerableAsTextContext.Provider;

@@ -390,6 +390,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "gauge-blocks",
     gaugeType: "Gauge Block",
     description: "Grade K steel gauge block set, 81 pc — metrology lab master",
+    manufacturer: "Mitutoyo",
     modelNumber: "GBS-81K",
     serialNumber: "MB-22-0144",
     role: "Master",
@@ -417,6 +418,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "caliper",
     gaugeType: "Caliper - Outside",
     description: "150 mm digital caliper — new unit for the integration cell",
+    manufacturer: "Mitutoyo",
     modelNumber: "DC-150",
     serialNumber: "C24-88213",
     role: "Standard",
@@ -430,6 +432,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Micrometer - Outside",
     description:
       "0–25 mm outside micrometer — retired after failed calibration",
+    manufacturer: "Starrett",
     modelNumber: "OM-25",
     serialNumber: "M19-40522",
     role: "Standard",

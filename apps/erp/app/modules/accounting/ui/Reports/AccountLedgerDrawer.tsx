@@ -4,6 +4,7 @@
 
 import {
   Badge,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -122,7 +123,12 @@ const AccountLedgerDrawer = ({
           </div>
         </DrawerHeader>
         <DrawerBody className="p-0 max-md:p-0">
-          <div className="grid w-full grid-cols-3 divide-x divide-border border-b border-border">
+          <div
+            className={cn(
+              "grid w-full divide-x divide-border border-b border-border",
+              summary.close ? "grid-cols-4" : "grid-cols-3"
+            )}
+          >
             <div className="px-4 py-3">
               <p className="text-xs text-muted-foreground">
                 <Trans>Opening</Trans>
@@ -139,6 +145,16 @@ const AccountLedgerDrawer = ({
                 {formatAmount(summary.netChange)}
               </p>
             </div>
+            {summary.close ? (
+              <div className="px-4 py-3">
+                <p className="text-xs text-muted-foreground">
+                  <Trans>Year-End Close</Trans>
+                </p>
+                <p className="text-sm font-medium tabular-nums">
+                  {formatAmount(summary.close)}
+                </p>
+              </div>
+            ) : null}
             <div className="px-4 py-3">
               <p className="text-xs text-muted-foreground">
                 <Trans>Closing</Trans>

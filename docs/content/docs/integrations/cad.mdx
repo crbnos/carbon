@@ -276,7 +276,9 @@ review is written to Carbon only; Onshape keeps its values.
 Creates or updates the Carbon item for an Onshape part: the part number becomes the
 item ID, plus name, description, revision, the 3D model and a thumbnail. Pushing again
 after a change updates the item. Pushing an unchanged part writes only mapped values
-that differ, and exports nothing. Parts need a part number in Onshape first. **Push
+that differ, and exports nothing. In a workspace, a part changes when a Part Studio,
+Variable Studio or Feature Studio in its document does; editing a drawing or an
+assembly leaves it unchanged. Parts need a part number in Onshape first. **Push
 all** pushes every numbered part in the Part Studio, at most 50.
 
 After the push the item is a Carbon item like any other, and every field stays
@@ -329,13 +331,13 @@ review: **STEP model** on a part or sub-assembly, and
 above the list pick every row of one kind. Nothing is picked to start with.
 
 - A row gets no checkboxes when its item is from Onshape's Standard content library,
-  released in Carbon, or linked to a different Onshape part. That item's files come
-  from its own push.
+  released in Carbon, or linked to a different Onshape part, or when one Onshape part
+  is listed under two part numbers. That item's files come from its own push.
 - Drawings are found in the documents the pushed items come from. A drawing kept in a
   separate drawings document is not offered.
-- A drawing attaches to the assembly it shows, else to the one part it shows. A drawing
-  of several parts, or of nothing in the push, is listed in the review and not
-  offered.
+- A drawing of an assembly goes to that assembly only, not to its parts; any other
+  drawing goes to every picked row it shows. A drawing that shows nothing in the push
+  is listed in the review and not offered.
 - A row whose item already has the model or a drawing from the document as it is now
   says **current**. It is not exported again, and the review does not count it. The
   export checks again, so a file changed after the review still exports.
@@ -343,8 +345,13 @@ above the list pick every row of one kind. Nothing is picked to start with.
   Part Studio, Variable Studio or Feature Studio makes every model in the document out
   of date; editing an assembly, only assembly models; editing a drawing, only that
   drawing.
-- A drawing lands on its item as `<part number>-<drawing id>.pdf`. A model replaces the
-  item's current one, as a part push does.
+- A model replaces the item's current one, as a part push does.
+- A PDF is named after the drawing in Onshape and appears in the item's **Files**. Two
+  drawings with the same name on one item are told apart by a number: `Drawing 1.pdf`,
+  `Drawing 1 (2).pdf`. Another file on the item with the same name, such as one
+  uploaded by hand, is never overwritten.
+- Renaming a drawing in Onshape renames its PDF in Carbon on the next push.
+- Each drawing is exported once, whatever the number of items it goes to.
 - Files export in the background and appear on the items a few minutes after the
   push, two files at a time per company. A drawing PDF deleted from an item exports
   again on the next push.
@@ -362,7 +369,9 @@ The **Releases** page lists the document's 20 newest Onshape releases, each mark
   revision's method,
 - takes each released item's mapped values at its released version,
 - attaches models and thumbnails at the released version, and each released drawing
-  as a PDF named `<part number>-<revision>.pdf` on its part.
+  as a PDF named `<part number>-<revision>.pdf` on its part,
+- attaches every other drawing in the document, as it was at the released version, to
+  each released part or assembly it shows, as on an assembly push.
 
 The new revisions go on one draft **change notice**, named after the release. They
 stay inactive until you release that notice in Carbon, which activates them and

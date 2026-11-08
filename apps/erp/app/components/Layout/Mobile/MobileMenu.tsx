@@ -218,6 +218,7 @@ function CompanyFinder({
                     size="xs"
                     name={company.name ?? undefined}
                     src={logo ?? undefined}
+                    decorative
                   />
                 }
                 label={company.name}
@@ -378,6 +379,7 @@ export function MobileMenu({
                   size="xs"
                   name={user.company.name}
                   src={companyLogo ?? undefined}
+                  decorative
                 />
               }
               label={user.company.name}
@@ -399,6 +401,7 @@ export function MobileMenu({
       >
         {/* A tap on a link closes the menu even when it leads to the page
             already open, where the path (and so the menu) would not change. */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: delegated listener that closes the menu after a contained <a> is activated; the links are the controls */}
         <div
           role="presentation"
           className="px-1.5 pb-1.5"
@@ -421,7 +424,7 @@ export function MobileMenu({
               onClick={onOpenProfile}
               className={dockMenuRowClassName}
             >
-              <Avatar path={user.avatarUrl} name={name} size="xs" />
+              <Avatar path={user.avatarUrl} name={name} size="xs" decorative />
               <span className="flex min-w-0 flex-1 flex-col py-1.5">
                 <span className="truncate text-foreground">{name}</span>
                 <span className="truncate text-sm">{user.email}</span>

@@ -9,9 +9,12 @@ import type {
   PeriodRunPreview
 } from "./accounting.service";
 import {
+  burdenComputedCheck,
   checklistTasksToCreate,
+  earnedValueClosedCheck,
   evaluateCloseChecklist,
-  periodRunChecks
+  periodRunChecks,
+  shippedNotInvoicedCheck
 } from "./accounting.service";
 import {
   fiscalYearPeriodDates,
@@ -371,5 +374,111 @@ describe("periodRunChecks", () => {
         { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
       ]
     });
+  });
+});
+
+// The Government Contracting close checks: "Compute burden for the period"
+// (5b) and "Close earned value for the period" (5c).
+describe("shippedNotInvoicedCheck", () => {
+  it("passes with no uninvoiced shipment", () => {
+    expect(shippedNotInvoicedCheck({ shipments: [], count: 0 })).toEqual({
+      failing: false,
+      count: 0,
+      documents: []
+    });
+  });
+
+  it("fails with the shipments as linked documents and the exact count", () => {
+    expect(
+      shippedNotInvoicedCheck({
+        shipments: [{ id: "s1", shipmentId: "SH000001", status: "Posted" }],
+        count: 1
+      })
+    ).toEqual({
+      failing: true,
+      count: 1,
+      documents: [
+        {
+          documentType: "Shipment",
+          id: "s1",
+          readableId: "SH000001",
+          status: "Posted"
+        }
+      ]
+    });
+  });
+
+  it("lists at most the first 25 shipments while the count stays exact", () => {
+    const shipments = Array.from({ length: 30 }, (_, i) => ({
+      id: `s${i}`,
+      shipmentId: `SH${i}`,
+      status: "Posted"
+    }));
+    const result = shippedNotInvoicedCheck({ shipments, count: 30 });
+    expect(result.count).toBe(30);
+    expect(result.documents).toHaveLength(25);
+    expect(result.documents[24]?.id).toBe("s24");
+  });
+});
+
+describe("burdenComputedCheck", () => {
+  it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: false,
+        poolCount: 1,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("fails with one pool and no run", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 1,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: true, count: 1 });
+  });
+
+  it("passes when the period's run computed burden", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 1,
+        burdenComputedAt: "2026-10-31T12:00:00Z"
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("passes, not applicable, with no pool", () => {
+    expect(
+      burdenComputedCheck({
+        entitled: true,
+        poolCount: 0,
+        burdenComputedAt: null
+      })
+    ).toEqual({ failing: false, count: 0 });
+  });
+});
+
+describe("earnedValueClosedCheck", () => {
+  it("passes, not applicable, without GOVERNMENT_CONTRACTING", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: false, projectsWithoutSnapshot: 2 })
+    ).toEqual({ failing: false, count: 0 });
+  });
+
+  it("fails while a project with a work package has no snapshot", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: true, projectsWithoutSnapshot: 1 })
+    ).toEqual({ failing: true, count: 1 });
+  });
+
+  it("passes once the project has a snapshot, or with no work package", () => {
+    expect(
+      earnedValueClosedCheck({ entitled: true, projectsWithoutSnapshot: 0 })
+    ).toEqual({ failing: false, count: 0 });
   });
 });

@@ -320,7 +320,10 @@ const QuoteToOrderDrawer = ({
             <CustomerDetailsForm poNumber={poNumber} />
             <PaymentDetailsForm />
             <ShippingDetailsForm />
-            <NotificationOptionsForm quote={quote} />
+            <NotificationOptionsForm
+              quote={quote}
+              onEmailBlockedChange={setEmailBlocked}
+            />
           </VStack>
         );
       default:
@@ -337,6 +340,11 @@ const QuoteToOrderDrawer = ({
     onSuccess: onClose
   });
   const isSubmitting = ruleViolations.fetcher.state !== "idle";
+  const [emailBlocked, setEmailBlocked] = useState(false);
+  // Must match the Send Via value NotificationOptionsForm starts with: a
+  // default that differs makes the select change value on mount, and Radix
+  // then clears it to "" (its native <select> has no options yet).
+  const defaultNotification = useIntegrations().has("email") ? "Email" : "None";
 
   const isNextButtonDisabled =
     step === 1 && Object.keys(selectedLines).length === 0;
@@ -362,8 +370,9 @@ const QuoteToOrderDrawer = ({
             action={path.to.convertQuoteToOrder(quote.id!)}
             validator={salesConfirmValidator}
             fetcher={ruleViolations.fetcher}
+            className="flex flex-col flex-1 min-h-0"
             defaultValues={{
-              notification: "None",
+              notification: defaultNotification,
               customerContact: quote.customerContactId ?? undefined,
               cc: []
             }}
@@ -375,7 +384,7 @@ const QuoteToOrderDrawer = ({
               </Button>
               <Button
                 type="submit"
-                isDisabled={isSubmitting}
+                isDisabled={isSubmitting || emailBlocked}
                 isLoading={isSubmitting}
               >
                 <Trans>Convert</Trans>
@@ -519,6 +528,7 @@ const LinePricingOptions = ({
   formatter,
   setSelectedLines
 }: LinePricingOptionsProps) => {
+  const { t } = useLingui();
   const [selectedValue, setSelectedValue] = useState("");
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const [showOverride, setShowOverride] = useState(false);
@@ -728,14 +738,14 @@ const LinePricingOptions = ({
               <Tr>
                 <Td>
                   <RadioGroupItem value="custom" id={`${line.id}:custom`} />
-                  <label
-                    htmlFor={`${line.id}:custom`}
-                    className="sr-only"
-                  ></label>
+                  <label htmlFor={`${line.id}:custom`} className="sr-only">
+                    <Trans>Custom pricing</Trans>
+                  </label>
                 </Td>
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom quantity`}
                     value={overridePricing.quantity}
                     onChange={(quantity) =>
                       setOverridePricing((v) => ({
@@ -753,6 +763,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom unit price`}
                     value={
                       shouldConvertCurrency
                         ? overridePricing.convertedNetUnitPrice
@@ -783,6 +794,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom shipping cost`}
                     value={
                       shouldConvertCurrency
                         ? overridePricing.convertedShippingCost
@@ -813,6 +825,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom add-ons`}
                     value={
                       shouldConvertCurrency
                         ? overridePricing.convertedAddOn
@@ -843,6 +856,7 @@ const LinePricingOptions = ({
                 <Td>
                   <NumberField
                     className="w-[120px]"
+                    aria-label={t`Custom lead time`}
                     formatOptions={{
                       style: "unit",
                       unit: "day",
@@ -1073,7 +1087,14 @@ function ShippingDetailsForm() {
   );
 }
 
-function NotificationOptionsForm({ quote }: { quote: Quotation }) {
+function NotificationOptionsForm({
+  quote,
+  onEmailBlockedChange
+}: {
+  quote: Quotation;
+  /** Called when an Email send is blocked by a contact with no email. */
+  onEmailBlockedChange: (blocked: boolean) => void;
+}) {
   const { t } = useLingui();
   const [isExpanded, setIsExpanded] = useState(true);
   const integrations = useIntegrations();
@@ -1081,6 +1102,12 @@ function NotificationOptionsForm({ quote }: { quote: Quotation }) {
   const [notificationType, setNotificationType] = useState(
     canEmail ? "Email" : "None"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
+  const emailBlocked = notificationType === "Email" && contactMissingEmail;
+
+  useEffect(() => {
+    onEmailBlockedChange(emailBlocked);
+  }, [emailBlocked, onEmailBlockedChange]);
 
   if (!canEmail) return null;
 
@@ -1100,31 +1127,32 @@ function NotificationOptionsForm({ quote }: { quote: Quotation }) {
           className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
         />
       </HStack>
-      {isExpanded && (
-        <VStack spacing={4}>
-          <SelectControlled
-            label={t`Send Via`}
-            name="notification"
-            options={[
-              { label: "None", value: "None" },
-              { label: "Email", value: "Email" }
-            ]}
-            value={notificationType}
-            onChange={(t) => {
-              if (t) setNotificationType(t.value);
-            }}
-          />
-          {notificationType === "Email" && (
-            <>
-              <CustomerContact
-                name="customerContact"
-                customer={quote.customerId ?? undefined}
-              />
-              <EmailRecipients name="cc" label={t`CC`} type="employee" />
-            </>
-          )}
-        </VStack>
-      )}
+      {/* Hidden, not unmounted, so collapsing keeps the field values. */}
+      <VStack spacing={4} className={isExpanded ? undefined : "hidden"}>
+        <SelectControlled
+          label={t`Send Via`}
+          name="notification"
+          options={[
+            { label: "None", value: "None" },
+            { label: "Email", value: "Email" }
+          ]}
+          value={notificationType}
+          onChange={(t) => {
+            if (t) setNotificationType(t.value);
+          }}
+        />
+        {notificationType === "Email" && (
+          <>
+            <CustomerContact
+              name="customerContact"
+              customer={quote.customerId ?? undefined}
+              warnIfNoEmail
+              onMissingEmailChange={setContactMissingEmail}
+            />
+            <EmailRecipients name="cc" label={t`CC`} type="employee" />
+          </>
+        )}
+      </VStack>
     </div>
   );
 }

@@ -23,10 +23,13 @@ import {
   Toaster,
   TooltipProvider,
   useMode,
+  useThemeContent,
   useUiScale,
   ViewportProvider
 } from "@carbon/react";
+import { DocumentHiddenMotion } from "@carbon/react/DocumentHidden";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
+import { RouteAnnouncer } from "@carbon/react/RouteAnnouncer";
 import type { UiScale } from "@carbon/utils";
 import {
   colorSchemeHintScript,
@@ -34,9 +37,9 @@ import {
   densityValidator,
   getPreferenceHeaders,
   getViewportHint,
-  isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
+  rootShouldRevalidate,
   TEXT_SIZE_COOKIE,
   textSizeValidator,
   themeByName,
@@ -49,7 +52,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
@@ -101,7 +104,8 @@ export const clientMiddleware = [
   flashClientMiddleware,
   createInvalidationMiddleware({
     getCache: () => window.clientCache,
-    skipPaths: [path.to.refreshSession]
+    // The root action only writes appearance cookies: no cached data changed.
+    skipPaths: [path.to.refreshSession, path.to.root]
   })
 ];
 
@@ -126,8 +130,7 @@ export const meta: MetaFunction = ({ error }) => {
 // Root data is cookies + env + the flash result. A same-pathname GET (table
 // filter, sort, page, useRevalidator from realtime hooks) can change none of
 // it; actions still revalidate so the flash toast is surfaced.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
+export const shouldRevalidate: ShouldRevalidateFunction = rootShouldRevalidate;
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
@@ -297,6 +300,7 @@ export function Document({
   mode = "light",
   theme = "zinc",
   uiScale,
+  themeContent,
   env
 }: {
   children: React.ReactNode;
@@ -304,6 +308,7 @@ export function Document({
   mode?: "light" | "dark";
   theme?: string;
   uiScale?: UiScale;
+  themeContent?: Record<string, string>;
   env?: Record<string, unknown>;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
@@ -323,6 +328,7 @@ export function Document({
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "light" ? lightVars : darkVars),
+    ...themeContent,
     "--radius": "0.4375rem",
     ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
@@ -376,6 +382,19 @@ export function Document({
   );
 }
 
+/**
+ * The query devtools button floats over form controls, so a browser driven by
+ * automation (`navigator.webdriver`) does not get it. Developers still do.
+ */
+function QueryDevtools() {
+  const [automated, setAutomated] = useState(true);
+  useEffect(() => {
+    setAutomated(navigator.webdriver === true);
+  }, []);
+  if (automated) return null;
+  return <ReactQueryDevtools buttonPosition="bottom-right" />;
+}
+
 export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
@@ -390,6 +409,7 @@ export default function App() {
     .map((match) => (match.handle as Handle | undefined)?.hostMode)
     .find((value) => value !== undefined);
   const mode = hostMode ? hostMode(new URLSearchParams(search)) : userMode;
+  const themeContent = useThemeContent(mode);
 
   // One client for both consumers: the imperative `window.clientCache`
   // read-through convention (clientLoader/cachedApiQuery) and hook-based
@@ -427,12 +447,17 @@ export default function App() {
                     mode={mode}
                     theme={theme}
                     uiScale={uiScale}
+                    themeContent={themeContent}
                     lang={appLanguage}
                     env={env}
                   >
                     <Outlet />
-                    {/* Renders nothing outside development; the package strips itself. */}
-                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                    {/* Says which page opened and moves focus to it on navigation. */}
+                    <RouteAnnouncer />
+                    {/* Closed menus and dialogs unmount at once in a hidden tab. */}
+                    <DocumentHiddenMotion />
+                    {/* Renders nothing outside development or in an automated browser. */}
+                    <QueryDevtools />
                   </Document>
                 </MotionConfig>
               </TooltipProvider>

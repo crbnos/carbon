@@ -12,7 +12,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { deferRootActionPost, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -21,6 +21,7 @@ import { LuTriangleAlert } from "react-icons/lu";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
+  MetaFunction,
   ShouldRevalidateFunctionArgs
 } from "react-router";
 import { useLoaderData } from "react-router";
@@ -43,6 +44,7 @@ import {
 } from "~/modules/workflows/workflows.service";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const links: LinksFunction = () => [
@@ -58,15 +60,18 @@ export const handle: Handle = {
   module: "workflows"
 };
 
-// Neither write may revalidate the loader: a save would re-seed the canvas mid-edit
-// and lose the selection, a canvas write would snap the viewport back.
-export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
-  return (
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.workflow?.name, "Workflow");
+
+// No builder write may revalidate the loader: a save would re-seed the canvas
+// mid-edit and lose the selection, a canvas or positions write would snap the
+// viewport back.
+export const shouldRevalidate = deferRootActionPost(
+  ({ formAction }: ShouldRevalidateFunctionArgs) =>
     !formAction?.includes("/save") &&
     !formAction?.includes("/canvas") &&
     !formAction?.includes("/positions")
-  );
-}
+);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

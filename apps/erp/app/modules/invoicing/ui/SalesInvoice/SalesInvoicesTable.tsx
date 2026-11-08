@@ -38,6 +38,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -174,7 +175,15 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
       {
         accessorKey: "needsReview",
         header: t`Needs Review`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const invoiceId = item.row.original.invoiceId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Needs review: ${invoiceId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -372,12 +381,16 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
     );
   }, [closeSalesInvoiceModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesInvoiceListItem>("sales-invoices");
+
   return (
     <>
       <Table<SalesInvoiceListItem>
+        getRowLabel={(row) => row.invoiceId ?? undefined}
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
         infinite={infinite}
         defaultColumnPinning={{
           left: ["invoiceId"]

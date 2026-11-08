@@ -2,6 +2,16 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+export type {
+  DrawingAssemblyElement,
+  DrawingDocument,
+  DrawingReference,
+  DrawingSource,
+  DrawingTarget,
+  DrawingTie,
+  OnshapeDrawing
+} from "../panel/drawings";
+export { tieDrawings } from "../panel/drawings";
 export type { DraftCandidate } from "../panel/method-version";
 export {
   DRAFT_MARKER_ENTITY_TYPE,
@@ -17,6 +27,7 @@ export * from "./connection";
 export * from "./data";
 export * from "./document.type";
 export * from "./drawing-references-cache";
+export * from "./drawings";
 export * from "./element.type";
 export * from "./integration-id";
 export * from "./oauth";

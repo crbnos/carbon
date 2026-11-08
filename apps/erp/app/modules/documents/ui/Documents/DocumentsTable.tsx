@@ -252,7 +252,7 @@ const DocumentsTable = memo(
                 className="group flex items-center gap-1"
               >
                 <Enumerable value={row.original.sourceDocument} />{" "}
-                <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+                <span className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150 w-4 h-4 text-foreground">
                   <LuExternalLink />
                 </span>
               </PrefetchLink>
@@ -282,6 +282,7 @@ const DocumentsTable = memo(
                 >
                   {label}
                   <BadgeCloseButton
+                    aria-label={t`Remove label ${label}`}
                     onClick={(e) => onDeleteLabel(e, row.original, label)}
                   />
                 </Badge>

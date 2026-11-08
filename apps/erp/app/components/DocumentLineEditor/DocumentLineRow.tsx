@@ -6,7 +6,7 @@ import { cn, IconButton, Input, NumberField, NumberInput } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { LuChevronRight, LuTrash } from "react-icons/lu";
-import { AccountControlled } from "~/components/Form";
+import { AccountControlled, ChargeNumberControlled } from "~/components/Form";
 import { useCurrencyDecimals } from "~/hooks";
 import DimensionSelector from "~/modules/accounting/ui/JournalEntries/DimensionSelector";
 import type {
@@ -20,6 +20,10 @@ type DocumentLineRowProps = {
   index: number;
   currencyCode: string;
   availableDimensions: DimensionWithValues[];
+  /** Dimensions the charge number decides; the dimension picker leaves them out. */
+  hiddenDimensionIds: Set<string>;
+  /** The line takes a charge number (a project, or a project and an element). */
+  showChargeNumber: boolean;
   /** Collapsed rows show account + amount only; expanded adds the rest. */
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -34,6 +38,8 @@ const DocumentLineRow = ({
   index,
   currencyCode,
   availableDimensions,
+  hiddenDimensionIds,
+  showChargeNumber,
   isExpanded,
   onToggleExpand,
   onChange,
@@ -42,6 +48,7 @@ const DocumentLineRow = ({
   isDisabled
 }: DocumentLineRowProps) => {
   const { t } = useLingui();
+  const lineNumber = index + 1;
   // A coding line's amount is a SETTLEMENT amount — what the document is worth
   // — so it formats and steps at the currency's own decimals, never a literal.
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -49,6 +56,12 @@ const DocumentLineRow = ({
   const handleDimensionsChange = (dimensions: JournalLineDimensionValue[]) => {
     onChange({ ...line, dimensions });
   };
+  const pickerDimensions = availableDimensions.filter(
+    (d) => !hiddenDimensionIds.has(d.dimensionId)
+  );
+  const currentDimensions = line.dimensions.filter(
+    (d) => !hiddenDimensionIds.has(d.dimensionId)
+  );
 
   return (
     <div className="group">
@@ -56,6 +69,7 @@ const DocumentLineRow = ({
         {/* Expand toggle + row number */}
         <div className="flex h-9 items-center gap-1">
           <IconButton
+            aria-expanded={isExpanded}
             type="button"
             aria-label={isExpanded ? t`Collapse line` : t`Expand line`}
             icon={
@@ -87,6 +101,7 @@ const DocumentLineRow = ({
           {isExpanded && (
             <>
               <Input
+                aria-label={t`Line description`}
                 placeholder={t`Line description (optional)`}
                 value={line.description}
                 onChange={(e) =>
@@ -96,13 +111,24 @@ const DocumentLineRow = ({
                 size="sm"
               />
 
-              {availableDimensions.length > 0 && (
+              {pickerDimensions.length > 0 && (
                 <DimensionSelector
                   journalLineId={line.key}
-                  availableDimensions={availableDimensions}
-                  currentDimensions={line.dimensions}
+                  availableDimensions={pickerDimensions}
+                  currentDimensions={currentDimensions}
                   onChange={handleDimensionsChange}
                   autoSave={false}
+                />
+              )}
+
+              {showChargeNumber && (
+                <ChargeNumberControlled
+                  projectId={line.projectId}
+                  projectElementId={line.projectElementId}
+                  onChange={(projectId, projectElementId) =>
+                    onChange({ ...line, projectId, projectElementId })
+                  }
+                  isReadOnly={isDisabled}
                 />
               )}
             </>
@@ -111,6 +137,7 @@ const DocumentLineRow = ({
 
         {/* Amount */}
         <NumberField
+          aria-label={t`Amount for line ${lineNumber}`}
           value={line.amount ?? 0}
           onChange={(value) =>
             onChange({ ...line, amount: isNaN(value) ? null : value })
@@ -137,7 +164,7 @@ const DocumentLineRow = ({
               variant="ghost"
               onClick={onDelete}
               isDisabled={!canDelete}
-              className="size-8 p-0 text-muted-foreground md:opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 disabled:opacity-0"
+              className="size-8 p-0 text-muted-foreground md:opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 disabled:opacity-0"
             />
           )}
         </div>

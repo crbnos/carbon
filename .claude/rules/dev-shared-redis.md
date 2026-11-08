@@ -9,6 +9,9 @@ paths:
 
 # Dev shared Redis
 
+Redis is a `crbn-shared` service, with Postgres, PgBouncer, Storage, imgproxy
+and Inbucket: see [dev-shared-services.md](dev-shared-services.md).
+
 ## Client (`@carbon/kv`)
 
 - Library is **`ioredis`** (`packages/kv/package.json`; `ioredis-mock` for tests).
@@ -40,28 +43,51 @@ paths:
 ## Dev: one shared container, per-worktree logical DB
 
 Dev uses a **single `redis:7-alpine` container per host**, reused across all
-worktrees; each worktree is isolated by a **logical DB index (0–15)**, not its
+worktrees; each worktree is isolated by a **logical DB index (0–24)**, not its
 own container.
 
-- **Not a compose service.** `packages/dev/docker/docker-compose.dev.yml`
-  (the per-worktree Supabase + inngest stack) explicitly documents redis's
-  absence (~line 238). The dev CLI boots redis directly.
-- **`bootSharedRedis()`** in `packages/dev/src/services/compose.ts` does
-  `docker run` of container **`carbon-redis`** (volume `carbon-redis-data`,
-  `-p ${SHARED_REDIS_PORT}:6379`, `--restart unless-stopped`, healthcheck
-  `redis-cli ping`, `redis-server --appendonly yes`). Idempotent: reuse running,
-  start stopped, else recreate. Constants `REDIS_CONTAINER` / `REDIS_VOLUME` are
-  at the top of that file.
-- `SHARED_REDIS_PORT = 6379` and `REDIS_DB_MAX = 16` live in
-  `packages/dev/src/worktree.ts`; `pickRedisDb` allocates a free DB index per
-  worktree.
-- Wired into `crbn up` at `packages/dev/src/commands/up.ts` ("shared redis" task).
+- **The `redis` service of `crbn-shared`** (`packages/dev/docker/docker-compose.shared.yml`):
+  container **`carbon-redis`**, `127.0.0.1:6379`, `restart: on-failure` (like
+  every compose service, it comes back with the next `crbn up`, not with
+  Docker), healthcheck `redis-cli ping`, `redis-server --appendonly yes
+  --databases ${REDIS_DATABASES}`. The volume `carbon-redis-data` is `external`:
+  it predates the compose file, and `ensureRedisVolume` creates it.
+- **Boot** (`packages/dev/src/services/compose.ts`): shared mode starts it with
+  the rest (`bootSharedServices`); isolated mode starts it alone
+  (`bootSharedForIsolated`: `up -d --wait --no-deps redis edge-runtime`). Both run `prepareShared`,
+  which writes `REDIS_DATABASES=redisDatabasesNeeded(slots)` to
+  `~/.carbon/shared/.env`: the pool, or one past a higher index a slot still
+  holds. A new count makes compose recreate only redis; the AOF keeps the keys.
+- **Move from `docker run`**: crbn before this ran `carbon-redis` with
+  `docker run`. `removeStandaloneRedis` stops (so redis flushes its AOF) and
+  removes a `carbon-redis` without the `crbn-shared` label; compose then starts
+  its own on the same volume. A running `crbn-shared` whose file has no `redis`
+  service gets the new file (`missingSharedServices`); compose creates only redis.
+  The container and volume names are `SHARED_CONTAINERS.redis` and
+  `SHARED_REDIS_VOLUME` in `packages/dev/src/topology.ts`.
+- `SHARED_REDIS_PORT = 6379` and `REDIS_DB_MAX = 25` live in
+  `packages/dev/src/topology.ts` (`topology.test.ts` checks them against the
+  compose file); `pickRedisDb` (`worktree.ts`) allocates a free DB index per
+  worktree. A slot keeps its index until `crbn down --purge`, `crbn remove`, or
+  `crbn prune` (folder gone) releases it.
+- Wired into `crbn up` at `packages/dev/src/commands/up.ts` ("Boot shared
+  containers", or "Boot shared redis" in isolated mode).
+- `crbn prune --all` flushes the slots' databases before it stops `crbn-shared`.
+- **Redis does not come back with Docker.** `restart: on-failure` restarts a
+  crash only; after a Docker restart Redis is down until a `crbn up`. The apps
+  keep working (`@carbon/kv` fails soft). `flushDb` starts it
+  (`startSharedRedis`: `up -d --wait --no-deps redis`) before it flushes: the
+  slot is released next, and the worktree that gets the index would otherwise
+  read the old keys, cached permissions included, since every worktree's
+  database is cloned from the same template users. A flush that still fails
+  warns with the command to run.
 - The env writer `packages/dev/src/env.ts` emits
   `REDIS_URL=redis://localhost:${SHARED_REDIS_PORT}/${redisDb}` — so dev apps
   connect to **`localhost:6379`** at the worktree's DB index.
-- `crbn reset` / `crbn remove` flush only that worktree's DB via
+- A teardown that wipes data (`crbn down --volumes` / `--purge`, `crbn reset`,
+  `crbn remove`, `crbn up --run --volumes`) flushes only that worktree's DB via
   `flushDb(db)` → `docker exec carbon-redis redis-cli -n <db> FLUSHDB`
-  (`compose.ts`).
+  (`teardown.ts` → `compose.ts`).
 
 ## Consumers
 

@@ -6,13 +6,13 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
-  getCarbon,
   getMESUrl,
   ITAR_RIDER_PDF_PATH,
   isAuthProviderEnabled,
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
+import { getCarbonForRequest } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -40,14 +40,17 @@ import {
   ItarEntityPendingBlock,
   ItarUserCertification,
   SidebarProvider,
+  ThemeStyleProvider,
   TooltipProvider,
   useKeyboardWedge,
+  useMode,
   useNProgress,
+  useThemeStyle,
   useViewport
 } from "@carbon/react";
-import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
+  deferRootActionPost,
   Edition,
   formatDate,
   redirect,
@@ -62,7 +65,8 @@ import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
-  ShouldRevalidateFunction
+  ShouldRevalidateFunction,
+  ShouldRevalidateFunctionArgs
 } from "react-router";
 import { Await, data, Outlet, useLoaderData } from "react-router";
 import { RealtimeDataProvider } from "~/components";
@@ -110,34 +114,36 @@ const log = getLogger("erp", "auth");
 // link prefetching calls that too.
 let shellLoadedAt = Date.now();
 
-export const shouldRevalidate: ShouldRevalidateFunction = ({
-  currentUrl,
-  formMethod,
-  formAction,
-  defaultShouldRevalidate
-}) => {
-  // The refreshed session reaches the client through this loader.
-  if (formAction === path.to.refreshSession) return true;
+export const shouldRevalidate: ShouldRevalidateFunction = deferRootActionPost(
+  ({
+    currentUrl,
+    formMethod,
+    formAction,
+    defaultShouldRevalidate
+  }: ShouldRevalidateFunctionArgs) => {
+    // The refreshed session reaches the client through this loader.
+    if (formAction === path.to.refreshSession) return true;
 
-  if (
-    currentUrl.pathname.startsWith("/x/settings") ||
-    currentUrl.pathname.startsWith("/x/users") ||
-    currentUrl.pathname.startsWith("/refresh-session") ||
-    currentUrl.pathname.startsWith("/x/acknowledge") ||
-    currentUrl.pathname.startsWith("/x/get-started") ||
-    currentUrl.pathname.startsWith("/x/shared/views")
-  ) {
-    return true;
+    if (
+      currentUrl.pathname.startsWith("/x/settings") ||
+      currentUrl.pathname.startsWith("/x/users") ||
+      currentUrl.pathname.startsWith("/refresh-session") ||
+      currentUrl.pathname.startsWith("/x/acknowledge") ||
+      currentUrl.pathname.startsWith("/x/get-started") ||
+      currentUrl.pathname.startsWith("/x/shared/views")
+    ) {
+      return true;
+    }
+
+    // Only a mutation can change what the shell returns, so a GET re-runs it
+    // only once the data has aged out — that covers out-of-band changes.
+    if (!formMethod || formMethod === "GET") {
+      return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
+    }
+
+    return defaultShouldRevalidate;
   }
-
-  // Only a mutation can change what the shell returns, so a GET re-runs it
-  // only once the data has aged out — that covers out-of-band changes.
-  if (!formMethod || formMethod === "GET") {
-    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
-  }
-
-  return defaultShouldRevalidate;
-};
+);
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await requireAuthSession(request, { verify: true });
@@ -159,7 +165,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   proxyRegion,
   // });
 
-  const client = getCarbon(accessToken);
+  const client = getCarbonForRequest(accessToken, request);
 
   // The user's and the company's rows, in one round trip. Started here so the
   // hub's signal probes can chain off it and overlap the fan-out below.
@@ -243,30 +249,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const modulePreferences = read(shell.data?.modulePreferences);
   const printerRoutes = read(shell.data?.printerRoutes);
 
+  // A failed read is the database or the API being briefly away — a deploy
+  // restarts them — not a reason to end the session. Signing out on it sent
+  // people to the login page mid-call; an error page they can retry keeps
+  // them signed in.
+  if (user.error || groups.error) {
+    log.warn("App shell read failed", {
+      userId,
+      companyId,
+      userError: user.error?.message ?? null,
+      groupsError: groups.error?.message ?? null
+    });
+    throw data("Carbon could not load your account. Try again in a moment.", {
+      status: 503
+    });
+  }
+
   // Empty groups is a valid pre-onboarding state (a first-run user with no
   // company yet has zero memberships → groups is []), NOT an auth failure —
   // logging out here made the `requiresOnboarding` redirect below unreachable.
-  // Only a genuine RPC error (groups.error) logs out.
-  if (!claims || user.error || !user.data || groups.error) {
-    // Four very different faults share this exit: no claims usually means the
-    // user has no company membership (get_claims returned nothing), while the
-    // user/groups errors mean a failed RPC. Record which one before bouncing.
-    const reason = !claims
-      ? "no-claims"
-      : user.error
-        ? "user-error"
-        : !user.data
-          ? "no-user-row"
-          : "groups-error";
+  if (!claims || !user.data) {
+    // No claims usually means the user has no company membership
+    // (get_claims returned nothing); no user row means the account is gone.
+    const reason = !claims ? "no-claims" : "no-user-row";
 
     log.warn("Destroying auth session in x+/_layout loader", {
       userId,
       companyId,
       reason,
       noClaims: !claims,
-      userError: user.error?.message ?? null,
-      hasUserData: Boolean(user.data),
-      groupsError: groups.error?.message ?? null
+      hasUserData: Boolean(user.data)
     });
 
     throw await destroyAuthSession(request, reason);
@@ -449,6 +461,8 @@ export default function AuthenticatedRoute() {
   });
 
   useNProgress();
+  const themeStyle = useThemeStyle();
+  const mode = useMode();
   useKeyboardWedge({
     test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
@@ -564,51 +578,51 @@ export default function AuthenticatedRoute() {
             <RealtimeDataProvider>
               {company?.id && <RouteRealtime companyId={company.id} />}
               <TooltipProvider>
-                <SidebarProvider
-                  defaultOpen={false}
-                  className="h-screen min-h-0"
-                >
-                  <PrimaryNavigation />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
-                    {/* Phones: app bar on top; below <main>, a page's
-                        bottom bar in flow or the dock floating over it.
-                        Mounted only on phones so their hooks
-                        (notifications, sheets) never run on desktop. */}
-                    {isPhone && <MobileAppBar />}
-                    <Topbar />
-                    <AnnouncementBar
-                      announcement={announcement}
-                      userId={user?.id ?? ""}
-                      dismissLabel={t`Dismiss`}
-                      defaultLinkLabel={t`Learn more`}
-                    />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide relative">
-                      <ModuleSidebarLayout>
-                        {/* A company switch stays on the same page. Without the key the page
-                            keeps its state, so a form still held the previous company's
-                            values and saving wrote them to the new one. */}
-                        <Outlet key={companyId} />
-                      </ModuleSidebarLayout>
-                      {/* Room to scroll a page's end out from under the
-                          floating dock. A spacer, not padding: padding would
-                          shrink h-full pages and end them above the dock. */}
+                <ThemeStyleProvider value={themeStyle}>
+                  <SidebarProvider
+                    defaultOpen={false}
+                    className="h-screen min-h-0"
+                    style={themeStyle?.frame[mode]}
+                  >
+                    <PrimaryNavigation />
+                    <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
+                      {/* Phones: app bar on top; below <main>, a page's
+                          bottom bar in flow or the dock floating over it.
+                          Mounted only on phones so their hooks
+                          (notifications, sheets) never run on desktop. */}
+                      {isPhone && <MobileAppBar />}
+                      <Topbar />
+                      <AnnouncementBar
+                        announcement={announcement}
+                        userId={user?.id ?? ""}
+                        dismissLabel={t`Dismiss`}
+                        defaultLinkLabel={t`Learn more`}
+                      />
+                      <main className="flex-1 overflow-y-auto scrollbar-hide relative">
+                        <ModuleSidebarLayout>
+                          {/* A company switch stays on the same page. Without the key the page
+                              keeps its state, so a form still held the previous company's
+                              values and saving wrote them to the new one. */}
+                          <Outlet key={companyId} />
+                        </ModuleSidebarLayout>
+                        {/* Room to scroll a page's end out from under the
+                            floating dock. A spacer, not padding: padding would
+                            shrink h-full pages and end them above the dock. */}
+                        {isPhone && (
+                          <div
+                            aria-hidden
+                            className="h-[var(--dock-height,0px)] md:hidden"
+                          />
+                        )}
+                      </main>
                       {isPhone && (
-                        <div
-                          aria-hidden
-                          className="h-[var(--dock-height,0px)] md:hidden"
-                        />
+                        <MobileBottomChrome>
+                          <MobileDock />
+                        </MobileBottomChrome>
                       )}
-                    </main>
-                    {/* Seasonal: shows only with the Halloween theme. Remove
-                        with packages/react/src/Halloween/. */}
-                    <HalloweenLayer />
-                    {isPhone && (
-                      <MobileBottomChrome>
-                        <MobileDock />
-                      </MobileBottomChrome>
-                    )}
-                  </div>
-                </SidebarProvider>
+                    </div>
+                  </SidebarProvider>
+                </ThemeStyleProvider>
                 <TrainingPanel
                   training={training}
                   isOpen={isOpen}

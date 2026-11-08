@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, cn, HStack, VStack } from "@carbon/react";
+import { Button, cn, HStack, PrefetchLink, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
@@ -14,6 +14,8 @@ import {
   useRouteData
 } from "~/hooks";
 import { path } from "~/utils/path";
+import { isProjectBillingMethod } from "../../sales.models";
+import { useBillingMethodLabels } from "./ContractLineBillingFields";
 import ContractMoney from "./ContractMoney";
 import type { ContractLine, ContractRouteData } from "./types";
 
@@ -110,11 +112,18 @@ function ExplorerLine({
 }) {
   const { t } = useLingui();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
   const { formatDate } = useDateFormatter();
 
-  const to = path.to.contractLine(contractId, line.id);
-  const isSelected = location.pathname === to;
+  const billingLabels = useBillingMethodLabels();
+  // A Time & Materials or Cost Plus line opens on its billing: funding, rates
+  // and items. Its details stay one click away there.
+  const isBilling = isProjectBillingMethod(line.billingMethod);
+  const to = isBilling
+    ? path.to.contractLineBilling(contractId, line.id)
+    : path.to.contractLine(contractId, line.id);
+  const isSelected =
+    location.pathname === to ||
+    location.pathname === path.to.contractLine(contractId, line.id);
 
   const rateUnitLabels: Record<
     NonNullable<ContractLine["rateUnit"]>,
@@ -131,41 +140,55 @@ function ExplorerLine({
   return (
     <HStack
       className={cn(
-        "group w-full p-2 items-center border-b hover:bg-accent/30 cursor-pointer",
+        "group w-full p-2 items-center border-b hover:bg-accent/30 cursor-pointer relative",
         isSelected && "bg-accent/60 hover:bg-accent/50"
       )}
-      onClick={() => {
-        if (!isSelected) navigate(to);
-      }}
     >
-      <HStack spacing={2} className="flex-grow min-w-0">
-        <ItemThumbnail type="Service" />
-        <VStack spacing={0} className="min-w-0 flex-1">
-          <span
-            className={cn(
-              "font-semibold line-clamp-1 w-full",
-              isReplaced && "line-through text-muted-foreground"
-            )}
-          >
-            {title}
-          </span>
-          <span className="text-muted-foreground text-xs truncate w-full">
-            <span className="tabular-nums">{Number(line.quantity)}</span>
-            {" × "}
-            <ContractMoney value={line.rate} currencyCode={currencyCode} rate />
-            {line.revenueType === "Recurring"
-              ? line.rateUnit
-                ? ` ${rateUnitLabels[line.rateUnit]}`
-                : ""
-              : ` ${t`one-time`}`}
-          </span>
-          {isReplaced && line.endDate && (
-            <span className="text-muted-foreground text-xs truncate w-full">
-              <Trans>until {formatDate(line.endDate)}</Trans>
+      {/* A real link, stretched over the row, so the line is reachable and
+          says where it goes. */}
+      <PrefetchLink
+        to={to}
+        className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+      >
+        <HStack spacing={2} className="flex-grow min-w-0">
+          <ItemThumbnail type="Service" />
+          <VStack spacing={0} className="min-w-0 flex-1">
+            <span
+              className={cn(
+                "font-semibold line-clamp-1 w-full",
+                isReplaced && "line-through text-muted-foreground"
+              )}
+            >
+              {title}
             </span>
-          )}
-        </VStack>
-      </HStack>
+            {isBilling ? (
+              <span className="text-muted-foreground text-xs truncate w-full">
+                {billingLabels[line.billingMethod]}
+              </span>
+            ) : (
+              <span className="text-muted-foreground text-xs truncate w-full">
+                <span className="tabular-nums">{Number(line.quantity)}</span>
+                {" × "}
+                <ContractMoney
+                  value={line.rate}
+                  currencyCode={currencyCode}
+                  rate
+                />
+                {line.revenueType === "Recurring"
+                  ? line.rateUnit
+                    ? ` ${rateUnitLabels[line.rateUnit]}`
+                    : ""
+                  : ` ${t`one-time`}`}
+              </span>
+            )}
+            {isReplaced && line.endDate && (
+              <span className="text-muted-foreground text-xs truncate w-full">
+                <Trans>until {formatDate(line.endDate)}</Trans>
+              </span>
+            )}
+          </VStack>
+        </HStack>
+      </PrefetchLink>
     </HStack>
   );
 }

@@ -9,6 +9,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,7 @@ import {
   LuCircleStop,
   LuClipboardList,
   LuClock,
+  LuFolderKanban,
   LuList,
   LuLoaderCircle,
   LuQrCode,
@@ -73,6 +75,10 @@ import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { Location, StorageUnit } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -99,6 +105,7 @@ import {
   isJobDeletable,
   jobCompleteValidator
 } from "../../production.models";
+import type { JobProjectCharge } from "../../production.service";
 import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
@@ -140,6 +147,7 @@ const JobHeader = () => {
   const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
+  const documentEdit = useDocumentEditModal("jobTraveler", jobId);
 
   const { company } = useUser();
   const location = useOptimisticLocation();
@@ -158,8 +166,10 @@ const JobHeader = () => {
   const expediteModal = useDisclosure();
   const routeData = useRouteData<{
     job: Job;
+    projectCharge?: JobProjectCharge | null;
     unbatchedBatchableOperations?: number;
   }>(path.to.job(jobId));
+  const projectCharge = routeData?.projectCharge;
 
   const statusFetcher = useAction<typeof statusAction>({
     onSuccess: () => toast.success(t`Updated job status`)
@@ -334,6 +344,16 @@ const JobHeader = () => {
           )}
         </>
       )}
+      {projectCharge?.consumeToProject && (
+        <Badge variant="secondary">
+          <Trans>Consumes to project</Trans>
+        </Badge>
+      )}
+      {projectCharge?.receiveToProjectStock && (
+        <Badge variant="secondary">
+          <Trans>Receives to project stock</Trans>
+        </Badge>
+      )}
       {unbatchedBatchableOperations > 0 && (
         <Status
           color="gray"
@@ -372,6 +392,30 @@ const JobHeader = () => {
         onToggleProperties={toggleProperties}
         actions={
           <>
+            {projectCharge?.project && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFolderKanban />}
+                  variant="secondary"
+                  asChild
+                >
+                  <Link
+                    to={
+                      projectCharge.element
+                        ? path.to.projectElement(
+                            projectCharge.project.id,
+                            projectCharge.element.id
+                          )
+                        : path.to.projectElements(projectCharge.project.id)
+                    }
+                  >
+                    {projectCharge.element?.readableId ??
+                      projectCharge.project.identifier ??
+                      projectCharge.project.name}
+                  </Link>
+                </Button>
+              </RecordAction>
+            )}
             {routeData?.job?.salesOrderId &&
               routeData?.job.salesOrderLineId && (
                 <RecordAction slot="overflow">
@@ -415,6 +459,9 @@ const JobHeader = () => {
                       <Trans>Job Traveler</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                   <DropdownMenuRadioGroup
                     value={currentValue}
                     onValueChange={(option) => {
@@ -608,6 +655,7 @@ const JobHeader = () => {
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };
@@ -661,6 +709,7 @@ export function JobStartModal({
   release: JobRelease;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const { carbon } = useCarbon();
   const [suppliers] = useSuppliers();
   const companySettings = useCompanySettings();
@@ -1044,6 +1093,7 @@ export function JobStartModal({
                               {operation.description}
                             </span>
                             <Select
+                              aria-label={t`Supplier process for ${operation.description}`}
                               size="sm"
                               value={
                                 selectedSupplierProcessByOperationId[
@@ -1074,6 +1124,9 @@ export function JobStartModal({
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
                           existingPurchaseOrdersBySupplierId[supplierId] ?? [];
+                        const supplierName =
+                          suppliers.find((s) => s.id === supplierId)?.name ??
+                          "";
                         return (
                           <div
                             key={supplierId}
@@ -1082,6 +1135,7 @@ export function JobStartModal({
                             <SupplierAvatar supplierId={supplierId} />
 
                             <Select
+                              aria-label={t`Purchase order for ${supplierName}`}
                               size="sm"
                               value={purchaseOrderId}
                               isReadOnly={

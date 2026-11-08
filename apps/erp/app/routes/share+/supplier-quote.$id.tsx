@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Input, TextArea, ValidatedForm } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -41,7 +42,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { useLingui } from "@lingui/react/macro";
+import { async, groupBy } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
@@ -50,6 +52,7 @@ import {
   LuChevronRight,
   LuCirclePlus,
   LuImage,
+  LuPaperclip,
   LuPencil
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -58,9 +61,11 @@ import { DateTime } from "~/components";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import { recordSupplierQuoteLinkVisit } from "~/modules/purchasing/purchasing.server";
 import {
+  getItemSupplierFiles,
   getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
-  getSupplierQuoteLines
+  getSupplierQuoteLines,
+  signItemFile
 } from "~/modules/purchasing/purchasing.service";
 import type {
   SupplierQuote,
@@ -74,6 +79,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "share", "supplier-quote");
 export const meta = () => {
   return [{ title: "Supplier Quote" }];
 };
@@ -113,13 +119,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  if (quote.data.externalLinkId) {
-    const ctx = await shareLinkContext(quote.data);
-    if (ctx) {
-      await recordSupplierQuoteLinkVisit(ctx, {
-        externalLinkId: quote.data.externalLinkId
-      });
-    }
+  const ctx = await shareLinkContext(quote.data);
+  if (ctx && quote.data.externalLinkId) {
+    await recordSupplierQuoteLinkVisit(ctx, {
+      externalLinkId: quote.data.externalLinkId
+    });
   }
 
   if (
@@ -141,6 +145,42 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getSupplierQuoteLines(serviceRole, quote.data.id),
     getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
   ]);
+
+  // The part files the quote was shared with (`sharedFilePaths`, picked when
+  // it was sent), as links signed for an hour (a reload signs them again).
+  const filesPromise =
+    ctx && quote.data.sharedFilePaths.length > 0
+      ? getItemSupplierFiles(
+          ctx.asSystem.supabase,
+          ctx.asSystem.pg,
+          quote.data.companyId,
+          (quoteLines.data ?? []).flatMap((line) =>
+            line.itemId ? [line.itemId] : []
+          ),
+          quote.data.sharedFilePaths
+        )
+          .then((files) =>
+            async.map(files, async (file) => ({
+              itemId: file.itemId,
+              filename: file.filename,
+              url: await signItemFile(
+                ctx.asSystem.supabase,
+                quote.data.companyId,
+                file,
+                3600,
+                file.filename
+              )
+            }))
+          )
+          // The quote page stays usable when its files can't be read.
+          .catch((error) => {
+            logger.error("Failed to read a supplier quote's part files", {
+              supplierQuoteId: quote.data.id,
+              error
+            });
+            return [];
+          })
+      : Promise.resolve([]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
     (acc, line) => {
@@ -175,6 +215,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       return acc;
     }, {}) ?? {};
 
+  // A picked file that can't be signed stays, shown as unavailable.
+  const filesByItem = groupBy(await filesPromise, (file) => file.itemId);
+
   return {
     state: QuoteState.Valid,
     data: {
@@ -185,10 +228,57 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
           ...line
         })) ?? [],
       thumbnails: thumbnails,
+      files: Object.fromEntries(
+        (quoteLines.data ?? []).flatMap((line) =>
+          line.id && line.itemId
+            ? [[line.id, filesByItem[line.itemId] ?? []]]
+            : []
+        )
+      ),
       quoteLinePrices: quoteLinePrices.data ?? []
     }
   };
 }
+
+const LineFiles = ({
+  files
+}: {
+  files: { filename: string; url: string | null }[];
+}) => {
+  if (files.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {files.map((file) =>
+        file.url ? (
+          <Button
+            key={file.filename}
+            variant="secondary"
+            leftIcon={<LuPaperclip />}
+            asChild
+          >
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noreferrer"
+              download={file.filename}
+            >
+              {file.filename}
+            </a>
+          </Button>
+        ) : (
+          <Button
+            key={file.filename}
+            variant="secondary"
+            leftIcon={<LuPaperclip />}
+            isDisabled
+          >
+            <Trans>{file.filename} (unavailable)</Trans>
+          </Button>
+        )
+      )}
+    </div>
+  );
+};
 
 // rounded icon in badge class name "rounded-full"
 const EditableBadge = () => {
@@ -243,6 +333,7 @@ const NotesEditorModal = ({
   onSave: (content: JSONContent) => void;
   quoteStatus: SupplierQuote["status"];
 }) => {
+  const { t } = useLingui();
   const isDraft = quoteStatus === "Draft";
   const modal = useDisclosure();
 
@@ -315,6 +406,7 @@ const NotesEditorModal = ({
                   <div className="flex flex-col gap-2 w-full">
                     <Label>Notes</Label>
                     <Editor
+                      label={t`Notes`}
                       initialValue={editorContent}
                       onChange={handleEditorChange}
                       className="min-h-[300px] p-4 border rounded-lg transition-colors"
@@ -358,7 +450,9 @@ const LineItems = ({
   quoteLinePrices: SupplierQuoteLinePrice[];
   onSaveNotes: (lineId: string, content: JSONContent) => void;
 }) => {
-  const { quoteLines, thumbnails } = useLoaderData<typeof loader>().data!;
+  const { t } = useLingui();
+  const { quoteLines, thumbnails, files } =
+    useLoaderData<typeof loader>().data!;
   const [openItems, setOpenItems] = useState<string[]>(() =>
     Array.isArray(quoteLines) && quoteLines.length > 0
       ? quoteLines.map((line) => line.id!).filter(Boolean)
@@ -383,15 +477,10 @@ const LineItems = ({
         const lineDescription = isGlAccount
           ? "Indirect Expense"
           : line.description;
+        const lineName = lineHeading ?? "";
 
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id] ? (
                 <img
@@ -410,23 +499,37 @@ const LineItems = ({
                   thumbnail beside it, pushing the description past the card
                   edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  onClick={() => toggleOpen(line.id!)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
                         instead of shoving the chevron out of it. */}
                     <Heading className="min-w-0">{lineHeading}</Heading>
                     <HStack spacing={4} className="shrink-0">
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id!)}
+                        aria-controls={`supplier-quote-line-details-${line.id}`}
+                        aria-label={
+                          openItems.includes(line.id!)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id!) ? 90 : 0
                         }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                      </motion.div>
+                        <LuChevronRight size={24} aria-hidden />
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText
@@ -439,16 +542,30 @@ const LineItems = ({
               </VStack>
             </HStack>
 
+            {/* Stays mounted: LinePricing holds the supplier's unsaved prices.
+                `display: none` once collapsed takes it out of the tab order. */}
             <motion.div
-              initial="collapsed"
+              id={`supplier-quote-line-details-${line.id}`}
+              initial={false}
               animate={openItems.includes(line.id) ? "open" : "collapsed"}
               variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
+                open: {
+                  opacity: 1,
+                  height: "auto",
+                  marginTop: 16,
+                  display: "block"
+                },
+                collapsed: {
+                  opacity: 0,
+                  height: 0,
+                  marginTop: 0,
+                  transitionEnd: { display: "none" }
+                }
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
+              <LineFiles files={files[line.id] ?? []} />
               <LinePricing
                 line={line}
                 currencyCode={currencyCode}
@@ -464,7 +581,7 @@ const LineItems = ({
               onSave={(content) => onSaveNotes(line.id!, content)}
               quoteStatus={quoteStatus}
             />
-          </motion.div>
+          </div>
         );
       })}
     </VStack>
@@ -490,6 +607,11 @@ const LinePricing = ({
   quoteStatus: SupplierQuote["status"];
   quoteLinePrices: SupplierQuoteLinePrice[];
 }) => {
+  const { t } = useLingui();
+  const lineLabel =
+    line.supplierQuoteLineType === "G/L Account"
+      ? line.description || "Indirect Expense"
+      : line.itemReadableId;
   const pricingOptions =
     quoteLinePrices
       ?.filter((price) => price.supplierQuoteLineId === line.id)
@@ -715,6 +837,7 @@ const LinePricing = ({
                   <>
                     <Td className="">
                       <NumberField
+                        aria-label={t`Unit price for ${lineLabel}, quantity ${qty}`}
                         value={unitPrice}
                         formatOptions={{
                           style: "currency",
@@ -737,6 +860,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[150px]">
                       <NumberField
+                        aria-label={t`Lead time for ${lineLabel}, quantity ${qty}`}
                         value={leadTime}
                         formatOptions={{
                           style: "unit",
@@ -760,6 +884,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[150px]">
                       <NumberField
+                        aria-label={t`Shipping cost for ${lineLabel}, quantity ${qty}`}
                         value={shippingCost}
                         formatOptions={{
                           style: "currency",
@@ -785,6 +910,7 @@ const LinePricing = ({
                     </Td>
                     <Td className="w-[120px]">
                       <NumberField
+                        aria-label={t`Tax for ${lineLabel}, quantity ${qty}`}
                         value={taxAmount}
                         formatOptions={{
                           style: "currency",

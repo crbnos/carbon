@@ -13,10 +13,6 @@ import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
-/**
- * Event definitions for the Carbon inngest functions.
- * Each event has a name and a typed data payload.
- */
 type OnshapeElementSyncData = {
   companyId: string;
   userId: string;
@@ -46,8 +42,14 @@ type OnshapeDrawingSyncData = {
   drawingElementId: string;
   assetBaseName?: string;
   sourceWvm?: "w" | "v";
+  /** More items the same PDF attaches to, each under its own name. */
+  moreItems?: Array<{ itemId: string; assetBaseName: string }>;
 };
 
+/**
+ * Event definitions for the Carbon inngest functions.
+ * Each event has a name and a typed data payload.
+ */
 export type Events = {
   // Notification events
   "carbon/notify": {
@@ -113,6 +115,8 @@ export type Events = {
         | { filename: string; content: string }
         | { filename: string; path: string }
       >;
+      // Extra mail headers (an invite's X-Entity-Ref-ID). Gmail cannot set them.
+      headers?: Record<string, string>;
       companyId: string;
       // A quote, order, invoice, purchase order or RFQ to a customer or
       // supplier. Every event follows the company's Email settings; on
@@ -368,6 +372,16 @@ export type Events = {
     };
   };
 
+  // Indirect rate period run (Government Contracting 5b), sent when an
+  // accounting period locks.
+  "carbon/indirect-rates.compute": {
+    data: {
+      companyId: string;
+      accountingPeriodId: string;
+      userId: string;
+    };
+  };
+
   // Generate preventive-maintenance dispatches for one schedule on demand
   // (fired when a maintenance schedule is created or updated).
   "carbon/generate-maintenance": {
@@ -581,6 +595,35 @@ export type Events = {
     };
   };
 
+  "carbon/event-issue-sync": {
+    data: {
+      records: Array<{
+        event: {
+          table: string;
+          recordId: string;
+          operation: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE";
+          [key: string]: unknown;
+        };
+        companyId: string;
+      }>;
+    };
+  };
+
+  // One company's synced-record changes, for the Linear and Jira push
+  "carbon/issue-sync.push": {
+    data: {
+      companyId: string;
+      /** A newly created issue: push every field Carbon has. */
+      initial?: boolean;
+      records: Array<{
+        table: string;
+        recordId: string;
+        operation: "UPDATE" | "DELETE";
+        old: Record<string, unknown> | null;
+      }>;
+    };
+  };
+
   "carbon/event-embedding": {
     data: {
       records: Array<{
@@ -633,6 +676,11 @@ export type Events = {
     data: Record<string, never>;
   };
   "carbon/workflow-run-retention.process": {
+    data: Record<string, never>;
+  };
+  // `util.sweep_timesheet_missing_time`, daily while a company runs DCAA
+  // timekeeping.
+  "carbon/timesheet-missing-time.process": {
     data: Record<string, never>;
   };
   // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,
@@ -788,8 +836,8 @@ export type Events = {
     };
   };
 
-  // Assembly push: the STEP models and drawing PDFs the reviewer picked, at
-  // most 100 rows per event, exported onto the items the push linked.
+  // Assembly push: the child rows' STEP models, at most 100 rows per event,
+  // exported onto the items the push linked.
   "carbon/onshape-panel-assets": {
     data: {
       companyId: string;
@@ -797,6 +845,8 @@ export type Events = {
       planId: string;
       models: Array<{
         itemId: string;
+        /** The key of the item's link to this source. */
+        externalId: string;
         partNumber: string;
         kind: "partstudio" | "assembly";
         documentId: string;
@@ -807,16 +857,12 @@ export type Events = {
         /** Normalized; absent or null = the default configuration. */
         configuration?: string | null;
       }>;
-      drawings: Array<{
-        itemId: string;
-        partNumber: string;
-        documentId: string;
-        wvm: "w" | "v";
-        wvmId: string;
-        drawingElementId: string;
-        drawingMicroversionId?: string | null;
-        /** The row the drawing shows; its state is part of the skip key. */
-        target: {
+      /** Find each row's drawings and attach their PDFs. */
+      drawings?: {
+        /** The rows that take the PDF of every drawing that shows them. */
+        targets: Array<{
+          itemId: string;
+          partNumber: string;
           kind: "partstudio" | "assembly";
           documentId: string;
           wvm: "w" | "v";
@@ -824,8 +870,21 @@ export type Events = {
           elementId: string;
           partId?: string;
           configuration?: string | null;
-        };
-      }>;
+        }>;
+        /**
+         * Every assembly the push shows, rows that take no files included: a
+         * drawing of one is that assembly's, never its parts'.
+         */
+        assemblies: Array<{
+          documentId: string;
+          wvm: "w" | "v";
+          wvmId: string;
+          elementId: string;
+          configuration?: string | null;
+        }>;
+        /** Drawings the push exports on its own: a release's released ones. */
+        skipElementIds?: string[];
+      };
     };
   };
 
@@ -839,7 +898,7 @@ export type Events = {
     data: OnshapeDrawingSyncData;
   };
 
-  // One file of an assembly push (step.invoked by onshape-panel-assets): a
+  // One model of an assembly push (step.invoked by onshape-panel-assets): a
   // run of its own so a per-company key bounds every push's exports together.
   "carbon/onshape-panel-asset-export": {
     data:
@@ -852,9 +911,41 @@ export type Events = {
       | {
           kind: "drawing";
           companyId: string;
+          /** The first item the PDF attaches to. */
           itemId: string;
           drawing: OnshapeDrawingSyncData;
         };
+  };
+
+  // A batch of an assembly push's exports (step.invoked by onshape-panel-assets),
+  // so a push of any size stays under Inngest's per-run step limit.
+  "carbon/onshape-panel-asset-batch": {
+    data: {
+      companyId: string;
+      userId: string;
+      /** Failures in a row before this batch, so a streak spans batches. */
+      consecutiveFailures: number;
+      tasks: Array<
+        | {
+            kind: "model";
+            id: string;
+            label: string;
+            data: OnshapeElementSyncData;
+          }
+        | {
+            kind: "drawing";
+            id: string;
+            label: string;
+            data: OnshapeDrawingSyncData;
+            /** Recorded on each item once its PDF attaches. */
+            records: Array<{
+              itemId: string;
+              sourceKey: string;
+              fileName: string;
+            }>;
+          }
+      >;
+    };
   };
 
   // The assembler copies one finished Onshape translation into staging
@@ -939,6 +1030,13 @@ export type Events = {
       integrationId: string;
     };
   };
+  "carbon/oee-device-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
+      externalDeviceId: string;
+    };
+  };
 
   // Paperless parts integration (full webhook payload)
   "carbon/paperless-parts": {
@@ -963,7 +1061,7 @@ export type Events = {
         action: string;
         data: {
           id: string;
-          assigneeId?: string;
+          assigneeId?: string | null;
           [key: string]: unknown;
         };
       };

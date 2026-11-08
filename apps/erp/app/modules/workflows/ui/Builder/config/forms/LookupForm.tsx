@@ -126,6 +126,7 @@ export function LookupForm({
           <Trans>Record type</Trans>
         </Section>
         <Combobox
+          aria-label={t`Record type`}
           size="md"
           value={entity}
           options={entityOptions}

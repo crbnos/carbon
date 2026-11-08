@@ -389,6 +389,7 @@ export function SyncActivity({
             <Button
               size="sm"
               variant={status === null ? "active" : "ghost"}
+              aria-pressed={status === null}
               onClick={() => setStatusFilter(null)}
             >
               <Trans>All</Trans>
@@ -398,6 +399,7 @@ export function SyncActivity({
                 key={filter}
                 size="sm"
                 variant={status === filter ? "active" : "ghost"}
+                aria-pressed={status === filter}
                 onClick={() => setStatusFilter(filter)}
               >
                 {filter}

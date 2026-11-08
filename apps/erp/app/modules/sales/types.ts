@@ -183,7 +183,9 @@ export type CostEffects = {
   toolCost: QuantityEffect[];
 };
 
-export type Customer = NonNullable<
+export type Customer = Database["public"]["Views"]["customers"]["Row"];
+
+export type CustomerListItem = NonNullable<
   Awaited<ReturnType<typeof getCustomers>>["data"]
 >[number];
 

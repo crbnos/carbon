@@ -17,7 +17,7 @@ import {
 } from "../../integrations/secrets";
 import { identityValue } from "../panel/standard-sources";
 import { normalizeConfiguration } from "../panel/status";
-import { apiCallPathKey } from "./api-call-key";
+import { apiCallPathKey, isBilledCall } from "./api-call-key";
 import {
   getOnshapeIntegration,
   isOnshapeIntegrationId,
@@ -219,6 +219,12 @@ export class OnshapeAssetTooLargeError extends Error {
   }
 }
 
+/** The status Onshape answered a failed request with; undefined when no
+ *  answer arrived. */
+function answeredStatus(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined;
+}
+
 export class OnshapeClient {
   private baseUrl: string;
   private accessToken: string;
@@ -282,7 +288,7 @@ export class OnshapeClient {
         url: path,
         data: body
       });
-      void this.countLiveCall(path);
+      void this.countLiveCall(path, response.status);
       if (cacheKey) {
         try {
           await redis.set(
@@ -297,7 +303,7 @@ export class OnshapeClient {
       }
       return response.data;
     } catch (error) {
-      void this.countLiveCall(path);
+      void this.countLiveCall(path, answeredStatus(error));
 
       if (
         axios.isAxiosError(error) &&
@@ -326,23 +332,26 @@ export class OnshapeClient {
    * caller that downloads it elsewhere (the assembler's `fetch`, so a large
    * export never passes through this process). The token is the one this
    * client holds: build the client right before handing it on. Counted as a
-   * live call, since the download is one.
+   * billed call when handed on, since the download happens elsewhere and its
+   * answer never comes back here.
    */
   externalDataDownload(
     documentId: string,
     foreignId: string
   ): { url: string; authorization: string } {
     const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
-    void this.countLiveCall(path);
+    void this.countLiveCall(path, 200);
     return {
       url: `${this.baseUrl.replace(/\/+$/, "")}${path}`,
       authorization: `Bearer ${this.accessToken}`
     };
   }
 
-  /** Counts in Redis `onshape:api-calls:<year>`, and per endpoint in the hash
+  /** Counts a call Onshape bills (`isBilledCall`) in Redis
+   *  `onshape:api-calls:<year>`, and per endpoint in the hash
    *  `onshape:api-calls:<year>:paths`; never awaited. */
-  private async countLiveCall(path: string) {
+  private async countLiveCall(path: string, status: number | undefined) {
+    if (!isBilledCall(status)) return;
     try {
       const year = new Date().getUTCFullYear();
       await redis
@@ -901,20 +910,25 @@ export class OnshapeClient {
     foreignId: string,
     options: { maxBytes?: number } = {}
   ): Promise<ArrayBuffer> {
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
     try {
       const response = await this.axiosInstance.request<ArrayBuffer>({
         method: "GET",
-        url: `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`,
+        url: path,
         responseType: "arraybuffer",
         ...(options.maxBytes ? { maxContentLength: options.maxBytes } : {})
       });
+      void this.countLiveCall(path, response.status);
       return response.data;
     } catch (error) {
-      if (
-        options.maxBytes &&
+      const tooLarge =
+        !!options.maxBytes &&
         error instanceof Error &&
-        /maxContentLength/i.test(error.message)
-      ) {
+        /maxContentLength/i.test(error.message);
+      // An oversized body is refused after Onshape answered, so that call is
+      // billed although axios reports no response.
+      void this.countLiveCall(path, tooLarge ? 200 : answeredStatus(error));
+      if (tooLarge && options.maxBytes) {
         throw new OnshapeAssetTooLargeError(
           `Onshape external data ${foreignId} exceeds the ${Math.round(
             options.maxBytes / (1024 * 1024)
@@ -941,16 +955,20 @@ export class OnshapeClient {
     const { Transform } = await import("node:stream");
 
     let response: {
+      status: number;
       headers: Record<string, unknown>;
       data: NodeJS.ReadableStream;
     };
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
     try {
       response = await this.axiosInstance.request({
         method: "GET",
-        url: `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`,
+        url: path,
         responseType: "stream"
       });
+      void this.countLiveCall(path, response.status);
     } catch (error) {
+      void this.countLiveCall(path, answeredStatus(error));
       throw this.toApiError(error);
     }
 

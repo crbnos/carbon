@@ -61,9 +61,9 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
       )}
       {back ? (
         <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <span className="truncate text-[1.0625rem] font-semibold leading-tight text-foreground">
+          <h1 className="truncate text-[1.0625rem] font-semibold leading-tight text-foreground">
             {title}
-          </span>
+          </h1>
           {subtitle ? (
             <span className="truncate text-xs text-muted-foreground">
               {subtitle}
@@ -71,7 +71,8 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
           ) : null}
         </div>
       ) : (
-        <div className="flex min-w-0 flex-1 items-center">
+        // The page's heading is the title button that opens the queue list.
+        <h1 className="flex min-w-0 flex-1 items-center">
           <button
             type="button"
             onClick={() => setOpenMobile(true)}
@@ -84,7 +85,7 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
             </span>
             <LuChevronDown className="size-5 shrink-0 text-muted-foreground" />
           </button>
-        </div>
+        </h1>
       )}
       {actions ? (
         <div className="flex shrink-0 items-center self-stretch">{actions}</div>
@@ -93,12 +94,15 @@ export function MesAppBar({ title, subtitle, back, actions }: MesAppBarProps) {
   );
 }
 
-/** A root (queue) page's md+ header: the sidebar trigger and an h4 title. */
+/** A root (queue) page's md+ header: the sidebar trigger and the page's h1, at h4 size. */
 export function MesQueueHeader({
   title,
+  actions,
   className
 }: {
   title: ReactNode;
+  /** The queue's one action, at the right (New). */
+  actions?: ReactNode;
   className?: string;
 }) {
   const { isPhone } = useViewport();
@@ -113,8 +117,13 @@ export function MesQueueHeader({
     >
       <div className="flex items-center gap-2 px-2">
         <SidebarTrigger />
-        <Heading size="h4">{title}</Heading>
+        <Heading as="h1" size="h4">
+          {title}
+        </Heading>
       </div>
+      {actions ? (
+        <div className="ml-auto flex items-center gap-2 px-2">{actions}</div>
+      ) : null}
     </header>
   );
 }

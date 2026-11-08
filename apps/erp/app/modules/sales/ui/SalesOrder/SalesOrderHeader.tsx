@@ -46,6 +46,10 @@ import {
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { CSVLink } from "~/components/CSVLink";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -88,6 +92,7 @@ const SalesOrderConfirmModal = ({
   const [notificationType, setNotificationType] = useState<"Email" | "None">(
     canEmail ? "Email" : "None"
   );
+  const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   // Confirming re-evaluates sales rules across every line (the terminal gate in
   // the action). Route the submission through the violations hook so a blocked
@@ -158,6 +163,8 @@ const SalesOrderConfirmModal = ({
                   <CustomerContact
                     name="customerContact"
                     customer={salesOrder?.customerId ?? undefined}
+                    warnIfNoEmail
+                    onMissingEmailChange={setContactMissingEmail}
                   />
                   <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
@@ -168,7 +175,11 @@ const SalesOrderConfirmModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button type="submit" isLoading={fetcher.state !== "idle"}>
+            <Button
+              type="submit"
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={notificationType === "Email" && contactMissingEmail}
+            >
               <Trans>Confirm</Trans>
             </Button>
           </ModalFooter>
@@ -183,6 +194,7 @@ const SalesOrderHeader = () => {
   const { t } = useLingui();
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
+  const documentEdit = useDocumentEditModal("salesOrder", orderId);
 
   const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -428,6 +440,9 @@ const SalesOrderHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -721,6 +736,7 @@ const SalesOrderHeader = () => {
         />
       )}
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

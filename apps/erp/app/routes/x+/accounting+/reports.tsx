@@ -8,7 +8,6 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import {
   Badge,
-  cn,
   Heading,
   IconButton,
   Input,
@@ -48,6 +47,7 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { PinnedCard, PinToggle } from "~/components/ReportPin";
 import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
@@ -438,22 +438,26 @@ export default function ReportsIndexRoute() {
                 <SectionHeading>{category}</SectionHeading>
                 <div className="overflow-hidden rounded-lg border border-border">
                   {categoryReports.map((report, index) => (
-                    <PrefetchLink
+                    // The name is the link, stretched over the row; the pin is a
+                    // sibling so no button sits inside the link.
+                    <div
                       key={report.key}
-                      to={report.to}
                       className={
-                        "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
+                        "relative flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
                         (index > 0 ? " border-t border-border" : "")
                       }
                     >
                       <report.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="text-sm font-medium max-md:shrink-0 max-md:whitespace-nowrap">
+                      <PrefetchLink
+                        to={report.to}
+                        className="text-sm font-medium max-md:shrink-0 max-md:whitespace-nowrap outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+                      >
                         {report.name}
-                      </span>
+                      </PrefetchLink>
                       <span className="truncate text-sm text-muted-foreground">
                         {report.description}
                       </span>
-                      <span className="ml-auto">
+                      <span className="relative z-10 ml-auto">
                         <PinToggle
                           pinned={isPinned(report)}
                           onToggle={(next) => togglePin(report, next)}
@@ -461,7 +465,7 @@ export default function ReportsIndexRoute() {
                           pinLabel={t`Pin ${report.name}`}
                         />
                       </span>
-                    </PrefetchLink>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -473,16 +477,20 @@ export default function ReportsIndexRoute() {
                   </SectionHeading>
                   <div className="overflow-hidden rounded-lg border border-border">
                     {categoryViews.map((view, index) => (
-                      <PrefetchLink
+                      <div
                         key={view.id}
-                        to={`${path.to.analyticsReport(view.reportKey)}?view=${view.id}`}
                         className={
-                          "flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
+                          "relative flex cursor-pointer items-center gap-3 bg-card/70 px-4 py-2.5 transition-colors hover:bg-accent/40" +
                           (index > 0 ? " border-t border-border" : "")
                         }
                       >
                         <LuBookmark className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="text-sm font-medium">{view.name}</span>
+                        <PrefetchLink
+                          to={`${path.to.analyticsReport(view.reportKey)}?view=${view.id}`}
+                          className="text-sm font-medium outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+                        >
+                          {view.name}
+                        </PrefetchLink>
                         <span className="truncate text-sm text-muted-foreground">
                           {
                             categoryReports.find(
@@ -490,7 +498,7 @@ export default function ReportsIndexRoute() {
                             )?.name
                           }
                         </span>
-                        <span className="ml-auto flex items-center gap-1">
+                        <span className="relative z-10 ml-auto flex items-center gap-1">
                           {view.visibility === "Company" && (
                             <Badge variant="secondary">
                               <Trans>Shared</Trans>
@@ -517,7 +525,7 @@ export default function ReportsIndexRoute() {
                             />
                           )}
                         </span>
-                      </PrefetchLink>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -544,76 +552,6 @@ export default function ReportsIndexRoute() {
     </div>
   );
 }
-
-// A pinned item (report or saved view) rendered as a card in the Pinned grid.
-const PinnedCard = ({
-  to,
-  icon: Icon,
-  name,
-  pinned,
-  onToggle,
-  pinLabel,
-  unpinLabel
-}: {
-  to: string;
-  icon: IconType;
-  name: string;
-  pinned: boolean;
-  onToggle: (pinned: boolean) => void;
-  pinLabel: string;
-  unpinLabel: string;
-}) => (
-  <PrefetchLink
-    to={to}
-    className="group flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-border bg-card/70 p-4 backdrop-blur-md transition-colors duration-200 hover:border-foreground/20 hover:bg-accent/40"
-  >
-    <span className="flex items-center gap-3 overflow-hidden">
-      <span className="shrink-0 rounded-lg border border-border p-2.5 transition-colors group-hover:border-foreground/20">
-        <Icon className="text-xl" />
-      </span>
-      <span className="truncate text-sm font-medium tracking-tight">
-        {name}
-      </span>
-    </span>
-    <PinToggle
-      pinned={pinned}
-      onToggle={onToggle}
-      pinLabel={pinLabel}
-      unpinLabel={unpinLabel}
-    />
-  </PrefetchLink>
-);
-
-// Sits inside the card/row Link, so it must not trigger navigation. Pinned
-// shows a solid pin; unpinned shows a muted pin that fills in on hover.
-const PinToggle = ({
-  pinned,
-  onToggle,
-  pinLabel,
-  unpinLabel
-}: {
-  pinned: boolean;
-  onToggle: (pinned: boolean) => void;
-  pinLabel: string;
-  unpinLabel: string;
-}) => (
-  <IconButton
-    aria-label={pinned ? unpinLabel : pinLabel}
-    variant="ghost"
-    size="sm"
-    className={cn(
-      pinned
-        ? "text-foreground"
-        : "text-muted-foreground/50 hover:text-foreground"
-    )}
-    icon={<LuPin />}
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      onToggle(!pinned);
-    }}
-  />
-);
 
 const SectionHeading = ({ children }: { children: ReactNode }) => (
   <Subheading className="mb-3 flex items-center gap-1.5">{children}</Subheading>

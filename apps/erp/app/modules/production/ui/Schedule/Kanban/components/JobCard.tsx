@@ -35,6 +35,7 @@ import {
   LuEllipsisVertical,
   LuFlashlight,
   LuFlashlightOff,
+  LuFolderKanban,
   LuGripVertical,
   LuPencil,
   LuStar,
@@ -163,6 +164,9 @@ const JobCardBody = memo(function JobCardBody({
   // Forecast slack: calendar days between projected completion and the due date.
   // Positive = late (+2d, red), negative = early (-3d, muted).
   const projectedCompletionOnly = getDateOnly(item.projectedCompletionAt);
+  const conflictMessage = t`Scheduling conflict: operations cannot meet due date`;
+  const scheduleOutdatedReason = item.scheduleOutdatedReason;
+  const outdatedMessage = t`Schedule outdated — ${scheduleOutdatedReason}`;
   const slackDays =
     projectedCompletionOnly && dueDateValue
       ? parseDate(projectedCompletionOnly).compare(parseDate(dueDateValue))
@@ -233,34 +237,54 @@ const JobCardBody = memo(function JobCardBody({
               </Link>
               {item.hasConflict && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-red-500 flex-shrink-0"
+                      />
+                      {/* The tooltip is pointer-only; this reads the warning
+                          as part of the card for keyboard and screen readers. */}
+                      <span className="sr-only">{conflictMessage}</span>
+                    </span>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    Scheduling conflict: operations cannot meet due date
-                  </TooltipContent>
+                  <TooltipContent>{conflictMessage}</TooltipContent>
                 </Tooltip>
               )}
               {item.scheduleOutdatedReason && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-amber-500 flex-shrink-0"
+                      />
+                      <span className="sr-only">{outdatedMessage}</span>
+                    </span>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    Schedule outdated — {item.scheduleOutdatedReason}
-                  </TooltipContent>
+                  <TooltipContent>{outdatedMessage}</TooltipContent>
                 </Tooltip>
               )}
               {slack && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <span
-                      className={cn(
-                        "text-xs font-medium tabular-nums flex-shrink-0",
-                        slack.late ? "text-red-500" : "text-muted-foreground"
-                      )}
-                    >
-                      {slack.label}
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <span
+                        className={cn(
+                          "text-xs font-medium tabular-nums flex-shrink-0",
+                          slack.late ? "text-red-500" : "text-muted-foreground"
+                        )}
+                      >
+                        {slack.label}
+                      </span>
+                      <span className="sr-only">
+                        {" "}
+                        {t`Projected`}{" "}
+                        <DateTime
+                          value={projectedCompletionOnly!}
+                          variant="date"
+                        />
+                      </span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -370,8 +394,10 @@ const JobCardBody = memo(function JobCardBody({
           <HStack className="justify-start space-x-2">
             {getDeadlineIcon(item.deadlineType)}
             <Tooltip>
-              <TooltipTrigger>
-                <span className="text-sm">{item.deadlineType}</span>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <span className="text-sm">{item.deadlineType}</span>
+                </span>
               </TooltipTrigger>
               <TooltipContent side="right">{item.deadlineType}</TooltipContent>
             </Tooltip>
@@ -434,6 +460,33 @@ const JobCardBody = memo(function JobCardBody({
                 className="text-sm"
               >
                 {item.salesOrderReadableId}
+              </Link>
+            </HStack>
+          )}
+
+        {displaySettings.showProject &&
+          item.projectId &&
+          item.projectReadableId && (
+            <HStack className="justify-start space-x-2 min-w-0">
+              <LuFolderKanban className="text-muted-foreground shrink-0" />
+              <Link
+                to={
+                  item.projectElementId
+                    ? path.to.projectElement(
+                        item.projectId,
+                        item.projectElementId
+                      )
+                    : path.to.project(item.projectId)
+                }
+                className="text-sm truncate"
+              >
+                {item.projectReadableId}
+                {item.projectName && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {item.projectName}
+                  </span>
+                )}
               </Link>
             </HStack>
           )}

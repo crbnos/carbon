@@ -49,13 +49,17 @@ import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { isSalesInvoiceLocked } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  isSalesInvoiceLocked
+} from "../../invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
 import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
 import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 export default function SalesInvoiceExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -180,7 +184,7 @@ export default function SalesInvoiceExplorer() {
               </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -215,7 +219,10 @@ function SalesInvoiceLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
-  const readableId = getItemReadableId(items, line.itemId) ?? "";
+  // A Service line with no item is named by its description.
+  const readableId = isItemlessServiceLine(line)
+    ? (line.description ?? "")
+    : (getItemReadableId(items, line.itemId) ?? "");
   const description = distinctItemText(readableId, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
@@ -253,6 +260,8 @@ function SalesInvoiceLineItem({
   const location = useOptimisticLocation();
   const rentalLineTypeLabel = useRentalLineTypeLabel();
   const isRental = line.invoiceLineType === "Rental";
+  // A service job's labor or fixed price line: its description names it.
+  const isItemless = isItemlessServiceLine(line);
 
   const isSelected =
     location.pathname === path.to.salesInvoiceLine(invoiceId, line.id!);
@@ -260,22 +269,34 @@ function SalesInvoiceLineItem({
   const secondaryText =
     line.invoiceLineType === "Fixed Asset"
       ? (line as any).assetName || line.description
-      : distinctItemText(
-          getItemReadableId(items, line.itemId),
-          line.description
-        );
+      : isItemless
+        ? undefined
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
+
+  const lineName = isRental
+    ? rentalLineTypeLabel(line.rentalLineType)
+    : line.invoiceLineType === "Fixed Asset"
+      ? (line as any).assetReadableId || "Fixed Asset"
+      : isItemless
+        ? line.description || t`Service`
+        : (getItemReadableId(items, line.itemId) ?? "");
 
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.salesInvoiceLine(invoiceId, line.id!)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        {/* The link is stretched over the row; the menu sits beside it, not
+            inside it, so neither is nested in the other. */}
+        <PrefetchLink
+          to={path.to.salesInvoiceLine(invoiceId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             {isRental ? (
@@ -286,13 +307,7 @@ function SalesInvoiceLineItem({
               <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             )}
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {isRental
-                  ? rentalLineTypeLabel(line.rentalLineType)
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : (getItemReadableId(items, line.itemId) ?? "")}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
               {secondaryText && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">
                   {secondaryText}
@@ -300,55 +315,55 @@ function SalesInvoiceLineItem({
               )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More`}
-                  className="md:opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={isDisabled || !permissions.can("update", "sales")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+              {/* @ts-expect-error */}
+              {itemType.includes(line.invoiceLineType ?? "") && line.itemId && (
                 <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
-                </DropdownMenuItem>
-                {/* @ts-expect-error */}
-                {itemType.includes(line.invoiceLineType ?? "") && (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.view}
-                    asChild
-                    onClick={(e) => e.stopPropagation()}
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.invoiceLineType as ItemType,
+                      line.itemId!
+                    )}
                   >
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.invoiceLineType as ItemType,
-                        line.itemId!
-                      )}
-                    >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={"Part"} />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type={"Part"} />}
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

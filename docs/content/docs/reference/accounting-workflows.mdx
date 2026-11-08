@@ -1,0 +1,669 @@
+---
+title: Accounting workflows
+description: Follow purchasing, production, sales, scrap, returns and refunds in numbered workflow steps, with document details and account-by-account DR and CR entries.
+---
+
+Paying a supplier, receiving goods and posting the supplier’s invoice are separate events. This reference follows the accounts at each step, so you can see what has moved and what remains to be cleared.
+
+## Reading the entries
+
+The tables use **debit** and **credit** in their accounting sense. A debit increases an asset or expense; a credit increases a liability, equity or revenue account. Cash going out credits the bank account, but it does not necessarily create an expense.
+
+Examples use **USD as the company’s base currency** and omit tax, freight, discounts and exchange-rate differences unless a section adds them.
+
+Each journal lists accounts on separate rows, with debits in **DR** and credits in **CR**. Example account numbers follow Carbon’s default chart. Your company can use different account names and numbers through **Accounting → Default Accounts** and the relevant item or asset settings.
+
+Before [accounting is set up](/docs/reference/accounting#before-and-after-accounting-is-set-up), automatic journals are **Provisional** and do not count in balances or reports. After setup, they are **Posted**. The economic account movements described here are the same.
+
+<Callout type="info" title="Keep the order, the goods, the invoice and the money separate">
+Use the action named in each step as the posting point. An amount on a purchase order is not, by itself, an invoice, a stock receipt or a payment.
+</Callout>
+
+## Posting map
+
+An order records a commitment. Posting goods, invoices and money moves the ledger. Each row below is a separate event; a term such as Net 30 changes when payment is due.
+
+| Posted event | Debit | Credit |
+| --- | --- | --- |
+| Submit or approve a PO; confirm a sales order | No entry | No entry |
+| Supplier advance for a PO | Supplier Prepayments | Bank / Cash |
+| Stock receipt | Inventory | GR/IR Clearing |
+| Supplier invoice for received stock | GR/IR | Accounts Payable (AP) |
+| Pay supplier invoice | AP | Bank / Cash |
+| Consume job material | Work in Progress (WIP) | Inventory |
+| Post production time | WIP | Labor/Machine Absorption; Overhead Absorption |
+| Complete stocked production | Finished Goods | WIP |
+| Ship sales-order stock | Cost of Goods Sold (COGS) | Inventory |
+| Customer invoice | Accounts Receivable (AR) | Sales, plus applicable shipping and tax |
+| Customer deposit for an order | Bank / Cash | Customer Prepayments |
+| Collect customer invoice | Bank / Cash | AR |
+| Scrap available stock | Scrap | Inventory |
+
+**Inventory** in these tables means the item's selected stock account, not a separate account named Inventory. The examples below use **Buy** raw material and **Make** finished products. The settings below determine which accounts your own items use.
+
+### How the stock account is selected
+
+Two settings work together:
+
+1. The item's **Replenishment System** chooses between Raw Materials and Finished Goods. Set it on the item form; an existing part shows it as **Replenishment** in its properties. This is separate from **Default Method Type**, such as Pull from Inventory or Make to Order.
+2. **Accounting → Default Accounts → Inventory** sets the actual ledger accounts used for **Raw Materials** and **Finished Goods**. The names and numbers below are defaults, not fixed account codes.
+
+| Item's Replenishment System | Stock account used | Default chart account |
+| --- | --- | --- |
+| Buy | Raw Materials | 1210 Raw Materials |
+| Make | Finished Goods | 1220 Finished Goods |
+| Buy and Make | Finished Goods | 1220 Finished Goods |
+| Unset on an older item | Raw Materials | 1210 Raw Materials |
+
+The item's setting determines the account even when the current transaction is a purchase or a sale. Buying a **Buy and Make** item puts its stock value in Finished Goods. Shipping a **Buy** item credits Raw Materials, even though it is leaving on a sales order. Selling an item does not automatically make its stock account Finished Goods.
+
+<Screenshot src="/screens/reference-accounting-default-accounts.png" label="Accounting Default Accounts with the Inventory section showing Raw Materials and Finished Goods" caption="Set the ledger accounts here; the item's Replenishment System chooses which one a stock posting uses." ratio="wide" />
+
+The same selection applies wherever these workflows show **Inventory**:
+
+| Stock movement | How the selected stock account is used |
+| --- | --- |
+| Purchase receipt; stock received with a purchase invoice | Debit the received item's stock account |
+| Purchase invoice price adjustment for units still on hand | Debit that stock account for a cost increase; credit it for a decrease |
+| Job material issue or replacement | Credit the consumed material's stock account |
+| Complete a job to stocked inventory | Debit the output item's stock account |
+| Sales-order shipment; standalone stock sales invoice | Credit the sold item's stock account; debit COGS |
+| Supplier return shipment | Credit the returned item's stock account |
+| Customer return receipt | Debit the returned item's stock account; credit COGS |
+| Scrap on-hand stock; count shortage | Credit the affected item's stock account |
+| Unscrap; count surplus | Debit the affected item's stock account |
+| Recost on-hand stock | Debit that stock account for a cost increase; credit it for a decrease |
+
+**Cost of Goods Sold**, **Work in Progress**, **Scrap**, **Inventory Adjustment Variance** and the other side of each entry have their own account settings. Choosing Raw Materials or Finished Goods changes the stock side, not both sides. A warranty replacement shipment can debit Warranty Expense instead of COGS. Item posting groups and locations shown on these stock journal lines are dimensions; they do not override this Raw Materials/Finished Goods choice.
+
+Non-inventory purchases, project charges, outside processing and fixed assets have their own destinations, described below; the stock-account table does not replace those rules.
+
+## Purchasing
+
+### Receive, invoice and pay on Net 30
+
+Buy **100 raw units at $10**, totaling **$1,000**. These items have **Replenishment System = Buy**, so the receipt uses the configured Raw Materials account. Submit and approve the purchase order, receive all units, post the supplier invoice, then pay when due. Each numbered step shows the journal posted by that document.
+
+<JournalStep number={1} title="Submit / approve PO" document="Purchase Order">
+
+*No journal entry.*
+
+The order records the commitment. Goods, invoices and cash post separately.
+
+</JournalStep>
+
+<JournalStep number={2} title="Post receipt of 100 units" document="Receipt (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1210 Raw Materials | $1,000 | |
+| 2125 GR/IR Clearing | | $1,000 |
+
+The **Buy** setting selects Raw Materials for this receipt debit. For **Make** or **Buy and Make**, the debit would use Finished Goods instead. Stock increases now. The clearing credit waits for the supplier invoice; AP has not been created yet.
+
+</JournalStep>
+
+<JournalStep number={3} title="Post supplier invoice" document="Purchase Invoice (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2125 GR/IR Clearing | $1,000 | |
+| 2010 Accounts Payable | | $1,000 |
+
+The invoice clears the receipt accrual and creates the amount owed to the supplier. No cash moves.
+
+</JournalStep>
+
+<JournalStep number={4} title="Post payment on the due date" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $1,000 | |
+| Bank / Cash | | $1,000 |
+
+The payment clears AP and reduces bank cash. Net 30 controls the due date, not the posting itself.
+
+</JournalStep>
+
+
+After receipt, stock is $1,000 and GR/IR holds a $1,000 credit awaiting the invoice. Posting the invoice clears GR/IR and creates AP. Payment clears AP. **Net 30 does not post cash automatically.**
+
+For a partial receipt of 40 units, the receipt entry is $400. The other 60 units create no receipt entry until received. Partial invoices and payments likewise post only their own quantities and amounts.
+
+### Prepay the purchase order
+
+For the same $1,000 order, send a **$300 advance**. On **Payment to Supplier**, choose the PO under **Prepayment for**, then post. Receive and invoice the order, apply the advance, and pay the $700 balance.
+
+<JournalStep number={1} title="Post PO advance" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1150 Supplier Prepayments | $300 | |
+| Bank / Cash | | $300 |
+
+Cash leaves the bank. The advance remains an asset until it is applied or refunded.
+
+</JournalStep>
+
+<JournalStep number={2} title="Post receipt" document="Receipt (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1210 Raw Materials | $1,000 | |
+| 2125 GR/IR Clearing | | $1,000 |
+
+</JournalStep>
+
+<JournalStep number={3} title="Post invoice" document="Purchase Invoice (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2125 GR/IR Clearing | $1,000 | |
+| 2010 Accounts Payable | | $1,000 |
+
+</JournalStep>
+
+<JournalStep number={4} title="Apply advance to invoice" document="Payment application">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $300 | |
+| 1150 Supplier Prepayments | | $300 |
+
+The advance clears part of AP. There is no new bank movement or inventory cost.
+
+</JournalStep>
+
+<JournalStep number={5} title="Pay remaining balance" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $700 | |
+| Bank / Cash | | $700 |
+
+</JournalStep>
+
+
+The advance is an asset until applied. Applying it moves no new cash and creates no second inventory cost. At the end, AP, GR/IR and the advance are all zero; stock is $1,000 and total cash paid is $1,000.
+
+**Full prepayment** uses $1,000 at the advance and application steps, with no remaining cash payment. A PO advance can fund only invoices that bill that PO. An unscoped on-account payment uses the supplier control account instead of the dedicated PO advance account.
+
+### Pay when the supplier ships
+
+Payment timing does not replace receipt or invoice posting. If the supplier invoice exists when payment is made, post the invoice and settle AP. If money goes out before there is an invoice to settle, record a PO advance and apply it when the invoice is posted.
+
+If the supplier bills before you receive the goods, the stock sequence is:
+
+<JournalStep number={1} title="Post invoice before receipt" document="Purchase Invoice (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2125 GR/IR Clearing | $1,000 | |
+| 2010 Accounts Payable | | $1,000 |
+
+</JournalStep>
+
+<JournalStep number={2} title="Pay the invoice" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $1,000 | |
+| Bank / Cash | | $1,000 |
+
+</JournalStep>
+
+<JournalStep number={3} title="Post receipt later" document="Receipt (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1210 Raw Materials | $1,000 | |
+| 2125 GR/IR Clearing | | $1,000 |
+
+</JournalStep>
+
+
+The debit in GR/IR represents invoiced stock awaiting receipt. Receipt clears it using the invoice accrual cost. Supplier shipment alone does not post your receipt or bank payment.
+
+### Refund an unused supplier advance
+
+You sent $300 and the supplier returns **$100 before application**. Create **Refund from Supplier**, select the PO under **Refund prepayment for**, and post it.
+
+<JournalStep number={1} title="Refund unused PO advance" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| Bank / Cash | $100 | |
+| 1150 Supplier Prepayments | | $100 |
+
+</JournalStep>
+
+
+The advance now available is $200. Refunded money cannot also pay an invoice. Carbon releases the original advance’s account and carrying value; exchange differences post separately. Voiding the refund restores availability.
+
+### Invoice price, freight and purchase tax differences
+
+You received 100 units at $10, but the invoice is **$1,100**. If 40 units remain and 60 have been consumed, the $100 increase splits between remaining stock and purchase variance.
+
+| Invoice leg | Debit | Credit |
+| --- | ---: | ---: |
+| GR/IR: clear the receipt estimate | $1,000 | – |
+| Inventory: increase remaining stock cost | $40 | – |
+| Purchase Price Variance: consumed share | $60 | – |
+| AP: supplier’s invoice | – | $1,100 |
+| **Total** | **$1,100** | **$1,100** |
+
+The on-hand adjustment uses the invoiced item's [selected stock account](#how-the-stock-account-is-selected): Raw Materials for Buy, Finished Goods for Make or Buy and Make. If all units remain, the full $100 increases inventory. A price decrease reverses the difference. Consumed project purchases can charge the project account instead of general purchase variance.
+
+For the stock purchases in this example, freight and nonrecoverable purchase tax join invoice acquisition cost. For $1,000 of goods plus $100 freight and $50 nonrecoverable tax, the invoice total is $1,150. Amounts beyond the receipt estimate follow the same stock-versus-consumed split. Do not assume a separate freight expense or recoverable-tax entry.
+
+### Other purchase destinations
+
+| Purchase destination | Receipt debit | Receipt credit | Invoice treatment |
+| --- | --- | --- | --- |
+| Stock | [Selected stock account](#how-the-stock-account-is-selected) | GR/IR | Clear GR/IR; allocate price differences |
+| Outside processing for a job | WIP | GR/IR | Clear GR/IR into AP |
+| Non-inventory purchase | Indirect Cost | GR/IR | Clear receipt accrual; an unreceived Service invoice charges Indirect Cost directly |
+| Fixed asset | Asset class acquisition account | GR/IR | Clear received asset cost; invoice differences use purchase variance |
+| Consumed project purchase | Resolved project charge account | GR/IR | Project accounting applies |
+| G/L Account invoice line | No stock receipt assumed | – | Debit selected G/L account, credit AP |
+
+A fixed-asset invoice before receipt debits the asset acquisition account directly, rather than following the stock GR/IR sequence. Use [Fixed assets](/docs/reference/fixed-assets) and [Projects](/docs/reference/projects) for their subsequent lifecycle.
+
+## Supplier returns and rejected receipts
+
+### Return invoiced goods with a restocking fee
+
+Start with the $1,000 receipt and supplier invoice above, still unpaid. The returned items are **Buy** items, so the shipment credits Raw Materials; Make or Buy and Make items would credit Finished Goods. Return **20 units carried at $10**. The supplier allows a $200 gross credit, less a **$20 restocking fee**, so the credit is $180.
+
+<JournalStep number={1} title="Post supplier-return shipment" document="Shipment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2125 GR/IR Clearing | $200 |  |
+| 1210 Raw Materials |  | $200 |
+
+</JournalStep>
+
+<JournalStep number={2} title="Post supplier return credit" document="Memo (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $180 |  |
+| Purchase Price Variance | $20 |  |
+| 2125 GR/IR Clearing |  | $200 |
+
+AP falls by the agreed $180 credit. The $20 shortfall is purchase variance, clearing the full $200 return accrual.
+
+</JournalStep>
+
+<JournalStep number={3} title="Pay remaining supplier balance" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $820 |  |
+| Bank / Cash |  | $820 |
+
+</JournalStep>
+
+
+Ending stock is $800; the fee is $20 expense; total cash is $820. GR/IR and AP clear. The return’s **Issue Credit** action creates a supplier **Debit memo**, which reduces AP. The credit starts as a draft and must be posted.
+
+If the original $1,000 invoice was already paid, the same return memo leaves a $180 debit in AP. Post a supplier refund against that credit: **debit Bank $180, credit AP $180**. This refund settles a memo, unlike a refund of an unused PO advance.
+
+### Rejected stock already written off
+
+The Inventory rows in this example use the affected item's [selected stock account](#how-the-stock-account-is-selected), both when writing off stock and when restoring it for return. An inspection rejection and a supplier return are separate events. If inspection already removed $200 of stock, it posted **debit Scrap $200, credit Inventory $200**. The return shipment restores that cost before sending the goods back.
+
+<JournalStep number={1} title="Restore previously written-off units for return" document="Inventory movement (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| Inventory | $200 | |
+| Scrap | | $200 |
+
+</JournalStep>
+
+<JournalStep number={2} title="Ship them to supplier" document="Shipment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2125 GR/IR Clearing | $200 | |
+| Inventory | | $200 |
+
+</JournalStep>
+
+<JournalStep number={3} title="Post agreed full supplier credit" document="Memo (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2010 Accounts Payable | $200 | |
+| 2125 GR/IR Clearing | | $200 |
+
+</JournalStep>
+
+
+This avoids writing off inventory twice. Receipt posting values the received quantity; an inspection label alone is not a substitute for checking which rejection or disposition movement actually posted.
+
+<Callout type="warn" title="Match the credit to what was actually billed">
+A supplier return does not automatically reduce the original PO’s receipt or invoice quantities. If the supplier bills only the goods you kept, do not also post a credit for goods omitted from that invoice. Return shipment and Issue Credit are separate actions; review the original PO and GR/IR before closing them.
+</Callout>
+
+## Building products from raw material
+
+### Issue, work, complete and sell
+
+Continue from the purchase of 100 raw units. Use **60 units costing $600** to make **10 finished products**. Post $200 labor, $100 machine time and $100 work-center overhead. Total job cost is **$1,000**, or $100 per finished unit in this example. The consumed materials are **Buy** items, so their issue credits Raw Materials. A Make or Buy and Make component would instead credit Finished Goods.
+
+<JournalStep number={1} title="Issue / consume raw material" document="Job material (consume)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1230 Work in Progress | $600 | |
+| 1210 Raw Materials | | $600 |
+
+</JournalStep>
+
+<JournalStep number={2} title="Post labor time" document="Production event (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1230 Work in Progress | $200 | |
+| Labor/Machine Absorption | | $200 |
+
+</JournalStep>
+
+<JournalStep number={3} title="Post machine time" document="Production event (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1230 Work in Progress | $100 | |
+| Labor/Machine Absorption | | $100 |
+
+</JournalStep>
+
+<JournalStep number={4} title="Post work-center overhead" document="Production event (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1230 Work in Progress | $100 | |
+| Overhead Absorption | | $100 |
+
+</JournalStep>
+
+<JournalStep number={5} title="Complete 10 products to stock" document="Job (complete to inventory)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1220 Finished Goods | $1,000 | |
+| 1230 Work in Progress | | $1,000 |
+
+The output item is Make, so its Replenishment System selects Finished Goods for this debit. The component items' settings determine their earlier material credits, not the output account. The job’s $1,000 WIP balance becomes finished inventory. Job WIP is now zero.
+
+</JournalStep>
+
+
+After completion, raw material is $400, finished goods are $1,000 and job WIP is zero. Absorption credits offset the production cost charged into WIP; posting shop-floor time does not itself pay payroll or a machine supplier.
+
+Overhead is the work-center hourly overhead rate multiplied by event duration. Material backflush at completion creates the same consumption entry for outstanding material; do not add a second manual issue for material already consumed.
+
+Completion transfers the job’s remaining actual WIP into newly received output. This also applies to Standard-cost items; it does not imply that the configured Standard unit cost is recalculated. A later completion transfers remaining WIP into its new output, rather than proportionally spreading all job cost across planned units.
+
+### Subassemblies, outside processing and residual WIP
+
+For a **stocked subassembly**, complete its job into Finished Goods, then issue it to the parent job: debit parent WIP, credit Finished Goods. This describes stocked production; nested Make to Order progress follows its own workflow.
+
+An outside-processing receipt of $150 posts **debit WIP $150, credit GR/IR $150**. Its supplier invoice and payment then clear GR/IR and AP as in purchasing. The finished job output includes that WIP cost.
+
+Closing a job with **$50 positive residual WIP** posts **debit Production Variance $50, credit WIP $50**. A negative balance reverses the sides. Check residuals before close; they are distinct from receiving completed products into stock.
+
+## Scrap, counts and stock moves
+
+In this table, **Inventory** is the affected item's [selected stock account](#how-the-stock-account-is-selected). For example, a shortage of Buy stock credits Raw Materials; a shortage of Make or Buy and Make stock credits Finished Goods. The offset comes from the relevant scrap, variance or selected adjustment account.
+
+| Event | Debit | Credit | Example |
+| --- | --- | --- | --- |
+| Scrap available raw or finished stock | Scrap | Inventory | 2 units carried at $10: $20 |
+| Scrap material already consumed by a job | Scrap | WIP | $10 material write-off |
+| Consume replacement material | WIP | Inventory | Separate $10 issue |
+| Post count shortage | Inventory Adjustment Variance | Inventory | 3 missing units at $10: $30 |
+| Post count surplus | Inventory | Inventory Adjustment Variance | 2 extra units at $10: $20 |
+| Unscrap previously written-off stock | Inventory | Scrap | Restore $20 where original write-off cost is available |
+| Move stock between bins or same-company warehouses | No GL entry | No GL entry | Quantity location changes; company stock value is preserved |
+
+Operation scrap and consumed-material scrap write off attributable **material** cost. Do not assume they also write off all labor and overhead accumulated on the job. Scrap of available finished stock instead relieves that stock’s carrying cost.
+
+Unscrap uses the original write-off cost when available, otherwise current cost.
+
+Recording a count does not post its variance. Posting the count books the difference from its reviewed baseline. A zero difference has no journal.
+
+For an eligible on-hand FIFO/LIFO serial, **Recost** can change value without changing quantity. Raising cost from $100 to $125 debits Inventory $25 and credits the selected offset account $25; a decrease reverses the entry. The offset is an explicit selection.
+
+## Sales orders
+
+### Ship, invoice and collect on Net 30
+
+Sell the 10 finished products for **$200 each**, totaling **$2,000**, with stock cost **$1,000**. These products have **Replenishment System = Make**. Their shipments therefore credit the configured Finished Goods account; shipping Buy products would credit Raw Materials instead. COGS remains the debit. Confirm the sales order, post shipment, post the invoice and collect when due.
+
+<JournalStep number={1} title="Confirm sales order" document="Sales Order">
+
+*No journal entry.*
+
+The order records the commitment. Goods, invoices and cash post separately.
+
+</JournalStep>
+
+<JournalStep number={2} title="Post shipment" document="Shipment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| COGS | $1,000 | |
+| 1220 Finished Goods | | $1,000 |
+
+The Make setting selects Finished Goods for the credit in this example. The cost carried in stock moves to COGS; the sales invoice is a separate posting.
+
+</JournalStep>
+
+<JournalStep number={3} title="Post sales invoice" document="Sales Invoice (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1110 Accounts Receivable | $2,000 | |
+| Sales | | $2,000 |
+
+Revenue and the customer receivable are recognized. Collection is a separate posting.
+
+</JournalStep>
+
+<JournalStep number={4} title="Post customer payment" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| Bank / Cash | $2,000 | |
+| 1110 Accounts Receivable | | $2,000 |
+
+</JournalStep>
+
+
+AR and finished stock are now zero. Sales are $2,000 and COGS is $1,000, giving $1,000 gross margin before other expenses. Net 30 changes the collection date; it does not create another revenue entry.
+
+### Customer prepays the sales order
+
+The customer pays **$600 before fulfillment**. Record the deposit for the order, then ship and invoice. Apply the available deposit and collect $1,400.
+
+<JournalStep number={1} title="Post order deposit" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| Bank / Cash | $600 | |
+| 2110 Customer Prepayments | | $600 |
+
+Cash arrives, with an equal deposit liability. Revenue has not been recognized yet.
+
+</JournalStep>
+
+<JournalStep number={2} title="Post shipment" document="Shipment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| COGS | $1,000 | |
+| 1220 Finished Goods | | $1,000 |
+
+The Make setting selects Finished Goods for the credit in this example. The cost carried in stock moves to COGS; the sales invoice is a separate posting.
+
+</JournalStep>
+
+<JournalStep number={3} title="Post sales invoice" document="Sales Invoice (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1110 Accounts Receivable | $2,000 | |
+| Sales | | $2,000 |
+
+Revenue and the customer receivable are recognized. Collection is a separate posting.
+
+</JournalStep>
+
+<JournalStep number={4} title="Apply deposit" document="Payment application">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 2110 Customer Prepayments | $600 | |
+| 1110 Accounts Receivable | | $600 |
+
+The deposit liability clears part of AR. No new cash or revenue is posted.
+
+</JournalStep>
+
+<JournalStep number={5} title="Collect balance" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| Bank / Cash | $1,400 | |
+| 1110 Accounts Receivable | | $1,400 |
+
+</JournalStep>
+
+
+The deposit is a liability until applied. It does not recognize sales on receipt, and its application does not recognize sales again. Full prepayment uses $2,000 at the deposit and application steps, with no final cash collection.
+
+### Paid on shipment or invoiced before shipment
+
+For payment at shipment, post the shipment, invoice and payment as separate events, even when all occur on the same day. The entries are the same as the Net 30 example; only cash timing changes.
+
+If invoiced first, **AR and Sales post first**, while **COGS and Inventory post when the sales-order shipment posts**. This can put revenue and stock cost in different periods. Use [Period close](/docs/reference/period-close) to review the timing difference.
+
+<Callout type="info" title="Standalone stock invoices also relieve inventory">
+A stock sales invoice without a sales-order line posts its own inventory consumption and COGS, alongside AR and revenue. Its stock credit uses the same item setting: Buy credits Raw Materials; Make or Buy and Make credits Finished Goods. Do not add a separate sales-order shipment for those same units. Service and non-inventory lines have no stock consumption.
+</Callout>
+
+### Cancel and refund an unused deposit
+
+A customer paid $600 but you return $200 before applying it. Create **Refund to Customer**, select the order under **Refund deposit for**, and post: **debit Customer Prepayments $200, credit Bank $200**. The remaining deposit liability is $400.
+
+Cancelling the order does not itself return cash. Refund the remaining $400 separately if it is no longer owed as a deposit. Refunds release original advance carrying value; currency differences are separate exchange gain or loss.
+
+## Customer returns, credits and refunds
+
+A customer returns **2 products**, originally sold for $400 and shipped at a total cost of $200. These are Make products, so the receipt debits Finished Goods. For Buy products it would debit Raw Materials; Buy and Make also uses Finished Goods. You accept the return and agree a $400 credit. Assume the original invoice was fully paid.
+
+<JournalStep number={1} title="Post physical RMA receipt" document="Receipt (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1220 Finished Goods | $200 | |
+| COGS | | $200 |
+
+Returned stock re-enters inventory at cost and reverses that portion of COGS. The customer credit is separate.
+
+</JournalStep>
+
+<JournalStep number={2} title="Post RMA credit memo" document="Memo (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| Sales Returns | $400 | |
+| 1110 Accounts Receivable | | $400 |
+
+The agreed selling-price credit reduces AR through Sales Returns. It does not move cash.
+
+</JournalStep>
+
+<JournalStep number={3} title="Post cash refund against credit" document="Payment (post)">
+
+| Account | DR | CR |
+| --- | ---: | ---: |
+| 1110 Accounts Receivable | $400 | |
+| Bank / Cash | | $400 |
+
+The refund clears the customer credit and reduces cash.
+
+</JournalStep>
+
+
+The stock receipt restores cost; the memo reverses commercial value; the refund moves money. Tracked returned goods enter **On Hold** pending disposition. If the original invoice is unpaid, apply the credit to that invoice instead of refunding cash. Applying the memo in the same-currency, same-rate example creates no additional GL entry.
+
+A return linked to an original shipment uses its outbound cost when usable consumption records exist, otherwise current cost. A blind return uses current cost. A return reason configured for zero inventory value creates no valued stock receipt journal. These choices are independent of the agreed customer credit.
+
+Choosing **Scrap** or **Rework** as an RMA disposition does not itself prove a stock write-off. Post the relevant inventory or quality movement to remove value. Sending valued returned goods back to the customer posts **debit COGS, credit the item's selected stock account** at the cost relieved: Raw Materials for Buy, Finished Goods for Make or Buy and Make.
+
+<Callout type="warn" title="Return memos do not rebuild invoice tax and freight">
+An RMA memo posts its principal to Sales Returns and AR. It does not automatically reverse the original invoice’s separate tax or shipping accounts. Check those amounts before treating a taxed or freight-inclusive return as fully reconciled. Ordinary customer credit memos use Sales Discount rather than the RMA Sales Returns account.
+</Callout>
+
+## Discounts, tax and foreign currency
+
+### Sales invoice with discount, shipping and tax
+
+Merchandise is $1,000 with a 10% line discount, plus $50 line shipping. With 10% tax on the resulting $950 taxable amount, the invoice is $1,045.
+
+| Account | Debit | Credit |
+| --- | ---: | ---: |
+| AR | $1,045 | – |
+| Sales | – | $900 |
+| Shipping Revenue | – | $50 |
+| Sales Tax Payable | – | $95 |
+| **Total** | **$1,045** | **$1,045** |
+
+The line discount reduces Sales; it is not a separate $100 discount expense. Shipping and add-ons do not receive that merchandise percentage discount. This example uses taxable line shipping; do not assume every header shipping amount has the same tax treatment.
+
+### Settlement discounts and write-offs
+
+| Settlement | Debit | Credit |
+| --- | --- | --- |
+| Customer pays $980 to settle $1,000; $20 discount | Bank $980; Customer Payment Discount $20 | AR $1,000 |
+| Customer pays $990; write off $10 | Bank $990; Bad Debt Expense $10 | AR $1,000 |
+
+A settlement adjustment clears the invoice through its configured discount or write-off account. It does not edit the original shipment cost.
+
+### Currency differences release historical carrying value
+
+Advance applications and refunds use the source’s original base-currency carrying amount. Cash uses the payment’s exchange rate. Any difference balances through realized exchange gain or loss.
+
+For example, an unused supplier advance carries **$100 base value**, but its full foreign-currency refund brings in **$105 base cash**: debit Bank $105, credit Supplier Prepayments $100 and credit Realized Exchange Gain $5. Do not recalculate the original advance at today’s rate and leave part of it outstanding.
+
+## Correcting and reconciling a workflow
+
+Saving a draft does not post its journal. Use the document’s **Post** action, then inspect its journal and related settlements. Reversals use the posted account amounts, so check the reversal and replacement together.
+
+For an advance consumed by a posted refund, void the refund before trying to void its source. Voiding that refund restores the original advance’s availability. Voiding cash does not automatically undo goods or an invoice.
+
+| Balance still open | What to check |
+| --- | --- |
+| GR/IR credit | Received goods awaiting invoice, or return credit timing |
+| GR/IR debit | Invoice before receipt, or shipped supplier return awaiting credit |
+| Supplier Prepayments debit | Advance still available, awaiting application or refund |
+| Customer Prepayments credit | Deposit still owed, awaiting application or refund |
+| AP credit / AR debit | Invoice still unpaid or only partly settled |
+| AP debit / AR credit | Credit or on-account cash awaiting application or refund |
+| WIP | Issued material and posted work not yet transferred or cleared |
+
+Reconcile quantities as well as money. A returned unit, an issued credit and a cash refund can have different dates and values. Each must explain its own ledger movement.
+
+## Find the next part of the workflow
+
+<Cards>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">Order, receive and invoice the supplier’s goods.</Card>
+  <Card title="Payments" href="/docs/reference/payments">Record cash, apply advances and handle refunds.</Card>
+  <Card title="Accounting & the ledger" href="/docs/reference/accounting">Account defaults, journal statuses and accounting setup.</Card>
+  <Card title="Period close" href="/docs/reference/period-close">Find costs and revenue that have landed in different periods.</Card>
+</Cards>

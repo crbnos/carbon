@@ -11,7 +11,7 @@ import {
   LuHandCoins,
   LuListChecks,
   LuNetwork,
-  LuPackageSearch,
+  LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -56,6 +56,11 @@ export default function useInventorySubmodules() {
           table: "inventoryCount"
         },
         {
+          name: t`Issue to Project`,
+          to: path.to.projectIssue,
+          icon: <LuPackageMinus />
+        },
+        {
           name: t`Kanbans`,
           to: path.to.kanbans,
           role: "employee",
@@ -66,13 +71,6 @@ export default function useInventorySubmodules() {
     {
       name: t`Shipping & Receiving`,
       routes: [
-        {
-          name: t`Receiving`,
-          to: path.to.receiving,
-          icon: <LuPackageSearch />,
-          // Open purchase order lines are only readable with purchasing view.
-          permission: "purchasing"
-        },
         {
           name: t`Receipts`,
           to: path.to.receipts,

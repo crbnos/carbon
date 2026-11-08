@@ -387,7 +387,15 @@ const ToolsTable = memo((props: ToolsTableProps) => {
       {
         accessorKey: "active",
         header: t`Active`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const itemId = item.row.original.readableIdWithRevision;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Active: ${itemId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",

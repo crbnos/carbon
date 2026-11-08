@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
+import { getFileExtension } from "@carbon/files";
 import type {
   DefaultRentalRates,
   LeasePaymentTerms,
@@ -20,6 +21,12 @@ import {
   rentalTermMonths,
   round
 } from "@carbon/utils";
+import {
+  parseAbsolute,
+  parseDate,
+  toCalendarDate,
+  toZoned
+} from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type {
@@ -762,6 +769,19 @@ function stableStringify(value: unknown): string {
 }
 
 /**
+ * Whether a line with this method takes a configuration. Only a built line
+ * uses one: a configuration picks the job's method, and a line pulled from
+ * stock or bought ships what it gets.
+ */
+export function methodTakesConfiguration(
+  methodType: string | null | undefined
+) {
+  return (
+    methodType !== "Pull from Inventory" && methodType !== "Purchase to Order"
+  );
+}
+
+/**
  * The configuration a job made for a sales order line is built with: the
  * line's own, falling back to its quote line's. `reconfigured` is true when
  * the order line was configured differently from the quote — the quote's
@@ -986,4 +1006,104 @@ export function priceListOverrideScopes(
   }
   if (scope.allCustomers) return [{ allCustomers: true }];
   return [];
+}
+
+// The customer portal is an open link: anyone holding it sees what it shows.
+// It serves photos and PDFs recorded on a job's steps, never CAD models or
+// drawings, which can be export-controlled. SVG is left out because it can
+// carry script and is served from the app's own origin.
+const CUSTOMER_PORTAL_FILE_TYPES = new Set([
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "heic",
+  "heif"
+]);
+
+export function customerPortalServesFile(path: string) {
+  const fileName = path.split("/").pop() ?? "";
+  return CUSTOMER_PORTAL_FILE_TYPES.has(getFileExtension(fileName));
+}
+
+// Sales orders the portal never lists: not yet confirmed, or called off.
+export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
+  "Draft",
+  "Needs Approval",
+  "Cancelled"
+] as const;
+
+// A portal set to expire on a day stops working at the start of that day in
+// the company's timezone. A blank date stores no expiry.
+export function customerPortalExpiresAt(
+  date: string | undefined,
+  timeZone: string
+) {
+  if (!date) return null;
+  return toZoned(parseDate(date), timeZone).toAbsoluteString();
+}
+
+// The day a stored expiry falls on in the company's timezone, for the form.
+export function customerPortalExpiryDate(
+  expiresAt: string | null,
+  timeZone: string
+) {
+  if (!expiresAt) return undefined;
+  return toCalendarDate(parseAbsolute(expiresAt, timeZone)).toString();
+}
+
+export function customerPortalExpired(
+  expiresAt: string | null,
+  nowInstant: string
+) {
+  if (!expiresAt) return false;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(parseAbsolute(nowInstant, "UTC")) <=
+    0
+  );
+}
+
+export type CustomerPortalRefusal = "expired";
+
+// Why an open portal link must not be served, or null when it may be. Every
+// share route answers through this, so a new route cannot skip a check.
+export function customerPortalRefusal(
+  portal: { expiresAt: string | null },
+  nowInstant: string
+): CustomerPortalRefusal | null {
+  if (customerPortalExpired(portal.expiresAt, nowInstant)) return "expired";
+  return null;
+}
+
+// A new expiry that has already passed would make a link that never works.
+// Saving a portal whose stored expiry has passed, without changing it, is
+// allowed, so an expired portal can still be edited.
+export function customerPortalExpiryRefused(
+  expiresAt: string | null,
+  storedExpiresAt: string | null,
+  nowInstant: string
+) {
+  if (!customerPortalExpired(expiresAt, nowInstant)) return false;
+  if (!expiresAt || !storedExpiresAt) return true;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(
+      parseAbsolute(storedExpiresAt, "UTC")
+    ) !== 0
+  );
+}
+
+// The first day the Expires On picker offers: tomorrow in the company's
+// calendar, or the portal's own stored date when that has already passed, so
+// an expired portal can be edited without changing it.
+export function customerPortalEarliestExpiry(
+  companyToday: string,
+  storedExpiresOn?: string
+) {
+  const tomorrow = parseDate(companyToday).add({ days: 1 });
+  if (!storedExpiresOn) return tomorrow.toString();
+  const stored = parseDate(storedExpiresOn);
+  return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }

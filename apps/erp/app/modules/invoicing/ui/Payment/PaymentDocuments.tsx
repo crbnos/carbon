@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import { LuKeyRound } from "react-icons/lu";
+import { LuKeyRound, LuSection, LuShoppingCart } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Await, useParams } from "react-router";
 import { Empty } from "~/components";
@@ -15,6 +15,7 @@ import {
   RelatedDocumentSkeleton
 } from "~/components/DocumentPage";
 import { usePermissions, useRouteData } from "~/hooks";
+import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import RentalStatus from "~/modules/sales/ui/Rentals/RentalStatus";
 import SalesStatus from "~/modules/sales/ui/SalesOrder/SalesStatus";
 import { path } from "~/utils/path";
@@ -81,10 +82,16 @@ function PaymentDocumentList({
   const party = useCounterparty(payment);
   const settlementRows = useSettlementRows(related, payment.status === "Draft");
 
-  // The order or rental agreement this payment is a deposit for.
-  const depositId = payment.rentalAgreementId ?? payment.salesOrderId;
+  // The order, rental agreement or contract this payment is a deposit for, or
+  // the purchase order it is a prepayment for.
+  const depositId =
+    payment.rentalAgreementId ??
+    payment.salesOrderId ??
+    payment.customerContractId ??
+    payment.purchaseOrderId;
   const deposit =
-    depositId && permissions.can("view", "sales")
+    depositId &&
+    permissions.can("view", payment.purchaseOrderId ? "purchasing" : "sales")
       ? depositDocuments.find((doc) => doc.id === depositId)
       : undefined;
 
@@ -113,6 +120,27 @@ function PaymentDocumentList({
               <RentalStatus
                 status={
                   deposit.status as Database["public"]["Enums"]["rentalAgreementStatus"]
+                }
+              />
+            }
+          />
+        ) : deposit.kind === "customerContract" ? (
+          <RelatedDocument
+            to={path.to.contract(deposit.id)}
+            icon={<LuSection />}
+            title={deposit.readableId}
+            description={t`Contract`}
+          />
+        ) : deposit.kind === "purchaseOrder" ? (
+          <RelatedDocument
+            to={path.to.purchaseOrderDetails(deposit.id)}
+            icon={<LuShoppingCart />}
+            title={deposit.readableId}
+            description={t`Purchase Order`}
+            status={
+              <PurchasingStatus
+                status={
+                  deposit.status as Database["public"]["Enums"]["purchaseOrderStatus"]
                 }
               />
             }

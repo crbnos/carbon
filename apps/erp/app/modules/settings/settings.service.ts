@@ -48,6 +48,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  projectStates,
   returnReasons,
   scrapReasons,
   sequences,
@@ -60,17 +61,22 @@ import {
 } from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
+  DocumentEdit,
+  DocumentEditType,
   DocumentSectionPlacement,
   DocumentSettings,
   DocumentTemplate,
   DocumentTemplateType,
   DocumentTheme,
-  ResolvedSection
+  ResolvedSection,
+  ValueEdits
 } from "@carbon/documents/template";
 import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
+  isEmptyDocumentEdit,
+  rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -96,6 +102,7 @@ import {
   assemblyAssetRows,
   integrations as availableIntegrations,
   BOM_LINE_FIELDS,
+  bomAssemblySources,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -214,8 +221,7 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
-import type { Events } from "@carbon/jobs";
-import { trigger } from "@carbon/jobs";
+import { type Events, trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
   getCompanyTableCatalog,
@@ -223,6 +229,7 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -244,6 +251,7 @@ import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
+  getShippingTermsList,
   getStockTransfer,
   getStockTransferLines
 } from "~/modules/inventory/inventory.service";
@@ -324,6 +332,9 @@ import type {
   subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+
+const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -973,7 +984,6 @@ export async function upsertDocumentTemplate(
 ) {
   const { companyId, userId } = documentTemplate;
   const now = datetime.timestamp();
-  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
   await withTransaction(db, async (trx) => {
     if (header) {
@@ -1938,6 +1948,7 @@ export async function buildPreviewProps(
         terms,
         payment,
         shipping,
+        shippingTerms,
         ar
       ] = await Promise.all([
         getSalesInvoice(client, id),
@@ -1947,6 +1958,7 @@ export async function buildPreviewProps(
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId),
+        getShippingTermsList(client, companyId),
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
@@ -1962,7 +1974,8 @@ export async function buildPreviewProps(
           : null,
         terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
-        shippingMethods: shipping.data ?? []
+        shippingMethods: shipping.data ?? [],
+        shippingTerms: shippingTerms.data ?? []
       };
     }
     case "salesOrder": {
@@ -2032,7 +2045,8 @@ export async function buildPreviewProps(
         shipment,
         terms,
         paymentTerms,
-        shipping
+        shipping,
+        timeZone
       ] = await Promise.all([
         getQuote(client, id),
         getQuoteLines(client, id),
@@ -2042,7 +2056,8 @@ export async function buildPreviewProps(
         getQuoteShipment(client, id),
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
-        getShippingMethodsList(client, companyId)
+        getShippingMethodsList(client, companyId),
+        getCompanyTimeZone(client, companyId)
       ]);
       if (!quote.data) return null;
       // The document's own stamped rate — never a live lookup, so a reprint
@@ -2052,6 +2067,7 @@ export async function buildPreviewProps(
       return {
         ...base,
         exchangeRate,
+        printDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -2093,6 +2109,10 @@ export {
 type CompanyLogoPaths = {
   logoLight: string | null;
   logoLightIcon: string | null;
+  /** The label's `company.*` variables, read in the same query. */
+  name: string;
+  city: string | null;
+  countryCode: string | null;
 };
 
 /**
@@ -2110,7 +2130,7 @@ export async function getCompanyLogoForLabel(
 ): Promise<CompanyLogoPaths | null> {
   const { data } = await client
     .from("company")
-    .select("logoLight, logoLightIcon")
+    .select("logoLight, logoLightIcon, name, city, countryCode")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -2123,7 +2143,10 @@ export async function getCompanyLogoForLabel(
 
   return {
     logoLight: expand(data.logoLight),
-    logoLightIcon: expand(data.logoLightIcon)
+    logoLightIcon: expand(data.logoLightIcon),
+    name: data.name,
+    city: data.city,
+    countryCode: data.countryCode
   };
 }
 const logger = getLogger("erp", "oee-devices");
@@ -3472,6 +3495,103 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
+const timekeepingLogger = getLogger("erp", "settings", "time");
+
+/**
+ * Why the company cannot turn DCAA timekeeping on, or null. DCAA mode needs a
+ * cost objective on every Released project, so each charge lands in a known
+ * pool, and the certification text each employee signs at submit (the sent
+ * text, else the stored one). The projects are checked only when the mode
+ * turns on.
+ */
+export async function dcaaTimekeepingRefusal(
+  ctx: ServiceContext,
+  sent: {
+    certificationTextExempt?: string | null;
+    certificationTextNonExempt?: string | null;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const current = await client
+    .from("companySettings")
+    .select(
+      "timekeepingControls, certificationTextExempt, certificationTextNonExempt"
+    )
+    .eq("id", companyId)
+    .maybeSingle();
+  if (current.error) {
+    timekeepingLogger.error("Failed to read the timekeeping settings", {
+      companyId,
+      error: current.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to read the timekeeping settings",
+      current.error
+    );
+  }
+
+  const exempt =
+    sent.certificationTextExempt !== undefined
+      ? sent.certificationTextExempt
+      : current.data?.certificationTextExempt;
+  if (!exempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for exempt staff"
+    );
+  }
+  const nonExempt =
+    sent.certificationTextNonExempt !== undefined
+      ? sent.certificationTextNonExempt
+      : current.data?.certificationTextNonExempt;
+  if (!nonExempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for non-exempt staff"
+    );
+  }
+
+  if (current.data?.timekeepingControls === "DCAA") return null;
+  const missing = await client
+    .from("project")
+    .select("identifier", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("status", "Released")
+    .is("costObjective", null)
+    .order("identifier")
+    .limit(3);
+  if (missing.error) {
+    timekeepingLogger.error("Failed to count projects with no cost objective", {
+      companyId,
+      error: missing.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to check the projects' cost objectives",
+      missing.error
+    );
+  }
+  const count = missing.count ?? 0;
+  if (count > 0) {
+    // Name the projects, so the person can find them: a Released project
+    // with none shows the field on its Settings page.
+    const named = (missing.data ?? [])
+      .map((project) => project.identifier)
+      .filter(Boolean)
+      .join(", ");
+    const more = count > 3 ? ` and ${count - 3} more` : "";
+    return ctx.error(
+      "rule",
+      `Set a cost objective on ${count} ${
+        count === 1 ? "project" : "projects"
+      } first${named ? ` (${named}${more})` : ""}`
+    );
+  }
+  return null;
+}
+
 /** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
 export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
@@ -3979,6 +4099,19 @@ export async function seedCompany(
       await trx
         .insertInto("sequence")
         .values(sequences.map((s) => ({ ...s, companyId })))
+        .execute();
+
+      // project states: company-wide, shared by every project and service
+      // order (Settings → Projects)
+      await trx
+        .insertInto("projectState")
+        .values(
+          projectStates.map((state) => ({
+            ...state,
+            companyId,
+            createdBy: "system"
+          }))
+        )
         .execute();
 
       // period-close checklist definitions (system template rows). The table is
@@ -6844,7 +6977,7 @@ export async function pushOnshapeAssembly(
       itemByReadableId,
       linkedSourceByItemId: childLinks.linkedSourceByItemId,
       // Released: the root keeps its release's link and files.
-      rootItemId: null,
+      root: null,
       summary
     });
     return panelReply(
@@ -6925,23 +7058,113 @@ export async function pushOnshapeAssembly(
     drawingRows: new Set(input.drawingRows),
     itemByReadableId,
     linkedSourceByItemId: childLinks.linkedSourceByItemId,
-    rootItemId: assemblyMapping.error === null ? rootItem.id : null,
+    // Its drawings go where its model goes: only when the link holds.
+    root:
+      assemblyMapping.error === null
+        ? {
+            itemId: rootItem.id,
+            partNumber: root.partNumber,
+            kind: "assembly",
+            documentId,
+            wvm: wv,
+            wvmId: wvId,
+            elementId,
+            configuration: normalizeConfiguration(configuration)
+          }
+        : null,
     summary
   });
 
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 
-type AssetsEvent = Events["carbon/onshape-panel-assets"]["data"];
-
-// Rows per `onshape-panel-assets` event, well under Inngest's event size limit.
+// Model rows per `onshape-panel-assets` event: each row's export is a step of
+// the run, and a run has a step limit.
 const ASSET_ROWS_PER_EVENT = 100;
+
+// Bytes of drawing targets per `onshape-panel-assets` event, under Inngest's
+// 256 KB event limit with room for the rest of the event. One event is one
+// search for drawings, so a push's targets share one event whenever they fit
+// (about 800 rows): a drawing showing rows of two events would be exported
+// once per event, and one whose document only the other event reads missed.
+const DRAWING_TARGET_BYTES = 150_000;
+
+// Every drawing event repeats `assemblies` and `skipElementIds`. The targets
+// get what those leave under this budget for the whole event (Inngest takes at
+// most 256 KB), never less than the floor: a shared payload that large still
+// sends, and a rejected event is reported as not queued.
+const DRAWING_EVENT_BYTES = 240_000;
+const MIN_DRAWING_TARGET_BYTES = 10_000;
+
+/** Sends a push's drawings, every target in as few events as fit. */
+async function queueDrawingEvents(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  /** The event ids' prefix, `<planId>:<kind>`. */
+  idPrefix: string;
+  targets: DrawingTargetRow[];
+  assemblies: NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["assemblies"];
+  skipElementIds?: string[];
+}): Promise<boolean> {
+  const sharedBytes = Buffer.byteLength(
+    JSON.stringify({
+      assemblies: input.assemblies,
+      skipElementIds: input.skipElementIds ?? []
+    })
+  );
+  const events = packBySize(
+    input.targets,
+    Math.max(
+      Math.min(DRAWING_TARGET_BYTES, DRAWING_EVENT_BYTES - sharedBytes),
+      MIN_DRAWING_TARGET_BYTES
+    )
+  );
+  let queued = true;
+  for (const [index, targets] of events.entries()) {
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models: [],
+          drawings: {
+            targets,
+            assemblies: input.assemblies,
+            ...(input.skipElementIds
+              ? { skipElementIds: input.skipElementIds }
+              : {})
+          }
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.idPrefix}:${index}` }
+      );
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape drawings", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      queued = false;
+    }
+  }
+  return queued;
+}
+
+type DrawingTargetRow = NonNullable<
+  Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+>["targets"][number];
 
 /**
  * Queues the STEP models and drawings the reviewer picked. A row is queued
  * only when its item ended up linked to the row's Onshape source; any other
  * pick counts in `assetsSkipped`. A part number the plan did not offer is
- * ignored. `rootItemId` is the root when the push linked it to this assembly.
+ * ignored. `root` takes the drawings of the assembly itself; its model is
+ * queued with every push, not here.
  */
 async function queueAssemblyAssets(input: {
   companyId: string;
@@ -6953,7 +7176,8 @@ async function queueAssemblyAssets(input: {
   drawingRows: Set<string>;
   itemByReadableId: Map<string, { id: string }>;
   linkedSourceByItemId: Map<string, string>;
-  rootItemId: string | null;
+  /** Null when the push leaves the root as its release left it. */
+  root: DrawingTargetRow | null;
   summary: AssemblyPushSummary;
 }): Promise<void> {
   const { plan, summary } = input;
@@ -6961,12 +7185,13 @@ async function queueAssemblyAssets(input: {
 
   const picked = assemblyAssetRows({
     plan,
-    ties: plan.drawingTies ?? [],
     modelRows: input.modelRows,
     drawingRows: input.drawingRows,
     excluded: input.excluded,
-    itemIdFor: (partNumber, source) => {
-      if (partNumber === plan.root.partNumber) return input.rootItemId;
+    root: input.root
+      ? { ...input.root, configuration: input.root.configuration ?? null }
+      : null,
+    linkFor: (partNumber, source) => {
       const item = input.itemByReadableId.get(partNumber);
       const externalId = externalIdForBomLine({
         documentId: source.documentId,
@@ -6977,28 +7202,33 @@ async function queueAssemblyAssets(input: {
       return item &&
         externalId &&
         input.linkedSourceByItemId.get(item.id) === externalId
-        ? item.id
+        ? { itemId: item.id, externalId }
         : null;
     }
   });
   summary.assetsSkipped += picked.unlinked;
 
-  const rows: Array<
-    | { type: "model"; row: AssetsEvent["models"][number] }
-    | { type: "drawing"; row: AssetsEvent["drawings"][number] }
-  > = [
-    ...picked.models.map((row) => ({ type: "model" as const, row })),
-    ...picked.drawings.map((row) => ({ type: "drawing" as const, row }))
+  // Every assembly of the push, so a drawing of one never lands on its parts.
+  const assemblies = [
+    {
+      documentId: plan.documentId,
+      wvm: plan.wv,
+      wvmId: plan.wvId,
+      elementId: plan.elementId,
+      configuration: normalizeConfiguration(plan.configuration)
+    },
+    ...bomAssemblySources(plan.nodes).map(
+      ({ kind: _kind, ...source }) => source
+    )
   ];
+
   let failed = false;
-  for (let start = 0; start < rows.length; start += ASSET_ROWS_PER_EVENT) {
-    const chunk = rows.slice(start, start + ASSET_ROWS_PER_EVENT);
-    const eventModels = chunk.flatMap((entry) =>
-      entry.type === "model" ? [entry.row] : []
-    );
-    const eventDrawings = chunk.flatMap((entry) =>
-      entry.type === "drawing" ? [entry.row] : []
-    );
+  for (
+    let start = 0;
+    start < picked.models.length;
+    start += ASSET_ROWS_PER_EVENT
+  ) {
+    const models = picked.models.slice(start, start + ASSET_ROWS_PER_EVENT);
     try {
       await trigger(
         "onshape-panel-assets",
@@ -7006,22 +7236,33 @@ async function queueAssemblyAssets(input: {
           companyId: input.companyId,
           userId: input.userId,
           planId: input.planId,
-          models: eventModels,
-          drawings: eventDrawings
+          models
         },
         // A retried apply sends the same events once.
         { id: `${input.planId}:assets:${start / ASSET_ROWS_PER_EVENT}` }
       );
-      summary.modelsQueued += eventModels.length;
-      summary.drawingsQueued += eventDrawings.length;
+      summary.modelsQueued += models.length;
     } catch (error) {
-      onshapePushLogger.error("Failed to queue the Onshape assembly assets", {
+      onshapePushLogger.error("Failed to queue the Onshape assembly files", {
         companyId: input.companyId,
         planId: input.planId,
         error
       });
       failed = true;
     }
+  }
+  // The picked rows' drawings in one search, apart from the models' batches.
+  if (picked.drawingTargets.length > 0) {
+    const queued = await queueDrawingEvents({
+      companyId: input.companyId,
+      userId: input.userId,
+      planId: input.planId,
+      idPrefix: `${input.planId}:drawings`,
+      targets: picked.drawingTargets,
+      assemblies
+    });
+    if (queued) summary.drawingsQueued += picked.drawings;
+    else failed = true;
   }
   if (failed) {
     // The apply took the plan, and the panel's next push starts a new review
@@ -8502,6 +8743,59 @@ export async function pushOnshapeRelease(
     }
   }
 
+  // Every other drawing of a released model at the released version, on each
+  // model it shows. The release's own drawings went above, under their own
+  // part number and revision.
+  type ReleaseDrawingTarget = NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["targets"][number];
+  const drawingTargets = assetTargets.flatMap(
+    (target): ReleaseDrawingTarget[] => {
+      if (target.kind === "drawing") return [];
+      const selection = releaseExportSelection(target.item);
+      if (!selection.ok) return [];
+      return [
+        {
+          itemId: target.itemId,
+          partNumber: target.item.partNumber,
+          kind: target.kind,
+          documentId: plan.documentId,
+          wvm: "v",
+          wvmId: target.item.versionId,
+          elementId: target.item.elementId,
+          ...(selection.partId ? { partId: selection.partId } : {}),
+          configuration: normalizeConfiguration(target.item.configuration)
+        }
+      ];
+    }
+  );
+  const releasedAssemblies = modelItems
+    .filter((item) => item.elementType === 1)
+    .map((item) => ({
+      documentId: plan.documentId,
+      wvm: "v" as const,
+      wvmId: item.versionId,
+      elementId: item.elementId,
+      configuration: normalizeConfiguration(item.configuration)
+    }));
+  const releasedDrawingIds = drawingItems.map((item) => item.elementId);
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId,
+      userId,
+      planId,
+      idPrefix: `${planId}:release-drawings`,
+      targets: drawingTargets,
+      assemblies: releasedAssemblies,
+      skipElementIds: releasedDrawingIds
+    }))
+  ) {
+    summary.errors.push(
+      "The drawings of the released parts couldn't be queued. Push again to retry."
+    );
+  }
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 export const onshapePanelFieldsLogger = getLogger(
@@ -9136,4 +9430,170 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
+}
+
+/**
+ * The record a document prints, for the "Edit document" modal: its readable
+ * number, whether it is locked, and the notes its Notes block prints. Read with
+ * the caller's client, so a record the caller cannot see is not found.
+ */
+export async function getDocumentEditRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const { data, error } = await client
+    .from(record.table as "purchaseOrder")
+    .select(
+      ["status", record.readableId, record.notesColumn]
+        .filter(Boolean)
+        .join(", ")
+    )
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    data: {
+      label: String(row[record.readableId] ?? documentId),
+      locked: record.isLocked(row.status as string | null),
+      notes: record.notesColumn
+        ? ((row[record.notesColumn] as JSONContent | null) ?? null)
+        : null
+    },
+    error: null
+  };
+}
+
+/**
+ * Save one document's edits and, when given, its notes, together. An empty edit
+ * deletes the row, so the document follows the template again. Writes nothing and
+ * says why when the record is locked or gone.
+ */
+export async function saveDocumentEditRow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    documentId: string;
+    edit: DocumentEdit;
+    notes?: JSONContent | null;
+    userId: string;
+  }
+) {
+  const { companyId, documentType, documentId, edit, userId } = args;
+  const now = datetime.timestamp();
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+
+  return withTransaction(db, async (trx) => {
+    // Lock the record row while the edit is written: a finalize that runs at the
+    // same time waits for this save, or this save sees the record locked.
+    const current = await trx
+      .selectFrom(record.table as "purchaseOrder")
+      .select("status")
+      .where("id", "=", documentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!current) return "notFound" as const;
+    if (record.isLocked(current.status)) return "locked" as const;
+
+    if (isEmptyDocumentEdit(edit)) {
+      await trx
+        .deleteFrom("documentEdit")
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType)
+        .where("documentId", "=", documentId)
+        .execute();
+    } else {
+      await trx
+        .insertInto("documentEdit")
+        .values({
+          companyId,
+          documentType,
+          documentId,
+          blocks: jsonb(edit.blocks),
+          settings: jsonb(edit.settings),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["companyId", "documentType", "documentId"]).doUpdateSet({
+            blocks: jsonb(edit.blocks),
+            settings: jsonb(edit.settings),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    if (args.notes !== undefined && record.notesColumn) {
+      // The record's own notes column: the same text its page edits.
+      await trx
+        .updateTable(record.table as "purchaseOrder")
+        .set({
+          [record.notesColumn]: jsonb(args.notes ?? {}),
+          updatedBy: userId,
+          updatedAt: now
+        } as never)
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return "saved" as const;
+  });
+}
+
+/**
+ * Give a new copy of a document the same edits (a quote revision prints like
+ * the quote it revises). Nothing happens when the source has none.
+ */
+export async function copyDocumentEdit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    fromId: string;
+    toId: string;
+    userId: string;
+    /** The copy's id for each of the record's row ids. */
+    rowIds: ReadonlyMap<string, string>;
+  }
+) {
+  const source = await db
+    .selectFrom("documentEdit")
+    .select(["blocks", "settings"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.fromId)
+    .executeTakeFirst();
+  if (!source) return;
+
+  const settings = (source.settings ?? {}) as { valueEdits?: ValueEdits };
+  await db
+    .insertInto("documentEdit")
+    .values({
+      companyId: args.companyId,
+      documentType: args.documentType,
+      documentId: args.toId,
+      blocks: jsonb(source.blocks),
+      settings: jsonb(
+        settings.valueEdits
+          ? {
+              ...settings,
+              valueEdits: rewriteValueEditRowKeys(settings.valueEdits, (id) =>
+                args.rowIds.get(id)
+              )
+            }
+          : settings
+      ),
+      createdBy: args.userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["companyId", "documentType", "documentId"]).doNothing()
+    )
+    .execute();
 }

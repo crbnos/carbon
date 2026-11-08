@@ -1,0 +1,301 @@
+###
+# The shared dev containers: one set per machine, used by every worktree in
+# shared mode (the default). `crbn up` copies this file, init.sql and
+# shared-init.sql to ~/.carbon/shared/ and runs it from there as
+# project `crbn-shared`, so the containers outlive any one worktree. The
+# project name must not start with `carbon-`: every crbn version treats a
+# `carbon-*` project with no slot as an orphan and force-removes it (`reset`,
+# `prune`), and older versions in other worktrees can't be taught otherwise.
+#
+#   carbon-postgres   one database per worktree (wt_<slug>), cloned from carbon_template
+#   carbon-pgbouncer  transaction-mode pooler; the `*` entry routes every database
+#   carbon-storage    one Storage tenant per worktree (X-Forwarded-Host)
+#   carbon-imgproxy   image transforms for carbon-storage
+#   carbon-inbucket   one mailbox server for every worktree
+#   carbon-redis      one logical database per worktree slot (redisDb)
+#   carbon-edge-runtime  every worktree's edge functions
+#
+# Isolated worktrees use carbon-redis and carbon-edge-runtime too: `crbn up
+# --isolated` starts them alone (`up --no-deps`), without the shared Postgres.
+#
+# pg_cron and pg_net serve only `postgres`; crbn adds triggers to each worktree
+# database that hand its jobs and requests to them (worktree-forwarding.sql).
+#
+# Realtime stays per worktree: its broadcast slot name has no tenant in it, so
+# 2 tenants on one cluster collide (.claude/rules/dev-shared-services.md).
+#
+# Required env (~/.carbon/shared/.env): SUPABASE_JWT_SECRET, SUPABASE_SERVICE_ROLE_KEY,
+# SUPABASE_ANON_KEY, REDIS_DATABASES, FUNCTIONS_DIR, EDGE_MAIN_DIR.
+###
+
+name: crbn-shared
+
+services:
+  postgres:
+    image: supabase/postgres:17.6.1.166
+    container_name: carbon-postgres
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_POSTGRES:-2g}
+          cpus: ${CPU_POSTGRES:-4}
+    ports:
+      - "127.0.0.1:54322:5432"
+    environment:
+      TZ: UTC
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PORT: 5432
+      PGPORT: 5432
+      POSTGRES_DB: postgres
+      PGDATABASE: postgres
+      POSTGRES_PASSWORD: postgres
+      PGPASSWORD: postgres
+      JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      JWT_EXP: 3600
+    volumes:
+      - carbon-postgres-data:/var/lib/postgresql/data
+      - carbon-postgres-config:/etc/postgresql-custom
+      - ./init.sql:/docker-entrypoint-initdb.d/zz-carbon-roles.sql:ro
+      - ./shared-init.sql:/docker-entrypoint-initdb.d/zzz-carbon-shared.sql:ro
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-256MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-512MB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-4MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-64MB}
+      # Every worktree's GoTrue, PostgREST, Realtime and app pool connect here.
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-500}
+      # Each worktree's Realtime holds 2 temporary slots.
+      - -c
+      - max_replication_slots=64
+      - -c
+      - max_wal_senders=64
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - max_wal_size=256MB
+      - -c
+      - jit=off
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [carbon-shared]
+
+  # Same transaction semantics as production's Supavisor. No DB_NAME, so the
+  # image writes the `*` database: any wt_ database routes with no setup.
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.25.2-p0
+    container_name: carbon-pgbouncer
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_PGBOUNCER:-128m}
+          cpus: ${CPU_PGBOUNCER:-0.5}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:54329:6432"
+    environment:
+      DB_HOST: carbon-postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      LISTEN_PORT: 6432
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      # 0 = off, as Supavisor's transaction mode is by default: a named prepared
+      # statement then fails here as it does in production. Unnamed ones (node-pg's
+      # default) work in both.
+      MAX_PREPARED_STATEMENTS: "0"
+      DEFAULT_POOL_SIZE: 20
+      MAX_CLIENT_CONN: 1000
+    networks: [carbon-shared]
+
+  # One tenant per worktree (shared-db.ts registerStorageTenant). The tenant
+  # comes from X-Forwarded-Host, which each worktree's Envoy sets. No
+  # STORAGE_PUBLIC_URL: it is one URL for every tenant, so each Envoy sends its
+  # worktree's API URL in Forwarded and X-Forwarded-Port instead.
+  storage:
+    image: supabase/storage-api:v1.89.12
+    container_name: carbon-storage
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_STORAGE:-2g}
+          cpus: ${CPU_STORAGE:-2}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:54326:5001"
+    environment:
+      MULTI_TENANT: "true"
+      DATABASE_MULTITENANT_URL: postgres://supabase_admin:postgres@carbon-postgres:5432/carbon_storage
+      SERVER_ADMIN_API_KEYS: ${SUPABASE_SERVICE_ROLE_KEY}
+      REQUEST_X_FORWARDED_HOST_REGEXP: '^([a-z0-9_]+)\.storage$'
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      # 2.5 GB global ceiling (>= the largest per-bucket limit, temp-staging).
+      FILE_SIZE_LIMIT: 2500000000
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      GLOBAL_S3_BUCKET: stub
+      REGION: stub
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://carbon-imgproxy:5001
+    # `crbn up --wait`s on it before it registers the worktree's tenant.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5001/status"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - carbon-storage-data:/var/lib/storage:z
+    networks: [carbon-shared, storage-imgproxy]
+
+  # Internal only — never publish a port: direct imgproxy access reads the
+  # storage volume with no RLS. It shares a network with Storage alone, so a
+  # worktree's containers can't ask it for another tenant's files.
+  imgproxy:
+    image: darthsim/imgproxy:v4.0.21
+    container_name: carbon-imgproxy
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_IMGPROXY:-512m}
+          cpus: ${CPU_IMGPROXY:-1}
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      # Default is 16.8Mpx, which rejects 48MP iPhone photos.
+      IMGPROXY_MAX_SRC_RESOLUTION: "60"
+    volumes:
+      - carbon-storage-data:/var/lib/storage:z
+    networks: [storage-imgproxy]
+
+  inbucket:
+    image: inbucket/inbucket:3.1.1
+    container_name: carbon-inbucket
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_INBUCKET:-64m}
+          cpus: ${CPU_INBUCKET:-0.25}
+    ports:
+      - "127.0.0.1:54324:9000"
+    # The image declares /config and /storage as volumes; left unmounted, each
+    # recreate strands two anonymous volumes. /config is empty in the image.
+    tmpfs:
+      - /config
+    volumes:
+      - carbon-inbucket-data:/storage
+    networks: [carbon-shared]
+
+  # The apps reach it from the host at localhost:6379/<redisDb>. crbn writes
+  # REDIS_DATABASES: the slot pool, or more when a slot holds a higher index.
+  # A change recreates only this container; the AOF on the volume keeps its keys.
+  redis:
+    image: redis:7-alpine
+    container_name: carbon-redis
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          # A dev redis has peaked at ~450 MB; over the limit it is OOM-killed.
+          memory: ${MEM_REDIS:-1g}
+          cpus: ${CPU_REDIS:-0.5}
+    ports:
+      - "127.0.0.1:6379:6379"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --databases
+      - "${REDIS_DATABASES:-25}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - carbon-redis-data:/data
+    networks: [carbon-shared]
+
+  # Serves every worktree's /functions/v1/. Each worktree's Envoy sets
+  # x-carbon-api to its own gateway, and edge-main gives the function that as
+  # SUPABASE_URL, with a worker pool per worktree. A worktree started with
+  # `crbn up --full` runs a private edge-runtime, which its Envoy prefers.
+  # crbn copies the functions and edge-main into directories named after their
+  # content and writes the names to .env: new code is a new mount path, so
+  # compose recreates this container, and the old copy stays until it has.
+  # The code is what the crbn that booted last copied (usually the main
+  # checkout's); `crbn up --full` gives a worktree its own runtime instead.
+  edge-runtime:
+    image: supabase/edge-runtime:v1.77.9
+    container_name: carbon-edge-runtime
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          # Worker boot compiles each function's module graph; starved of CPU
+          # it outlives the isolate's CPU budget and requests hang mid-kill.
+          memory: ${MEM_EDGE:-1g}
+          cpus: ${CPU_EDGE:-3}
+    environment:
+      TZ: UTC
+      JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      VERIFY_JWT: "false"
+      API_URL_FROM_HEADER: "true"
+    volumes:
+      - ./${FUNCTIONS_DIR:-functions}:/home/deno/functions:ro
+      - ./${EDGE_MAIN_DIR:-edge-main}:/home/deno/main:ro
+    command:
+      - start
+      - --main-service
+      - /home/deno/main
+    networks: [carbon-shared]
+
+networks:
+  carbon-shared:
+    name: carbon-shared
+    external: true
+  storage-imgproxy:
+    internal: true
+
+volumes:
+  carbon-postgres-data:
+    name: carbon-postgres-data
+  carbon-postgres-config:
+    name: carbon-postgres-config
+  carbon-storage-data:
+    name: carbon-storage-data
+  carbon-inbucket-data:
+    name: carbon-inbucket-data
+  # External: it predates this file (crbn ran redis with `docker run`), and
+  # compose warns on every boot about a volume it did not create. crbn creates it.
+  carbon-redis-data:
+    name: carbon-redis-data
+    external: true

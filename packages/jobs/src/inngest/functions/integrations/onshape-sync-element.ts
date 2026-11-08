@@ -786,6 +786,8 @@ export interface SyncOnshapeDrawingInput {
   drawingElementId: string; // the released DRAWING element to export as PDF
   assetBaseName?: string; // filename base (e.g. the model's readableIdWithRevision)
   sourceWvm?: "w" | "v"; // path segment for the drawing translation; default "v"
+  /** More items the same PDF attaches to: one translation for all of them. */
+  moreItems?: Array<{ itemId: string; assetBaseName: string }>;
 }
 
 export type DrawingSyncResult = AttachOnshapeAssetsResult & {
@@ -846,14 +848,30 @@ export async function runOnshapeDrawingSync(
           tooLarge: true
         };
       }
-      const baseName = input.assetBaseName ?? translation.name ?? "drawing";
-      return attachOnshapeAssetsToItem(carbon, {
-        companyId: input.companyId,
-        createdBy: input.userId,
-        itemId: input.itemId,
-        sourceDocument: input.sourceDocument,
-        documents: [{ fileName: `${baseName}.pdf`, bytes: pdf }]
-      });
+      const items = [
+        {
+          itemId: input.itemId,
+          assetBaseName: input.assetBaseName ?? translation.name ?? "drawing"
+        },
+        ...(input.moreItems ?? [])
+      ];
+      // One at a time: a retry re-attaches onto the same paths.
+      const documentIds: string[] = [];
+      for (const item of items) {
+        const attached = await attachOnshapeAssetsToItem(carbon, {
+          companyId: input.companyId,
+          createdBy: input.userId,
+          itemId: item.itemId,
+          sourceDocument: input.sourceDocument,
+          documents: [{ fileName: `${item.assetBaseName}.pdf`, bytes: pdf }]
+        });
+        documentIds.push(...attached.documentIds);
+      }
+      return {
+        modelUploadId: null,
+        documentIds,
+        preservedPriorModelAsDocument: false
+      };
     }, `attach ${label}`)
   );
 }

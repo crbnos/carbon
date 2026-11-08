@@ -278,7 +278,7 @@ in), `sourceDocument='Job Operation'`, `sourceDocumentId=job.id`,
 Concurrent first-opens are settled by the partial unique index (23505 → reselect).
 
 - **MES UI**: `apps/mes/app/components/Inspection/` — `InspectionView` (AssemblyView
-  shell: header segments for Add Sample / Complete passed (n) / Reject / Partial /
+  shell: header segments for Add Sample / Complete (n passed) / Reject / Partial /
   Accept, TimerControl → `/x/event` — the labor clock **auto-starts on open
   whenever no clock is running**, always on for inspections, independent of the
   company `autoStartOperationTimer` setting; action sheet for Scrap/Rework/Finish/Quality
@@ -326,7 +326,7 @@ inspection link is written with the disposition row under the issue lock).
 | **Accept** | Completes the open remainder (serial: per-entity `issue` `jobOperationSerialComplete`, Pending-sampled and un-sampled units included, failed-sample units EXCLUDED; non-serial: one bulk posting of the op-column remaining via `jobOperationBatchComplete` or `insertProductionQuantity`+backflush) |
 | **Reject** | The operator allocates the open remainder in `DispositionModal`: serial per-unit Scrap/Rework toggles, non-serial scrap+rework quantity fields; the rest is record-only. Scrap subset → one `insertScrapQuantity` (+reason, + backflush) and the serial subset flips → `Rejected`. Rework subset → ONE `trigger-rework` invoke (targets from `rework-targets`; the routing clone includes the inspection op → fresh lot → automatic re-inspection) + `recalculate jobRequirements`; reworked entities are NOT flipped. |
 | **Partial** | Terminal mixed close, gated `inspected >= lotSize && passes > 0 && fails > 0`. Passed units complete; the failed set is allocated exactly like Reject (allocation restricted to failed units). |
-| **Complete passed (n)** header chip | Progressive completion of passed-but-unposted units any time the lot is open (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
+| **Complete (n passed)** header chip | Progressive completion of passed-but-unposted units any time the lot is open (`$id.complete-passed.tsx`) — explicit button, not auto-on-pass, so verdict typos need no compensating transaction. |
 
 Mechanics (in order, per POST):
 1. Buckets recomputed server-side and validated (allocation ids must be open
@@ -392,6 +392,50 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   rows when `liveFeatures.length > 0`, otherwise the single `OVERALL_ROW_ID` pass/fail row whose
   cells write the sample status via the sample route. `RejectLotModal.tsx` (extracted) previews
   failed features.
+- **Entry ergonomics (both apps, 2026-11-05)** — spec
+  `.ai/specs/2026-11-05-inspection-entry-ergonomics.md`. The ERP grid and the MES matrix have
+  two layouts: **By characteristic** (row per characteristic) and **By part** (row per sample,
+  column per characteristic). The default is By part when samples outnumber characteristics
+  (`defaultInspectionGridLayout`, decided once per page); the inspector's choice persists in
+  `localStorage` (`INSPECTION_GRID_LAYOUT_STORAGE_KEY`). Enter/Tab walk the entry cells of a row
+  and wrap to the next row in both layouts; on a go / no-go cell P records a pass and F a
+  fail, then the selection moves on. The browser runs the server's verdict
+  (`valuateMeasurement` / `toleranceLimits` / `measurementDeviation` from
+  `@carbon/database/inspection-verdict`): a cell turns red with ↑ / ↓ while typed and at commit,
+  and the save response replaces that client verdict (a saved cell keeps its stored status).
+  Saves of one sample are queued, so the first save of an anonymous sample creates it and the
+  next reuses its id. **Pass all** (attribute characteristics) and a pasted tab-separated
+  block (`planPaste`, `parseMeasurementToken`, `parseAttributeToken` in `@carbon/utils`
+  `inspection-entry`) send the same per-cell POSTs one at a time — no batch endpoint. A
+  **Hide drawing** toggle (`INSPECTION_DRAWING_HIDDEN_STORAGE_KEY`) gives the grid the body.
+  Only a fail has colour (a passed reading has no fill); a closed lot shows no spare row and
+  renders go / no-go results as text. The ERP grid turns off every Table toolbar control (no
+  toolbar row, no CSV export); its Sample column uses the shared Table's `meta.shrinkToFit`.
+  **Positions are bound to sample ids.** `getInspection` (ERP and MES) orders the embedded
+  samples by `createdAt`, then `id` (an embed has no order, and an UPDATE moves a row). The grids
+  map each column/row to a sample with `placeSamples` (`@carbon/utils`): a sample keeps its
+  position for the page, a new one takes the lowest free position, and cell state is keyed by
+  sample id. Never map a position to `samples[index]` of a reloaded list: each save broadcasts
+  `inspectionSample`, the page reloads, and the index then names another sample.
+  Serial lots pass `dropMissing`: their samples come only from a scan, so a sample the loader
+  no longer returns was deleted (its tracked entity removed) and its position is freed. The
+  serial column count covers the highest kept position, and a save into a freed position is
+  refused ("This sample was removed").
+  Nothing may remount an open ERP cell editor, or what was typed while the previous save
+  landed is lost: each column's editor is made once (`editorCache`) and reads the grid's
+  state through a ref, and a By part row is keyed by its position (non-serial) so the
+  save that creates its sample does not re-key it.
+  A reading typed on a go / no-go cell (both apps) shows "This is a pass / fail check.
+  Press P or F." and the next Enter neither records nor moves, so a misplaced reading
+  never becomes a Pass (the MES records Pass on Enter over its Pass button).
+  Readings and limits are shown and sent with `formatReading` (`@carbon/utils`), never
+  `String()`, which writes 0.0000005 as "5e-7"; the ERP editor keeps 20 decimals (at 6, a
+  typed 0.0000004 was saved as 0). `parseSpecNumber` reads only a plain decimal (with an
+  optional exponent): "Infinity", "0x10", "12,5" and "" make the characteristic pass / fail.
+  Every type other than a Measurement with a numeric nominal (Checkbox, Timestamp, Person,
+  List, File, Task, Inspection) is a pass / fail cell. A failed cell is red to its edges:
+  the ERP display cell paints the fill as a `before:` layer over the whole table cell, and
+  the open editor fills the cell.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity

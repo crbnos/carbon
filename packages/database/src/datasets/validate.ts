@@ -10,7 +10,8 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { EPSILON, round } from "../precision.ts";
+import { Constants } from "../constants.ts";
+import { EPSILON, RoundingMode, round } from "../precision.ts";
 import {
   accounts,
   changeOrderRequiredActions,
@@ -27,7 +28,6 @@ import {
   scrapReasons,
   unitOfMeasures
 } from "../seed-data.ts";
-import { Constants } from "../types.ts";
 import { NOT_CLOSED_MIN_OFFSET, OPEN_PERIOD_MIN_OFFSET } from "./dates.ts";
 import {
   deriveSampleStatus,
@@ -43,6 +43,7 @@ import {
   receiptJournal,
   salesInvoiceJournal,
   scrapJournal,
+  serviceJobTimeJournal,
   shipmentJournal,
   signedNet,
   voidJournal
@@ -65,10 +66,17 @@ import type {
   JournalEntrySpec,
   JournalLineSpec,
   MakeMethodSpec,
+  ProjectElementLinkSpec,
+  ProjectPegSpec,
+  ProjectSpec,
   ReturnCreditSpec,
   RuleConditionValue,
   RuleOperator,
-  SalesOpportunitySpec
+  SalesOpportunitySpec,
+  SalesReturnLineSpec,
+  SalesReturnSpec,
+  ServiceJobLineSpec,
+  ServiceJobSpec
 } from "./types.ts";
 
 export const OPEN_JOB_STATUSES = new Set([
@@ -207,8 +215,17 @@ export const COVERAGE = {
     missing: matrix("sales status matrix", "salesInvoice with status")
   },
   salesReturn: {
-    values: enumValues("salesReturnOrderStatus", { Cancelled: OPTIONAL }),
+    values: enumValues("salesReturnOrderStatus", {
+      Cancelled: OPTIONAL
+    }),
     missing: matrix("sales status matrix", "salesReturn with status")
+  },
+  serviceJob: {
+    values: enumValues("serviceJobStatus", {
+      "On Hold": OPTIONAL,
+      Cancelled: OPTIONAL
+    }),
+    missing: matrix("field service matrix", "serviceJob with status")
   },
   arAgingBucket: {
     // get_ar_aging's default buckets, by days past due as of today.
@@ -252,6 +269,8 @@ export const COVERAGE = {
   approvalRequestType: {
     values: enumValues("approvalDocumentType", {
       qualityDocument: "the seed requests approval for orders and suppliers",
+      projectChangeRequest:
+        "the demo datasets seed no project change request (Phase 1c)",
       changeOrder: "the seed does not create change notice approval requests"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
@@ -696,6 +715,9 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
     register(`sales.salesReturns "${rma.key}"`, `rma:${rma.key}`);
     seenBy.salesReturns.push(count);
   }
+  for (const job of sales.serviceJobs) {
+    register(`sales.serviceJobs "${job.key}"`, `sj:${job.key}`);
+  }
 
   const p = dataset.purchasing;
   for (const quote of p.rfqQuotes) {
@@ -946,8 +968,9 @@ export function onHandLedger(
   for (const spec of dataset.sales.opportunities) shipped(spec);
   for (const spec of dataset.sales.releasedOrders) shipped(spec);
   for (const rma of dataset.sales.salesReturns) {
-    if (rma.status !== "Completed") continue;
+    if (!isReceivedReturn(rma)) continue;
     for (const line of rma.lines) {
+      if (isServiceReturnLine(line)) continue;
       if (line.toShelf !== undefined && shelves.has(line.toShelf)) {
         add(line.item, line.toShelf, line.quantity);
       }
@@ -988,6 +1011,26 @@ export function onHandLedger(
     for (const part of dispatch.spareParts ?? []) {
       if (shelves.has(part.shelf)) add(part.item, part.shelf, -part.quantity);
     }
+  }
+  // Every movement above is common stock. A project's opening stock is in its
+  // own stripe and stays out; a Transfer into a project draws common stock.
+  for (const project of dataset.accounting.projects) {
+    for (const transfer of project.projectStock?.transfers ?? []) {
+      if (shelves.has(transfer.shelf)) {
+        add(transfer.item, transfer.shelf, -transfer.qty);
+      }
+    }
+  }
+  // A grouped receipt lands in its members' stripes, not in common stock.
+  for (const group of dataset.accounting.planningGroups ?? []) {
+    const po = dataset.purchasing.purchaseOrders.find(
+      (p) => p.source === "direct" && p.ref === group.received.purchaseOrder
+    );
+    if (po?.source !== "direct" || po.receipt?.status !== "Posted") continue;
+    const line = po.receipt.lines.find((l) => l.item === group.item);
+    if (line?.toShelf === undefined || !shelves.has(line.toShelf)) continue;
+    const striped = group.received.pegs.reduce((sum, p) => sum + p.quantity, 0);
+    add(group.item, line.toShelf, -striped);
   }
   return onHand;
 }
@@ -1884,18 +1927,6 @@ export function items(ctx: ValidationCtx): void {
       }
     }
   }
-  // Tier 02 promotes each ladder's active revision to Production and every
-  // other item keeps the Design default, so Prototype is the one status only
-  // a ladder rung can supply.
-  if (
-    !dataset.items.revisionLadder.some(
-      (spec) => spec.nextStatus === "Prototype"
-    )
-  ) {
-    fail(
-      `items.revisionLadder: no rung with nextStatus "Prototype" — every itemRevisionStatus must be on screen`
-    );
-  }
 }
 
 export function batchProperties(ctx: ValidationCtx): void {
@@ -1946,6 +1977,218 @@ export function openingStock(ctx: ValidationCtx): void {
       fail(`${where}: shelf life on a non-Batch-tracked item`);
     }
     if (shelfLife.days <= 0) fail(`${where}: days must be positive`);
+  }
+}
+
+/**
+ * Project stock (Projects Phase 2a): the items and shelves resolve, the
+ * items are untracked (the tier writes untracked rows), the quantities and
+ * costs are positive, and the dates fall in an Open period.
+ */
+export function projectStock(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need } = ctx;
+  for (const project of dataset.accounting.projects) {
+    if (!project.projectStock) continue;
+    const where = `accounting.projects "${project.key}" projectStock`;
+    const rows = [
+      ...project.projectStock.openingStock.map((row) => ({
+        ...row,
+        kind: "openingStock"
+      })),
+      ...project.projectStock.transfers.map((row) => ({
+        ...row,
+        kind: "transfers"
+      }))
+    ];
+    if (rows.length === 0) fail(`${where}: no opening stock or transfer`);
+    for (const row of rows) {
+      const at = `${where}.${row.kind} "${row.item}"`;
+      need("item", at, row.item);
+      need("shelf", at, row.shelf);
+      if (ix.isTracked(row.item)) fail(`${at}: a tracked item`);
+      if (!(row.qty > 0)) fail(`${at}: quantity must be positive`);
+      if (row.dateOffset < OPEN_PERIOD_MIN_OFFSET || row.dateOffset > 0) {
+        fail(`${at}: dateOffset outside the Open periods`);
+      }
+    }
+    for (const row of project.projectStock.openingStock) {
+      if (!(row.unitCost > 0)) {
+        fail(`${where}.openingStock "${row.item}": unitCost must be positive`);
+      }
+    }
+  }
+}
+
+/** The statuses `openPurchaseOrderLines` reads as open supply. */
+const OPEN_SUPPLY_PO_STATUSES = new Set([
+  "Planned",
+  "To Receive",
+  "To Receive and Invoice"
+]);
+
+/**
+ * Government contracting Phase 5b: every pool account number is a posting
+ * account of the chart, names and sequences are unique, and one account is
+ * Cost of at most one pool (decision B4, the unique index the tier would hit).
+ */
+export function indirectPools(ctx: ValidationCtx): void {
+  const { dataset, fail } = ctx;
+  const names = new Set<string>();
+  const sequences = new Set<number>();
+  const costAccounts = new Map<string, string>();
+  for (const pool of dataset.accounting.indirectPools) {
+    const where = `accounting.indirectPools "${pool.name}"`;
+    if (names.has(pool.name)) fail(`${where}: duplicate name`);
+    names.add(pool.name);
+    if (!Number.isInteger(pool.sequence) || pool.sequence < 1) {
+      fail(`${where}: sequence must be a whole number from 1`);
+    }
+    if (sequences.has(pool.sequence)) {
+      fail(`${where}: sequence ${pool.sequence} is taken`);
+    }
+    sequences.add(pool.sequence);
+    if (!(pool.rate >= 0 && pool.rate < 10)) {
+      fail(`${where}: rate ${pool.rate} must be a fraction (0.32 is 32 %)`);
+    }
+    if (
+      pool.appliedAccount !== undefined &&
+      !ACCOUNT_CLASS_BY_NUMBER.has(pool.appliedAccount)
+    ) {
+      fail(`${where}: unknown GL account "${pool.appliedAccount}"`);
+    }
+    if (pool.accounts.length === 0) fail(`${where}: no accounts`);
+    const seen = new Set<string>();
+    for (const mapping of pool.accounts) {
+      if (!ACCOUNT_CLASS_BY_NUMBER.has(mapping.account)) {
+        fail(`${where}: unknown GL account "${mapping.account}"`);
+      }
+      const key = `${mapping.account}:${mapping.role}`;
+      if (seen.has(key)) {
+        fail(`${where}: ${mapping.account} is listed twice as ${mapping.role}`);
+      }
+      seen.add(key);
+      if (mapping.role !== "Cost") continue;
+      const other = costAccounts.get(mapping.account);
+      if (other !== undefined) {
+        fail(
+          `${where}: ${mapping.account} is already a Cost account of "${other}"`
+        );
+      }
+      costAccounts.set(mapping.account, pool.name);
+    }
+  }
+}
+
+/**
+ * Planning groups (Projects Phase 3): the members are distinct Released
+ * projects; the item is untracked; the received line has a Posted receipt of
+ * exactly its Hard pegs; the open line is open supply that covers its Soft
+ * pegs; every peg names a member's plan-line material of the item, and no
+ * material is pegged beyond its quantity.
+ */
+export function planningGroups(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need } = ctx;
+  const names = new Set<string>();
+  for (const group of dataset.accounting.planningGroups ?? []) {
+    const where = `accounting.planningGroups "${group.name}"`;
+    if (names.has(group.name)) fail(`${where}: duplicate name`);
+    names.add(group.name);
+    need("item", where, group.item);
+    if (ix.isTracked(group.item)) fail(`${where}: a tracked item`);
+
+    const members = new Set<string>();
+    for (const member of group.members) {
+      const project = dataset.accounting.projects.find(
+        (p) => p.key === member.project
+      );
+      if (!project) fail(`${where}: unknown member "${member.project}"`);
+      else if (project.status !== "Released") {
+        fail(`${where}: member "${member.project}" is not Released`);
+      }
+      if (members.has(member.project)) {
+        fail(`${where}: member "${member.project}" listed twice`);
+      }
+      members.add(member.project);
+    }
+    if (members.size < 2) fail(`${where}: expected at least 2 members`);
+
+    const orderLine = (kind: string, ref: string) => {
+      const po = dataset.purchasing.purchaseOrders.find(
+        (p) => p.source === "direct" && p.ref === ref
+      );
+      if (!po || po.source !== "direct") {
+        fail(`${where}.${kind}: unknown direct purchase order "${ref}"`);
+        return null;
+      }
+      const lines = po.lines.filter((line) => line.item === group.item);
+      if (lines.length !== 1) {
+        fail(`${where}.${kind}: "${ref}" needs exactly one ${group.item} line`);
+        return null;
+      }
+      return { po, line: lines[0]! };
+    };
+    if (group.received.purchaseOrder === group.open.purchaseOrder) {
+      fail(`${where}: the received and open lines share one order`);
+    }
+
+    const pegged = new Map<string, number>();
+    const checkPegs = (kind: string, pegs: ProjectPegSpec[]): number => {
+      if (pegs.length === 0) fail(`${where}.${kind}: no pegs`);
+      let total = 0;
+      for (const peg of pegs) {
+        const at = `${where}.${kind} peg ${peg.project}:${peg.element}`;
+        if (!members.has(peg.project)) fail(`${at}: not a member`);
+        const material = dataset.accounting.projects
+          .find((p) => p.key === peg.project)
+          ?.elements.find((e) => e.key === peg.element)
+          ?.materials?.find((m) => m.item === group.item);
+        if (!material) {
+          fail(`${at}: no ${group.item} plan-line material`);
+        }
+        if (!(peg.quantity > 0)) fail(`${at}: quantity must be positive`);
+        total += peg.quantity;
+        const key = `${peg.project}:${peg.element}`;
+        const sum = (pegged.get(key) ?? 0) + peg.quantity;
+        pegged.set(key, sum);
+        if (material && sum > material.quantity) {
+          fail(
+            `${at}: pegs ${sum}, beyond the material's ${material.quantity}`
+          );
+        }
+      }
+      return total;
+    };
+
+    const hard = checkPegs("received", group.received.pegs);
+    const received = orderLine("received", group.received.purchaseOrder);
+    if (received) {
+      const receiptLine = received.po.receipt?.lines.find(
+        (line) => line.item === group.item
+      );
+      if (received.po.receipt?.status !== "Posted" || !receiptLine) {
+        fail(`${where}.received: no Posted receipt line of ${group.item}`);
+      } else if (receiptLine.receivedQuantity !== hard) {
+        fail(
+          `${where}.received: received ${receiptLine.receivedQuantity}, but the pegs sum to ${hard}`
+        );
+      }
+    }
+
+    const soft = checkPegs("open", group.open.pegs);
+    const open = orderLine("open", group.open.purchaseOrder);
+    if (open) {
+      if (!OPEN_SUPPLY_PO_STATUSES.has(open.po.status)) {
+        fail(`${where}.open: status "${open.po.status}" is not open supply`);
+      }
+      if (open.po.receipt?.status === "Posted") {
+        fail(`${where}.open: the order has a Posted receipt`);
+      }
+      if (soft > open.line.purchaseQuantity) {
+        fail(
+          `${where}.open: the pegs sum to ${soft}, beyond the line's ${open.line.purchaseQuantity}`
+        );
+      }
+    }
   }
 }
 
@@ -2162,6 +2405,404 @@ export function netOnHand(ctx: ValidationCtx): void {
   }
 }
 
+/** Today's warranty states every dataset shows on the asset list. */
+const WARRANTY_STATES = ["In warranty", "Labor ended", "Expired"] as const;
+
+/** In Progress and Completed RMAs are fully received (tier 04 posts their receipt). */
+function isReceivedReturn(rma: SalesReturnSpec): boolean {
+  return rma.status === "In Progress" || rma.status === "Completed";
+}
+
+/** A Service or Warranty line is serviced, not restocked. */
+function isServiceReturnLine(line: SalesReturnLineSpec): boolean {
+  return (
+    line.returnType === "Return for Service" ||
+    line.returnType === "Return for Warranty"
+  );
+}
+
+/**
+ * The most calendar days `workdaysBack` working days can span (two weekend
+ * days per started week, plus a weekend anchor). Only an upper bound: the
+ * pure validator has no anchor.
+ */
+function maxCalendarDaysBack(workdaysBack: number): number {
+  return workdaysBack + 2 * round(workdaysBack / 5, 0, RoundingMode.Up) + 2;
+}
+
+const DONE_SERVICE_JOB_STATUSES = new Set(["Completed", "Invoiced"]);
+/** Seeded dispatch assignments go on these jobs only: work still to schedule. */
+const DISPATCHABLE_SERVICE_JOB_STATUSES = new Set([
+  "Open",
+  "Awaiting Approval",
+  "In Progress"
+]);
+
+/**
+ * Service jobs: each names a seeded asset and bills at the dataset's labor
+ * rates (a positive cost and bill rate); an estimate line with no item is a
+ * Labor line at the bill rate. A job from an RMA line names
+ * a received Service or Warranty line of the asset's unit, with the coverage
+ * that return type gives it, and every such line has exactly one job; an In
+ * Progress RMA has a job that is not done. Dates follow the job: time on or
+ * after opening and in an open period (each entry posts its own balanced
+ * journal on its day), completion after the last entry, the invoice after
+ * completion. An Invoiced job is Billable and bills something. Only
+ * open jobs have dispatch assignments (one per weekday, positive hours), and
+ * at least one open job has none, so the grid and its backlog both show rows.
+ */
+function serviceJobs(ctx: ValidationCtx): void {
+  const { dataset, fail, need } = ctx;
+  const sales = dataset.sales;
+  const services = new Map(
+    dataset.items.services.map((item) => [item.readableId, item])
+  );
+  const rates = sales.serviceLaborRates;
+  if (!(rates.cost > 0 && rates.bill > 0)) {
+    fail(
+      `sales.serviceLaborRates: needs a positive cost and bill rate per hour (cost ${rates.cost}, bill ${rates.bill})`
+    );
+  }
+  const assets = new Map(sales.customerAssets.map((a) => [a.key, a]));
+  const returns = new Map(sales.salesReturns.map((r) => [r.key, r]));
+  const seen = new Set<string>();
+  const statuses = new Set<string>();
+  const jobByReturnLine = new Map<string, ServiceJobSpec>();
+  let assigned = 0;
+  let backlog = 0;
+
+  const checkLine = (where: string, line: ServiceJobLineSpec) => {
+    // No item: a Labor estimate line, hours at the job's bill rate.
+    const label = line.item ?? "Labor";
+    if (line.item === undefined) {
+      if (Math.abs(line.unitPrice - rates.bill) > EPSILON) {
+        fail(
+          `${where} Labor: unit price ${line.unitPrice} is not the bill rate ${rates.bill}`
+        );
+      }
+    } else {
+      need("item", where, line.item);
+      if (!services.has(line.item)) {
+        fail(`${where} "${line.item}": not a Service item`);
+      }
+    }
+    if (line.quantity <= 0)
+      fail(`${where} "${label}": quantity must be positive`);
+    if (line.unitPrice < 0) fail(`${where} "${label}": negative price`);
+  };
+
+  for (const job of sales.serviceJobs) {
+    const where = `sales.serviceJobs "${job.key}"`;
+    if (seen.has(job.key)) fail(`${where}: duplicate key`);
+    seen.add(job.key);
+    statuses.add(job.status);
+    const done = DONE_SERVICE_JOB_STATUSES.has(job.status);
+
+    const asset = assets.get(job.asset);
+    if (!asset) fail(`${where}: unknown customer asset "${job.asset}"`);
+    if (
+      job.coverage === "Warranty" &&
+      asset &&
+      !(
+        (asset.laborWarrantyEndOffset ?? -1) >= 0 ||
+        (asset.partsWarrantyEndOffset ?? -1) >= 0
+      )
+    ) {
+      fail(`${where}: Warranty coverage on an asset whose warranty has ended`);
+    }
+
+    const origin = job.salesReturnLine;
+    if (origin) {
+      if (job.openedWorkdaysBack !== undefined) {
+        fail(
+          `${where}: a job from an RMA line opens on the receipt day, so it has no openedWorkdaysBack`
+        );
+      }
+      const rma = returns.get(origin.salesReturn);
+      const line = rma?.lines[origin.line - 1];
+      if (!rma || !line) {
+        fail(
+          `${where}: unknown sales return line ${origin.salesReturn} ${origin.line}`
+        );
+      } else {
+        const lineKey = `${origin.salesReturn}:${origin.line}`;
+        if (jobByReturnLine.has(lineKey)) {
+          fail(`${where}: RMA line ${lineKey} already has a job`);
+        }
+        jobByReturnLine.set(lineKey, job);
+        if (!isServiceReturnLine(line)) {
+          fail(
+            `${where}: RMA line ${lineKey} is not a Service or Warranty line`
+          );
+        } else if (
+          job.coverage !==
+          (line.returnType === "Return for Warranty" ? "Warranty" : "Billable")
+        ) {
+          fail(
+            `${where}: a ${line.returnType} line's job starts ${line.returnType === "Return for Warranty" ? "Warranty" : "Billable"}`
+          );
+        }
+        if (!isReceivedReturn(rma)) {
+          fail(
+            `${where}: RMA "${rma.key}" is ${rma.status}; the receipt creates the job`
+          );
+        }
+        if (line.asset !== job.asset) {
+          fail(
+            `${where}: RMA line ${lineKey} returns asset "${line.asset ?? ""}", not "${job.asset}"`
+          );
+        }
+      }
+    } else if (job.openedWorkdaysBack === undefined) {
+      fail(`${where}: needs openedWorkdaysBack`);
+    }
+
+    const opened = job.openedWorkdaysBack;
+    for (const entry of job.time) {
+      if (!(entry.hours > 0)) fail(`${where} time: hours must be positive`);
+      if (entry.workdaysBack < 0) fail(`${where} time: in the future`);
+      if (opened !== undefined && entry.workdaysBack > opened) {
+        fail(
+          `${where} time: ${entry.workdaysBack} working days back, before the job opened`
+        );
+      }
+      // post-service-job post-time: each closed entry posts on its day.
+      if (maxCalendarDaysBack(entry.workdaysBack) > -OPEN_PERIOD_MIN_OFFSET) {
+        fail(
+          `${where} time: ${entry.workdaysBack} working days back, its journal needs an Open period`
+        );
+      }
+      const journal = serviceJobTimeJournal({
+        serviceJobReadableId: job.key,
+        coverage: job.coverage,
+        unitCost: rates.cost,
+        hours: entry.hours
+      });
+      const net = round(journal.lines.reduce((sum, l) => sum + l.amount, 0));
+      if (Math.abs(net) > EPSILON) {
+        fail(`${where} time: its journal does not balance (net ${net})`);
+      }
+      if (entry.clock) {
+        const start = secondsOfDay(entry.clock.start);
+        const end = secondsOfDay(entry.clock.end);
+        if (start === null || end === null || end <= start) {
+          fail(
+            `${where} time: clock ${entry.clock.start}–${entry.clock.end} is not a forward "HH:MM:SS" span`
+          );
+        } else if (Math.abs((end - start) / 3600 - entry.hours) > EPSILON) {
+          fail(
+            `${where} time: ${entry.hours} hours, but the clock spans ${(end - start) / 3600}`
+          );
+        }
+      }
+    }
+
+    const estimate = job.estimate;
+    if (estimate) {
+      for (const line of estimate.lines) checkLine(`${where} estimate`, line);
+      if (estimate.lines.length === 0) fail(`${where}: an estimate has lines`);
+      if (job.coverage !== "Billable")
+        fail(`${where}: only a Billable job has an estimate`);
+      const sent = estimate.sentWorkdaysBack;
+      const responded = estimate.respondedWorkdaysBack;
+      if ((estimate.status === "Draft") !== (sent === undefined)) {
+        fail(
+          `${where}: sentWorkdaysBack is set exactly when the estimate is past Draft`
+        );
+      }
+      const answered =
+        estimate.status === "Accepted" || estimate.status === "Declined";
+      if (answered !== (responded !== undefined)) {
+        fail(
+          `${where}: respondedWorkdaysBack is set exactly when the estimate is Accepted or Declined`
+        );
+      }
+      if (sent !== undefined && responded !== undefined && responded > sent) {
+        fail(`${where}: the customer responds before the estimate is sent`);
+      }
+    }
+    if (job.status === "Awaiting Approval" && estimate?.status !== "Sent") {
+      fail(`${where}: an Awaiting Approval job has a Sent estimate`);
+    }
+    for (const charge of job.charges) checkLine(`${where} charge`, charge);
+
+    const completed = job.completedWorkdaysBack;
+    if (done !== (completed !== undefined)) {
+      fail(
+        `${where}: completedWorkdaysBack is set exactly when the job is Completed or Invoiced`
+      );
+    }
+    if (completed !== undefined) {
+      if (job.time.some((entry) => entry.workdaysBack < completed)) {
+        fail(`${where}: time is logged after the job completed`);
+      }
+    }
+    const invoiced = job.invoiceWorkdaysBack;
+    if ((job.status === "Invoiced") !== (invoiced !== undefined)) {
+      fail(
+        `${where}: invoiceWorkdaysBack is set exactly when the job is Invoiced`
+      );
+    }
+    if (job.status === "Invoiced") {
+      if (job.coverage !== "Billable")
+        fail(`${where}: only a Billable job is invoiced`);
+      if (
+        invoiced !== undefined &&
+        completed !== undefined &&
+        invoiced > completed
+      ) {
+        fail(`${where}: invoiced before it completed`);
+      }
+      const bills =
+        job.time.some((entry) => entry.billable ?? true) ||
+        job.charges.some((charge) => charge.billable ?? true);
+      if (!bills) fail(`${where}: an Invoiced job bills time or a charge`);
+    }
+
+    // The dispatch grid: assignments of open jobs, one per day
+    // (serviceJobAssignment_unique: job, employee, date — the employee is
+    // always the applying user).
+    const assignments = job.assignments ?? [];
+    if (assignments.length > 0) {
+      assigned += assignments.length;
+      if (!DISPATCHABLE_SERVICE_JOB_STATUSES.has(job.status)) {
+        fail(`${where}: a ${job.status} job is not on the dispatch grid`);
+      }
+    } else if (DISPATCHABLE_SERVICE_JOB_STATUSES.has(job.status)) {
+      backlog += 1;
+    }
+    const days = new Set<number>();
+    for (const assignment of assignments) {
+      if (
+        !Number.isInteger(assignment.weekday) ||
+        assignment.weekday < 0 ||
+        assignment.weekday > 4
+      ) {
+        fail(
+          `${where} assignment: weekday ${assignment.weekday} is not Monday (0) to Friday (4)`
+        );
+      }
+      if (days.has(assignment.weekday)) {
+        fail(
+          `${where} assignment: two on weekday ${assignment.weekday} for the same employee`
+        );
+      }
+      days.add(assignment.weekday);
+      if (!(assignment.plannedHours > 0)) {
+        fail(`${where} assignment: planned hours must be positive`);
+      }
+    }
+  }
+
+  if (assigned === 0) {
+    fail("sales.serviceJobs: no assignments, so the dispatch grid is empty");
+  }
+  if (backlog === 0) {
+    fail(
+      "sales.serviceJobs: every open job is assigned, so the dispatch backlog is empty"
+    );
+  }
+
+  for (const rma of sales.salesReturns) {
+    if (!isReceivedReturn(rma)) continue;
+    let open = false;
+    for (const [index, line] of rma.lines.entries()) {
+      if (!isServiceReturnLine(line)) continue;
+      const job = jobByReturnLine.get(`${rma.key}:${index + 1}`);
+      if (!job) {
+        fail(
+          `sales.salesReturns "${rma.key}" line ${index + 1}: the receipt creates a service job, and none names it`
+        );
+      } else if (!DONE_SERVICE_JOB_STATUSES.has(job.status)) {
+        open = true;
+      }
+    }
+    if (rma.status === "In Progress" && !open) {
+      fail(
+        `sales.salesReturns "${rma.key}": In Progress needs a Service or Warranty line whose job is not done`
+      );
+    }
+  }
+
+  checkCoverage(fail, { serviceJob: statuses });
+}
+
+/**
+ * Field service: the assets are serials of serial-tracked items at customers
+ * with a contact, with a warranty that ends after the ship date and the three
+ * warranty states on the anchor day; a contract's project has a unique
+ * identifier and name.
+ */
+export function fieldService(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need, needCustomer } = ctx;
+  const sales = dataset.sales;
+
+  const assetKeys = new Set<string>();
+  const serials = new Set<string>();
+  const warrantyStates = new Set<string>();
+  for (const asset of sales.customerAssets) {
+    const where = `sales.customerAssets "${asset.key}"`;
+    if (assetKeys.has(asset.key)) fail(`${where}: duplicate key`);
+    assetKeys.add(asset.key);
+    const serialKey = `${asset.item}|${asset.serial}`;
+    if (serials.has(serialKey)) fail(`${where}: duplicate serial`);
+    serials.add(serialKey);
+    need("item", where, asset.item);
+    if (ix.trackingByItem.get(asset.item) !== "Serial") {
+      fail(`${where}: item "${asset.item}" is not serial-tracked`);
+    }
+    needCustomer(where, asset.customer);
+    for (const end of [
+      asset.laborWarrantyEndOffset,
+      asset.partsWarrantyEndOffset
+    ]) {
+      if (end !== null && end < asset.shippedOffset) {
+        fail(`${where}: a warranty ends before the ship date`);
+      }
+    }
+    warrantyStates.add(
+      asset.laborWarrantyEndOffset !== null && asset.laborWarrantyEndOffset >= 0
+        ? "In warranty"
+        : asset.partsWarrantyEndOffset !== null &&
+            asset.partsWarrantyEndOffset >= 0
+          ? "Labor ended"
+          : "Expired"
+    );
+  }
+  for (const state of WARRANTY_STATES) {
+    if (!warrantyStates.has(state)) {
+      fail(`sales.customerAssets: no asset whose warranty is "${state}" today`);
+    }
+  }
+
+  // A contract's project is seeded beside the dataset's projects: its name
+  // and identifier share their uniqueness.
+  const projectIdentifiers = new Set(
+    dataset.accounting.projects.map((project) => project.identifier)
+  );
+  const projectNames = new Set(
+    dataset.accounting.projects.map((project) => project.name)
+  );
+  for (const contract of sales.contracts) {
+    if (!contract.project) continue;
+    const where = `sales.contracts "${contract.key}" project`;
+    const { identifier } = contract.project;
+    if (!/^[A-Z][A-Z0-9]{1,5}$/.test(identifier)) {
+      fail(`${where}: identifier "${identifier}" is not 2–6 capitals`);
+    }
+    if (projectIdentifiers.has(identifier)) {
+      fail(`${where}: duplicate identifier "${identifier}"`);
+    }
+    projectIdentifiers.add(identifier);
+    if (projectNames.has(contract.name)) {
+      fail(`${where}: duplicate project name "${contract.name}"`);
+    }
+    projectNames.add(contract.name);
+  }
+
+  serviceJobs(ctx);
+}
+
 export function sales(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;
   const f = dataset.foundation;
@@ -2333,23 +2974,70 @@ export function sales(ctx: ValidationCtx): void {
       fail(`${where}: unknown sales order ref "${rma.salesOrder}"`);
     }
     if (rma.lines.length === 0) fail(`${where}: no lines`);
+    const received = isReceivedReturn(rma);
     for (const line of rma.lines) {
       need("item", where, line.item);
       if (line.quantity <= 0) {
         fail(`${where} line "${line.item}": quantity must be positive`);
       }
-      if (isTracked(line.item)) {
+      if (line.toShelf !== undefined) need("shelf", where, line.toShelf);
+      if (isServiceReturnLine(line)) {
+        // salesReturnOrderLine_service_quantity_check; the unit enters no
+        // stock (receipt-service-return.ts), so it has no shelf.
+        if (line.quantity !== 1) {
+          fail(
+            `${where} line "${line.item}": a ${line.returnType} line holds one unit`
+          );
+        }
+        if (line.toShelf !== undefined) {
+          fail(
+            `${where} line "${line.item}": a ${line.returnType} line enters no stock, so it has no toShelf`
+          );
+        }
+        const asset = dataset.sales.customerAssets.find(
+          (a) => a.key === line.asset
+        );
+        if (!asset) {
+          fail(
+            `${where} line "${line.item}": unknown customer asset "${line.asset ?? ""}"`
+          );
+        } else {
+          if (asset.item !== line.item) {
+            fail(
+              `${where} line "${line.item}": asset "${asset.key}" is a ${asset.item}`
+            );
+          }
+          if (asset.customer !== rma.customer) {
+            fail(
+              `${where} line "${line.item}": asset "${asset.key}" belongs to "${asset.customer}"`
+            );
+          }
+        }
+        // The seed never ships a serviced unit back, which completing the
+        // line needs.
+        if (rma.status === "Completed") {
+          fail(
+            `${where} line "${line.item}": a Completed return's ${line.returnType} line needs a ship-back the seed does not model`
+          );
+        }
+        continue;
+      }
+      if (line.asset !== undefined) {
+        fail(
+          `${where} line "${line.item}": only a Service or Warranty line names an asset`
+        );
+      }
+      // A return that is not received writes only its lines, so a tracked
+      // item is fine there; receiving one needs per-entity rows.
+      if (received && isTracked(line.item)) {
         fail(
           `${where} line "${line.item}": tracked items need per-entity returns the seed does not model`
         );
       }
-      if (line.toShelf !== undefined) need("shelf", where, line.toShelf);
-      if (rma.status === "Completed") {
-        if (line.toShelf === undefined) {
-          fail(
-            `${where} line "${line.item}": Completed return line needs a toShelf`
-          );
-        }
+      if (received && line.toShelf === undefined) {
+        fail(
+          `${where} line "${line.item}": a received return line needs a toShelf`
+        );
       }
     }
   }
@@ -4798,7 +5486,6 @@ export function quality(ctx: ValidationCtx): void {
         `${where}: gaugeType "${gauge.gaugeType}" is not a bootstrap gauge type`
       );
     }
-    if (gauge.supplier !== undefined) need("supplier", where, gauge.supplier);
     if (gauge.shelf !== undefined) need("shelf", where, gauge.shelf);
     if (gauge.calibrationIntervalInMonths <= 0) {
       fail(`${where}: calibrationIntervalInMonths must be positive`);
@@ -4958,6 +5645,175 @@ type InvoiceFacts = {
   currencyCode: string;
 };
 
+/** The element types each end of a seeded link may have (ERP `allowedLinkEnds`). */
+const LINK_ENDS: Record<
+  ProjectElementLinkSpec["type"] | "feeds",
+  { from: string[] | null; to: string[] | null }
+> = {
+  satisfies: { from: ["System", "Function"], to: ["Requirement"] },
+  verifies: { from: ["Test Case"], to: ["Requirement"] },
+  derives: { from: ["Requirement"], to: ["Requirement"] },
+  implements: { from: ["Task"], to: ["System", "Function", "Requirement"] },
+  blocks: { from: null, to: null },
+  precedes: { from: null, to: null },
+  "relates to": { from: null, to: null },
+  feeds: { from: ["Parameter"], to: ["Parameter"] }
+};
+
+/**
+ * The Phase 1b element fields of one project: a Parameter's children are
+ * Parameters and it links no part, type-specific fields sit on their type,
+ * refs (item, actual Parameter, formula, links) resolve, a Capitalize
+ * project names its CIP class.
+ */
+function projectElementChecks(
+  ctx: ValidationCtx,
+  project: ProjectSpec,
+  where: string
+): void {
+  const { ix, fail } = ctx;
+  const typeOf = new Map(project.elements.map((e) => [e.key, e.type]));
+  const listed = new Set<string>();
+  for (const element of project.elements) {
+    const at = `${where} element "${element.key}"`;
+    const parentType = element.parentKey
+      ? typeOf.get(element.parentKey)
+      : undefined;
+    if (parentType === "Parameter" && element.type !== "Parameter") {
+      fail(`${at}: a Parameter's children must be Parameters`);
+    }
+    if (
+      element.type === "Parameter" &&
+      (element.item || element.isFinalAsset)
+    ) {
+      fail(`${at}: a Parameter links no part and is never a final asset`);
+    }
+    if (element.item && !ix.refs.item.has(element.item)) {
+      fail(`${at}: unknown item "${element.item}"`);
+    }
+    if (element.isFinalAsset && project.costTreatment !== "Capitalize") {
+      fail(`${at}: a final asset needs a Capitalize project`);
+    }
+    if (element.requirement && element.type !== "Requirement") {
+      fail(`${at}: requirement fields on a ${element.type}`);
+    }
+    if (element.verdict && element.type !== "Test Case") {
+      fail(`${at}: a verdict on a ${element.type}`);
+    }
+    const materialItems = new Set<string>();
+    for (const material of element.materials ?? []) {
+      const where = `${at} material "${material.item}"`;
+      if (element.type === "Parameter") fail(`${where}: on a Parameter`);
+      if (!ix.refs.item.has(material.item)) fail(`${where}: unknown item`);
+      else if (ix.isTracked(material.item)) fail(`${where}: a tracked item`);
+      if (materialItems.has(material.item)) fail(`${where}: listed twice`);
+      materialItems.add(material.item);
+      if (!(material.quantity > 0)) fail(`${where}: quantity must be positive`);
+    }
+    if (element.parameter && element.type !== "Parameter") {
+      fail(`${at}: parameter fields on a ${element.type}`);
+    }
+    const requirement = element.requirement;
+    if (
+      requirement?.operator === "Range" &&
+      requirement.upperTarget === undefined
+    ) {
+      fail(`${at}: a Range target needs an upper target`);
+    }
+    if (
+      requirement?.actualParameter !== undefined &&
+      !(
+        listed.has(requirement.actualParameter) &&
+        typeOf.get(requirement.actualParameter) === "Parameter"
+      )
+    ) {
+      fail(
+        `${at}: actual parameter "${requirement.actualParameter}" is not a Parameter listed before it`
+      );
+    }
+    const parameter = element.parameter;
+    if (parameter?.source === "Formula") {
+      const refs = [...(parameter.formula ?? "").matchAll(/\{([^}]+)\}/g)];
+      if (refs.length === 0) fail(`${at}: a Formula Parameter needs a formula`);
+      for (const [, key] of refs) {
+        if (typeOf.get(key!) !== "Parameter" || key === element.key) {
+          fail(`${at}: formula ref "${key}" is not another Parameter`);
+        }
+      }
+    }
+    if (parameter?.source === "Item") {
+      fail(`${at}: the Item source is not seeded (it needs a custom field)`);
+    }
+    if (element.isControlAccount && element.earnedValueTechnique) {
+      fail(`${at}: a control account takes no earned value technique`);
+    }
+    if (
+      element.startOffset !== undefined &&
+      element.targetOffset !== undefined &&
+      element.targetOffset < element.startOffset
+    ) {
+      fail(`${at}: the target date is before the start date`);
+    }
+    if (element.earnedValueTechnique) {
+      // The nearest control account above it makes it a work package (C7).
+      let parentKey = element.parentKey;
+      const seen = new Set<string>();
+      let found = false;
+      while (parentKey && !seen.has(parentKey)) {
+        seen.add(parentKey);
+        const parent = project.elements.find((e) => e.key === parentKey);
+        if (parent?.isControlAccount) found = true;
+        parentKey = found ? undefined : parent?.parentKey;
+      }
+      if (!found || element.type === "Parameter") {
+        fail(
+          `${at}: an earned value technique needs a chargeable element below a control account`
+        );
+      }
+    }
+    if (
+      element.earnedValuePercent !== undefined &&
+      element.earnedValueTechnique !== "Percent Complete"
+    ) {
+      fail(`${at}: a percent complete without the Percent Complete technique`);
+    }
+    for (const value of [
+      parameter?.allocationPercent,
+      parameter?.contingencyPercent,
+      element.earnedValuePercent
+    ]) {
+      if (value !== undefined && (value < 0 || value > 100)) {
+        fail(`${at}: a percent outside 0–100`);
+      }
+    }
+    listed.add(element.key);
+  }
+  if (project.costTreatment === "Capitalize" && !project.fixedAssetClass) {
+    fail(`${where}: a Capitalize project needs its CIP fixedAssetClass`);
+  }
+  const linkKeys = new Set<string>();
+  for (const link of project.links ?? []) {
+    const at = `${where} link ${link.from} ${link.type} ${link.to}`;
+    const from = typeOf.get(link.from);
+    const to = typeOf.get(link.to);
+    if (!from || !to) {
+      fail(`${at}: unknown element`);
+      continue;
+    }
+    if (link.from === link.to) fail(`${at}: links an element to itself`);
+    const ends = LINK_ENDS[link.type];
+    if (
+      (ends.from && !ends.from.includes(from)) ||
+      (ends.to && !ends.to.includes(to))
+    ) {
+      fail(`${at}: a ${link.type} link cannot run from a ${from} to a ${to}`);
+    }
+    const key = `${link.from} ${link.type} ${link.to}`;
+    if (linkKeys.has(key)) fail(`${at}: duplicate link`);
+    linkKeys.add(key);
+  }
+}
+
 export function accounting(ctx: ValidationCtx): void {
   const { dataset, ix, fail } = ctx;
   const customers = ix.refs.customer;
@@ -5030,6 +5886,114 @@ export function accounting(ctx: ValidationCtx): void {
     }
   }
   if (a.projects.length < 2) fail("accounting.projects: expected at least 2");
+
+  // The workspace: identifiers, milestones, the element tree and the timesheet.
+  const identifiers = new Set<string>();
+  const elementKeys = new Map<string, Set<string>>();
+  const projectStatus = new Map<string, string>();
+  for (const project of a.projects) {
+    const where = `accounting.projects "${project.key}"`;
+    projectStatus.set(project.key, project.status);
+    if (!/^[A-Z][A-Z0-9]{1,5}$/.test(project.identifier)) {
+      fail(`${where}: identifier "${project.identifier}" is not 2–6 capitals`);
+    }
+    if (identifiers.has(project.identifier)) {
+      fail(`${where}: duplicate identifier "${project.identifier}"`);
+    }
+    identifiers.add(project.identifier);
+
+    const milestoneKeys = new Set<string>();
+    for (const milestone of project.milestones) {
+      if (milestoneKeys.has(milestone.key)) {
+        fail(`${where}: duplicate milestone "${milestone.key}"`);
+      }
+      milestoneKeys.add(milestone.key);
+      if (milestone.endOffset < milestone.startOffset) {
+        fail(`${where}: milestone "${milestone.key}" ends before it starts`);
+      }
+    }
+    if (project.milestones.length < 2) {
+      fail(`${where}: expected at least 2 milestones`);
+    }
+
+    const keys = new Set<string>();
+    const depth = new Map<string, number>();
+    for (const element of project.elements) {
+      const at = `${where} element "${element.key}"`;
+      if (keys.has(element.key)) fail(`${at}: duplicate key`);
+      if (element.parentKey !== undefined) {
+        const parentDepth = depth.get(element.parentKey);
+        if (parentDepth === undefined) {
+          fail(`${at}: parent "${element.parentKey}" is not listed before it`);
+        } else {
+          depth.set(element.key, parentDepth + 1);
+        }
+      } else {
+        depth.set(element.key, 1);
+      }
+      if (
+        element.milestone !== undefined &&
+        !milestoneKeys.has(element.milestone)
+      ) {
+        fail(`${at}: unknown milestone "${element.milestone}"`);
+      }
+      if ((element.budget ?? 0) < 0 || (element.estimatedHours ?? 0) < 0) {
+        fail(`${at}: negative budget or estimated hours`);
+      }
+      keys.add(element.key);
+    }
+    elementKeys.set(project.key, keys);
+    projectElementChecks(ctx, project, where);
+    if (project.elements.length < 8) {
+      fail(`${where}: expected at least 8 elements`);
+    }
+    if (Math.max(0, ...depth.values()) < 3) {
+      fail(`${where}: expected an element tree 3 levels deep`);
+    }
+  }
+
+  const laborCategoryNames = new Set<string>();
+  for (const category of a.laborCategories) {
+    if (laborCategoryNames.has(category.name)) {
+      fail(`accounting.laborCategories "${category.name}": duplicate name`);
+    }
+    laborCategoryNames.add(category.name);
+    if (category.costRate < 0) {
+      fail(`accounting.laborCategories "${category.name}": negative cost rate`);
+    }
+  }
+  if (a.laborCategories.length === 0) {
+    fail("accounting.laborCategories: must not be empty");
+  }
+
+  // A week-0 day after the anchor is pulled back to the anchor, so two
+  // week-0 entries on one timesheet row could land in one cell.
+  const timesheetCells = new Set<string>();
+  for (const [index, entry] of a.timesheetEntries.entries()) {
+    const where = `accounting.timesheetEntries[${index}]`;
+    if (!elementKeys.get(entry.project)?.has(entry.element)) {
+      fail(`${where}: unknown element "${entry.project}:${entry.element}"`);
+    }
+    if (projectStatus.get(entry.project) !== "Released") {
+      fail(`${where}: project "${entry.project}" is not Released`);
+    }
+    if (!laborCategoryNames.has(entry.laborCategory)) {
+      fail(`${where}: unknown labor category "${entry.laborCategory}"`);
+    }
+    if (entry.hours <= 0) fail(`${where}: hours must be positive`);
+    const row = `${entry.project}:${entry.element}:${entry.laborCategory}`;
+    const cell =
+      entry.week === 0 ? `0:${row}` : `${entry.week}:${entry.weekday}:${row}`;
+    if (timesheetCells.has(cell)) {
+      fail(`${where}: shares a timesheet cell with an earlier entry`);
+    }
+    timesheetCells.add(cell);
+  }
+  for (const status of ["Draft", "Submitted"] as const) {
+    if (!a.timesheetEntries.some((entry) => entry.status === status)) {
+      fail(`accounting.timesheetEntries: no ${status} entry`);
+    }
+  }
   if (!a.projects.some((p) => p.purchaseInvoiceLine)) {
     fail("accounting.projects: no project codes a purchase invoice line");
   }
@@ -5895,19 +6859,24 @@ export function workforce(ctx: ValidationCtx): void {
   const spans: { where: string; start: number; end: number }[] = [];
   ops.timecards.forEach((card, index) => {
     const where = `ops.timecards[${index}]`;
-    if (card.dayOffset > -1 || card.dayOffset < -7) {
+    if (
+      !Number.isInteger(card.workdaysBack) ||
+      card.workdaysBack < 1 ||
+      card.workdaysBack > 5
+    ) {
       fail(
-        `${where}: dayOffset ${card.dayOffset} is outside the past week (-7…-1)`
+        `${where}: workdaysBack ${card.workdaysBack} is outside the past working week (1…5)`
       );
     }
     const clockIn = secondsOfDay(card.clockIn);
     const clockOut = secondsOfDay(card.clockOut);
     if (clockIn === null || clockOut === null) {
-      fail(`${where}: clockIn/clockOut must be UTC "HH:MM:SS"`);
+      fail(`${where}: clockIn/clockOut must be "HH:MM:SS"`);
       return;
     }
     if (clockOut <= clockIn) fail(`${where}: clockOut must be after clockIn`);
-    const day = card.dayOffset * 86_400;
+    // Further back is earlier: workday 1 is the latest.
+    const day = -card.workdaysBack * 86_400;
     spans.push({ where, start: day + clockIn, end: day + clockOut });
   });
   spans.sort((a, b) => a.start - b.start);
@@ -6909,10 +7878,14 @@ const RULES: Rule[] = [
   foundation,
   items,
   openingStock,
+  projectStock,
+  planningGroups,
+  indirectPools,
   batchProperties,
   trackedStockAndMovements,
   uniqueDocumentRefs,
   sales,
+  fieldService,
   purchasing,
   jobs,
   floor,

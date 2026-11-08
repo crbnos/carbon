@@ -347,7 +347,7 @@ export function MaintenanceAddPartModal({
           }}
         >
           <ModalBody>
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-4">
               <Hidden name="itemId" value={selectedItemId} />
               <Hidden name="unitOfMeasureCode" value={unitOfMeasureCode} />
               {/* Item Selection */}
@@ -410,6 +410,7 @@ export function MaintenanceAddPartModal({
                             <div className="flex-1">
                               <InputGroup>
                                 <Input
+                                  aria-label={t`Serial number ${index + 1}`}
                                   placeholder={`Serial Number ${index + 1}`}
                                   value={sn.id}
                                   onChange={(e) => {
@@ -469,6 +470,7 @@ export function MaintenanceAddPartModal({
                             <div className="flex-1">
                               <ComboboxBase
                                 placeholder={`Select Serial ${index + 1}`}
+                                aria-label={t`Serial number ${index + 1}`}
                                 value={sn.id}
                                 onChange={(value) => {
                                   setSelectedSerialNumbers((prev) => {
@@ -530,6 +532,7 @@ export function MaintenanceAddPartModal({
                             <div className="flex-1">
                               <InputGroup>
                                 <Input
+                                  aria-label={t`Batch number ${index + 1}`}
                                   placeholder={`Batch Number ${index + 1}`}
                                   value={batch.id}
                                   onChange={(e) => {
@@ -574,6 +577,7 @@ export function MaintenanceAddPartModal({
                             </div>
                             <div className="w-20">
                               <NumberField
+                                aria-label={t`Quantity for batch ${index + 1}`}
                                 value={batch.quantity}
                                 onChange={(value) => {
                                   setSelectedBatches((prev) => {
@@ -621,6 +625,7 @@ export function MaintenanceAddPartModal({
                             <div className="flex-1">
                               <ComboboxBase
                                 placeholder={`Select Batch ${index + 1}`}
+                                aria-label={t`Batch number ${index + 1}`}
                                 value={batch.id}
                                 onChange={(value) => {
                                   setSelectedBatches((prev) => {
@@ -648,6 +653,7 @@ export function MaintenanceAddPartModal({
                             </div>
                             <div className="w-20">
                               <NumberField
+                                aria-label={t`Quantity for batch ${index + 1}`}
                                 value={batch.quantity}
                                 onChange={(value) => {
                                   setSelectedBatches((prev) => {

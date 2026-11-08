@@ -43,10 +43,14 @@ import {
   inOrder,
   many,
   maybeSingle,
-  selectRows
+  selectRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
-import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
+import {
+  findStorageObjectBuckets,
+  listStorageObjects
+} from "@carbon/database/storage-objects";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -56,7 +60,13 @@ import {
   getPurchaseOrderDisplayId,
   type PurchaseOrderApproval
 } from "@carbon/documents/pdf";
-import { getDocumentApproval } from "@carbon/ee/approvals.server";
+import {
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  getDocumentApproval,
+  isApprovalRequired,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
@@ -69,6 +79,7 @@ import {
 import { isModelRawDownloadable } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import {
   addDays,
   addMonths,
@@ -77,8 +88,10 @@ import {
   buildJournalLineDimensionInserts,
   buildLesseeSchedule,
   datetime,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   escalatedLeasePayment,
+  escapeHTMLChars,
   getCompletionAfterQuantityChange,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
@@ -102,6 +115,7 @@ import {
   measureLesseeAsset,
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
+  PO_EMAIL_ATTACHMENT_LIMIT_MB,
   paymentMonthIndex,
   remeasureLease,
   requireAffected,
@@ -126,15 +140,22 @@ import {
   upsertDocument
 } from "~/modules/documents/documents.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
 import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -145,6 +166,7 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -156,6 +178,7 @@ import {
   insertNegatedJournal,
   invokePosting,
   invokePostingOrThrow,
+  isContactEmailRequired,
   resolveAccountingPeriod,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -184,23 +207,56 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  exceedsApprovedAmount,
+  isPurchaseOrderAmendable,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
   type leaseLineValidator,
   leasePaymentTermFields,
   leaseTermColumns,
+  orderItemSupplierFiles,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
+  PURCHASE_ORDER_AMENDABLE_STATUSES,
+  PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
+  PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderFundsIntent,
+  type PurchaseOrderLineDateField,
+  type PurchaseOrderLineIdentity,
+  type PurchaseOrderLineReceivingIntent,
+  type PurchaseOrderVersion,
   planningLineCurrencyCode,
   planningQuantityChange,
+  planPurchaseOrderRestore,
+  purchaseOrderEditRefusal,
+  purchaseOrderFundsRefusal,
+  purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
+  purchaseOrderLineDateRefusal,
+  purchaseOrderLineDeleteRefusal,
+  purchaseOrderPromisedDateRefusal,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED,
+  shortClosePurchaseOrderLineRefusal,
+  splitRfqFileAttachments,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
-import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+import type {
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  PurchasingRFQ,
+  SupplierQuote
+} from "./types";
+
+// The supplier list's columns: its table, filters, custom field columns and
+// cursor (the contact columns come from the list's rows loader, by id). Leaving
+// out orderCount and partCount (grouped counts), externalId (a subquery) and
+// embedding lets Postgres skip them.
+const SUPPLIERS_LIST_COLUMNS =
+  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
   "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
@@ -605,15 +661,24 @@ export async function getPurchaseOrders(
   let query = client
     .from("purchaseOrders")
     // Later pages (`cursor`) skip the count: the first page already has it.
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["purchaseOrderId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the order or one of its lines. `searchPurchaseOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -672,13 +737,23 @@ export async function getPurchaseOrderApproval(
     withSignature?: boolean;
   }
 ): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
-  const approval = await getDocumentApproval(
-    serviceRole,
-    "purchaseOrder",
-    purchaseOrderId,
-    companyId
-  );
-  if (!approval) return null;
+  const [approval, order] = await Promise.all([
+    getDocumentApproval(
+      serviceRole,
+      "purchaseOrder",
+      purchaseOrderId,
+      companyId
+    ),
+    serviceRole
+      .from("purchaseOrder")
+      .select("status")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  // A Rejected order (a first approval refused, or an edit's rejection that
+  // could not restore it) runs under no approval, whatever came before.
+  if (!approval || order.data?.status === "Rejected") return null;
   return {
     approvedBy: approval.approvedBy,
     approvedById: approval.approvedById,
@@ -813,11 +888,14 @@ export async function getPurchasingDocumentsAssignedToMe(
 
 // What the row's Order / Make button offers (the grid RPC's orderQuantity,
 // from MRP's open new-supply actions), then the part number so a page is
-// stable when many rows have nothing to order.
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
 export const PURCHASING_PLANNING_PAGING: Paging = {
   defaultSorts: [
     { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
   ]
 };
 
@@ -837,6 +915,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -864,6 +945,10 @@ export async function getPurchasingPlanning(
     query = query.or(
       searchFilter(["name", "readableIdWithRevision"], args.search)
     );
+  }
+
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
@@ -918,6 +1003,16 @@ export async function getSupplierContact(
     .eq("id", supplierContactId);
   if (companyId) query = query.eq("companyId", companyId);
   return query.single();
+}
+
+/** Whether a supplier contact can be emailed. A failed read counts as no. */
+export async function supplierContactHasEmail(
+  client: SupabaseClient<Database>,
+  supplierContactId: string,
+  companyId: string
+) {
+  const row = await getSupplierContact(client, supplierContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
 }
 
 export async function getSupplierContacts(
@@ -1036,7 +1131,7 @@ export async function getSupplierInteractionLineAttachments(
       const storagePath = `${companyId}/supplier-interaction-line/${lineId}/${doc.name}`;
       const { data, error } = await storage(client)
         .company(companyId)
-        .createSignedUrl(storagePath, 3600);
+        .createSignedUrl(storagePath, EMAIL_ATTACHMENT_URL_SECONDS);
       if (!data) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath,
@@ -1169,13 +1264,20 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      searchFilter(["supplierQuoteId", "supplierReference"], args.search)
-    );
+  // Every word must occur in the quote or one of its lines. `searchSupplierQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSupplierQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
@@ -1313,7 +1415,7 @@ export async function getSuppliers(
 ) {
   let query = client
     .from("suppliers")
-    .select("*", {
+    .select(SUPPLIERS_LIST_COLUMNS, {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1419,6 +1521,9 @@ export async function insertSupplierContact(
 ) {
   const { supplierId, companyId, supplierLocationId, contact } =
     supplierContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
+  }
   try {
     // One transaction: a contact with no supplier link is invisible in the app.
     const id = await withTransaction(db, async (trx) => {
@@ -1429,6 +1534,12 @@ export async function insertSupplierContact(
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!owner) return "Supplier not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "supplier"))
+      ) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
+      }
       if (supplierLocationId) {
         const location = await trx
           .selectFrom("supplierLocation")
@@ -1582,13 +1693,15 @@ export async function finalizePurchaseOrder(
 export async function sendSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string,
-  userId: string
+  userId: string,
+  sharedFilePaths?: string[]
 ) {
   // Send keeps status as Draft, just updates timestamp
   const quoteUpdate = await requireAffected(
     client
       .from("supplierQuote")
       .update({
+        ...(sharedFilePaths ? { sharedFilePaths } : {}),
         updatedAt: datetime.timestamp(),
         updatedBy: userId
       })
@@ -1699,7 +1812,9 @@ export async function submitPurchaseOrderForApproval(
     companyId,
     userId,
     amount,
-    orderDate
+    orderDate,
+    fromStatuses,
+    priorVersion
   }: {
     id: string;
     companyId: string;
@@ -1707,9 +1822,16 @@ export async function submitPurchaseOrderForApproval(
     amount: number;
     /** Today in the company's timezone: set only when the order has none. */
     orderDate: string;
+    /**
+     * Move the order only from these statuses. An order in another status is
+     * left alone and the call returns false (it changed since it was read).
+     */
+    fromStatuses?: readonly (typeof purchaseOrderStatusType)[number][];
+    /** The order as it was before the edit this request is for. */
+    priorVersion?: PurchaseOrderVersion;
   }
 ) {
-  const updated = await db
+  let update = db
     .updateTable("purchaseOrder")
     .set({
       status: "Needs Approval",
@@ -1718,9 +1840,11 @@ export async function submitPurchaseOrderForApproval(
       updatedAt: datetime.timestamp()
     })
     .where("id", "=", id)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
+    .where("companyId", "=", companyId);
+  if (fromStatuses) update = update.where("status", "in", [...fromStatuses]);
+  const updated = await update.executeTakeFirst();
   if (Number(updated.numUpdatedRows ?? 0) !== 1) {
+    if (fromStatuses) return false;
     throw new NotFoundError("Purchase order not found");
   }
 
@@ -1734,18 +1858,1040 @@ export async function submitPurchaseOrderForApproval(
     .executeTakeFirst();
   if (pending) return false;
 
-  await db
+  const request = await db
     .insertInto("approvalRequest")
     .values({
       documentType: "purchaseOrder",
       documentId: id,
       requestedBy: userId,
       amount,
+      hasPriorVersion: priorVersion !== undefined,
       companyId,
       createdBy: userId
     })
-    .execute();
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (priorVersion) {
+    await insertPurchaseOrderVersion(db, {
+      companyId,
+      userId,
+      approvalRequestId: request.id,
+      purchaseOrderId: id,
+      version: priorVersion
+    });
+  }
   return true;
+}
+
+/**
+ * Keeps an order's version with its approval request, as rows of
+ * `purchaseOrderVersion` (the exchange rate and the delivery) and
+ * `purchaseOrderLineVersion` (one per line, naming the live line). The rows
+ * carry the same foreign keys as the live rows, so a row they name that is
+ * deleted later is nulled here too, and a company restore renumbers the line
+ * references with the lines.
+ */
+async function insertPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    approvalRequestId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+) {
+  const delivery: Record<string, unknown> = {};
+  for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+    if (version.delivery && column in version.delivery) {
+      delivery[column] = version.delivery[column];
+    }
+  }
+  if ("customFields" in delivery) {
+    delivery.customFields = toJson(delivery.customFields);
+  }
+  // The delivery and line columns come from the version column lists, which
+  // are typed against the live tables; the version tables repeat them.
+  const header = await db
+    .insertInto("purchaseOrderVersion")
+    .values({
+      companyId,
+      approvalRequestId,
+      purchaseOrderId,
+      exchangeRate: version.exchangeRate,
+      hasDelivery: version.delivery !== null,
+      ...delivery,
+      createdBy: userId
+    } as never)
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (version.lines.length === 0) return;
+  await db
+    .insertInto("purchaseOrderLineVersion")
+    .values(
+      version.lines.map(({ id, ...line }) => {
+        const columns: Record<string, unknown> = {};
+        for (const column of PURCHASE_ORDER_LINE_VERSION_COLUMNS) {
+          if (column in line) columns[column] = line[column];
+        }
+        for (const json of ["customFields", "externalNotes", "internalNotes"]) {
+          if (json in columns) columns[json] = toJson(columns[json]);
+        }
+        return {
+          companyId,
+          purchaseOrderVersionId: header.id,
+          purchaseOrderLineId: id,
+          ...columns,
+          createdBy: userId
+        } as never;
+      })
+    )
+    .execute();
+}
+
+/**
+ * The version an approval request kept, read back from its rows into the
+ * shape `restorePurchaseOrderVersion` takes, or null when it kept none. A
+ * line whose live line is gone (`purchaseOrderLineId` nulled by its delete)
+ * gets an id no line has, so the restore plan finds the version no longer
+ * fits the order.
+ */
+export async function getKeptPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  approvalRequestId: string
+): Promise<PurchaseOrderVersion | null> {
+  const header = await db
+    .selectFrom("purchaseOrderVersion")
+    .select([
+      "id",
+      "exchangeRate",
+      "hasDelivery",
+      ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS
+    ])
+    .where("approvalRequestId", "=", approvalRequestId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!header) return null;
+  const lines = await db
+    .selectFrom("purchaseOrderLineVersion")
+    .select(["purchaseOrderLineId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+    .where("purchaseOrderVersionId", "=", header.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const { id: _id, exchangeRate, hasDelivery, ...delivery } = header;
+  return {
+    exchangeRate: exchangeRate === null ? null : Number(exchangeRate),
+    delivery: hasDelivery ? delivery : null,
+    lines: lines.map(({ purchaseOrderLineId, ...line }) => ({
+      id: purchaseOrderLineId ?? "",
+      ...line
+    }))
+  };
+}
+
+/**
+ * Each released order as it is now, to keep with an approval request its
+ * edit raises (`priorVersion`): the header's exchange rate, the delivery and
+ * the lines, in three queries.
+ */
+export async function getPurchaseOrderVersions(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<Map<string, PurchaseOrderVersion>> {
+  const ids = [...new Set(purchaseOrderIds)];
+  const versions = new Map<string, PurchaseOrderVersion>();
+  if (ids.length === 0) return versions;
+  const [orders, deliveries, lines] = await Promise.all([
+    db
+      .selectFrom("purchaseOrder")
+      .select(["id", "exchangeRate"])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderDelivery")
+      .select(["id", ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderLine")
+      .select(["id", "purchaseOrderId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+      .where("purchaseOrderId", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+  for (const order of orders) {
+    const delivery = deliveries.find((row) => row.id === order.id);
+    versions.set(order.id, {
+      exchangeRate:
+        order.exchangeRate === null ? null : Number(order.exchangeRate),
+      delivery: delivery ? omitKey(delivery, "id") : null,
+      lines: lines
+        .filter((line) => line.purchaseOrderId === order.id)
+        .map((line) => omitKey(line, "purchaseOrderId"))
+    });
+  }
+  return versions;
+}
+
+function omitKey<T extends Record<string, unknown>, K extends keyof T>(
+  row: T,
+  key: K
+): Omit<T, K> {
+  const { [key]: _omitted, ...rest } = row;
+  return rest;
+}
+
+/**
+ * Puts a rejected order back to the version its request kept, inside the
+ * rejection's transaction: the lines (`planPurchaseOrderRestore`), the
+ * delivery and the exchange rate, then the status its lines give, as at
+ * release. Returns false, changing nothing, when the order is not Rejected or
+ * the version no longer fits its lines.
+ */
+export async function restorePurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+): Promise<boolean> {
+  return withTransaction(db, async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (order?.status !== "Rejected") return false;
+
+    const current = await trx
+      .selectFrom("purchaseOrderLine")
+      .select([
+        "id",
+        "purchaseQuantity",
+        "quantityReceived",
+        "quantityInvoiced",
+        "receivedComplete"
+      ])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const plan = planPurchaseOrderRestore(version, current);
+    if (!plan.restorable) return false;
+
+    const stamp = { updatedBy: userId, updatedAt: datetime.timestamp() };
+    if (plan.deleteIds.length > 0) {
+      await trx
+        .deleteFrom("purchaseOrderLine")
+        .where("id", "in", plan.deleteIds)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      plan.updates.map(({ id, data }) => ({
+        id,
+        data: { ...data, ...stamp } as never
+      }))
+    );
+    if (version.delivery) {
+      const delivery: Record<string, unknown> = {};
+      for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+        if (column in version.delivery) {
+          delivery[column] = version.delivery[column];
+        }
+      }
+      await updateRowsById(trx, "purchaseOrderDelivery", companyId, [
+        { id: purchaseOrderId, data: { ...delivery, ...stamp } as never }
+      ]);
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const { status } = getPurchaseOrderStatus(lines);
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, exchangeRate: version.exchangeRate, ...stamp })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Rejected")
+      .execute();
+    return true;
+  });
+}
+
+/**
+ * Rejects a purchase order's pending request. When the request is for an
+ * edit of a released order (it kept a `priorVersion`), the order goes back
+ * to that version and to the status its lines give, in the same transaction:
+ * the version that was approved stays live. A first approval, or a version
+ * that no longer fits, leaves the order Rejected.
+ *
+ * `restored` says whether the order went back to its approved version;
+ * `versionKept` whether the request had one to go back to. A request with a
+ * version that was not restored leaves the order Rejected with the edit's
+ * values, which the caller tells the approver.
+ */
+export async function rejectPurchaseOrderApproval(
+  db: Kysely<KyselyDatabase>,
+  {
+    approvalRequestId,
+    purchaseOrderId,
+    companyId,
+    userId
+  }: {
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { restored: boolean; versionKept: boolean }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  class RejectionRefused extends Error {
+    constructor(readonly refusal: { message: string }) {
+      super(refusal.message);
+    }
+  }
+  try {
+    return await withTransaction(db, async (trx) => {
+      const rejected = await rejectRequest(trx, approvalRequestId, userId);
+      // Roll back whatever the rejection wrote before it failed.
+      if (rejected.error) throw new RejectionRefused(rejected.error);
+
+      const request = await trx
+        .selectFrom("approvalRequest")
+        .select("hasPriorVersion")
+        .where("id", "=", approvalRequestId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!request?.hasPriorVersion) {
+        return { data: { restored: false, versionKept: false }, error: null };
+      }
+      const version = await getKeptPurchaseOrderVersion(
+        trx,
+        companyId,
+        approvalRequestId
+      );
+      if (!version) {
+        logger.warn("A rejected approval kept no version rows", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId
+        });
+        return { data: { restored: false, versionKept: true }, error: null };
+      }
+      // The version's references are kept by the database (a deleted row is
+      // nulled, never dangling), so the restore fails only on a rule the live
+      // row refuses: a constraint, or a trigger. Such a version can never be
+      // written back; without the savepoint the failure would roll the
+      // rejection back too, and the order could never leave Needs Approval.
+      // With it, the rejection stands and the order stays Rejected, as for
+      // any version that no longer fits. Any other failure (a lock timeout, a
+      // lost connection) fails the rejection, so the approver can try again
+      // and the order is restored.
+      await sql`SAVEPOINT restore_purchase_order_version`.execute(trx);
+      let restored: boolean;
+      try {
+        restored = await restorePurchaseOrderVersion(trx, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          version
+        });
+        await sql`RELEASE SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+      } catch (error) {
+        if (!isUnrestorableVersionError(error)) throw error;
+        await sql`ROLLBACK TO SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+        logger.warn("A rejected edit's version was refused by the live row", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId,
+          error
+        });
+        restored = false;
+      }
+      if (!restored) {
+        logger.warn(
+          "A rejected edit could not be undone; the order stays Rejected",
+          {
+            companyId,
+            purchaseOrderId,
+            approvalRequestId
+          }
+        );
+      }
+      return { data: { restored, versionKept: true }, error: null };
+    });
+  } catch (error) {
+    if (error instanceof RejectionRefused) {
+      return { data: null, error: error.refusal };
+    }
+    throw error;
+  }
+}
+
+/**
+ * A failure that means a stored version can never be written back: an
+ * integrity constraint (SQLSTATE class 23: a check, a not-null, a unique, a
+ * foreign key) or a rule a trigger raised (P0001). Not a lock timeout, a
+ * deadlock or a lost connection, which a retry gets past.
+ */
+function isUnrestorableVersionError(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return (
+    typeof code === "string" && (code.startsWith("23") || code === "P0001")
+  );
+}
+
+export type PurchaseOrderApprovalState = {
+  id: string;
+  readableId: string | null;
+  status: (typeof purchaseOrderStatusType)[number] | null;
+  /** The `purchaseOrders` view's total: base currency, tax and shipping in. */
+  total: number;
+  /** The amount of the latest Approved request, or null when none exists. */
+  approvedAmount: number | null;
+  /** The `purchaseOrders` view's received quantity over the lines. */
+  receivedQuantity: number;
+};
+
+/**
+ * Each order's status, total and approved amount, in two queries. Pass the
+ * service role: `approvalRequest` has no API read policy.
+ */
+export async function getPurchaseOrderApprovalStates(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<
+  | { data: Map<string, PurchaseOrderApprovalState>; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const ids = [...new Set(purchaseOrderIds.filter(Boolean))];
+  const states = new Map<string, PurchaseOrderApprovalState>();
+  if (ids.length === 0) return { data: states, error: null };
+
+  const [orders, approved] = await Promise.all([
+    system
+      .from("purchaseOrders")
+      .select("id, purchaseOrderId, status, orderTotal, receivedQuantity")
+      .eq("companyId", companyId)
+      .in("id", ids),
+    // Paged: many orders at once (an invoice's) can hold more approved
+    // requests than one response returns, and a cut tail would read as
+    // "no approved amount".
+    fetchAllRecords(() =>
+      system
+        .from("approvalRequest")
+        .select("id, documentId, amount, decisionAt")
+        .eq("companyId", companyId)
+        .eq("documentType", "purchaseOrder")
+        .eq("status", "Approved")
+        .in("documentId", ids)
+        .order("decisionAt", { ascending: false })
+        .order("id")
+    )
+  ]);
+  if (orders.error) return { data: null, error: orders.error };
+  if (approved.error) return { data: null, error: approved.error };
+
+  const approvedAmountById = new Map<string, number | null>();
+  for (const request of approved.data ?? []) {
+    // Newest first: the first row per order is its latest approval. A latest
+    // approval with no amount approved no amount to hold the order to: null,
+    // never $0 (which would hold every such order) and never an older
+    // approval's amount.
+    if (approvedAmountById.has(request.documentId)) continue;
+    approvedAmountById.set(
+      request.documentId,
+      request.amount === null ? null : Number(request.amount)
+    );
+  }
+
+  for (const order of orders.data ?? []) {
+    if (!order.id) continue;
+    states.set(order.id, {
+      id: order.id,
+      readableId: order.purchaseOrderId ?? null,
+      status: order.status ?? null,
+      total: Number(order.orderTotal ?? 0),
+      approvedAmount: approvedAmountById.get(order.id) ?? null,
+      receivedQuantity: Number(order.receivedQuantity ?? 0)
+    });
+  }
+  return { data: states, error: null };
+}
+
+/**
+ * Why goods may not be received or invoiced against these orders, or null
+ * when every one is released (for an invoice, released or Closed) and within
+ * its approved amount. An id with no order is left to the caller's own
+ * not-found check.
+ */
+export async function getPurchaseOrderFundsRefusal(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[],
+  intent: PurchaseOrderFundsIntent
+): Promise<
+  { data: string | null; error: null } | { data: null; error: PostgrestError }
+> {
+  const states = await getPurchaseOrderApprovalStates(
+    system,
+    companyId,
+    purchaseOrderIds
+  );
+  if (states.error) return states;
+  for (const order of states.data.values()) {
+    // An order above its approved amount with no rule covering the new
+    // total is not waiting for anyone (`settlePurchaseOrderAmendment` raised
+    // no request), so nothing holds it.
+    const held =
+      exceedsApprovedAmount(order.total, order.approvedAmount) &&
+      (await isApprovalRequired(
+        system,
+        "purchaseOrder",
+        companyId,
+        order.total
+      ));
+    const refusal = purchaseOrderFundsRefusal(
+      held ? order : { ...order, approvedAmount: null },
+      intent
+    );
+    if (refusal) return { data: refusal, error: null };
+  }
+  return { data: null, error: null };
+}
+
+/**
+ * The funds gate as a service-function refusal: a `rule` error when goods may
+ * not be received or invoiced against these orders, else null. Every caller
+ * that moves goods or money against a purchase order runs it (receipts,
+ * invoices from an order, invoice posting), so the API and MCP get the same
+ * answer as the page.
+ */
+export async function purchaseOrderFundsGate(
+  ctx: ServiceContext,
+  purchaseOrderIds: string | null | undefined | (string | null | undefined)[],
+  {
+    intent,
+    purchaseOrderLineIds = []
+  }: {
+    intent: PurchaseOrderFundsIntent;
+    purchaseOrderLineIds?: (string | null | undefined)[];
+  }
+): Promise<CarbonError | null> {
+  const ids = (
+    Array.isArray(purchaseOrderIds) ? purchaseOrderIds : [purchaseOrderIds]
+  ).filter((id): id is string => Boolean(id));
+  const lineIds = purchaseOrderLineIds.filter((id): id is string =>
+    Boolean(id)
+  );
+  if (lineIds.length > 0) {
+    const lines = await ctx.asSystem.supabase
+      .from("purchaseOrderLine")
+      .select("purchaseOrderId")
+      .eq("companyId", ctx.company.id)
+      .in("id", lineIds);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order lines",
+        lines.error
+      );
+    }
+    for (const line of lines.data ?? []) ids.push(line.purchaseOrderId);
+  }
+  if (ids.length === 0) return null;
+  const funds = await getPurchaseOrderFundsRefusal(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    ids,
+    intent
+  );
+  if (funds.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      funds.error
+    );
+  }
+  return funds.data ? ctx.error("rule", funds.data) : null;
+}
+
+/**
+ * Read before an edit: the order's status, its total before the edit (the
+ * baseline `settlePurchaseOrderAmendment` compares against when the order has
+ * no approved request), and why the edit is refused, or null.
+ * `supplierId` / `currencyCode`: the values the edit would write, if any.
+ */
+export async function getPurchaseOrderEditRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderId: string,
+  edit: { supplierId?: string | null; currencyCode?: string | null } = {}
+): Promise<
+  | {
+      data: {
+        status: (typeof purchaseOrderStatusType)[number] | null;
+        total: number;
+        refusal: string | null;
+      } | null;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const order = await client
+    .from("purchaseOrders")
+    .select("status, orderTotal, supplierId, currencyCode")
+    .eq("id", purchaseOrderId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (order.error) return { data: null, error: order.error };
+  if (!order.data) return { data: null, error: null };
+  const changesSupplierOrCurrency =
+    (edit.supplierId !== undefined &&
+      edit.supplierId !== order.data.supplierId) ||
+    (edit.currencyCode !== undefined &&
+      edit.currencyCode !== order.data.currencyCode);
+  return {
+    data: {
+      status: order.data.status,
+      total: Number(order.data.orderTotal ?? 0),
+      refusal: purchaseOrderEditRefusal(order.data.status, {
+        changesSupplierOrCurrency
+      })
+    },
+    error: null
+  };
+}
+
+/**
+ * Runs `run` while holding each order's edit lock, so two edits of one order
+ * run one after the other: the second reads the status the first left, and
+ * is refused if the first sent the order back to approval. Without it, an
+ * edit could pass the status check, then land on an order another edit had
+ * just sent to approval, and the pending request would not include it.
+ *
+ * The lock is a transaction-scoped advisory lock on a connection of its own.
+ * It holds no row locks, so the reads and writes `run` makes on other
+ * connections never wait on it. A caller that waits more than 5 seconds for
+ * the lock is refused as a conflict: shorter than the pool's 10-second
+ * connection timeout, so callers waiting for one order's lock give their
+ * connections back before the edit holding it runs out of time for one.
+ */
+export async function withPurchaseOrderEditLock<T>(
+  ctx: ServiceContext,
+  purchaseOrderIds: string[],
+  run: () => Promise<T>
+): Promise<T | CarbonError> {
+  class EditLockBusy extends Error {}
+  const keys = [...new Set(purchaseOrderIds)].map(
+    (id) => `purchase-order-edit:${ctx.company.id}:${id}`
+  );
+  try {
+    return await withTransaction(ctx.asSystem.pg, async (trx) => {
+      await sql`SET LOCAL lock_timeout = '5s'`.execute(trx);
+      try {
+        // Sorted by key, so two edits of the same orders cannot deadlock.
+        await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+          trx
+        );
+      } catch (error) {
+        if ((error as { code?: unknown } | null)?.code === "55P03") {
+          throw new EditLockBusy();
+        }
+        throw error;
+      }
+      return run();
+    });
+  } catch (error) {
+    if (error instanceof EditLockBusy) {
+      return ctx.error(
+        "conflict",
+        "Another change to this purchase order is being saved. Try again in a moment."
+      );
+    }
+    throw error;
+  }
+}
+
+type AmendPurchaseOrderOptions = {
+  supplierId?: string | null;
+  currencyCode?: string | null;
+  line?: {
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+    purchaseQuantity: number | null | undefined;
+    receivedComplete?: boolean;
+    /** The line's own identity fields, compared with `edit`'s. */
+    purchaseOrderLineType?: string | null;
+    itemId?: string | null;
+    assetId?: string | null;
+    purchaseUnitOfMeasureCode?: string | null;
+    conversionFactor?: number | null;
+    /** The line's own dates, compared with `dates`. */
+    requiredDate?: string | null;
+    promisedDate?: string | null;
+    receivedDate?: string | null;
+    /** The identity fields the edit writes. */
+    edit?: Partial<PurchaseOrderLineIdentity>;
+    /** The dates the edit writes, each under its own rule. */
+    dates?: Partial<Record<PurchaseOrderLineDateField, string | null>>;
+  };
+  /** False for an edit that cannot change the total. */
+  settle?: boolean;
+  restatesStatus?: boolean;
+};
+
+/**
+ * Runs one edit of a purchase order for a service function: refuses it as
+ * `purchaseOrderEditRefusal` says, runs `write`, then settles the approval
+ * (`settlePurchaseOrderAmendment`) when the order is released. A failed
+ * settle is logged, not returned: the edit is saved. When the order has an
+ * approved request, the funds gate then refuses to receive or invoice it
+ * above that amount; an order released with no request has no amount to hold
+ * it to, so it stays released until an edit settles again.
+ *
+ * `line`: the line the edit changes, with the quantity it writes (null for a
+ * delete), checked against what was received and invoiced. A released order
+ * never deletes a line (`purchaseOrderLineDeleteRefusal`).
+ * `restatesStatus`: the edit adds, changes or deletes a line, so a released
+ * order's status is derived from its lines again (`restatePurchaseOrderStatus`)
+ * before the approval is settled.
+ */
+export async function amendPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  options: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  return withPurchaseOrderEditLock(ctx, [purchaseOrderId], () =>
+    amendLockedPurchaseOrder(ctx, purchaseOrderId, write, options)
+  );
+}
+
+/** `amendPurchaseOrder`'s body, run under the order's edit lock. */
+async function amendLockedPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  {
+    supplierId,
+    currencyCode,
+    line,
+    settle = true,
+    restatesStatus = false
+  }: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  const gate = await getPurchaseOrderEditRefusal(
+    ctx.asCaller.supabase,
+    ctx.company.id,
+    purchaseOrderId,
+    { supplierId, currencyCode }
+  );
+  if (gate.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      gate.error
+    );
+  }
+  if (!gate.data) return ctx.error("notFound", "Purchase order not found");
+  if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
+  if (line) {
+    const lineRefusal =
+      (line.purchaseQuantity === null
+        ? purchaseOrderLineDeleteRefusal(gate.data.status)
+        : null) ??
+      purchaseOrderLineAmendRefusal(line, line.purchaseQuantity, line.edit);
+    if (lineRefusal) return ctx.error("rule", lineRefusal);
+    // A date the edit changes follows the same rule as the date routes. A
+    // date the edit leaves out is not a change.
+    for (const [field, value] of Object.entries(line.dates ?? {})) {
+      const dateField = field as PurchaseOrderLineDateField;
+      if (value === undefined) continue;
+      if ((value ?? null) === (line[dateField] ?? null)) continue;
+      const dateRefusal = purchaseOrderLineDateRefusal(dateField, {
+        status: gate.data.status,
+        receivedComplete: line.receivedComplete ?? false
+      });
+      if (dateRefusal) return ctx.error("rule", dateRefusal);
+    }
+  }
+
+  // The order before the edit: if the edit sends it back to approval, a
+  // rejection restores this version.
+  const settles = settle && isPurchaseOrderAmendable(gate.data.status);
+  let priorVersion: PurchaseOrderVersion | undefined;
+  if (settles) {
+    try {
+      priorVersion = (
+        await getPurchaseOrderVersions(ctx.asSystem.pg, ctx.company.id, [
+          purchaseOrderId
+        ])
+      ).get(purchaseOrderId);
+    } catch (error) {
+      return ctx.error("internal", "Failed to read the purchase order", error);
+    }
+  }
+
+  const result = await write();
+  if (result instanceof CarbonError) return result;
+
+  if (settles) {
+    try {
+      await settlePurchaseOrderAmendment(
+        ctx.asSystem.pg,
+        ctx.asSystem.supabase,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          purchaseOrderId,
+          previousTotal: gate.data.total,
+          priorVersion
+        }
+      );
+    } catch (error) {
+      logger.error(
+        "Failed to settle the approval of an edited purchase order",
+        {
+          companyId: ctx.company.id,
+          purchaseOrderId,
+          error
+        }
+      );
+    }
+  }
+  // After the settle: an edit that completes every line while taking the
+  // total above the approved amount would otherwise read as Completed, which
+  // the settle leaves alone. A restate is a no-op on an order sent back.
+  if (restatesStatus && isPurchaseOrderAmendable(gate.data.status)) {
+    try {
+      await restatePurchaseOrderStatus(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        purchaseOrderId
+      });
+    } catch (error) {
+      logger.error("Failed to restate the status of an edited purchase order", {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        error
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Why `itemId` may not go on a purchase order line, or null: an item a
+ * change notice is still holding is a draft revision the supplier has never
+ * been shown. Read as the system, as the line routes did; nothing when the
+ * edit names no item.
+ */
+export async function unreleasedChangeOrderRefusal(
+  ctx: ServiceContext,
+  itemId: string | null | undefined
+): Promise<CarbonError | null> {
+  if (!itemId) return null;
+  const issue = await getUnreleasedChangeOrderIssue(ctx.asSystem.supabase, {
+    itemId,
+    companyId: ctx.company.id
+  });
+  return issue ? ctx.error("rule", `${issue} It cannot be purchased.`) : null;
+}
+
+/** The line an edit names, with what was received and invoiced on it. */
+export async function getPurchaseOrderLineForAmendment(
+  ctx: ServiceContext,
+  purchaseOrderLineId: string
+) {
+  return ctx.asCaller.supabase
+    .from("purchaseOrderLine")
+    .select(
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+    )
+    .eq("id", purchaseOrderLineId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+}
+
+/**
+ * After a line is added, changed or deleted on a released order, sets the
+ * order's status from its lines again (`getPurchaseOrderStatus`), as receipt
+ * and invoice posting do. Only an order still in an amendable status moves,
+ * and an order with no line to receive or invoice is left alone: with no
+ * lines the rule would call it Completed. Returns the status written, or null.
+ */
+export async function restatePurchaseOrderStatus(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId
+  }: { companyId: string; userId: string; purchaseOrderId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order || !isPurchaseOrderAmendable(order.status)) return null;
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (!lines.some((line) => line.purchaseOrderLineType !== "Comment")) {
+      return null;
+    }
+
+    const { status } = getPurchaseOrderStatus(lines);
+    if (status === order.status) return null;
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_AMENDABLE_STATUSES])
+      .execute();
+    return status;
+  });
+}
+
+/**
+ * After an edit of a released order: when its new total is above what was
+ * approved (with no approved request, above its total before the edit) and an
+ * approval rule applies to the new total, send it back to Needs Approval with a request for the new total, and
+ * notify the rule's approvers. Returns whether it was sent back.
+ *
+ * The edit has already been written. If this fails, the order stays released
+ * above its approved amount. With an approved request,
+ * `getPurchaseOrderFundsRefusal` refuses to receive or invoice it until it is
+ * approved again; with none, nothing holds it back.
+ */
+export async function settlePurchaseOrderAmendment(
+  db: Kysely<KyselyDatabase>,
+  system: SupabaseClient<Database>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    previousTotal,
+    priorVersion
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    /** The total before the edit, from `getPurchaseOrderEditRefusal`. */
+    previousTotal: number;
+    /** The order before the edit (`getPurchaseOrderVersions`), kept on the request. */
+    priorVersion?: PurchaseOrderVersion;
+  }
+): Promise<{ resubmitted: boolean; amount: number }> {
+  const states = await getPurchaseOrderApprovalStates(system, companyId, [
+    purchaseOrderId
+  ]);
+  if (states.error) throw states.error;
+  const order = states.data.get(purchaseOrderId);
+  if (!order || !isPurchaseOrderAmendable(order.status)) {
+    return { resubmitted: false, amount: order?.total ?? 0 };
+  }
+  const amount = order.total;
+  // The approved amount, or, for an order released with no request, what it
+  // totalled before this edit: only an increase can need an approval.
+  if (!exceedsApprovedAmount(amount, order.approvedAmount ?? previousTotal)) {
+    return { resubmitted: false, amount };
+  }
+
+  // No planning bypass here: every caller is an edit by hand, and planning's
+  // own writes never come through it. The bypass covers only the order as
+  // planning sized it, at finalize.
+  if (!(await isApprovalRequired(system, "purchaseOrder", companyId, amount))) {
+    return { resubmitted: false, amount };
+  }
+
+  const orderDate = datetime
+    .today(await getCompanyTimeZone(system, companyId))
+    .toString();
+  const resubmitted = await db.transaction().execute((tx) =>
+    submitPurchaseOrderForApproval(tx, {
+      id: purchaseOrderId,
+      companyId,
+      userId,
+      amount,
+      orderDate,
+      fromStatuses: PURCHASE_ORDER_AMENDABLE_STATUSES,
+      priorVersion
+    })
+  );
+  if (!resubmitted) return { resubmitted: false, amount };
+
+  const rule = await getApprovalRuleByAmount(
+    system,
+    "purchaseOrder",
+    companyId,
+    amount
+  );
+  const approverIds = rule.data
+    ? await getApproverUserIdsForRule(system, rule.data)
+    : [];
+  if (approverIds.length > 0) {
+    await trigger("notify", {
+      event: NotificationEvent.ApprovalRequested,
+      companyId,
+      documentId: purchaseOrderId,
+      documentType: "purchaseOrder",
+      recipient: { type: "users", userIds: approverIds },
+      from: userId
+    }).catch((error) =>
+      logger.error("Failed to trigger approval notification", {
+        companyId,
+        purchaseOrderId,
+        error
+      })
+    );
+  }
+  return { resubmitted: true, amount };
 }
 
 /**
@@ -1794,11 +2940,58 @@ export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!supplierContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("supplierContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", supplierContact.contactId)
+        .eq("companyId", supplierContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", supplierContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = supplierContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")
@@ -2310,6 +3503,17 @@ async function updatePurchaseOrderLineRestatingCompletion(
         Number(current.data.purchaseQuantity ?? 0),
         line.purchaseQuantity
       );
+    // The floor again, on this read: a receipt or invoice posted since the
+    // service function checked it can have raised it past the new quantity.
+    if (quantityChanged) {
+      const refusal = purchaseOrderLineAmendRefusal(
+        current.data,
+        line.purchaseQuantity
+      );
+      if (refusal) {
+        return { data: null, error: new InvalidInputError(refusal) };
+      }
+    }
 
     let update = client
       .from("purchaseOrderLine")
@@ -2353,6 +3557,8 @@ export async function upsertPurchaseOrderLine(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        /** Projects Phase 3: a line bought for a planning group (no project). */
+        planningGroupId?: string;
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
@@ -2443,6 +3649,12 @@ export async function updatePurchaseOrderLineOrder(
  * received quantity is already fully invoiced gets `invoicedComplete` too —
  * otherwise the order could never reach Completed. Reopening restores the
  * natural rule (fully invoiced = ordered quantity).
+ *
+ * The rule (`shortClosePurchaseOrderLineRefusal`) is checked in the same
+ * transaction as the write, on the line's row and its order's status: the
+ * header recompute would otherwise release an unreleased order — a Draft
+ * with every line closed reads as Completed — with no approval. Every
+ * caller shares it; the page has no check of its own.
  */
 export async function shortClosePurchaseOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -2457,24 +3669,52 @@ export async function shortClosePurchaseOrderLine(
     purchaseOrderId: string;
     companyId: string;
     userId: string;
-    intent: "close" | "reopen";
+    intent: PurchaseOrderLineReceivingIntent;
   }
-) {
+): Promise<
+  | { found: false; refusal: null; status: null }
+  | { found: true; refusal: string; status: null }
+  | { found: true; refusal: null; status: PurchaseOrderStatus }
+> {
   return db.transaction().execute(async (trx) => {
     const line = await trx
       .selectFrom("purchaseOrderLine")
-      .select(["purchaseQuantity", "quantityReceived", "quantityInvoiced"])
-      .where("id", "=", lineId)
-      .where("purchaseOrderId", "=", purchaseOrderId)
-      .where("companyId", "=", companyId)
+      .innerJoin("purchaseOrder", (join) =>
+        join
+          .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+          .onRef("purchaseOrder.companyId", "=", "purchaseOrderLine.companyId")
+      )
+      .select([
+        "purchaseOrderLine.purchaseOrderLineType",
+        "purchaseOrderLine.purchaseQuantity",
+        "purchaseOrderLine.quantityReceived",
+        "purchaseOrderLine.quantityInvoiced",
+        "purchaseOrderLine.quantityToReceive",
+        "purchaseOrderLine.receivedComplete",
+        "purchaseOrder.status"
+      ])
+      .where("purchaseOrderLine.id", "=", lineId)
+      .where("purchaseOrderLine.purchaseOrderId", "=", purchaseOrderId)
+      .where("purchaseOrderLine.companyId", "=", companyId)
+      .forUpdate()
       .executeTakeFirst();
 
-    if (!line) throw new Error("Purchase order line not found");
+    // No line was found for the ID
+    if (!line) return { found: false, refusal: null, status: null };
 
-    // NUMERIC columns come back from the pg driver as strings
-    const ordered = Number(line.purchaseQuantity ?? 0);
-    const received = Number(line.quantityReceived ?? 0);
-    const invoiced = Number(line.quantityInvoiced ?? 0);
+    const refusal = shortClosePurchaseOrderLineRefusal(intent, {
+      status: line.status,
+      purchaseOrderLineType: line.purchaseOrderLineType,
+      quantityToReceive: line.quantityToReceive ?? 0,
+      receivedComplete: line.receivedComplete
+    });
+
+    // The close was refused
+    if (refusal) return { found: true, refusal, status: null };
+
+    const ordered = line.purchaseQuantity ?? 0;
+    const received = line.quantityReceived ?? 0;
+    const invoiced = line.quantityInvoiced ?? 0;
 
     const invoicedComplete =
       intent === "close" ? invoiced >= received : invoiced >= ordered;
@@ -2485,7 +3725,7 @@ export async function shortClosePurchaseOrderLine(
         receivedComplete: intent === "close",
         invoicedComplete,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", lineId)
       .where("purchaseOrderId", "=", purchaseOrderId)
@@ -2506,11 +3746,13 @@ export async function shortClosePurchaseOrderLine(
       .set({
         status,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", purchaseOrderId)
       .where("companyId", "=", companyId)
       .execute();
+
+    return { found: true, refusal: null, status };
   });
 }
 
@@ -3230,11 +4472,20 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: listCount(args) })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("rfqId", `%${args.search}%`);
+  // Every word must occur in the RFQ or one of its lines. `searchPurchasingRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchasingRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
   query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
@@ -3853,7 +5104,7 @@ export async function updatePurchaseOrderLineSchedule(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -6400,7 +7651,7 @@ export async function signedAttachments(
   const signed = await async.map(files, async (file) => {
     const { data, error } = await storage(client)
       .company(companyId)
-      .createSignedUrl(file.path, 3600);
+      .createSignedUrl(file.path, EMAIL_ATTACHMENT_URL_SECONDS);
     if (!data) {
       logger.error("Failed to create signed URL for attachment", {
         storagePath: file.path,
@@ -6412,6 +7663,15 @@ export async function signedAttachments(
   });
   return signed.flatMap((file) => (file ? [file] : []));
 }
+
+/** A file a supplier gets with an item: its model, or a file on its Files tab. */
+export type ItemSupplierFile = {
+  itemId: string;
+  filename: string;
+  bucket: string;
+  path: string;
+  size: number;
+};
 
 /**
  * The original CAD file of each item's model, found where the model's Download button
@@ -6425,15 +7685,7 @@ export async function getItemModelFiles(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   itemIds: string[]
-): Promise<
-  {
-    modelId: string;
-    filename: string;
-    bucket: string;
-    path: string;
-    size: number;
-  }[]
-> {
+): Promise<ItemSupplierFile[]> {
   if (itemIds.length === 0) return [];
   const items = await client
     .from("item")
@@ -6500,7 +7752,6 @@ export async function getItemModelFiles(
         [
           model.id,
           {
-            modelId: model.id,
             filename,
             bucket,
             path,
@@ -6510,18 +7761,139 @@ export async function getItemModelFiles(
       ] as const;
     })
   );
-  return modelIds.flatMap((id) => {
-    const file = byId.get(id);
-    return file ? [file] : [];
+  return itemIds.flatMap((itemId) => {
+    const modelId = modelByItem.get(itemId);
+    const file = modelId ? byId.get(modelId) : undefined;
+    return file ? [{ itemId, ...file }] : [];
   });
 }
 
-/** A signed link to a file `getOriginalModelFiles` found, valid `seconds`. */
-export async function signOriginalModelFile(
+/**
+ * Every file a supplier gets with each item, in item order: the model's
+ * original CAD file (`getItemModelFiles`), then each file on the item's Files
+ * tab (`${companyId}/parts/${itemId}`: drawings, other models, specs). With
+ * `onlyPaths`, just those of them (`orderItemSupplierFiles`).
+ */
+export async function getItemSupplierFiles(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[],
+  onlyPaths?: string[]
+): Promise<ItemSupplierFile[]> {
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return [];
+  const bucket = getCompanyPrivateBucket(companyId);
+  const folderOf = (itemId: string) => `${companyId}/parts/${itemId}`;
+  const [models, partFiles] = await Promise.all([
+    getItemModelFiles(client, db, companyId, ids),
+    listStorageObjects(db, { bucket, folders: ids.map(folderOf) })
+  ]);
+  const itemByFolder = new Map(ids.map((id) => [folderOf(id), id]));
+  return orderItemSupplierFiles(
+    ids,
+    [
+      ...models,
+      ...partFiles.flatMap((file) => {
+        const itemId = itemByFolder.get(file.folder);
+        return itemId
+          ? [
+              {
+                itemId,
+                filename: file.name,
+                bucket,
+                path: file.path,
+                // Unknown size: sent as a link, never attached blind.
+                size: file.size ?? Number.POSITIVE_INFINITY
+              }
+            ]
+          : [];
+      })
+    ],
+    onlyPaths
+  );
+}
+
+/**
+ * The item files of a supplier email: attached in order while the email stays
+ * under the attachment limit (`documentBytes` already used by its documents),
+ * the rest as links in the body. Each file is signed once for 7 days, so an
+ * attachment still opens when the send job runs late or retries. A file that
+ * cannot be signed is named, so the supplier knows to ask for it. A file two
+ * lines share is sent once.
+ */
+export async function supplierFileEmailParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  files: ItemSupplierFile[],
+  documentBytes: number
+): Promise<{
+  attachments: { filename: string; path: string }[];
+  html: string;
+  text: string;
+}> {
+  const unique = [
+    ...new Map(
+      files.map((file) => [`${file.bucket}/${file.path}`, file])
+    ).values()
+  ];
+  const signed = await async.map(unique, async (file) => ({
+    ...file,
+    url: await signItemFile(
+      client,
+      companyId,
+      file,
+      EMAIL_ATTACHMENT_URL_SECONDS
+    )
+  }));
+  const missing = signed.flatMap((file) => (file.url ? [] : [file.filename]));
+  const split = splitRfqFileAttachments(
+    signed.flatMap((file) => (file.url ? [{ ...file, url: file.url }] : [])),
+    PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
+  );
+  const links = split.link;
+
+  const linksHtml = links.length
+    ? `<br><br>Files too large to attach (links valid for 7 days):<br>${links
+        .map(
+          (link) =>
+            `<a href="${escapeHTMLChars(link.url)}">${escapeHTMLChars(link.filename)}</a>`
+        )
+        .join("<br>")}`
+    : "";
+  const linksText = links.length
+    ? `\n\nFiles too large to attach (links valid for 7 days):\n${links
+        .map((link) => `${link.filename}: ${link.url}`)
+        .join("\n")}`
+    : "";
+  const missingHtml = missing.length
+    ? `<br><br>These files could not be included; reply to ask for them: ${missing
+        .map(escapeHTMLChars)
+        .join(", ")}`
+    : "";
+  const missingText = missing.length
+    ? `\n\nThese files could not be included; reply to ask for them: ${missing.join(", ")}`
+    : "";
+
+  return {
+    attachments: split.attach.map((file) => ({
+      filename: file.filename,
+      path: file.url
+    })),
+    html: linksHtml + missingHtml,
+    text: linksText + missingText
+  };
+}
+
+/** A signed link to a file `getItemSupplierFiles` found, valid `seconds`. */
+export async function signItemFile(
   client: SupabaseClient<Database>,
   companyId: string,
   file: { bucket: string; path: string },
-  seconds: number
+  seconds: number,
+  // A file name: the link downloads under it instead of opening inline (a
+  // cross-origin <a download> is ignored).
+  download?: string
 ): Promise<string | null> {
   const bucket =
     file.bucket === TEMP_STAGING_BUCKET
@@ -6529,14 +7901,19 @@ export async function signOriginalModelFile(
       : storage(client).company(companyId);
   const { data, error } = await bucket.createSignedUrl(file.path, seconds);
   if (!data) {
-    logger.error("Failed to sign a model file", {
+    logger.error("Failed to sign an item file", {
       companyId,
       storagePath: file.path,
       error
     });
     return null;
   }
-  return data.signedUrl;
+  if (!download) return data.signedUrl;
+  // Set here, not through createSignedUrl's `download` option: that encodes
+  // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
+  const url = new URL(data.signedUrl);
+  url.searchParams.set("download", download);
+  return url.toString();
 }
 
 /** The statuses of records an edit is about to touch, for a lock check. */
@@ -6558,6 +7935,46 @@ export async function statusesOf(
     return ctx.error("internal", "Failed to read the records", rows.error);
   }
   return rows.data.map((row) => row.status);
+}
+
+/**
+ * Why a delivery write may not change the order's promised date, or null.
+ * A changed promised date follows the properties panel's rule: fixed once
+ * the order is fully received. A write that leaves the date out, or re-sends
+ * the stored one, changes nothing.
+ */
+export async function purchaseOrderPromisedDateChangeRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  receiptPromisedDate: string | undefined
+): Promise<CarbonError | null> {
+  if (receiptPromisedDate === undefined) return null;
+  const [statuses, stored] = await Promise.all([
+    statusesOf(ctx, "purchaseOrder", [purchaseOrderId]),
+    ctx.asCaller.supabase
+      .from("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle()
+  ]);
+  if (statuses instanceof CarbonError) return statuses;
+  if (stored.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order delivery",
+      stored.error
+    );
+  }
+  if (
+    (stored.data?.receiptPromisedDate ?? null) === (receiptPromisedDate || null)
+  ) {
+    return null;
+  }
+  const refusal = statuses
+    .map(purchaseOrderPromisedDateRefusal)
+    .find((message) => message !== null);
+  return refusal ? ctx.error("rule", refusal) : null;
 }
 
 /**
@@ -6912,6 +8329,8 @@ export async function purchaseOrderEmail(
   if (!paymentTerms.data) throw new Error("Failed to get payment terms");
   const supplierEmail = contact.data.contact.email;
   if (!supplierEmail) return null;
+  // Never send one supplier's order to another supplier's contact.
+  if (contact.data.supplierId !== purchaseOrder.data.supplierId) return null;
 
   // Same decimals the PDF of this order uses.
   const currency = purchaseOrder.data.currencyCode
@@ -7039,6 +8458,11 @@ export async function releaseApprovedPurchaseOrder(
           attachments: attachment ? [attachment] : undefined,
           companyId: ctx.company.id
         });
+      } else {
+        logger.warn(
+          "Purchase order not emailed after approval: the supplier contact has no email",
+          { purchaseOrderId, supplierContactId: supplierContact }
+        );
       }
     } catch (err) {
       logger.error("Failed to send email after approval", { error: err });
@@ -7069,12 +8493,18 @@ export function deduplicateForecasts<
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;
@@ -7273,6 +8703,10 @@ export async function finalizeSupplierQuote(
     >();
     const updatedAt = datetime.timestamp();
 
+    const supplierPartUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["supplierPart"]["Update"];
+    }[] = [];
     for (const line of pricedLines) {
       const supplierPart = supplierPartByItem.get(line.itemId);
       if (!supplierPart) {
@@ -7298,17 +8732,16 @@ export async function finalizeSupplierQuote(
         .filter((price) => !!price.supplierUnitPrice)
         .sort((a, b) => a.supplierUnitPrice - b.supplierUnitPrice)[0];
       if (bestPrice) {
-        await trx
-          .updateTable("supplierPart")
-          .set({
+        supplierPartUpdates.push({
+          id: supplierPartId,
+          data: {
             supplierUnitPrice: toPartCurrency(bestPrice.supplierUnitPrice),
             minimumOrderQuantity: bestPrice.quantity ?? 1
-          })
-          .where("id", "=", supplierPartId)
-          .where("companyId", "=", companyId)
-          .execute();
+          }
+        });
       }
     }
+    await updateRowsById(trx, "supplierPart", companyId, supplierPartUpdates);
 
     if (priceBreaks.size > 0) {
       await trx
@@ -7343,7 +8776,9 @@ export async function finalizeSupplierQuote(
   return { success: true };
 }
 export const finalizePurchasingRfqInput = z.object({
-  rfqId: z.string()
+  rfqId: z.string(),
+  // The part files each new supplier quote is shared with.
+  sharedFilePaths: z.array(z.string()).default([])
 });
 
 const ITEM_TYPES = [
@@ -7375,7 +8810,7 @@ export async function finalizePurchasingRfq(
   ctx: ServiceContext,
   raw: z.input<typeof finalizePurchasingRfqInput>
 ) {
-  const { rfqId } = finalizePurchasingRfqInput.parse(raw);
+  const { rfqId, sharedFilePaths } = finalizePurchasingRfqInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -7445,6 +8880,7 @@ export async function finalizePurchasingRfq(
           exchangeRateUpdatedAt: now,
           quotedDate: now,
           supplierQuoteType: "Purchase",
+          sharedFilePaths,
           companyId,
           createdBy: userId,
           updatedBy: userId
@@ -8034,14 +9470,12 @@ export async function updatePurchasedPrices(
     }
 
     if (jobOperationUpdates.length > 0) {
-      for await (const jobOperationUpdate of jobOperationUpdates) {
-        await trx
-          .updateTable("jobOperation")
-          .set(jobOperationUpdate)
-          .where("id", "=", jobOperationUpdate.id!)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "jobOperation",
+        companyId,
+        jobOperationUpdates.map((update) => ({ id: update.id!, data: update }))
+      );
     }
 
     if (supplierPartInserts.length > 0) {
@@ -8062,14 +9496,12 @@ export async function updatePurchasedPrices(
     }
 
     if (supplierPartUpdates.length > 0) {
-      for await (const supplierPartUpdate of supplierPartUpdates) {
-        await trx
-          .updateTable("supplierPart")
-          .set(supplierPartUpdate)
-          .where("id", "=", supplierPartUpdate.id!)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "supplierPart",
+        companyId,
+        supplierPartUpdates.map((update) => ({ id: update.id!, data: update }))
+      );
     }
 
     if (itemReplenishmentUpdates.length > 0) {

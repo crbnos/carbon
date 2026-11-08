@@ -303,6 +303,26 @@ export const auditConfig = {
       }
     },
 
+    // Who may approve what: thresholds, approvers and default approver.
+    approvalRule: {
+      label: "Approval Rule",
+      tables: {
+        approvalRule: {
+          role: "root",
+          createFields: [
+            "documentType",
+            "lowerBoundAmount",
+            "approverGroupIds",
+            "defaultApproverId",
+            "enabled"
+          ],
+          snapshotFields: {
+            defaultApproverId: { table: "user", displayColumns: ["fullName"] }
+          }
+        }
+      }
+    },
+
     purchaseOrder: {
       label: "Purchase Order",
       tables: {
@@ -435,6 +455,28 @@ export const auditConfig = {
           }
         },
         jobMakeMethod: { entityIdColumn: "jobId" }
+      }
+    },
+
+    projectElement: {
+      label: "Project Element",
+      tables: {
+        projectElement: { role: "root" },
+        projectElementLabel: { entityIdColumn: "projectElementId" },
+        projectElementMaterial: { entityIdColumn: "projectElementId" },
+        projectElementLabor: { entityIdColumn: "projectElementId" },
+        projectElementCost: { entityIdColumn: "projectElementId" },
+        // A link is audited on the element it starts from.
+        projectElementLink: { entityIdColumn: "fromElementId" }
+      }
+    },
+
+    // Billing review (hold, release, write off, edit price) on a project's
+    // billable items.
+    projectBillableItem: {
+      label: "Billable Item",
+      tables: {
+        projectBillableItem: { role: "root" }
       }
     },
 
@@ -716,6 +758,7 @@ export const auditConfig = {
    * Tables not listed here fall back to a camelCase → Title Case conversion.
    */
   tableLabels: {
+    approvalRule: "Approval Rule",
     journal: "Journal Entry",
     invoiceSettlement: "Settlement",
     revenueRecognitionRunLine: "Recognition Line",

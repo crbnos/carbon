@@ -186,6 +186,7 @@ export function OvertimeDialog({
             ) : (
               <div className="w-full">
                 <Combobox
+                  aria-label={t`Week`}
                   asButton
                   size="sm"
                   value={overtimeDate}

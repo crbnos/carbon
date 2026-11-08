@@ -182,6 +182,7 @@ import {
   FormHelperText,
   FormLabel
 } from "./Form";
+import { useFormControl, useInlineTriggerLabel } from "./Form/useFormControl";
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
@@ -278,7 +279,8 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
-  navRailItemClasses
+  navRailItemClasses,
+  pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
 import type { NumberFieldProps } from "./Number";
@@ -357,6 +359,12 @@ import {
   SidebarTrigger,
   useSidebar
 } from "./Sidebar";
+import type {
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps
+} from "./SignaturePad";
+import { createSignatureDrawing, SignaturePad } from "./SignaturePad";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -398,7 +406,7 @@ import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
-import { isEditableTarget } from "./utils/keyboard";
+import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
   getValidChildren,
   optionLabelText,
@@ -411,6 +419,7 @@ export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
 export * from "./ImageZoomViewer";
+export * from "./InlineTrigger";
 export * from "./RecordOutlet";
 export type {
   ActionPresentation,
@@ -438,6 +447,9 @@ export type {
   ShortcutHelpEntry,
   ShortcutInput,
   ShortcutKeyMapEntry,
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps,
   SubheadingProps,
   TextareaProps,
   TrackedEntityOption,
@@ -534,6 +546,7 @@ export {
   CreatableMultiSelect,
   cn,
   copyToClipboard,
+  createSignatureDrawing,
   DatePicker,
   DateRangePicker,
   DateTime,
@@ -605,6 +618,7 @@ export {
   InputOTPSlot,
   InputRightAddon,
   InputRightElement,
+  isBareKeyForAnotherControl,
   isEditableTarget,
   isInsideTopmostDialog,
   isRichTextEmpty,
@@ -689,6 +703,7 @@ export {
   PrefetchLink,
   Progress,
   PulsingDot,
+  pulseNavIcon,
   RadioGroup,
   RadioGroupButton,
   RadioGroupItem,
@@ -738,6 +753,7 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SignaturePad,
   Skeleton,
   Slider,
   Spinner,
@@ -780,6 +796,8 @@ export {
   toastError,
   useBotProtection,
   useEnumerableAsText,
+  useFormControl,
+  useInlineTriggerLabel,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

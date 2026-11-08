@@ -294,7 +294,8 @@ export async function action({ request }: ActionFunctionArgs) {
     mapping,
     propertiesByPartId,
     released,
-    sourceState
+    sourceState,
+    ...(wv === "v" ? { versionId: wvId } : {})
   });
   if (rows.length === 0) {
     return data(

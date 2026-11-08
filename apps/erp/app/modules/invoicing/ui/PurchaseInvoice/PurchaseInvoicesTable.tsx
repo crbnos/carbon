@@ -18,6 +18,7 @@ import {
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuLayoutList,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -35,6 +36,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -51,6 +53,13 @@ type PurchaseInvoicesTableProps = {
   infinite: InfiniteOptions;
 };
 
+// The Purchase Order column shows the invoice's order; with one, its lines
+// need not repeat it.
+const purchaseOrderShownOnRow = (row: PurchaseInvoiceListItem) =>
+  row.purchaseOrderReadableIds?.length === 1
+    ? (row.purchaseOrderReadableIds[0] ?? null)
+    : null;
+
 const PurchaseInvoicesTable = memo(
   ({ data, count, infinite }: PurchaseInvoicesTableProps) => {
     const { t } = useLingui();
@@ -66,6 +75,10 @@ const PurchaseInvoicesTable = memo(
     const [suppliers] = useSuppliers();
     const customColumns =
       useCustomColumns<PurchaseInvoiceListItem>("purchaseInvoice");
+
+    const hasMultiplePurchaseOrders = data.some(
+      (row) => (row.purchaseOrderIds?.length ?? 0) > 1
+    );
 
     const columns = useMemo<ColumnDef<PurchaseInvoiceListItem>[]>(() => {
       const defaultColumns: ColumnDef<PurchaseInvoiceListItem>[] = [
@@ -131,6 +144,31 @@ const PurchaseInvoicesTable = memo(
           cell: (item) => item.getValue(),
           meta: {
             icon: <LuQrCode />
+          }
+        },
+        {
+          accessorKey: "purchaseOrderReadableIds",
+          header: hasMultiplePurchaseOrders
+            ? t`Purchase Orders`
+            : t`Purchase Order`,
+          cell: ({ row }) => {
+            const ids = row.original.purchaseOrderIds ?? [];
+            const readableIds = row.original.purchaseOrderReadableIds ?? [];
+            return (
+              <HStack spacing={0} className="gap-2">
+                {ids.map((id, index) => (
+                  <Hyperlink key={id} to={path.to.purchaseOrder(id)}>
+                    {readableIds[index]}
+                  </Hyperlink>
+                ))}
+              </HStack>
+            );
+          },
+          enableSorting: false,
+          meta: {
+            exportValue: (row) =>
+              (row.purchaseOrderReadableIds ?? []).join(", "),
+            icon: <LuLayoutList />
           }
         },
         {
@@ -309,7 +347,14 @@ const PurchaseInvoicesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [currencyFormatter, customColumns, people, suppliers, t]);
+    }, [
+      currencyFormatter,
+      customColumns,
+      hasMultiplePurchaseOrders,
+      people,
+      suppliers,
+      t
+    ]);
 
     const renderContextMenu = useMemo(() => {
       return (row: PurchaseInvoiceListItem) => (
@@ -340,12 +385,19 @@ const PurchaseInvoicesTable = memo(
       );
     }, [closePurchaseInvoiceModal, navigate, permissions]);
 
+    const lineItemRows = useLineItemRows<PurchaseInvoiceListItem>(
+      "purchase-invoices",
+      purchaseOrderShownOnRow
+    );
+
     return (
       <>
         <Table<PurchaseInvoiceListItem>
+          getRowLabel={(row) => row.invoiceId ?? undefined}
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
           infinite={infinite}
           defaultColumnPinning={{
             left: ["invoiceId"]

@@ -155,7 +155,7 @@ const LeaseHeader = ({
               variant="ghost"
             />
             <Link to={path.to.leaseDetails(id)}>
-              <Heading size="h4" className="flex items-center gap-2">
+              <Heading as="h1" size="h4" className="flex items-center gap-2">
                 <span className="whitespace-nowrap">{readableId}</span>
               </Heading>
             </Link>

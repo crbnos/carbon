@@ -4,21 +4,24 @@
 
 import { describe, expect, it, vi } from "vitest";
 import type {
-  AssetRows,
-  DrawingRow,
-  FileRecords,
+  DrawingRecords,
+  DrawingTargetRow,
+  ModelRecords,
   ModelRow,
-  SourceStates
+  SourceStates,
+  TiedDrawing
 } from "./onshape-asset-state";
 import {
-  currentFiles,
+  currentDrawingFiles,
+  currentModels,
   documentStateKey,
   drawingFileKey,
-  drawingPdfPath,
-  drawingRowSourceKey,
+  drawingTargetSourceKey,
   outOfDateFiles,
+  planDrawingFiles,
   rowsWithFiles,
-  sourceStateReads
+  sourceStateReads,
+  sourceStateStamps
 } from "./onshape-asset-state";
 import { assemblySourceKeyAt, partSourceId } from "./onshape-source-keys";
 
@@ -28,32 +31,17 @@ vi.mock("@carbon/ee/onshape", () => ({
   selectInBatches: vi.fn()
 }));
 
-const studio = {
-  kind: "partstudio" as const,
-  documentId: "d",
-  wvm: "w" as const,
-  wvmId: "w1",
-  elementId: "ps",
-  configuration: null
-};
-
 const model = (over: Partial<ModelRow> = {}): ModelRow => ({
-  ...studio,
-  itemId: "brk",
-  partNumber: "BRK-010",
-  partId: "JHD",
-  ...over
-});
-
-const drawing = (over: Partial<DrawingRow> = {}): DrawingRow => ({
-  itemId: "brk",
-  partNumber: "BRK-010",
+  kind: "partstudio",
   documentId: "d",
   wvm: "w",
   wvmId: "w1",
-  drawingElementId: "drw",
-  drawingMicroversionId: "mv-drawing",
-  target: { ...studio, partId: "JHD" },
+  elementId: "ps",
+  configuration: null,
+  itemId: "brk",
+  externalId: "d:ps:JHD",
+  partNumber: "BRK-010",
+  partId: "JHD",
   ...over
 });
 
@@ -76,39 +64,23 @@ const brkModelId = partSourceId({
   partId: "JHD"
 });
 
-const records = (over: Partial<FileRecords> = {}): FileRecords => ({
+const records = (over: Partial<ModelRecords> = {}): ModelRecords => ({
   modelUploadIds: { brk: brkModelId },
   modelSources: {},
-  drawingKeys: {
-    brk: { drw: drawingRowSourceKey(drawing(), states)! }
-  },
-  storedPaths: [drawingPdfPath("company", drawing())],
-  ...over
-});
-
-const rows = (over: Partial<AssetRows> = {}): AssetRows => ({
-  models: [model()],
-  drawings: [drawing()],
   ...over
 });
 
 describe("sourceStateReads", () => {
   it("reads each workspace once, whatever its rows, and no version", () => {
     expect(
-      sourceStateReads({
-        models: [
-          model(),
-          model({ itemId: "plt", partId: "JKD" }),
-          model({ itemId: "len", configuration: "Length=40mm" }),
-          model({ itemId: "pin", wvm: "v", wvmId: "v1" })
-        ],
-        drawings: [
-          drawing({
-            target: { ...studio, kind: "assembly", elementId: "asm" }
-          }),
-          drawing({ target: { ...studio, documentId: "lib", wvmId: "w9" } })
-        ]
-      })
+      sourceStateReads([
+        model(),
+        model({ itemId: "plt", partId: "JKD" }),
+        model({ itemId: "len", configuration: "Length=40mm" }),
+        model({ itemId: "sub", kind: "assembly", elementId: "asm" }),
+        model({ itemId: "pin", wvm: "v", wvmId: "v1" }),
+        model({ itemId: "lib", documentId: "lib", wvmId: "w9" })
+      ])
     ).toEqual([
       { documentId: "d", wvmId: "w1" },
       { documentId: "lib", wvmId: "w9" }
@@ -116,22 +88,18 @@ describe("sourceStateReads", () => {
   });
 });
 
-describe("currentFiles", () => {
-  it("finds the model and drawing an item already has from the current state", () => {
-    expect(currentFiles("company", rows(), states, records())).toEqual({
-      models: ["brk"],
-      drawings: [drawingFileKey(drawing())]
-    });
+describe("currentModels", () => {
+  it("finds the model an item already has from the current state", () => {
+    expect(currentModels("company", [model()], states, records())).toEqual([
+      "brk"
+    ]);
   });
 
-  it("finds nothing current once the workspace has changed", () => {
+  it("finds nothing current once the workspace's parts have changed", () => {
     const changed: SourceStates = {
       documents: { [workspaceKey]: { parts: "ws-2", assemblies: "wa-1" } }
     };
-    expect(currentFiles("company", rows(), changed, records())).toEqual({
-      models: [],
-      drawings: []
-    });
+    expect(currentModels("company", [model()], changed, records())).toEqual([]);
   });
 
   it("keeps a part current when only an assembly in the workspace changed", () => {
@@ -139,31 +107,24 @@ describe("currentFiles", () => {
       documents: { [workspaceKey]: { parts: "ws-1", assemblies: "wa-2" } }
     };
     expect(
-      currentFiles("company", rows(), assemblyEdited, records()).models
+      currentModels("company", [model()], assemblyEdited, records())
     ).toEqual(["brk"]);
   });
 
   it("finds nothing current when Onshape did not report the workspace's state", () => {
     expect(
-      currentFiles("company", rows(), { documents: {} }, records())
-    ).toEqual({ models: [], drawings: [] });
-  });
-
-  it("exports a recorded drawing again once its PDF was deleted from the item", () => {
-    expect(
-      currentFiles("company", rows(), states, records({ storedPaths: [] }))
-        .drawings
+      currentModels("company", [model()], { documents: {} }, records())
     ).toEqual([]);
   });
 
   it("exports a model again once the item's model was replaced", () => {
     expect(
-      currentFiles(
+      currentModels(
         "company",
-        rows(),
+        [model()],
         states,
         records({ modelUploadIds: { brk: "manual-upload" } })
-      ).models
+      )
     ).toEqual([]);
   });
 
@@ -185,57 +146,341 @@ describe("currentFiles", () => {
         sub: { externalId: source, metadata: { modelUploadId: "model-sub" } }
       }
     });
-    expect(
-      currentFiles(
-        "company",
-        rows({ models: [sub], drawings: [] }),
-        states,
-        held
-      ).models
-    ).toEqual(["sub"]);
+    expect(currentModels("company", [sub], states, held)).toEqual(["sub"]);
   });
 });
 
-describe("rowsWithFiles", () => {
-  it("keeps only rows whose item holds a model or a stored, recorded drawing", () => {
+describe("sourceStateStamps", () => {
+  it("records a workspace part's parts state, the value a part push compares", () => {
+    expect(sourceStateStamps([model()], states, new Set(["brk"]))).toEqual([
+      {
+        itemId: "brk",
+        externalId: "d:ps:JHD",
+        patch: { microversionId: "ws-1", modelVersionId: null }
+      }
+    ]);
+  });
+
+  it("records a version part's version id and clears the workspace state", () => {
+    const pin = model({
+      itemId: "pin",
+      externalId: "lib:ps:JKD",
+      documentId: "lib",
+      wvm: "v",
+      wvmId: "v3",
+      partId: "JKD"
+    });
+    expect(sourceStateStamps([pin], states, new Set(["pin"]))).toEqual([
+      {
+        itemId: "pin",
+        externalId: "lib:ps:JKD",
+        patch: { microversionId: null, modelVersionId: "v3" }
+      }
+    ]);
+  });
+
+  it("stamps only items that hold their model, and no assembly", () => {
+    const sub = model({
+      kind: "assembly",
+      itemId: "sub",
+      elementId: "asm",
+      partId: undefined
+    });
+    const failed = model({ itemId: "plt", partId: "JKD" });
+    expect(sourceStateStamps([sub, failed], states, new Set(["sub"]))).toEqual(
+      []
+    );
+  });
+
+  it("stamps nothing for a workspace whose state Onshape did not report", () => {
+    expect(
+      sourceStateStamps([model()], { documents: {} }, new Set(["brk"]))
+    ).toEqual([]);
+  });
+});
+
+describe("planDrawingFiles", () => {
+  const states: SourceStates = {
+    documents: { [workspaceKey]: { parts: "ws-1", assemblies: "wa-1" } }
+  };
+  const bracket: DrawingTargetRow = {
+    itemId: "brk",
+    partNumber: "BRK-010",
+    kind: "partstudio",
+    documentId: "d",
+    wvm: "w",
+    wvmId: "w1",
+    elementId: "ps",
+    partId: "JHD",
+    configuration: null
+  };
+  const plate: DrawingTargetRow = {
+    ...bracket,
+    itemId: "plt",
+    partNumber: "PLT-020",
+    partId: "JKD"
+  };
+  const drawing = (over: Partial<TiedDrawing> = {}): TiedDrawing => ({
+    documentId: "d",
+    wvm: "w",
+    wvmId: "w1",
+    drawingElementId: "drw",
+    name: "Bracket drawing",
+    microversionId: "mv-1",
+    targets: [bracket, plate],
+    ...over
+  });
+  // The bracket holds the drawing's current PDF under `fileName`.
+  const held = (fileName = "Bracket drawing.pdf"): DrawingRecords => ({
+    records: {
+      brk: {
+        drw: {
+          sourceKey: drawingTargetSourceKey(drawing(), bracket, states),
+          fileName
+        }
+      }
+    },
+    files: { brk: [fileName] }
+  });
+  const none: DrawingRecords = { records: {}, files: {} };
+
+  it("exports a new drawing once for every row it shows and records its name first", () => {
+    const tied = drawing();
+    expect(planDrawingFiles([tied], states, none)).toEqual({
+      exports: [
+        {
+          drawing: tied,
+          targets: [
+            {
+              ...bracket,
+              sourceKey: drawingTargetSourceKey(tied, bracket, states),
+              fileName: "Bracket drawing.pdf"
+            },
+            {
+              ...plate,
+              sourceKey: drawingTargetSourceKey(tied, plate, states),
+              fileName: "Bracket drawing.pdf"
+            }
+          ]
+        }
+      ],
+      placements: [
+        {
+          itemId: "brk",
+          drawingElementId: "drw",
+          from: null,
+          record: { sourceKey: null, fileName: "Bracket drawing.pdf" }
+        },
+        {
+          itemId: "plt",
+          drawingElementId: "drw",
+          from: null,
+          record: { sourceKey: null, fileName: "Bracket drawing.pdf" }
+        }
+      ],
+      unchanged: 0,
+      renamed: 0
+    });
+  });
+
+  it("leaves out a row that holds the PDF from the same drawing and part state", () => {
+    const plan = planDrawingFiles([drawing()], states, held());
+    expect(plan.unchanged).toBe(1);
+    expect(plan.exports[0]!.targets.map((t) => t.itemId)).toEqual(["plt"]);
+    expect(plan.placements.map((p) => p.itemId)).toEqual(["plt"]);
+  });
+
+  it("exports again when the drawing changed since the recorded export", () => {
+    const plan = planDrawingFiles(
+      [drawing({ microversionId: "mv-2", targets: [bracket] })],
+      states,
+      held()
+    );
+    expect(plan.exports[0]!.targets.map((t) => t.itemId)).toEqual(["brk"]);
+    expect(plan.placements).toEqual([]);
+  });
+
+  it("exports again when the PDF was deleted from the item", () => {
+    const plan = planDrawingFiles([drawing({ targets: [bracket] })], states, {
+      ...held(),
+      files: {}
+    });
+    expect(plan.unchanged).toBe(0);
+    expect(plan.exports).toHaveLength(1);
+  });
+
+  it("renames the PDF of a renamed drawing without exporting it", () => {
+    const plan = planDrawingFiles(
+      [drawing({ name: "Bracket", targets: [bracket] })],
+      states,
+      held()
+    );
+    expect(plan).toEqual({
+      exports: [],
+      placements: [
+        {
+          itemId: "brk",
+          drawingElementId: "drw",
+          from: "Bracket drawing.pdf",
+          record: {
+            sourceKey: drawingTargetSourceKey(drawing(), bracket, states),
+            fileName: "Bracket.pdf"
+          }
+        }
+      ],
+      unchanged: 0,
+      renamed: 1
+    });
+  });
+
+  it("moves the old PDF of a renamed, changed drawing before exporting it", () => {
+    const plan = planDrawingFiles(
+      [
+        drawing({ name: "Bracket", microversionId: "mv-2", targets: [bracket] })
+      ],
+      states,
+      held()
+    );
+    expect(plan.placements[0]!.from).toBe("Bracket drawing.pdf");
+    expect(plan.exports[0]!.targets[0]!.fileName).toBe("Bracket.pdf");
+    expect(plan.renamed).toBe(0);
+  });
+
+  it("does not export again a PDF that was too large for the same state", () => {
+    const records = held();
+    records.records.brk!.drw!.tooLarge = true;
+    const plan = planDrawingFiles([drawing({ targets: [bracket] })], states, {
+      ...records,
+      files: {}
+    });
+    expect(plan).toEqual({
+      exports: [],
+      placements: [],
+      unchanged: 1,
+      renamed: 0
+    });
+  });
+
+  it("always exports when the part's workspace state is unknown", () => {
+    const plan = planDrawingFiles(
+      [drawing({ targets: [bracket] })],
+      { documents: {} },
+      none
+    );
+    expect(plan.exports[0]!.targets).toEqual([
+      { ...bracket, sourceKey: null, fileName: "Bracket drawing.pdf" }
+    ]);
+  });
+
+  it("keys a version drawing by the version, whatever the workspace does", () => {
+    const atVersion = { ...bracket, wvm: "v" as const, wvmId: "v3" };
+    const tied = drawing({
+      wvm: "v",
+      wvmId: "v3",
+      microversionId: null,
+      targets: [atVersion]
+    });
+    expect(drawingTargetSourceKey(tied, atVersion, { documents: {} })).toBe(
+      drawingTargetSourceKey(tied, atVersion, states)
+    );
+    expect(drawingTargetSourceKey(tied, atVersion, states)).not.toBeNull();
+  });
+});
+
+describe("sourceStateReads with drawing rows", () => {
+  it("reads each workspace once across models and drawing rows, and no version", () => {
+    expect(
+      sourceStateReads([
+        model(),
+        { documentId: "d", wvm: "w", wvmId: "w1" },
+        { documentId: "root", wvm: "w", wvmId: "rw" },
+        { documentId: "lib", wvm: "v", wvmId: "v3" }
+      ])
+    ).toEqual([
+      { documentId: "d", wvmId: "w1" },
+      { documentId: "root", wvmId: "rw" }
+    ]);
+  });
+});
+
+describe("the review's current-file checks", () => {
+  const bracket: DrawingTargetRow = {
+    itemId: "brk",
+    partNumber: "BRK-010",
+    kind: "partstudio",
+    documentId: "d",
+    wvm: "w",
+    wvmId: "w1",
+    elementId: "ps",
+    partId: "JHD",
+    configuration: null
+  };
+  const tied: TiedDrawing = {
+    documentId: "d",
+    wvm: "w",
+    wvmId: "w1",
+    drawingElementId: "drw",
+    name: "Bracket drawing",
+    microversionId: "mv-1",
+    targets: [bracket]
+  };
+  const drawingKey = drawingFileKey({ itemId: "brk", drawingElementId: "drw" });
+  const fileName = "Bracket drawing.pdf";
+  const holding = (sourceKey: string | null): DrawingRecords => ({
+    records: { brk: { drw: { sourceKey, fileName } } },
+    files: { brk: [fileName] }
+  });
+  const currentKey = drawingTargetSourceKey(tied, bracket, states);
+
+  it("finds a drawing current only when its state matches and the PDF is stored", () => {
+    expect(currentDrawingFiles([tied], states, holding(currentKey))).toEqual([
+      drawingKey
+    ]);
+    expect(
+      currentDrawingFiles([tied], states, holding("an-earlier-key"))
+    ).toEqual([]);
+    expect(
+      currentDrawingFiles([tied], states, {
+        ...holding(currentKey),
+        files: {}
+      })
+    ).toEqual([]);
+  });
+
+  it("reads only the rows whose item holds a model or a stored drawing", () => {
     const fresh = model({ itemId: "new", partNumber: "NEW-001" });
-    const unrecorded = drawing({ drawingElementId: "drw-2" });
+    const unstored = { ...tied, drawingElementId: "gone" };
     expect(
       rowsWithFiles(
-        "company",
-        rows({
-          models: [model(), fresh],
-          drawings: [drawing(), unrecorded]
-        }),
-        records()
+        { models: [model(), fresh], drawings: [tied, unstored] },
+        { models: records(), drawings: holding(currentKey) }
       )
-    ).toEqual({ models: [model()], drawings: [drawing()] });
-  });
-});
-
-describe("outOfDateFiles", () => {
-  const none = { models: [], drawings: [] };
-
-  it("names an earlier Onshape export and a drawing recorded at an earlier state", () => {
-    const earlier = records({
-      modelUploadIds: { brk: "onshape-earlier" },
-      drawingKeys: { brk: { drw: "an-earlier-key" } }
-    });
-    expect(outOfDateFiles("company", rows(), earlier, none)).toEqual({
-      models: ["brk"],
-      drawings: [drawingFileKey(drawing())]
-    });
+    ).toEqual({ models: [model()], drawings: [tied] });
   });
 
-  it("leaves out current files, a model uploaded by hand, and an item with no file", () => {
-    const fresh = model({ itemId: "new", partNumber: "NEW-001" });
+  it("names an earlier Onshape export and a drawing recorded at an earlier state as out of date", () => {
     expect(
       outOfDateFiles(
-        "company",
-        rows({ models: [model(), fresh] }),
-        records({ modelUploadIds: { brk: "manual-upload" } }),
-        { models: [], drawings: [drawingFileKey(drawing())] }
+        { models: [model()], drawings: [tied] },
+        {
+          models: records({ modelUploadIds: { brk: "onshape-earlier" } }),
+          drawings: holding("an-earlier-key")
+        },
+        { models: [], drawings: [] }
       )
-    ).toEqual(none);
+    ).toEqual({ models: ["brk"], drawings: [drawingKey] });
+  });
+
+  it("leaves current files and a model uploaded by hand out of the out-of-date list", () => {
+    expect(
+      outOfDateFiles(
+        { models: [model()], drawings: [tied] },
+        {
+          models: records({ modelUploadIds: { brk: "manual-upload" } }),
+          drawings: holding(currentKey)
+        },
+        { models: [], drawings: [drawingKey] }
+      )
+    ).toEqual({ models: [], drawings: [] });
   });
 });

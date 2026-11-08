@@ -46,7 +46,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Theme`,
-  to: path.to.theme
+  to: path.to.onboarding.theme
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

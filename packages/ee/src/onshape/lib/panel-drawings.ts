@@ -5,17 +5,18 @@
 import { getLogger } from "@carbon/logger";
 import type { OnshapeBomNode } from "../panel/bom";
 import type {
+  DrawingAssemblyElement,
+  DrawingDocument,
   DrawingTie,
-  ElementPartsRequest,
   OnshapeDrawing,
   SkippedDrawing
 } from "../panel/drawings";
 import {
-  elementPartsKey,
+  bomAssemblySources,
   parseDrawingReferences,
   tieDrawings
 } from "../panel/drawings";
-import type { AssemblyPlan, DrawingDocument } from "../panel/plan";
+import type { AssemblyPlan } from "../panel/plan";
 import {
   assemblyDrawingDocuments,
   assemblyDrawingTargets
@@ -28,7 +29,7 @@ import {
   drawingState,
   getCachedReferences
 } from "./drawing-references-cache";
-import { ONSHAPE_DRAWING_DATA_TYPE, OnshapeElementType } from "./element.type";
+import { readDocumentDrawings } from "./drawings";
 import { settleBefore } from "./source-state";
 
 // The drawings an assembly review offers: listed per source document, their
@@ -45,7 +46,7 @@ const DRAWING_READS_AT_ONCE = 4;
 
 type DrawingClient = Pick<
   OnshapeClient,
-  "getElementsIn" | "resolveAppElementReferences" | "getPartsInElement"
+  "getElementsIn" | "resolveAppElementReferences"
 >;
 
 /**
@@ -113,41 +114,31 @@ export async function readAssemblyDrawings({
   const empty = { ties: [], skipped: [] };
   if (documents.length === 0) return { tied: empty, warnings };
 
-  const listed = await eachUntil(
-    documents,
-    deadline,
-    async (document): Promise<OnshapeDrawing[] | null> => {
-      try {
-        const rows = await client.getElementsIn(
-          onshapeDocument(document),
-          OnshapeElementType.APPLICATION
-        );
-        return rows
-          .filter((row) => row.dataType === ONSHAPE_DRAWING_DATA_TYPE)
-          .map((row) => ({
-            documentId: document.documentId,
-            wvm: document.wvm,
-            wvmId: document.wvmId,
-            elementId: row.id,
-            name: row.name,
-            microversionId:
-              typeof row.microversionId === "string"
-                ? row.microversionId
-                : null,
-            references: []
-          }));
-      } catch (error) {
-        logger.warn("Onshape drawing list failed", {
-          companyId,
-          documentId: document.documentId,
-          error
-        });
-        return null;
-      }
+  const listed = await eachUntil(documents, deadline, async (document) => {
+    try {
+      return { document, ...(await readDocumentDrawings(client, document)) };
+    } catch (error) {
+      logger.warn("Onshape drawing list failed", {
+        companyId,
+        documentId: document.documentId,
+        error
+      });
+      return null;
     }
+  });
+  const drawings = listed.done.flatMap((read) => read?.drawings ?? []);
+  // Every assembly of the documents read, so a drawing of one outside the
+  // push is still an assembly's drawing, as the export job reads it.
+  const assemblyElements: DrawingAssemblyElement[] = listed.done.flatMap(
+    (read) =>
+      read
+        ? read.assemblyElementIds.map((elementId) => ({
+            ...read.document,
+            elementId
+          }))
+        : []
   );
-  const drawings = listed.done.flatMap((rows) => rows ?? []);
-  const unlistedDocuments = listed.done.filter((rows) => rows === null).length;
+  const unlistedDocuments = listed.done.filter((read) => read === null).length;
   const lateDocuments = listed.late;
   if (unlistedDocuments > 0) {
     warnings.push(
@@ -227,42 +218,23 @@ export async function readAssemblyDrawings({
     (a, b) => (order.get(drawingKey(a)) ?? 0) - (order.get(drawingKey(b)) ?? 0)
   );
 
-  const targets = assemblyDrawingTargets(plan, nodes);
-  const first = tieDrawings(read, targets);
-  if (first.needsParts.length === 0) {
-    return { tied: first, warnings };
-  }
-
-  // A drawing of a whole Part Studio: it ties only when the Part Studio has
-  // one part.
-  // A Part Studio left unread keeps its drawings skipped as several parts.
-  const partReads = await eachUntil(
-    first.needsParts,
-    deadline,
-    async (request: ElementPartsRequest) => {
-      try {
-        const parts = await client.getPartsInElement(
-          onshapeDocument(request),
-          request.elementId,
-          request.configuration
-        );
-        return [
-          elementPartsKey(request),
-          parts.map((part) => part.partId)
-        ] as const;
-      } catch (error) {
-        logger.warn("Onshape Part Studio parts read failed", {
-          companyId,
-          elementId: request.elementId,
-          error
-        });
-        return null;
-      }
+  const { ties, skipped } = tieDrawings(
+    read,
+    assemblyDrawingTargets(plan, nodes),
+    bomAssemblySources(nodes),
+    assemblyElements
+  );
+  // A document at two states lists a drawing twice: once tied, it is not
+  // also skipped, and a drawing skipped twice is listed once.
+  const tiedIds = new Set(ties.map((tie) => tie.drawing.elementId));
+  const skippedOnce = new Map<string, SkippedDrawing>();
+  for (const drawing of skipped) {
+    if (!tiedIds.has(drawing.elementId)) {
+      skippedOnce.set(drawing.elementId, {
+        elementId: drawing.elementId,
+        name: drawing.name
+      });
     }
-  );
-  const elementParts = new Map<string, string[]>(
-    partReads.done.flatMap((entry) => (entry ? [[entry[0], entry[1]]] : []))
-  );
-  const second = tieDrawings(read, targets, elementParts);
-  return { tied: second, warnings };
+  }
+  return { tied: { ties, skipped: [...skippedOnce.values()] }, warnings };
 }

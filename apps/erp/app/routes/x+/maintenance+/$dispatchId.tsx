@@ -11,7 +11,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import RiskRegisterCard from "~/modules/quality/ui/RiskRegister/RiskRegisterCard";
@@ -30,6 +30,7 @@ import {
 } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchNotes";
 import MaintenanceDispatchProperties from "~/modules/resources/ui/Maintenance/MaintenanceDispatchProperties";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -53,6 +54,9 @@ async function getMaintenanceDispatchFiles(
     .list(`${companyId}/maintenance/${dispatchId}`);
   return result.data ?? [];
 }
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.dispatch?.maintenanceDispatchId, "Maintenance Dispatch");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

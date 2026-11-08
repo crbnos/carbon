@@ -4,7 +4,6 @@
 
 import {
   Badge,
-  Button,
   Combobox,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -13,11 +12,10 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
-  LuCirclePlus,
   LuClock,
   LuMapPin,
   LuPencil,
@@ -25,20 +23,19 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import { NewAction } from "~/components/New";
+import New from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { clearStockTransferWizard, usePeople } from "~/stores";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { stockTransferStatusType } from "../../inventory.models";
 import type { StockTransfer } from "../../types";
 import StockTransferStatus from "./StockTransferStatus";
-import { StockTransferWizard } from "./StockTransferWizard";
 
 type StockTransfersTableProps = {
   data: StockTransfer[];
@@ -50,8 +47,6 @@ type StockTransfersTableProps = {
 
 const StockTransfersTable = memo(
   ({ data, count, nextCursor, locationId }: StockTransfersTableProps) => {
-    const wizardDisclosure = useDisclosure();
-
     const [params] = useUrlParams();
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -59,26 +54,6 @@ const StockTransfersTable = memo(
 
     const rows = useMemo(() => data, [data]);
     const [people] = usePeople();
-
-    // `?new` (path.to.stockTransfersNew, the Create menu's target) opens the
-    // wizard, then drops the param so a refresh or back doesn't reopen it.
-    const [searchParams, setSearchParams] = useSearchParams();
-    const { onOpen: openWizard } = wizardDisclosure;
-    const canCreate = permissions.can("create", "inventory");
-    useEffect(() => {
-      if (!searchParams.has("new")) return;
-      if (canCreate) {
-        clearStockTransferWizard();
-        openWizard();
-      }
-      setSearchParams(
-        (prev) => {
-          prev.delete("new");
-          return prev;
-        },
-        { replace: true }
-      );
-    }, [searchParams, setSearchParams, openWizard, canCreate]);
 
     const customColumns = useCustomColumns<StockTransfer>("stockTransfer");
     const locations = useLocations();
@@ -321,6 +296,7 @@ const StockTransfersTable = memo(
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={locationId}
@@ -331,23 +307,10 @@ const StockTransfersTable = memo(
                 }}
               />
               {permissions.can("create", "inventory") && (
-                <NewAction
-                  label={t`Add Stock Transfer`}
-                  onClick={() => {
-                    clearStockTransferWizard();
-                    wizardDisclosure.onOpen();
-                  }}
-                >
-                  <Button
-                    onClick={() => {
-                      clearStockTransferWizard();
-                      wizardDisclosure.onOpen();
-                    }}
-                    leftIcon={<LuCirclePlus />}
-                  >
-                    {t`Add Stock Transfer`}
-                  </Button>
-                </NewAction>
+                <New
+                  label={t`Stock Transfer`}
+                  to={`${path.to.newStockTransfer}?location=${locationId}`}
+                />
               )}
             </div>
           }
@@ -370,12 +333,6 @@ const StockTransfersTable = memo(
               deleteStockTransferModal.onClose();
               setSelectedStockTransfer(null);
             }}
-          />
-        )}
-        {wizardDisclosure.isOpen && (
-          <StockTransferWizard
-            locationId={locationId}
-            onClose={wizardDisclosure.onClose}
           />
         )}
       </>

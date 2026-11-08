@@ -5,6 +5,22 @@
 import type { Database } from "@carbon/database";
 import { distinctItemText } from "@carbon/utils";
 
+type SalesInvoiceLineRow =
+  Database["public"]["Views"]["salesInvoiceLines"]["Row"];
+
+/**
+ * A service job's labor or fixed price line: a Service line with no item,
+ * named by its description. "Labor" is the type those lines had before
+ * 2026-11-01.
+ */
+function isItemlessServiceLine(line: SalesInvoiceLineRow) {
+  return (
+    (line?.invoiceLineType === "Service" ||
+      line?.invoiceLineType === "Labor") &&
+    !line?.itemId
+  );
+}
+
 export function getLineDescription(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
@@ -18,7 +34,9 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default:
-      return line?.itemReadableId;
+      return isItemlessServiceLine(line)
+        ? line?.description
+        : line?.itemReadableId;
   }
 }
 
@@ -30,6 +48,8 @@ export function getLineDescriptionDetails(
       return line?.description;
     case "Comment":
     default:
+      // Its description is already its name.
+      if (isItemlessServiceLine(line)) return "";
       // A service's readable id is its name — don't print it twice.
       return distinctItemText(line?.itemReadableId, line?.description) ?? "";
   }

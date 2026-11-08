@@ -18,7 +18,7 @@ import {
   sheetRowClassName,
   useMode
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useState } from "react";
 import { LuBell, LuBuilding2 } from "react-icons/lu";
@@ -71,7 +71,6 @@ export function ProfileSheet({
   /** The screen the sheet opens on; Back always returns to the root. */
   initialScreen?: "root" | "notifications";
 }) {
-  const { t } = useLingui();
   const menu = useAccountMenu();
   const user = useUser();
   const mode = useMode();
@@ -120,37 +119,6 @@ export function ProfileSheet({
             />
           </a>
         );
-      case "mode":
-        return (
-          <div className="flex min-h-12 items-center gap-3 px-3">
-            <SheetRowContent icon={item.icon} label={item.label} />
-            <div
-              role="radiogroup"
-              aria-label={t`Appearance`}
-              className="flex shrink-0 rounded-lg bg-muted p-0.5"
-            >
-              {menu.modeOptions.map((option) => {
-                const selected = menu.modePreference === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => menu.onModeChange(option.value)}
-                    className={cn(
-                      "hit-area flex h-9 min-w-11 items-center justify-center rounded-md px-2 text-sm text-muted-foreground",
-                      selected &&
-                        "bg-background text-foreground shadow-button-base"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
       case "submenu":
         return (
           <SheetRowButton
@@ -167,12 +135,14 @@ export function ProfileSheet({
           </SheetRowButton>
         );
       case "action":
-        if (item.id === "account") {
+        if (item.id === "account" || item.id === "appearance") {
           return (
             <SheetRowButton
               onClick={() => {
                 onOpenChange(false);
-                menu.openAccountSettings();
+                menu.openAccountSettings(
+                  item.id === "appearance" ? "appearance" : undefined
+                );
               }}
             >
               <SheetRowContent icon={item.icon} label={item.label} />
@@ -197,29 +167,6 @@ export function ProfileSheet({
   };
 
   const renderSubmenu = (item: AccountMenuItem): ReactNode => {
-    if (item.id === "theme") {
-      return (
-        <>
-          {menu.themeOptions.map((theme) => (
-            <SheetRowButton
-              key={theme.name}
-              onClick={() => menu.onThemeChange(theme.name)}
-            >
-              <span
-                className="size-5 shrink-0 rounded-full"
-                style={{
-                  background: `hsl(${theme.activeColor[mode === "dark" ? "dark" : "light"]})`
-                }}
-              />
-              <SheetRowContent
-                label={theme.label}
-                trailing={menu.optimisticTheme === theme.name ? "check" : null}
-              />
-            </SheetRowButton>
-          ))}
-        </>
-      );
-    }
     if (item.id === "language") {
       return (
         <menu.localeFetcher.Form method="post" action="/api/locale">
@@ -280,7 +227,11 @@ export function ProfileSheet({
             {screen.id === "root" && (
               <>
                 <div className="flex items-center gap-3 px-3 pb-3">
-                  <Avatar path={menu.user.avatarUrl} name={menu.name} />
+                  <Avatar
+                    path={menu.user.avatarUrl}
+                    name={menu.name}
+                    decorative
+                  />
                   <span className="min-w-0 truncate text-sm text-muted-foreground">
                     {menu.signedInAs}
                   </span>
@@ -360,6 +311,7 @@ export function ProfileSheet({
                             size="xs"
                             name={company.name ?? undefined}
                             src={logo ?? undefined}
+                            decorative
                           />
                           <SheetRowContent
                             label={company.name}

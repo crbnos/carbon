@@ -367,6 +367,7 @@ const SupplierQuoteHeader = () => {
       {sendModal.isOpen && (
         <SupplierQuoteSendModal
           quote={routeData?.quote}
+          lines={routeData?.lines ?? []}
           onClose={sendModal.onClose}
           fetcher={sendFetcher}
           externalLinkId={routeData?.quote?.externalLinkId ?? ""}
@@ -508,6 +509,7 @@ function ShareQuoteModal({
   onClose: () => void;
   isOpen: boolean;
 }) {
+  const { t } = useLingui();
   if (!externalLinkId) return null;
   if (typeof window === "undefined") return null;
 
@@ -534,7 +536,7 @@ function ShareQuoteModal({
         </ModalHeader>
         <ModalBody>
           <InputGroup>
-            <Input value={digitalQuoteUrl} />
+            <Input aria-label={t`Share link`} value={digitalQuoteUrl} />
             <InputRightElement>
               <Copy text={digitalQuoteUrl} />
             </InputRightElement>

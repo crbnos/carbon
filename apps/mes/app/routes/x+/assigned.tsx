@@ -30,7 +30,7 @@ import {
   LuSettings2,
   LuTriangleAlert
 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { OperationsList } from "~/components";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
@@ -39,16 +39,20 @@ import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
 import { userContext } from "~/context";
 import {
   getJobOperationsAssignedToEmployee,
+  getJobProjects,
   getWorkCentersByCompany
 } from "~/services/operations.service";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 
 export const handle: Handle = {
   realtime: ["jobOperation", "productionEvent"]
 };
 
 const log = getLogger("mes");
+
+export const meta: MetaFunction = () => pageMeta("Assigned to Me");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
@@ -71,8 +75,21 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     log.error("Failed to load work centers", { error: workCenters.error });
   }
 
+  const jobProjects = await getJobProjects(
+    serviceRole,
+    companyId,
+    Array.from(new Set(operations.data?.map((op) => op.jobId) ?? []))
+  );
+  if (jobProjects.error) {
+    log.error("Failed to load job projects", { error: jobProjects.error });
+  }
+
   return {
-    operations: operations?.data?.map(makeDurations) ?? [],
+    operations:
+      operations?.data?.map((op) => ({
+        ...makeDurations(op),
+        ...jobProjects.data[op.jobId]
+      })) ?? [],
     workCenters: workCenters?.data ?? [],
     locationId
   };
@@ -94,6 +111,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showProgress: false,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -195,6 +213,7 @@ export default function AssignedRoute() {
       subtitle: operation.itemReadableId,
       description: operation.description,
       dueDate: operation.operationDueDate,
+      dueDateScope: "operation" as const,
       duration:
         operation.setupDuration +
         Math.max(operation.laborDuration, operation.machineDuration),
@@ -208,6 +227,10 @@ export default function AssignedRoute() {
       salesOrderReadableId: operation.salesOrderReadableId,
       salesOrderId: operation.salesOrderId,
       salesOrderLineId: operation.salesOrderLineId,
+      projectId: operation.projectId,
+      projectElementId: operation.projectElementId,
+      projectReadableId: operation.projectReadableId,
+      projectName: operation.projectName,
       status: operation.operationStatus,
       thumbnailPath: operation.thumbnailPath,
       quantity: operation.operationQuantity,
@@ -273,6 +296,7 @@ export default function AssignedRoute() {
           { key: "showProgress", label: t`Progress` },
           { key: "showStatus", label: t`Status` },
           { key: "showSalesOrder", label: t`Sales Order` },
+          { key: "showProject", label: t`Project` },
           { key: "showThumbnail", label: t`Thumbnail` }
         ].map(({ key, label }) => (
           <Switch
@@ -331,7 +355,7 @@ export default function AssignedRoute() {
 
       {/* Phones: a column so the board fills what the toolbar leaves and
           each column scrolls under its header (see Schedule). */}
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent max-md:flex max-md:flex-col">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent max-md:flex max-md:flex-col">
         <div className="w-full px-4 h-[var(--header-height)] flex items-center max-md:h-auto max-md:pt-3">
           <div className="relative w-full">
             <div className="flex justify-between gap-4">
@@ -340,6 +364,7 @@ export default function AssignedRoute() {
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label={t`Search assigned operations`}
                   placeholder={t`Search`}
                   className="pl-8"
                 />
@@ -361,6 +386,7 @@ export default function AssignedRoute() {
                 )}
                 <ToggleGroup
                   type="single"
+                  aria-label={t`View`}
                   value={view}
                   onValueChange={(value) => {
                     if (value) setView(value as AssignedView);
@@ -426,7 +452,7 @@ export default function AssignedRoute() {
             </span>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

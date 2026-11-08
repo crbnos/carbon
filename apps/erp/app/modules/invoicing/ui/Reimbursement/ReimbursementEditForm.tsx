@@ -157,6 +157,7 @@ const ReimbursementEditForm = ({
             availableDimensions={dimensions}
             headerAmount={headerAmount}
             onTotalChange={onTotalChange}
+            showChargeNumber
           />
         </CardContent>
       </Card>

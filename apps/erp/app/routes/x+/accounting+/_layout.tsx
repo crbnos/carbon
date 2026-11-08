@@ -9,7 +9,7 @@ import { getIntegrationIdsByRole } from "@carbon/ee";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import {
@@ -20,13 +20,12 @@ import {
 import AccountingBetaGate from "~/modules/accounting/ui/AccountingBetaGate";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Accounting" }];
-};
+export const meta = moduleMeta("Accounting");
 
 function AccountingSidebar() {
   const { groups } = useAccountingSubmodules();

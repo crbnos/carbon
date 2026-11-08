@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import type { OnshapeBomNode } from "./bom";
 import {
   assemblyAssetRows,
+  assemblyCurrentFileRows,
   assemblyDrawingDocuments,
   assemblyDrawingTargets,
   assemblyTextChanges,
@@ -419,6 +420,23 @@ describe("buildPartPlan", () => {
     expect(
       planParts({ mappings: linked("m2"), sourceState: null })[0]
     ).toMatchObject({ action: "update", microversionId: null });
+  });
+
+  it("judges a version part unchanged when an assembly push exported its model from that version", () => {
+    // The assembly push records the version, not the part microversion (m1 here, m2 now).
+    const exported = (modelVersionId: string) => [
+      { ...linked()[0]!, metadata: { microversionId: null, modelVersionId } }
+    ];
+    expect(
+      planParts({ mappings: exported("v3"), versionId: "v3" })[0]?.action
+    ).toBe("unchanged");
+    expect(
+      planParts({ mappings: exported("v3"), versionId: "v4" })[0]?.action
+    ).toBe("update");
+    // On a workspace the recorded version says nothing.
+    expect(
+      planParts({ mappings: exported("v3"), sourceState: "ws-1" })[0]?.action
+    ).toBe("update");
   });
 
   it("treats a mapping whose item is gone as no link", () => {
@@ -2248,7 +2266,7 @@ describe("assembly row assets", () => {
   it("names every row of the tree as a drawing target, rows without files included", () => {
     expect(
       assemblyDrawingTargets(plan(), nodes).map((target) => [
-        target.partNumber,
+        target.id,
         target.kind
       ])
     ).toEqual([
@@ -2274,12 +2292,12 @@ describe("assembly row assets", () => {
       plan(),
       {
         ties: [
-          { partNumber: "WB-100", drawing: drawing("a") },
-          { partNumber: "PLT-020", drawing: drawing("b") },
-          { partNumber: "PLT-020", drawing: drawing("c") },
-          { partNumber: "NUT-M6", drawing: drawing("d") }
+          { targetIds: ["WB-100"], drawing: drawing("a") },
+          { targetIds: ["PLT-020"], drawing: drawing("b") },
+          { targetIds: ["PLT-020"], drawing: drawing("c") },
+          { targetIds: ["NUT-M6"], drawing: drawing("d") }
         ],
-        skipped: [{ elementId: "e", name: "Drawing e", reason: "not-in-push" }]
+        skipped: [{ elementId: "e", name: "Drawing e" }]
       },
       ["one document unread"]
     );
@@ -2301,6 +2319,27 @@ describe("assembly row assets", () => {
     expect(placed.plan.skippedDrawings).toHaveLength(1);
     expect(placed.plan.fileWarnings).toEqual(["one document unread"]);
   });
+
+  it("keeps a drawing on every row it shows, and only those rows' ties", () => {
+    const shared = {
+      documentId: "d",
+      wvm: "w" as const,
+      wvmId: "w1",
+      elementId: "s",
+      name: "Shared",
+      microversionId: "mv",
+      references: []
+    };
+    const placed = withAssemblyDrawings(plan(), {
+      // NUT-M6 is Standard content: it takes no files.
+      ties: [{ targetIds: ["PLT-020", "BRK-010", "NUT-M6"], drawing: shared }],
+      skipped: []
+    });
+    expect(placed.ties).toEqual([
+      { drawing: shared, targetIds: ["BRK-010", "PLT-020"] }
+    ]);
+  });
+
   it("builds the picked rows' exports on their items, counting unlinked and current files", () => {
     const drawing = (elementId: string) => ({
       documentId: "d",
@@ -2313,8 +2352,8 @@ describe("assembly row assets", () => {
     });
     const placed = withAssemblyDrawings(plan(), {
       ties: [
-        { partNumber: "WB-100", drawing: drawing("a") },
-        { partNumber: "PLT-020", drawing: drawing("b") }
+        { targetIds: ["WB-100"], drawing: drawing("a") },
+        { targetIds: ["PLT-020"], drawing: drawing("b") }
       ],
       skipped: []
     });
@@ -2324,16 +2363,28 @@ describe("assembly row assets", () => {
     });
     const rows = assemblyAssetRows({
       plan: marked,
-      ties: placed.ties,
       modelRows: new Set(["PLT-020", "BRK-010"]),
       drawingRows: new Set(["WB-100", "PLT-020"]),
+      root: {
+        itemId: "item-WB-100",
+        partNumber: "WB-100",
+        kind: "assembly",
+        documentId: "d",
+        wvm: "w",
+        wvmId: "w1",
+        elementId: "root",
+        configuration: null
+      },
       // BRK-010's item ended up linked elsewhere.
-      itemIdFor: (partNumber) =>
-        partNumber === "BRK-010" ? null : `item-${partNumber}`
+      linkFor: (partNumber) =>
+        partNumber === "BRK-010"
+          ? null
+          : { itemId: `item-${partNumber}`, externalId: `link-${partNumber}` }
     });
     expect(rows.models).toEqual([
       {
         itemId: "item-PLT-020",
+        externalId: "link-PLT-020",
         partNumber: "PLT-020",
         kind: "partstudio",
         documentId: "d",
@@ -2344,25 +2395,80 @@ describe("assembly row assets", () => {
         configuration: null
       }
     ]);
-    expect(
-      rows.drawings.map((row) => [
-        row.itemId,
-        row.drawingElementId,
-        row.target.kind
-      ])
-    ).toEqual([
-      ["item-WB-100", "a", "assembly"],
-      ["item-PLT-020", "b", "partstudio"]
+    expect(rows.drawingTargets.map((row) => [row.itemId, row.kind])).toEqual([
+      ["item-WB-100", "assembly"],
+      ["item-PLT-020", "partstudio"]
     ]);
+    expect(rows.drawings).toBe(2);
     expect(rows.unlinked).toBe(1);
     expect(rows.current).toEqual({ models: 1, drawings: 1 });
+  });
+
+  it("counts the root's picked drawings as unlinked when the push did not link it", () => {
+    const placed = withAssemblyDrawings(plan(), {
+      ties: [
+        {
+          targetIds: ["WB-100"],
+          drawing: {
+            documentId: "d",
+            wvm: "w",
+            wvmId: "w1",
+            elementId: "a",
+            name: "Drawing a",
+            microversionId: "mv",
+            references: []
+          }
+        }
+      ],
+      skipped: []
+    });
+    const rows = assemblyAssetRows({
+      plan: placed.plan,
+      modelRows: new Set(),
+      drawingRows: new Set(["WB-100"]),
+      root: null,
+      linkFor: () => null
+    });
+    expect(rows.drawingTargets).toEqual([]);
+    expect(rows.unlinked).toBe(1);
+  });
+
+  it("checks current files only for rows that have an item, each drawing on its rows", () => {
+    const shared = {
+      documentId: "d",
+      wvm: "w" as const,
+      wvmId: "w1",
+      elementId: "s",
+      name: "Shared",
+      microversionId: "mv",
+      references: []
+    };
+    const placed = withAssemblyDrawings(plan(), {
+      ties: [{ targetIds: ["PLT-020", "BRK-010"], drawing: shared }],
+      skipped: []
+    });
+    const rows = assemblyCurrentFileRows({
+      plan: placed.plan,
+      ties: placed.ties,
+      itemIdFor: (partNumber) =>
+        partNumber === "PLT-020" ? "item-plate" : null
+    });
+    expect(rows.models.map((row) => [row.partNumber, row.itemId])).toEqual([
+      ["PLT-020", "item-plate"]
+    ]);
+    expect(
+      rows.drawings.map((row) => [
+        row.drawingElementId,
+        row.targets.map((target) => target.itemId)
+      ])
+    ).toEqual([["s", ["item-plate"]]]);
   });
 
   it("marks files Carbon holds from an earlier state, and the root's own model", () => {
     const placed = withAssemblyDrawings(plan(), {
       ties: [
         {
-          partNumber: "PLT-020",
+          targetIds: ["PLT-020"],
           drawing: {
             documentId: "d",
             wvm: "w",
@@ -2392,5 +2498,73 @@ describe("assembly row assets", () => {
       { elementId: "b", name: "Drawing b", outOfDate: true }
     ]);
     expect(marked.root.modelCurrent).toBe(true);
+  });
+
+  const exportsOf = (rows: ReturnType<typeof assemblyAssetRows>) => ({
+    models: rows.models.map((row) => [row.partNumber, row.itemId]),
+    unlinked: rows.unlinked
+  });
+  const onItems = (partNumber: string) => ({
+    itemId: `item-${partNumber}`,
+    externalId: `link-${partNumber}`
+  });
+
+  it("exports every row that offers a model when the request sends no picks, leaving out excluded rows", () => {
+    expect(
+      exportsOf(
+        assemblyAssetRows({
+          plan: plan(),
+          excluded: new Set(["SUB-110"]),
+          linkFor: onItems
+        })
+      )
+    ).toEqual({
+      models: [
+        ["BRK-010", "item-BRK-010"],
+        ["PLT-020", "item-PLT-020"]
+      ],
+      unlinked: 0
+    });
+  });
+
+  it("exports only the rows the request picks, and none for an empty pick", () => {
+    const rows = (modelRows: string[]) =>
+      exportsOf(
+        assemblyAssetRows({
+          plan: plan(),
+          modelRows: new Set(modelRows),
+          linkFor: onItems
+        })
+      );
+    expect(rows(["PLT-020", "NUT-M6"])).toEqual({
+      models: [["PLT-020", "item-PLT-020"]],
+      unlinked: 0
+    });
+    expect(rows([])).toEqual({ models: [], unlinked: 0 });
+  });
+
+  it("builds a row's export on its item and counts a row whose item ended up unlinked", () => {
+    const rows = assemblyAssetRows({
+      plan: plan(),
+      modelRows: new Set(["PLT-020", "BRK-010"]),
+      // BRK-010's item ended up linked elsewhere.
+      linkFor: (partNumber) =>
+        partNumber === "BRK-010" ? null : onItems(partNumber)
+    });
+    expect(rows.models).toEqual([
+      {
+        itemId: "item-PLT-020",
+        externalId: "link-PLT-020",
+        partNumber: "PLT-020",
+        kind: "partstudio",
+        documentId: "d",
+        wvm: "w",
+        wvmId: "w1",
+        elementId: "ps",
+        partId: "JKD",
+        configuration: null
+      }
+    ]);
+    expect(rows.unlinked).toBe(1);
   });
 });

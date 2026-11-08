@@ -1,18 +1,16 @@
 ---
 paths:
   - packages/ee/src/linear/**
-  - packages/ee/src/notifications/services/linear.ts
   - packages/jobs/src/inngest/functions/integrations/linear.ts
   - apps/erp/app/routes/api+/integrations.linear.*.ts
 ---
 
 # Linear Integration
 
-Two-way sync between a Carbon **non-conformance action task**
-(`nonConformanceActionTask`) and a **Linear issue**. EE package `@carbon/ee`,
-subpaths `@carbon/ee/linear` (client) and `@carbon/ee/linear.server` (server). Only
-action tasks can be linked — but `task.status.changed` also processes `investigation`
-type, not just `action`.
+The Linear client, config and webhook. EE package `@carbon/ee`, subpaths
+`@carbon/ee/linear` (client) and `@carbon/ee/linear.server` (server). The two-way
+sync of a record and its issue (what syncs, the snapshot, the push, locks) is the
+shared engine in `issue-sync.md`.
 
 ## Pieces
 
@@ -30,8 +28,14 @@ type, not just `action`.
   (search by term), `getIssueById`, `createIssue`, `updateIssue`, `getUsers` ({email|id}),
   `listTeamMembers`, `getWorkflowState`, `createAttachmentLink`, `listAttachments`,
   `removeAttachment`.
-- **Service:** `lib/service.ts` — `linkActionToLinearIssue`, `unlinkActionFromLinearIssue`,
-  `getLinearIssueFromExternalId`, `getLinearIntegration`, `getCompanyEmployees`.
+- **Client fixes to keep:** `getUsers` sends a `UserFilter` (`email: { eqIgnoreCase }`,
+  `id: { eq }`) and returns `[]` with no filter; an unfiltered call returns every user.
+  `getWorkflowState(companyId, teamId, type)` filters by team AND type and takes the
+  lowest `position`: states belong to a team. Issue queries fetch `team { id }`.
+  `LinearWorkStateType` includes `duplicate` (→ Skipped), or the schema refuses the issue.
+- **Service:** `lib/service.ts` — `unlinkActionFromLinearIssue`,
+  `getLinearIssueFromExternalId`, `getLinearIntegration`, `getCompanyEmployees`. The
+  link write and the field updates live in the issue-sync engine.
 - **Status map:** `lib/utils.ts` — enum `LinearWorkStateType` +
   `mapLinearStatusToCarbonStatus` / `mapCarbonStatusToLinearStatus`. `started`→"In
   Progress", `completed`→"Completed", `canceled`→"Skipped", else (triage/backlog/todo/
@@ -40,17 +44,13 @@ type, not just `action`.
   reads a Linear description (Markdown) into Carbon task `notes` (Tiptap JSON);
   `TiptapText(notes).toMarkdown()` writes it back.
 - **Types:** `lib/types.ts` — `LinearIssueSchema` (zod): `id, title, description?, url,
-  state{name,color,type}, identifier, dueDate?, assignee{email}?`.
+  state{name,color,type}, identifier, dueDate?, priority?, assignee{email}?, team{id}?`.
+  `updateIssue` returns `null` on failure; `removeIssueLink` removes one issue's back-link.
 
 ## The link lives in `externalIntegrationMapping`
 
-One row per linked task (the old `externalId` JSONB on the task is gone):
-`entityType='nonConformanceActionTask'`, `entityId=<action task id>`,
-`integration='linear'`, `externalId=<Linear issue id>`, `metadata=<full LinearIssue JSON>`,
-`companyId`. `linkActionToLinearIssue` service-role-deletes any existing row, then inserts.
-It **also** updates the task itself: `assignee`, mapped `status`, `dueDate`, and (when
-`syncNotes`) markdown→Tiptap `notes`. `getLinearIssueFromExternalId(client, companyId,
-actionId)` looks up by **`entityId`** (the action id, despite the name) and parses `metadata`.
+One row per linked record, with the issue as `metadata` plus the sync snapshot. See
+`issue-sync.md`.
 
 ## Inbound: Linear → Carbon (webhook → Inngest, NOT trigger.dev)
 
@@ -78,49 +78,49 @@ actionId)` looks up by **`entityId`** (the action id, despite the name) and pars
   - The settings action's "a credential is required" install check ignores
     `WEBHOOK_SIGNING_SECRET_KEY`, so a signing secret alone never satisfies it.
 - Webhook body schema is **minimal**: `event.data = { id, assigneeId? }` only (type
-  `"Issue"`, action `"update"`) — `packages/jobs/src/schemas.ts`
+  `"Issue"`, action `"update"` or `"remove"`) — `packages/jobs/src/schemas.ts`
   `syncIssueFromLinearSchema`. The full issue is re-fetched, never trusted from the payload.
 - Trigger key `"sync-issue-from-linear"` → Inngest event `"carbon/linear-sync"`
   (`packages/lib/src/trigger.ts`). Handler is the **Inngest function**
   `packages/jobs/src/inngest/functions/integrations/linear.ts` (id `sync-issue-from-linear`):
-  find action via mapping by `externalId` → `getIssueById` → map assignee email→employee
-  → `linkActionToLinearIssue(..., { syncNotes: true })`.
+  `remove` → `unlinkDeletedIssue`; `update` → `applyIssue` (issue-sync engine).
 
 ## Outbound: Carbon → Linear
 
 - The POST/DELETE writes below are operations in `apps/erp/app/modules/shared/shared.server.ts`
-  (`createLinearIssue` / `linkLinearIssue` / `unlinkLinearIssue`, `shared.server.ts`), gated on the task's module
+  (`createLinearIssue` / `linkLinearIssue` / `unlinkLinearIssue`), gated on the task's module
   (`actionTaskPermissions`) and refused on a change notice whose workflow is locked.
 - **Link existing** `api+/integrations.linear.issue.link.ts`: GET search issues; POST
-  link `{actionId, issueId}` (map assignee email→user, link, create back-link attachment
-  to `/x/issue/{nonConformanceId}/details`); DELETE unlink + best-effort remove the
+  `linkExistingIssue` + a back-link attachment; DELETE unlink + best-effort remove the
   Linear attachment.
 - **Create new** `api+/integrations.linear.issue.create.ts`: GET teams (+ team members
-  filtered to matching Carbon employees when `?teamId`); POST create issue, link, attach.
-- **Sync notes** `api+/integrations.linear.issue.sync-notes.ts`: POST `{actionId, notes}`
-  → `TiptapText(notes).toMarkdown()` → `updateIssue({description})`.
-- **Notification service** `packages/ee/src/notifications/services/linear.ts`
-  (`LinearNotificationService`, id `"linear"`, registered in
-  `packages/ee/src/notifications/index.ts`). Reacts to events (`notifications/types.ts`):
-  `task.status.changed` (action|investigation → `getWorkflowState` + `updateIssue stateId`),
-  `task.assigned` (nonConformanceActionTask → match email → `updateIssue assigneeId`),
-  `task.notes.changed` (Tiptap → markdown → `updateIssue description`).
+  filtered to matching Carbon employees when `?teamId`); POST create issue,
+  `linkNewIssue`, attach.
+- Field changes push through the `ISSUE_SYNC` subscription (`issue-sync.md`), not
+  from routes.
 
 ## UI
 
-`apps/erp/app/modules/quality/ui/Issue/Linear/{LinkIssue,CreateIssue,IssueDialog}.tsx`.
-The dialog reads `task.linearIssue`, hydrated in `quality.service.ts`
-(`getIssueActionTasks` batch-reads `externalIntegrationMapping` `metadata` into a
-`linearMappings` map). `IssueTask.tsx` renders the dialog only when the company has the
-`linear` integration, and after notes edits POSTs to `path.to.api.linearSyncNotes`
-(+ `linearCreateIssue`, `linearLinkExistingIssue`).
+`apps/erp/app/components/ActionTasks/Linear/{LinkIssue,CreateIssue,IssueDialog}.tsx`,
+shared by quality tasks (`IssueTask.tsx`) and change notice tasks
+(`ChangeNoticeActions.tsx`). The dialog reads the record's `linearIssue` (the link's
+`metadata`, batch-read by `getIssueActionTasks` / `getChangeNoticeActions`) and shows a
+refusal from `metadata.sync.refused`.
 
 ## Gotchas
 
+- `getCompanyEmployees` must select `user!inner(email)`. Without `!inner`, PostgREST
+  filters only the embed and returns every employee.
+- An inbound assignee goes through `resolveInboundAssignee` (`packages/ee/src/issue-sync/assignee.ts`):
+  an unassigned issue clears the Carbon assignee; an assignee who matches no employee
+  leaves it unchanged.
+- A `changeOrderActionTask` on a Done or Cancelled change notice refuses inbound
+  changes (`lockedFields`, `isChangeNoticeLocked` from `@carbon/database/change-notice`).
+
 - Webhook payload carries only `{id, assigneeId?}` — always re-fetch the issue.
 - Assignee/employee matching is by **email** (Linear user ↔ Carbon employee).
-- `companyIntegration` must exist and be `active` for both inbound webhook and outbound
-  notifications.
+- `companyIntegration` must exist and be `active` for the inbound webhook; the
+  outbound push needs the `linear-issue-sync` subscription (`issue-sync.md`).
 - API key is the raw `Authorization` header value (personal API key, `lin_api…`).
 - Migration `packages/database/supabase/migrations/20251127091215_add_linear_integration.sql`
   seeds the `integration` row; the `externalIntegrationMapping` table comes from the

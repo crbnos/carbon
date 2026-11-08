@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useEffect } from "react";
+import { isRouteErrorResponse } from "react-router";
 import { useRevalidator } from "../hooks/useRevalidator";
 import { isNetworkError } from "./routeErrorCopy";
 
@@ -30,5 +31,24 @@ export function useNetworkRetry(error: unknown) {
     };
   }, [offline, revalidate]);
 
-  return { offline, retry: revalidate };
+  // A 503 that is not maintenance is a service restarting under a deploy:
+  // ask again every few seconds, so the page comes back without a click.
+  const unavailable = isUnavailable(error);
+  useEffect(() => {
+    if (!unavailable) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void revalidate();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [unavailable, revalidate]);
+
+  return { offline, unavailable, retry: revalidate };
+}
+
+export function isUnavailable(error: unknown) {
+  return (
+    isRouteErrorResponse(error) &&
+    error.status === 503 &&
+    error.data?.message !== "maintenance"
+  );
 }

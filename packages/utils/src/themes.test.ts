@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The season is tested on a fixture, and the registry on whatever seasonal
-// themes exist, so removing one (Halloween) leaves this file as it is.
+// themes exist, so removing one leaves this file as it is.
 
 import { CalendarDate } from "@internationalized/date";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +13,7 @@ import {
   isSeasonalTheme,
   pickableThemes,
   resolveTheme,
+  resolveThemeValue,
   type SeasonalTheme,
   seasonalThemes,
   storedTheme,
@@ -252,3 +253,26 @@ for (const theme of seasonal) {
     });
   });
 }
+
+describe("resolveThemeValue", () => {
+  it("shows a preview before anything else", () => {
+    expect(resolveThemeValue("forge", ["plum"], "zinc")).toBe("forge");
+  });
+
+  it("shows a pending pick before the loader's theme", () => {
+    expect(resolveThemeValue(undefined, [null, "plum"], "zinc")).toBe("plum");
+  });
+
+  it("skips a theme field that is not a theme name", () => {
+    // A document template posts its own JSON as `theme`.
+    expect(
+      resolveThemeValue("custom:zzz", ['{"primary":"#000"}', 42], "blue")
+    ).toBe("blue");
+  });
+
+  it("reads an unknown loader theme as the default", () => {
+    expect(resolveThemeValue(undefined, [], "removed-theme")).toBe(
+      DEFAULT_THEME_NAME
+    );
+  });
+});

@@ -68,7 +68,6 @@ describe("initWorktree", () => {
     });
     expect(expected).toBe("carbon-feat-scope-test");
     expect(readFileSync(join(wtDir, slugFile), "utf8").trim()).toBe(expected);
-    // Must NOT have provisioned the main checkout.
     expect(existsSync(join(mainDir, slugFile))).toBe(false);
   });
 

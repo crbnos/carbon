@@ -7,7 +7,7 @@ import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime, requireAffected, searchFilter } from "@carbon/utils";
-import { getDayOfWeek, today } from "@internationalized/date";
+import { getDayOfWeek, parseAbsolute, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { DataType } from "~/modules/shared/types";
@@ -674,6 +674,15 @@ export async function updateEmployeeJob(
       shiftId: sanitized.shiftId,
       departmentId: sanitized.departmentId,
       managerId: sanitized.managerId,
+      laborCategoryId: sanitized.laborCategoryId,
+      flsaStatus: sanitized.flsaStatus,
+      // NOT NULL: a caller that leaves it out keeps the stored flag.
+      ...(typeof sanitized.isOfficer === "boolean"
+        ? { isOfficer: sanitized.isOfficer }
+        : {}),
+      ...(typeof sanitized.timesheetRequired === "boolean"
+        ? { timesheetRequired: sanitized.timesheetRequired }
+        : {}),
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),
@@ -686,7 +695,7 @@ export async function updateEmployeeJob(
       // Kysely bypasses RLS and every id below comes from the caller, so each
       // one is re-read under companyId: the single-column FKs would accept a
       // location, shift, department or manager from any company.
-      const [employee, location, shift, department, manager] =
+      const [employee, location, shift, department, manager, laborCategory] =
         await Promise.all([
           trx
             .selectFrom("employee")
@@ -725,6 +734,14 @@ export async function updateEmployeeJob(
                 .where("id", "=", employeeJob.managerId)
                 .where("companyId", "=", companyId)
                 .executeTakeFirst()
+            : null,
+          employeeJob.laborCategoryId
+            ? trx
+                .selectFrom("laborCategory")
+                .select("id")
+                .where("id", "=", employeeJob.laborCategoryId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
             : null
         ]);
       if (!employee) throw new Error("Employee not found");
@@ -737,6 +754,9 @@ export async function updateEmployeeJob(
       }
       if (employeeJob.managerId && !manager) {
         throw new Error("Manager not found");
+      }
+      if (employeeJob.laborCategoryId && !laborCategory) {
+        throw new Error("Labor category not found");
       }
 
       const updated = await trx
@@ -892,13 +912,24 @@ export async function clockOut(
   if (!open.data) {
     return { data: null, error: { message: "Not currently clocked in" } };
   }
+  const at = args.clockOut ?? datetime.timestamp();
+  // The table refuses it too (timeCardEntry_clockOut_after_clockIn); say why.
+  if (
+    parseAbsolute(at, "UTC").compare(parseAbsolute(open.data.clockIn, "UTC")) <=
+    0
+  ) {
+    return {
+      data: null,
+      error: { message: "Clock out must be after you clocked in" }
+    };
+  }
 
   return requireAffected(
     client
       .from("timeCardEntry")
       .update(
         sanitize({
-          clockOut: args.clockOut ?? datetime.timestamp(),
+          clockOut: at,
           note: args.note,
           updatedBy: args.updatedBy,
           updatedAt: datetime.timestamp()
@@ -1058,6 +1089,30 @@ export async function getTimecardEntries(
   }
 
   query = setGenericQueryFilters(query, args, TIMECARD_ENTRIES_PAGING);
+
+  return query;
+}
+
+/**
+ * Lists the imported payroll totals: one row per employee and pay period,
+ * newest period first.
+ */
+export async function getPayrollPeriodTotals(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters
+) {
+  let query = client
+    .from("payrollPeriodTotal")
+    .select(
+      "id, employeeId, periodStart, periodEnd, grossWages, hoursPaid, importedAt",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId);
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "periodEnd", ascending: false }
+  ]);
 
   return query;
 }

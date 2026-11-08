@@ -4,9 +4,11 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { SINGLE_TENANT } from "@carbon/env";
 import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   apiKeyFields,
@@ -20,7 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     update: "users"
   });
 
-  return null;
+  return { canSetRateLimit: SINGLE_TENANT };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -33,9 +35,12 @@ export async function action(args: ActionFunctionArgs) {
 export default function NewApiKeyRoute() {
   const closeRoute = useCloseRoute();
   const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
+  const { canSetRateLimit } = useLoaderData<typeof loader>();
 
   const initialValues = {
-    name: ""
+    name: "",
+    // The column's default for a new key.
+    rateLimit: 20
   };
 
   return (
@@ -43,6 +48,7 @@ export default function NewApiKeyRoute() {
       onClose={() => closeRoute()}
       initialValues={initialValues}
       companyId={routeData?.companyId}
+      canSetRateLimit={canSetRateLimit}
     />
   );
 }

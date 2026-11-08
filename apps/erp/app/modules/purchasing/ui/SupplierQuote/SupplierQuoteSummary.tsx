@@ -21,9 +21,9 @@ import {
   VStack
 } from "@carbon/react";
 import { distinctItemText, getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -50,6 +50,7 @@ const LineItems = ({
   formatter: Intl.NumberFormat;
   locale: string;
 }) => {
+  const { t } = useLingui();
   const { company } = useUser();
   const { isPhone } = useViewport();
   const accounts = useAccounts();
@@ -108,27 +109,31 @@ const LineItems = ({
       return null;
     }
 
+    const lineName = itemReadableId ?? "";
     const pricingOptions = (
-      <motion.div
-        initial="collapsed"
-        animate={openItems.includes(line.id) ? "open" : "collapsed"}
-        variants={{
-          open: { opacity: 1, height: "auto", marginTop: 16 },
-          collapsed: { opacity: 0, height: 0, marginTop: 0 }
-        }}
-        transition={{ duration: 0.3 }}
-        className="w-full overflow-hidden"
-      >
-        <LinePricingOptions
-          formatter={formatter}
-          line={line}
-          options={pricingByLine[line.id!]}
-          quoteCurrency={routeData?.quote.currencyCode ?? "USD"}
-          quoteExchangeRate={routeData?.quote.exchangeRate ?? 1}
-          shouldConvertCurrency={shouldConvertCurrency}
-          locale={locale}
-        />
-      </motion.div>
+      <AnimatePresence initial={false}>
+        {openItems.includes(line.id) ? (
+          <motion.div
+            key="panel"
+            id={`supplier-quote-line-details-${line.id}`}
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            className="w-full overflow-hidden"
+          >
+            <LinePricingOptions
+              formatter={formatter}
+              line={line}
+              options={pricingByLine[line.id!]}
+              quoteCurrency={routeData?.quote.currencyCode ?? "USD"}
+              quoteExchangeRate={routeData?.quote.exchangeRate ?? 1}
+              shouldConvertCurrency={shouldConvertCurrency}
+              locale={locale}
+            />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     );
 
     // Phones: a text row (no image or Edit link) that opens the prices.
@@ -144,7 +149,7 @@ const LineItems = ({
               <motion.span
                 className="self-center text-muted-foreground"
                 animate={{ rotate: openItems.includes(line.id) ? 90 : 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 <LuChevronRight className="size-4" />
               </motion.span>
@@ -157,13 +162,7 @@ const LineItems = ({
     }
 
     return (
-      <motion.div
-        key={line.id}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="py-6 w-full"
-      >
+      <div key={line.id} className="py-6 w-full">
         <HStack spacing={4} className="items-start">
           {line.thumbnailPath ? (
             <img
@@ -178,9 +177,13 @@ const LineItems = ({
           )}
 
           <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
             <div
               className="flex flex-col cursor-pointer w-full"
-              onClick={() => toggleOpen(line.id!)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
+              }}
             >
               <div className="flex items-center gap-x-4 justify-between flex-grow">
                 <HStack spacing={2} className="min-w-0 flex-shrink">
@@ -197,14 +200,28 @@ const LineItems = ({
                   </Button>
                 </HStack>
                 <HStack spacing={4}>
-                  <motion.div
+                  <motion.button
+                    type="button"
+                    aria-expanded={openItems.includes(line.id)}
+                    aria-controls={
+                      openItems.includes(line.id)
+                        ? `supplier-quote-line-details-${line.id}`
+                        : undefined
+                    }
+                    aria-label={
+                      openItems.includes(line.id)
+                        ? t`Hide details for ${lineName}`
+                        : t`Show details for ${lineName}`
+                    }
+                    className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => toggleOpen(line.id!)}
                     animate={{
                       rotate: openItems.includes(line.id) ? 90 : 0
                     }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <LuChevronRight size={24} />
-                  </motion.div>
+                    <LuChevronRight size={24} aria-hidden />
+                  </motion.button>
                 </HStack>
               </div>
               {lineDescription && (
@@ -220,7 +237,7 @@ const LineItems = ({
         </HStack>
 
         {pricingOptions}
-      </motion.div>
+      </div>
     );
   });
 
