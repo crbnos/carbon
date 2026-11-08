@@ -383,6 +383,9 @@ msgstr "Görünüm"
 msgid "Apply link"
 msgstr "Bağlantıyı uygula"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "Onaylar"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Seviye {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Bu geçiş anahtarını silmek istediğinizden emin misiniz? Artık bununla oturum açamayacaksınız."
@@ -1024,6 +1035,7 @@ msgstr "Operasyonları Sonlandır"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Her iş emrinin değerini girin veya ilk satırdan tüm iş emirlerini bir kez doldurun. Boş satırlar atlanır."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "PIN'i {0} için girin"
@@ -1708,6 +1720,9 @@ msgstr "Etkin operasyon yok"
 msgid "No active work centers at this location."
 msgstr "Bu konumda etkin iş merkezi yok."
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "Atanmış operasyon yok"
 
@@ -1789,6 +1804,8 @@ msgstr "Bu Partide Malzeme yok."
 
 msgid "No open inspections"
 msgstr "Açık muayene yok"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
@@ -3129,6 +3146,9 @@ msgstr "Bu, iş emrinin süresini muhasebeleştirir. İş emri artık değiştir
 
 msgid "This sample was removed"
 msgstr "Bu numune kaldırıldı"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."

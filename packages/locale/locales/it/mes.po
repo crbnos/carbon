@@ -383,6 +383,9 @@ msgstr "Aspetto"
 msgid "Apply link"
 msgstr "Applica collegamento"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "Approvazioni"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Liv. {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Sei sicuro di voler eliminare questo Passkey? Non potrai più usarlo per accedere."
@@ -1024,6 +1035,7 @@ msgstr "Termina Operazioni"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Inserisci il valore di ogni ordine di produzione, o compila ogni ordine di produzione tutto insieme dalla prima riga. Le righe vuote vengono saltate."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Inserisci il PIN per {0}"
@@ -1708,6 +1720,9 @@ msgstr "Nessuna operazione attiva"
 msgid "No active work centers at this location."
 msgstr "Nessun centro di lavoro attivo in questa posizione."
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "Nessuna operazione assegnata"
 
@@ -1789,6 +1804,8 @@ msgstr "Nessun materiale in questo Lotto di produzione."
 
 msgid "No open inspections"
 msgstr "Nessun controllo Aperto"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "Nessun ordine di produzione aperto"
@@ -3129,6 +3146,9 @@ msgstr "Questo registra il tempo dell'ordine di produzione. L'ordine non può pi
 
 msgid "This sample was removed"
 msgstr "Questo campione è stato rimosso"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Questo ferma il tuo orologio e registra il tempo dell'ordine di produzione. L'ordine non può più cambiare."

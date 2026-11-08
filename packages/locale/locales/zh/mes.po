@@ -383,6 +383,9 @@ msgstr "外观"
 msgid "Apply link"
 msgstr "应用链接"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "审批"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · 检验水平 {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "您确定要删除此通行密钥吗?删除后您将无法使用它登录。"
@@ -1024,6 +1035,7 @@ msgstr "结束工序"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "为每个工单输入值，或从第一行同时填充所有工单。空行将被跳过。"
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "输入 {0} 的 PIN 码"
@@ -1708,6 +1720,9 @@ msgstr "没有启用的工序"
 msgid "No active work centers at this location."
 msgstr "此地点没有启用的工作中心。"
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "无已分配工序"
 
@@ -1789,6 +1804,8 @@ msgstr "此生产批次上没有物料。"
 
 msgid "No open inspections"
 msgstr "没有未结的检验"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "没有未结的工单"
@@ -3129,6 +3146,9 @@ msgstr "这将过账工单的时间。工单不再能更改。"
 
 msgid "This sample was removed"
 msgstr "此样本已被删除"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "这将停止您的时钟并过账工单的时间。工单不再能更改。"

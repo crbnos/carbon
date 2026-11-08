@@ -4335,6 +4335,9 @@ msgstr "Approved"
 msgid "Approved <0/> by <1/>"
 msgstr "Approved <0/> by <1/>"
 
+msgid "Approved At"
+msgstr "Approved At"
+
 msgid "Approved By"
 msgstr "Approved By"
 
@@ -12441,6 +12444,9 @@ msgstr "Estimated scrap quantity applied to every job in the bulk batch."
 msgid "Estimated time"
 msgstr "Estimated time"
 
+msgid "Estimated Value"
+msgstr "Estimated Value"
+
 msgid "Estimated versus actual time by job"
 msgstr "Estimated versus actual time by job"
 
@@ -18112,6 +18118,9 @@ msgstr "Minimum Order:"
 msgid "Minimum Reserve Quantity"
 msgstr "Minimum Reserve Quantity"
 
+msgid "Minimum Scrap Value"
+msgstr "Minimum Scrap Value"
+
 msgid "Minute"
 msgstr "Minute"
 
@@ -20363,6 +20372,9 @@ msgstr "Not configured"
 msgid "Not Configured"
 msgstr "Not Configured"
 
+msgid "Not confirmed"
+msgstr "Not confirmed"
+
 msgid "Not delivered"
 msgstr "Not delivered"
 
@@ -20650,6 +20662,9 @@ msgstr "of {0}h"
 
 msgid "of {budgetText}"
 msgstr "of {budgetText}"
+
+msgid "of any value"
+msgstr "of any value"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Of the funded cost, from 75% to 85%"
@@ -25133,6 +25148,9 @@ msgstr "Require a Signature to Approve Purchase Orders"
 msgid "Require a Supplier Contact and Location"
 msgstr "Require a Supplier Contact and Location"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 
@@ -26478,6 +26496,9 @@ msgstr "Scrap {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Scrap / Cost of Quality"
 
+msgid "Scrap Approvals"
+msgstr "Scrap Approvals"
+
 msgid "Scrap Percent"
 msgstr "Scrap Percent"
 
@@ -26513,6 +26534,9 @@ msgstr "Scrap the unit"
 
 msgid "Scrap Unit"
 msgstr "Scrap Unit"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
 
 msgid "Scrapped"
 msgstr "Scrapped"

@@ -8,6 +8,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   type ApprovalDocumentType,
+  adminApprovedDocumentTypes,
+  approvalDocumentType,
   approvalRuleValidator
 } from "@carbon/ee/approvals";
 import { upsertApprovalRule } from "@carbon/ee/approvals.server";
@@ -36,13 +38,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const typeParam = url.searchParams.get("type");
+  // Admin-approved types take no rule.
   const documentType: ApprovalDocumentType | null =
-    typeParam === "purchaseOrder" ||
-    typeParam === "qualityDocument" ||
-    typeParam === "supplier" ||
-    typeParam === "changeOrder"
-      ? typeParam
-      : null;
+    approvalDocumentType.find(
+      (type) => type === typeParam && !adminApprovedDocumentTypes.includes(type)
+    ) ?? null;
 
   return {
     rule: null,

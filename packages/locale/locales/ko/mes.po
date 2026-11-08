@@ -383,6 +383,9 @@ msgstr "모양"
 msgid "Apply link"
 msgstr "링크 적용"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "승인"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · 수준 {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "이 패스키를 삭제하시겠습니까? 더 이상 이 패스키로 로그인할 수 없습니다."
@@ -1024,6 +1035,7 @@ msgstr "공정작업 종료"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0}의 PIN 입력"
@@ -1708,6 +1720,9 @@ msgstr "진행 중인 공정작업이 없습니다"
 msgid "No active work centers at this location."
 msgstr "이 사업장에는 운영 중인 작업장이 없습니다."
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "배정된 공정작업이 없습니다"
 
@@ -1789,6 +1804,8 @@ msgstr "이 배치에 자재가 없습니다."
 
 msgid "No open inspections"
 msgstr "미결 검사가 없습니다"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
@@ -3129,6 +3146,9 @@ msgstr "이는 작업 지시의 시간을 전기합니다. 작업 지시는 더 
 
 msgid "This sample was removed"
 msgstr "이 샘플은 삭제되었습니다"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "이는 시계를 중지하고 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."

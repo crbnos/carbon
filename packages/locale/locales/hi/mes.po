@@ -383,6 +383,9 @@ msgstr "दिखावट"
 msgid "Apply link"
 msgstr "लिंक लागू करें"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "अनुमोदन"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · स्तर {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "क्या आप निश्चित हैं कि आप इस पासकी को हटाना चाहते हैं? आप इसे साइन इन करने के लिए उपयोग नहीं कर पाएंगे।"
@@ -1024,6 +1035,7 @@ msgstr "ऑपरेशन समाप्त करें"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0} के लिए PIN दर्ज करें"
@@ -1708,6 +1720,9 @@ msgstr "कोई चल रहा ऑपरेशन नहीं है"
 msgid "No active work centers at this location."
 msgstr "इस स्थान पर कोई कार्यशील वर्क सेंटर नहीं हैं।"
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "कोई नियुक्त ऑपरेशन नहीं"
 
@@ -1789,6 +1804,8 @@ msgstr "इस बैच पर कोई सामग्री नहीं ह
 
 msgid "No open inspections"
 msgstr "कोई खुला निरीक्षण नहीं"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"
@@ -3129,6 +3146,9 @@ msgstr "यह जॉब के समय को पोस्ट करता �
 
 msgid "This sample was removed"
 msgstr "यह नमूना हटा दिया गया था"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "यह आपकी घड़ी को रोकता है और जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"

@@ -1,7 +1,7 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110211543",
+  "schemaVersion": "20261111091953",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
@@ -6924,6 +6924,29 @@
         "completedAt",
         "companyId",
         "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "scrapRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobOperationId",
+        "jobOperationBatchId",
+        "jobMaterialId",
+        "trackedEntityId",
+        "itemId",
+        "scrapReasonId",
+        "quantity",
+        "estimatedValue",
+        "notes",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
         "updatedAt"
       ]
     },

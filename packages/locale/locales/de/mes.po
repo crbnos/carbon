@@ -383,6 +383,9 @@ msgstr "Darstellung"
 msgid "Apply link"
 msgstr "Link anwenden"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "Genehmigungen"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Stufe {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Sind Sie sicher, dass Sie diesen Passkey löschen möchten? Sie können sich damit nicht mehr anmelden."
@@ -1024,6 +1035,7 @@ msgstr "Arbeitsgänge beenden"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Geben Sie den Wert jedes Fertigungsauftrags ein oder füllen Sie alle Fertigungsaufträge auf einmal aus der ersten Zeile. Leere Zeilen werden übersprungen."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "PIN für {0} eingeben"
@@ -1708,6 +1720,9 @@ msgstr "Keine aktiven Arbeitsgänge"
 msgid "No active work centers at this location."
 msgstr "Keine aktiven Arbeitsplätze an diesem Standort."
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "Keine zugewiesenen Arbeitsgänge"
 
@@ -1789,6 +1804,8 @@ msgstr "Keine Werkstoffe in diesem Los."
 
 msgid "No open inspections"
 msgstr "Keine offenen Prüfungen"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "Keine offenen Fertigungsaufträge"
@@ -3129,6 +3146,9 @@ msgstr "Dies bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann s
 
 msgid "This sample was removed"
 msgstr "Diese Probe wurde entfernt"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Dies stoppt Ihre Uhr und bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann sich nicht mehr ändern."

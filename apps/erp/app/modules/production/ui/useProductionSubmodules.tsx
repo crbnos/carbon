@@ -11,6 +11,7 @@ import {
   LuLayers,
   LuListChecks,
   LuListTodo,
+  LuShieldCheck,
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
@@ -53,6 +54,12 @@ export default function useProductionSubmodules() {
           to: path.to.operationBatches,
           icon: <LuLayers />,
           table: "jobOperationBatch"
+        },
+        {
+          name: t`Scrap Approvals`,
+          to: path.to.scrapApprovals,
+          icon: <LuShieldCheck />,
+          role: "employee" as const
         },
         ...(hasOeeProvider
           ? [

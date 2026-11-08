@@ -383,6 +383,9 @@ msgstr "外観"
 msgid "Apply link"
 msgstr "リンクを適用"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "承認"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · 検査水準 {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
@@ -1024,6 +1035,7 @@ msgstr "工程を終了"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "各製造指図の値を入力するか、最初の行からすべての製造指図を一度に入力します。空の行はスキップされます。"
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0} のPINを入力"
@@ -1708,6 +1720,9 @@ msgstr "アクティブな工程はありません"
 msgid "No active work centers at this location."
 msgstr "この拠点には有効な作業区がありません。"
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "割り当てられた工程はありません"
 
@@ -1789,6 +1804,8 @@ msgstr "このバッチに材料がありません。"
 
 msgid "No open inspections"
 msgstr "オープン中の検査はありません"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"
@@ -3129,6 +3146,9 @@ msgstr "これは製造指図の時間を転記します。製造指図は変更
 
 msgid "This sample was removed"
 msgstr "このサンプルは削除されました"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "これはクロックを停止して、製造指図の時間を転記します。製造指図は変更できなくなります。"

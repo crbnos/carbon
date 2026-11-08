@@ -383,6 +383,9 @@ msgstr "Внешний вид"
 msgid "Apply link"
 msgstr "Применить ссылку"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "Утверждения"
 
@@ -391,6 +394,14 @@ msgstr "AQL"
 
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Ур. {level} · {severity}"
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Вы уверены, что хотите удалить этот ключ доступа? Вы больше не сможете использовать его для входа."
@@ -1024,6 +1035,7 @@ msgstr "Завершить операции"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Введите значение для каждого производственного заказа или заполните все производственные заказы одновременно из первой строки. Пустые строки пропускаются."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Введите PIN для {0}"
@@ -1708,6 +1720,9 @@ msgstr "Нет активных операций"
 msgid "No active work centers at this location."
 msgstr "На этом месте нет активных рабочих центров."
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "Нет назначенных операций"
 
@@ -1789,6 +1804,8 @@ msgstr "На этой серии нет материалов."
 
 msgid "No open inspections"
 msgstr "Нет открытых контролей"
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "Нет открытых производственных заказов"
@@ -3129,6 +3146,9 @@ msgstr "Это проводит рабочее время производств
 
 msgid "This sample was removed"
 msgstr "Этот образец был удалён"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
