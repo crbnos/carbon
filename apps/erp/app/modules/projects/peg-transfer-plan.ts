@@ -44,8 +44,13 @@ export function planPegTransfer(
       // ISO dates order as strings
       return a.needDate < b.needDate ? -1 : 1;
     });
-  const left = supplies.map((supply) => ({ ...supply }));
-  const lastSupplyId = supplies.at(-1)?.supplyId ?? null;
+  // A supply too small to hold 5 places takes nothing: skipped up front, so
+  // the walk below always advances.
+  const left = supplies
+    .map((supply) => ({ ...supply, quantity: round(supply.quantity, 5) }))
+    .filter((supply) => supply.quantity > 0);
+  const lastSupplyId = left.at(-1)?.supplyId ?? null;
+  const overflowSupplyId = keepRemainder ? null : lastSupplyId;
 
   const splits: PegSplit[] = [];
   const add = (pegIndex: number, supplyId: string | null, quantity: number) => {
@@ -63,20 +68,22 @@ export function planPegTransfer(
 
   let s = 0;
   for (const peg of order) {
+    // A peg too small to split at 5 places moves whole, unrounded, so it is
+    // neither lost nor written as 0 (projectPeg_quantity_check).
+    if (round(peg.quantity, 5) <= 0) {
+      add(peg.pegIndex, left[s]?.supplyId ?? overflowSupplyId, peg.quantity);
+      continue;
+    }
     let need = peg.quantity;
     while (need > 0 && s < left.length) {
       const supply = left[s]!;
       const take = round(Math.min(need, supply.quantity), 5);
-      if (take > 0) {
-        add(peg.pegIndex, supply.supplyId, take);
-        need = round(need - take, 5);
-        supply.quantity = round(supply.quantity - take, 5);
-      }
+      add(peg.pegIndex, supply.supplyId, take);
+      need = round(need - take, 5);
+      supply.quantity = round(supply.quantity - take, 5);
       if (supply.quantity <= 0) s++;
     }
-    if (need > 0) {
-      add(peg.pegIndex, keepRemainder ? null : lastSupplyId, need);
-    }
+    if (need > 0) add(peg.pegIndex, overflowSupplyId, need);
   }
   return splits;
 }

@@ -90,6 +90,42 @@ describe("planPegTransfer", () => {
     ]);
   });
 
+  it("skips a supply too small to hold 5 places and uses the next one", () => {
+    expect(
+      planPegTransfer(
+        [peg(10)],
+        [
+          { supplyId: "job_1", quantity: 0.000001 },
+          { supplyId: "job_2", quantity: 10 }
+        ],
+        false
+      )
+    ).toEqual([{ pegIndex: 0, supplyId: "job_2", quantity: 10 }]);
+  });
+
+  it("leaves the peg on the action when every supply is too small", () => {
+    expect(
+      planPegTransfer(
+        [peg(10)],
+        [{ supplyId: "job_1", quantity: 0.000001 }],
+        true
+      )
+    ).toEqual([{ pegIndex: 0, supplyId: null, quantity: 10 }]);
+  });
+
+  it("moves a peg too small to hold 5 places whole, without losing it", () => {
+    expect(
+      planPegTransfer(
+        [peg(0.000001), peg(5)],
+        [{ supplyId: "job_1", quantity: 5 }],
+        false
+      )
+    ).toEqual([
+      { pegIndex: 0, supplyId: "job_1", quantity: 0.000001 },
+      { pegIndex: 1, supplyId: "job_1", quantity: 5 }
+    ]);
+  });
+
   it("keeps decimal quantities exact at 5 places", () => {
     expect(
       planPegTransfer(

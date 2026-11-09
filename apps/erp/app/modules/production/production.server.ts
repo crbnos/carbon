@@ -77,6 +77,7 @@ import {
   deadlineTypes,
   getAssemblyModelState,
   getDueDateForColumn,
+  invalidOrderDateMessage,
   isAssemblyPlanRunning,
   isBatchDissolvable,
   isJobBulkReleasable,
@@ -102,6 +103,7 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
+  planningOrderDatesAreValid,
   planningOrderStart,
   planningOrderStartsInPast,
   procedureStatus,
@@ -4582,9 +4584,23 @@ export const orderPlannedJobs = defineServiceFn({
 
       // insertJob's own default when the item has no lead time
       const leadTime = manufacturing.leadTime ?? 7;
+      const invalidOrders = item.orders.filter(
+        (order) => !planningOrderDatesAreValid(order)
+      ).length;
+      if (invalidOrders > 0) {
+        errors.push(
+          invalidOrderDateMessage(
+            readableIdByItem.get(item.id) ?? item.id,
+            invalidOrders
+          )
+        );
+      }
       const pastIndexes = new Set(
         item.orders.flatMap((order, index) =>
-          planningOrderStartsInPast(order, today, leadTime) ? [index] : []
+          planningOrderDatesAreValid(order) &&
+          planningOrderStartsInPast(order, today, leadTime)
+            ? [index]
+            : []
         )
       );
       if (pastIndexes.size > 0) {
@@ -4606,7 +4622,9 @@ export const orderPlannedJobs = defineServiceFn({
       }
 
       for (const [index, order] of item.orders.entries()) {
-        if (pastIndexes.has(index)) continue;
+        if (pastIndexes.has(index) || !planningOrderDatesAreValid(order)) {
+          continue;
+        }
         const created = await service.insertJob(
           client,
           db,

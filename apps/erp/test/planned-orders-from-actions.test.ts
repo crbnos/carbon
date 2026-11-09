@@ -14,6 +14,7 @@ vi.mock("@carbon/content/glossary", () => ({
 }));
 
 import {
+  planningOrderDatesAreValid,
   planningOrderStart,
   planningOrderStartsInPast
 } from "../app/modules/production/production.models";
@@ -427,6 +428,18 @@ describe("planningOrderStartsInPast", () => {
     expect(
       planningOrderStart({ startDate: "2026-11-09", dueDate: "2026-11-10" }, 7)
     ).toBe("2026-11-09");
+  });
+});
+
+describe("planningOrderDatesAreValid", () => {
+  it.each([
+    ["two real days", { startDate: "2026-11-05", dueDate: "2026-11-12" }, true],
+    ["no dates", { startDate: null, dueDate: null }, true],
+    ["an ISO timestamp", { startDate: null, dueDate: "2026-11-12T00:00:00Z" }, false],
+    ["a day that does not exist", { startDate: "2026-02-31", dueDate: null }, false],
+    ["text", { startDate: "soon", dueDate: "2026-11-12" }, false]
+  ] as const)("an order with %s is valid: %s", (_, order, expected) => {
+    expect(planningOrderDatesAreValid(order)).toBe(expected);
   });
 });
 

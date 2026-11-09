@@ -6,7 +6,10 @@ import type { Database } from "@carbon/database";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { plannedOrderValidator } from "../purchasing/purchasing.models";
+import {
+  isIsoDate,
+  plannedOrderValidator
+} from "../purchasing/purchasing.models";
 import {
   jsonInput,
   methodItemType,
@@ -115,6 +118,30 @@ export function isJobEditableFromPlanning(
   status: Database["public"]["Enums"]["jobStatus"] | null | undefined
 ): boolean {
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
+}
+
+/**
+ * Whether the order's dates are real `YYYY-MM-DD` days or absent. The order
+ * validators take any text, and a date such as an ISO timestamp would make
+ * `parseDate` throw, failing the whole batch instead of this one order.
+ */
+export function planningOrderDatesAreValid(order: {
+  startDate?: string | null;
+  dueDate?: string | null;
+}): boolean {
+  return [order.startDate, order.dueDate].every(
+    (value) => !value || isIsoDate(value)
+  );
+}
+
+/** The `errors` line for an order `planningOrderDatesAreValid` refuses. */
+export function invalidOrderDateMessage(
+  itemReadableId: string,
+  count: number
+): string {
+  return count === 1
+    ? `1 order for ${itemReadableId} has an invalid date and was not created.`
+    : `${count} orders for ${itemReadableId} have an invalid date and were not created.`;
 }
 
 /**

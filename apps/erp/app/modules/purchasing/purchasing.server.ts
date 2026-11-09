@@ -56,7 +56,9 @@ import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  invalidOrderDateMessage,
   pastStartRefusalMessage,
+  planningOrderDatesAreValid,
   planningOrderStartsInPast,
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
@@ -90,6 +92,7 @@ import { ERP_URL, path } from "~/utils/path";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
+  findMergeablePlanningLine,
   findPlanningPurchaseOrder,
   isIsoDate,
   isPurchaseOrderDateField,
@@ -3202,6 +3205,7 @@ export const orderPlannedPurchases = defineServiceFn({
     );
     const today = asOf.toString();
     const refusedOrders: RefusedPlanningOrder[] = [];
+    const invalidCountByItem = new Map<string, number>();
 
     // Whether purchasing is blocked, and the lead time an order with no order
     // date is dated by, for every item ordered, in one read.
@@ -3221,6 +3225,13 @@ export const orderPlannedPurchases = defineServiceFn({
       itemIds.add(item.id);
       let itemHasUsableOrder = false;
       for (const [index, order] of item.orders.entries()) {
+        if (!planningOrderDatesAreValid(order)) {
+          invalidCountByItem.set(
+            item.id,
+            (invalidCountByItem.get(item.id) ?? 0) + 1
+          );
+          continue;
+        }
         const leadTime = purchasingByItem.get(item.id)?.leadTime ?? 0;
         if (planningOrderStartsInPast(order, today, leadTime)) {
           refusedOrders.push({
@@ -3246,6 +3257,7 @@ export const orderPlannedPurchases = defineServiceFn({
       }
       if (
         !itemHasUsableOrder &&
+        !invalidCountByItem.has(item.id) &&
         !refusedOrders.some((refused) => refused.itemId === item.id)
       ) {
         errors.push(
@@ -3283,15 +3295,17 @@ export const orderPlannedPurchases = defineServiceFn({
         (refusedCountByItem.get(refused.itemId) ?? 0) + 1
       );
     }
-    const pastStartErrors = [...refusedCountByItem].map(([itemId, count]) => {
+    const readableIdOf = (itemId: string) => {
       const item = ownedItems.data.find((owned) => owned.id === itemId);
-      return pastStartRefusalMessage(
-        item?.readableIdWithRevision ?? item?.readableId ?? itemId,
-        count,
-        today
-      );
-    });
+      return item?.readableIdWithRevision ?? item?.readableId ?? itemId;
+    };
+    const pastStartErrors = [...refusedCountByItem].map(([itemId, count]) =>
+      pastStartRefusalMessage(readableIdOf(itemId), count, today)
+    );
     errors.push(...pastStartErrors);
+    for (const [itemId, count] of invalidCountByItem) {
+      errors.push(invalidOrderDateMessage(readableIdOf(itemId), count));
+    }
 
     // An order in a project segment is charged to that project: the PO
     // line carries the project, and the receipt puts the stock in the
@@ -3524,20 +3538,12 @@ export const orderPlannedPurchases = defineServiceFn({
           const requiredDate = order.dueDate ?? null;
           const isGroupSegment =
             segments.planningGroupIds.has(planningSegmentId);
-          const existing = purchaseOrder.purchaseOrderLine.find(
-            (line) =>
-              line.itemId === itemId &&
-              line.requiredDate === requiredDate &&
-              (line.planningGroupId ?? line.projectId ?? "") ===
-                planningSegmentId
+          const conversionFactor = supplierPart?.conversionFactor ?? 1;
+          const existing = findMergeablePlanningLine(
+            purchaseOrder.purchaseOrderLine,
+            { itemId, requiredDate, planningSegmentId, conversionFactor }
           );
           let purchaseOrderLineId = existing?.id;
-          // purchase units to the action's inventory units, at the factor of
-          // the line the order lands on
-          const conversionFactor =
-            (existing
-              ? existing.conversionFactor
-              : supplierPart?.conversionFactor) ?? 1;
 
           if (existing) {
             const purchaseQuantity =
@@ -3668,8 +3674,7 @@ export const orderPlannedPurchases = defineServiceFn({
             itemId,
             locationId,
             sourceType: "Purchase Order",
-            forecastQuantity:
-              order.quantity * (supplierPart?.conversionFactor ?? 1),
+            forecastQuantity: adjustedQuantity * conversionFactor,
             periodId: order.periodId,
             planningSegmentId,
             companyId,
@@ -3680,36 +3685,8 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    if (allSupplyForecasts.length > 0) {
-      const forecasts = await client
-        .from("supplyForecast")
-        .upsert(service.deduplicateForecasts(allSupplyForecasts), {
-          onConflict: "itemId,locationId,periodId,planningSegmentId",
-          ignoreDuplicates: false
-        });
-      if (forecasts.error) {
-        const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
-        logger.error(message, { companyId, locationId });
-        errors.push(message);
-      }
-    }
-
-    if (planningPurchaseOrderIds.size > 0) {
-      const flagged = await client
-        .from("purchaseOrder")
-        .update({ createdFromPlanning: true })
-        .in("id", [...planningPurchaseOrderIds])
-        .eq("companyId", companyId);
-      if (flagged.error) {
-        // The orders stand; they go through approval like any other PO.
-        logger.error("Failed to mark planning purchase orders", {
-          companyId,
-          purchaseOrderIds: [...planningPurchaseOrderIds],
-          error: flagged.error
-        });
-      }
-    }
-
+    // Settled as soon as the lines exist: an MRP run that reads a line before
+    // the settle would net it, and the settle would take it off again.
     const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
       companyId,
       locationId,
@@ -3746,6 +3723,36 @@ export const orderPlannedPurchases = defineServiceFn({
         userId,
         moves
       });
+    }
+
+    if (allSupplyForecasts.length > 0) {
+      const forecasts = await client
+        .from("supplyForecast")
+        .upsert(service.deduplicateForecasts(allSupplyForecasts), {
+          onConflict: "itemId,locationId,periodId,planningSegmentId",
+          ignoreDuplicates: false
+        });
+      if (forecasts.error) {
+        const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
+        logger.error(message, { companyId, locationId });
+        errors.push(message);
+      }
+    }
+
+    if (planningPurchaseOrderIds.size > 0) {
+      const flagged = await client
+        .from("purchaseOrder")
+        .update({ createdFromPlanning: true })
+        .in("id", [...planningPurchaseOrderIds])
+        .eq("companyId", companyId);
+      if (flagged.error) {
+        // The orders stand; they go through approval like any other PO.
+        logger.error("Failed to mark planning purchase orders", {
+          companyId,
+          purchaseOrderIds: [...planningPurchaseOrderIds],
+          error: flagged.error
+        });
+      }
     }
 
     if (errors.length > 0 && processedItems === 0) {
