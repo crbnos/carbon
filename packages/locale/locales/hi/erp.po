@@ -24744,10 +24744,12 @@ msgid "Request date"
 msgstr "अनुरोध तारीख"
 
 msgid "Requested"
-msgstr ""
+msgstr "अनुरोधित"
 
 msgid "Requested By"
 msgstr "द्वारा अनुरोधित"
+msgid "Requested"
+msgstr ""
 
 msgid "Requested Date"
 msgstr "अनुरोधित तिथि"
