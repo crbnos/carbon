@@ -59,17 +59,6 @@
       "dependsOn": ["^build"],
       "cache": false
     },
-    "db:types": {
-      "outputs": [],
-      "cache": true
-    },
-    "db:init": {
-      "outputs": []
-    },
-    "db:migrate": {
-      "outputs": [],
-      "cache": false
-    },
     "db:seed": {
       "outputs": [],
       "cache": false

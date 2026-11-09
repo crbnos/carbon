@@ -654,6 +654,10 @@ msgstr "{0}件の残高のある仕入先"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}個の未サンプリングエンティティが利用可能にリリースされます。サンプリング済みの合格品は利用可能なままで、サンプリング済みの不合格品は却下されたままです。"
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "未請求の出荷{0}件"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1445,6 +1449,9 @@ msgstr "推奨バッチ 1 個"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 目標がコミット済 — 注文でレビュー"
+
+msgid "1 uninvoiced shipment"
+msgstr "未請求の出荷1件"
 
 msgid "1 unit"
 msgstr "1 個"
@@ -22355,6 +22362,9 @@ msgstr "転記日付"
 msgid "Posting Date"
 msgstr "転記日付"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "転記すると、この文書に対して保持されている前払金が返金されます。"
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "請求書を転記して、接続されたStripeアカウント経由で支払いリンク付きで送信します。Stripe得意先がリンクされていない得意先の請求書は転記され、未送信としてマークされます。"
 
@@ -22387,6 +22397,15 @@ msgstr "プレフィックス"
 
 msgid "Preparing the backup for restore…"
 msgstr "バックアップを復元用に準備しています…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "前払金（その受注の請求書のみ）"
+
+msgid "Prepayment for"
+msgstr "前払金："
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "{document}の前払金（その請求書のみ）"
 
 msgid "Prepayments"
 msgstr "前払金（デフォルト）"
@@ -23829,6 +23848,9 @@ msgstr "受け取った日時"
 msgid "Received By"
 msgstr "受け取った人"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
 
@@ -24064,6 +24086,9 @@ msgstr "仕入先からの返金"
 
 msgid "Refund memos"
 msgstr "返金メモ"
+
+msgid "Refund prepayment for"
+msgstr "前払金の返金："
 
 msgid "Refund to Customer"
 msgstr "得意先への返金"
@@ -24719,7 +24744,7 @@ msgid "Request date"
 msgstr "リクエスト日付"
 
 msgid "Requested"
-msgstr "リクエスト済み"
+msgstr ""
 
 msgid "Requested By"
 msgstr "要求者"
@@ -28769,6 +28794,9 @@ msgstr "仕入先支払値引（デフォルト）"
 msgid "Supplier Prepayments"
 msgstr "仕入先前払金"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "仕入先への前払金は試算表と照合して一致させる必要があります。<0>試算表へ移動</0>"
+
 msgid "supplier process"
 msgstr "仕入先工法"
 
@@ -29050,6 +29078,9 @@ msgstr "有効開始"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "{effectiveDate} から有効になります。"
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "この受注に充当されている前払金を仕入先前払金から取り消します。"
 
 msgid "Takes work center offline"
 msgstr "作業区をオフラインにする"
@@ -30923,6 +30954,9 @@ msgstr "これらの行はこの会社外のデータにリンクしているた
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "これらの出荷の原価はこの期間に記録されていますが、一部の数量は期末までに請求されていませんでした。新しい売上請求書は本日の日付で転記されるため、期末後に請求してもこの警告は解消されません。計上時期の差異と必要な会計調整を確認し、警告が残る場合は処理内容を説明する理由を記入してタスクをスキップしてください。"
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "これらの単位は販売として扱われます。起動により各単位が認識を外され、その開始仕訳が転記されます："
 
@@ -32195,6 +32229,12 @@ msgstr "未適用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "適用されていない現金はこの文書の得意先前払金として保有され、掛上与信として保有されません。"
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "未充当の現金は、売掛残高への貸方計上ではなく、この受注の仕入先前払金として保持されます。"
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "未充当の現金は、この文書の前受金として保持されます。"
+
 msgid "Unapproved Supplier"
 msgstr "未承認の仕入先"
 
@@ -32288,6 +32328,9 @@ msgstr "{0}をアンインストールしてください"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "まず{conflictsWith}をアンインストールしてください"
+
+msgid "Uninvoiced Shipments"
+msgstr "未請求の出荷"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
@@ -33774,11 +33817,11 @@ msgstr "シリアル番号を割り当てるタイミング"
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "購買担当者が商品をリクエストした日付。仕入先は回答納期に異なる日付を約束し、納期に再び別の日付を記録することができます。"
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "購買担当者がこの明細の品物を受入ドックに必要とする日です。新しい明細は、オーダーの希望納期が初期値になります。計画では、この日付を在庫可否および外注工程のスケジュール設定に使用します。"
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "契約の実行期間と完了時のアクション。"

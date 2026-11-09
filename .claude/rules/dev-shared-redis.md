@@ -63,9 +63,11 @@ own container.
   removes a `carbon-redis` without the `crbn-shared` label; compose then starts
   its own on the same volume. A running `crbn-shared` whose file has no `redis`
   service gets the new file (`missingSharedServices`); compose creates only redis.
-  Constants `REDIS_CONTAINER` / `REDIS_VOLUME` are at the top of `compose.ts`.
+  The container and volume names are `SHARED_CONTAINERS.redis` and
+  `SHARED_REDIS_VOLUME` in `packages/dev/src/topology.ts`.
 - `SHARED_REDIS_PORT = 6379` and `REDIS_DB_MAX = 25` live in
-  `packages/dev/src/worktree.ts`; `pickRedisDb` allocates a free DB index per
+  `packages/dev/src/topology.ts` (`topology.test.ts` checks them against the
+  compose file); `pickRedisDb` (`worktree.ts`) allocates a free DB index per
   worktree. A slot keeps its index until `crbn down --purge`, `crbn remove`, or
   `crbn prune` (folder gone) releases it.
 - Wired into `crbn up` at `packages/dev/src/commands/up.ts` ("Boot shared
@@ -82,9 +84,10 @@ own container.
 - The env writer `packages/dev/src/env.ts` emits
   `REDIS_URL=redis://localhost:${SHARED_REDIS_PORT}/${redisDb}` — so dev apps
   connect to **`localhost:6379`** at the worktree's DB index.
-- `crbn reset` / `crbn remove` flush only that worktree's DB via
+- A teardown that wipes data (`crbn down --volumes` / `--purge`, `crbn reset`,
+  `crbn remove`, `crbn up --run --volumes`) flushes only that worktree's DB via
   `flushDb(db)` → `docker exec carbon-redis redis-cli -n <db> FLUSHDB`
-  (`compose.ts`).
+  (`teardown.ts` → `compose.ts`).
 
 ## Consumers
 

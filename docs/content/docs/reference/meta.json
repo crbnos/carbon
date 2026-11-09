@@ -45,6 +45,7 @@
     "invoices",
     "payments",
     "accounting",
+    "accounting-workflows",
     "financial-reports",
     "period-close",
     "dimensions",

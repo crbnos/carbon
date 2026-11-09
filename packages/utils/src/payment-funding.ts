@@ -9,17 +9,19 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/database/accounting-currency";
-import { round } from "@carbon/database/precision";
+import { EPSILON, round } from "@carbon/database/precision";
 
 /**
- * The document a customer deposit secures (`payment.rentalAgreementId` /
- * `payment.salesOrderId` / `payment.customerContractId`). A deposit funds only
- * invoices that bill that document — a `salesInvoiceLine` carrying the same
- * id, or for a contract the invoice's `customerContractId` — never the
- * customer's other invoices. An unscoped source funds anything.
+ * The document a deposit secures (`payment.rentalAgreementId` /
+ * `payment.salesOrderId` / `payment.customerContractId`, or for a supplier
+ * prepayment `payment.purchaseOrderId`). A deposit funds only invoices that
+ * bill that document — a `salesInvoiceLine` carrying the same id, for a
+ * contract the invoice's `customerContractId`, for a purchase order a
+ * `purchaseInvoiceLine.purchaseOrderId` — never the party's other invoices. An
+ * unscoped source funds anything.
  */
 export type FundingScope = {
-  type: "rentalAgreement" | "salesOrder" | "customerContract";
+  type: "rentalAgreement" | "salesOrder" | "customerContract" | "purchaseOrder";
   /** The document's row id, as stored on the payment and the invoice line. */
   id: string;
   /** Readable id (RA000001, SO000123) for messages; optional. */
@@ -53,29 +55,39 @@ export type FundingRequest = {
   /** Contracts the target invoice bills (`salesInvoice.customerContractId`
    *  and `salesInvoiceLine.customerContractId`). */
   customerContractIds?: readonly string[];
+  /** Purchase orders the target invoice bills (`purchaseInvoiceLine.purchaseOrderId`). */
+  purchaseOrderIds?: readonly string[];
 };
+
+export type FundingScopeIds = Pick<
+  FundingRequest,
+  | "rentalAgreementIds"
+  | "salesOrderIds"
+  | "customerContractIds"
+  | "purchaseOrderIds"
+>;
 
 /** The deposit scope a payment row carries, or null for an ordinary payment. */
 export function fundingScopeOf(row: {
   rentalAgreementId?: string | null;
   salesOrderId?: string | null;
   customerContractId?: string | null;
+  purchaseOrderId?: string | null;
 }): FundingScope | null {
   if (row.rentalAgreementId)
     return { type: "rentalAgreement", id: row.rentalAgreementId };
   if (row.salesOrderId) return { type: "salesOrder", id: row.salesOrderId };
   if (row.customerContractId)
     return { type: "customerContract", id: row.customerContractId };
+  if (row.purchaseOrderId)
+    return { type: "purchaseOrder", id: row.purchaseOrderId };
   return null;
 }
 
 /** Whether a source with this scope may fund the request's target. */
 export function fundingScopeCovers(
   scope: FundingScope | null | undefined,
-  request: Pick<
-    FundingRequest,
-    "rentalAgreementIds" | "salesOrderIds" | "customerContractIds"
-  >
+  request: FundingScopeIds
 ): boolean {
   if (!scope) return true;
   const ids =
@@ -83,12 +95,15 @@ export function fundingScopeCovers(
       ? request.rentalAgreementIds
       : scope.type === "customerContract"
         ? request.customerContractIds
-        : request.salesOrderIds;
+        : scope.type === "purchaseOrder"
+          ? request.purchaseOrderIds
+          : request.salesOrderIds;
   return Boolean(ids?.includes(scope.id));
 }
 
 /** The refusal for applying a deposit to an invoice of another document. */
 export function depositScopeMessage(scope: FundingScope): string {
+  const noun = scope.type === "purchaseOrder" ? "prepayment" : "deposit";
   const owner =
     scope.type === "rentalAgreement"
       ? "that agreement's"
@@ -96,12 +111,14 @@ export function depositScopeMessage(scope: FundingScope): string {
         ? "that contract's"
         : "that order's";
   if (scope.readableId)
-    return `A deposit for ${scope.readableId} can only be applied to ${owner} invoices`;
+    return `A ${noun} for ${scope.readableId} can only be applied to ${owner} invoices`;
   return scope.type === "rentalAgreement"
     ? "A rental agreement deposit can only be applied to that agreement's invoices"
     : scope.type === "customerContract"
       ? "A contract deposit can only be applied to that contract's invoices"
-      : "A sales order deposit can only be applied to that order's invoices";
+      : scope.type === "purchaseOrder"
+        ? "A purchase order prepayment can only be applied to that order's invoices"
+        : "A sales order deposit can only be applied to that order's invoices";
 }
 
 function assertScope(scope: FundingScope | null | undefined): void {
@@ -109,7 +126,8 @@ function assertScope(scope: FundingScope | null | undefined): void {
   if (
     (scope.type !== "rentalAgreement" &&
       scope.type !== "salesOrder" &&
-      scope.type !== "customerContract") ||
+      scope.type !== "customerContract" &&
+      scope.type !== "purchaseOrder") ||
     typeof scope.id !== "string" ||
     !scope.id.trim()
   ) {
@@ -483,14 +501,7 @@ export function allocatePaymentFunding(input: {
 export function fundableDocumentAmounts(input: {
   currentPayment: FundingSource;
   priorSources: readonly FundingSource[];
-  requests: ReadonlyArray<
-    Pick<
-      FundingRequest,
-      "rentalAgreementIds" | "salesOrderIds" | "customerContractIds"
-    > & {
-      maximumDocument: number;
-    }
-  >;
+  requests: ReadonlyArray<FundingScopeIds & { maximumDocument: number }>;
   currencyDecimals: number;
 }): number[] {
   const { currencyDecimals } = input;
@@ -767,4 +778,176 @@ export function remainingFundingSources(
       return source;
     })
     .filter((payment) => payment.remainingDocument > 0);
+}
+
+export type DepositRefundApplication = {
+  sourcePaymentId: string;
+  sourceAmount: number;
+  carryingBase: number;
+  sourceExchangeRate: number;
+};
+
+/** Refund advances held for this document at their original carrying value.
+ * Callers supply effective sources with matching company, party and currency. */
+export function allocateDepositRefund(input: {
+  scope: FundingScope;
+  sources: readonly FundingSource[];
+  requestedDocumentPrincipal: number;
+  currencyDecimals: number;
+}): DepositRefundApplication[] {
+  assertScope(input.scope);
+  assertCurrencyDecimals(input.currencyDecimals);
+  const documentAmount = (value: number) => {
+    nonnegativeAmount(value, "Refund principal");
+    const normalized = toDocumentAmount(value, 1, input.currencyDecimals);
+    if (Math.abs(normalized - value) > Number.EPSILON * Math.max(1, value) * 4)
+      throw new Error("Refund principal exceeds document currency precision");
+    if (
+      !Number.isSafeInteger(round(normalized * 10 ** input.currencyDecimals, 0))
+    )
+      throw new Error("Refund principal exceeds safe document currency units");
+    return normalized;
+  };
+  let remaining = documentAmount(input.requestedDocumentPrincipal);
+  const applications: DepositRefundApplication[] = [];
+  const seen = new Set<string>();
+  const sources = [...input.sources]
+    .filter(
+      (source) =>
+        source.scope?.type === input.scope.type &&
+        source.scope.id === input.scope.id
+    )
+    .sort((a, b) =>
+      a.postingDate < b.postingDate
+        ? -1
+        : a.postingDate > b.postingDate
+          ? 1
+          : a.paymentId < b.paymentId
+            ? -1
+            : a.paymentId > b.paymentId
+              ? 1
+              : 0
+    );
+  for (const source of sources) {
+    addUniqueId(seen, source.paymentId, "refund source");
+    assertExchangeRate(source.exchangeRate);
+    const available = documentAmount(source.remainingDocument);
+    const availableBase = nonnegativeAmount(
+      source.remainingBase,
+      "Refund source carrying base"
+    );
+    if (available === 0 && availableBase !== 0)
+      throw new Error("Exhausted refund source retains carrying base");
+    if (remaining === 0 || available === 0) continue;
+    const sourceAmount = Math.min(remaining, available);
+    applications.push({
+      sourcePaymentId: source.paymentId,
+      sourceAmount,
+      carryingBase:
+        sourceAmount === available
+          ? availableBase
+          : Math.min(
+              toBaseAmount(sourceAmount, source.exchangeRate),
+              availableBase
+            ),
+      sourceExchangeRate: source.exchangeRate
+    });
+    remaining = toDocumentAmount(
+      remaining - sourceAmount,
+      1,
+      input.currencyDecimals
+    );
+  }
+  if (remaining > 0)
+    throw new Error(
+      "Refund exceeds the remaining advances held for this document"
+    );
+  return applications;
+}
+
+export class HistoricalDepositReconciliationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HistoricalDepositReconciliationError";
+  }
+}
+
+export type LegacyDepositRefund = {
+  paymentId: string;
+  postingDate: string;
+  currencyCode: string;
+  scope: FundingScope;
+  principal: number;
+  carryingBase: number;
+  accountId: string;
+};
+
+/** Reserve refunds posted before source-payment applications existed, without
+ * changing their journals or guessing a different account or carrying value. */
+export function reserveLegacyDepositRefunds(input: {
+  sources: readonly FundingSource[];
+  refunds: readonly LegacyDepositRefund[];
+  sourceFacts: ReadonlyMap<
+    string,
+    { currencyCode: string; accountId: string | null }
+  >;
+  decimals: ReadonlyMap<string, number>;
+}): FundingSource[] {
+  const sources = input.sources.map((source) => ({ ...source }));
+  for (const refund of [...input.refunds].sort(
+    (a, b) =>
+      a.postingDate.localeCompare(b.postingDate) ||
+      a.paymentId.localeCompare(b.paymentId)
+  )) {
+    const error = new HistoricalDepositReconciliationError(
+      `Reconcile historical deposit refund ${refund.paymentId} before applying or refunding this document's remaining deposit`
+    );
+    const decimals = input.decimals.get(refund.currencyCode);
+    if (decimals === undefined) throw error;
+    let applications: DepositRefundApplication[];
+    try {
+      applications = allocateDepositRefund({
+        scope: refund.scope,
+        sources: sources.filter(
+          (source) =>
+            input.sourceFacts.get(source.paymentId)?.currencyCode ===
+              refund.currencyCode && source.postingDate <= refund.postingDate
+        ),
+        requestedDocumentPrincipal: refund.principal,
+        currencyDecimals: decimals
+      });
+    } catch {
+      throw error;
+    }
+    if (
+      applications.some(
+        (application) =>
+          input.sourceFacts.get(application.sourcePaymentId)?.accountId !==
+          refund.accountId
+      ) ||
+      Math.abs(
+        round(
+          applications.reduce(
+            (sum, application) => sum + application.carryingBase,
+            0
+          )
+        ) - refund.carryingBase
+      ) > EPSILON
+    )
+      throw error;
+    for (const application of applications) {
+      const source = sources.find(
+        (source) => source.paymentId === application.sourcePaymentId
+      )!;
+      source.remainingDocument = toDocumentAmount(
+        source.remainingDocument - application.sourceAmount,
+        1,
+        decimals
+      );
+      source.remainingBase = round(
+        source.remainingBase - application.carryingBase
+      );
+    }
+  }
+  return sources.filter((source) => source.remainingDocument > 0);
 }

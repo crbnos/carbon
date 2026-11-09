@@ -654,6 +654,10 @@ msgstr "{0} bakiyesi olan tedarikçi"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örneklenen başarılılar Kullanılabilir ve örneklenen başarısızlar Reddedilmiş olarak kalır."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} faturalanmamış sevkiyat"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1445,6 +1449,9 @@ msgstr "1 önerilen parti"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 hedef kaydedildi — sipariş üzerinde kontrol edin"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 faturalanmamış sevkiyat"
 
 msgid "1 unit"
 msgstr "1 adet"
@@ -22355,6 +22362,9 @@ msgstr "Muhasebeleştirme tarihi"
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "Muhasebeleştirme, bu belge için tutulan avansları iade eder."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Faturayı muhasebeleştirir ve bağlı Stripe hesabınız üzerinden bir ödeme linki ile gönderir. Bağlı Stripe müşterisi olmayan bir müşteri için fatura muhasebeleştirilir ve gönderilmedi olarak işaretlenir."
 
@@ -22387,6 +22397,15 @@ msgstr "Ön Ek"
 
 msgid "Preparing the backup for restore…"
 msgstr "Yedek geri yükleme için hazırlanıyor…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Avans (yalnızca kendi siparişinin faturaları)"
+
+msgid "Prepayment for"
+msgstr "Şunun için avans:"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "{document} için avans (yalnızca kendi faturaları)"
 
 msgid "Prepayments"
 msgstr "Avanslar"
@@ -23829,6 +23848,9 @@ msgstr "Alındığı Tarih"
 msgid "Received By"
 msgstr "Kim Aldığı Kişi"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
 
@@ -24064,6 +24086,9 @@ msgstr "Tedarikçiden İade"
 
 msgid "Refund memos"
 msgstr "İade Muhasebe Notları"
+
+msgid "Refund prepayment for"
+msgstr "Şunun için avans iadesi:"
 
 msgid "Refund to Customer"
 msgstr "Müşteriye İade"
@@ -24719,7 +24744,7 @@ msgid "Request date"
 msgstr "İstek tarihi"
 
 msgid "Requested"
-msgstr "İstenen"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Talep Eden"
@@ -28769,6 +28794,9 @@ msgstr "Tedarikçi ödeme iskontoları (varsayılan)"
 msgid "Supplier Prepayments"
 msgstr "Tedarikçi avansları"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Tedarikçilere verilen avanslar mizanla mutabık olmalıdır. <0>Mizana git</0>"
+
 msgid "supplier process"
 msgstr "tedarikçi prosesi"
 
@@ -29050,6 +29078,9 @@ msgstr "Yürürlüğe Girer"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Yürürlüğe {effectiveDate} tarihinde girer."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Bu sipariş için tutulan avansı tedarikçi avansları hesabından geri çıkarır."
 
 msgid "Takes work center offline"
 msgstr "İş merkezini çevrimdışı alır"
@@ -30923,6 +30954,9 @@ msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcu
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Bu sevkiyatların maliyetleri bu dönemde kaydedildi, ancak bazı miktarlar dönem sonuna kadar faturalanmadı. Yeni satış faturaları bugünün tarihiyle muhasebeleştirilir; bu nedenle dönem sonundan sonra faturalamak bu uyarıyı kaldırmaz. Tarih farkını ve gerekli muhasebe düzeltmelerini inceleyin. Uyarı devam ederse uygulanan işlemi açıklayan bir gerekçe yazarak görevi atlayın."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayıttan çıkarır ve başlangıç muhasebe fişi'ni muhasebeleştirir:"
 
@@ -32195,6 +32229,12 @@ msgstr "Uygulanmamış"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Uygulanmamış nakit, bu belge için müşteri avansı olarak tutuluyor, hesapta alacak yerine."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Uygulanmamış nakit, cari hesap alacağı olarak değil, bu sipariş için tedarikçi avansı olarak tutulur."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Uygulanmamış nakit, bu belge için avans olarak tutulur."
+
 msgid "Unapproved Supplier"
 msgstr "Onaylanmamış Tedarikçi"
 
@@ -32288,6 +32328,9 @@ msgstr "Önce {0} kaldırın"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Önce {conflictsWith} kaldırın"
+
+msgid "Uninvoiced Shipments"
+msgstr "Faturalanmamış sevkiyatlar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
@@ -33774,11 +33817,11 @@ msgstr "Seri numaraları atandığında"
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Satın almacının malları istediği zaman; tedarikçi Taahhüt tarihinde başka bir şey taahhüt edebilir ve Teslim tarihinde yine başka bir şey muhasebeleştirebilir."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Satın almacının bu satırdaki malları rıhtımda istediği tarih. Yeni bir satır, siparişin Talep edilen tarihinde başlar; planlama bu tarihi stok uygunluğu ve dış işlem çizelgelemesi için kullanır."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."

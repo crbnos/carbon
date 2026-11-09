@@ -3,11 +3,13 @@ title: Accounting & the ledger
 description: "How operations become journal entries: accounts, periods, the postings behind every flow, and setting up accounting at a cutover date."
 ---
 
-Shipping, receiving, job completion, and asset depreciation can each post to the **<Term id="general-ledger">general ledger</Term>**. This page describes their shared accounting behavior.
+Shipping, receiving, job completion, and asset depreciation can each post to the **<Term id="general-ledger">general ledger</Term>**. This page describes their shared accounting behavior. For complete debit and credit examples from order through settlement, see [Accounting workflows](/docs/reference/accounting-workflows).
 
 ## Before and after accounting is set up
 
-Every company posts journals for its receipts, shipments, invoices, payments, adjustments and jobs. The company's **<Term id="accounting-cutover">cutover date</Term>** decides only the journal's status. A company with no cutover date writes *<Term id="provisional-journal">Provisional</Term>* journals: they record the document's accounting, but no balance or report counts them, and they have no accounting period. After you [set up accounting](#setting-up-accounting), every posting writes a *Posted* journal.
+Every company posts journals for its receipts, shipments, invoices, payments, adjustments and jobs.
+
+The company's **<Term id="accounting-cutover">cutover date</Term>** decides only the journal's status. A company with no cutover date writes *<Term id="provisional-journal">Provisional</Term>* journals: they record the document's accounting, but no balance or report counts them, and they have no accounting period. After you [set up accounting](#setting-up-accounting), every posting writes a *Posted* journal.
 
 Cost layers, inventory valuation, fixed-asset cost, deferred revenue schedules and intercompany records do not wait for the cutover. Every company writes them from the first document.
 
@@ -15,7 +17,7 @@ A new company starts without a cutover date. It posts Provisional journals on Ca
 
 ## The journal
 
-Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with balanced **journal lines**: debits are positive and credits are negative. The journal records its source type. Each line references an account and can include dimensions. Voiding a posted journal creates a reversing journal instead of deleting the original.
+Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** whose total debits equal its total credits. The journal records its source type. Each line references an account and can include dimensions. Voiding a posted journal creates a reversing journal instead of deleting the original.
 
 | Status | Meaning |
 | --- | --- |
@@ -54,7 +56,9 @@ Carbon resolves posting accounts from one set of company defaults. It does not u
 | Goods received, not invoiced | The accrual between receiving goods and being billed for them. |
 | Variance | Differences swept at job close or from purchase price. |
 
-A sales invoice line separates shipping, tax, and merchandise. Line shipping and its share of header-level shipping credit **shipping revenue**; tax credits **sales tax payable**; merchandise and add-ons credit **sales**. The sales and shipping-revenue defaults must reference different accounts. Posting fails if both resolve to the sales account. New companies receive account **4040 "Shipping Revenue"** under Revenue; companies joining an existing group inherit the group's shipping default.
+A sales invoice line separates shipping, tax, and merchandise.
+
+Line shipping and its share of header-level shipping credit **shipping revenue**; tax credits **sales tax payable**; merchandise and add-ons credit **sales**. The sales and shipping-revenue defaults must reference different accounts. Posting fails if both resolve to the sales account. New companies receive account **4040 "Shipping Revenue"** under Revenue; companies joining an existing group inherit the group's shipping default.
 
 ## Dimensions
 
@@ -62,7 +66,9 @@ A journal line can include dimensions for location, department, cost center, ite
 
 ## Periods
 
-Every Posted journal belongs to an **<Term id="accounting-period">accounting period</Term>**, which Carbon creates and activates as needed. A Provisional journal has no period, and Carbon creates no periods until accounting is set up. A period can be **Open**, **Closed**, or **Locked**. Receipts, shipments, invoices, and payments cannot post to a Closed or Locked period. Reopen or unlock the period, or change the posting date to an open period. See [period close](/docs/reference/period-close).
+Every Posted journal belongs to an **<Term id="accounting-period">accounting period</Term>**, which Carbon creates and activates as needed.
+
+A Provisional journal has no period, and Carbon creates no periods until accounting is set up. A period can be **Open**, **Closed**, or **Locked**. Receipts, shipments, invoices, and payments cannot post to a Closed or Locked period. Reopen or unlock the period, or change the posting date to an open period. See [period close](/docs/reference/period-close).
 
 ## Revenue recognition and lease runs
 
@@ -77,7 +83,11 @@ On the first day of each month Carbon proposes a draft run of each type for the 
 
 ## Setting up accounting
 
-Setting up accounting opens your books in Carbon at a **cutover date**. Carbon takes the open items it already knows (for example invoices, unapplied payments, goods received but not invoiced, open jobs, stock and fixed assets) and your prior system's trial balance, and posts one opening journal from them. Open it from **Settings → Accounting** with **Set up accounting**. Until it is done, the **Reporting**, **Journal Entries**, **Intercompany**, **Accounting Periods**, **Depreciation** and **Assets** pages are blurred behind an overlay that reads "Accounting is not set up for this company." and has a **Set up accounting** button. You need permission to view accounting to open the wizard, and to update accounting to save a step or enable. Editing an item's unit cost on the Inventory step needs permission to update parts.
+Setting up accounting opens your books in Carbon at a **cutover date**.
+
+Carbon takes the open items it already knows (for example invoices, unapplied payments, goods received but not invoiced, open jobs, stock and fixed assets) and your prior system's trial balance, and posts one opening journal from them. Open it from **Settings → Accounting** with **Set up accounting**.
+
+Until it is done, the **Reporting**, **Journal Entries**, **Intercompany**, **Accounting Periods**, **Depreciation** and **Assets** pages are blurred behind an overlay that reads "Accounting is not set up for this company." and has a **Set up accounting** button. You need permission to view accounting to open the wizard, and to update accounting to save a step or enable. Editing an item's unit cost on the Inventory step needs permission to update parts.
 
 <Screenshot label="Set Up Accounting wizard: the Readiness step with the cutover date picker and the readiness checklist" caption="Every check must pass before you can continue." />
 
@@ -101,7 +111,11 @@ Setting up accounting opens your books in Carbon at a **cutover date**. Carbon t
 **Fixed assets.** Each asset on the books the day before the cutover, with its cost, accumulated depreciation and net book value as of that day. No depreciation run happens before the cutover, so enter each asset's accumulated depreciation here.
 </Step>
 <Step>
-**Trial balance.** Enter your prior system's trial balance as of the day before the cutover, for every account, or **Import CSV** with the columns `accountNumber`, `debit` and `credit`. An import replaces the whole trial balance and saves nothing when a row has an error. **Save Trial Balance** keeps it as a Draft Opening Balance journal, which the opening journal replaces when you enable. Accounts marked **Control** (receivables, payables, inventory, work in process and the others Carbon opens from its own records) are only compared: the **Migration Clearing** table shows, per control account, the trial balance amount, Carbon's opening total and the difference.
+**Trial balance.** Enter your prior system's trial balance as of the day before the cutover, for every account, or **Import CSV** with the columns `accountNumber`, `debit` and `credit`.
+
+An import replaces the whole trial balance and saves nothing when a row has an error. **Save Trial Balance** keeps it as a Draft Opening Balance journal, which the opening journal replaces when you enable.
+
+Accounts marked **Control** (receivables, payables, inventory, work in process and the others Carbon opens from its own records) are only compared: the **Migration Clearing** table shows, per control account, the trial balance amount, Carbon's opening total and the difference. Each supplier-prepayment control account must reconcile with the trial balance before you can enable accounting, even when Migration Clearing totals zero. If a difference remains, the **Enable** page links back to **Trial Balance**.
 </Step>
 <Step>
 **Enable.** The summary lists the documents posted before Carbon kept journals, per type, when there are any (see below). Migration Clearing must total zero and every readiness check must pass. Type the company name and press **Enable accounting**.
@@ -122,7 +136,9 @@ That journal uses today's account defaults and item costs, because the original 
 
 Labor and machine absorption of a job is not written again. Carbon does not send a rewritten depreciation, disposal or recognition journal to your accounting provider on its own, because the provider may already hold the original.
 
-**Journals still missing after the enable.** A company that set up accounting before the enable wrote these journals can still have posted documents dated on or after its cutover with no journal. **Settings → Accounting** then shows a warning with the number of such documents and a **Write missing journals** button. The button writes the same journals the enable writes, with today's account defaults and item costs, and posts them. It needs permission to update settings and to update accounting. If one of the journals falls in a Closed or Locked period, Carbon writes none of them.
+**Journals still missing after the enable.** A company that set up accounting before the enable wrote these journals can still have posted documents dated on or after its cutover with no journal.
+
+**Settings → Accounting** then shows a warning with the number of such documents and a **Write missing journals** button. The button writes the same journals the enable writes, with today's account defaults and item costs, and posts them. It needs permission to update settings and to update accounting. If one of the journals falls in a Closed or Locked period, Carbon writes none of them.
 
 <Callout type="warn" title="Setting up accounting cannot be undone">
 The cutover date never changes after you enable. The base currency and the fiscal year start month lock too.
@@ -141,7 +157,11 @@ The import needs two CSV files:
 
 <Steps>
 <Step>
-**Upload your chart.** Export it from your current system. Carbon reads the column names most systems use: `Account Number`, `Code` or `GL Account` for the number; `Account Name` or `Name` for the name; `Class`, `Account Type` or `Category` for the class; `Subtype` or `Detail Type` for the type; and `Group` or `Parent Grouping` for the group. A class column that holds a type, such as `Bank`, is read as that type and its class. A row whose `Status` is `Inactive` is left out. To start from Carbon's chart instead, press **Download template**: it lists the current accounts in the columns the import reads.
+**Upload your chart.** Export it from your current system.
+
+Carbon reads the column names most systems use: `Account Number`, `Code` or `GL Account` for the number; `Account Name` or `Name` for the name; `Class`, `Account Type` or `Category` for the class; `Subtype` or `Detail Type` for the type; and `Group` or `Parent Grouping` for the group. A class column that holds a type, such as `Bank`, is read as that type and its class. A row whose `Status` is `Inactive` is left out.
+
+To start from Carbon's chart instead, press **Download template**: it lists the current accounts in the columns the import reads.
 </Step>
 <Step>
 **Download the default accounts template and fill it in.** It has one row per default account, with the account it uses now in `Current Account`. In `Account Number`, enter the number of the account in your chart that takes it. A row marked `Required` needs a number.
@@ -194,6 +214,7 @@ After the cutover, a document dated before it keeps its status, with some limits
     The balance sheet, income statement and trial balance the Posted journals feed.
   </Card>
 </Cards>
+
 
 <AgentContext>
 ## Troubleshooting

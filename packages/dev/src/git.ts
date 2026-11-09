@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { execa } from "execa";
 import { dirname, resolve } from "pathe";
+import { sameWorktreePath } from "./worktree.js";
 
 export type Worktree = {
   path: string;
@@ -52,9 +53,18 @@ export async function currentBranch(cwd = process.cwd()): Promise<string> {
   }
 }
 
+/** The worktree the cwd is in: its top-level directory. */
+export async function getWorktreeRoot(): Promise<string> {
+  const r = await execa("git", ["rev-parse", "--show-toplevel"], {
+    reject: false
+  });
+  if (r.exitCode !== 0) throw new Error("not inside a git repository");
+  return r.stdout.trim();
+}
+
 export async function listWorktrees(): Promise<Worktree[]> {
   const r = await execa("git", ["worktree", "list", "--porcelain"]);
-  const cwd = process.cwd();
+  const here = await getWorktreeRoot();
   const blocks = r.stdout.trim().split("\n\n");
   return blocks.map((block) => {
     const lines = block.split("\n");
@@ -70,7 +80,7 @@ export async function listWorktrees(): Promise<Worktree[]> {
       branch,
       head: get("HEAD"),
       bare: lines.includes("bare"),
-      current: path === cwd
+      current: sameWorktreePath(path, here)
     };
   });
 }
@@ -103,19 +113,16 @@ export async function pruneWorktreeEntries(): Promise<void> {
   await execa("git", ["worktree", "prune"], { reject: false });
 }
 
-export async function removeWorktree(
-  path: string,
-  force = false
-): Promise<void> {
-  const args = ["worktree", "remove"];
-  if (force) args.push("--force");
-  args.push(path);
-  const r = await execa("git", args, { reject: false });
+// The caller confirmed the removal, uncommitted work included.
+export async function removeWorktree(path: string): Promise<void> {
+  const r = await execa("git", ["worktree", "remove", "--force", path], {
+    reject: false
+  });
   if (r.exitCode === 0) return;
 
-  // git refused (busy dir from a held cwd, locked, or corrupt gitdir). The
-  // caller already confirmed removal — fall back to a direct directory wipe
-  // and prune the orphaned admin metadata so git's worktree list stays clean.
+  // git refused (busy dir from a held cwd, locked, or corrupt gitdir): wipe
+  // the directory and prune its admin metadata so `git worktree list` stays
+  // clean.
   if (existsSync(path)) {
     await rm(path, { recursive: true, force: true });
   }
@@ -128,6 +135,14 @@ export async function isDirty(path: string): Promise<boolean> {
     reject: false
   });
   return r.exitCode === 0 && (r.stdout || "").trim().length > 0;
+}
+
+/** git's own rule for a branch name (git-check-ref-format --branch). */
+export async function isValidBranchName(branch: string): Promise<boolean> {
+  const r = await execa("git", ["check-ref-format", "--branch", branch], {
+    reject: false
+  });
+  return r.exitCode === 0;
 }
 
 export async function branchExists(branch: string): Promise<boolean> {

@@ -3605,48 +3605,51 @@ export async function closeAccountingPeriod(
     };
   }
 
-  // Checklist gate: every required task must be Done/Skipped and no Blocker
-  // auto-check may be failing (acceptance criteria 7/10). Instantiation is
-  // idempotent, so this both materializes and evaluates the checklist.
-  const checklist = await loadPeriodCloseChecklist(
-    client,
-    db,
-    args.companyId,
-    args.periodId,
-    previewRuns,
-    entitlements
-  );
-  if (checklist.error || !checklist.data) {
-    return {
-      data: null,
-      error: checklist.error ?? { message: "Failed to load close checklist" }
-    };
-  }
-  if (!checklist.data.canClose) {
-    return {
-      data: null,
-      error: {
-        message:
-          checklist.data.blockingReason ?? "Close checklist is not complete"
-      }
-    };
-  }
-
   // Persist the final Auto-task states and flip the period atomically. The
   // checklist state and the period status must move together — a partial write
   // would leave the checklist inconsistent with the period. supabase-js has no
   // multi-statement transaction, so the writes go through the Kysely client;
   // the DB close trigger remains the backstop for the invariant.
-  const now = new Date().toISOString();
-  // periodCloseTask and accountingPeriod.closeStatus are added by the
-  // period-close-lifecycle migration; the generated Kysely types don't include
-  // them yet, so the write builder is cast until types are regenerated (this
-  // mirrors the `as any` casts the read path already uses).
+
+  // Run previews synthesize schedules in their own rolled-back transactions.
+  // Finish those before holding the period lock to avoid inverted lock order.
+  const runPreview = await previewRuns(period.data.endDate);
+  const now = datetime.timestamp();
   try {
     await db.transaction().execute(async (trx) => {
-      const tx = trx as any;
+      // Match posting's FOR SHARE before reading the checklist. NO KEY UPDATE
+      // still permits its separate client's task inserts to check their FK.
+      const lockedPeriod = await trx
+        .selectFrom("accountingPeriod")
+        .select("closeStatus")
+        .where("id", "=", args.periodId)
+        .where("companyId", "=", args.companyId)
+        .forNoKeyUpdate()
+        .executeTakeFirst();
+      if (lockedPeriod?.closeStatus !== "Locked") {
+        throw new Error("Period must be locked before closing.");
+      }
+      const checklist = await loadPeriodCloseChecklist(
+        client,
+        trx,
+        args.companyId,
+        args.periodId,
+        async () => runPreview,
+        entitlements
+      );
+      if (checklist.error || !checklist.data) {
+        throw new Error(
+          checklist.error?.message ?? "Failed to load close checklist"
+        );
+      }
+      if (!checklist.data.canClose) {
+        throw new Error(
+          checklist.data.blockingReason ?? "Close checklist is not complete"
+        );
+      }
+
       for (const state of checklist.data.autoTaskStates) {
-        await tx
+        await trx
           .updateTable("periodCloseTask")
           .set({
             status: state.status,
@@ -3659,7 +3662,7 @@ export async function closeAccountingPeriod(
           .execute();
       }
 
-      await tx
+      await trx
         .updateTable("accountingPeriod")
         .set({
           closeStatus: "Closed",
@@ -4152,6 +4155,24 @@ export function runPreviewer(
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
+// A failed readiness query must not abort the transaction that closes the period.
+async function readPeriodCheck<T>(
+  db: Kysely<KyselyDatabase>,
+  read: () => Promise<T>
+): Promise<T> {
+  if (!db.isTransaction) return read();
+  await sql`SAVEPOINT period_readiness`.execute(db);
+  try {
+    const result = await read();
+    await sql`RELEASE SAVEPOINT period_readiness`.execute(db);
+    return result;
+  } catch (error) {
+    await sql`ROLLBACK TO SAVEPOINT period_readiness`.execute(db);
+    await sql`RELEASE SAVEPOINT period_readiness`.execute(db);
+    throw error;
+  }
+}
+
 /**
  * The "Timesheets complete" close check (Government Contracting 5a). It reads
  * with the privileged Kysely client, so the count does not depend on the
@@ -4165,11 +4186,9 @@ async function getPeriodTimesheetReadiness(
   endDate: string
 ): Promise<{ failing: boolean; count: number }> {
   try {
-    return await getTimesheetCloseReadiness(db, {
-      companyId,
-      startDate,
-      endDate
-    });
+    return await readPeriodCheck(db, () =>
+      getTimesheetCloseReadiness(db, { companyId, startDate, endDate })
+    );
   } catch {
     return { failing: true, count: 1 };
   }
@@ -4218,6 +4237,197 @@ export function burdenComputedCheck({
 }
 
 /**
+ * Find shipments that were posted in this period but not fully invoiced by
+ * period end. Their costs are recorded in this period, but the remaining
+ * revenue is not.
+ *
+ * `shipments` contains each shipment once. `count` is the total, and
+ * `documents` contains up to `UNPOSTED_DOCUMENT_LIMIT` for checklist links.
+ */
+export function shippedNotInvoicedCheck({
+  shipments,
+  count
+}: {
+  shipments: { id: string; shipmentId: string | null; status: string }[];
+  count: number;
+}): {
+  failing: boolean;
+  count: number;
+  documents: PeriodCloseUnpostedDocument[];
+} {
+  return {
+    failing: count > 0,
+    count,
+    documents: shipments.slice(0, UNPOSTED_DOCUMENT_LIMIT).map((shipment) => ({
+      documentType: "Shipment",
+      id: shipment.id,
+      readableId: shipment.shipmentId ?? shipment.id,
+      status: shipment.status
+    }))
+  };
+}
+
+/**
+ * Invoices refer to sales order lines rather than individual shipments, so we
+ * apply invoiced quantities to the oldest shipments first, using the shipment
+ * id to break ties when posting dates match.
+ *
+ * Goods returned by period end before being invoiced no longer need an invoice.
+ * Returns for service or warranty still count as sales that need invoicing.
+ * If the database query fails, keep the warning instead of marking the check
+ * as passed.
+ */
+export async function getShippedNotInvoiced(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<ReturnType<typeof shippedNotInvoicedCheck>> {
+  try {
+    return await readPeriodCheck(db, async () => {
+      const rows = await db
+        .with("returns", (db) =>
+          db
+            .selectFrom("salesReturnOrderLine as r")
+            .innerJoin("receiptLine as rl", (join) =>
+              join
+                .onRef("rl.lineId", "=", "r.id")
+                .onRef("rl.companyId", "=", "r.companyId")
+            )
+            .innerJoin("receipt", (join) =>
+              join
+                .onRef("receipt.id", "=", "rl.receiptId")
+                .onRef("receipt.companyId", "=", "rl.companyId")
+            )
+            .select("r.shipmentLineId")
+            .select((eb) =>
+              eb.fn.sum<number>("rl.receivedQuantity").as("quantity")
+            )
+            .where("r.companyId", "=", companyId)
+            .where("r.salesInvoiceLineId", "is", null)
+            .where("r.returnType", "not in", [
+              "Return for Service",
+              "Return for Warranty"
+            ])
+            .where("receipt.status", "=", "Posted")
+            .where("receipt.sourceDocument", "=", "Sales Return Order")
+            .where("receipt.postingDate", "<=", endDate)
+            .groupBy("r.shipmentLineId")
+        )
+        .with("shipped_lines", (db) =>
+          db
+            .selectFrom("shipmentLine as l")
+            .leftJoin("returns as r", "r.shipmentLineId", "l.id")
+            .select(["l.shipmentId", "l.lineId as orderLineId"])
+            .select((eb) =>
+              eb
+                .fn<number>("greatest", [
+                  eb(
+                    "l.shippedQuantity",
+                    "-",
+                    eb.fn.coalesce("r.quantity", eb.val(0))
+                  ),
+                  eb.val(0)
+                ])
+                .as("quantity")
+            )
+            .where("l.companyId", "=", companyId)
+            .where("l.lineId", "is not", null)
+            .unionAll(
+              db
+                .selectFrom("shipmentFixedAssetLine as l")
+                .select(["l.shipmentId", "l.salesOrderLineId as orderLineId"])
+                .select((eb) => eb.val(1).as("quantity"))
+                .where("l.companyId", "=", companyId)
+                .where("l.shipped", "=", true)
+                .where("l.salesOrderLineId", "is not", null)
+            )
+        )
+        .with("shipments", (db) =>
+          db
+            .selectFrom("shipment as s")
+            .innerJoin("shipped_lines as l", "l.shipmentId", "s.id")
+            .select([
+              "s.id",
+              "s.shipmentId",
+              "s.status",
+              "s.postingDate",
+              "l.orderLineId"
+            ])
+            .select((eb) => eb.fn.sum<number>("l.quantity").as("quantity"))
+            .where("s.companyId", "=", companyId)
+            .where("s.status", "=", "Posted")
+            .where("s.sourceDocument", "=", "Sales Order")
+            .where("s.postingDate", "<=", endDate)
+            .groupBy([
+              "s.id",
+              "s.shipmentId",
+              "s.status",
+              "s.postingDate",
+              "l.orderLineId"
+            ])
+        )
+        .with("coverage", (db) =>
+          db
+            .selectFrom("shipments")
+            .selectAll()
+            .select((eb) =>
+              eb.fn
+                .sum<number>("quantity")
+                .over((ob) =>
+                  ob
+                    .partitionBy("orderLineId")
+                    .orderBy("postingDate")
+                    .orderBy("id")
+                )
+                .as("cumulativeQuantity")
+            )
+        )
+        .with("invoiced", (db) =>
+          db
+            .selectFrom("salesInvoiceLine as il")
+            .innerJoin("salesInvoice as i", (join) =>
+              join
+                .onRef("i.id", "=", "il.invoiceId")
+                .onRef("i.companyId", "=", "il.companyId")
+            )
+            .select("il.salesOrderLineId")
+            .select((eb) => eb.fn.sum<number>("il.quantity").as("quantity"))
+            .where("il.companyId", "=", companyId)
+            .where("i.status", "not in", ["Draft", "Pending", "Voided"])
+            .where("i.postingDate", "<=", endDate)
+            .groupBy("il.salesOrderLineId")
+        )
+        .selectFrom("coverage as c")
+        .leftJoin("invoiced as i", "i.salesOrderLineId", "c.orderLineId")
+        .select(["c.id", "c.shipmentId", "c.status"])
+        .distinct()
+        .where("c.postingDate", ">=", startDate)
+        .where("c.quantity", ">", 0)
+        .where((eb) =>
+          eb(
+            "c.cumulativeQuantity",
+            ">",
+            eb.fn.coalesce("i.quantity", eb.val(0))
+          )
+        )
+        .orderBy("c.shipmentId")
+        .orderBy("c.id")
+        .execute();
+      return shippedNotInvoicedCheck({ shipments: rows, count: rows.length });
+    });
+  } catch (error) {
+    logger.error("Failed to read shipped-not-invoiced close check", {
+      companyId,
+      startDate,
+      endDate,
+      error
+    });
+    return { failing: true, count: 1, documents: [] };
+  }
+}
+
+/**
  * The "Compute burden for the period" close check. It reads with the
  * privileged Kysely client, as the Timesheets complete check does, and only
  * when the company has GOVERNMENT_CONTRACTING. A failed read counts as one,
@@ -4238,40 +4448,42 @@ async function getPeriodBurdenReadiness(
     });
   }
   try {
-    const pools = await db
-      .selectFrom("indirectPool")
-      .select((eb) => eb.fn.countAll<number>().as("count"))
-      .where("companyId", "=", companyId)
-      .where("active", "=", true)
-      .where("appliesToProjects", "=", true)
-      .executeTakeFirst();
-    const poolCount = Number(pools?.count ?? 0);
-    if (poolCount === 0) {
+    return await readPeriodCheck(db, async () => {
+      const pools = await db
+        .selectFrom("indirectPool")
+        .select((eb) => eb.fn.countAll<number>().as("count"))
+        .where("companyId", "=", companyId)
+        .where("active", "=", true)
+        .where("appliesToProjects", "=", true)
+        .executeTakeFirst();
+      const poolCount = Number(pools?.count ?? 0);
+      if (poolCount === 0) {
+        return burdenComputedCheck({
+          entitled,
+          poolCount,
+          burdenComputedAt: null
+        });
+      }
+      const run = await db
+        .selectFrom("indirectRateRun")
+        .select("burdenComputedAt")
+        .where("companyId", "=", companyId)
+        .where(
+          "accountingPeriodId",
+          "in",
+          db
+            .selectFrom("accountingPeriod")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("startDate", "=", startDate)
+            .where("endDate", "=", endDate)
+        )
+        .executeTakeFirst();
       return burdenComputedCheck({
         entitled,
         poolCount,
-        burdenComputedAt: null
+        burdenComputedAt: run?.burdenComputedAt ?? null
       });
-    }
-    const run = await db
-      .selectFrom("indirectRateRun")
-      .select("burdenComputedAt")
-      .where("companyId", "=", companyId)
-      .where(
-        "accountingPeriodId",
-        "in",
-        db
-          .selectFrom("accountingPeriod")
-          .select("id")
-          .where("companyId", "=", companyId)
-          .where("startDate", "=", startDate)
-          .where("endDate", "=", endDate)
-      )
-      .executeTakeFirst();
-    return burdenComputedCheck({
-      entitled,
-      poolCount,
-      burdenComputedAt: run?.burdenComputedAt ?? null
     });
   } catch {
     return { failing: true, count: 1 };
@@ -4316,41 +4528,43 @@ async function getPeriodEarnedValueReadiness(
     return earnedValueClosedCheck({ entitled, projectsWithoutSnapshot: 0 });
   }
   try {
-    const result = await sql<{ count: number }>`
-      WITH RECURSIVE ancestors AS (
-        SELECT e."projectId", e."parentId" AS "ancestorId"
-        FROM "projectElement" e
-        JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
-        WHERE e."companyId" = ${companyId}
-          AND e."earnedValueTechnique" IS NOT NULL
-          AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
-        UNION
-        SELECT a."projectId", parent."parentId"
-        FROM ancestors a
-        JOIN "projectElement" parent
-          ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
-      ),
-      projects AS (
-        SELECT DISTINCT a."projectId"
-        FROM ancestors a
-        JOIN "projectElement" ca
-          ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
-        WHERE ca."isControlAccount"
-      )
-      SELECT COUNT(*)::int AS "count"
-      FROM projects pr
-      WHERE NOT EXISTS (
-        SELECT 1 FROM "earnedValuePeriod" ev
-        JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
-        WHERE ev."companyId" = ${companyId}
-          AND ev."projectId" = pr."projectId"
-          AND ap."startDate" = ${startDate}::date
-          AND ap."endDate" = ${endDate}::date
-      )
-    `.execute(db);
-    return earnedValueClosedCheck({
-      entitled,
-      projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+    return await readPeriodCheck(db, async () => {
+      const result = await sql<{ count: number }>`
+        WITH RECURSIVE ancestors AS (
+          SELECT e."projectId", e."parentId" AS "ancestorId"
+          FROM "projectElement" e
+          JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
+          WHERE e."companyId" = ${companyId}
+            AND e."earnedValueTechnique" IS NOT NULL
+            AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
+          UNION
+          SELECT a."projectId", parent."parentId"
+          FROM ancestors a
+          JOIN "projectElement" parent
+            ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
+        ),
+        projects AS (
+          SELECT DISTINCT a."projectId"
+          FROM ancestors a
+          JOIN "projectElement" ca
+            ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
+          WHERE ca."isControlAccount"
+        )
+        SELECT COUNT(*)::int AS "count"
+        FROM projects pr
+        WHERE NOT EXISTS (
+          SELECT 1 FROM "earnedValuePeriod" ev
+          JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
+          WHERE ev."companyId" = ${companyId}
+            AND ev."projectId" = pr."projectId"
+            AND ap."startDate" = ${startDate}::date
+            AND ap."endDate" = ${endDate}::date
+        )
+      `.execute(db);
+      return earnedValueClosedCheck({
+        entitled,
+        projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+      });
     });
   } catch {
     return { failing: true, count: 1 };
@@ -4637,22 +4851,36 @@ export async function computePeriodReadiness(
     endDate
   );
   // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
-  const [burden, earnedValue] = await Promise.all([
+  const readBurden = () =>
     getPeriodBurdenReadiness(
       db,
       companyId,
       startDate,
       endDate,
       entitlements.governmentContracting === true
-    ),
+    );
+  const readEarnedValue = () =>
     getPeriodEarnedValueReadiness(
       db,
       companyId,
       startDate,
       endDate,
       entitlements.governmentContracting === true
-    )
-  ]);
+    );
+  const readShippedNotInvoiced = () =>
+    getShippedNotInvoiced(db, companyId, startDate, endDate);
+  // A transaction has one connection: recover a failed check before the next runs.
+  const [burden, earnedValue, shippedNotInvoiced] = db.isTransaction
+    ? ([
+        await readBurden(),
+        await readEarnedValue(),
+        await readShippedNotInvoiced()
+      ] as const)
+    : await Promise.all([
+        readBurden(),
+        readEarnedValue(),
+        readShippedNotInvoiced()
+      ]);
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -4798,6 +5026,17 @@ export async function computePeriodReadiness(
         "Projects with work packages that have no earned value snapshot for this period",
       failing: earnedValue.failing,
       count: earnedValue.count
+    },
+    // This evaluator MUST exist for the seeded "Invoice shipped sales orders"
+    // task: an Auto task with no evaluator fails closed.
+    {
+      autoCheckKey: "shipped-not-invoiced",
+      severity: "Warning",
+      label:
+        "Sales order shipments posted in this period with quantities not fully invoiced by the period end (the cost of sale is in this period, the revenue is not)",
+      failing: shippedNotInvoiced.failing,
+      count: shippedNotInvoiced.count,
+      documents: shippedNotInvoiced.documents
     }
   ];
 
@@ -22311,6 +22550,11 @@ export async function activateAccounting(
       const failed = readiness.checks.find((check) => !check.passed);
       if (failed) refuse(failed.detail ?? failed.label);
       const clearing = await getMigrationClearing(trx, args);
+      if (clearing.reconciliationBlockers.length > 0) {
+        refuse(
+          "Reconcile supplier prepayments on the trial balance before setting up accounting."
+        );
+      }
       if (!isMigrationClearingZero(clearing.total)) {
         refuse(
           `Migration Clearing totals ${clearing.total}. It must be zero to set up accounting.`

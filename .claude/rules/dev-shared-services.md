@@ -18,8 +18,9 @@ well): see [dev-shared-redis.md](dev-shared-redis.md).
 | Shared (default) | `crbn up` | 5 per worktree, plus the 7 in `crbn-shared` |
 | Isolated | `crbn up --isolated` | 9 per worktree, all in the worktree's project |
 
-- `crbn up` writes the mode to `~/.carbon/stacks/<slug>/mode`. `readStackMode`
-  reads it. A missing file reads as `shared`.
+- `crbn up` writes the mode to `~/.carbon/stacks/<slug>/mode`. `stackAt`
+  (`stack.ts`) reads it. Without the file, a `.env.local` that names the
+  `postgres` database reads as `isolated`, anything else as `shared`.
 - `recordedStackMode` returns `null` for a missing file. A missing file means no
   `crbn` with modes ran `up` there, so the worktree has no `wt_` database and its
   volumes are live. Every command that deletes data checks `recordedStackMode`.
@@ -51,7 +52,7 @@ The containers then outlive any worktree.
   pins this.
 - The network is `carbon-shared` (external). The worktree's `api-gw` and
   `inngest` join it with the aliases `<slug>-api-gw` and `<slug>-inngest`.
-  `stackHosts` (`services/migrations.ts`) gives the config row these hosts.
+  `stackHosts` (`topology.ts`) gives the config row these hosts.
 - When the running shared project used other files, `bootSharedServices` returns
   a warning and does not restart it. Another worktree may depend on it. A file
   missing a service added since (`redis`, `edge-runtime`) is the exception: it is
@@ -144,6 +145,9 @@ adds it in isolated mode.
 
 ## The worktree database
 
+`provisionWorktreeData` (`services/shared-db.ts`) runs three steps, in order,
+on every `up`, and on a `migrate` that boots its own services in shared mode:
+
 - `ensureTemplate` builds `carbon_template` once per volume, from `postgres`
   with pg_cron and pg_net. `postgres` can't be cloned while the pg_cron and
   pg_net workers hold connections, so it is closed to new connections for the
@@ -163,7 +167,7 @@ adds it in isolated mode.
 pg_cron and pg_net each serve one database per cluster, and in this cluster
 that database is `postgres`. `docker/worktree-forwarding.sql` adds triggers to
 each `wt_` database that hand its work to `postgres` over dblink. `crbn up`
-applies it on every boot (`createWorktreeDatabase`); it is idempotent. The
+applies it on every boot (`provisionWorktreeData`); it is idempotent. The
 objects live in the schema `crbn`, outside what PostgREST and the generated
 types read.
 
@@ -179,8 +183,9 @@ types read.
   `cron.schedule_in_database`, named `<db>:<job>`, as the job's owner.
   `cron.unschedule` deletes with `simple_heap_delete`, which fires no trigger,
   and a restore loads `cron.job` with triggers off, so `crbn.sync_cron()` makes
-  the copies match. crbn runs it after each migration run (`applyMigrations`),
-  after `crbn restore`, and on every `crbn up`. A job unscheduled by hand keeps
+  the copies match. In shared mode `databaseTasks` (`services/migrations.ts`)
+  runs it on every `crbn up`, `crbn migrate` and `crbn restore`, also when no
+  migration applied. A job unscheduled by hand keeps
   running until then. A failed forward warns and leaves the repair to the
   next sync, so it never fails a migration.
 - Dropping a worktree database removes its copies, and those of any database
@@ -195,7 +200,7 @@ types read.
 | `crbn up` | Boots `crbn-shared`, creates the database and the tenant, starts the 5 worktree containers. |
 | `crbn down` | Stops the worktree containers. Keeps the database and the tenant. |
 | `crbn down --volumes` / `--purge` | Also drops the database and deletes the tenant and its files (`dropWorktreeData`). `--purge` releases the slot. |
-| `crbn reset` | Boots `crbn-shared`, drops the database, then runs `up` in the recorded mode. |
+| `crbn reset` | Boots `crbn-shared`, drops the database, then runs `up` in the recorded mode. Keeps the slot. Orphans of other worktrees are `crbn prune`'s. |
 | `crbn remove` | Drops the database and the tenant with the stack. |
 | `crbn prune` | Also drops each `wt_` database that no live slot owns, and the old private volumes of worktrees now in shared mode. |
 | `crbn prune --all` | Drops every `wt_` database and stops `crbn-shared`. |
@@ -203,9 +208,11 @@ types read.
 | `crbn restore` | Restores into `wt_<slug>`. It passes `PORT_DB` and `DB_NAME` to the script. |
 | Hibernation | Stops the worktree containers only. |
 
-- `down`, `remove` and `up --run --volumes` warn when they can't drop the
-  database (`tryDropWorktreeData`). `prune` drops it later, because no slot owns
-  it.
+- Every command stops and removes a stack through `teardown` (`teardown.ts`).
+  It runs each step even when one before it failed, and returns the failures.
+  `down`, `remove` and `up --run --volumes` warn when it can't drop the
+  database (`down` also exits 1). After `--purge` or `remove`, `prune` drops it
+  later, because no slot owns it.
 - `reset` fails instead. A reset that keeps the data is wrong.
 
 ## Generated types

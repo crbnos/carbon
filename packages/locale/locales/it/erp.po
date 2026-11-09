@@ -654,6 +654,10 @@ msgstr "{0} fornitori con un saldo"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entità non campionate verranno rilasciate a Disponibile. I campioni approvati rimangono Disponibili e i campioni rifiutati rimangono Rifiutati."
 
+#. placeholder {0}: task.autoCheck.count
+msgid "{0} uninvoiced shipments"
+msgstr "{0} spedizioni non fatturate"
+
 #. placeholder {0}: formatQuantity(quantity)
 #. placeholder {0}: formatQuantity(totalQuantity)
 msgid "{0} units"
@@ -1445,6 +1449,9 @@ msgstr "1 lotto di produzione suggerito"
 
 msgid "1 target is committed — review on the order"
 msgstr "1 target è confermato — rivedere sull'ordine"
+
+msgid "1 uninvoiced shipment"
+msgstr "1 spedizione non fatturata"
 
 msgid "1 unit"
 msgstr "1 unità"
@@ -22355,6 +22362,9 @@ msgstr "Data di registrazione"
 msgid "Posting Date"
 msgstr "Data di registrazione"
 
+msgid "Posting refunds the advances held for this document."
+msgstr "La registrazione rimborsa gli anticipi detenuti per questo documento."
+
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Registra la fattura e la invia tramite il tuo account Stripe collegato con un link di pagamento. Una fattura per un cliente senza un cliente Stripe collegato viene registrata e contrassegnata come non inviata."
 
@@ -22387,6 +22397,15 @@ msgstr "Prefisso"
 
 msgid "Preparing the backup for restore…"
 msgstr "Preparazione del backup per il ripristino…"
+
+msgid "Prepayment (its order's invoices only)"
+msgstr "Acconto (solo le fatture del relativo ordine)"
+
+msgid "Prepayment for"
+msgstr "Acconto per"
+
+msgid "Prepayment for {document} (its invoices only)"
+msgstr "Acconto per {document} (solo le relative fatture)"
 
 msgid "Prepayments"
 msgstr "Acconti"
@@ -23829,6 +23848,9 @@ msgstr "Ricevuto il"
 msgid "Received By"
 msgstr "Ricevuto da"
 
+msgid "Received Date"
+msgstr ""
+
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Linee ricevute da questo fornitore con quantità rimanente da restituire"
 
@@ -24064,6 +24086,9 @@ msgstr "Rimborso da Fornitore"
 
 msgid "Refund memos"
 msgstr "Memo di rimborso"
+
+msgid "Refund prepayment for"
+msgstr "Rimborsa acconto per"
 
 msgid "Refund to Customer"
 msgstr "Rimborso a Cliente"
@@ -24719,7 +24744,7 @@ msgid "Request date"
 msgstr "Data della richiesta"
 
 msgid "Requested"
-msgstr "Richiesto"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Richiesto da"
@@ -28769,6 +28794,9 @@ msgstr "Sconti per il Pagamento dei Fornitori (predefinito)"
 msgid "Supplier Prepayments"
 msgstr "Acconti fornitori"
 
+msgid "Supplier prepayments must reconcile with the trial balance. <0>Go to Trial Balance</0>"
+msgstr "Gli acconti ai fornitori devono essere riconciliati con il bilancio di verifica. <0>Vai al bilancio di verifica</0>"
+
 msgid "supplier process"
 msgstr "processo del fornitore"
 
@@ -29050,6 +29078,9 @@ msgstr "Ha effetto"
 
 msgid "Takes effect {effectiveDate}."
 msgstr "Ha effetto {effectiveDate}."
+
+msgid "Takes the prepayment held for this order back out of supplier prepayments."
+msgstr "Storna dagli acconti ai fornitori l’acconto trattenuto per questo ordine."
 
 msgid "Takes work center offline"
 msgstr "Mette il centro di lavoro offline"
@@ -30923,6 +30954,9 @@ msgstr "Queste righe sono collegate a dati esterni a questa azienda, pertanto no
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Queste righe collegano i dati al di fuori di questa azienda, quindi non potrebbero mai essere ripristinate. Tutto il resto è stato sottoposto a backup."
 
+msgid "These shipments recorded costs in this period, but some quantities were not invoiced by period end. New sales invoices post with today's date, so invoicing after period end will not clear this warning. Review the timing difference and any required accounting adjustment, then skip with a reason documenting the treatment if the warning remains."
+msgstr "Queste spedizioni hanno registrato costi in questo periodo, ma alcune quantità non erano ancora fatturate alla fine del periodo. Le nuove fatture di vendita vengono registrate con la data odierna, quindi fatturare dopo la fine del periodo non eliminerà questo avviso. Esamina la differenza temporale e le eventuali rettifiche contabili necessarie, quindi salta l’attività indicando un motivo che documenti il trattamento se l’avviso rimane."
+
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Questi articoli sono trattati come vendite. L'attivazione cancella il riconoscimento di ognuno e registra la relativa prima nota di inizio:"
 
@@ -32195,6 +32229,12 @@ msgstr "Non applicato"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "La cassa non applicata è trattenuta come acconto del cliente per questo documento anziché come credito sul conto."
 
+msgid "Unapplied cash is held as a supplier prepayment for this order instead of on-account credit."
+msgstr "Gli importi non allocati sono trattenuti come acconto al fornitore per questo ordine anziché come credito a conto."
+
+msgid "Unapplied cash is held as an advance for this document."
+msgstr "Gli importi non allocati sono trattenuti come anticipo per questo documento."
+
 msgid "Unapproved Supplier"
 msgstr "Fornitore non approvato"
 
@@ -32288,6 +32328,9 @@ msgstr "Disinstalla {0} per primo"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Disinstalla {conflictsWith} prima"
+
+msgid "Uninvoiced Shipments"
+msgstr "Spedizioni non fatturate"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Univoco, maiuscolo, senza spazi (max 10 caratteri)"
@@ -33774,11 +33817,11 @@ msgstr "Quando vengono assegnati i numeri di serie"
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando si prevede che i fornitori rispondano; i fornitori vedono questa data sul portale RFQ e Carbon smette di accettare risposte tardive dopo di essa (configurabile)."
 
-msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
-msgstr "Quando il buyer ha richiesto la merce; il fornitore può promettere qualcosa di diverso sulla data promessa e consegnare qualcosa di diverso di nuovo sulla data di consegna."
+msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
+msgstr ""
 
-msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Quando il Buyer richiede la merce di questa riga in banchina. Una nuova riga parte dalla Data richiesta dell'ordine; la Pianificazione usa questa data per la verifica della disponibilità di magazzino e per la programmazione delle lavorazioni esterne."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr ""
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quando il contratto è in corso e cosa accade al completamento."
