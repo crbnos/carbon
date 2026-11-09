@@ -729,6 +729,18 @@ describe("isUserScopedIdentityTable", () => {
     expect(isUserScopedIdentityTable(t)).toBe(true);
   });
 
+  it("false when only the tenant half of a composite FK is unique (payment shape)", () => {
+    // payment(employeeId, companyId) -> employee: companyId is in the PK, but it
+    // keys the row to a company, not to a user.
+    const t = table(
+      "payment",
+      [col("id"), col("companyId"), col("employeeId")],
+      [fk("employeeId", "employee"), fk("companyId", "employee")],
+      { pkColumns: ["id", "companyId"], uniqueColumns: ["id", "companyId"] }
+    );
+    expect(isUserScopedIdentityTable(t)).toBe(false);
+  });
+
   it("false when the user FK is in no uniqueness constraint (assignee column)", () => {
     const t = table(
       "salesOrder",
@@ -740,10 +752,9 @@ describe("isUserScopedIdentityTable", () => {
   });
 });
 
-describe("selectWipeableTables (identity tables vs foreign restore)", () => {
-  // customerAccount is identity (NOT-NULL customerId in its PK → user-keyed); on a
-  // foreign restore its parent `customer` is remapped, and CASCADE won't clear it
-  // under replica mode, so it must be WIPED (but never reloaded) to avoid dangling.
+describe("selectWipeableTables (identity tables)", () => {
+  // Identity tables are wiped on every restore: an own restore and a revert
+  // reload them from the backup, a foreign restore leaves them empty.
   const normal = table("customer", [col("id"), col("companyId")]);
   const identity = table(
     "customerAccount",
@@ -751,18 +762,14 @@ describe("selectWipeableTables (identity tables vs foreign restore)", () => {
     [fk("id", "user")],
     { pkColumns: ["id"], uniqueColumns: ["id"] }
   );
-  const cat = catalog([normal, identity]);
+  const kept = table("employee", [col("id"), col("companyId")]);
+  const cat = catalog([normal, identity, kept]);
 
-  it("own restore keeps identity tables OUT of the wipe set", () => {
-    const names = selectWipeableTables(cat).map((t) => t.name);
-    expect(names).toContain("customer");
-    expect(names).not.toContain("customerAccount");
-  });
-
-  it("foreign restore (remap) WIPES identity tables so they can't dangle", () => {
-    const names = selectWipeableTables(cat, { remap: true }).map((t) => t.name);
-    expect(names).toContain("customer");
-    expect(names).toContain("customerAccount");
+  it("wipes identity tables and keeps the access tables", () => {
+    expect(selectWipeableTables(cat).map((t) => t.name)).toEqual([
+      "customer",
+      "customerAccount"
+    ]);
   });
 });
 

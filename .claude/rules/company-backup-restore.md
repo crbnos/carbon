@@ -117,6 +117,15 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   `RESEED_SKIPPED_TABLES` (memberships/invites/employee/externalIntegrationMapping
   — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (access/identity
   tables a restore must keep so the user isn't locked out).
+- User-scoped identity tables (`isUserScopedIdentityTable`: a `user`/`employee` FK
+  column in a unique index, favourites, preferences, accounts, `productionEvent`)
+  are wiped by every restore. An own restore and a revert reload them from the
+  backup, whose users are this company's; a foreign restore and a reseed skip them,
+  since every source user collapses onto the importing one and the rows would
+  collide. The tenant half of a composite FK (`(employeeId, companyId) -> employee`)
+  doesn't count: it once marked `payment` and `reimbursement` as identity, and a
+  foreign restore dropped them. Before, identity tables were kept on an own restore
+  (missing the backup's state) and never reloaded by a revert.
 - Format: a backup is a **FOLDER**, not a file — `exports/<name>/` holding
   `manifest.json`, one `tables/<table>.ndjson.gz` per NON-EMPTY table, and
   `assets/<path>` files. Paths come from `backupDir` / `backupManifestPath` /
@@ -215,8 +224,9 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
   of the company bucket's `{companyId}/…` files into a backup's `assets/` folder) and
   `restoreAssetsFromBackup` (copy them back into the target company's bucket, rewriting paths +
-  guarding every write to the target `{companyId}/` prefix). `removeStoragePrefix`
-  recursively deletes a backup's asset folder, which is `backupAssetsDir(name)` =
+  guarding every write to the target `{companyId}/` prefix). `removeBucketPrefix`
+  (`src/backups/storage.ts`, also used by the ERP's backup delete, `strict` there)
+  deletes a backup's folder, which is `backupAssetsDir(name)` =
   `exports/<name>/assets` — derived from the folder name, not from a file suffix.
   Copies are server-side — **no asset bytes pass through the job process**, so
   memory stays flat regardless of asset size.
@@ -523,6 +533,10 @@ State marker: a row on `externalIntegrationMapping`, `integration =
 "company-restore"`, `metadata = { status: running|ready|failed|reverting,
 snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
 `snapshotPath` (using `metadata.includeGroup`). Status is polled by the UI.
+Reading or writing it throws on an error: an unread or unrecorded `snapshotPath`
+would let a retry snapshot the restored data over the pre-restore copy. Only
+progress writes are best-effort, and the terminal `failed` write
+(`markRestoreFailed`) never hides the error that caused it.
 
 **Second caller.** `wipeAndLoad`, `getCompanyGroupId` and `resolveRestoreScope`
 (the extracted `targetGroupId` + `includeGroup` rule) are **exported** and are
@@ -535,8 +549,11 @@ used by the weekly inactive-company cleanup) runs `wipeScopedData` over the WHOL
 replica mode, secret and identity tables included, because nothing is reloaded after it. It
 then deletes the `company` row with triggers back on, so tables outside the catalog cascade.
 `canSetReplicationRole` decides whether it can wipe at all. See `billing-system.md`.
-`listBucketFilesRecursive` lives in `src/backups/storage.ts`, shared by the export and that
-cleanup.
+`listBucketFilesRecursive` lives in `src/backups/storage.ts`, shared by the export, that
+cleanup, `removeBucketPrefix` and the archive download. It pages past storage's 1000
+entries per `list` call: a larger folder was cut short and the backup left files out.
+The archive download lists strictly and fails when a file can't be read, rather than
+shipping an archive that imports as complete.
 
 ### Known caveats in the committed code (not yet hardened)
 

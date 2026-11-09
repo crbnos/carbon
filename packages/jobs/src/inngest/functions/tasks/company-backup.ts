@@ -530,6 +530,11 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
   );
   return table.foreignKeys.some(
     (fk) =>
+      // The tenant half of a composite FK (`(employeeId, companyId) ->
+      // employee`) keys nothing to a user; counting it marked `payment` and
+      // `reimbursement` as identity, and a foreign restore dropped them.
+      fk.column !== "companyId" &&
+      fk.column !== "companyGroupId" &&
       uniqueCols.has(fk.column) &&
       (fk.refTable === "user" || fk.refTable === "employee")
   );
@@ -537,20 +542,17 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
 
 export function selectWipeableTables(
   catalog: Catalog,
-  opts: { includeGroup?: boolean; remap?: boolean } = {}
+  opts: { includeGroup?: boolean } = {}
 ): TableInfo[] {
   const skip = new Set([...SECRET_TABLES, ...IN_PLACE_SKIPPED_TABLES]);
   return catalog.tables.filter(
     (t) =>
       !skip.has(t.name) &&
-      // Identity tables (per-source-user rows) are normally KEPT. But a FOREIGN
-      // restore (remap) re-keys their parents' ids, and `ON DELETE CASCADE` does
-      // NOT fire under `session_replication_role='replica'` — so a kept child would
-      // be left dangling at a deleted/remapped parent. On remap we therefore WIPE
-      // them (reverse-topo wipe clears children before parents) and never reload
-      // them (the load set drops them separately). On an own restore parent ids are
-      // stable, so keeping them is safe.
-      (opts.remap === true || !isUserScopedIdentityTable(t)) &&
+      // Identity tables (per-user rows) are wiped like any other. An own restore
+      // and a revert reload them from the backup, whose users are this
+      // company's; a foreign restore can't (its users collapse onto one) and
+      // leaves them empty. Kept, they missed the backup's state, and a revert
+      // after a foreign restore never brought them back.
       (t.scopeColumn === "companyId" ||
         (opts.includeGroup === true && t.scopeColumn === "companyGroupId"))
   );
@@ -754,32 +756,4 @@ export async function restoreAssetsFromBackup(
     await onProgress?.(++done, total);
   });
   return { copied, failed };
-}
-
-/**
- * Remove every object under a prefix in a bucket (e.g. a backup's `.assets/`
- * folder), recursing into subfolders, so deleting a backup or snapshot leaves no
- * orphaned files.
- */
-export async function removeStoragePrefix(
-  client: SupabaseClient,
-  bucket: string,
-  prefix: string
-): Promise<void> {
-  const { data, error } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000 });
-  if (error || !data) return;
-  const files: string[] = [];
-  for (const entry of data) {
-    const path = `${prefix}/${entry.name}`;
-    if (entry.id === null) {
-      await removeStoragePrefix(client, bucket, path);
-    } else {
-      files.push(path);
-    }
-  }
-  if (files.length > 0) {
-    await client.storage.from(bucket).remove(files);
-  }
 }

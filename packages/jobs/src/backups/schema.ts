@@ -629,3 +629,4 @@ export function compatibilityStatus(report: {
 // re-exported so `@carbon/jobs/backups` stays the one import surface.
 export { rebuildDerivedGroups } from "./derived-groups";
 export * from "./scope";
+export { listBucketFilesRecursive, removeBucketPrefix } from "./storage";
