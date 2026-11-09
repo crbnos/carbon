@@ -59,6 +59,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `conductor` | Autonomous doer→gate→judge loop to a gated PR (no mid-loop human input) | PR + ledger |
 | `improve` | Senior-advisor audit; plans for other agents to execute | `.ai/plans/improve/` |
 | `test` | Drive changed flows in the browser; cache playbooks | pass/fail + `.ai/playbooks/{slug}.md` |
+| `ui-harness` | Screenshot MES/ERP shell UI with stubbed data, no backend (`scripts/harness-shot.mjs`) | `.harness-shots/` |
 | `smoke-test` | Do all core modules load? | pass/fail table |
 | `auth` | Authenticate agent-browser against local dev | authed session (building block) |
 | `error` | Capture screenshot + snapshot on browser failure | `.ai/scratch/e2e/…` (building block) |
