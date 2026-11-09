@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "{0} pedidos"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
 
@@ -9624,9 +9624,6 @@ msgstr "Disminuir orden de trabajo {target} a {amount}"
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Disminuir orden de compra {target} a {amount}"
 
-msgid "Deducted from invoiced sales"
-msgstr ""
-
 msgid "Deep in the small hours, {name}."
 msgstr "Horas profundas de la madrugada, {name}."
 
@@ -13788,6 +13785,9 @@ msgstr "Ubicación de despacho"
 
 msgid "Full name"
 msgstr "Nombre completo"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "Configuración completa y migraciones"
@@ -26459,6 +26459,9 @@ msgstr "Selecciona un bloque para configurarlo"
 
 msgid "Select a completed job"
 msgstr "Selecciona una orden de trabajo completada"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"

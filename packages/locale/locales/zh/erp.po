@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "{0} 个订单"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
 
@@ -9624,9 +9624,6 @@ msgstr "减少工单 {target} 至 {amount}"
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "减少采购订单 {target} 至 {amount}"
 
-msgid "Deducted from invoiced sales"
-msgstr ""
-
 msgid "Deep in the small hours, {name}."
 msgstr "深夜时分，{name}。"
 
@@ -13788,6 +13785,9 @@ msgstr "发货地点"
 
 msgid "Full name"
 msgstr "全名"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "完整设置和迁移"
@@ -26459,6 +26459,9 @@ msgstr "选择要配置的块"
 
 msgid "Select a completed job"
 msgstr "选择已完成的工单"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"

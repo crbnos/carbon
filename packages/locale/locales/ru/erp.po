@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "{0} заказов"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
 
@@ -9624,9 +9624,6 @@ msgstr "Уменьшить производственный заказ {target} 
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Уменьшить заказ поставщику {target} до {amount}"
 
-msgid "Deducted from invoiced sales"
-msgstr ""
-
 msgid "Deep in the small hours, {name}."
 msgstr "Глубокая ночь, {name}."
 
@@ -13788,6 +13785,9 @@ msgstr "Площадка отгрузки"
 
 msgid "Full name"
 msgstr "Полное имя"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "Полная наладка и миграции"
@@ -26459,6 +26459,9 @@ msgstr "Выберите блок для настройки"
 
 msgid "Select a completed job"
 msgstr "Выберите завершённый производственный заказ"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"

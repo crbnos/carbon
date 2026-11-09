@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "{0} orders"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr "{0} orders as of {1} · merchandise only"
 
@@ -9624,9 +9624,6 @@ msgstr "Decrease job {target} to {amount}"
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Decrease purchase order {target} to {amount}"
 
-msgid "Deducted from invoiced sales"
-msgstr "Deducted from invoiced sales"
-
 msgid "Deep in the small hours, {name}."
 msgstr "Deep in the small hours, {name}."
 
@@ -13788,6 +13785,9 @@ msgstr "Fulfillment Location"
 
 msgid "Full name"
 msgstr "Full name"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr "Full posted credits, including any tax or freight"
 
 msgid "Full setup and migrations"
 msgstr "Full setup and migrations"
@@ -26459,6 +26459,9 @@ msgstr "Select a block to configure it"
 
 msgid "Select a completed job"
 msgstr "Select a completed job"
+
+msgid "Select a date range of at most one year"
+msgstr "Select a date range of at most one year"
 
 msgid "Select a default approver"
 msgstr "Select a default approver"

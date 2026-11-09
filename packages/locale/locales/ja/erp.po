@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "{0}件の注文"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
 
@@ -9624,9 +9624,6 @@ msgstr "製造指図{target}を{amount}に減少"
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に減少"
 
-msgid "Deducted from invoiced sales"
-msgstr ""
-
 msgid "Deep in the small hours, {name}."
 msgstr "真夜中ですね、{name}さん。"
 
@@ -13788,6 +13785,9 @@ msgstr "出荷拠点"
 
 msgid "Full name"
 msgstr "氏名"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "完全なセットアップとマイグレーション"
@@ -26459,6 +26459,9 @@ msgstr "設定するブロックを選択してください"
 
 msgid "Select a completed job"
 msgstr "完了した製造指図を選択してください"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"

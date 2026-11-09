@@ -4,6 +4,7 @@
 
 import { carbonFor } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   Card,
@@ -16,7 +17,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import {
@@ -27,6 +29,7 @@ import {
 import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { useMemo } from "react";
 import {
@@ -52,6 +55,8 @@ import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "sales-dashboard");
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const auth = await requirePermissions(request, { view: "sales" });
   const url = new URL(request.url);
@@ -62,6 +67,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customerId: url.searchParams.get("customerId")
   });
   if (result.error || !result.data) {
+    logger.error("Failed to load sales analytics", {
+      companyId: auth.companyId,
+      error: result.error
+    });
     throw new Response(
       result.error?.message ?? "Could not load sales analytics",
       {
@@ -74,6 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function SalesDashboard() {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const report = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers] = useCustomers();
@@ -137,6 +147,15 @@ export default function SalesDashboard() {
   };
 
   const onDateRangeChange = (range: DateRange | null) => {
+    if (range) {
+      if (
+        range.start.compare(range.end) > 0 ||
+        range.start.compare(range.end.subtract({ years: 1 })) < 0
+      ) {
+        toast.error(t`Select a date range of at most one year`);
+        return;
+      }
+    }
     updateParams({
       interval: "custom",
       start: range?.start.toString() ?? null,
@@ -150,7 +169,7 @@ export default function SalesDashboard() {
   const credits =
     revenue?.daily.reduce((total, row) => total + row.credits, 0) ?? 0;
   const netSales = invoiceSales - credits;
-  const periodLabel = `${formatDate(report.startDate)} – ${formatDate(report.endDate)}`;
+  const periodLabel = `${formatDate(report.startDate, undefined, locale)} – ${formatDate(report.endDate, undefined, locale)}`;
 
   const chartData = useMemo(() => {
     if (!revenue) return [];
@@ -172,8 +191,8 @@ export default function SalesDashboard() {
       const value = byDay.get(day.toString());
       const point = points.get(key) ?? {
         period: monthly
-          ? formatDate(`${key}-01`, { month: "short", year: "numeric" })
-          : formatDate(key, { month: "short", day: "numeric" }),
+          ? formatDate(`${key}-01`, { month: "short", year: "numeric" }, locale)
+          : formatDate(key, { month: "short", day: "numeric" }, locale),
         invoiceSales: 0,
         credits: 0,
         netSales: 0
@@ -184,7 +203,7 @@ export default function SalesDashboard() {
       points.set(key, point);
     }
     return [...points.values()];
-  }, [revenue, report.startDate, report.endDate]);
+  }, [revenue, report.startDate, report.endDate, locale]);
 
   const chartConfig = {
     invoiceSales: { label: t`Invoices`, color: "hsl(var(--primary))" },
@@ -306,7 +325,9 @@ export default function SalesDashboard() {
               icon={<LuReceiptText />}
               title={<Trans>Customer credits</Trans>}
               value={currency.format(-credits)}
-              description={<Trans>Deducted from invoiced sales</Trans>}
+              description={
+                <Trans>Full posted credits, including any tax or freight</Trans>
+              }
               to={path.to.creditMemos}
               linkLabel={t`View Credit Memos`}
             />
@@ -314,7 +335,7 @@ export default function SalesDashboard() {
               icon={<LuPackageOpen />}
               title={<Trans>Open order backlog</Trans>}
               value={currency.format(report.backlog.amount)}
-              description={t`${formatCount(report.backlog.count)} orders as of ${formatDate(report.asOfDate)} · merchandise only`}
+              description={t`${formatCount(report.backlog.count)} orders as of ${formatDate(report.asOfDate, undefined, locale)} · merchandise only`}
               to={path.to.salesOrders}
               linkLabel={t`View Sales Orders`}
             />
@@ -449,7 +470,7 @@ export default function SalesDashboard() {
             icon={<LuPackageOpen />}
             title={<Trans>Open order backlog</Trans>}
             value={currency.format(report.backlog.amount)}
-            description={t`${formatCount(report.backlog.count)} orders as of ${formatDate(report.asOfDate)} · merchandise only`}
+            description={t`${formatCount(report.backlog.count)} orders as of ${formatDate(report.asOfDate, undefined, locale)} · merchandise only`}
             to={path.to.salesOrders}
             linkLabel={t`View Sales Orders`}
           />

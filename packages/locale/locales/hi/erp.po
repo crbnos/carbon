@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "{0} ऑर्डर"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
 
@@ -9624,9 +9624,6 @@ msgstr "जॉब {target} को {amount} तक घटाएं"
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "क्रय आदेश {target} को {amount} तक घटाएं"
 
-msgid "Deducted from invoiced sales"
-msgstr ""
-
 msgid "Deep in the small hours, {name}."
 msgstr "गहरी रात में, {name}।"
 
@@ -13788,6 +13785,9 @@ msgstr "पूर्ति स्थान"
 
 msgid "Full name"
 msgstr "पूरा नाम"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "पूर्ण सेटअप और माइग्रेशन"
@@ -26459,6 +26459,9 @@ msgstr "कॉन्फ़िगर करने के लिए एक ब्�
 
 msgid "Select a completed job"
 msgstr "एक पूर्ण जॉब चुनें"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"

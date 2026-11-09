@@ -596,7 +596,7 @@ msgid "{0} orders"
 msgstr "주문 {0}건"
 
 #. placeholder {0}: formatCount(report.backlog.count)
-#. placeholder {1}: formatDate(report.asOfDate)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
 
@@ -9624,9 +9624,6 @@ msgstr "작업 지시 {target}을(를) {amount}로 감소"
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "발주서 {target}을(를) {amount}로 감소"
 
-msgid "Deducted from invoiced sales"
-msgstr ""
-
 msgid "Deep in the small hours, {name}."
 msgstr "{name}님, 한밤중이군요."
 
@@ -13788,6 +13785,9 @@ msgstr "출하 사업장"
 
 msgid "Full name"
 msgstr "전체 이름"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "완전한 셋업 및 마이그레이션"
@@ -26459,6 +26459,9 @@ msgstr "구성할 블록을 선택하세요"
 
 msgid "Select a completed job"
 msgstr "완료된 작업 지시를 선택하세요"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"

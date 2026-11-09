@@ -2061,7 +2061,7 @@ export async function getSalesDashboardRevenue(
     ? sql`AND si."customerId" = ${customerId}`
     : sql``;
   const memoCustomer = customerId
-    ? sql`AND m."customerId" = ${customerId}`
+    ? sql`AND COALESCE(cc."customerId", m."customerId") = ${customerId}`
     : sql``;
   const facts = sql`
     SELECT si."postingDate" AS day, si."customerId" AS customer_id,
@@ -2081,16 +2081,19 @@ export async function getSalesDashboardRevenue(
       ${invoiceCustomer}
     GROUP BY si."postingDate", si."customerId"
     UNION ALL
-    SELECT m."postingDate" AS day, m."customerId" AS customer_id,
+    SELECT m."postingDate" AS day,
+      COALESCE(cc."customerId", m."customerId") AS customer_id,
       0::numeric AS invoice_sales,
       SUM(ROUND(m.amount / NULLIF(m."exchangeRate", 0), 5)) AS credits
     FROM memo m
+    LEFT JOIN "customerContract" cc
+      ON cc.id = m."customerContractId" AND cc."companyId" = m."companyId"
     WHERE m."companyId" = ${companyId}
       AND m."customerId" IS NOT NULL
       AND m.direction = 'Credit' AND m.status = 'Posted'
       AND m."postingDate" BETWEEN ${startDate}::date AND ${endDate}::date
       ${memoCustomer}
-    GROUP BY m."postingDate", m."customerId"
+    GROUP BY m."postingDate", COALESCE(cc."customerId", m."customerId")
   `;
 
   const [daily, customers] = await Promise.all([
@@ -2166,6 +2169,7 @@ export async function getSalesDashboardBacklog(
           'To Ship and Invoice', 'To Ship', 'To Invoice'
         )
         AND sol."quantityToInvoice" > 0
+        AND NOT sol."invoicedComplete"
         ${customerFilter}
       GROUP BY so.id, so."salesOrderId", so."customerId", c.name
     )
