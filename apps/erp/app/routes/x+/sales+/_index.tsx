@@ -27,7 +27,6 @@ import {
 import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { useMemo } from "react";
 import {
@@ -49,6 +48,7 @@ import {
 import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -79,7 +79,7 @@ export default function SalesDashboard() {
   const [customers] = useCustomers();
   const currency = useCurrencyFormatter();
   const compactCurrency = useCurrencyFormatter({ compact: true });
-  const number = useNumberFormatter({ maximumFractionDigits: 0 });
+  const formatCount = useQuantityFormatter();
   const customerId = searchParams.get("customerId") ?? "all";
   const interval =
     searchParams.get("interval") ??
@@ -314,7 +314,7 @@ export default function SalesDashboard() {
               icon={<LuPackageOpen />}
               title={<Trans>Open order backlog</Trans>}
               value={currency.format(report.backlog.amount)}
-              description={t`${number.format(report.backlog.count)} orders as of ${formatDate(report.asOfDate)} · merchandise only`}
+              description={t`${formatCount(report.backlog.count)} orders as of ${formatDate(report.asOfDate)} · merchandise only`}
               to={path.to.salesOrders}
               linkLabel={t`View Sales Orders`}
             />
@@ -449,7 +449,7 @@ export default function SalesDashboard() {
             icon={<LuPackageOpen />}
             title={<Trans>Open order backlog</Trans>}
             value={currency.format(report.backlog.amount)}
-            description={t`${number.format(report.backlog.count)} orders as of ${formatDate(report.asOfDate)} · merchandise only`}
+            description={t`${formatCount(report.backlog.count)} orders as of ${formatDate(report.asOfDate)} · merchandise only`}
             to={path.to.salesOrders}
             linkLabel={t`View Sales Orders`}
           />

@@ -595,7 +595,7 @@ msgstr "{0} işlem · {1} adet"
 msgid "{0} orders"
 msgstr "{0} sipariş"
 
-#. placeholder {0}: number.format(report.backlog.count)
+#. placeholder {0}: formatCount(report.backlog.count)
 #. placeholder {1}: formatDate(report.asOfDate)
 msgid "{0} orders as of {1} · merchandise only"
 msgstr ""
