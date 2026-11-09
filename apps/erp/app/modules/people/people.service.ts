@@ -572,6 +572,11 @@ export async function insertAttributeCategory(
     .single();
 }
 
+/**
+ * A user has one job row per company ("employeeJob_pkey" on id, companyId). A
+ * retried add, or one whose first attempt wrote the row before failing later,
+ * finds it there: keep it rather than fail on the duplicate.
+ */
 export async function insertEmployeeJob(
   client: SupabaseClient<Database>,
   job: {
@@ -580,7 +585,11 @@ export async function insertEmployeeJob(
     locationId: string;
   }
 ) {
-  return client.from("employeeJob").insert(job).select("*").single();
+  return client
+    .from("employeeJob")
+    .upsert(job, { onConflict: "id,companyId", ignoreDuplicates: true })
+    .select("*")
+    .maybeSingle();
 }
 
 export async function updateAttribute(
