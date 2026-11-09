@@ -24744,12 +24744,10 @@ msgid "Request date"
 msgstr "İstek tarihi"
 
 msgid "Requested"
-msgstr "İstenen"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Talep Eden"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Talep Edilen Tarih"
