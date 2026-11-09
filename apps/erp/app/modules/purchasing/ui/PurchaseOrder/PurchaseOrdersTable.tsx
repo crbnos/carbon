@@ -208,7 +208,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "receiptRequestedDate",
-          header: t`Requested Date`,
+          header: t`Receipt Requested Date`,
           cell: (item) => (
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
@@ -221,7 +221,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "receiptPromisedDate",
-          header: t`Promised Date`,
+          header: t`Receipt Promised Date`,
           cell: ({ row }) => {
             const isReceivedOnTime =
               row.original.deliveryDate &&
