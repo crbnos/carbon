@@ -1075,8 +1075,10 @@ never offered a Cancel, Defer or Expedite.
     wrong, which the drawers and grids toast. The refused orders stay the
     row's draft exactly as they were sent (`refusedOrdersOfRow`,
     `draftsOfRefusedOrders`), so an edit or a row the planner added survives
-    and the drawer shows them late with their reschedule button; a row with
-    none drops its draft and re-seeds from the suggestions. A drawer with
+    and the drawer shows them late with their reschedule button. Until they
+    are placed, that draft also hides any other remainder of the row; it
+    returns when the draft goes. A row with none drops its draft and re-seeds
+    from the suggestions. A drawer with
     refusals stays open and reloads its Open Jobs / Open Orders, and the toast
     (`usePastStartToast`) counts the orders placed. When every order was
     refused the call fails with only that message. A drawer cannot close

@@ -619,14 +619,15 @@ export const PurchasingPlanningOrderDrawer = memo(
         // keep what was not ordered.
         if (refused.length > 0) {
           setOrders(selectedItem, refused);
-          setOpenLinesVersion((version) => version + 1);
           toast.error(pastStartToast(processedItems, refused.length));
-          return;
+        } else {
+          onSuggestionsStale(selectedItem);
         }
-        onSuggestionsStale(selectedItem);
 
         if (purchaseOrders.length === 0) {
-          toast.success(t`Orders submitted`);
+          if (refused.length === 0 && errors.length === 0) {
+            toast.success(t`Orders submitted`);
+          }
         } else {
           toast.success(
             <div className="flex gap-1">
@@ -647,6 +648,10 @@ export const PurchasingPlanningOrderDrawer = memo(
           );
         }
 
+        if (refused.length > 0 || errors.length > 0) {
+          setOpenLinesVersion((version) => version + 1);
+          return;
+        }
         onClose();
       }
     }, [fetcher.state, fetcher.data]);

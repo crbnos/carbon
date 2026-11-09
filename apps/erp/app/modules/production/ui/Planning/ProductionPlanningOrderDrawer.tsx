@@ -144,14 +144,17 @@ export const ProductionPlanningOrderDrawer = memo(
         const problems =
           data && "warnings" in data ? [...data.warnings, ...data.errors] : [];
         if (problems.length > 0) toast.error(problems.join(" · "));
-        if (refused.length === 0) {
+        const failed = data && "errors" in data && data.errors.length > 0;
+        if (refused.length === 0 && !failed) {
           toast.success(t`Orders submitted`);
           onClose();
           return;
         }
         const created = data && "jobs" in data ? data.jobs.length : 0;
         setOpenJobsVersion((version) => version + 1);
-        toast.error(pastStartToast(created, refused.length));
+        if (refused.length > 0) {
+          toast.error(pastStartToast(created, refused.length));
+        }
       }
     });
     const { locale } = useLocale();

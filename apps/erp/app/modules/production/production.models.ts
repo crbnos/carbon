@@ -217,6 +217,19 @@ function pastStartRefusalMessage(
     : `${count} orders for ${itemReadableId} start before today (${today}) and were not created. Reschedule them from today.`;
 }
 
+/** The failure of a Make / Order that placed nothing. */
+export function nothingOrderedMessage(
+  noun: "jobs" | "orders",
+  problems: string[],
+  onlyRefusals: boolean
+): string {
+  const shown = problems.slice(0, 3);
+  const more = problems.length - shown.length;
+  return onlyRefusals
+    ? `No ${noun} were created. ${shown.join(" ")}${more > 0 ? ` And ${more} more.` : ""}`
+    : `Failed to process any items. Errors: ${shown.join("; ")}${more > 0 ? ` and ${more} more...` : ""}`;
+}
+
 /** One message per item for the orders refused for starting in the past. */
 export function pastStartRefusalMessages(
   refused: RefusedPlanningOrder[],

@@ -58,6 +58,7 @@ import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   classifyPlanningOrders,
   invalidOrderDateMessage,
+  nothingOrderedMessage,
   pastStartRefusalMessages,
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
@@ -3244,7 +3245,7 @@ export const orderPlannedPurchases = defineServiceFn({
       const { invalid, past, placeable } = classifyPlanningOrders(
         item.orders,
         today,
-        replenishment.leadTime ?? 0
+        replenishment.leadTime
       );
       if (invalid.length > 0) invalidCountByItem.set(item.id, invalid.length);
       refusedOrders.push(
@@ -3705,7 +3706,8 @@ export const orderPlannedPurchases = defineServiceFn({
         "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
       );
     } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Order's pegs move to the PO lines that answered it.
+      // A grouped Order's pegs move to the PO lines that answered it. A
+      // failure leaves them on the action; the next MRP run re-pegs.
       await moveActionPegsToSupply(ctx.asSystem.pg, {
         companyId,
         userId,
@@ -3764,13 +3766,7 @@ export const orderPlannedPurchases = defineServiceFn({
       });
       return ctx.error(
         "rule",
-        errors.length === 0
-          ? `No orders were created. ${problems.slice(0, 3).join(" ")}${
-              problems.length > 3 ? ` And ${problems.length - 3} more.` : ""
-            }`
-          : `Failed to process any items. Errors: ${problems.slice(0, 3).join("; ")}${
-              problems.length > 3 ? ` and ${problems.length - 3} more...` : ""
-            }`
+        nothingOrderedMessage("orders", problems, errors.length === 0)
       );
     }
 

@@ -92,6 +92,7 @@ import {
   jobStatus,
   jobValidator,
   makeToAssetItemError,
+  nothingOrderedMessage,
   PLANNING_EDITABLE_JOB_STATUSES,
   pastStartRefusalMessages,
   peopleAbsenceRangeValidator,
@@ -4586,8 +4587,7 @@ export const orderPlannedJobs = defineServiceFn({
         continue;
       }
 
-      // insertJob's own default when the item has no lead time
-      const leadTime = manufacturing.leadTime ?? 7;
+      const leadTime = manufacturing.leadTime;
       const { invalid, past, placeable } = classifyPlanningOrders(
         item.orders,
         today,
@@ -4698,7 +4698,8 @@ export const orderPlannedJobs = defineServiceFn({
         "The jobs were created, but their suggestions were not updated. Recalculate before making them again."
       );
     } else if (segments.planningGroupIds.size > 0) {
-      // A grouped Make's pegs move to the jobs that answered it.
+      // A grouped Make's pegs move to the jobs that answered it. A failure
+      // leaves them on the action; the next MRP run re-pegs.
       await moveActionPegsToSupply(db, {
         companyId,
         userId,
@@ -4779,13 +4780,7 @@ export const orderPlannedJobs = defineServiceFn({
     if (problems.length > 0 && processedItems === 0) {
       return ctx.error(
         "rule",
-        errors.length === 0
-          ? `No jobs were created. ${problems.slice(0, 3).join(" ")}${
-              problems.length > 3 ? ` And ${problems.length - 3} more.` : ""
-            }`
-          : `Failed to process any items. Errors: ${problems.slice(0, 3).join("; ")}${
-              problems.length > 3 ? ` and ${problems.length - 3} more...` : ""
-            }`
+        nothingOrderedMessage("jobs", problems, errors.length === 0)
       );
     }
 
