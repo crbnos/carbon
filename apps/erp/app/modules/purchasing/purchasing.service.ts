@@ -7013,8 +7013,9 @@ export async function getLeaseRelatedDocuments(
   // In groups of ids, so each `.in()` fits in the request URL.
   const [invoices, journals] = await Promise.all([
     fetchAllByIds(invoiceIds, (batch) =>
+      // The view, not the table: Paid and Overdue exist only in the view.
       client
-        .from("purchaseInvoice")
+        .from("purchaseInvoices")
         .select("id, invoiceId, status, dateIssued")
         .in("id", batch)
         .eq("companyId", companyId)
@@ -7035,9 +7036,12 @@ export async function getLeaseRelatedDocuments(
   return {
     data: {
       // Newest first. ISO dates sort as strings.
-      purchaseInvoices: invoices.data.sort((a, b) =>
-        (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")
-      ),
+      purchaseInvoices: (
+        invoices.data as Pick<
+          Database["public"]["Tables"]["purchaseInvoice"]["Row"],
+          "id" | "invoiceId" | "status" | "dateIssued"
+        >[]
+      ).sort((a, b) => (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")),
       journals: journals.data.sort((a, b) =>
         b.postingDate.localeCompare(a.postingDate)
       )
