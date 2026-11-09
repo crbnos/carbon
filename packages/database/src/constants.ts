@@ -381,7 +381,7 @@ export const Constants = {
       inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
       inspectionSampleStatusType: ["Pending", "Passed", "Failed"],
       inspectionSeverity: ["Normal", "Tightened", "Reduced"],
-      inspectionSourceDocument: ["Receipt", "Job Operation"],
+      inspectionSourceDocument: ["Receipt", "Job Operation", "Manual"],
       inspectionStatus: ["Pass", "Fail"],
       inspectionStatusType: [
         "Pending",
@@ -389,6 +389,7 @@ export const Constants = {
         "Passed",
         "Failed",
         "Partial",
+        "Cancelled",
       ],
       intercompanyEliminationRole: [
         "Control",

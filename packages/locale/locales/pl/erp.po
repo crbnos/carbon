@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Zadanie niezgodności, które uniemożliwia powtarzanie się problemu gdzie indziej — różne od poprawy naprawczej i zabezpieczenia."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Liczba lub znak obok wartości zmienia jej znaczenie. Wstaw między nimi słowo."
 
 msgid "A part"
 msgstr "Część"
@@ -1953,6 +1953,9 @@ msgstr "Część zawiera informacje o konkretnym artykule, który można kupić 
 
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "Część w tym kroku może przewrócić się po umieszczeniu — rozważ przyrząd obróbkowy lub drugą osobę."
+
+msgid "A PDF drawing to balloon, or a STEP model. Click to choose a file."
+msgstr "Rysunek PDF do oznaczenia pozycji lub model STEP. Kliknij, aby wybrać plik."
 
 msgid "A photo or PDF the operator sees on this step"
 msgstr "Zdjęcie lub PDF, które operator widzi na tym kroku"
@@ -2732,6 +2735,10 @@ msgstr "Typy akcji"
 
 msgid "Actions"
 msgstr "Akcje"
+
+#. placeholder {0}: inspection.inspectionId
+msgid "Actions for {0}"
+msgstr "Działania dla {0}"
 
 msgid "Actions for {attributeName}"
 msgstr "Akcje dla: {attributeName}"
@@ -5271,6 +5278,9 @@ msgstr "Dostępne w planie {plan}"
 msgid "Available on the Business plan"
 msgstr "Dostępne w planie Business"
 
+msgid "Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned."
+msgstr "Dostępne lub wstrzymane numery seryjne i partie produkcyjne. Dostępne zostaną wstrzymane do czasu rozstrzygnięcia kontroli."
+
 msgid "Avatar style"
 msgstr "Styl awatara"
 
@@ -6196,6 +6206,9 @@ msgstr "Anuluj"
 msgid "Cancel {0}"
 msgstr "Anuluj {0}"
 
+msgid "Cancel {name}?"
+msgstr "Anulować {name}?"
+
 msgid "Cancel {readableId}"
 msgstr "Anuluj {readableId}"
 
@@ -6210,6 +6223,9 @@ msgstr "Anuluj zawiadomienie o zmianie"
 
 msgid "Cancel Contract"
 msgstr "Anuluj umowę"
+
+msgid "Cancel Inspection"
+msgstr "Anuluj kontrolę"
 
 msgid "Cancel Job"
 msgstr "Anuluj zadanie"
@@ -9961,6 +9977,9 @@ msgstr "Usuń grupę"
 msgid "Delete Holiday"
 msgstr "Usuń Święto"
 
+msgid "Delete Inspection"
+msgstr "Usuń kontrolę"
+
 msgid "Delete Inspection Plan"
 msgstr "Usuń plan kontroli"
 
@@ -10023,6 +10042,10 @@ msgstr "Usuń Notatkę"
 
 msgid "Delete Month"
 msgstr "Usuń miesiąc"
+
+#. placeholder {0}: row.original.key
+msgid "Delete parameter {0}"
+msgstr "Usuń parametr {0}"
 
 msgid "Delete Part"
 msgstr "Usuń część"
@@ -10927,11 +10950,14 @@ msgstr "Narysuj to lub prześlij obraz tego."
 msgid "Drawing"
 msgstr "Pobieranie"
 
-msgid "Drawing Number"
-msgstr "Numer rysunku"
-
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze charakterystyk pozostały niezmienione."
+
+msgid "Drop a drawing or model"
+msgstr "Upuść rysunek lub model"
+
+msgid "Drop a PDF drawing or a STEP model"
+msgstr "Upuść rysunek PDF lub model STEP"
 
 msgid "Drop an image of your signature"
 msgstr "Upuść obraz swojego podpisu"
@@ -11079,9 +11105,6 @@ msgstr "np. Acme Manufacturing"
 msgid "e.g. Detroit"
 msgstr "np. Warszawa"
 
-msgid "e.g. DWG-1234"
-msgstr "np. DWG-1234"
-
 msgid "e.g. GB123456789"
 msgstr "np. GB123456789"
 
@@ -11096,6 +11119,9 @@ msgstr "np. Marco + liderzy obszarów"
 
 msgid "e.g. MI"
 msgstr "np. mazowieckie"
+
+msgid "e.g. R1234 Receipt"
+msgstr "np. R1234 Przyjęcie"
 
 msgid "e.g. Suite 200"
 msgstr "np. lok. 200"
@@ -11579,6 +11605,9 @@ msgstr "Edytuj Ilość Produkcji"
 
 msgid "Edit Project"
 msgstr "Edytuj projekt"
+
+msgid "Edit Properties"
+msgstr "Edytuj właściwości"
 
 msgid "Edit purchase order line type"
 msgstr "Edytuj typ linii zamówienia zakupu"
@@ -13217,6 +13246,9 @@ msgstr "Nie udało się przesłać pliku PDF"
 
 msgid "Failed to upload signature"
 msgstr "Nie udało się przesłać podpisu"
+
+msgid "Failed to upload the model"
+msgstr "Nie udało się przesłać modelu"
 
 msgid "Failed to upload thumbnail"
 msgstr "Nie udało się przesłać miniatury."
@@ -15220,6 +15252,9 @@ msgstr "Zlecenie produkcyjne kontroli"
 msgid "Inspection Level"
 msgstr "Poziom kontroli"
 
+msgid "Inspection Name"
+msgstr "Nazwa kontroli"
+
 msgid "Inspection Plan"
 msgstr "Plan kontroli"
 
@@ -16099,7 +16134,7 @@ msgid "Keep matching items"
 msgstr "Zachowaj pasujące elementy"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Zachowaj moje"
 
 msgid "Keep navigation open"
 msgstr "Pozostaw nawigację otwartą"
@@ -16844,7 +16879,7 @@ msgid "Linked Record"
 msgstr "Powiązany rekord"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Połączono z sekcją współdzieloną. Edytuj ją w bibliotece, aby zaktualizować wszędzie."
 
 msgid "Links"
 msgstr "Łącza"
@@ -18539,6 +18574,9 @@ msgstr "Nowe Święto"
 msgid "New IC Transaction"
 msgstr "Nowa Transakcja IC"
 
+msgid "New Inspection"
+msgstr "Nowa kontrola"
+
 msgid "New Inspection Plan"
 msgstr "Nowy Plan kontroli"
 
@@ -19942,7 +19980,7 @@ msgid "No values available"
 msgstr "Brak dostępnych wartości"
 
 msgid "No values found"
-msgstr ""
+msgstr "Nie znaleziono wartości"
 
 msgid "No variable matches {query}"
 msgstr "Żadna zmienna nie pasuje do {query}"
@@ -20432,6 +20470,10 @@ msgstr "W magazynie: z {before} na {after}"
 
 msgid "On Hold"
 msgstr "Wstrzymane"
+
+#. placeholder {0}: entity.quantity
+msgid "On Hold · {0}"
+msgstr "Wstrzymano · {0}"
 
 msgid "On its side"
 msgstr "Na boku"
@@ -22209,7 +22251,7 @@ msgid "Playback"
 msgstr "Odtwarzanie"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Proszę <0>zmienić to</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Skontaktuj się z administratorem, aby włączyć rejestrowanie audytu."
@@ -22933,6 +22975,9 @@ msgstr "Data potwierdzona"
 
 msgid "Properties"
 msgstr "Właściwości"
+
+msgid "Properties (apply to all serials on this line)"
+msgstr "Właściwości (dotyczą wszystkich numerów seryjnych w tej pozycji)"
 
 msgid "Property"
 msgstr "Właściwość"
@@ -23842,14 +23887,8 @@ msgstr "Otrzymane"
 msgid "Received {0} of {1}"
 msgstr "Otrzymano {0} z {1}"
 
-msgid "Received At"
-msgstr "Otrzymano o"
-
-msgid "Received By"
-msgstr "Otrzymane od"
-
 msgid "Received Date"
-msgstr ""
+msgstr "Data przyjęcia"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Otrzymane linie od tego dostawcy z pozostałą ilością do zwrotu"
@@ -24352,7 +24391,7 @@ msgid "Remove authenticator app"
 msgstr "Usuń z listy aplikację uwierzytelniającą"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Usuń z listy blok"
 
 msgid "Remove clause"
 msgstr "Usuń z listy klauzulę"
@@ -24744,12 +24783,10 @@ msgid "Request date"
 msgstr "Data żądania"
 
 msgid "Requested"
-msgstr "Żądane"
+msgstr "Żądana"
 
 msgid "Requested By"
 msgstr "Zażądane przez"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Data żądana"
@@ -27185,7 +27222,7 @@ msgid "Shared channel"
 msgstr "Kanał wspólny"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Sekcja współdzielona (usunięta)"
 
 msgid "Shared Sections"
 msgstr "Sekcje wspólne"
@@ -27828,7 +27865,7 @@ msgid "Someone"
 msgstr "Ktoś"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Ktoś inny właśnie zapisał ten szablon. Odśwież, aby wczytać jego wersję, lub kontynuuj edycję, aby nadpisać ją przy zapisie."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Osoba, która może aktualizować księgowość, musi wpisać, ile kosztowało to wytworzenie, zanim będzie można to skapitalizować."
@@ -29812,7 +29849,7 @@ msgid "The document could not be downloaded."
 msgstr "Nie udało się pobrać dokumentu."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Nie udało się otworzyć dokumentu."
 
 msgid "The early hours, {name}."
 msgstr "Wczesne godziny, {name}."
@@ -29834,9 +29871,6 @@ msgstr "Przepływ handlowy end-to-end od wyceny klienta do zbierania płatności
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Punkt końcowy, który odbiera żądanie POST z zaktualizowanymi danymi, gdy tabela jest aktualizowana"
-
-msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Rysunek techniczny, do którego powiązany jest ten plan inspekcji; kontrole zarejestrowane dla tej części odnoszą się do tego rysunku."
 
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "Okno wpisu, sprawdzenie karty czasu pracy, rozcieńczenie i zaświadczenie podpisane przez pracownika przy przesłaniu. DCAA jest włączane i wyłączane w Ustawienia → Projekty."
@@ -29990,6 +30024,12 @@ msgstr "Reguła Incoterm (FOB, DAP, EXW, CIF, ...), która określa, kto płaci 
 
 msgid "The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted."
 msgstr "Koszt pośredni, który stawka puli nakłada na projekt: stawka × baza projektu, zaksięgowana w księdze projektów jako wiersze Burden, od początku roku minus to, co wcześniejsze przebiegi zaksięgowały."
+
+msgid "The inspection is deleted and its tracked entities return to the status they had before it."
+msgstr "Kontrola zostaje usunięta, a śledzone obiekty wracają do statusu, jaki miały przed nią."
+
+msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
+msgstr "Kontrola opuszcza halę produkcyjną bez wyniku. Zarejestrowane dane są zachowane, a wstrzymane śledzone obiekty wracają do statusu, jaki miały przed nią."
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "Integracja autoryzowała połączenie, ale zapisanie go nie powiodło się. Spróbuj ponownie nawiązać połączenie."
@@ -30382,7 +30422,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Wstępnie ustawiony pakiet zadań i wymagań zatwierdzenia stosowany do tego problemu; zastępuje domyślny przepływ pracy typu problemu, jeśli jest ustawiony."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Nie udało się wygenerować podglądu. Pokazano ostatni poprawnie wygenerowany."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Cena godziny w linii Time & Materials: stawka linii dla pracownika, inaczej dla kategorii robocizny, inaczej domyślna stawka rozliczeniowa kategorii robocizny, obowiązująca w dniu."
@@ -31085,6 +31125,9 @@ msgstr "Te informacje będą używane w nagłówkach dokumentów"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Te informacje będą widoczne dla wszystkich użytkowników, więc uważaj co udostępniasz."
 
+msgid "this inspection"
+msgstr "ta kontrola"
+
 msgid "this inspection plan"
 msgstr "ten plan kontroli"
 
@@ -31232,7 +31275,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Ten PIN nie będzie już więcej wyświetlany. Będzie ci potrzebny do wyjścia z trybu konsoli na terminalach MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Podgląd jest wstrzymany, ponieważ tekst zmienia wartość."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ta cena została wprowadzona ręcznie, dlatego nie zastosowano żadnych reguł cenowych."
@@ -31298,7 +31341,7 @@ msgid "This serial"
 msgstr "Ten numer seryjny"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Ta sekcja współdzielona już nie istnieje. Usuń z listy blok lub utwórz sekcję ponownie."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "To stanowisko robocze wykonuje pracę ograniczoną do uprawnień — działa tylko gdy na zmianie jest wykwalifikowany operator; operatorzy przypisani na tablicy obsady dalej kształtują dostępną roboczyzną."
@@ -32757,6 +32800,9 @@ msgstr "Przesłany podpis"
 msgid "Uploaded: {0}"
 msgstr "Przesłano: {0}"
 
+msgid "Uploading"
+msgstr "Przesyłanie"
+
 #. placeholder {0}: avatarFile.name
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
@@ -33200,6 +33246,9 @@ msgstr "Wyświetl w nowej karcie"
 
 msgid "View in project plan"
 msgstr "Wyświetl w planie projektu"
+
+msgid "View Inspection"
+msgstr "Wyświetl kontrolę"
 
 msgid "View Issue"
 msgstr "Wyświetl Problem"
@@ -33723,6 +33772,9 @@ msgstr "Co te wiersze oznaczają"
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Co to pole zawierało przed zmianą. Zostaw puste, aby nic nie robić."
 
+msgid "What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation."
+msgstr "Nazwa tego planu kontroli (np. R1234 Przyjęcie). Na jej podstawie plan jest wybierany dla przyjęcia części lub operacji kontroli."
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Co ten paragon spełnia — zamówienie zakupu, zwrot, transfer przychodzący lub paragon ręczny bez rodzica."
 
@@ -33820,10 +33872,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Kiedy oczekuje się odpowiedzi dostawców; dostawcy widzą tę datę w portalu RFQ, a Carbon przestaje akceptować spóźnione odpowiedzi po niej (konfigurowanej)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Kiedy kupiec zażądał towaru. Dostawca może potwierdzić inny termin w polu Data potwierdzona przyjęcia, a w polu Data dostawy wpisać jeszcze inny."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Kiedy kupiec potrzebuje towaru z tej pozycji na rampie. Nowa pozycja domyślnie przyjmuje datę żądaną przyjęcia z zamówienia; planowanie wykorzystuje tę datę do sprawdzania dostępności zapasów i harmonogramowania obróbki zewnętrznej."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Kiedy umowa działa i co się dzieje po jej zakończeniu."

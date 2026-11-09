@@ -21,9 +21,8 @@ import { path } from "~/utils/path";
 type InspectionDocumentFormProps = {
   initialValues: {
     id?: string;
-    name: string;
+    name?: string;
     partId: string;
-    drawingNumber?: string;
   };
   onClose: () => void;
 };
@@ -59,10 +58,10 @@ export default function InspectionDocumentForm({
               {isEditing && <Hidden name="id" />}
               <Item name="partId" type="Part" />
               <Input
-                name="drawingNumber"
-                label={t`Drawing Number`}
-                termId="inspection-document-drawing-number"
-                placeholder={t`e.g. DWG-1234`}
+                name="name"
+                label={t`Inspection Name`}
+                termId="inspection-document-name"
+                placeholder={t`e.g. R1234 Receipt`}
               />
             </VStack>
           </DrawerBody>

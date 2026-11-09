@@ -229,6 +229,9 @@ msgstr "高于上限"
 msgid "Accept"
 msgstr "接受"
 
+msgid "Accept inspection?"
+msgstr "接受检验？"
+
 msgid "Accept Lot"
 msgstr "接受批次"
 
@@ -1277,6 +1280,9 @@ msgstr "检验物品"
 msgid "inspected"
 msgstr "已检验"
 
+msgid "Inspections"
+msgstr "检验"
+
 msgid "Instructions"
 msgstr "作业指导"
 
@@ -1351,6 +1357,9 @@ msgstr "工单详情"
 
 msgid "Job due"
 msgstr "工单到期"
+
+msgid "Job Operation"
+msgstr "工单工序"
 
 msgid "Job Traveler"
 msgstr "工单流转卡"
@@ -1519,6 +1528,9 @@ msgstr "制作替换件"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "管理您如何登录 Carbon。"
+
+msgid "Manual"
+msgstr "手动"
 
 msgid "Manually add items to inventory"
 msgstr "手动添加物料至库存管理"
@@ -1701,6 +1713,12 @@ msgstr "未找到量具。"
 msgid "No Impact"
 msgstr "无影响"
 
+msgid "No inspection plan"
+msgstr "没有检验计划"
+
+msgid "No inspections assigned to you"
+msgstr "没有分配给您的检验"
+
 msgid "No issue types configured"
 msgstr "未配置问题类型"
 
@@ -1727,6 +1745,9 @@ msgstr "没有原材料"
 
 msgid "No materials on this batch."
 msgstr "此生产批次上没有物料。"
+
+msgid "No open inspections"
+msgstr "没有未结的检验"
 
 msgid "No open jobs"
 msgstr "没有未结的工单"
@@ -1818,6 +1839,9 @@ msgstr "无件"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 
+msgid "No work center"
+msgstr "没有工作中心"
+
 msgid "No Work Center"
 msgstr "无工作中心"
 
@@ -1838,6 +1862,10 @@ msgstr "未设置"
 
 msgid "Notes"
 msgstr "备注"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "尚无失败项，因此请说明这些件被拒绝的原因。全部 {0} 件将被标记为已拒绝。"
 
 msgid "Nothing matches your search."
 msgstr "没有匹配您搜索的内容。"
@@ -1923,6 +1951,9 @@ msgstr "未结工单"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
+
+msgid "Opens in the ERP"
+msgstr "在 ERP 中打开"
 
 msgid "Operation due"
 msgstr "工序到期"
@@ -2026,6 +2057,9 @@ msgstr "暂停{workTypeLabel}计时器"
 
 msgid "Pause maintenance"
 msgstr "暂停维护"
+
+msgid "Pending"
+msgstr "待处理"
 
 msgid "Phone"
 msgstr "电话"
@@ -2228,6 +2262,15 @@ msgstr "队列为空"
 msgid "Quotes"
 msgstr "报价单"
 
+msgid "Reason"
+msgstr "原因"
+
+msgid "Reason (optional)"
+msgstr "原因（可选）"
+
+msgid "Reason (required)"
+msgstr "原因（必填）"
+
 msgid "Reason for change"
 msgstr "变更原因"
 
@@ -2239,6 +2282,9 @@ msgstr "迟交原因"
 
 msgid "Reason for rework"
 msgstr "返工原因"
+
+msgid "Receipt"
+msgstr "收货"
 
 msgid "Recent"
 msgstr "最近"
@@ -2280,6 +2326,9 @@ msgstr "注册失败"
 
 msgid "Reject"
 msgstr "拒绝"
+
+msgid "Reject inspection?"
+msgstr "拒绝检验？"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
@@ -2902,6 +2951,16 @@ msgstr "日期在输入窗口之前。原因与条目一起保存。"
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "整个{0}批次将作为不符合规范进行拒绝——目前有{passes}个样品合格和{fails}个故障。将下面的件路由到报废或返工，或仅记录判定结果。"
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "检验未通过：{passes} 个样本已通过，{fails} 个样本未通过。全部 {0} 件将被标记为已拒绝。"
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "检验将标记为已通过，其件将释放为可用。"
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "检验将标记为已通过。其件将释放为可用，但未通过样本检验的 {fails} 件仍保持已拒绝状态。"
 
 msgid "The job is closed"
 msgstr "工单已关闭"

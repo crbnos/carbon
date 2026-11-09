@@ -17,7 +17,7 @@ paths:
 
 Generic quality-inspection execution keyed by `sourceDocument` /
 `sourceDocumentId` / `sourceDocumentLineId` / `sourceDocumentReadableId`
-(enum `inspectionSourceDocument`: 'Receipt' and 'Job Operation', both live; no
+(enum `inspectionSourceDocument`: 'Receipt', 'Job Operation' and 'Manual'; no
 FKs on the generic ids, unique per `(sourceDocument, sourceDocumentLineId)` —
 a **partial** unique index `WHERE "sourceDocumentLineId" IS NOT NULL`).
 Renamed from the receipt-only "Inbound Inspections" in `20260722132135_inspections-refactor.sql`
@@ -104,8 +104,12 @@ strings (cosmetic).
 - `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
   (`inspectionSampleStatusType`: Pending/Passed/Failed), `inspectedBy`/`inspectedAt`.
-  A **partial** unique index `inspectionSample_trackedEntityId_key WHERE trackedEntityId
-  IS NOT NULL` keeps a serial entity sampleable once while allowing many anonymous samples.
+  A **partial** unique index `inspectionSample_inspectionId_trackedEntityId_key
+  (inspectionId, trackedEntityId) WHERE trackedEntityId IS NOT NULL` keeps a serial
+  sampleable once **per inspection** while allowing many anonymous samples. A unit is
+  inspected again in a later lot (a manual re-inspection, a rework lot): the old
+  global `inboundInspectionSample_trackedEntityId_key` was dropped by
+  `20261109202741_inspection-sample-per-inspection.sql`.
 - `inspectionHistory` — one row per disposition (skeleton for future plan auto-switching).
 - `nonConformanceInspection` (`20260421091238`) — links an auto-created NCR back to
   the inspection (unique `(nonConformanceId, inspectionId)`).
@@ -206,6 +210,49 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `Highlight` / `searchMatches`).
 - PMI ids are per-kind counters in file order, stable for one file. An extractor
   change that reorders items would point an old plan's features at other items.
+
+## Plan parameters (`20261109200337_inspection-plan-parameters.sql`)
+
+Fixed key/value pairs on a plan ("Ambient temp" / "20 ±2 °C", "Fixture" /
+"F-12") that the inspector reads before measuring. The sibling is procedure
+parameters (`procedureParameter`), with two differences: a `sortOrder` column
+(the editor keeps the author's order) and no snapshot — a lot reads its plan's
+parameters live, as it reads the characteristics.
+
+- **Schema** — `inspectionDocumentParameter` (`id` `idp`, `inspectionDocumentId`
+  composite FK ON DELETE CASCADE, `key`, `value` default `''`, `sortOrder`),
+  RLS `company("quality")`, shipped by `20261109200419_inspection-plan-parameters-rls.sql`.
+- **Save** — through the editor's autosave, not per-row routes. The editor mints
+  the ids (`newParameterId`, `ui/InspectionDocument/autosave.ts`) and sends the
+  whole list as `parameters` only when it changed (`sendableParameters`: trimmed,
+  a row with no key stays in the browser). `saveInspectionDocument` passes it to
+  `replaceInspectionDocumentParameters` (`quality.service.ts`, Kysely): it locks
+  the plan, deletes the rows not sent and upserts the rest by id; an id that is
+  another plan's row throws and rolls the save back. Pinned by
+  `apps/erp/test/database/inspection-plan-parameters.test.ts`.
+- **Editor** — `Characteristics | Parameters` tabs sit in the header after the
+  title's ⋮ menu (no counts), with the matching Add Characteristic / Add Parameter
+  button in the header's actions; the bottom pane shows the chosen `Grid` (the
+  Parameters grid is Key, Value, delete). Add Selector and the zoom controls show
+  only when the plan has a PDF.
+  A plan with no PDF and no model has no viewer: the tabs fill the page and a
+  right sidebar (`InspectionDocumentDropzone`) takes a dropped or picked PDF
+  (the editor's own `uploadPdfAndSave`) or STEP file. A STEP file is staged with
+  `useModelUpload` and attached by `attachInspectionDocumentModel`
+  (`quality.server.ts`, `@mcp`, `update: "quality"`; route
+  `x+/inspection-document+/$id.model.tsx`): it inserts the `modelUpload` as the
+  system with no item link (a quality user need not hold `parts`), which starts
+  `model-optimize`, then sets `inspectionDocument.modelUploadId`. Refused when the
+  plan already has a PDF (`storagePath`) or a model. Once a PDF or model exists the
+  viewer takes the top half and the sidebar is gone. The PMI job only plans for
+  ITEMS on a model, so an attached model's PMI does not fill the plan's
+  characteristics.
+- **Execution** — read by `getInspectionDocumentParameters` (ERP `$id` loader)
+  and by MES `getInspectionDocumentWithBalloons` (`parameters`). The ERP
+  `InspectionMeasurementGrid` shows `Characteristics | Parameters` tabs in its
+  title when the plan has any (a key/value list on the Parameters tab); the MES `InspectionView` and `ManualInspectionView`
+  show a meta-bar chip (`InspectionParametersButton`) opening a bottom sheet.
+  Nothing renders when the plan has none.
 
 ## Gauges (`20260929203517_inspection-gauges.sql`)
 
@@ -350,6 +397,65 @@ The action sheet keeps Scrap/Rework (escape hatches for non-quality losses),
 Finish, and Quality Issue; **Log Completed was removed** (verdict-driven
 completion replaced it).
 
+## Manual inspections (`20261109141852_manual-inspections.sql`)
+
+A person inspects specific tracked entities of one item (a quality hold on stock
+on hand, a re-check, a complaint). `sourceDocument = 'Manual'` is the type, and it
+decides the behaviour: **hold → release / reject**, exactly a receipt lot's entity
+semantics, with no job completion and no bin move (a receipt Accept does not move
+stock to its shelf either).
+
+- **Schema** — `inspection.workCenterId` (nullable, composite FK to `workCenter`,
+  `ON DELETE SET NULL ("workCenterId")`) and `inspection.assignee` (nullable FK to
+  `user`): where and by whom. Set on manual lots only; a Job Operation lot's work
+  center and assignee are its operation's. `inspectionTrackedEntity`
+  (`inspectionId`, `trackedEntityId`, unique pair) lists a manual lot's entities —
+  a receipt lot finds its own through `attributes ->> 'Receipt Line'`. A manual
+  lot is its own source: `sourceDocumentId` is the lot's id,
+  `sourceDocumentLineId` / `sourceDocumentReadableId` are null.
+- **Create** — `createManualInspection` (`@carbon/database/quality`; ERP
+  operation `quality.createManualInspection`, `@mcp`, `create: "quality"`; route
+  `x+/quality+/inspections.new.tsx`, drawer `ui/Inspections/ManualInspectionForm.tsx`,
+  entity options from `api+/quality.inspection-tracked-entities.$itemId.ts`). One
+  transaction: entities `FOR UPDATE`, all of one item, all `Available` / `On Hold`,
+  none in another open manual lot or an open receipt lot of their receipt line;
+  lot size = serial count or the batches' summed quantity; sampling from the
+  chosen plan via the shared `resolveLotSamplingPlans` / `insertLotSamplingPlans`
+  (also used by `getOrCreateJobOperationInspection`); `Available` entities flip to
+  `On Hold`. **The picked serials are the samples**: a serial lot gets one Pending
+  `inspectionSample` per entity at creation (serial order, each `createdAt` a
+  microsecond apart so the grid keeps it), so nothing is scanned — the ERP view's
+  `scansSamples` is false for Manual lots (no Add Sample, no auto-opened scanner) and
+  the MES manual view has no scanner. Receipt and Job Operation lots still scan their
+  samples in. A batch lot keeps the grid's anonymous columns.
+- **Engine** — `holdsLotEntities(sourceDocument)` (Receipt or Manual) gates the
+  sample / measurement entity flips; `dispositionInspection` reads a manual lot's
+  entities from `inspectionTrackedEntity`; a serial sample on a manual lot must
+  be one of its entities. `requireSource` takes one source or a list: the ERP
+  Accept / Partial routes and `rejectInspection` pass `["Receipt", "Manual"]`.
+  No write-off: a manual lot is always tracked. `rejectInspection` opens the NCR
+  for a manual lot with the lot's own entities and no supplier or receipt line.
+- **ERP** — `InspectionView`'s `hasErpDisposition` (Receipt or Manual) shows
+  Accept / Reject; the list has a New button, a Manual source filter and Work
+  Center / Assignee columns. Pinned by `apps/erp/test/database/manual-inspection.test.ts`.
+- **Cancel and delete** (`20261109201803_manual-inspection-cancel.sql`) — manual
+  lots only. `inspectionTrackedEntity.previousStatus` records each entity's
+  status at create. `cancelManualInspection` (`@carbon/database/quality`;
+  operation `quality.cancelManualInspection`, `update: quality`) sets the new
+  terminal status `Cancelled` (in `INSPECTION_CLOSED_STATUSES`, so samples,
+  measurements, gauges and document swaps are refused; `dispositionInspection`
+  refuses it too, also under a racing UPDATE). It keeps what was recorded and
+  leaves the MES queue (which lists Pending / In Progress only).
+  `deleteManualInspection` (`delete: quality`, `@mcp destructive`) is refused once the lot has a
+  non-Pending sample, a measurement, a gauge, an `inspectionHistory` row or an
+  NCR link; a serial lot's Pending samples made at create are not activity. Both
+  lock the lot and give every entity still On Hold its `previousStatus` (NULL →
+  Available, for lots made before the column). Routes `x+/inspection+/$id.cancel.tsx`
+  / `$id.delete.tsx`; triggers in the list's ⋯ row menu (`InspectionsTable`) and
+  the ⋮ menu beside the inspection id (`InspectionView`), confirmed by
+  `ManualInspectionConfirm`. The datasets seed
+  one Cancelled manual lot each (the validator allows Cancelled on manual lots only).
+
 ## Tracking types
 
 All four `itemTrackingType` values support inbound inspection (the only UI gate is purchased
@@ -436,6 +542,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   List, File, Task, Inspection) is a pass / fail cell. A failed cell is red to its edges:
   the ERP display cell paints the fill as a `before:` layer over the whole table cell, and
   the open editor fills the cell.
+- **Header**: the lot's Change Document / Cancel Inspection / Delete Inspection sit
+  in a ⋮ menu beside the inspection id (`lotActions` in `InspectionView`; on phones
+  the same entries go to the record ⋯ sheet through `RecordAction`). The By
+  characteristic grid has no Result column. A click inside `[data-gauge-picker]`
+  does not make its row active: that re-render rebuilt the columns and closed the
+  picker the click had opened.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity
@@ -462,10 +574,10 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     for a void in progress) refuses samples, measurements, gauges, document swaps and
     dispositions with "The receipt of this inspection was voided", and the `$id` loader
     passes `receiptVoided` so `InspectionView` treats the lot as closed and shows a
-    "Receipt voided" badge. The lot keeps its Pending status: there is no cancelled
-    inspection status.
-  - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
-    statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
+    "Receipt voided" badge. The lot keeps its Pending status (the `Cancelled`
+    status is for manual lots only).
+  - **Closed guards + linked-sample locks (2026-07-27):** the terminal
+    statuses (Passed/Failed/**Partial**, and a manual lot's `Cancelled`) block `upsertInspectionSample` (guard
     is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is
     closed") and `changeInspectionDocument`. Updating an EXISTING sample (or a
     measurement on one) additionally fails when a `productionQuantity` row
@@ -475,7 +587,15 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     else by `sampleId` (the "Overall result" row re-toggling an anonymous column
     in place), else insert a fresh anonymous sample. Entity flip + `trackedActivity`
     via the shared `applySampleEntityStatus` helper; skipped for `Pending`
-    (identify-only) samples. The `$id.sample.tsx` route returns the `sampleId` and,
+    (identify-only) samples. A lot has ONE `Inspect` activity
+    (`sourceDocumentId` = the lot, `sourceDocumentReadableId` = its readable id),
+    made by the first verdict under an advisory lock; each unit with a verdict is
+    linked to it once, as an input at the unit's quantity and with no output
+    (nothing is consumed or made). The unit's status carries the result. The
+    traceability graph draws an inspection as one dashed edge per unit with no
+    new state (`isInspectionActivity`, `metadata.ts`), and
+    `normalizeInspectionLinks` (`utils.ts`) reads older inspections, stored as
+    zero-quantity input + output self-loops, the same way. The `$id.sample.tsx` route returns the `sampleId` and,
     when `quiet=true` (grid overall-result POST), suppresses the success flash.
   - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
     unparseable nominal / non-Measurement types valuate as attributes.
@@ -543,6 +663,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   `20261001022635`) and are now *consumed* by this flow via the item's Receipt-usage
   assignment. The lot references the document **live** — measurement rows store the
   valuation at entry, so later tolerance edits never rewrite recorded results.
+- **A plan's name is `inspectionDocument.name`** (labelled "Inspection Name"; the
+  column was `drawingNumber` until `20261109193418_inspection-plan-name.sql`, which
+  also recreated `inspectionDocuments` and `inspectionPlanParts`). It names the plan
+  ("R1234 Receipt"), not a drawing; pickers show `name ?? fileName`. Old backups
+  map the column through `LIVE_COLUMN_RENAMES` (`packages/jobs/src/backups/renames.ts`).
 - **The plan editor autosaves** — there is no Save button. A debounced effect posts the
   whole diff to `x+/inspection-document+/$id.save.tsx` while the editor is quiet (a drag
   saves when it ends), one save at a time; the toolbar shows Saving… / Saved / Could not

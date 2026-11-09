@@ -229,6 +229,9 @@ msgstr "Выше верхнего предела"
 msgid "Accept"
 msgstr "Принять"
 
+msgid "Accept inspection?"
+msgstr "Принять контроль?"
+
 msgid "Accept Lot"
 msgstr "Принять партию"
 
@@ -1277,6 +1280,9 @@ msgstr "Проверить элемент"
 msgid "inspected"
 msgstr "проверенный"
 
+msgid "Inspections"
+msgstr "Контроли"
+
 msgid "Instructions"
 msgstr "Инструкции"
 
@@ -1351,6 +1357,9 @@ msgstr "Детали задания"
 
 msgid "Job due"
 msgstr "Срок производственного заказа"
+
+msgid "Job Operation"
+msgstr "Операция заказа"
 
 msgid "Job Traveler"
 msgstr "Маршрутный лист"
@@ -1519,6 +1528,9 @@ msgstr "Создать замену"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Управляйте способом входа в Carbon."
+
+msgid "Manual"
+msgstr "Вручную"
 
 msgid "Manually add items to inventory"
 msgstr "Добавить номенклатуру на склад вручную"
@@ -1701,6 +1713,12 @@ msgstr "Средства измерения не найдены."
 msgid "No Impact"
 msgstr "Без влияния"
 
+msgid "No inspection plan"
+msgstr "Нет плана контроля"
+
+msgid "No inspections assigned to you"
+msgstr "Вам не назначено ни одного контроля"
+
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
 
@@ -1727,6 +1745,9 @@ msgstr "Нет материалов"
 
 msgid "No materials on this batch."
 msgstr "На этой серии нет материалов."
+
+msgid "No open inspections"
+msgstr "Нет открытых контролей"
 
 msgid "No open jobs"
 msgstr "Нет открытых производственных заказов"
@@ -1818,6 +1839,9 @@ msgstr "Нет единицы"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
+msgid "No work center"
+msgstr "Нет рабочего центра"
+
 msgid "No Work Center"
 msgstr "Без рабочего центра"
 
@@ -1838,6 +1862,10 @@ msgstr "Не установлено"
 
 msgid "Notes"
 msgstr "Примечания"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Отказов пока нет, поэтому укажите причину, по которой единицы отклонены. Все единицы ({0}) будут отклонены."
 
 msgid "Nothing matches your search."
 msgstr "Ничего не совпадает с вашим поиском."
@@ -1923,6 +1951,9 @@ msgstr "Открытые производственные заказы"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
+
+msgid "Opens in the ERP"
+msgstr "Откроется в ERP"
 
 msgid "Operation due"
 msgstr "Срок операции"
@@ -2026,6 +2057,9 @@ msgstr "Приостановить таймер: {workTypeLabel}"
 
 msgid "Pause maintenance"
 msgstr "Приостановить техобслуживание"
+
+msgid "Pending"
+msgstr "В ожидании"
 
 msgid "Phone"
 msgstr "Телефон"
@@ -2228,6 +2262,15 @@ msgstr "Очередь пуста"
 msgid "Quotes"
 msgstr "Коммерческие предложения"
 
+msgid "Reason"
+msgstr "Причина"
+
+msgid "Reason (optional)"
+msgstr "Причина (необязательно)"
+
+msgid "Reason (required)"
+msgstr "Причина (обязательно)"
+
 msgid "Reason for change"
 msgstr "Причина изменения"
 
@@ -2239,6 +2282,9 @@ msgstr "Причина позднего ввода"
 
 msgid "Reason for rework"
 msgstr "Причина доработки"
+
+msgid "Receipt"
+msgstr "Поступление"
 
 msgid "Recent"
 msgstr "Недавние"
@@ -2280,6 +2326,9 @@ msgstr "Регистрация не удалась"
 
 msgid "Reject"
 msgstr "Отклонить"
+
+msgid "Reject inspection?"
+msgstr "Отклонить контроль?"
 
 msgid "Reject Lot"
 msgstr "Отклонить партию"
@@ -2902,6 +2951,16 @@ msgstr "Дата находится перед окном ввода. Причи
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "Вся партия {0} будет отклонена как несоответствующая — {passes} успешных прохождений и {fails} отказов до сих пор. Отправьте единицы ниже в брак или на доработку, или только запишите результат."
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "Контроль не пройден: прошли образцы — {passes}, не прошли — {fails}. Все единицы ({0}) будут отклонены."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "Контроль будет помечен как Пройдено, а его единицы переведены в Доступно."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "Контроль будет помечен как Пройдено. Его единицы переводятся в Доступно, за исключением не прошедших образец ({fails}) — они останутся отклонёнными."
 
 msgid "The job is closed"
 msgstr "Производственный заказ закрыт"

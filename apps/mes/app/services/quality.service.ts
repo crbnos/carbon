@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { fetchAllByIds, fetchAllRecords } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Reads for the MES inspection execution view. Copied from the ERP quality
@@ -109,11 +110,11 @@ export async function getInspectionDocumentWithBalloons(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string
 ) {
-  const [document, balloons] = await Promise.all([
+  const [document, balloons, parameters] = await Promise.all([
     client
       .from("inspectionDocument")
       .select(
-        "id, drawingNumber, fileName, storagePath, modelUploadId, modelUpload(modelPath)"
+        "id, name, fileName, storagePath, modelUploadId, modelUpload(modelPath)"
       )
       .eq("id", inspectionDocumentId)
       .single(),
@@ -122,7 +123,13 @@ export async function getInspectionDocumentWithBalloons(
       .select(
         "id, inspectionFeatureId, pageNumber, xCoordinate, yCoordinate, regionX, regionY, regionWidth, regionHeight"
       )
+      .eq("inspectionDocumentId", inspectionDocumentId),
+    client
+      .from("inspectionDocumentParameter")
+      .select("id, key, value")
       .eq("inspectionDocumentId", inspectionDocumentId)
+      .order("sortOrder")
+      .order("id")
   ]);
 
   if (document.error) {
@@ -133,15 +140,15 @@ export async function getInspectionDocumentWithBalloons(
   return {
     data: {
       name:
-        document.data?.drawingNumber ??
-        document.data?.fileName ??
-        "Untitled Diagram",
+        document.data?.name ?? document.data?.fileName ?? "Untitled Diagram",
       pdfUrl: storagePath
         ? storagePath.startsWith("/file/preview/private/")
           ? storagePath
           : `/file/preview/private/${storagePath}`
         : null,
       balloons: balloons.data ?? [],
+      // Fixed key/value pairs the inspector reads before measuring.
+      parameters: parameters.data ?? [],
       // A plan made from a model's PMI holds the model instead of a PDF.
       model: document.data?.modelUploadId
         ? {
@@ -152,4 +159,56 @@ export async function getInspectionDocumentWithBalloons(
     },
     error: null
   };
+}
+
+// Every open inspection of the company (all sources), newest first, for the
+// Inspections queue. Closed lots (Passed / Failed / Partial) are left out.
+export async function getOpenInspections(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("inspection")
+      .select(
+        "id, inspectionId, sourceDocument, sourceDocumentId, sourceDocumentLineId, sourceDocumentReadableId, itemReadableId, status, lotSize, sampleSize, workCenterId, assignee, createdAt, item(name), inspectionDocument(name, fileName)"
+      )
+      .eq("companyId", companyId)
+      .in("status", ["Pending", "In Progress"])
+      .order("createdAt", { ascending: false })
+      .order("id")
+  );
+}
+
+// The job operations Job Operation lots inspect: their work center and
+// assignee decide where and for whom the lot is listed.
+export async function getInspectionJobOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobOperationIds: string[]
+) {
+  return fetchAllByIds([...new Set(jobOperationIds)], (batch) =>
+    client
+      .from("jobOperation")
+      .select("id, workCenterId, assignee, description")
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
+}
+
+// The tracked entities a manual inspection covers — the only units its
+// samples may be taken from.
+export async function getManualInspectionTrackedEntities(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionTrackedEntity")
+    .select(
+      "trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId)"
+    )
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId);
 }

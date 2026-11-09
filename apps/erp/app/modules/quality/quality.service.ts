@@ -36,6 +36,7 @@ import {
 } from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -2293,7 +2294,7 @@ export async function getInspections(
   let query = client
     .from("inspection")
     .select(
-      "*, item(readableId, name), supplier(name), inspectionSample(status)",
+      "*, item(readableId, name), supplier(name), workCenter(name), inspectionSample(status)",
       { count: listCount(args) }
     )
     .eq("companyId", companyId);
@@ -2397,6 +2398,38 @@ export async function getInspectionTrackedEntities(
     .from("trackedEntity")
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
+    .eq("companyId", companyId);
+}
+
+// The tracked entities of an item a manual inspection may take: Available or
+// On Hold (a manual inspection holds what it inspects, and releases or rejects
+// it at the verdict).
+export async function getInspectableTrackedEntities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("id, readableId, quantity, status")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .in("status", ["Available", "On Hold"])
+    .order("readableId", { ascending: true })
+    .limit(1000);
+}
+
+// The tracked entities a manual inspection covers (Receipt lots find theirs
+// through the receipt line: getInspectionTrackedEntities).
+export async function getManualInspectionTrackedEntities(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionTrackedEntity")
+    .select("trackedEntity(*)")
+    .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
 }
 
@@ -2559,10 +2592,10 @@ function fileNameFromPath(storagePath?: string | null) {
 }
 
 function mapInspectionDocument(row: Record<string, unknown>) {
-  const drawingNumber = (row.drawingNumber as string | null) ?? null;
+  const planName = (row.name as string | null) ?? null;
   return {
     id: String(row.id),
-    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
+    name: String(planName ?? row.fileName ?? "Untitled Diagram"),
     companyId: String(row.companyId),
     partId: (row.partId as string | null) ?? null,
     createdBy: String(row.createdBy),
@@ -2570,7 +2603,7 @@ function mapInspectionDocument(row: Record<string, unknown>) {
     createdAt: String(row.createdAt),
     updatedAt: (row.updatedAt as string | null) ?? null,
     content: {
-      drawingNumber,
+      name: planName,
       pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
       annotations: [],
       features: []
@@ -2602,7 +2635,7 @@ function mapInspectionDocument(row: Record<string, unknown>) {
 }
 
 export const INSPECTION_DOCUMENTS_PAGING: Paging = {
-  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+  defaultSorts: [{ column: "name", ascending: true }]
 };
 
 export async function getInspectionDocuments(
@@ -2617,7 +2650,7 @@ export async function getInspectionDocuments(
 
   if (args?.search) {
     query = query.or(
-      searchFilter(["drawingNumber", "fileName", "partReadableId"], args.search)
+      searchFilter(["name", "fileName", "partReadableId"], args.search)
     );
   }
 
@@ -2628,10 +2661,11 @@ export async function getInspectionDocuments(
   const result = await query;
 
   return {
-    // The cursor reads the default sort column from the row.
+    // The cursor reads the default sort column from the row, so `name` is the
+    // stored value here, not mapInspectionDocument's file-name fallback.
     data: (result.data ?? []).map((row: Record<string, unknown>) => ({
       ...mapInspectionDocument(row),
-      drawingNumber: (row.drawingNumber as string | null) ?? null
+      name: (row.name as string | null) ?? null
     })),
     count: result.count ?? 0,
     error: result.error
@@ -2691,7 +2725,7 @@ export async function getInspectionDocumentsForItem(
 ) {
   return client
     .from("inspectionDocument")
-    .select("id, fileName, drawingNumber, version")
+    .select("id, fileName, name, version")
     .eq("companyId", companyId)
     .eq("partId", itemId)
     .order("updatedAt", { ascending: false, nullsFirst: false });
@@ -2716,11 +2750,11 @@ export async function getInspectionDocument(
 }
 
 /**
- * When an inspection plan is created without a drawing number, fall back to the
- * part's readableIdWithRevision. If a plan with that drawing number already
- * exists for the company, append " (1)", " (2)", etc. until it is unique.
+ * When an inspection plan is created without a name, fall back to the part's
+ * readableIdWithRevision. If a plan with that name already exists for the
+ * company, append " (1)", " (2)", etc. until it is unique.
  */
-async function resolveInspectionDocumentDrawingNumber(
+async function resolveInspectionDocumentName(
   client: SupabaseClient<Database>,
   companyId: string,
   partId: string
@@ -2737,13 +2771,13 @@ async function resolveInspectionDocumentDrawingNumber(
 
   const existingResult = await client
     .from("inspectionDocument")
-    .select("drawingNumber")
+    .select("name")
     .eq("companyId", companyId)
-    .not("drawingNumber", "is", null);
+    .not("name", "is", null);
 
   const taken = new Set(
     (existingResult.data ?? [])
-      .map((row) => row.drawingNumber)
+      .map((row) => row.name)
       .filter((value): value is string => Boolean(value))
   );
 
@@ -2781,7 +2815,7 @@ export async function upsertInspectionDocument(
   const {
     id,
     partId,
-    drawingNumber,
+    name,
     pdfUrl,
     pageCount,
     defaultPageWidth,
@@ -2822,8 +2856,8 @@ export async function upsertInspectionDocument(
         updatedBy: updatedBy ?? createdBy,
         updatedAt: datetime.timestamp()
       };
-    if (drawingNumber !== undefined) {
-      updatePayload.drawingNumber = drawingNumber ?? null;
+    if (name !== undefined) {
+      updatePayload.name = name ?? null;
     }
     if (partId !== undefined) {
       updatePayload.partId = partId;
@@ -2859,16 +2893,16 @@ export async function upsertInspectionDocument(
     };
   }
 
-  const resolvedDrawingNumber = drawingNumber?.trim()
-    ? drawingNumber.trim()
-    : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
+  const resolvedName = name?.trim()
+    ? name.trim()
+    : await resolveInspectionDocumentName(client, companyId, partId);
 
   return client
     .from("inspectionDocument")
     .insert({
       companyId,
       partId,
-      drawingNumber: resolvedDrawingNumber ?? null,
+      name: resolvedName ?? null,
       version: 0,
       ...(storagePath
         ? {
@@ -3096,6 +3130,103 @@ export async function getInspectionPlan(
     }),
     error: null
   };
+}
+
+export async function getInspectionDocumentParameters(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocumentParameter")
+    .select("id, key, value, sortOrder")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .eq("companyId", companyId)
+    .order("sortOrder")
+    .order("id");
+}
+
+/**
+ * Make a plan's parameters exactly `parameters`, in that order: rows not sent
+ * are deleted, the rest upserted by the ids the editor minted. An id that is
+ * another plan's row is refused, so the whole save rolls back.
+ */
+export async function replaceInspectionDocumentParameters(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    parameters: { id: string; key: string; value: string }[];
+  }
+) {
+  const { inspectionDocumentId, companyId, userId, parameters } = args;
+  return withTransaction(db, async (trx) => {
+    // Locks the plan, so two saves of its parameters run one after the other.
+    const document = await trx
+      .selectFrom("inspectionDocument")
+      .select("id")
+      .where("id", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!document) throw new Error("Inspection plan not found");
+
+    const ids = parameters.map((p) => p.id);
+    let deletion = trx
+      .deleteFrom("inspectionDocumentParameter")
+      .where("inspectionDocumentId", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId);
+    if (ids.length > 0) deletion = deletion.where("id", "not in", ids);
+    await deletion.execute();
+
+    if (parameters.length > 0) {
+      const now = datetime.timestamp();
+      const written = await trx
+        .insertInto("inspectionDocumentParameter")
+        .values(
+          parameters.map((p, sortOrder) => ({
+            id: p.id,
+            inspectionDocumentId,
+            companyId,
+            key: p.key,
+            value: p.value,
+            sortOrder,
+            createdBy: userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns(["id", "companyId"])
+            .doUpdateSet((eb) => ({
+              key: eb.ref("excluded.key"),
+              value: eb.ref("excluded.value"),
+              sortOrder: eb.ref("excluded.sortOrder"),
+              updatedBy: userId,
+              updatedAt: now
+            }))
+            .where(
+              "inspectionDocumentParameter.inspectionDocumentId",
+              "=",
+              inspectionDocumentId
+            )
+        )
+        .returning("id")
+        .execute();
+      if (written.length !== parameters.length) {
+        throw new Error("A parameter id belongs to another inspection plan");
+      }
+    }
+
+    return trx
+      .selectFrom("inspectionDocumentParameter")
+      .select(["id", "key", "value", "sortOrder"])
+      .where("inspectionDocumentId", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId)
+      .orderBy("sortOrder")
+      .orderBy("id")
+      .execute();
+  });
 }
 
 export async function updateInspectionDocumentSampling(

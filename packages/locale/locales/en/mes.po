@@ -229,6 +229,9 @@ msgstr "Above the upper limit"
 msgid "Accept"
 msgstr "Accept"
 
+msgid "Accept inspection?"
+msgstr "Accept inspection?"
+
 msgid "Accept Lot"
 msgstr "Accept Lot"
 
@@ -1277,6 +1280,9 @@ msgstr "Inspect Item"
 msgid "inspected"
 msgstr "inspected"
 
+msgid "Inspections"
+msgstr "Inspections"
+
 msgid "Instructions"
 msgstr "Instructions"
 
@@ -1351,6 +1357,9 @@ msgstr "Job Details"
 
 msgid "Job due"
 msgstr "Job due"
+
+msgid "Job Operation"
+msgstr "Job Operation"
 
 msgid "Job Traveler"
 msgstr "Job Traveler"
@@ -1519,6 +1528,9 @@ msgstr "Make a replacement"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Manage how you sign in to Carbon."
+
+msgid "Manual"
+msgstr "Manual"
 
 msgid "Manually add items to inventory"
 msgstr "Manually add items to inventory"
@@ -1701,6 +1713,12 @@ msgstr "No gauges found."
 msgid "No Impact"
 msgstr "No Impact"
 
+msgid "No inspection plan"
+msgstr "No inspection plan"
+
+msgid "No inspections assigned to you"
+msgstr "No inspections assigned to you"
+
 msgid "No issue types configured"
 msgstr "No issue types configured"
 
@@ -1727,6 +1745,9 @@ msgstr "No materials"
 
 msgid "No materials on this batch."
 msgstr "No materials on this batch."
+
+msgid "No open inspections"
+msgstr "No open inspections"
 
 msgid "No open jobs"
 msgstr "No open jobs"
@@ -1818,6 +1839,9 @@ msgstr "No unit"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
+msgid "No work center"
+msgstr "No work center"
+
 msgid "No Work Center"
 msgstr "No Work Center"
 
@@ -1838,6 +1862,10 @@ msgstr "Not set"
 
 msgid "Notes"
 msgstr "Notes"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 
 msgid "Nothing matches your search."
 msgstr "Nothing matches your search."
@@ -1923,6 +1951,9 @@ msgstr "Open Jobs"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Open sub-assembly {0}: {1}"
+
+msgid "Opens in the ERP"
+msgstr "Opens in the ERP"
 
 msgid "Operation due"
 msgstr "Operation due"
@@ -2026,6 +2057,9 @@ msgstr "Pause {workTypeLabel} timer"
 
 msgid "Pause maintenance"
 msgstr "Pause maintenance"
+
+msgid "Pending"
+msgstr "Pending"
 
 msgid "Phone"
 msgstr "Phone"
@@ -2228,6 +2262,15 @@ msgstr "Queue empty"
 msgid "Quotes"
 msgstr "Quotes"
 
+msgid "Reason"
+msgstr "Reason"
+
+msgid "Reason (optional)"
+msgstr "Reason (optional)"
+
+msgid "Reason (required)"
+msgstr "Reason (required)"
+
 msgid "Reason for change"
 msgstr "Reason for change"
 
@@ -2239,6 +2282,9 @@ msgstr "Reason for late entry"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
+
+msgid "Receipt"
+msgstr "Receipt"
 
 msgid "Recent"
 msgstr "Recent"
@@ -2280,6 +2326,9 @@ msgstr "Registration failed"
 
 msgid "Reject"
 msgstr "Reject"
+
+msgid "Reject inspection?"
+msgstr "Reject inspection?"
 
 msgid "Reject Lot"
 msgstr "Reject Lot"
@@ -2902,6 +2951,16 @@ msgstr "The date is before the entry window. The reason is kept with the entry."
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "The inspection will be marked Passed and its units released to Available."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
 
 msgid "The job is closed"
 msgstr "The job is closed"

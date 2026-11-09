@@ -26,8 +26,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     decision: "Partial",
     companyId,
     dispositionedBy: userId,
-    // ERP verdict carries no production posting — Receipt lots only.
-    requireSource: "Receipt"
+    // ERP verdict carries no production posting — Receipt and Manual lots only.
+    requireSource: ["Receipt", "Manual"]
   });
 
   if (result.error) {

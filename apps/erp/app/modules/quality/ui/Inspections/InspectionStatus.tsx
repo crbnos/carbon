@@ -9,6 +9,7 @@ export function getInspectionStatusVariant(status: string) {
   if (status === "Failed") return "red";
   if (status === "Partial") return "yellow";
   if (status === "In Progress") return "blue";
+  if (status === "Cancelled") return "gray";
   return "secondary";
 }
 

@@ -229,6 +229,9 @@ msgstr "Üst sınırın üzerinde"
 msgid "Accept"
 msgstr "Kabul Et"
 
+msgid "Accept inspection?"
+msgstr "Muayene kabul edilsin mi?"
+
 msgid "Accept Lot"
 msgstr "Lotu Kabul Et"
 
@@ -1277,6 +1280,9 @@ msgstr "Ürünü İncele"
 msgid "inspected"
 msgstr "incelendi"
 
+msgid "Inspections"
+msgstr "Muayeneler"
+
 msgid "Instructions"
 msgstr "Talimatlar"
 
@@ -1351,6 +1357,9 @@ msgstr "İş Detayları"
 
 msgid "Job due"
 msgstr "İş emri son tarihi"
+
+msgid "Job Operation"
+msgstr "İş emri operasyonu"
 
 msgid "Job Traveler"
 msgstr "İş emri takip kartı"
@@ -1519,6 +1528,9 @@ msgstr "Bir yedek oluştur"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Carbon'a nasıl oturum açacağınızı yönetin."
+
+msgid "Manual"
+msgstr "Manuel"
 
 msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
@@ -1701,6 +1713,12 @@ msgstr "Ölçüm aleti bulunamadı."
 msgid "No Impact"
 msgstr "Etki Yok"
 
+msgid "No inspection plan"
+msgstr "Kontrol planı yok"
+
+msgid "No inspections assigned to you"
+msgstr "Size atanmış muayene yok"
+
 msgid "No issue types configured"
 msgstr "Sorun türü yapılandırılmadı"
 
@@ -1727,6 +1745,9 @@ msgstr "Malzeme yok"
 
 msgid "No materials on this batch."
 msgstr "Bu Partide Malzeme yok."
+
+msgid "No open inspections"
+msgstr "Açık muayene yok"
 
 msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
@@ -1818,6 +1839,9 @@ msgstr "Adet yok"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
+msgid "No work center"
+msgstr "İş merkezi yok"
+
 msgid "No Work Center"
 msgstr "İş merkezi yok"
 
@@ -1838,6 +1862,10 @@ msgstr "Ayarlanmamış"
 
 msgid "Notes"
 msgstr "Notlar"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Henüz hiçbir numune kalmadı, bu yüzden birimlerin neden reddedildiğini belirtin. Tüm {0} adet Reddedildi durumuna geçecek."
 
 msgid "Nothing matches your search."
 msgstr "Aramanızla eşleşen hiçbir şey yok."
@@ -1923,6 +1951,9 @@ msgstr "Açık İş emirleri"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Alt derlemeyi aç {0}: {1}"
+
+msgid "Opens in the ERP"
+msgstr "ERP'de açılır"
 
 msgid "Operation due"
 msgstr "Operasyon son tarihi"
@@ -2026,6 +2057,9 @@ msgstr "{workTypeLabel} zamanlayıcısını duraklat"
 
 msgid "Pause maintenance"
 msgstr "Bakımı duraklat"
+
+msgid "Pending"
+msgstr "Beklemede"
 
 msgid "Phone"
 msgstr "Telefon"
@@ -2228,6 +2262,15 @@ msgstr "Kuyruk boş"
 msgid "Quotes"
 msgstr "Teklifler"
 
+msgid "Reason"
+msgstr "Neden"
+
+msgid "Reason (optional)"
+msgstr "Neden (isteğe bağlı)"
+
+msgid "Reason (required)"
+msgstr "Neden (zorunlu)"
+
 msgid "Reason for change"
 msgstr "Değişiklik Nedeni"
 
@@ -2239,6 +2282,9 @@ msgstr "Geç Giriş Nedeni"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
+
+msgid "Receipt"
+msgstr "Mal kabul"
 
 msgid "Recent"
 msgstr "Son"
@@ -2280,6 +2326,9 @@ msgstr "Kayıt başarısız"
 
 msgid "Reject"
 msgstr "Reddet"
+
+msgid "Reject inspection?"
+msgstr "Muayene reddedilsin mi?"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
@@ -2902,6 +2951,16 @@ msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "{0} partinin tamamı uyumsuz olarak reddedilecek — şu ana kadar {passes} örnek uygun(lar) ve {fails} hata(lar). Aşağıdaki adetleri fire veya yeniden işleme yönünde yönlendirin veya sadece kararı kaydedin."
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "Muayene başarısız: {passes} numune geçti, {fails} numune kaldı. Tüm {0} adet Reddedildi durumuna geçecek."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "Muayene Geçti olarak işaretlenecek ve birimleri Kullanılabilir durumuna geçecek."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "Muayene Geçti olarak işaretlenecek. Birimleri Kullanılabilir durumuna geçecek; ancak numune testinde kalan {fails} adet Reddedildi durumunda kalacak."
 
 msgid "The job is closed"
 msgstr "İş emri kapatıldı"

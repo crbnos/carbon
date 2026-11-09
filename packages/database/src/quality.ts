@@ -15,11 +15,13 @@
 import type { NotNull, Transaction } from "kysely";
 import { sql } from "kysely";
 import type { Kysely, KyselyDatabase } from "./client.ts";
+import { withTransaction } from "./client.ts";
 import {
   computeLotStatus,
   deriveSampleStatus,
   valuateMeasurement
 } from "./inspection-verdict.ts";
+import { RoundingMode, round } from "./precision.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
 import { getNextSequence } from "./sequence.ts";
@@ -69,14 +71,33 @@ export type InspectionDispositionInput = {
   // dispositions drive physical postings (scrap/rework/complete) that must not
   // re-run; ERP receipt lots keep re-disposition (write-off retry semantics).
   requireOpen?: boolean;
-  // Restrict the disposition to lots of this source. The ERP Accept/Reject/Partial
-  // routes pass "Receipt" because their verdicts carry NO physical production
-  // posting — accepting a Job Operation lot here would hard-terminate it with no
-  // complete/scrap/rework and wedge the operation (whose outcome the MES
-  // disposition route owns). The MES route omits this so it can disposition
-  // Job Operation lots.
-  requireSource?: "Receipt" | "Job Operation";
+  // Restrict the disposition to lots of these sources. The ERP Accept/Reject/Partial
+  // routes pass Receipt and Manual because their verdicts carry NO physical
+  // production posting — accepting a Job Operation lot here would hard-terminate
+  // it with no complete/scrap/rework and wedge the operation (whose outcome the
+  // MES disposition route owns). The MES job-operation route omits this so it
+  // can disposition Job Operation lots.
+  requireSource?: InspectionSource | InspectionSource[];
 };
+
+export type InspectionSource = "Receipt" | "Job Operation" | "Manual";
+
+export type ManualInspectionInput = {
+  trackedEntityIds: string[];
+  inspectionDocumentId?: string | null;
+  workCenterId?: string | null;
+  assignee?: string | null;
+  notes?: string | null;
+  companyId: string;
+  userId: string;
+};
+
+// Receipt and Manual lots inspect stock that waits On Hold for the verdict, so
+// a sample verdict and the lot disposition move their tracked entities. Job
+// Operation lots inspect WIP whose status belongs to the job.
+function holdsLotEntities(sourceDocument: string): boolean {
+  return sourceDocument === "Receipt" || sourceDocument === "Manual";
+}
 
 export type InspectionMeasurementInput = {
   inspectionId: string;
@@ -123,7 +144,13 @@ function toSamplingPlanInput(
 // Terminal lot statuses. Passed/Failed/Partial are all hard-terminal: once
 // dispositioned, samples and measurements are immutable (Partial is the mixed
 // close — some units passed, some failed, each already routed to its outcome).
-const INSPECTION_CLOSED_STATUSES = ["Passed", "Failed", "Partial"] as const;
+// Cancelled is a manual lot taken off the queue with no verdict.
+const INSPECTION_CLOSED_STATUSES = [
+  "Passed",
+  "Failed",
+  "Partial",
+  "Cancelled"
+] as const;
 
 function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
@@ -173,9 +200,9 @@ async function assertSampleNotLinked(
 }
 
 // Entity-level side effects of a sample verdict (serial parts only): flip the
-// tracked entity's status and record the Inspect activity. Shared by the
+// tracked entity's status and link it to the lot's Inspect activity. Shared by the
 // pass/fail sample path and the derived-status measurement path. Only invoked
-// for Receipt-sourced lots — Job Operation inspections act on WIP entities
+// for Receipt and Manual lots — Job Operation inspections act on WIP entities
 // whose lifecycle belongs to the job, so sampling never flips them.
 async function applySampleEntityStatus(
   trx: Transaction<KyselyDatabase>,
@@ -186,58 +213,87 @@ async function applySampleEntityStatus(
     // Receipt-sourced lots pass the receipt id for the activity's Receipt
     // attribute; other sources pass null.
     receiptId: string | null;
-    notes: string | null;
     userId: string;
     companyId: string;
   }
 ) {
   const trackedEntityStatus =
     args.status === "Passed" ? "Available" : "Rejected";
-  await trx
+  const entity = await trx
     .updateTable("trackedEntity")
     .set({ status: trackedEntityStatus })
     .where("id", "=", args.trackedEntityId)
     .where("companyId", "=", args.companyId)
-    .execute();
+    .returning("quantity")
+    .executeTakeFirstOrThrow();
 
+  // One Inspect activity per lot, so the graph shows every unit the inspection
+  // covered. The lock keeps two verdicts saved at once from each creating one.
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`inspectActivity:${args.inspectionId}`}, 0))`.execute(
+    trx
+  );
+  const activityId =
+    (
+      await trx
+        .selectFrom("trackedActivity")
+        .select("id")
+        .where("sourceDocument", "=", "Inbound Inspection")
+        .where("sourceDocumentId", "=", args.inspectionId)
+        .where("type", "=", "Inspect")
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
+    )?.id ?? (await insertInspectActivity(trx, args));
+
+  // The unit is the activity's input and stays itself: no output row, since
+  // nothing is consumed or made. A changed verdict leaves it linked once; its
+  // status holds the result.
+  await trx
+    .insertInto("trackedActivityInput")
+    .values({
+      trackedActivityId: activityId,
+      trackedEntityId: args.trackedEntityId,
+      quantity: entity.quantity,
+      companyId: args.companyId,
+      createdBy: args.userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["trackedActivityId", "trackedEntityId"]).doNothing()
+    )
+    .execute();
+}
+
+async function insertInspectActivity(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    inspectionId: string;
+    receiptId: string | null;
+    userId: string;
+    companyId: string;
+  }
+): Promise<string> {
+  const lot = await trx
+    .selectFrom("inspection")
+    .select("inspectionId")
+    .where("id", "=", args.inspectionId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirstOrThrow();
   const activity = await trx
     .insertInto("trackedActivity")
     .values({
       type: "Inspect",
       sourceDocument: "Inbound Inspection",
       sourceDocumentId: args.inspectionId,
+      sourceDocumentReadableId: lot.inspectionId,
       attributes: {
-        Result: args.status,
         ...(args.receiptId ? { Receipt: args.receiptId } : {}),
-        Inspector: args.userId,
-        ...(args.notes ? { Notes: args.notes } : {})
+        Inspector: args.userId
       },
       companyId: args.companyId,
       createdBy: args.userId
     })
     .returning(["id"])
     .executeTakeFirstOrThrow();
-
-  await trx
-    .insertInto("trackedActivityInput")
-    .values({
-      trackedActivityId: activity.id,
-      trackedEntityId: args.trackedEntityId,
-      quantity: 0,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
-  await trx
-    .insertInto("trackedActivityOutput")
-    .values({
-      trackedActivityId: activity.id,
-      trackedEntityId: args.trackedEntityId,
-      quantity: 0,
-      companyId: args.companyId,
-      createdBy: args.userId
-    })
-    .execute();
+  return activity.id;
 }
 
 // -------------------------------------------------------------
@@ -275,6 +331,18 @@ export async function upsertInspectionSample(
       // (idempotent re-toggle of the "Overall result" cell), otherwise each call
       // is a fresh anonymous sample.
       const trackedEntityId = sample.trackedEntityId || null;
+      if (trackedEntityId && inspection.sourceDocument === "Manual") {
+        const member = await trx
+          .selectFrom("inspectionTrackedEntity")
+          .select(["id"])
+          .where("inspectionId", "=", sample.inspectionId)
+          .where("trackedEntityId", "=", trackedEntityId)
+          .where("companyId", "=", sample.companyId)
+          .executeTakeFirst();
+        if (!member) {
+          throw new Error("This tracked entity is not part of the inspection");
+        }
+      }
       let existing: { id: string } | undefined;
       if (trackedEntityId) {
         existing = await trx
@@ -334,7 +402,7 @@ export async function upsertInspectionSample(
       // a verdict; anonymous samples are handled by the lot's disposition.
       // Job Operation lots sample WIP entities and never flip their status.
       if (
-        inspection.sourceDocument === "Receipt" &&
+        holdsLotEntities(inspection.sourceDocument) &&
         trackedEntityId &&
         sample.status !== "Pending"
       ) {
@@ -342,8 +410,10 @@ export async function upsertInspectionSample(
           trackedEntityId,
           status: sample.status,
           inspectionId: sample.inspectionId,
-          receiptId: inspection.sourceDocumentId,
-          notes: sample.notes ?? null,
+          receiptId:
+            inspection.sourceDocument === "Receipt"
+              ? inspection.sourceDocumentId
+              : null,
           userId: sample.inspectedBy,
           companyId: sample.companyId
         });
@@ -457,12 +527,18 @@ export async function dispositionInspection(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
+      if (inspection.status === "Cancelled") {
+        throw new Error("Inspection is cancelled");
+      }
+      const allowedSources = args.requireSource
+        ? ([] as string[]).concat(args.requireSource)
+        : null;
       if (
-        args.requireSource &&
-        inspection.sourceDocument !== args.requireSource
+        allowedSources &&
+        !allowedSources.includes(inspection.sourceDocument)
       ) {
         throw new Error(
-          `This disposition is only available for ${args.requireSource} inspections`
+          `This disposition is only available for ${allowedSources.join(" and ")} inspections`
         );
       }
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
@@ -479,8 +555,9 @@ export async function dispositionInspection(
         .executeTakeFirst();
 
       // Receipt-sourced lots: the received tracked entities and the receiving
-      // location hang off the receipt line. Other sources have no lot entities
-      // to flip (e.g. Job Operation inspections act on WIP, not received stock).
+      // location hang off the receipt line. Manual lots list their entities in
+      // inspectionTrackedEntity. Job Operation lots have none to flip: they act
+      // on WIP, not stock.
       const receiptLine =
         isReceiptSource && inspection.sourceDocumentLineId
           ? await trx
@@ -503,7 +580,14 @@ export async function dispositionInspection(
               )
               .where("companyId", "=", args.companyId)
               .execute()
-          : [];
+          : inspection.sourceDocument === "Manual"
+            ? await trx
+                .selectFrom("inspectionTrackedEntity")
+                .select(["trackedEntityId as id"])
+                .where("inspectionId", "=", args.id)
+                .where("companyId", "=", args.companyId)
+                .execute()
+            : [];
 
       const existingSamples = await trx
         .selectFrom("inspectionSample")
@@ -661,6 +745,8 @@ export async function dispositionInspection(
         })
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
+        // A cancel that committed while this read the lot wins.
+        .where("status", "!=", "Cancelled")
         // One-shot under concurrency: a second disposition blocks on the row
         // lock, re-evaluates this predicate against the committed terminal
         // status, matches zero rows, and throws below — the early read check
@@ -880,8 +966,11 @@ export async function upsertInspectionMeasurement(
           .execute();
 
         // WIP entities on Job Operation lots keep their job-owned status; only
-        // Receipt-sourced entities ride the sample verdict.
-        if (inspection.sourceDocument === "Receipt" && sample.trackedEntityId) {
+        // Receipt and Manual entities ride the sample verdict.
+        if (
+          holdsLotEntities(inspection.sourceDocument) &&
+          sample.trackedEntityId
+        ) {
           if (derivedStatus === "Pending") {
             // Revert (e.g. corrected typo): back On Hold, no activity row.
             await trx
@@ -895,8 +984,10 @@ export async function upsertInspectionMeasurement(
               trackedEntityId: sample.trackedEntityId,
               status: derivedStatus,
               inspectionId: args.inspectionId,
-              receiptId: inspection.sourceDocumentId,
-              notes: args.notes ?? null,
+              receiptId:
+                inspection.sourceDocument === "Receipt"
+                  ? inspection.sourceDocumentId
+                  : null,
               userId: args.userId,
               companyId: args.companyId
             });
@@ -1294,6 +1385,524 @@ export async function getRecentInspectionGauges(
 // -------------------------------------------------------------
 // 6. getOrCreateJobOperationInspection
 // -------------------------------------------------------------
+// Lot sampling plans
+// -------------------------------------------------------------
+// The lot-level snapshot and the per-feature plans a new lot starts with. The
+// document's default sampling rule is both the lot-level plan base and the
+// fallback for features without their own rule. No document (or no default
+// set) means 100% inspection.
+
+async function resolveLotSamplingPlans(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    inspectionDocumentId: string | null;
+    lotSize: number;
+    companyId: string;
+  }
+) {
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select(["samplingStandard"])
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+  const samplingStandard = (settings?.samplingStandard ??
+    "ANSI_Z1_4") as SamplingStandard;
+
+  const documentDefault = args.inspectionDocumentId
+    ? await trx
+        .selectFrom("inspectionDocument")
+        .select([
+          "samplingPlanType",
+          "samplingSampleSize",
+          "samplingPercentage",
+          "samplingAql",
+          "samplingInspectionLevel",
+          "samplingSeverity"
+        ])
+        .where("id", "=", args.inspectionDocumentId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
+    : undefined;
+  const defaultPlan = toSamplingPlanInput(documentDefault);
+
+  const plan: SamplingPlanInput = defaultPlan ?? {
+    type: "All",
+    sampleSize: null,
+    percentage: null,
+    aql: null,
+    inspectionLevel: "II",
+    severity: "Normal"
+  };
+
+  const snapshot = resolveSamplingPlan(plan, args.lotSize, samplingStandard);
+
+  const documentFeatures = args.inspectionDocumentId
+    ? await trx
+        .selectFrom("inspectionFeature")
+        .select([
+          "id",
+          "samplingPlanType",
+          "samplingSampleSize",
+          "samplingPercentage",
+          "samplingAql",
+          "samplingInspectionLevel",
+          "samplingSeverity"
+        ])
+        .where("inspectionDocumentId", "=", args.inspectionDocumentId)
+        .where("companyId", "=", args.companyId)
+        .execute()
+    : [];
+  const featurePlans = documentFeatures.map((feature) => ({
+    inspectionFeatureId: feature.id,
+    resolved: resolveFeatureSamplingPlan(
+      feature,
+      defaultPlan,
+      args.lotSize,
+      samplingStandard
+    )
+  }));
+
+  return { samplingStandard, plan, snapshot, featurePlans };
+}
+
+async function insertLotSamplingPlans(
+  trx: Transaction<KyselyDatabase>,
+  featurePlans: Awaited<
+    ReturnType<typeof resolveLotSamplingPlans>
+  >["featurePlans"],
+  args: { inspectionId: string; companyId: string; userId: string }
+) {
+  if (featurePlans.length === 0) return;
+  await trx
+    .insertInto("inspectionSamplingPlan")
+    .values(
+      featurePlans.map((p) => ({
+        inspectionId: args.inspectionId,
+        inspectionFeatureId: p.inspectionFeatureId,
+        sampleSize: p.resolved.sampleSize,
+        acceptanceNumber: p.resolved.acceptance,
+        rejectionNumber: p.resolved.rejection,
+        codeLetter: p.resolved.codeLetter,
+        companyId: args.companyId,
+        createdBy: args.userId
+      }))
+    )
+    .execute();
+}
+
+// -------------------------------------------------------------
+// Manual inspection
+// -------------------------------------------------------------
+// A person inspects specific tracked entities of one item: a quality hold on
+// stock already on hand, a re-check, a customer complaint. The entities go On
+// Hold until a sample verdict or the disposition releases (Accept) or rejects
+// them, exactly as a receipt lot's do. The lot has no source document of its
+// own, so it is its own: sourceDocumentId is the lot's id.
+
+const MANUAL_INSPECTION_ENTITY_STATUSES = ["Available", "On Hold"] as const;
+
+export async function createManualInspection(
+  db: Kysely<KyselyDatabase>,
+  args: ManualInspectionInput
+): Promise<Result<{ id: string }>> {
+  const trackedEntityIds = [...new Set(args.trackedEntityIds.filter(Boolean))];
+  if (trackedEntityIds.length === 0) {
+    return errResult("Select at least one tracked entity");
+  }
+
+  try {
+    const result = await db.transaction().execute(async (trx) => {
+      const entities = await trx
+        .selectFrom("trackedEntity")
+        .select([
+          "id",
+          "itemId",
+          "status",
+          "quantity",
+          "readableId",
+          "attributes"
+        ])
+        .where("id", "in", trackedEntityIds)
+        .where("companyId", "=", args.companyId)
+        .forUpdate()
+        .execute();
+      if (entities.length !== trackedEntityIds.length) {
+        throw new Error("A tracked entity could not be found");
+      }
+
+      const itemIds = new Set(entities.map((e) => e.itemId));
+      const itemId = entities[0]?.itemId;
+      if (itemIds.size !== 1 || !itemId) {
+        throw new Error("Every tracked entity must be of the same item");
+      }
+
+      const unavailable = entities.filter(
+        (e) =>
+          !(MANUAL_INSPECTION_ENTITY_STATUSES as readonly string[]).includes(
+            e.status
+          )
+      );
+      if (unavailable.length > 0) {
+        throw new Error(
+          `Only Available or On Hold entities can be inspected: ${unavailable
+            .map((e) => e.readableId ?? e.id)
+            .join(", ")}`
+        );
+      }
+
+      // An entity is inspected by one open lot at a time: another lot's verdict
+      // would release or reject it under this one.
+      const inOpenManualLot = await trx
+        .selectFrom("inspectionTrackedEntity as ite")
+        .innerJoin("inspection", "inspection.id", "ite.inspectionId")
+        .select(["ite.trackedEntityId", "inspection.inspectionId"])
+        .where("ite.trackedEntityId", "in", trackedEntityIds)
+        .where("ite.companyId", "=", args.companyId)
+        .where("inspection.status", "not in", [...INSPECTION_CLOSED_STATUSES])
+        .execute();
+      const receiptLineIds = [
+        ...new Set(
+          entities
+            .map(
+              (e) =>
+                (e.attributes as Record<string, unknown> | null)?.[
+                  "Receipt Line"
+                ]
+            )
+            .filter((id): id is string => typeof id === "string" && !!id)
+        )
+      ];
+      const inOpenReceiptLot =
+        receiptLineIds.length > 0
+          ? await trx
+              .selectFrom("inspection")
+              .select(["inspectionId"])
+              .where("sourceDocument", "=", "Receipt")
+              .where("sourceDocumentLineId", "in", receiptLineIds)
+              .where("companyId", "=", args.companyId)
+              .where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
+              .execute()
+          : [];
+      const openLots = [
+        ...new Set([
+          ...inOpenManualLot.map((row) => row.inspectionId),
+          ...inOpenReceiptLot.map((row) => row.inspectionId)
+        ])
+      ];
+      if (openLots.length > 0) {
+        throw new Error(
+          `These entities are already in an open inspection: ${openLots.join(", ")}`
+        );
+      }
+
+      const item = await trx
+        .selectFrom("item")
+        .select(["readableIdWithRevision", "itemTrackingType"])
+        .where("id", "=", itemId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!item) throw new Error("Item not found");
+
+      if (args.inspectionDocumentId) {
+        const document = await trx
+          .selectFrom("inspectionDocument")
+          .select(["id"])
+          .where("id", "=", args.inspectionDocumentId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst();
+        if (!document) throw new Error("Inspection plan not found");
+      }
+
+      if (args.assignee) {
+        const member = await trx
+          .selectFrom("userToCompany")
+          .select(["userId"])
+          .where("userId", "=", args.assignee)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst();
+        if (!member) throw new Error("Assignee not found");
+      }
+
+      // A serial lot is one unit per entity; a batch lot is the quantity the
+      // batches hold, in whole units (the sampling tables take a count).
+      const lotSize = Math.max(
+        1,
+        item.itemTrackingType === "Serial"
+          ? entities.length
+          : round(
+              entities.reduce((sum, e) => sum + Number(e.quantity ?? 0), 0),
+              0,
+              RoundingMode.Down
+            )
+      );
+
+      const { samplingStandard, plan, snapshot, featurePlans } =
+        await resolveLotSamplingPlans(trx, {
+          inspectionDocumentId: args.inspectionDocumentId ?? null,
+          lotSize,
+          companyId: args.companyId
+        });
+
+      const readableInspectionId = await getNextSequence(
+        trx,
+        "inspection",
+        args.companyId
+      );
+
+      const { id } = await sql<{
+        id: string;
+      }>`SELECT id() AS id`
+        .execute(trx)
+        .then((r) => r.rows[0]!);
+
+      await trx
+        .insertInto("inspection")
+        .values({
+          id,
+          inspectionId: readableInspectionId,
+          sourceDocument: "Manual",
+          sourceDocumentId: id,
+          sourceDocumentLineId: null,
+          sourceDocumentReadableId: null,
+          itemId,
+          itemReadableId: item.readableIdWithRevision ?? null,
+          supplierId: null,
+          workCenterId: args.workCenterId || null,
+          assignee: args.assignee || null,
+          notes: args.notes?.trim() || null,
+          lotSize,
+          samplingStandard,
+          samplingPlanType: plan.type,
+          sampleSize:
+            featurePlans.length > 0
+              ? Math.max(...featurePlans.map((p) => p.resolved.sampleSize))
+              : snapshot.sampleSize,
+          acceptanceNumber: snapshot.acceptance,
+          rejectionNumber: snapshot.rejection,
+          aql: plan.aql ?? null,
+          inspectionLevel: plan.inspectionLevel ?? null,
+          severity: plan.severity ?? null,
+          codeLetter: snapshot.codeLetter,
+          inspectionDocumentId: args.inspectionDocumentId || null,
+          status: "Pending",
+          companyId: args.companyId,
+          createdBy: args.userId
+        })
+        .execute();
+
+      // Each entity remembers its status, so a cancel or delete gives it back.
+      await trx
+        .insertInto("inspectionTrackedEntity")
+        .values(
+          entities.map((entity) => ({
+            inspectionId: id,
+            trackedEntityId: entity.id,
+            previousStatus: entity.status,
+            companyId: args.companyId,
+            createdBy: args.userId
+          }))
+        )
+        .execute();
+
+      await trx
+        .updateTable("trackedEntity")
+        .set({ status: "On Hold" })
+        .where("id", "in", trackedEntityIds)
+        .where("companyId", "=", args.companyId)
+        .where("status", "=", "Available")
+        .execute();
+
+      // The person picked the serials to inspect, so each is a sample from the
+      // start (Pending, no verdict): the grid shows a column per serial and
+      // nothing is scanned. Receipt and job operation lots scan theirs instead.
+      // A batch lot keeps the grid's anonymous columns.
+      if (item.itemTrackingType === "Serial") {
+        const ordered = [...entities].sort((a, b) =>
+          (a.readableId ?? a.id).localeCompare(
+            b.readableId ?? b.id,
+            undefined,
+            {
+              numeric: true
+            }
+          )
+        );
+        // The grid orders samples by createdAt, then id; one statement shares
+        // one now(), so each row is a microsecond later to keep serial order.
+        await trx
+          .insertInto("inspectionSample")
+          .values(
+            ordered.map((entity, index) => ({
+              inspectionId: id,
+              trackedEntityId: entity.id,
+              status: "Pending" as const,
+              companyId: args.companyId,
+              createdBy: args.userId,
+              createdAt: sql<string>`now() + make_interval(secs => ${index} * 0.000001)`
+            }))
+          )
+          .execute();
+      }
+
+      await insertLotSamplingPlans(trx, featurePlans, {
+        inspectionId: id,
+        companyId: args.companyId,
+        userId: args.userId
+      });
+
+      return { id };
+    });
+
+    return { data: result, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to create inspection"
+    );
+  }
+}
+
+// What a manual lot recorded: a verdict on a sample, a reading, a gauge, a
+// disposition or a linked issue. A serial lot's Pending samples are made with
+// it, so they are not activity.
+async function manualInspectionActivity(
+  trx: Transaction<KyselyDatabase>,
+  inspectionId: string,
+  companyId: string
+): Promise<boolean> {
+  const { rows } = await sql<{ active: boolean }>`
+    SELECT
+      EXISTS (SELECT 1 FROM "inspectionMeasurement"
+              WHERE "inspectionId" = ${inspectionId} AND "companyId" = ${companyId})
+      OR EXISTS (SELECT 1 FROM "inspectionSample"
+                 WHERE "inspectionId" = ${inspectionId} AND "companyId" = ${companyId}
+                   AND status <> 'Pending')
+      OR EXISTS (SELECT 1 FROM "inspectionSamplingPlan"
+                 WHERE "inspectionId" = ${inspectionId} AND "companyId" = ${companyId}
+                   AND "gaugeId" IS NOT NULL)
+      OR EXISTS (SELECT 1 FROM "inspectionHistory"
+                 WHERE "inspectionId" = ${inspectionId} AND "companyId" = ${companyId})
+      OR EXISTS (SELECT 1 FROM "nonConformanceInspection"
+                 WHERE "inspectionId" = ${inspectionId} AND "companyId" = ${companyId})
+      AS active
+  `.execute(trx);
+  return rows[0]?.active === true;
+}
+
+// Locks an open manual lot for a cancel or delete.
+async function lockOpenManualInspection(
+  trx: Transaction<KyselyDatabase>,
+  inspectionId: string,
+  companyId: string
+) {
+  const inspection = await trx
+    .selectFrom("inspection")
+    .select(["id", "sourceDocument", "status"])
+    .where("id", "=", inspectionId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!inspection) throw new Error("Inspection not found");
+  if (inspection.sourceDocument !== "Manual") {
+    throw new Error("Only a manual inspection can be cancelled or deleted");
+  }
+  if (isInspectionClosed(inspection.status)) {
+    throw new Error("Inspection is closed");
+  }
+  return inspection;
+}
+
+// Gives each entity the lot still holds the status it had before the lot.
+// An entity a sample verdict already moved off On Hold keeps that status.
+// A lot made before the status was recorded releases to Available.
+async function releaseManualInspectionEntities(
+  trx: Transaction<KyselyDatabase>,
+  inspectionId: string,
+  companyId: string
+) {
+  await sql`
+    UPDATE "trackedEntity" te
+    SET status = COALESCE(ite."previousStatus", 'Available')
+    FROM "inspectionTrackedEntity" ite
+    WHERE ite."inspectionId" = ${inspectionId}
+      AND ite."companyId" = ${companyId}
+      AND te.id = ite."trackedEntityId"
+      AND te."companyId" = ${companyId}
+      AND te.status = 'On Hold'
+  `.execute(trx);
+}
+
+/**
+ * Delete a manual inspection that recorded nothing. Its entities return to
+ * the status they had before it.
+ */
+export async function deleteManualInspection(
+  db: Kysely<KyselyDatabase>,
+  args: { inspectionId: string; companyId: string }
+): Promise<Result<{ id: string }>> {
+  try {
+    await withTransaction(db, async (trx) => {
+      await lockOpenManualInspection(trx, args.inspectionId, args.companyId);
+      if (
+        await manualInspectionActivity(trx, args.inspectionId, args.companyId)
+      ) {
+        throw new Error(
+          "This inspection has recorded results. Cancel it instead."
+        );
+      }
+      await releaseManualInspectionEntities(
+        trx,
+        args.inspectionId,
+        args.companyId
+      );
+      await trx
+        .deleteFrom("inspection")
+        .where("id", "=", args.inspectionId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    });
+    return { data: { id: args.inspectionId }, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to delete inspection"
+    );
+  }
+}
+
+/**
+ * Cancel an open manual inspection: it leaves the queue with no verdict, keeps
+ * what it recorded, and its held entities return to their earlier status.
+ */
+export async function cancelManualInspection(
+  db: Kysely<KyselyDatabase>,
+  args: { inspectionId: string; companyId: string; userId: string }
+): Promise<Result<{ id: string }>> {
+  try {
+    await withTransaction(db, async (trx) => {
+      await lockOpenManualInspection(trx, args.inspectionId, args.companyId);
+      await releaseManualInspectionEntities(
+        trx,
+        args.inspectionId,
+        args.companyId
+      );
+      await trx
+        .updateTable("inspection")
+        .set({
+          status: "Cancelled",
+          updatedBy: args.userId,
+          updatedAt: new Date().toISOString()
+        })
+        .where("id", "=", args.inspectionId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    });
+    return { data: { id: args.inspectionId }, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to cancel inspection"
+    );
+  }
+}
+
+// -------------------------------------------------------------
 // Lazy find-or-create of the inspection lot for a jobOperation with
 // operationType = 'Inspection', called by the MES inspection loader on first
 // open. Mirrors the post-receipt lot creation: snapshots the resolved sampling
@@ -1370,75 +1979,17 @@ export async function getOrCreateJobOperationInspection(
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
 
-      const settings = await trx
-        .selectFrom("companySettings")
-        .select(["samplingStandard"])
-        .where("id", "=", args.companyId)
-        .executeTakeFirst();
-      const samplingStandard = (settings?.samplingStandard ??
-        "ANSI_Z1_4") as SamplingStandard;
-
-      // The document's default sampling rule is both the lot-level plan base
-      // and the fallback for features without their own rule. No document (or
-      // no default set) means 100% inspection.
-      const documentDefault = operation.inspectionDocumentId
-        ? await trx
-            .selectFrom("inspectionDocument")
-            .select([
-              "samplingPlanType",
-              "samplingSampleSize",
-              "samplingPercentage",
-              "samplingAql",
-              "samplingInspectionLevel",
-              "samplingSeverity"
-            ])
-            .where("id", "=", operation.inspectionDocumentId)
-            .where("companyId", "=", args.companyId)
-            .executeTakeFirst()
-        : undefined;
-      const defaultPlan = toSamplingPlanInput(documentDefault);
-
-      const plan: SamplingPlanInput = defaultPlan ?? {
-        type: "All",
-        sampleSize: null,
-        percentage: null,
-        aql: null,
-        inspectionLevel: "II",
-        severity: "Normal"
-      };
-
       const lotSize = Math.max(
         1,
         Math.floor(Number(operation.operationQuantity ?? job.quantity ?? 1))
       );
 
-      const snapshot = resolveSamplingPlan(plan, lotSize, samplingStandard);
-
-      const documentFeatures = operation.inspectionDocumentId
-        ? await trx
-            .selectFrom("inspectionFeature")
-            .select([
-              "id",
-              "samplingPlanType",
-              "samplingSampleSize",
-              "samplingPercentage",
-              "samplingAql",
-              "samplingInspectionLevel",
-              "samplingSeverity"
-            ])
-            .where("inspectionDocumentId", "=", operation.inspectionDocumentId)
-            .where("companyId", "=", args.companyId)
-            .execute()
-        : [];
-      const featurePlans = documentFeatures.map((feature) => ({
-        inspectionFeatureId: feature.id,
-        resolved: resolveFeatureSamplingPlan(
-          feature,
-          defaultPlan,
+      const { samplingStandard, plan, snapshot, featurePlans } =
+        await resolveLotSamplingPlans(trx, {
+          inspectionDocumentId: operation.inspectionDocumentId,
           lotSize,
-          samplingStandard
-        )
-      }));
+          companyId: args.companyId
+        });
 
       const readableInspectionId = await getNextSequence(
         trx,
@@ -1485,23 +2036,11 @@ export async function getOrCreateJobOperationInspection(
         .returning(["id"])
         .executeTakeFirstOrThrow();
 
-      if (featurePlans.length > 0) {
-        await trx
-          .insertInto("inspectionSamplingPlan")
-          .values(
-            featurePlans.map((p) => ({
-              inspectionId: inserted.id,
-              inspectionFeatureId: p.inspectionFeatureId,
-              sampleSize: p.resolved.sampleSize,
-              acceptanceNumber: p.resolved.acceptance,
-              rejectionNumber: p.resolved.rejection,
-              codeLetter: p.resolved.codeLetter,
-              companyId: args.companyId,
-              createdBy: args.userId
-            }))
-          )
-          .execute();
-      }
+      await insertLotSamplingPlans(trx, featurePlans, {
+        inspectionId: inserted.id,
+        companyId: args.companyId,
+        userId: args.userId
+      });
 
       return { id: inserted.id, created: true };
     });
@@ -1596,27 +2135,24 @@ export async function createPmiInspectionPlan(
   if (!item) return null;
 
   const base = item.readableIdWithRevision?.trim() || null;
-  let drawingNumber = base;
+  let name = base;
   if (base) {
     const taken = new Set(
       (
         await trx
           .selectFrom("inspectionDocument")
-          .select(["drawingNumber"])
+          .select(["name"])
           .where("companyId", "=", companyId)
           .where((eb) =>
-            eb.or([
-              eb("drawingNumber", "=", base),
-              eb("drawingNumber", "like", `${base} (%)`)
-            ])
+            eb.or([eb("name", "=", base), eb("name", "like", `${base} (%)`)])
           )
           .execute()
-      ).map((row) => row.drawingNumber)
+      ).map((row) => row.name)
     );
     let suffix = 0;
-    while (drawingNumber && taken.has(drawingNumber)) {
+    while (name && taken.has(name)) {
       suffix += 1;
-      drawingNumber = `${base} (${suffix})`;
+      name = `${base} (${suffix})`;
     }
   }
 
@@ -1626,7 +2162,7 @@ export async function createPmiInspectionPlan(
       companyId,
       partId: itemId,
       modelUploadId,
-      drawingNumber,
+      name,
       createdBy
     })
     .onConflict((oc) =>

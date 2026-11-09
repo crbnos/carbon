@@ -85,6 +85,8 @@ import type { AllocatableUnit, FailedFeatureSummary } from "./DispositionModal";
 import DispositionModal from "./DispositionModal";
 import type { MeasurementSaveResult } from "./InspectionMeasurementMatrix";
 import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
+import type { InspectionParameter } from "./InspectionParameters";
+import { InspectionParametersButton } from "./InspectionParameters";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
@@ -148,6 +150,7 @@ type InspectionViewProps = {
   recentGaugeIds: string[];
   balloons: DrawingBalloonRow[];
   documentName: string | null;
+  parameters: InspectionParameter[];
   pdfUrl: string | null;
   /** A plan made from a model's PMI: the drawing pane shows the model. */
   model: { modelUploadId: string; modelPath: string | null } | null;
@@ -182,6 +185,7 @@ export function InspectionView({
   recentGaugeIds,
   balloons,
   documentName,
+  parameters,
   pdfUrl,
   model,
   issueTypes,
@@ -869,6 +873,7 @@ export function InspectionView({
               {documentName}
             </span>
           ) : null}
+          <InspectionParametersButton parameters={parameters} />
           <div className="flex-1 max-md:hidden" />
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums max-md:order-first">
             <Trans>Completed</Trans> {productionQuantities.production} ·{" "}

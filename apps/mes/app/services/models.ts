@@ -441,6 +441,15 @@ export const inspectionSampleValidator = z.object({
 // non-serial lots allocate by quantity. The route recomputes every bucket from
 // the DB and clamps to the operation's remaining quantity — these fields are
 // operator intent, not trusted arithmetic.
+// A manual inspection's verdict: no production outcome rides on it, so it is
+// only Accept or Reject, with the reason a Reject needs when nothing failed.
+export const inspectionVerdictValidator = z.object({
+  decision: z.enum(["Accept", "Reject"], {
+    error: "Decision is required"
+  }),
+  reason: zfd.text(z.string().optional())
+});
+
 export const inspectionDispositionValidator = z
   .object({
     decision: z.enum(["Accept", "Reject", "Partial"], {

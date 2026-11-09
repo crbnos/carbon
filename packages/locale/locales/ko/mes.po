@@ -229,6 +229,9 @@ msgstr "상한 초과"
 msgid "Accept"
 msgstr "수락"
 
+msgid "Accept inspection?"
+msgstr "검사를 수락하시겠습니까?"
+
 msgid "Accept Lot"
 msgstr "로트 수락"
 
@@ -1277,6 +1280,9 @@ msgstr "항목 검사"
 msgid "inspected"
 msgstr "검사됨"
 
+msgid "Inspections"
+msgstr "검사"
+
 msgid "Instructions"
 msgstr "작업 지침"
 
@@ -1351,6 +1357,9 @@ msgstr "작업 상세정보"
 
 msgid "Job due"
 msgstr "작업 지시 마감"
+
+msgid "Job Operation"
+msgstr "작업 지시 공정"
 
 msgid "Job Traveler"
 msgstr "작업 이동표"
@@ -1519,6 +1528,9 @@ msgstr "교체품 만들기"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Carbon 로그인 방식을 관리하세요."
+
+msgid "Manual"
+msgstr "수동"
 
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
@@ -1701,6 +1713,12 @@ msgstr "계측기가 없습니다."
 msgid "No Impact"
 msgstr "영향 없음"
 
+msgid "No inspection plan"
+msgstr "검사 계획 없음"
+
+msgid "No inspections assigned to you"
+msgstr "회원님께 배정된 검사가 없습니다"
+
 msgid "No issue types configured"
 msgstr "구성된 문제 유형이 없음"
 
@@ -1727,6 +1745,9 @@ msgstr "자재 없음"
 
 msgid "No materials on this batch."
 msgstr "이 배치에 자재가 없습니다."
+
+msgid "No open inspections"
+msgstr "미결 검사가 없습니다"
 
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
@@ -1818,6 +1839,9 @@ msgstr "단위 없음"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
+msgid "No work center"
+msgstr "작업장 없음"
+
 msgid "No Work Center"
 msgstr "작업장 없음"
 
@@ -1838,6 +1862,10 @@ msgstr "설정되지 않음"
 
 msgid "Notes"
 msgstr "메모"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "아직 실패한 항목이 없으므로 단위를 거부하는 사유를 입력하세요. 모든 {0}개 단위가 거부됨 상태로 처리됩니다."
 
 msgid "Nothing matches your search."
 msgstr "검색과 일치하는 항목이 없습니다."
@@ -1923,6 +1951,9 @@ msgstr "미결 작업 지시"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "하위 조립체 {0} 열기: {1}"
+
+msgid "Opens in the ERP"
+msgstr "ERP에서 열립니다"
 
 msgid "Operation due"
 msgstr "공정 마감"
@@ -2026,6 +2057,9 @@ msgstr "{workTypeLabel} 타이머 일시 중지"
 
 msgid "Pause maintenance"
 msgstr "유지보수 일시 중지"
+
+msgid "Pending"
+msgstr "대기 중"
 
 msgid "Phone"
 msgstr "전화"
@@ -2228,6 +2262,15 @@ msgstr "대기열 비었음"
 msgid "Quotes"
 msgstr "견적서"
 
+msgid "Reason"
+msgstr "사유"
+
+msgid "Reason (optional)"
+msgstr "사유 (선택)"
+
+msgid "Reason (required)"
+msgstr "사유 (필수)"
+
 msgid "Reason for change"
 msgstr "변경 사유"
 
@@ -2239,6 +2282,9 @@ msgstr "늦은 입력 사유"
 
 msgid "Reason for rework"
 msgstr "재작업 사유"
+
+msgid "Receipt"
+msgstr "입고"
 
 msgid "Recent"
 msgstr "최근"
@@ -2280,6 +2326,9 @@ msgstr "등록 실패"
 
 msgid "Reject"
 msgstr "거부"
+
+msgid "Reject inspection?"
+msgstr "검사를 거부하시겠습니까?"
 
 msgid "Reject Lot"
 msgstr "로트 거부"
@@ -2902,6 +2951,16 @@ msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 �
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "{0}개의 전체 로트는 부적합으로 거부됨될 예정입니다 — {passes}개 샘플링된 합격 및 {fails}개 실패(현재까지). 아래 개를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "검사 실패: {passes}개 샘플 통과, {fails}개 샘플 실패. 모든 {0}개 단위가 거부됨 상태로 처리됩니다."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "검사가 통과 상태로 표시되고, 해당 단위는 가용 상태로 전환됩니다."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "검사가 통과 상태로 표시됩니다. 샘플 검사에 실패한 {fails}개 단위를 제외한 나머지 단위는 가용 상태로 전환되며, 해당 {fails}개 단위는 거부됨 상태로 유지됩니다."
 
 msgid "The job is closed"
 msgstr "작업 지시가 마감됨"

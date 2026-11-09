@@ -2,28 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge } from "@carbon/react";
+import { Badge, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBlocks,
   LuBookMarked,
   LuCalendar,
+  LuCircleX,
   LuClipboardCheck,
+  LuExternalLink,
+  LuFactory,
   LuHash,
-  LuTruck
+  LuTrash,
+  LuTruck,
+  LuUser
 } from "react-icons/lu";
+import { useNavigate } from "react-router";
 import {
   DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
+  New,
   Table
 } from "~/components";
 import type { InfiniteOptions } from "~/components/Table";
-import { useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import {
   inspectionSourceDocuments,
   inspectionStatusType
@@ -32,6 +39,12 @@ import type { Inspection } from "~/modules/quality/types";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import { getInspectionStatusVariant } from "./InspectionStatus";
+import {
+  canCancelInspection,
+  canDeleteInspection,
+  type ManualInspectionAction,
+  ManualInspectionConfirm
+} from "./ManualInspectionConfirm";
 
 type InspectionsTableProps = {
   data: Inspection[];
@@ -56,6 +69,65 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
   const [items] = useItems();
+  const permissions = usePermissions();
+  const navigate = useNavigate();
+  const [pending, setPending] = useState<{
+    action: ManualInspectionAction;
+    row: Inspection;
+  } | null>(null);
+
+  const renderContextMenu = useCallback(
+    (row: Inspection) => {
+      const lot = row as unknown as {
+        id: string;
+        inspectionId: string | null;
+        sourceDocument: string;
+        status: string;
+        inspectionSample?: { status: string }[];
+      };
+      const isManual = lot.sourceDocument === "Manual";
+      return (
+        <>
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.view}
+            onClick={() =>
+              navigate(`${path.to.inspection(lot.id)}?${params.toString()}`)
+            }
+          >
+            <MenuIcon icon={<LuExternalLink />} />
+            {t`View Inspection`}
+          </MenuItem>
+          {isManual && (
+            <MenuItem
+              disabled={
+                !permissions.can("update", "quality") ||
+                !canCancelInspection(lot)
+              }
+              onClick={() => setPending({ action: "cancel", row })}
+            >
+              <MenuIcon icon={<LuCircleX />} />
+              {t`Cancel Inspection`}
+            </MenuItem>
+          )}
+          {isManual && (
+            <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
+              destructive
+              disabled={
+                !permissions.can("delete", "quality") ||
+                !canDeleteInspection(lot, lot.inspectionSample ?? [])
+              }
+              onClick={() => setPending({ action: "delete", row })}
+            >
+              <MenuIcon icon={<LuTrash />} />
+              {t`Delete Inspection`}
+            </MenuItem>
+          )}
+        </>
+      );
+    },
+    [navigate, params, permissions, t]
+  );
 
   const columns = useMemo<ColumnDef<Inspection>[]>(() => {
     return [
@@ -184,8 +256,29 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
         }
       },
       {
+        accessorKey: "workCenterId",
+        header: t`Work Center`,
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {(row.original as any).workCenter?.name ?? ""}
+          </span>
+        ),
+        meta: {
+          icon: <LuFactory />,
+          exportValue: (row) => (row as any).workCenter?.name ?? null
+        }
+      },
+      {
+        accessorKey: "assignee",
+        header: t`Assignee`,
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={(row.original as any).assignee} />
+        ),
+        meta: { icon: <LuUser /> }
+      },
+      {
         accessorKey: "createdBy",
-        header: t`Received By`,
+        header: t`Created By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
@@ -193,7 +286,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
       },
       {
         accessorKey: "createdAt",
-        header: t`Received At`,
+        header: t`Created At`,
         cell: ({ row }) => (
           <DateTime value={row.original.createdAt} variant="date" />
         ),
@@ -203,15 +296,40 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
   }, [items, t, params]);
 
   return (
-    <Table<Inspection>
-      data={data}
-      infinite={infinite}
-      columns={columns}
-      count={count ?? 0}
-      title={t`Inspections`}
-      table="inspection"
-      withSavedView
-    />
+    <>
+      <Table<Inspection>
+        data={data}
+        infinite={infinite}
+        columns={columns}
+        count={count ?? 0}
+        primaryAction={
+          permissions.can("create", "quality") && (
+            <New
+              label={t`Inspection`}
+              to={`${path.to.newInspection}?${params.toString()}`}
+            />
+          )
+        }
+        renderContextMenu={renderContextMenu}
+        title={t`Inspections`}
+        table="inspection"
+        withSavedView
+      />
+      {pending && (
+        <ManualInspectionConfirm
+          action={pending.action}
+          lot={
+            pending.row as unknown as {
+              id: string;
+              inspectionId: string | null;
+              sourceDocument: string;
+              status: string;
+            }
+          }
+          onClose={() => setPending(null)}
+        />
+      )}
+    </>
   );
 });
 

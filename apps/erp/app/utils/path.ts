@@ -181,6 +181,8 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      inspectionTrackedEntities: (itemId: string) =>
+        generatePath(`${api}/quality/inspection-tracked-entities/${itemId}`),
       integrationConnect: (piece: string) =>
         generatePath(`${api}/integrations/connections/${piece}/connect`),
       integrationConnectionCallback: `${api}/integrations/connections/callback`,
@@ -1514,8 +1516,14 @@ export const path = {
       generatePath(`${x}/inspection/${id}/accept`),
     inspectionAssignedDocument: (id: string) =>
       generatePath(`${x}/inspection/${id}/document`),
+    inspectionCancel: (id: string) =>
+      generatePath(`${x}/inspection/${id}/cancel`),
+    inspectionDelete: (id: string) =>
+      generatePath(`${x}/inspection/${id}/delete`),
     inspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}`),
+    inspectionDocumentModel: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/model`),
     inspectionDocuments: `${x}/quality/inspection-plans`,
     inspectionGauge: (id: string) =>
       generatePath(`${x}/inspection/${id}/gauge`),
@@ -1894,6 +1902,7 @@ export const path = {
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
     newIndirectPool: `${x}/accounting/indirect-pools/new`,
+    newInspection: `${x}/quality/inspections/new`,
     newInspectionDocument: `${x}/quality/inspection-plans/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,

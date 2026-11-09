@@ -31,7 +31,10 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { updateChangeNotice } from "~/modules/items/items.service";
+import {
+  insertModelUpload,
+  updateChangeNotice
+} from "~/modules/items/items.service";
 import {
   deletePurchaseReturnOrder,
   insertPurchaseReturnOrder,
@@ -49,6 +52,7 @@ import { getUserDefaults } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
 import {
   disposition,
+  inspectionDocumentParametersValidator,
   inspectionDocumentSamplingValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
@@ -1296,12 +1300,109 @@ export const draftIssueSupplierReturn = defineServiceFn({
 // --- Inspections --------------------------------------------------------------
 
 /**
- * Reject an inspection lot of a receipt, and open an issue for it.
+ * Create an inspection of specific tracked entities.
+ *
+ * @remarks
+ * Every tracked entity must be of one item, Available or On Hold, and in no
+ * other open inspection. The lot's size is the number of serials, or the
+ * quantity the batches hold; its sampling comes from the inspection plan
+ * (`inspectionDocumentId`), else every unit is inspected. Available entities
+ * go On Hold until a sample verdict or the lot's disposition releases them
+ * (Accept → Available) or rejects them (Reject → Rejected). The work center
+ * and assignee say where and by whom it is done; the shop floor lists open
+ * inspections by work center.
+ *
+ * @param trackedEntityIds - The serials or batches to inspect, all of one item.
+ * @param inspectionDocumentId - The inspection plan to measure against.
+ * @param workCenterId - Where the inspection is done.
+ * @param assignee - The user who does it.
+ *
+ * @mcp
+ */
+export const createManualInspection = defineServiceFn({
+  input: z.object({
+    trackedEntityIds: z.array(z.string().min(1)).min(1),
+    inspectionDocumentId: z.string().nullish(),
+    workCenterId: z.string().nullish(),
+    assignee: z.string().nullish(),
+    notes: z.string().trim().max(2000).nullish()
+  }),
+  permission: { create: "quality" },
+
+  async run(ctx, input) {
+    const created = await engine.createManualInspection(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (created.error) {
+      return ctx.error("rule", created.error.message, created.error);
+    }
+    return { id: created.data.id };
+  }
+});
+
+/**
+ * Delete a manual inspection that recorded nothing.
+ *
+ * @remarks
+ * Refused once the inspection has a sample verdict, a reading, a gauge, a
+ * disposition or a linked issue: cancel it instead. Its tracked entities
+ * return to the status they had before the inspection.
+ *
+ * @mcp destructive
+ */
+export const deleteManualInspection = defineServiceFn({
+  input: z.object({ inspectionId: z.string().min(1) }),
+  permission: { delete: "quality" },
+
+  async run(ctx, { inspectionId }) {
+    const deleted = await engine.deleteManualInspection(ctx.asSystem.pg, {
+      inspectionId,
+      companyId: ctx.company.id
+    });
+    if (deleted.error) {
+      return ctx.error("rule", deleted.error.message, deleted.error);
+    }
+    return { id: deleted.data.id };
+  }
+});
+
+/**
+ * Cancel an open manual inspection.
+ *
+ * @remarks
+ * The inspection becomes Cancelled: it leaves the shop floor queue with no
+ * verdict, and what it recorded stays as history. Its held tracked entities
+ * return to the status they had before the inspection. Receipt and Job
+ * Operation lots cannot be cancelled.
+ *
+ * @mcp
+ */
+export const cancelManualInspection = defineServiceFn({
+  input: z.object({ inspectionId: z.string().min(1) }),
+  permission: { update: "quality" },
+
+  async run(ctx, { inspectionId }) {
+    const cancelled = await engine.cancelManualInspection(ctx.asSystem.pg, {
+      inspectionId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (cancelled.error) {
+      return ctx.error("rule", cancelled.error.message, cancelled.error);
+    }
+    return { id: cancelled.data.id };
+  }
+});
+
+/**
+ * Reject a receipt or manual inspection lot, and open an issue for it.
  *
  * @remarks
  * Every tracked entity of the lot becomes Rejected and the lot Failed (ISO
- * 9001:2015 §8.7). Only a Receipt lot: a Job Operation lot is rejected from
- * the shop floor. A non-tracked Inventory lot's value is written off through
+ * 9001:2015 §8.7). Only a Receipt or Manual lot: a Job Operation lot is
+ * rejected from the shop floor. A non-tracked Inventory lot's value is written off through
  * `post-nonconformance`; when that fails no issue is opened (closing the
  * issue later restores value on the assumption the write-off posted), and
  * rejecting again retries it. With `createNcr` false that is all
@@ -1340,8 +1441,9 @@ export const rejectInspection = defineServiceFn({
       reason: reason || undefined,
       companyId,
       dispositionedBy: userId,
-      // The ERP reject does receipt-specific NCR / write-off work.
-      requireSource: "Receipt"
+      // A Job Operation lot's reject carries its production outcome, which
+      // only the shop floor posts.
+      requireSource: ["Receipt", "Manual"]
     });
     if (rejected.error) {
       return ctx.error("rule", "Failed to reject lot", rejected.error);
@@ -1404,6 +1506,7 @@ export const rejectInspection = defineServiceFn({
       );
     }
 
+    const isManual = insp.sourceDocument === "Manual";
     const supplierName = insp.supplier?.name ?? "supplier";
     const sourceReadableId = insp.sourceDocumentReadableId ?? "";
     const itemReadableId =
@@ -1426,7 +1529,7 @@ export const rejectInspection = defineServiceFn({
 
     const created = await service.insertIssue(serviceRole, {
       name: issueTitle,
-      description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
+      description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${isManual ? "" : ` Supplier: ${supplierName}.`}${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
       priority: "Medium",
       source: "Internal",
       locationId,
@@ -1465,22 +1568,27 @@ export const rejectInspection = defineServiceFn({
     )
       .map((s) => s.trackedEntityId)
       .filter((id): id is string => Boolean(id));
-    const receiptLineEntities = await serviceRole
-      .from("trackedEntity")
-      .select("id")
-      .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
-      .eq("companyId", companyId);
-    if (receiptLineEntities.error) {
+    // A receipt lot's entities hang off its receipt line; a manual lot lists
+    // its own.
+    const lotEntities = isManual
+      ? await serviceRole
+          .from("inspectionTrackedEntity")
+          .select("id:trackedEntityId")
+          .eq("inspectionId", id)
+          .eq("companyId", companyId)
+      : await serviceRole
+          .from("trackedEntity")
+          .select("id")
+          .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+          .eq("companyId", companyId);
+    if (lotEntities.error) {
       return abandon(
         "Lot rejected, but failed to read the lot for the NCR",
-        receiptLineEntities.error
+        lotEntities.error
       );
     }
     const lotEntityIds = [
-      ...new Set([
-        ...sampledIds,
-        ...(receiptLineEntities.data ?? []).map((r) => r.id)
-      ])
+      ...new Set([...sampledIds, ...(lotEntities.data ?? []).map((r) => r.id)])
     ];
     const entityQuantities =
       lotEntityIds.length > 0
@@ -1606,7 +1714,7 @@ export const rejectInspection = defineServiceFn({
             id: issueId,
             nonConformanceId,
             title: issueTitle,
-            description: `Auto-created from inbound inspection ${inspectionReadableId || id}`,
+            description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId || id}`,
             severity: "Medium"
           }
         }),
@@ -1630,8 +1738,9 @@ const emptyInspectionSave = { create: [], update: [], delete: [] };
  * characteristic id belongs are mapped to their characteristic. The default
  * sampling rule (`samplingDefault`) is saved first: a failure after the
  * features were created would leave the editor holding temporary ids, and
- * its retry would create them twice. Returns the saved rows and the maps
- * from temporary to persisted ids.
+ * its retry would create them twice. `parameters`, when sent, is the plan's
+ * whole parameter list in order: rows not in it are deleted. Returns the
+ * saved rows and the maps from temporary to persisted ids.
  *
  * @mcp
  */
@@ -1650,7 +1759,8 @@ export const saveInspectionDocument = defineServiceFn({
       ])
       .optional(),
     anchors: inspectionSaveAnchorsPayloadValidator.optional(),
-    samplingDefault: inspectionDocumentSamplingValidator.optional()
+    samplingDefault: inspectionDocumentSamplingValidator.optional(),
+    parameters: inspectionDocumentParametersValidator.optional()
   }),
   permission: { update: "quality" },
 
@@ -1730,6 +1840,27 @@ export const saveInspectionDocument = defineServiceFn({
       }
     }
 
+    // The whole list, so the editor's retry after a later failure writes it
+    // again unchanged.
+    let parameters: Awaited<
+      ReturnType<typeof service.replaceInspectionDocumentParameters>
+    > | null = null;
+    if (input.parameters) {
+      try {
+        parameters = await service.replaceInspectionDocumentParameters(
+          ctx.asSystem.pg,
+          {
+            inspectionDocumentId: id,
+            companyId,
+            userId: ctx.auditUserId,
+            parameters: input.parameters
+          }
+        );
+      } catch (err) {
+        return ctx.error("internal", "Failed to save parameters", err);
+      }
+    }
+
     const saved = await service.saveInspectionDocumentAtomic(client, {
       inspectionDocumentId: id,
       companyId,
@@ -1748,32 +1879,35 @@ export const saveInspectionDocument = defineServiceFn({
         saved.error
       );
     }
-    return saved.data as {
-      success: boolean;
-      featureIdMap: Record<string, string>;
-      balloonAnchorIdMap: Record<string, string>;
-      features: Array<Record<string, unknown>>;
-      anchors: Array<Record<string, unknown>>;
-      balloons: Array<Record<string, unknown>>;
+    return {
+      ...(saved.data as {
+        success: boolean;
+        featureIdMap: Record<string, string>;
+        balloonAnchorIdMap: Record<string, string>;
+        features: Array<Record<string, unknown>>;
+        anchors: Array<Record<string, unknown>>;
+        balloons: Array<Record<string, unknown>>;
+      }),
+      parameters
     };
   }
 });
 
 /**
- * Set an inspection plan's drawing number; an empty one clears it.
+ * Set an inspection plan's name; an empty one clears it.
  *
  * @mcp
  */
-export const setInspectionDocumentDrawingNumber = defineServiceFn({
-  input: z.object({ id: z.string(), drawingNumber: z.string().nullish() }),
+export const setInspectionDocumentName = defineServiceFn({
+  input: z.object({ id: z.string(), name: z.string().nullish() }),
   permission: { update: "quality" },
 
-  async run(ctx, { id, drawingNumber }) {
+  async run(ctx, { id, name }) {
     const { error } = await requireAffected(
       ctx.asCaller.supabase
         .from("inspectionDocument")
         .update({
-          drawingNumber: drawingNumber?.trim() || null,
+          name: name?.trim() || null,
           updatedBy: ctx.auditUserId,
           updatedAt: datetime.timestamp()
         })
@@ -1784,11 +1918,95 @@ export const setInspectionDocumentDrawingNumber = defineServiceFn({
     if (error) {
       return ctx.error(
         "internal",
-        "Failed to update the drawing number",
+        "Failed to update the inspection name",
         error
       );
     }
     return { id };
+  }
+});
+
+/**
+ * Attach a CAD model to an inspection plan that has no drawing.
+ *
+ * @remarks
+ * Stage the file first (`items_createModelUploadUrl`), then pass its
+ * `modelId` and `path`. Records the model upload, which starts its
+ * processing, and points the plan at it, so the editor and every lot show the
+ * model where a PDF drawing would be. Refused when the plan already has a PDF
+ * drawing or a model.
+ *
+ * @param modelId - The staged model's id (the file name without extension).
+ * @param path - Where the model was staged in `temp-staging`.
+ *
+ * @mcp
+ */
+export const attachInspectionDocumentModel = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    modelId: z.string().min(1),
+    path: z.string().min(1),
+    name: z.string().min(1),
+    size: z.number().nonnegative()
+  }),
+  permission: { update: "quality" },
+
+  async run(ctx, { id, modelId, path, name, size }) {
+    const plan = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .select("id, storagePath, modelUploadId")
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (plan.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the inspection plan",
+        plan.error
+      );
+    }
+    if (!plan.data) {
+      return ctx.error("notFound", "The inspection plan could not be found");
+    }
+    if (plan.data.storagePath || plan.data.modelUploadId) {
+      return ctx.error(
+        "rule",
+        "This inspection plan already has a drawing or a model"
+      );
+    }
+
+    // A quality user need not hold parts permissions, and the model belongs to
+    // the plan, not to a part: insert it as the system, linked to nothing.
+    const model = await insertModelUpload(ctx.asSystem.supabase, {
+      companyId: ctx.company.id,
+      createdBy: ctx.auditUserId,
+      modelId,
+      path,
+      name,
+      size
+    });
+    if (model.error) {
+      return ctx.error("rule", "Failed to record the model", model.error);
+    }
+
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("inspectionDocument")
+        .update({
+          modelUploadId: modelId,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .is("storagePath", null)
+        .is("modelUploadId", null)
+        .select("id")
+    );
+    if (error) {
+      return ctx.error("internal", "Failed to attach the model", error);
+    }
+    return { id, modelUploadId: modelId };
   }
 });
 
@@ -4046,7 +4264,6 @@ export const upsertInspectionDocument = defineServiceFn({
   input: z.looseObject({
     name: z.string().optional(),
     partId: z.string().min(1),
-    drawingNumber: z.string().optional(),
     pdfUrl: z.string().optional(),
     annotations: z.string().optional(),
     features: z.string().optional(),

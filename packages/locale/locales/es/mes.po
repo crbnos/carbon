@@ -229,6 +229,9 @@ msgstr "Por encima del límite superior"
 msgid "Accept"
 msgstr "Aceptar"
 
+msgid "Accept inspection?"
+msgstr "¿Aceptar la inspección?"
+
 msgid "Accept Lot"
 msgstr "Aceptar lote"
 
@@ -1277,6 +1280,9 @@ msgstr "Inspeccionar artículo"
 msgid "inspected"
 msgstr "inspeccionado"
 
+msgid "Inspections"
+msgstr "Inspecciones"
+
 msgid "Instructions"
 msgstr "Instrucciones"
 
@@ -1351,6 +1357,9 @@ msgstr "Detalles del trabajo"
 
 msgid "Job due"
 msgstr "Fecha límite de la orden de trabajo"
+
+msgid "Job Operation"
+msgstr "Operación de la orden"
 
 msgid "Job Traveler"
 msgstr "Hoja viajera"
@@ -1519,6 +1528,9 @@ msgstr "Hacer un reemplazo"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Administre cómo inicia sesión en Carbon."
+
+msgid "Manual"
+msgstr "Manual"
 
 msgid "Manually add items to inventory"
 msgstr "Agregar artículos al inventario manualmente"
@@ -1701,6 +1713,12 @@ msgstr "No se encontraron instrumentos de medición."
 msgid "No Impact"
 msgstr "Sin impacto"
 
+msgid "No inspection plan"
+msgstr "Sin plan de inspección"
+
+msgid "No inspections assigned to you"
+msgstr "No hay inspecciones a su cargo"
+
 msgid "No issue types configured"
 msgstr "No hay tipos de problema configurados"
 
@@ -1727,6 +1745,9 @@ msgstr "Sin materiales"
 
 msgid "No materials on this batch."
 msgstr "Sin materiales en este lote de producción."
+
+msgid "No open inspections"
+msgstr "No hay inspecciones abiertas"
 
 msgid "No open jobs"
 msgstr "Sin órdenes de trabajo abiertas"
@@ -1818,6 +1839,9 @@ msgstr "Sin unidad"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 
+msgid "No work center"
+msgstr "Sin centro de trabajo"
+
 msgid "No Work Center"
 msgstr "Sin centro de trabajo"
 
@@ -1838,6 +1862,10 @@ msgstr "No establecido"
 
 msgid "Notes"
 msgstr "Notas"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Todavía no hay fallos, así que indique el motivo por el que se rechazan las unidades. Todas las {0} unidad(es) serán Rechazadas."
 
 msgid "Nothing matches your search."
 msgstr "Nada coincide con su búsqueda."
@@ -1923,6 +1951,9 @@ msgstr "Órdenes de trabajo abiertas"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Abrir subconjunto {0}: {1}"
+
+msgid "Opens in the ERP"
+msgstr "Se abre en el ERP"
 
 msgid "Operation due"
 msgstr "Fecha límite de la operación"
@@ -2026,6 +2057,9 @@ msgstr "Pausar cronómetro de {workTypeLabel}"
 
 msgid "Pause maintenance"
 msgstr "Pausar mantenimiento"
+
+msgid "Pending"
+msgstr "Pendiente"
 
 msgid "Phone"
 msgstr "Teléfono"
@@ -2228,6 +2262,15 @@ msgstr "Cola vacía"
 msgid "Quotes"
 msgstr "Cotizaciones"
 
+msgid "Reason"
+msgstr "Motivo"
+
+msgid "Reason (optional)"
+msgstr "Motivo (opcional)"
+
+msgid "Reason (required)"
+msgstr "Motivo (obligatorio)"
+
 msgid "Reason for change"
 msgstr "Motivo del cambio"
 
@@ -2239,6 +2282,9 @@ msgstr "Motivo de entrada tardía"
 
 msgid "Reason for rework"
 msgstr "Motivo del retrabajo"
+
+msgid "Receipt"
+msgstr "Recepción"
 
 msgid "Recent"
 msgstr "Recientes"
@@ -2280,6 +2326,9 @@ msgstr "Falló el registro"
 
 msgid "Reject"
 msgstr "Rechazar"
+
+msgid "Reject inspection?"
+msgstr "¿Rechazar la inspección?"
 
 msgid "Reject Lot"
 msgstr "Rechazar lote"
@@ -2902,6 +2951,16 @@ msgstr "La fecha es anterior a la ventana de entrada. La razón se mantiene con 
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "El lote completo de {0} será rechazado como no conforme — {passes} muestra conforme y {fails} fallo(s) hasta ahora. Dirija las unidades a continuación a desperdicio o retrabajo, o solo registre el veredicto."
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "La inspección ha fallado: {passes} muestra(s) superada(s) y {fails} fallida(s). Todas las {0} unidad(es) serán Rechazadas."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "La inspección se marcará como Superada y sus unidades pasarán a Disponibles."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "La inspección se marcará como Superada. Sus unidades pasarán a Disponibles, excepto las {fails} que fallaron en alguna muestra, que seguirán Rechazadas."
 
 msgid "The job is closed"
 msgstr "La orden de trabajo está cerrada"

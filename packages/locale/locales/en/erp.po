@@ -1954,6 +1954,9 @@ msgstr "A part contains the information about a specific item that can be purcha
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "A part in this step may tip once placed — consider a fixture or a second person."
 
+msgid "A PDF drawing to balloon, or a STEP model. Click to choose a file."
+msgstr "A PDF drawing to balloon, or a STEP model. Click to choose a file."
+
 msgid "A photo or PDF the operator sees on this step"
 msgstr "A photo or PDF the operator sees on this step"
 
@@ -2732,6 +2735,10 @@ msgstr "Action Types"
 
 msgid "Actions"
 msgstr "Actions"
+
+#. placeholder {0}: inspection.inspectionId
+msgid "Actions for {0}"
+msgstr "Actions for {0}"
 
 msgid "Actions for {attributeName}"
 msgstr "Actions for {attributeName}"
@@ -5271,6 +5278,9 @@ msgstr "Available on the {plan} plan"
 msgid "Available on the Business plan"
 msgstr "Available on the Business plan"
 
+msgid "Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned."
+msgstr "Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned."
+
 msgid "Avatar style"
 msgstr "Avatar style"
 
@@ -6196,6 +6206,9 @@ msgstr "Cancel"
 msgid "Cancel {0}"
 msgstr "Cancel {0}"
 
+msgid "Cancel {name}?"
+msgstr "Cancel {name}?"
+
 msgid "Cancel {readableId}"
 msgstr "Cancel {readableId}"
 
@@ -6210,6 +6223,9 @@ msgstr "Cancel Change Notice"
 
 msgid "Cancel Contract"
 msgstr "Cancel Contract"
+
+msgid "Cancel Inspection"
+msgstr "Cancel Inspection"
 
 msgid "Cancel Job"
 msgstr "Cancel Job"
@@ -9961,6 +9977,9 @@ msgstr "Delete Group"
 msgid "Delete Holiday"
 msgstr "Delete Holiday"
 
+msgid "Delete Inspection"
+msgstr "Delete Inspection"
+
 msgid "Delete Inspection Plan"
 msgstr "Delete Inspection Plan"
 
@@ -10023,6 +10042,10 @@ msgstr "Delete Memo"
 
 msgid "Delete Month"
 msgstr "Delete Month"
+
+#. placeholder {0}: row.original.key
+msgid "Delete parameter {0}"
+msgstr "Delete parameter {0}"
 
 msgid "Delete Part"
 msgstr "Delete Part"
@@ -10927,11 +10950,14 @@ msgstr "Draw it, or upload an image of it."
 msgid "Drawing"
 msgstr "Drawing"
 
-msgid "Drawing Number"
-msgstr "Drawing Number"
-
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+
+msgid "Drop a drawing or model"
+msgstr "Drop a drawing or model"
+
+msgid "Drop a PDF drawing or a STEP model"
+msgstr "Drop a PDF drawing or a STEP model"
 
 msgid "Drop an image of your signature"
 msgstr "Drop an image of your signature"
@@ -11079,9 +11105,6 @@ msgstr "e.g. Acme Manufacturing"
 msgid "e.g. Detroit"
 msgstr "e.g. Detroit"
 
-msgid "e.g. DWG-1234"
-msgstr "e.g. DWG-1234"
-
 msgid "e.g. GB123456789"
 msgstr "e.g. GB123456789"
 
@@ -11096,6 +11119,9 @@ msgstr "e.g. Marco + the area leads"
 
 msgid "e.g. MI"
 msgstr "e.g. MI"
+
+msgid "e.g. R1234 Receipt"
+msgstr "e.g. R1234 Receipt"
 
 msgid "e.g. Suite 200"
 msgstr "e.g. Suite 200"
@@ -11579,6 +11605,9 @@ msgstr "Edit Production Quantity"
 
 msgid "Edit Project"
 msgstr "Edit Project"
+
+msgid "Edit Properties"
+msgstr "Edit Properties"
 
 msgid "Edit purchase order line type"
 msgstr "Edit purchase order line type"
@@ -13217,6 +13246,9 @@ msgstr "Failed to upload PDF"
 
 msgid "Failed to upload signature"
 msgstr "Failed to upload signature"
+
+msgid "Failed to upload the model"
+msgstr "Failed to upload the model"
 
 msgid "Failed to upload thumbnail"
 msgstr "Failed to upload thumbnail"
@@ -15219,6 +15251,9 @@ msgstr "Inspection Job"
 
 msgid "Inspection Level"
 msgstr "Inspection Level"
+
+msgid "Inspection Name"
+msgstr "Inspection Name"
 
 msgid "Inspection Plan"
 msgstr "Inspection Plan"
@@ -18539,6 +18574,9 @@ msgstr "New Holiday"
 msgid "New IC Transaction"
 msgstr "New IC Transaction"
 
+msgid "New Inspection"
+msgstr "New Inspection"
+
 msgid "New Inspection Plan"
 msgstr "New Inspection Plan"
 
@@ -20432,6 +20470,10 @@ msgstr "On hand {before} to {after}"
 
 msgid "On Hold"
 msgstr "On Hold"
+
+#. placeholder {0}: entity.quantity
+msgid "On Hold · {0}"
+msgstr "On Hold · {0}"
 
 msgid "On its side"
 msgstr "On its side"
@@ -22934,6 +22976,9 @@ msgstr "Promised Date"
 msgid "Properties"
 msgstr "Properties"
 
+msgid "Properties (apply to all serials on this line)"
+msgstr "Properties (apply to all serials on this line)"
+
 msgid "Property"
 msgstr "Property"
 
@@ -23842,12 +23887,6 @@ msgstr "Received"
 msgid "Received {0} of {1}"
 msgstr "Received {0} of {1}"
 
-msgid "Received At"
-msgstr "Received At"
-
-msgid "Received By"
-msgstr "Received By"
-
 msgid "Received Date"
 msgstr "Received Date"
 
@@ -24748,9 +24787,6 @@ msgstr "Requested"
 
 msgid "Requested By"
 msgstr "Requested By"
-
-msgid "Requested"
-msgstr "Requested"
 
 msgid "Requested Date"
 msgstr "Requested Date"
@@ -29836,9 +29872,6 @@ msgstr "The end-to-end commercial flow from quoting a customer to collecting pay
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "The endpoint that receives a POST request with the updated data when the table is updated"
 
-msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 
@@ -29991,6 +30024,12 @@ msgstr "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freigh
 
 msgid "The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted."
 msgstr "The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted."
+
+msgid "The inspection is deleted and its tracked entities return to the status they had before it."
+msgstr "The inspection is deleted and its tracked entities return to the status they had before it."
+
+msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
+msgstr "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "The integration authorized the connection but saving it failed. Try connecting again."
@@ -31085,6 +31124,9 @@ msgstr "This information will be used on document headers"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "This information will be visible to all users, so be careful what you share."
+
+msgid "this inspection"
+msgstr "this inspection"
 
 msgid "this inspection plan"
 msgstr "this inspection plan"
@@ -32758,6 +32800,9 @@ msgstr "Uploaded signature"
 msgid "Uploaded: {0}"
 msgstr "Uploaded: {0}"
 
+msgid "Uploading"
+msgstr "Uploading"
+
 #. placeholder {0}: avatarFile.name
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
@@ -33201,6 +33246,9 @@ msgstr "View in new tab"
 
 msgid "View in project plan"
 msgstr "View in project plan"
+
+msgid "View Inspection"
+msgstr "View Inspection"
 
 msgid "View Issue"
 msgstr "View Issue"
@@ -33723,6 +33771,9 @@ msgstr "What these rows mean"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "What this field held before the change. Leave blank for nothing."
+
+msgid "What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation."
+msgstr "What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."

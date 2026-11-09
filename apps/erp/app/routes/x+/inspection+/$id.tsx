@@ -15,12 +15,14 @@ import {
   getBalloons,
   getInspection,
   getInspectionDocument,
+  getInspectionDocumentParameters,
   getInspectionGauges,
   getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
   getIssueTypesList,
+  getManualInspectionTrackedEntities,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "~/modules/quality/quality.service";
@@ -109,7 +111,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     document,
     balloons,
     receipt,
-    issues
+    issues,
+    parameters
   ] = await Promise.all([
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
@@ -124,7 +127,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           insp.sourceDocumentLineId,
           companyId
         )
-      : Promise.resolve({ data: null, error: null }),
+      : insp.sourceDocument === "Manual"
+        ? getManualInspectionTrackedEntities(client, id, companyId).then(
+            (result) => ({
+              data: (result.data ?? [])
+                .map((row) => row.trackedEntity)
+                .filter(Boolean),
+              error: result.error
+            })
+          )
+        : Promise.resolve({ data: null, error: null }),
     insp.inspectionDocumentId
       ? getInspectionDocument(serviceRole, insp.inspectionDocumentId, companyId)
       : Promise.resolve({ data: null, error: null }),
@@ -140,7 +152,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("id", insp.sourceDocumentId)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
-    getInspectionIssues(client, id, companyId)
+    getInspectionIssues(client, id, companyId),
+    insp.inspectionDocumentId
+      ? getInspectionDocumentParameters(
+          serviceRole,
+          insp.inspectionDocumentId,
+          companyId
+        )
+      : Promise.resolve({ data: null, error: null })
   ]);
 
   const doc = document.data as {
@@ -174,6 +193,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       regionHeight: Number(b.regionHeight ?? 0)
     })),
     documentName: doc?.name ?? null,
+    parameters: parameters.data ?? [],
     pdfUrl: doc?.content?.pdfUrl ?? null,
     model: doc?.model ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
@@ -206,6 +226,7 @@ export default function InspectionExecutionRoute() {
       recentGaugeIds={loaderData.recentGaugeIds}
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
+      parameters={loaderData.parameters}
       pdfUrl={loaderData.pdfUrl}
       model={loaderData.model}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}

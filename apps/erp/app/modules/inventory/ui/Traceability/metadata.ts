@@ -127,3 +127,9 @@ export function isMovementActivity(type: string | null | undefined): boolean {
   const kind = activityKindFor(type);
   return kind === "Transfer" || kind === "Pick";
 }
+
+// An inspection looks at a unit and leaves it as it was: the unit is its input,
+// neither consumed nor moved, and keeps its state.
+export function isInspectionActivity(type: string | null | undefined): boolean {
+  return activityKindFor(type) === "Inspection";
+}

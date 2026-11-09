@@ -21,6 +21,7 @@ import {
   getBalloons,
   getGaugeTypesList,
   getInspectionDocument,
+  getInspectionDocumentParameters,
   getInspectionFeatures
 } from "~/modules/quality/quality.service";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
@@ -73,14 +74,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     balloonsResult,
     unitOfMeasuresResult,
     gaugeTypesResult,
-    companySettings
+    companySettings,
+    parametersResult
   ] = await Promise.all([
     getInspectionDocument(serviceRole, id, companyId),
     getInspectionFeatures(serviceRole, id),
     getBalloons(serviceRole, id),
     getUnitOfMeasuresList(client, companyId),
     getGaugeTypesList(client, companyId),
-    getCompanySettings(client, companyId)
+    getCompanySettings(client, companyId),
+    getInspectionDocumentParameters(serviceRole, id, companyId)
   ]);
 
   if (diagram.error) {
@@ -112,6 +115,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     balloons,
     unitOfMeasures,
     gaugeTypes: gaugeTypesResult.data ?? [],
+    parameters: parametersResult.data ?? [],
     samplingStandard:
       ((companySettings.data as any)?.samplingStandard as
         | "ANSI_Z1_4"
@@ -126,6 +130,7 @@ export default function BalloonDetailRoute() {
     balloons,
     unitOfMeasures,
     gaugeTypes,
+    parameters,
     samplingStandard
   } = useLoaderData<typeof loader>();
   const content = diagram.content as InspectionDocumentContent | null;
@@ -157,6 +162,7 @@ export default function BalloonDetailRoute() {
               balloons={balloons}
               unitOfMeasures={unitOfMeasures}
               gaugeTypes={gaugeTypes}
+              parameters={parameters}
               sampling={(diagram.sampling as SamplingRule | null) ?? null}
               samplingStandard={samplingStandard}
               model={diagram.model}

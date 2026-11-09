@@ -264,6 +264,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
+    parameters: document?.data?.parameters ?? [],
     pdfUrl: document?.data?.pdfUrl ?? null,
     model: document?.data?.model ?? null
   };

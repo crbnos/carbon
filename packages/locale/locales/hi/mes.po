@@ -229,6 +229,9 @@ msgstr "ऊपरी सीमा से अधिक"
 msgid "Accept"
 msgstr "स्वीकार करें"
 
+msgid "Accept inspection?"
+msgstr "निरीक्षण स्वीकार करें?"
+
 msgid "Accept Lot"
 msgstr "लॉट स्वीकार करें"
 
@@ -1277,6 +1280,9 @@ msgstr "आइटम का निरीक्षण करें"
 msgid "inspected"
 msgstr "निरीक्षण किया गया"
 
+msgid "Inspections"
+msgstr "निरीक्षण"
+
 msgid "Instructions"
 msgstr "निर्देश"
 
@@ -1351,6 +1357,9 @@ msgstr "नौकरी विवरण"
 
 msgid "Job due"
 msgstr "जॉब की नियत तिथि"
+
+msgid "Job Operation"
+msgstr "जॉब ऑपरेशन"
 
 msgid "Job Traveler"
 msgstr "जॉब ट्रैवलर"
@@ -1519,6 +1528,9 @@ msgstr "एक प्रतिस्थापन बनाएं"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "प्रबंधित करें कि आप Carbon में कैसे साइन इन करते हैं।"
+
+msgid "Manual"
+msgstr "मैनुअल"
 
 msgid "Manually add items to inventory"
 msgstr "इन्वेंटरी में आइटम मैन्युअली जोड़ें"
@@ -1701,6 +1713,12 @@ msgstr "कोई गेज नहीं मिला।"
 msgid "No Impact"
 msgstr "कोई प्रभाव नहीं"
 
+msgid "No inspection plan"
+msgstr "कोई निरीक्षण योजना नहीं"
+
+msgid "No inspections assigned to you"
+msgstr "आपको सौंपा गया कोई निरीक्षण नहीं"
+
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
 
@@ -1727,6 +1745,9 @@ msgstr "कोई सामग्री नहीं"
 
 msgid "No materials on this batch."
 msgstr "इस बैच पर कोई सामग्री नहीं है।"
+
+msgid "No open inspections"
+msgstr "कोई खुला निरीक्षण नहीं"
 
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"
@@ -1818,6 +1839,9 @@ msgstr "कोई इकाई नहीं"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
 
+msgid "No work center"
+msgstr "कोई वर्क सेंटर नहीं"
+
 msgid "No Work Center"
 msgstr "कोई वर्क सेंटर नहीं"
 
@@ -1838,6 +1862,10 @@ msgstr "सेट नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "अभी तक कुछ भी विफल नहीं हुआ है, इसलिए बताएँ कि इकाइयाँ अस्वीकृत क्यों हैं। सभी {0} इकाई(याँ) अस्वीकृत कर दी जाएँगी।"
 
 msgid "Nothing matches your search."
 msgstr "आपकी खोज से कुछ नहीं मिला।"
@@ -1923,6 +1951,9 @@ msgstr "खुले जॉब"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "सब-असेंबली {0} खोलें: {1}"
+
+msgid "Opens in the ERP"
+msgstr "ERP में खुलता है"
 
 msgid "Operation due"
 msgstr "ऑपरेशन की नियत तिथि"
@@ -2026,6 +2057,9 @@ msgstr "{workTypeLabel} टाइमर रोकें"
 
 msgid "Pause maintenance"
 msgstr "रखरखाव रोकें"
+
+msgid "Pending"
+msgstr "लंबित"
 
 msgid "Phone"
 msgstr "फोन"
@@ -2228,6 +2262,15 @@ msgstr "कतार खाली"
 msgid "Quotes"
 msgstr "कोटेशन"
 
+msgid "Reason"
+msgstr "कारण"
+
+msgid "Reason (optional)"
+msgstr "कारण (वैकल्पिक)"
+
+msgid "Reason (required)"
+msgstr "कारण (आवश्यक)"
+
 msgid "Reason for change"
 msgstr "परिवर्तन का कारण"
 
@@ -2239,6 +2282,9 @@ msgstr "देरी से प्रविष्टि का कारण"
 
 msgid "Reason for rework"
 msgstr "पुनः कार्य का कारण"
+
+msgid "Receipt"
+msgstr "प्राप्ति"
 
 msgid "Recent"
 msgstr "हाल ही में"
@@ -2280,6 +2326,9 @@ msgstr "पंजीकरण विफल"
 
 msgid "Reject"
 msgstr "अस्वीकार करें"
+
+msgid "Reject inspection?"
+msgstr "निरीक्षण अस्वीकार करें?"
 
 msgid "Reject Lot"
 msgstr "लॉट अस्वीकार करें"
@@ -2902,6 +2951,16 @@ msgstr "तारीख प्रविष्टि विंडो से प�
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "पूरे {0} लॉट को गैर-अनुरूप के रूप में अस्वीकार कर दिया जाएगा — अब तक {passes} सैंपल किए गए उत्तीर्ण और {fails} विफलता(एं)। नीचे की इकाइयों को स्क्रैप या पुनः कार्य के लिए निर्देशित करें, या केवल निर्णय रिकॉर्ड करें।"
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "निरीक्षण विफल रहा: {passes} नमूने उत्तीर्ण हुए और {fails} विफल रहे। सभी {0} इकाई(याँ) अस्वीकृत कर दी जाएँगी।"
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "निरीक्षण को उत्तीर्ण चिह्नित किया जाएगा और इसकी इकाइयाँ उपलब्ध कर दी जाएँगी।"
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "निरीक्षण को उत्तीर्ण चिह्नित किया जाएगा। इसकी इकाइयाँ उपलब्ध कर दी जाएँगी, सिवाय उन {fails} इकाइयों के जो एक नमूने में विफल रहीं; वे अस्वीकृत रहेंगी।"
 
 msgid "The job is closed"
 msgstr "जॉब बंद है"

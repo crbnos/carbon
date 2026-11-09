@@ -52,7 +52,7 @@ export const useInspectionDocuments = (args: { itemId?: string }) => {
               <div className="flex justify-between items-center gap-1 w-full">
                 <HStack className="items-end">
                   <span className="text-sm truncate">
-                    {c.drawingNumber ?? c.fileName ?? c.id}{" "}
+                    {c.name ?? c.fileName ?? c.id}{" "}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     v{c.version}

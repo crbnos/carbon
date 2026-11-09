@@ -13,6 +13,9 @@ import {
   Badge,
   cn,
   IconButton,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -64,6 +67,11 @@ import InspectionGaugePicker from "./InspectionGaugePicker";
 
 // A cell save's response payload (the measurement action returns it so the
 // grid can update without a revalidation roundtrip).
+/** A plan parameter: setup the inspector reads before measuring. */
+export type InspectionParameter = { id: string; key: string; value: string };
+
+type InspectionGridTab = "characteristics" | "parameters";
+
 export type MeasurementSaveResult = {
   sampleId: string;
   measurementId: string;
@@ -127,6 +135,9 @@ type InspectionMeasurementGridProps = {
   onActiveFeatureChange: (id: string | null) => void;
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
   primaryAction?: React.ReactNode;
+  // The plan's parameters (setup to read before measuring), shown on a
+  // Parameters tab beside the characteristics when the plan has any.
+  parameters?: InspectionParameter[];
   // Grid position -> sample id, owned by the view so it survives a remount
   // (Hide / Show drawing). A save still running in the old grid writes here,
   // so the new grid's next save reuses that sample instead of making another.
@@ -198,6 +209,7 @@ const InspectionMeasurementGrid = ({
   onActiveFeatureChange,
   onMeasurementSaved,
   primaryAction,
+  parameters = [],
   placementRef,
   onBusyChange
 }: InspectionMeasurementGridProps) => {
@@ -1575,13 +1587,7 @@ const InspectionMeasurementGrid = ({
               )
             } satisfies ColumnDef<GridRow>
           ]
-        : []),
-      {
-        id: "progress",
-        header: t`Result`,
-        cell: ({ row }) =>
-          renderProgress(characteristics[row.original.characteristicIndex]!)
-      }
+        : [])
     ];
 
     for (let i = 0; i < columnCount; i++) {
@@ -1724,6 +1730,7 @@ const InspectionMeasurementGrid = ({
 
   const gridRef = useRef<HTMLDivElement>(null);
   const rowCount = rows.length;
+  const [tab, setTab] = useState<InspectionGridTab>("characteristics");
 
   useEffect(() => {
     if (!activeFeatureId) return;
@@ -1900,12 +1907,61 @@ const InspectionMeasurementGrid = ({
     [isReadOnly, characteristics, persistCell, rowCount, t]
   );
 
+  const characteristicsTitle = hasFeatures
+    ? `${t`Characteristics`} (${characteristics.length})`
+    : t`Result`;
+  const parameterTabs =
+    parameters.length > 0 ? (
+      <Tabs
+        value={tab}
+        onValueChange={(value) => setTab(value as InspectionGridTab)}
+      >
+        <TabsList>
+          <TabsTrigger value="characteristics">
+            {characteristicsTitle}
+          </TabsTrigger>
+          <TabsTrigger value="parameters">
+            {t`Parameters`} ({parameters.length})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    ) : null;
+
+  if (parameterTabs && tab === "parameters") {
+    return (
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <div className="flex min-h-12 shrink-0 items-center px-4 py-2">
+          {parameterTabs}
+        </div>
+        <dl className="min-h-0 flex-1 divide-y divide-border overflow-auto border-t border-border">
+          {parameters.map((parameter) => (
+            <div
+              key={parameter.id}
+              className="flex items-baseline justify-between gap-4 px-4 py-2.5"
+            >
+              <dt className="text-sm text-muted-foreground">{parameter.key}</dt>
+              <dd className="text-right text-sm font-medium tabular-nums">
+                {parameter.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={gridRef}
       onKeyDownCapture={onGridKeyDownCapture}
       onPasteCapture={onPasteCapture}
       onClickCapture={(event) => {
+        // A click on the gauge picker only opens it. Making its row active
+        // here re-renders the grid's columns, which closed the picker the
+        // same click had just opened.
+        if ((event.target as HTMLElement).closest("[data-gauge-picker]")) {
+          return;
+        }
         const marker = (event.target as HTMLElement).closest<HTMLElement>(
           "[data-entry-cell]"
         );
@@ -1955,11 +2011,11 @@ const InspectionMeasurementGrid = ({
         }
         titleBadge={
           <span className="flex min-w-0 items-center gap-2">
-            <span className="min-w-0 truncate text-sm font-medium text-foreground">
-              {hasFeatures
-                ? `${t`Characteristics`} (${characteristics.length})`
-                : t`Result`}
-            </span>
+            {parameterTabs ?? (
+              <span className="min-w-0 truncate text-sm font-medium text-foreground">
+                {characteristicsTitle}
+              </span>
+            )}
             {failedReadings > 0 && (
               <Badge variant="red" className="tabular-nums">
                 {t`${failedReadings} failed`}

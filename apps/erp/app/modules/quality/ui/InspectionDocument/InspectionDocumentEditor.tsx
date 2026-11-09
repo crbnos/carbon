@@ -7,6 +7,7 @@ import { serviceErrorMessage, useAction } from "@carbon/query";
 import {
   Button,
   Combobox,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -23,6 +24,9 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   toast,
   toastError,
   useDebounce,
@@ -72,7 +76,7 @@ import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useModelUpload, usePermissions, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
@@ -86,12 +90,16 @@ import {
   hasUnsavedRows,
   mergeSaveResponse,
   newBalloonId,
-  newFeatureId
+  newFeatureId,
+  newParameterId,
+  type ParameterRow,
+  sendableParameters
 } from "./autosave";
 import {
   buildInspectionDocumentPdfWithOverlaysBytes,
   cropInspectionAnchorToPngBlob
 } from "./drawingRaster";
+import InspectionDocumentDropzone from "./InspectionDocumentDropzone";
 import type { SamplingRule } from "./SamplingRuleModal";
 import SamplingRuleModal, { EMPTY_SAMPLING_RULE } from "./SamplingRuleModal";
 
@@ -157,6 +165,8 @@ type InspectionDocumentEditorProps = {
   balloons: Array<Record<string, unknown>>;
   unitOfMeasures: Array<{ code: string; name: string }>;
   gaugeTypes: Array<{ id: string; name: string }>;
+  // Fixed key/value pairs the inspector reads on every lot of the plan.
+  parameters: Array<{ id: string; key: string; value: string }>;
   // The document's default sampling rule (fallback for features without a
   // rule) and the company's sampling standard for previews.
   sampling: SamplingRule | null;
@@ -454,6 +464,9 @@ type SaveSnapshot = {
   featureRows: FeatureRow[];
   anchorRects: SelectorRect[];
   docSampling: SamplingRule;
+  parameterRows: ParameterRow[];
+  /** The parameters payload the save sent; null when it sent none. */
+  parameters: string | null;
   pdfUrl: string;
   sentPdfMetrics: boolean;
   /** Characteristic and balloon ids this save creates. */
@@ -653,6 +666,7 @@ export default function InspectionDocumentEditor({
   balloons,
   unitOfMeasures,
   gaugeTypes,
+  parameters: initialParameters,
   sampling,
   samplingStandard,
   model
@@ -675,7 +689,7 @@ export default function InspectionDocumentEditor({
   const [title, setTitle] = useState(name);
   const debouncedSaveName = useDebounce((value: string) => {
     nameFetcher.submit(
-      { drawingNumber: value },
+      { name: value },
       {
         method: "post",
         action: path.to.updateInspectionDocumentName(diagramId)
@@ -692,6 +706,17 @@ export default function InspectionDocumentEditor({
   // feature rows. "document" | featureId targets the sampling modal.
   const [docSampling, setDocSampling] = useState<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
+  );
+  // The plan's parameters; autosaved as a whole list when they change.
+  const [parameterRows, setParameterRows] = useState<ParameterRow[]>(() =>
+    initialParameters.map(({ id, key, value }) => ({ id, key, value }))
+  );
+  const parametersPayload = useMemo(
+    () => JSON.stringify(sendableParameters(parameterRows)),
+    [parameterRows]
+  );
+  const [bottomTab, setBottomTab] = useState<"characteristics" | "parameters">(
+    "characteristics"
   );
   const [samplingTarget, setSamplingTarget] = useState<
     "document" | string | null
@@ -809,6 +834,9 @@ export default function InspectionDocumentEditor({
     sampling ?? EMPTY_SAMPLING_RULE
   );
   const savedPdfUrlRef = useRef(content?.pdfUrl ?? "");
+  const savedParametersRef = useRef(
+    JSON.stringify(sendableParameters(initialParameters))
+  );
   /** Whether a save has succeeded yet — the label shows nothing before. */
   const [hasSaved, setHasSaved] = useState(false);
   const [placingFeatureId, setPlacingFeatureId] = useState<string | null>(null);
@@ -923,16 +951,21 @@ export default function InspectionDocumentEditor({
     [featuresTableExpanded, pdfPaneHeightPx]
   );
 
-  // Measure container width and keep it up to date on resize
+  // A plan with no drawing or model has no viewer: the characteristics fill
+  // the page and the upload sits in a sidebar.
+  const hasDocument = pdfFile !== null || pdfUrl !== "" || !!model;
+
+  // Measure container width and keep it up to date on resize. The viewer
+  // mounts only once the plan has a document, so measure again then.
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!hasDocument || !containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (w) setContainerWidth(w);
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, []);
+  }, [hasDocument]);
 
   useEffect(() => {
     const hasPdfSource = pdfFile !== null || pdfUrl !== "";
@@ -985,6 +1018,7 @@ export default function InspectionDocumentEditor({
       pendingBalloonDeleteIdsRef.current.delete(id);
     }
     savedSamplingRef.current = sent.docSampling;
+    if (sent.parameters !== null) savedParametersRef.current = sent.parameters;
     savedPdfUrlRef.current = sent.pdfUrl;
     failedSaveRef.current = null;
     if (sent.sentPdfMetrics) setPdfMetricsDirty(false);
@@ -2274,10 +2308,14 @@ export default function InspectionDocumentEditor({
       formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
     }
     formData.set("samplingDefault", JSON.stringify(docSampling));
+    const sendParameters = parametersPayload !== savedParametersRef.current;
+    if (sendParameters) formData.set("parameters", parametersPayload);
     inFlightSaveRef.current = {
       featureRows,
       anchorRects,
       docSampling,
+      parameterRows,
+      parameters: sendParameters ? parametersPayload : null,
       pdfUrl,
       sentPdfMetrics: pdfMetrics != null,
       createdIds: [
@@ -2299,6 +2337,8 @@ export default function InspectionDocumentEditor({
     featureRows,
     pdfMetrics,
     docSampling,
+    parameterRows,
+    parametersPayload,
     submitSave,
     isUnsaved
   ]);
@@ -2316,13 +2356,16 @@ export default function InspectionDocumentEditor({
       pendingBalloonDeleteIdsRef.current.size > 0 ||
       pdfUrl !== savedPdfUrlRef.current ||
       (pdfMetricsDirty && pdfMetrics != null) ||
-      JSON.stringify(docSampling) !== JSON.stringify(savedSamplingRef.current));
+      JSON.stringify(docSampling) !==
+        JSON.stringify(savedSamplingRef.current) ||
+      parametersPayload !== savedParametersRef.current);
   const failedSave = failedSaveRef.current;
   const saveFailed =
     failedSave != null &&
     failedSave.featureRows === featureRows &&
     failedSave.anchorRects === anchorRects &&
     failedSave.docSampling === docSampling &&
+    failedSave.parameterRows === parameterRows &&
     failedSave.pdfUrl === pdfUrl;
 
   // Leaving with unsaved changes saves them first, then continues; only a
@@ -2402,6 +2445,31 @@ export default function InspectionDocumentEditor({
     [carbon, companyId, diagramId, featureRows, t, queueDelete]
   );
 
+  // A dropped STEP file is staged (resumable upload), then attached to the
+  // plan; the route revalidates, so the loader returns the model and the
+  // viewer replaces the sidebar.
+  const modelUpload = useModelUpload(`inspection-document:${diagramId}`);
+  const modelFetcher = useAction();
+  const handleModelUpload = useCallback(
+    async (file: File) => {
+      const staged = await modelUpload.runUpload(file);
+      if (staged.error) {
+        toast.error(t`Failed to upload the model`);
+        return;
+      }
+      modelFetcher.submit(
+        {
+          modelId: staged.modelId,
+          modelPath: staged.modelPath,
+          name: file.name,
+          size: String(file.size)
+        },
+        { method: "post", action: path.to.inspectionDocumentModel(diagramId) }
+      );
+    },
+    [diagramId, modelFetcher, modelUpload, t]
+  );
+
   const handlePdfUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -2437,6 +2505,8 @@ export default function InspectionDocumentEditor({
   }, []);
 
   const hasPdf = pdfFile !== null || pdfUrl !== "";
+  // Without a document the table has the page to itself.
+  const tableFillsPane = !hasDocument || featuresTableExpanded;
   const isPdfReady = hasPdf && (numPages > 0 || pdfMetrics !== null);
   const isOverlayReady = isPdfReady && containerWidth > 0 && overlayHeight > 0;
 
@@ -2630,6 +2700,72 @@ export default function InspectionDocumentEditor({
       gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions)
     }),
     [featureMutation, unitOfMeasureOptions, gaugeTypeOptions]
+  );
+
+  const handleAddParameter = useCallback(() => {
+    setParameterRows((prev) => [
+      ...prev,
+      { id: newParameterId(), key: "", value: "" }
+    ]);
+  }, []);
+
+  const handleDeleteParameter = useCallback((id: string) => {
+    setParameterRows((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
+  const parameterMutation = useCallback(
+    async (accessorKey: string, newValue: string, row: ParameterRow) => {
+      setParameterRows((prev) =>
+        prev.map((r) =>
+          r.id !== row.id
+            ? r
+            : { ...r, [accessorKey as "key" | "value"]: newValue }
+        )
+      );
+      return {
+        data: null,
+        error: null,
+        count: null,
+        status: 200,
+        statusText: "OK",
+        success: true
+      } as const;
+    },
+    []
+  );
+
+  const parameterEditableComponents = useMemo(
+    () => ({
+      key: EditableText(parameterMutation),
+      value: EditableText(parameterMutation)
+    }),
+    [parameterMutation]
+  );
+
+  const parameterColumns = useMemo<ColumnDef<ParameterRow>[]>(
+    () => [
+      { accessorKey: "key", header: t`Key`, size: 240 },
+      { accessorKey: "value", header: t`Value`, size: 360 },
+      {
+        id: "actions",
+        header: t`Actions`,
+        size: 80,
+        cell: ({ row }) => (
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={t`Delete parameter ${row.original.key}`}
+            icon={<LuTrash2 />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteParameter(row.original.id);
+            }}
+          />
+        )
+      }
+    ],
+    [handleDeleteParameter, t]
   );
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
@@ -2986,6 +3122,41 @@ export default function InspectionDocumentEditor({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Tabs
+            value={bottomTab}
+            onValueChange={(value) =>
+              setBottomTab(value as "characteristics" | "parameters")
+            }
+            className="ml-3"
+          >
+            <TabsList className="max-md:w-auto max-md:px-0">
+              <TabsTrigger value="characteristics">
+                {t`Characteristics`}
+              </TabsTrigger>
+              <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {hasDocument && (
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-expanded={featuresTableExpanded}
+              aria-label={
+                featuresTableExpanded
+                  ? t`Collapse characteristics table`
+                  : t`Expand characteristics table`
+              }
+              icon={
+                featuresTableExpanded ? (
+                  <LuChevronDown className="h-4 w-4" />
+                ) : (
+                  <LuChevronUp className="h-4 w-4" />
+                )
+              }
+              onClick={() => setFeaturesTableExpanded((v) => !v)}
+            />
+          )}
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
           {!canUpdate ? (
@@ -2999,7 +3170,27 @@ export default function InspectionDocumentEditor({
           ) : hasSaved ? (
             <span className="text-xs text-muted-foreground">{t`Saved`}</span>
           ) : null}
-          {!model && (
+          {bottomTab === "characteristics" ? (
+            <Button
+              type="button"
+              variant="secondary"
+              leftIcon={<LuPlus className="h-4 w-4" />}
+              onClick={handleAddFeature}
+            >
+              {t`Add Characteristic`}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              leftIcon={<LuPlus className="h-4 w-4" />}
+              onClick={handleAddParameter}
+            >
+              {t`Add Parameter`}
+            </Button>
+          )}
+          {/* Selectors and zoom act on a drawing. */}
+          {hasPdf && (
             <Button
               variant={placing ? "primary" : "secondary"}
               leftIcon={<LuRectangleHorizontal />}
@@ -3027,8 +3218,7 @@ export default function InspectionDocumentEditor({
           >
             {samplingRuleSummary(docSampling) ?? t`Sampling`}
           </Button>
-          {/* A model plan has no drawing to zoom. */}
-          {!model && (
+          {hasPdf && (
             <HStack
               spacing={0}
               className="ml-1 rounded-md border bg-background px-1 py-1"
@@ -3132,614 +3322,536 @@ export default function InspectionDocumentEditor({
         />
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
+      {/* No document: two flush panels, the table and the drop zone. */}
+      <div
+        className={
+          hasDocument
+            ? "flex min-h-0 flex-1 gap-4 overflow-hidden px-4 pb-4 pt-2"
+            : "flex min-h-0 flex-1 overflow-hidden"
+        }
+      >
         <div
           ref={editorStackRef}
-          className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden"
+          className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden"
         >
           {/* PDF viewer — outer measures width, inner fills container */}
-          <div
-            className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
-              featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1"
-            }`}
-            style={{
-              ...(featuresTableExpanded
-                ? { height: pdfPaneHeightPx }
-                : undefined),
-              minWidth: "100%"
-            }}
-          >
-            {hasPdf && documentPageCount > 1 ? (
-              <div
-                role="navigation"
-                aria-label={t`PDF pages`}
-                className="flex shrink-0 items-center justify-center gap-3 border-b border-border bg-card px-3 py-2.5 shadow-sm"
-              >
-                <IconButton
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  aria-label={t`Previous page`}
-                  icon={<LuChevronLeft className="h-4 w-4" />}
-                  isDisabled={pdfViewPage <= 1}
-                  onClick={() => setPdfViewPage((p) => Math.max(1, p - 1))}
-                />
-                <span className="min-w-[8.5rem] select-none text-center text-sm font-medium tabular-nums text-foreground">
-                  {t`Page ${pdfViewPage} of ${documentPageCount}`}
-                </span>
-                <IconButton
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  aria-label={t`Next page`}
-                  icon={<LuChevronRight className="h-4 w-4" />}
-                  isDisabled={pdfViewPage >= documentPageCount}
-                  onClick={() =>
-                    setPdfViewPage((p) => Math.min(documentPageCount, p + 1))
-                  }
-                />
-              </div>
-            ) : null}
+          {hasDocument && (
             <div
-              ref={containerRef}
-              className="relative min-h-0 min-w-full flex-1 overflow-auto"
+              className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
+                featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1"
+              }`}
               style={{
-                ...(placing || placingAnnotation || zoomBoxMode
-                  ? { cursor: "crosshair" }
-                  : {}),
+                ...(featuresTableExpanded
+                  ? { height: pdfPaneHeightPx }
+                  : undefined),
                 minWidth: "100%"
               }}
             >
-              {hasPdf ? (
-                // biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave only resets in-progress pointer drag state; not a control
+              {hasPdf && documentPageCount > 1 ? (
                 <div
-                  ref={overlayRef}
-                  className="relative select-none"
-                  style={{ width: renderedWidth > 0 ? renderedWidth : "100%" }}
-                  onMouseLeave={() => {
-                    if (drag) setDrag(null);
-                    if (dragKind) setDragKind(null);
-                    balloonDragRef.current = null;
-                    annotationResizeRef.current = null;
-                    anchorResizeRef.current = null;
-                    const el = konvaContentFromStageRef(stageRef);
-                    if (el) el.style.cursor = "";
-                  }}
+                  role="navigation"
+                  aria-label={t`PDF pages`}
+                  className="flex shrink-0 items-center justify-center gap-3 border-b border-border bg-card px-3 py-2.5 shadow-sm"
                 >
-                  {isMounted && (
-                    <div className="pointer-events-none">
-                      <Document
-                        file={pdfFile ?? pdfUrl}
-                        onLoadSuccess={async (pdf) => {
-                          setNumPages(pdf.numPages);
-                          setPdfViewPage(1);
-                          try {
-                            const page = await pdf.getPage(1);
-                            const viewport = page.getViewport({ scale: 1 });
-                            setPdfMetrics({
-                              pageCount: pdf.numPages,
-                              defaultPageWidth: viewport.width,
-                              defaultPageHeight: viewport.height
-                            });
-                          } catch {
-                            setPdfMetrics(null);
-                          }
-                        }}
-                        onLoadError={(err) =>
-                          toast.error(`PDF error: ${err.message}`)
-                        }
-                      >
-                        {numPages > 0 ? (
-                          <Page
-                            key={pdfViewPage}
-                            pageNumber={pdfViewPage}
-                            width={
-                              renderedWidth > 0 ? renderedWidth : undefined
+                  <IconButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    aria-label={t`Previous page`}
+                    icon={<LuChevronLeft className="h-4 w-4" />}
+                    isDisabled={pdfViewPage <= 1}
+                    onClick={() => setPdfViewPage((p) => Math.max(1, p - 1))}
+                  />
+                  <span className="min-w-[8.5rem] select-none text-center text-sm font-medium tabular-nums text-foreground">
+                    {t`Page ${pdfViewPage} of ${documentPageCount}`}
+                  </span>
+                  <IconButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    aria-label={t`Next page`}
+                    icon={<LuChevronRight className="h-4 w-4" />}
+                    isDisabled={pdfViewPage >= documentPageCount}
+                    onClick={() =>
+                      setPdfViewPage((p) => Math.min(documentPageCount, p + 1))
+                    }
+                  />
+                </div>
+              ) : null}
+              <div
+                ref={containerRef}
+                className="relative min-h-0 min-w-full flex-1 overflow-auto"
+                style={{
+                  ...(placing || placingAnnotation || zoomBoxMode
+                    ? { cursor: "crosshair" }
+                    : {}),
+                  minWidth: "100%"
+                }}
+              >
+                {hasPdf ? (
+                  // biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave only resets in-progress pointer drag state; not a control
+                  <div
+                    ref={overlayRef}
+                    className="relative select-none"
+                    style={{
+                      width: renderedWidth > 0 ? renderedWidth : "100%"
+                    }}
+                    onMouseLeave={() => {
+                      if (drag) setDrag(null);
+                      if (dragKind) setDragKind(null);
+                      balloonDragRef.current = null;
+                      annotationResizeRef.current = null;
+                      anchorResizeRef.current = null;
+                      const el = konvaContentFromStageRef(stageRef);
+                      if (el) el.style.cursor = "";
+                    }}
+                  >
+                    {isMounted && (
+                      <div className="pointer-events-none">
+                        <Document
+                          file={pdfFile ?? pdfUrl}
+                          onLoadSuccess={async (pdf) => {
+                            setNumPages(pdf.numPages);
+                            setPdfViewPage(1);
+                            try {
+                              const page = await pdf.getPage(1);
+                              const viewport = page.getViewport({ scale: 1 });
+                              setPdfMetrics({
+                                pageCount: pdf.numPages,
+                                defaultPageWidth: viewport.width,
+                                defaultPageHeight: viewport.height
+                              });
+                            } catch {
+                              setPdfMetrics(null);
                             }
-                            renderTextLayer={false}
-                            renderAnnotationLayer={false}
-                            className="w-full"
-                            onRenderSuccess={() => setPdfPageRendered(true)}
-                          />
-                        ) : null}
-                      </Document>
-                    </div>
-                  )}
-
-                  {pdfPageRendered &&
-                    containerWidth > 0 &&
-                    overlayHeight > 0 && (
-                      <div className="pointer-events-auto absolute inset-0 z-[9]">
-                        <Stage
-                          ref={stageRef as never}
-                          width={renderedWidth}
-                          height={overlayHeight}
-                          listening
-                          onMouseDown={handleStageMouseDown as never}
-                          onMouseMove={handleStageMouseMove as never}
-                          onMouseUp={handleStageMouseUp as never}
+                          }}
+                          onLoadError={(err) =>
+                            toast.error(`PDF error: ${err.message}`)
+                          }
                         >
-                          <Layer>
-                            {anchorRects
-                              .filter((s) => s.pageNumber === pdfViewPage)
-                              .map((s) => {
-                                const pageHeightPx = overlayHeight;
-                                const x = (s.x / 100) * renderedWidth;
-                                const y = (s.y / 100) * pageHeightPx;
-                                const width = (s.width / 100) * renderedWidth;
-                                const height = (s.height / 100) * pageHeightPx;
-                                const isSelected = s.id === selectedSelectorId;
+                          {numPages > 0 ? (
+                            <Page
+                              key={pdfViewPage}
+                              pageNumber={pdfViewPage}
+                              width={
+                                renderedWidth > 0 ? renderedWidth : undefined
+                              }
+                              renderTextLayer={false}
+                              renderAnnotationLayer={false}
+                              className="w-full"
+                              onRenderSuccess={() => setPdfPageRendered(true)}
+                            />
+                          ) : null}
+                        </Document>
+                      </div>
+                    )}
 
-                                return (
-                                  <Rect
-                                    key={`konva-rect-${s.id}`}
-                                    x={x}
-                                    y={y}
-                                    width={width}
-                                    height={height}
-                                    stroke={BALLOON_CALLOUT_STROKE}
-                                    strokeWidth={isSelected ? 3 : 2}
-                                    fill={
-                                      isSelected
-                                        ? "rgba(249,115,22,0.12)"
-                                        : undefined
-                                    }
-                                    fillEnabled={isSelected}
-                                    hitStrokeWidth={8}
-                                    listening={false}
-                                  />
-                                );
-                              })}
-                            {annotations
-                              .filter((a) => a.pageNumber === pdfViewPage)
-                              .map((annotation) => {
-                                const pageHeightPx = overlayHeight;
-                                const x = (annotation.x / 100) * renderedWidth;
-                                const y = (annotation.y / 100) * pageHeightPx;
-                                const w =
-                                  (annotation.width / 100) * renderedWidth;
-                                const h =
-                                  (annotation.height / 100) * pageHeightPx;
-                                const isSelected =
-                                  annotation.id === selectedAnnotationId;
-                                const previewText =
-                                  annotationEditDraft?.id === annotation.id
-                                    ? annotationEditDraft.text
-                                    : annotation.text;
-                                const previewFontSize =
-                                  annotationEditDraft?.id === annotation.id
-                                    ? annotationEditDraft.fontSize
-                                    : annotation.fontSize;
+                    {pdfPageRendered &&
+                      containerWidth > 0 &&
+                      overlayHeight > 0 && (
+                        <div className="pointer-events-auto absolute inset-0 z-[9]">
+                          <Stage
+                            ref={stageRef as never}
+                            width={renderedWidth}
+                            height={overlayHeight}
+                            listening
+                            onMouseDown={handleStageMouseDown as never}
+                            onMouseMove={handleStageMouseMove as never}
+                            onMouseUp={handleStageMouseUp as never}
+                          >
+                            <Layer>
+                              {anchorRects
+                                .filter((s) => s.pageNumber === pdfViewPage)
+                                .map((s) => {
+                                  const pageHeightPx = overlayHeight;
+                                  const x = (s.x / 100) * renderedWidth;
+                                  const y = (s.y / 100) * pageHeightPx;
+                                  const width = (s.width / 100) * renderedWidth;
+                                  const height =
+                                    (s.height / 100) * pageHeightPx;
+                                  const isSelected =
+                                    s.id === selectedSelectorId;
 
-                                return (
-                                  <Group
-                                    key={`annotation-${annotation.id}`}
-                                    x={x}
-                                    y={y}
-                                  >
+                                  return (
                                     <Rect
-                                      x={0}
-                                      y={0}
-                                      width={w}
-                                      height={h}
+                                      key={`konva-rect-${s.id}`}
+                                      x={x}
+                                      y={y}
+                                      width={width}
+                                      height={height}
+                                      stroke={BALLOON_CALLOUT_STROKE}
+                                      strokeWidth={isSelected ? 3 : 2}
                                       fill={
                                         isSelected
-                                          ? "rgba(249,115,22,0.22)"
-                                          : "rgba(249,115,22,0.12)"
+                                          ? "rgba(249,115,22,0.12)"
+                                          : undefined
                                       }
-                                      stroke={BALLOON_CALLOUT_STROKE}
-                                      strokeWidth={isSelected ? 2.5 : 1.5}
-                                      cornerRadius={4}
+                                      fillEnabled={isSelected}
+                                      hitStrokeWidth={8}
                                       listening={false}
                                     />
-                                    <Text
-                                      x={8}
-                                      y={6}
-                                      width={Math.max(20, w - 16)}
-                                      height={Math.max(16, h - 12)}
-                                      text={previewText}
-                                      fill={CALLOUT_TEXT}
-                                      fontSize={previewFontSize}
-                                      listening={false}
-                                    />
-                                  </Group>
-                                );
-                              })}
-                            {annotationDraft &&
-                              annotationDraft.pageNumber === pdfViewPage &&
-                              (() => {
-                                const pageHeightPx = overlayHeight;
-                                const x =
-                                  (annotationDraft.x / 100) * renderedWidth;
-                                const y =
-                                  (annotationDraft.y / 100) * pageHeightPx;
-                                const w =
-                                  (annotationDraft.width / 100) * renderedWidth;
-                                const h =
-                                  (annotationDraft.height / 100) * pageHeightPx;
+                                  );
+                                })}
+                              {annotations
+                                .filter((a) => a.pageNumber === pdfViewPage)
+                                .map((annotation) => {
+                                  const pageHeightPx = overlayHeight;
+                                  const x =
+                                    (annotation.x / 100) * renderedWidth;
+                                  const y = (annotation.y / 100) * pageHeightPx;
+                                  const w =
+                                    (annotation.width / 100) * renderedWidth;
+                                  const h =
+                                    (annotation.height / 100) * pageHeightPx;
+                                  const isSelected =
+                                    annotation.id === selectedAnnotationId;
+                                  const previewText =
+                                    annotationEditDraft?.id === annotation.id
+                                      ? annotationEditDraft.text
+                                      : annotation.text;
+                                  const previewFontSize =
+                                    annotationEditDraft?.id === annotation.id
+                                      ? annotationEditDraft.fontSize
+                                      : annotation.fontSize;
 
-                                return (
-                                  <Group key="annotation-draft" x={x} y={y}>
-                                    <Rect
-                                      x={0}
-                                      y={0}
-                                      width={w}
-                                      height={h}
-                                      fill="rgba(249,115,22,0.16)"
-                                      stroke={BALLOON_CALLOUT_STROKE}
-                                      dash={[4, 4]}
-                                      strokeWidth={2}
-                                      cornerRadius={4}
-                                      listening={false}
-                                    />
-                                    {annotationDraft.text.trim().length > 0 && (
+                                  return (
+                                    <Group
+                                      key={`annotation-${annotation.id}`}
+                                      x={x}
+                                      y={y}
+                                    >
+                                      <Rect
+                                        x={0}
+                                        y={0}
+                                        width={w}
+                                        height={h}
+                                        fill={
+                                          isSelected
+                                            ? "rgba(249,115,22,0.22)"
+                                            : "rgba(249,115,22,0.12)"
+                                        }
+                                        stroke={BALLOON_CALLOUT_STROKE}
+                                        strokeWidth={isSelected ? 2.5 : 1.5}
+                                        cornerRadius={4}
+                                        listening={false}
+                                      />
                                       <Text
                                         x={8}
                                         y={6}
                                         width={Math.max(20, w - 16)}
                                         height={Math.max(16, h - 12)}
-                                        text={annotationDraft.text}
+                                        text={previewText}
                                         fill={CALLOUT_TEXT}
-                                        fontSize={annotationDraft.fontSize}
+                                        fontSize={previewFontSize}
                                         listening={false}
                                       />
-                                    )}
-                                  </Group>
-                                );
-                              })()}
-                            {featureRows
-                              .filter(
-                                (b) =>
-                                  b.pageNumber === pdfViewPage && b.balloonId
-                              )
-                              .map((b) => {
-                                const pageHeightPx = overlayHeight;
-                                const balloonWidthPx =
-                                  (b.width / 100) * renderedWidth;
-                                const balloonHeightPx =
-                                  (b.height / 100) * pageHeightPx;
-                                const balloonX = (b.x / 100) * renderedWidth;
-                                const balloonY = (b.y / 100) * pageHeightPx;
-                                const balloonCenterX =
-                                  balloonX + balloonWidthPx / 2;
-                                const balloonCenterY =
-                                  balloonY + balloonHeightPx / 2;
-                                const radius = Math.max(
-                                  8,
-                                  Math.min(balloonWidthPx, balloonHeightPx) / 2
-                                );
-                                const balloonLabelFontSize = Math.max(
-                                  14,
-                                  Math.min(26, Math.round(radius * 1.15))
-                                );
-                                const isSelected =
-                                  b.balloonId === selectedBalloonId;
-                                const linkedSelector = anchorRects.find(
-                                  (s) => s.id === b.balloonAnchorId
-                                );
-                                let linePoints:
-                                  | [number, number, number, number]
-                                  | null = null;
-                                if (
-                                  linkedSelector &&
-                                  linkedSelector.pageNumber === pdfViewPage
-                                ) {
-                                  const sx =
-                                    (linkedSelector.x / 100) * renderedWidth;
-                                  const sy =
-                                    (linkedSelector.y / 100) * pageHeightPx;
-                                  const sw =
-                                    (linkedSelector.width / 100) *
-                                    renderedWidth;
-                                  const sh =
-                                    (linkedSelector.height / 100) *
-                                    pageHeightPx;
-                                  const anchorX = sx + sw / 2;
-                                  const anchorY = sy + sh / 2;
-                                  linePoints = clippedBalloonToAnchorLine(
-                                    balloonCenterX,
-                                    balloonCenterY,
-                                    radius,
-                                    anchorX,
-                                    anchorY,
-                                    { x: sx, y: sy, w: sw, h: sh }
+                                    </Group>
                                   );
-                                }
+                                })}
+                              {annotationDraft &&
+                                annotationDraft.pageNumber === pdfViewPage &&
+                                (() => {
+                                  const pageHeightPx = overlayHeight;
+                                  const x =
+                                    (annotationDraft.x / 100) * renderedWidth;
+                                  const y =
+                                    (annotationDraft.y / 100) * pageHeightPx;
+                                  const w =
+                                    (annotationDraft.width / 100) *
+                                    renderedWidth;
+                                  const h =
+                                    (annotationDraft.height / 100) *
+                                    pageHeightPx;
 
-                                return (
-                                  <Group
-                                    key={`balloon-group-${b.balloonId}`}
-                                    x={balloonX}
-                                    y={balloonY}
-                                    listening={false}
-                                  >
-                                    {/* Hit target: children use listening={false}, so without this rect
-                                the group receives no pointer events (no hover cursor, no drag). */}
-                                    <Rect
-                                      x={0}
-                                      y={0}
-                                      width={balloonWidthPx}
-                                      height={balloonHeightPx}
-                                      fill="rgba(0,0,0,0.001)"
-                                      listening={false}
-                                    />
-                                    {linePoints && (
-                                      <Line
-                                        key={`balloon-line-${b.balloonId}`}
-                                        points={[
-                                          linePoints[0] - balloonX,
-                                          linePoints[1] - balloonY,
-                                          linePoints[2] - balloonX,
-                                          linePoints[3] - balloonY
-                                        ]}
+                                  return (
+                                    <Group key="annotation-draft" x={x} y={y}>
+                                      <Rect
+                                        x={0}
+                                        y={0}
+                                        width={w}
+                                        height={h}
+                                        fill="rgba(249,115,22,0.16)"
                                         stroke={BALLOON_CALLOUT_STROKE}
+                                        dash={[4, 4]}
                                         strokeWidth={2}
+                                        cornerRadius={4}
                                         listening={false}
                                       />
-                                    )}
-                                    <Circle
-                                      key={`balloon-circle-${b.balloonId}`}
-                                      x={balloonWidthPx / 2}
-                                      y={balloonHeightPx / 2}
-                                      radius={radius}
-                                      fill={
-                                        isSelected
-                                          ? "rgba(249,115,22,0.14)"
-                                          : "rgba(0,0,0,0)"
-                                      }
-                                      fillEnabled
-                                      stroke={BALLOON_CALLOUT_STROKE}
-                                      strokeWidth={isSelected ? 3 : 2}
+                                      {annotationDraft.text.trim().length >
+                                        0 && (
+                                        <Text
+                                          x={8}
+                                          y={6}
+                                          width={Math.max(20, w - 16)}
+                                          height={Math.max(16, h - 12)}
+                                          text={annotationDraft.text}
+                                          fill={CALLOUT_TEXT}
+                                          fontSize={annotationDraft.fontSize}
+                                          listening={false}
+                                        />
+                                      )}
+                                    </Group>
+                                  );
+                                })()}
+                              {featureRows
+                                .filter(
+                                  (b) =>
+                                    b.pageNumber === pdfViewPage && b.balloonId
+                                )
+                                .map((b) => {
+                                  const pageHeightPx = overlayHeight;
+                                  const balloonWidthPx =
+                                    (b.width / 100) * renderedWidth;
+                                  const balloonHeightPx =
+                                    (b.height / 100) * pageHeightPx;
+                                  const balloonX = (b.x / 100) * renderedWidth;
+                                  const balloonY = (b.y / 100) * pageHeightPx;
+                                  const balloonCenterX =
+                                    balloonX + balloonWidthPx / 2;
+                                  const balloonCenterY =
+                                    balloonY + balloonHeightPx / 2;
+                                  const radius = Math.max(
+                                    8,
+                                    Math.min(balloonWidthPx, balloonHeightPx) /
+                                      2
+                                  );
+                                  const balloonLabelFontSize = Math.max(
+                                    14,
+                                    Math.min(26, Math.round(radius * 1.15))
+                                  );
+                                  const isSelected =
+                                    b.balloonId === selectedBalloonId;
+                                  const linkedSelector = anchorRects.find(
+                                    (s) => s.id === b.balloonAnchorId
+                                  );
+                                  let linePoints:
+                                    | [number, number, number, number]
+                                    | null = null;
+                                  if (
+                                    linkedSelector &&
+                                    linkedSelector.pageNumber === pdfViewPage
+                                  ) {
+                                    const sx =
+                                      (linkedSelector.x / 100) * renderedWidth;
+                                    const sy =
+                                      (linkedSelector.y / 100) * pageHeightPx;
+                                    const sw =
+                                      (linkedSelector.width / 100) *
+                                      renderedWidth;
+                                    const sh =
+                                      (linkedSelector.height / 100) *
+                                      pageHeightPx;
+                                    const anchorX = sx + sw / 2;
+                                    const anchorY = sy + sh / 2;
+                                    linePoints = clippedBalloonToAnchorLine(
+                                      balloonCenterX,
+                                      balloonCenterY,
+                                      radius,
+                                      anchorX,
+                                      anchorY,
+                                      { x: sx, y: sy, w: sw, h: sh }
+                                    );
+                                  }
+
+                                  return (
+                                    <Group
+                                      key={`balloon-group-${b.balloonId}`}
+                                      x={balloonX}
+                                      y={balloonY}
                                       listening={false}
-                                    />
-                                    <Text
-                                      key={`balloon-text-${b.balloonId}`}
-                                      x={balloonWidthPx / 2 - radius}
-                                      y={balloonHeightPx / 2 - radius}
-                                      width={radius * 2}
-                                      height={radius * 2}
-                                      text={b.label}
-                                      align="center"
-                                      verticalAlign="middle"
-                                      fill={BALLOON_CALLOUT_STROKE}
-                                      fontStyle="bold"
-                                      fontSize={balloonLabelFontSize}
-                                      listening={false}
-                                    />
-                                  </Group>
-                                );
-                              })}
-                            {previewRect && (
-                              <Rect
-                                x={(previewRect.x / 100) * renderedWidth}
-                                y={(previewRect.y / 100) * overlayHeight}
-                                width={
-                                  (previewRect.width / 100) * renderedWidth
-                                }
-                                height={
-                                  (previewRect.height / 100) * overlayHeight
-                                }
-                                stroke={
-                                  dragKind === "zoom"
-                                    ? "#2563eb"
-                                    : BALLOON_CALLOUT_STROKE
-                                }
-                                strokeWidth={2}
-                                fillEnabled={false}
-                              />
-                            )}
-                          </Layer>
-                        </Stage>
-                      </div>
-                    )}
-                </div>
-              ) : model ? (
-                <div className="h-full w-full">
-                  <ModelUploadPreview
-                    modelUploadId={model.modelUploadId}
-                    modelPath={model.modelPath}
-                    companyId={companyId}
-                    pmiLinks={pmiLinks}
-                    selectedLinkId={modelFeatureId}
-                    onLinkSelect={setModelFeatureId}
-                    className="h-full rounded-none"
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  disabled={uploading}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center min-w-full h-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-                >
-                  <VStack className="items-center gap-2">
-                    {uploading ? (
-                      <LuLoader className="h-12 w-12 opacity-30 animate-spin" />
-                    ) : (
-                      <LuUpload className="h-12 w-12 opacity-30" />
-                    )}
-                    <p>
-                      {uploading
-                        ? t`Uploading…`
-                        : t`Click to upload a PDF drawing`}
-                    </p>
-                  </VStack>
-                </button>
-              )}
-              {annotationDraft &&
-                annotationDraft.pageNumber === pdfViewPage &&
-                renderedWidth > 0 &&
-                overlayHeight > 0 && (
-                  <div
-                    className="absolute z-20 rounded-md border bg-background p-2 shadow-md"
-                    style={getAnnotationDialogPosition({
-                      renderedWidth,
-                      overlayHeight,
-                      totalPagesStage: 1,
-                      pageNumber: annotationDraft.pageNumber,
-                      x: annotationDraft.x,
-                      y: annotationDraft.y,
-                      width: annotationDraft.width,
-                      height: annotationDraft.height
-                    })}
-                  >
-                    <VStack spacing={2} className="w-52">
-                      <input
-                        aria-label={t`Annotation text`}
-                        className="h-8 w-full rounded border bg-background px-2 text-xs"
-                        placeholder={t`Annotation text`}
-                        value={annotationDraft.text}
-                        onChange={(event) =>
-                          setAnnotationDraft((prev) =>
-                            prev ? { ...prev, text: event.target.value } : prev
-                          )
-                        }
-                      />
-                      <input
-                        aria-label={t`Annotation text size`}
-                        type="text"
-                        inputMode="numeric"
-                        className="h-8 w-full rounded border bg-background px-2 text-xs"
-                        placeholder={t`Text size`}
-                        value={annotationFontSizeInput}
-                        onChange={(event) => {
-                          const raw = event.target.value;
-                          if (!/^\d*$/.test(raw)) return;
-                          setAnnotationFontSizeInput(raw);
-                          if (raw === "") return;
-                          const parsed = Number(raw);
-                          if (!Number.isFinite(parsed)) return;
-                          setAnnotationDraft((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  fontSize: Math.max(8, Math.min(48, parsed))
-                                }
-                              : prev
-                          );
-                        }}
-                        onBlur={() => {
-                          const parsed = Number(
-                            annotationFontSizeInput || "12"
-                          );
-                          const normalized = Math.max(
-                            8,
-                            Math.min(48, Number.isFinite(parsed) ? parsed : 12)
-                          );
-                          setAnnotationFontSizeInput(String(normalized));
-                          setAnnotationDraft((prev) =>
-                            prev ? { ...prev, fontSize: normalized } : prev
-                          );
-                        }}
-                      />
-                      <HStack spacing={1} className="justify-end">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setAnnotationDraft(null);
-                            setAnnotationFontSizeInput("12");
-                          }}
-                        >
-                          {t`Cancel`}
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => void handleCreateAnnotation()}
-                        >
-                          {t`Add`}
-                        </Button>
-                      </HStack>
-                    </VStack>
+                                    >
+                                      {/* Hit target: children use listening={false}, so without this rect
+                                the group receives no pointer events (no hover cursor, no drag). */}
+                                      <Rect
+                                        x={0}
+                                        y={0}
+                                        width={balloonWidthPx}
+                                        height={balloonHeightPx}
+                                        fill="rgba(0,0,0,0.001)"
+                                        listening={false}
+                                      />
+                                      {linePoints && (
+                                        <Line
+                                          key={`balloon-line-${b.balloonId}`}
+                                          points={[
+                                            linePoints[0] - balloonX,
+                                            linePoints[1] - balloonY,
+                                            linePoints[2] - balloonX,
+                                            linePoints[3] - balloonY
+                                          ]}
+                                          stroke={BALLOON_CALLOUT_STROKE}
+                                          strokeWidth={2}
+                                          listening={false}
+                                        />
+                                      )}
+                                      <Circle
+                                        key={`balloon-circle-${b.balloonId}`}
+                                        x={balloonWidthPx / 2}
+                                        y={balloonHeightPx / 2}
+                                        radius={radius}
+                                        fill={
+                                          isSelected
+                                            ? "rgba(249,115,22,0.14)"
+                                            : "rgba(0,0,0,0)"
+                                        }
+                                        fillEnabled
+                                        stroke={BALLOON_CALLOUT_STROKE}
+                                        strokeWidth={isSelected ? 3 : 2}
+                                        listening={false}
+                                      />
+                                      <Text
+                                        key={`balloon-text-${b.balloonId}`}
+                                        x={balloonWidthPx / 2 - radius}
+                                        y={balloonHeightPx / 2 - radius}
+                                        width={radius * 2}
+                                        height={radius * 2}
+                                        text={b.label}
+                                        align="center"
+                                        verticalAlign="middle"
+                                        fill={BALLOON_CALLOUT_STROKE}
+                                        fontStyle="bold"
+                                        fontSize={balloonLabelFontSize}
+                                        listening={false}
+                                      />
+                                    </Group>
+                                  );
+                                })}
+                              {previewRect && (
+                                <Rect
+                                  x={(previewRect.x / 100) * renderedWidth}
+                                  y={(previewRect.y / 100) * overlayHeight}
+                                  width={
+                                    (previewRect.width / 100) * renderedWidth
+                                  }
+                                  height={
+                                    (previewRect.height / 100) * overlayHeight
+                                  }
+                                  stroke={
+                                    dragKind === "zoom"
+                                      ? "#2563eb"
+                                      : BALLOON_CALLOUT_STROKE
+                                  }
+                                  strokeWidth={2}
+                                  fillEnabled={false}
+                                />
+                              )}
+                            </Layer>
+                          </Stage>
+                        </div>
+                      )}
                   </div>
-                )}
-              {!annotationDraft &&
-                annotationEditDraft &&
-                annotationEditDraft.pageNumber === pdfViewPage &&
-                renderedWidth > 0 &&
-                overlayHeight > 0 && (
-                  <div
-                    className="absolute z-20 rounded-md border bg-background p-2 shadow-md"
-                    style={getAnnotationDialogPosition({
-                      renderedWidth,
-                      overlayHeight,
-                      totalPagesStage: 1,
-                      pageNumber: annotationEditDraft.pageNumber,
-                      x: annotationEditDraft.x,
-                      y: annotationEditDraft.y,
-                      width: annotationEditDraft.width,
-                      height: annotationEditDraft.height
-                    })}
+                ) : model ? (
+                  <div className="h-full w-full">
+                    <ModelUploadPreview
+                      modelUploadId={model.modelUploadId}
+                      modelPath={model.modelPath}
+                      companyId={companyId}
+                      pmiLinks={pmiLinks}
+                      selectedLinkId={modelFeatureId}
+                      onLinkSelect={setModelFeatureId}
+                      className="h-full rounded-none"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center min-w-full h-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                   >
-                    <VStack spacing={2} className="w-52">
-                      <input
-                        aria-label={t`Annotation text`}
-                        className="h-8 w-full rounded border bg-background px-2 text-xs"
-                        placeholder={t`Annotation text`}
-                        value={annotationEditDraft.text}
-                        onChange={(event) =>
-                          setAnnotationEditDraft((prev) =>
-                            prev ? { ...prev, text: event.target.value } : prev
-                          )
-                        }
-                      />
-                      <input
-                        aria-label={t`Annotation text size`}
-                        type="text"
-                        inputMode="numeric"
-                        className="h-8 w-full rounded border bg-background px-2 text-xs"
-                        placeholder={t`Text size`}
-                        value={annotationEditFontSizeInput}
-                        onChange={(event) => {
-                          const raw = event.target.value;
-                          if (!/^\d*$/.test(raw)) return;
-                          setAnnotationEditFontSizeInput(raw);
-                          if (raw === "") return;
-                          const parsed = Number(raw);
-                          if (!Number.isFinite(parsed)) return;
-                          setAnnotationEditDraft((prev) =>
-                            prev
-                              ? {
-                                  ...prev,
-                                  fontSize: Math.max(8, Math.min(48, parsed))
-                                }
-                              : prev
-                          );
-                        }}
-                        onBlur={() => {
-                          const parsed = Number(
-                            annotationEditFontSizeInput || "12"
-                          );
-                          const normalized = Math.max(
-                            8,
-                            Math.min(48, Number.isFinite(parsed) ? parsed : 12)
-                          );
-                          setAnnotationEditFontSizeInput(String(normalized));
-                          setAnnotationEditDraft((prev) =>
-                            prev ? { ...prev, fontSize: normalized } : prev
-                          );
-                        }}
-                      />
-                      <HStack spacing={1} className="justify-between">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          leftIcon={<LuTrash2 />}
-                          onClick={() => void handleDeleteAnnotation()}
-                        >
-                          {t`Delete`}
-                        </Button>
-                        <HStack spacing={1}>
+                    <VStack className="items-center gap-2">
+                      {uploading ? (
+                        <LuLoader className="h-12 w-12 opacity-30 animate-spin" />
+                      ) : (
+                        <LuUpload className="h-12 w-12 opacity-30" />
+                      )}
+                      <p>
+                        {uploading
+                          ? t`Uploading…`
+                          : t`Click to upload a PDF drawing`}
+                      </p>
+                    </VStack>
+                  </button>
+                )}
+                {annotationDraft &&
+                  annotationDraft.pageNumber === pdfViewPage &&
+                  renderedWidth > 0 &&
+                  overlayHeight > 0 && (
+                    <div
+                      className="absolute z-20 rounded-md border bg-background p-2 shadow-md"
+                      style={getAnnotationDialogPosition({
+                        renderedWidth,
+                        overlayHeight,
+                        totalPagesStage: 1,
+                        pageNumber: annotationDraft.pageNumber,
+                        x: annotationDraft.x,
+                        y: annotationDraft.y,
+                        width: annotationDraft.width,
+                        height: annotationDraft.height
+                      })}
+                    >
+                      <VStack spacing={2} className="w-52">
+                        <input
+                          aria-label={t`Annotation text`}
+                          className="h-8 w-full rounded border bg-background px-2 text-xs"
+                          placeholder={t`Annotation text`}
+                          value={annotationDraft.text}
+                          onChange={(event) =>
+                            setAnnotationDraft((prev) =>
+                              prev
+                                ? { ...prev, text: event.target.value }
+                                : prev
+                            )
+                          }
+                        />
+                        <input
+                          aria-label={t`Annotation text size`}
+                          type="text"
+                          inputMode="numeric"
+                          className="h-8 w-full rounded border bg-background px-2 text-xs"
+                          placeholder={t`Text size`}
+                          value={annotationFontSizeInput}
+                          onChange={(event) => {
+                            const raw = event.target.value;
+                            if (!/^\d*$/.test(raw)) return;
+                            setAnnotationFontSizeInput(raw);
+                            if (raw === "") return;
+                            const parsed = Number(raw);
+                            if (!Number.isFinite(parsed)) return;
+                            setAnnotationDraft((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    fontSize: Math.max(8, Math.min(48, parsed))
+                                  }
+                                : prev
+                            );
+                          }}
+                          onBlur={() => {
+                            const parsed = Number(
+                              annotationFontSizeInput || "12"
+                            );
+                            const normalized = Math.max(
+                              8,
+                              Math.min(
+                                48,
+                                Number.isFinite(parsed) ? parsed : 12
+                              )
+                            );
+                            setAnnotationFontSizeInput(String(normalized));
+                            setAnnotationDraft((prev) =>
+                              prev ? { ...prev, fontSize: normalized } : prev
+                            );
+                          }}
+                        />
+                        <HStack spacing={1} className="justify-end">
                           <Button
                             type="button"
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              setSelectedAnnotationId(null);
-                              setAnnotationEditDraft(null);
+                              setAnnotationDraft(null);
+                              setAnnotationFontSizeInput("12");
                             }}
                           >
                             {t`Cancel`}
@@ -3747,19 +3859,125 @@ export default function InspectionDocumentEditor({
                           <Button
                             type="button"
                             size="sm"
-                            onClick={() => void handleUpdateAnnotation()}
+                            onClick={() => void handleCreateAnnotation()}
                           >
-                            {t`Update`}
+                            {t`Add`}
                           </Button>
                         </HStack>
-                      </HStack>
-                    </VStack>
-                  </div>
-                )}
+                      </VStack>
+                    </div>
+                  )}
+                {!annotationDraft &&
+                  annotationEditDraft &&
+                  annotationEditDraft.pageNumber === pdfViewPage &&
+                  renderedWidth > 0 &&
+                  overlayHeight > 0 && (
+                    <div
+                      className="absolute z-20 rounded-md border bg-background p-2 shadow-md"
+                      style={getAnnotationDialogPosition({
+                        renderedWidth,
+                        overlayHeight,
+                        totalPagesStage: 1,
+                        pageNumber: annotationEditDraft.pageNumber,
+                        x: annotationEditDraft.x,
+                        y: annotationEditDraft.y,
+                        width: annotationEditDraft.width,
+                        height: annotationEditDraft.height
+                      })}
+                    >
+                      <VStack spacing={2} className="w-52">
+                        <input
+                          aria-label={t`Annotation text`}
+                          className="h-8 w-full rounded border bg-background px-2 text-xs"
+                          placeholder={t`Annotation text`}
+                          value={annotationEditDraft.text}
+                          onChange={(event) =>
+                            setAnnotationEditDraft((prev) =>
+                              prev
+                                ? { ...prev, text: event.target.value }
+                                : prev
+                            )
+                          }
+                        />
+                        <input
+                          aria-label={t`Annotation text size`}
+                          type="text"
+                          inputMode="numeric"
+                          className="h-8 w-full rounded border bg-background px-2 text-xs"
+                          placeholder={t`Text size`}
+                          value={annotationEditFontSizeInput}
+                          onChange={(event) => {
+                            const raw = event.target.value;
+                            if (!/^\d*$/.test(raw)) return;
+                            setAnnotationEditFontSizeInput(raw);
+                            if (raw === "") return;
+                            const parsed = Number(raw);
+                            if (!Number.isFinite(parsed)) return;
+                            setAnnotationEditDraft((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    fontSize: Math.max(8, Math.min(48, parsed))
+                                  }
+                                : prev
+                            );
+                          }}
+                          onBlur={() => {
+                            const parsed = Number(
+                              annotationEditFontSizeInput || "12"
+                            );
+                            const normalized = Math.max(
+                              8,
+                              Math.min(
+                                48,
+                                Number.isFinite(parsed) ? parsed : 12
+                              )
+                            );
+                            setAnnotationEditFontSizeInput(String(normalized));
+                            setAnnotationEditDraft((prev) =>
+                              prev ? { ...prev, fontSize: normalized } : prev
+                            );
+                          }}
+                        />
+                        <HStack spacing={1} className="justify-between">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            leftIcon={<LuTrash2 />}
+                            onClick={() => void handleDeleteAnnotation()}
+                          >
+                            {t`Delete`}
+                          </Button>
+                          <HStack spacing={1}>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedAnnotationId(null);
+                                setAnnotationEditDraft(null);
+                              }}
+                            >
+                              {t`Cancel`}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => void handleUpdateAnnotation()}
+                            >
+                              {t`Update`}
+                            </Button>
+                          </HStack>
+                        </HStack>
+                      </VStack>
+                    </div>
+                  )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {featuresTableExpanded ? (
+          {hasDocument && featuresTableExpanded ? (
             <div
               role="separator"
               aria-orientation="horizontal"
@@ -3776,68 +3994,58 @@ export default function InspectionDocumentEditor({
 
           {/* Features table — form fields map to balloon columns; autosaved */}
           <div
-            className={
-              featuresTableExpanded
-                ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card"
-                : "flex max-h-[14rem] min-w-0 shrink-0 flex-col overflow-hidden rounded-lg bg-card"
-            }
+            className={cn(
+              "flex min-w-0 flex-col overflow-hidden bg-card",
+              tableFillsPane ? "min-h-0 flex-1" : "max-h-[14rem] shrink-0",
+              hasDocument && "rounded-lg"
+            )}
             style={
-              featuresTableExpanded && editorStackHeightPx > 0
+              hasDocument && featuresTableExpanded && editorStackHeightPx > 0
                 ? { minHeight: editorStackHeightPx * 0.5 }
                 : undefined
             }
           >
-            <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 px-2 py-2 pl-3">
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                {t`Characteristics`} ({featureRows.length})
-              </span>
-              <HStack spacing={1} className="flex-shrink-0 items-center">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={<LuPlus className="h-4 w-4" />}
-                  onClick={handleAddFeature}
-                >
-                  {t`Add Characteristic`}
-                </Button>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-expanded={featuresTableExpanded}
-                  aria-label={
-                    featuresTableExpanded
-                      ? t`Collapse characteristics table`
-                      : t`Expand characteristics table`
-                  }
-                  icon={
-                    featuresTableExpanded ? (
-                      <LuChevronDown className="h-4 w-4" />
-                    ) : (
-                      <LuChevronUp className="h-4 w-4" />
-                    )
-                  }
-                  onClick={() => setFeaturesTableExpanded((v) => !v)}
-                />
-              </HStack>
-            </div>
             <div
               className={
-                featuresTableExpanded
+                tableFillsPane
                   ? "min-h-0 flex-1 overflow-auto"
-                  : "overflow-hidden"
+                  : "overflow-auto"
               }
             >
-              <Grid<FeatureRow>
-                data={featureRows}
-                columns={featureColumns}
-                editableComponents={featureEditableComponents}
-                contained={false}
-              />
+              {/* Keyed: Grid records its column order on mount, so one
+                  instance reused across tabs would keep the other's order. */}
+              {bottomTab === "characteristics" ? (
+                <Grid<FeatureRow>
+                  key="characteristics"
+                  data={featureRows}
+                  columns={featureColumns}
+                  editableComponents={featureEditableComponents}
+                  contained={!hasDocument}
+                />
+              ) : (
+                <Grid<ParameterRow>
+                  key="parameters"
+                  data={parameterRows}
+                  columns={parameterColumns}
+                  editableComponents={parameterEditableComponents}
+                  canEdit={canUpdate}
+                  contained={!hasDocument}
+                />
+              )}
             </div>
           </div>
         </div>
+        {!hasDocument && (
+          <InspectionDocumentDropzone
+            uploading={uploading || modelUpload.upload !== null}
+            progress={modelUpload.upload}
+            disabled={!canUpdate}
+            onPdf={(file) =>
+              void uploadPdfAndSave(file, { clearBalloons: false })
+            }
+            onModel={(file) => void handleModelUpload(file)}
+          />
+        )}
       </div>
 
       {samplingTarget !== null && (

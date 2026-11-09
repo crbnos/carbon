@@ -229,6 +229,9 @@ msgstr "Sopra il limite superiore"
 msgid "Accept"
 msgstr "Accetta"
 
+msgid "Accept inspection?"
+msgstr "Accettare il controllo?"
+
 msgid "Accept Lot"
 msgstr "Accetta Lotto"
 
@@ -1277,6 +1280,9 @@ msgstr "Ispeziona Articolo"
 msgid "inspected"
 msgstr "ispezionato"
 
+msgid "Inspections"
+msgstr "Controlli"
+
 msgid "Instructions"
 msgstr "Istruzioni"
 
@@ -1351,6 +1357,9 @@ msgstr "Dettagli Commessa"
 
 msgid "Job due"
 msgstr "Ordine di produzione in scadenza"
+
+msgid "Job Operation"
+msgstr "Operazione dell'ordine"
 
 msgid "Job Traveler"
 msgstr "Cartellino di produzione"
@@ -1519,6 +1528,9 @@ msgstr "Crea una sostituzione"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Gestisci come accedi a Carbon."
+
+msgid "Manual"
+msgstr "Manuale"
 
 msgid "Manually add items to inventory"
 msgstr "Aggiungi manualmente articoli all'inventario"
@@ -1701,6 +1713,12 @@ msgstr "Nessuno strumento di misura trovato."
 msgid "No Impact"
 msgstr "Nessun Impatto"
 
+msgid "No inspection plan"
+msgstr "Nessun piano di controllo"
+
+msgid "No inspections assigned to you"
+msgstr "Nessun controllo affidato a te"
+
 msgid "No issue types configured"
 msgstr "Nessun tipo di problema configurato"
 
@@ -1727,6 +1745,9 @@ msgstr "Nessun materiale"
 
 msgid "No materials on this batch."
 msgstr "Nessun materiale in questo Lotto di produzione."
+
+msgid "No open inspections"
+msgstr "Nessun controllo Aperto"
 
 msgid "No open jobs"
 msgstr "Nessun ordine di produzione aperto"
@@ -1818,6 +1839,9 @@ msgstr "Nessuna unità"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
 
+msgid "No work center"
+msgstr "Nessun centro di lavoro"
+
 msgid "No Work Center"
 msgstr "Nessun centro di lavoro"
 
@@ -1838,6 +1862,10 @@ msgstr "Non impostato"
 
 msgid "Notes"
 msgstr "Note"
+
+#. placeholder {0}: lotEntities.length
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Nulla è ancora fallito, quindi spiega perché le unità sono rifiutate. Tutte le {0} unità saranno Rifiutate."
 
 msgid "Nothing matches your search."
 msgstr "Niente corrisponde alla tua ricerca."
@@ -1923,6 +1951,9 @@ msgstr "Ordini Aperti"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Apri sottoassieme {0}: {1}"
+
+msgid "Opens in the ERP"
+msgstr "Si apre nell'ERP"
 
 msgid "Operation due"
 msgstr "Operazione in scadenza"
@@ -2026,6 +2057,9 @@ msgstr "Sospendi il timer {workTypeLabel}"
 
 msgid "Pause maintenance"
 msgstr "Sospendi manutenzione"
+
+msgid "Pending"
+msgstr "In attesa"
 
 msgid "Phone"
 msgstr "Telefono"
@@ -2228,6 +2262,15 @@ msgstr "Coda vuota"
 msgid "Quotes"
 msgstr "Offerte"
 
+msgid "Reason"
+msgstr "Motivo"
+
+msgid "Reason (optional)"
+msgstr "Motivo (facoltativo)"
+
+msgid "Reason (required)"
+msgstr "Motivo (obbligatorio)"
+
 msgid "Reason for change"
 msgstr "Motivo della modifica"
 
@@ -2239,6 +2282,9 @@ msgstr "Motivo dell'inserimento tardivo"
 
 msgid "Reason for rework"
 msgstr "Motivo della rilavorazione"
+
+msgid "Receipt"
+msgstr "Entrata merci"
 
 msgid "Recent"
 msgstr "Recenti"
@@ -2280,6 +2326,9 @@ msgstr "Registrazione fallita"
 
 msgid "Reject"
 msgstr "Rifiuta"
+
+msgid "Reject inspection?"
+msgstr "Rifiutare il controllo?"
 
 msgid "Reject Lot"
 msgstr "Rifiuta Lotto"
@@ -2902,6 +2951,16 @@ msgstr "La data è precedente alla finestra di voce. Il motivo viene conservato 
 #. placeholder {0}: inspection.lotSize
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "L'intero lotto di {0} verrà rifiutato come non conforme — {passes} unità campionate conformi e {fails} guasto/i finora. Instradare le unità sottostanti a scarto o rilavorazione, oppure registrare solo il verdetto."
+
+#. placeholder {0}: lotEntities.length
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "Controllo non superato: {passes} campione/i superato/i e {fails} non superato/i. Tutte le {0} unità saranno Rifiutate."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "Il controllo sarà contrassegnato come Superato e le sue unità saranno rese Disponibili."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "Il controllo sarà contrassegnato come Superato. Le sue unità vengono rese Disponibili, tranne le {fails} che non hanno superato un campione, che restano Rifiutate."
 
 msgid "The job is closed"
 msgstr "L'ordine di produzione è chiuso"

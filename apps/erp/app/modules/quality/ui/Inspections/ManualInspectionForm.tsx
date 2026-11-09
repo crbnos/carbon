@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { ValidatedForm } from "@carbon/form";
+import { useAction, useLoaderQuery } from "@carbon/query";
+import {
+  Button,
+  HStack,
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle,
+  VStack
+} from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
+import { useMemo, useState } from "react";
+import type { z } from "zod";
+import {
+  Employee,
+  InspectionDocument,
+  Item,
+  MultiSelect,
+  Submit,
+  TextArea,
+  WorkCenter
+} from "~/components/Form";
+import { usePermissions } from "~/hooks";
+import { manualInspectionValidator } from "~/modules/quality/quality.models";
+import type { getInspectableTrackedEntities } from "~/modules/quality/quality.service";
+import { path } from "~/utils/path";
+
+type ManualInspectionFormProps = {
+  initialValues: z.infer<typeof manualInspectionValidator>;
+  onClose: () => void;
+};
+
+const ManualInspectionForm = ({
+  initialValues,
+  onClose
+}: ManualInspectionFormProps) => {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  // A refusal (an entity already being inspected, the wrong status) keeps the
+  // drawer open with the picks; success redirects to the new inspection.
+  const fetcher = useAction();
+  const [itemId, setItemId] = useState(initialValues.itemId);
+
+  const entities = useLoaderQuery<
+    Awaited<ReturnType<typeof getInspectableTrackedEntities>>
+  >(itemId ? path.to.api.inspectionTrackedEntities(itemId) : null);
+
+  const entityOptions = useMemo(
+    () =>
+      (entities.data?.data ?? []).map((entity) => ({
+        value: entity.id,
+        label: entity.readableId ?? entity.id,
+        helper:
+          entity.status === "On Hold"
+            ? t`On Hold · ${entity.quantity}`
+            : String(entity.quantity)
+      })),
+    [entities.data, t]
+  );
+
+  return (
+    <ModalDrawerProvider type="drawer">
+      <ModalDrawer
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={manualInspectionValidator}
+            method="post"
+            action={path.to.newInspection}
+            defaultValues={initialValues}
+            fetcher={fetcher}
+            className="flex flex-col h-full"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>{t`New Inspection`}</ModalDrawerTitle>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <VStack spacing={4}>
+                <Item
+                  name="itemId"
+                  label={t`Item`}
+                  type="Item"
+                  onChange={(value) => setItemId(value?.value ?? "")}
+                />
+                <MultiSelect
+                  // Remount with the item so a previous item's picks are cleared.
+                  key={itemId}
+                  name="trackedEntityIds"
+                  label={t`Tracked Entities`}
+                  options={entityOptions}
+                  isReadOnly={!itemId}
+                  helperText={t`Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned.`}
+                />
+                <InspectionDocument
+                  key={`plan-${itemId}`}
+                  name="inspectionDocumentId"
+                  label={t`Inspection Plan`}
+                  itemId={itemId || undefined}
+                />
+                <WorkCenter
+                  name="workCenterId"
+                  label={t`Work Center`}
+                  isOptional
+                />
+                <Employee name="assignee" label={t`Assignee`} isOptional />
+                <TextArea name="notes" label={t`Notes`} />
+              </VStack>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                <Submit isDisabled={!permissions.can("create", "quality")}>
+                  {t`Create`}
+                </Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  {t`Cancel`}
+                </Button>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
+  );
+};
+
+export default ManualInspectionForm;
