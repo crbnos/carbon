@@ -55,8 +55,6 @@ const ConfirmDelete = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open gets a fresh
-// fetcher, so nothing from an earlier open carries over.
 const ConfirmDeleteBody = ({
   action,
   name,

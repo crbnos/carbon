@@ -35,8 +35,6 @@ export function useDocumentEditModal(
   return {
     canEdit,
     openEditor: editor.onOpen,
-    // Mounted from the first open on, so it can animate closed; keyed per
-    // open, so each open loads the editor fresh.
     modal:
       canEdit && documentId && editor.openCount > 0 ? (
         <Suspense fallback={null}>

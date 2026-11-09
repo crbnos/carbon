@@ -298,7 +298,6 @@ export function SalesOrderJobItem({
 }) {
   const disclosure = useDisclosure();
   const permissions = usePermissions();
-  // JobStartModal validates the job once on mount: a new key per open.
   const releaseModal = useDisclosure();
   const release = useJobRelease();
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);

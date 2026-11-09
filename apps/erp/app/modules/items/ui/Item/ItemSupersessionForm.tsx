@@ -352,7 +352,6 @@ function AddPredecessorModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function AddPredecessorBody({
   itemId,
   itemReadableId,

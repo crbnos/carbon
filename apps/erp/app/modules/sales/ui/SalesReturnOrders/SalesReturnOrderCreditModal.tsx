@@ -53,7 +53,6 @@ const SalesReturnOrderCreditModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const SalesReturnOrderCreditBody = ({
   currencyCode,
   onClose

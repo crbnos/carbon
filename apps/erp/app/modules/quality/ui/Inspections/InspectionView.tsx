@@ -979,7 +979,6 @@ function DocumentSwitchModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function DocumentSwitchBody({
   inspectionId,
   itemId,

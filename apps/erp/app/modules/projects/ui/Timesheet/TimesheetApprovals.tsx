@@ -310,7 +310,6 @@ function RejectModal({ open = true, onClose, ...props }: RejectModalProps) {
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function RejectBody({ ids, label, onClose }: Omit<RejectModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<{ success: boolean }>({ onSuccess: onClose });

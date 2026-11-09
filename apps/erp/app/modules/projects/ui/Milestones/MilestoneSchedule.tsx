@@ -306,7 +306,6 @@ export default function MilestoneSchedule({
   };
 
   const open = milestones.find((m) => m.id === selected?.milestoneId) ?? null;
-  // The drawer keeps the last milestone on screen while it slides out.
   const [drawer, setDrawer] = useState<{
     milestone: Milestone;
     burn: typeof selected;

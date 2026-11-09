@@ -64,7 +64,6 @@ export default function ScanInspectionSample({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function ScanInspectionSampleBody({
   inspectionId,
   isSerial,

@@ -78,7 +78,6 @@ const ReturnableLinesModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const ReturnableLinesBody = ({
   customerId,
   salesOrderId,

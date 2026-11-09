@@ -59,7 +59,6 @@ const ReceiptPostModal = ({ open = true, onClose }: ReceiptPostModalProps) => {
   );
 };
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const ReceiptPostBody = ({ onClose }: Omit<ReceiptPostModalProps, "open">) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");

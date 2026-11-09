@@ -88,7 +88,6 @@ const SupplierQuoteCompareDrawer = ({
   </Drawer>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const SupplierQuoteCompareBody = ({
   onClose,
   purchasingRfqId

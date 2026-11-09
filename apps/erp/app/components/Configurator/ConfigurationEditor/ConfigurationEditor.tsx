@@ -79,7 +79,6 @@ export default function Configurator({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function ConfiguratorBody({
   configuration,
   parameters: defaultParameters,

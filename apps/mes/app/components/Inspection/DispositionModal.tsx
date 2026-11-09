@@ -117,7 +117,6 @@ const DispositionModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const DispositionBody = ({
   decision,
   inspectionId,

@@ -513,7 +513,6 @@ export default function ServiceJobRoute() {
   const { locale } = useLocale();
   const clockFetcher = useFetcher();
   const returnFetcher = useFetcher();
-  // Keyed by its open count: the add-part modal seeds its state on mount.
   const addPart = useDisclosure();
   const [tab, setTab] = useState("details");
   const [confirmComplete, setConfirmComplete] = useState(false);

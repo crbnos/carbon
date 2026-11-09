@@ -89,7 +89,6 @@ export function MaintenanceAddPartModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function MaintenanceAddPartBody({
   dispatchId,
   onClose

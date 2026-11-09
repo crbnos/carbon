@@ -77,7 +77,6 @@ export function AssignBatchModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function AssignBatchBody({
   itemId,
   itemReadableId,

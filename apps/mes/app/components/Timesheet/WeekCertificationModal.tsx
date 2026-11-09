@@ -61,7 +61,6 @@ export function WeekCertificationModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function WeekCertificationBody({
   certificationText,
   weekLabel,

@@ -27,11 +27,9 @@ const CONDITIONAL_TAG =
 
 const CLOSE_ROUTE = /\buseCloseRoute\s*\(/g;
 
-// `if (!isOpen) return null` in a component that renders a dialog.
 const EARLY_RETURN = /\bif\s*\(\s*!(?:isOpen|open)\s*\)\s*return\s+null\b/g;
 const RENDERS_DIALOG = /<(?:Modal|Drawer|ModalDrawer|ModalCard)[\s>]/;
 
-// Where the hooks are defined.
 const EXCLUDED_PREFIX = "packages/react/src/hooks/";
 
 /** Text of the JSX opening tag at `start`, brace-, quote- and comment-aware. */
@@ -128,7 +126,6 @@ const OPEN_STATE_CONDITION = /(?:\.|\b)(?:isOpen|open)\b(?!\s*(?:\(|=(?!=)))/;
 const escapeRegExp = (text: string) =>
   text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Is the condition the dialog's own open state, under any name? */
 function conditionIsOpenState(condition: string, expression: string): boolean {
   if (OPEN_STATE_CONDITION.test(condition)) return true;
   // `{showDelete && <ConfirmDelete isOpen={showDelete} />}`, and the same
@@ -198,7 +195,6 @@ export const noUnmountingDialog: ConformanceCheck = {
       const start = (match.index ?? 0) + match[0].lastIndexOf("<");
       const tag = openingTag(contents, start);
       if (tag === null) continue;
-      // A `*Form` rendered as a modal (`type="modal"`) is a dialog too.
       const isModalForm = /Form$/.test(name) && /\btype="modal"/.test(tag);
       if (!DIALOG_NAME.test(name) && !isModalForm) continue;
       const expression = openExpression(tag);

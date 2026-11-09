@@ -783,7 +783,6 @@ function PlanLineModal({ open = true, onClose, ...props }: PlanLineModalProps) {
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function PlanLineBody({
   row,
   elementId,

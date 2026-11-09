@@ -607,7 +607,6 @@ function SplitLineModal({ open, onClose, ...props }: SplitLineModalProps) {
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function SplitLineBody({
   target,
   fetcher,

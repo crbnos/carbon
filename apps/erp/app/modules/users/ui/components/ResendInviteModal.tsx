@@ -59,7 +59,6 @@ const ResendInviteModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const ResendInviteBody = ({
   userIds,
   allMatching,

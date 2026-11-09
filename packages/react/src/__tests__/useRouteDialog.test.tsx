@@ -118,7 +118,6 @@ async function clickCancel(settleMs = 0, label = "Cancel") {
   await act(async () => {
     cancel!.click();
   });
-  // The MutationObserver and the navigation settle on later ticks.
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, settleMs));
   });
@@ -181,7 +180,6 @@ describe("useRouteDialog", () => {
     expect(router.state.location.pathname).toBe("/list/new");
     expect(dialogTitles()).toEqual(["New record:open", "Unsaved changes:open"]);
 
-    // Stay, then close again at once: the close is not ignored.
     await clickCancel(250, "Stay");
     expect(dialogTitles()).toEqual(["New record:open"]);
 

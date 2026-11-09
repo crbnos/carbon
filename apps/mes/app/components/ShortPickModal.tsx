@@ -44,7 +44,6 @@ export function ShortPickModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function ShortPickBody({
   pickingListId,
   lineId,

@@ -231,7 +231,6 @@ function ServiceJobExplorerItem({
   const [isExpanded, setIsExpanded] = useState(
     node.children.length > 0 && node.children.length < 10
   );
-  // Changes on each open, so the modal starts from an empty part.
   const issuePartModal = useDisclosure();
   const getLabel = useChildLabel();
 

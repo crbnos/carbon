@@ -49,8 +49,6 @@ const Confirm = ({ isOpen = true, onCancel, ...props }: ConfirmProps) => (
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open gets a fresh
-// fetcher, so nothing from an earlier open carries over.
 const ConfirmBody = ({
   action,
   title,

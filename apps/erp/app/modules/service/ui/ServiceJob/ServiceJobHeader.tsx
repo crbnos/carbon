@@ -89,7 +89,6 @@ const ServiceJobHeader = () => {
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "service");
   const cancelModal = useDisclosure();
-  // Changes on each open, so the send modal starts from its defaults.
   const sendModal = useDisclosure();
   const completeModal = useDisclosure();
   const invoiceModal = useDisclosure();

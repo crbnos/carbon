@@ -147,7 +147,6 @@ export function IssueMaterialModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function IssueMaterialBody({
   operationId,
   allowPrefill = false,
@@ -410,7 +409,6 @@ function IssueMaterialBody({
     readableId?: string | null;
   } | null>(null);
   const [isScrapEntityOpen, setIsScrapEntityOpen] = useState(false);
-  // Goes up on each open: the scrap modal starts fresh every time.
   const [scrapEntityKey, setScrapEntityKey] = useState(0);
   const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
     []

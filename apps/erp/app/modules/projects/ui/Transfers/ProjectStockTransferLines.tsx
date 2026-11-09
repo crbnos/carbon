@@ -150,7 +150,6 @@ function LineModal({ open = true, onClose, ...props }: LineModalProps) {
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function LineBody({
   transfer,
   initialValues,

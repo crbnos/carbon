@@ -68,7 +68,6 @@ const BulkEditPermissions = ({
   </Drawer>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const BulkEditPermissionsBody = ({
   userIds,
   allMatching,

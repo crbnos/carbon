@@ -558,7 +558,6 @@ export function RecordModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function RecordBody({
   attribute,
   activeStep,

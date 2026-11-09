@@ -68,7 +68,6 @@ const QuotationFinalizeModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const QuotationFinalizeBody = ({
   quote,
   onClose,

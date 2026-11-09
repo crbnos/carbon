@@ -39,11 +39,8 @@ export default function useDisclosure(props: UseDisclosureProps = {}) {
 
   const isControlled = isOpenProp !== undefined;
 
-  // Goes up each time the disclosure turns open, through `onOpen` or the
-  // `isOpen` prop; opening an open one again does not count. A dialog that
-  // must start fresh on each open, and stays mounted so it can animate
-  // closed, renders as
-  // `{d.openCount > 0 && <Dialog key={d.openCount} open={d.isOpen} />}`.
+  // Goes up each time the disclosure turns open; opening an open one again
+  // does not count.
   const [openCount, setOpenCount] = useState(isOpen ? 1 : 0);
   // Uncontrolled: `onOpen`/`onClose` keep this in step at once, so two opens
   // in one tick count once and an open costs no extra render.

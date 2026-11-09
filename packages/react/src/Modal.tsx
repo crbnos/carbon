@@ -69,11 +69,8 @@ const ModalOverlay = forwardRef<
     data-backdrop=""
     className={cn(
       "bg-black/40 backdrop-blur-xs",
-      // Same rhythm as the content: 200ms in, 150ms out (exit faster than
-      // enter). The content closes inside this backdrop, and Radix removes
-      // both when the backdrop's animation ends, so the two must match.
-      // Durations sit on the state variants: `animate-in`/`animate-out` set
-      // their own duration, which a plain `duration-*` cannot override.
+      // Radix removes the content when this backdrop's animation ends, so the
+      // two durations must match.
       "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out data-[state=closed]:!pointer-events-none",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       // Phones: a bottom sheet over a dimmed screen.
@@ -132,7 +129,6 @@ const ModalContentVariants = cva(
   cn(
     "px-0 pt-6",
     "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm",
-    // Enter 200ms, exit 150ms, on the strong ease-out (`--ease-out`).
     "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out",
     "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",

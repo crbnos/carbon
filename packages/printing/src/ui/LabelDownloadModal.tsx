@@ -25,7 +25,6 @@ import { LuDownload, LuInfo } from "react-icons/lu";
 import { Link } from "react-router";
 import { usePrinting } from "./PrintingProvider";
 
-// The modal stays mounted while closed, so its size lists are built once.
 const metricSizes = labelSizes.filter((s) => s.metric);
 const imperialSizes = labelSizes.filter((s) => !s.metric);
 

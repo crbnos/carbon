@@ -1413,7 +1413,6 @@ function EditUnitModal({ open = true, onClose, ...props }: EditUnitModalProps) {
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function EditUnitBody({
   instructionId,
   modelUploadId,

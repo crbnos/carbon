@@ -57,7 +57,6 @@ const AddFromAssetsModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const AddFromAssetsBody = ({
   onClose
 }: Omit<AddFromAssetsModalProps, "open">) => {

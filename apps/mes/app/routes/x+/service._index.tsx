@@ -228,7 +228,6 @@ export default function ServiceRoute() {
   const { openJobs, myJobs, today, hasLocation } =
     useLoaderData<typeof loader>();
   const [activeTab, setActiveTab] = useState("mine");
-  // Keyed by its open count: the new-job modal seeds its state on mount.
   const newJob = useDisclosure();
   // Phones: the tab row scrolls sideways; keep the active tab in view.
   const tabsListRef = useRef<HTMLDivElement>(null);

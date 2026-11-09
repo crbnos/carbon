@@ -463,7 +463,6 @@ export default function MESTimesheetPage() {
   const { locale } = useLocale();
   const formatQuantity = (hours: number) => formatHours(hours, locale);
   const certifyModal = useDisclosure();
-  // Change on every open: the modals seed their fields on mount.
   const [reasonKey, setReasonKey] = useState(0);
   const submitFetcher = useAction<typeof action>({
     // The certification modal closes whatever the outcome, as in the ERP.

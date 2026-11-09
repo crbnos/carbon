@@ -140,7 +140,6 @@ export function BatchOverview({
       ([a], [b]) => order.indexOf(a) - order.indexOf(b)
     );
   };
-  // The step stays chosen while its modal closes; the next open sets it.
   const [recordingKey, setRecordingKey] = useState<string | null>(null);
   const recordModal = useDisclosure();
   const closeRecord = recordModal.onClose;

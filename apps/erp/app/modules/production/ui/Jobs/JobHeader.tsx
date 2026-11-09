@@ -159,7 +159,6 @@ const JobHeader = () => {
     variant: "dropdown"
   });
 
-  // Keyed per open: each open checks the job afresh, and nothing loads before the first.
   const releaseModal = useDisclosure();
   const cancelModal = useDisclosure();
   const completeModal = useDisclosure();
@@ -1011,7 +1010,6 @@ export function JobStartModal({
     setLoading(false);
   };
 
-  // Mounted per open (a `key` at the call site): the checks run once, on open.
   useMount(() => {
     if (open) validate();
   });
@@ -1645,7 +1643,6 @@ function JobCompleteModal({
     setLoading(false);
   };
 
-  // Mounted per open (a `key` at the call site): the job is read once, on open.
   useMount(() => {
     if (!job || !open) return;
     getJobData();

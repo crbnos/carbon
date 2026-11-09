@@ -46,7 +46,6 @@ export function UnscrapModal({ open, onClose, ...props }: UnscrapModalProps) {
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function UnscrapBody({
   itemId,
   trackedEntityId,

@@ -185,7 +185,6 @@ function CertificateCompleteModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function CertificateCompleteBody({
   assignment,
   onClose

@@ -132,7 +132,6 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     // navigation, which this blocker would otherwise intercept — blocking
     // the save itself behind the Unsaved-changes dialog.
     const hasUnsavedChanges = withBlocker && isTouched && !isSubmitting;
-    // A route dialog with unsaved changes stays open while the blocker asks.
     useReportUnsavedChanges(hasUnsavedChanges);
     const blocker = useBlocker(
       ({ currentLocation, nextLocation }) =>

@@ -3446,7 +3446,6 @@ function StepCompleteAction({
   const fetcher = useFetcher();
   const user = useUser();
   const busy = fetcher.state !== "idle";
-  // Keyed by its open count: RecordModal seeds its state from the record on mount.
   const recordModal = useDisclosure();
 
   // Find the existing record for this unit (if done)

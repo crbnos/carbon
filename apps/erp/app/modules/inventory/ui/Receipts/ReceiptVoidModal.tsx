@@ -51,7 +51,6 @@ const ReceiptVoidModal = ({
   );
 };
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const ReceiptVoidBody = ({
   isSalesReturn,
   onClose

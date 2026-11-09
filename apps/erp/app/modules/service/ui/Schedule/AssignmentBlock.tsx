@@ -120,7 +120,6 @@ export function AssignmentModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function AssignmentBody({
   assignment,
   employeeName,

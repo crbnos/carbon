@@ -50,7 +50,6 @@ const Items = (props: ItemsSelectProps) => {
   };
   const [items] = useItems();
   const selectTypeModal = useDisclosure();
-  // The type is kept with the open: a closed form stays mounted while it animates out.
   const newItem = useDrawerItem<ItemType>();
   const [created, setCreated] = useState<string>("");
   const [type, setType] = useState<ItemType>("Part");

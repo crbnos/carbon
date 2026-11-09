@@ -525,9 +525,7 @@ function PickLineItem({
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const isSubmitting = fetcher.state !== "idle";
-  // Keyed by its open count: the short-pick modal seeds its quantity on mount.
   const shortModal = useDisclosure();
-  // Keyed by its open count: the picker keeps its tab, order and scan at its top level.
   const picker = useDisclosure();
   const trackedFetcher = useFetcher<{
     entities: TrackedEntityOption[];

@@ -58,8 +58,6 @@ export default function MapExtractedLinesModal({
     <Modal open={open} onOpenChange={(val) => !val && onClose()}>
       <ModalOverlay />
       <ModalContent size="xlarge">
-        {/* Inside the content, so its fetcher and mappings start fresh on
-            every open and nothing loads while the modal is closed. */}
         <MapExtractedLinesForm onClose={onClose} {...props} />
       </ModalContent>
     </Modal>

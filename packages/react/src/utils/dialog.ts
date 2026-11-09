@@ -18,7 +18,6 @@ function openDialogs(): Element[] {
 // Popover content (a combobox, a date picker) is a `role="dialog"` too.
 const POPOVER_SELECTOR = "[data-radix-popper-content-wrapper]";
 
-/** The open modals and drawers, without popovers. */
 export function openModalDialogs(): Element[] {
   return openDialogs().filter((dialog) => !dialog.closest(POPOVER_SELECTOR));
 }
@@ -157,7 +156,6 @@ export function returnFocusOnClose(handler?: (event: Event) => void) {
   };
 }
 
-/** Resolves when `dialog` has left the page, or after `timeoutMs`. */
 function whenDialogRemoved(dialog: Element, timeoutMs = 500): Promise<void> {
   return new Promise((resolve) => {
     if (!dialog.isConnected) {

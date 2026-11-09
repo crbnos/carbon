@@ -82,7 +82,6 @@ export type TrackedEntitySelection = {
 export type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 export type TrackedEntityPickerProps = {
-  /** Drive it with the host's open state, so it can animate closed. */
   open?: boolean;
   /** Serial = qty 1 per lot; Batch = pick a partial quantity. */
   trackingType: "Serial" | "Batch";
@@ -164,7 +163,6 @@ export function TrackedEntityPicker({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function TrackedEntityPickerBody({
   trackingType,
   entities,

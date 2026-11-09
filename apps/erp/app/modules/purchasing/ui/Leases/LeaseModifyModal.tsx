@@ -86,7 +86,6 @@ const LeaseModifyModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const LeaseModifyBody = ({
   lease,
   lines,

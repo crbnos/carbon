@@ -48,8 +48,6 @@ export default function ContractLineBuildModal({
     <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
       <ModalContent>
-        {/* Inside the content: the charge numbers load, and the form and its
-            error reset, only while the modal is open. */}
         <ContractLineBuildForm {...props} onClose={onClose} />
       </ModalContent>
     </Modal>

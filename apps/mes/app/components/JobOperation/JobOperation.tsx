@@ -327,7 +327,6 @@ export const JobOperation = ({
   const batchOverdue = batchFacts?.dueDate
     ? parseDate(batchFacts.dueDate).compare(today(getLocalTimeZone())) < 0
     : false;
-  // Keyed by its open count: BatchCompleteModal seeds its rows on mount.
   const batchCompleteModal = useDisclosure();
   // The completion fetcher lives HERE, not in BatchCompleteModal: a successful
   // completion flips the batch out of Active/Completing, the loader stops
@@ -683,7 +682,6 @@ export const JobOperation = ({
     attributeRecordDeleteModal.onOpen();
   };
 
-  // The step stays selected while its modal closes; the next open sets it.
   const onDeselectStep = () => {
     attributeRecordModal.onClose();
     attributeRecordDeleteModal.onClose();

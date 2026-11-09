@@ -1530,7 +1530,6 @@ function SplitShipmentLineModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function SplitShipmentLineBody({
   line,
   onClose

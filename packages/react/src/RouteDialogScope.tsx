@@ -49,7 +49,6 @@ export function ReportDialogExit() {
   return null;
 }
 
-/** Tells the route's dialog that a form in it has unsaved changes. */
 export function useReportUnsavedChanges(unsaved: boolean) {
   const scope = useContext(RouteDialogScopeContext);
   useEffect(() => {

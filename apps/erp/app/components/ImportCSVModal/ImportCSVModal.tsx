@@ -108,7 +108,6 @@ export const ImportCSVModal = ({
 
   // A reload drops the same state, and there is nowhere to persist it to yet,
   // so the browser's own prompt is the only guard available for that path.
-  // A closed (discarded) import stays mounted until the next open: no guard.
   useEffect(() => {
     if (!open || !hasImportInProgress) return;
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {

@@ -46,7 +46,6 @@ export function KeepDemoDataModal({
   );
 }
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 function KeepDemoDataBody({
   onConfirm,
   onCancel

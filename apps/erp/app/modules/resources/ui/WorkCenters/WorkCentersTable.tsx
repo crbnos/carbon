@@ -451,8 +451,6 @@ function DeactivateWorkCenterModal({
   );
 }
 
-// Inside the modal's content, which Radix unmounts on close: each open checks
-// the selected work center's active operations again.
 function DeactivateWorkCenterBody({
   workCenter,
   onCancel,

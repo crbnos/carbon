@@ -223,7 +223,6 @@ const Item = ({
   ]);
 
   const selectTypeModal = useDisclosure();
-  // The type is kept with the open: a closed form stays mounted while it animates out.
   const newItem = useDrawerItem<ItemType | "Item">();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);

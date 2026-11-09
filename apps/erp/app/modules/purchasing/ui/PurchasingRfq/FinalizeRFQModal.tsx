@@ -61,7 +61,6 @@ const FinalizeRFQModal = ({
   </Modal>
 );
 
-// Inside the content, which Radix unmounts on close: each open starts fresh.
 const FinalizeRFQBody = ({
   rfqId,
   lines,

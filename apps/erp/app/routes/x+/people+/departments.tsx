@@ -93,7 +93,6 @@ export default function Route() {
   // Departments render a bespoke tree/list rather than the shared <Table>, so
   // the Bulk Import entry cannot arrive through its `importCSV` prop. Same
   // dropdown shape as TableHeader so the control is where users expect it.
-  // Its openCount keys the modal, so each import starts from an empty wizard.
   const importModal = useDisclosure();
   // Named `label` deliberately: Lingui bakes the placeholder name into the
   // msgid, so this must match TableHeader's `Import {label} CSV` to reuse its
