@@ -82,6 +82,16 @@ describe("mergeSuggestedColumns", () => {
     ).toEqual({ name: "Name" });
   });
 
+  it("gives a column to only the first field the AI proposes it for", () => {
+    expect(
+      mergeSuggestedColumns({
+        current: {},
+        suggested: { processType: "Unit", defaultStandardFactor: "Unit" },
+        fileColumns
+      })
+    ).toEqual({ processType: "Unit" });
+  });
+
   it("keeps a column the user picked, None included", () => {
     expect(
       mergeSuggestedColumns({

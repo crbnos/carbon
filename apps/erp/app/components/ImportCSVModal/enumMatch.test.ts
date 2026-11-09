@@ -84,6 +84,17 @@ describe("matching a lookup keyed by a code", () => {
     ]);
     expect(matchCsvValue(lookup, "bx")).toBe("BOX");
   });
+
+  it("matches an employee by email and not by internal id", () => {
+    const employees = buildOptionLookup([
+      toMatchableOption(
+        { id: "e1", name: "Jane Doe", email: "jane@co.com" },
+        false
+      )
+    ]);
+    expect(matchCsvValue(employees, "jane@co.com")).toBe("e1");
+    expect(matchCsvValue(employees, "e1")).toBeUndefined();
+  });
 });
 
 describe("toMatchableOption", () => {
@@ -92,7 +103,11 @@ describe("toMatchableOption", () => {
       { id: "e1", name: "Jane Doe", email: "jane@co.com" },
       false
     );
-    expect(option).toEqual({ label: "jane@co.com", value: "e1" });
+    expect(option).toEqual({
+      label: "jane@co.com",
+      value: "e1",
+      internalValue: true
+    });
   });
 
   it("supplier with readable IDs hidden: label is name, readableId is an alias", () => {

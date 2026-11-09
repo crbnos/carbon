@@ -15,6 +15,8 @@ export type MatchableOption = {
   label: string;
   value: string;
   aliases?: string[];
+  // The value is an internal id rather than a code, so it is not a match key.
+  internalValue?: boolean;
 };
 
 const normalize = (value: string): string => value.toLowerCase().trim();
@@ -38,7 +40,7 @@ export function buildOptionLookup(
     }
   }
   for (const option of options) {
-    add(option.value, option.value);
+    if (!option.internalValue) add(option.value, option.value);
   }
   return lookup;
 }
@@ -53,15 +55,16 @@ export function matchCsvValue(
 
 // Derive a MatchableOption from a fetched list item. Employees (items with an
 // email) match by email ONLY — their names are not unique, so name must not be
-// a match key. For suppliers and other no-email lookups, the label is the
-// readableId when the company displays readable IDs (else the name), and the
-// other identifier(s) become aliases so auto-match resolves by either.
+// a match key, and their id is internal. For suppliers and other no-email
+// lookups, the label is the readableId when the company displays readable IDs
+// (else the name), and the other identifier(s) become aliases so auto-match
+// resolves by either.
 export function toMatchableOption(
   item: ListItem,
   showReadableId: boolean
 ): MatchableOption {
   if (item.email) {
-    return { label: item.email, value: item.id };
+    return { label: item.email, value: item.id, internalValue: true };
   }
   const label = showReadableId && item.readableId ? item.readableId : item.name;
   const aliases = [item.readableId, item.name].filter(

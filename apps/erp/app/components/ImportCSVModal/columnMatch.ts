@@ -51,6 +51,7 @@ export function mergeSuggestedColumns({
     if (typeof column !== "string" || !fileColumns.includes(column)) continue;
     if (claimed.has(column)) continue;
     merged[fieldName] = column;
+    claimed.add(column);
   }
   return merged;
 }

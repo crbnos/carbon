@@ -31,7 +31,8 @@ a transaction. Imports are idempotent via the `externalIntegrationMapping` table
   lookup values inline.
 - `enumMatch.ts` — value auto-matching, tested by `enumMatch.test.ts`. A CSV value
   matches an option's label or aliases (a supplier's name and readableId; an
-  employee's email only), then the option's value, case- and whitespace-insensitive.
+  employee's email only), then the option's value unless it is `internalValue` (an
+  employee's id), case- and whitespace-insensitive.
   The value tier is what matches a code: the unit-of-measure and country fetchers
   return the code as the id (`{ name, id: code }`), so `EA` finds Each and `US` the
   United States. A label or alias wins over a value it collides with. A value nothing
