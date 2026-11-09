@@ -2057,84 +2057,148 @@ export async function getSalesDashboardRevenue(
 ) {
   // Sales line amounts are in base currency. A memo amount is in document
   // currency, so convert each posted memo before summing it.
-  const invoiceCustomer = customerId
-    ? sql`AND si."customerId" = ${customerId}`
-    : sql``;
-  const memoCustomer = customerId
-    ? sql`AND COALESCE(cc."customerId", m."customerId") = ${customerId}`
-    : sql``;
-  const facts = sql`
-    SELECT si."postingDate" AS day, si."customerId" AS customer_id,
-      SUM(
-        COALESCE(sil."quantity", 0) * COALESCE(sil."unitPrice", 0)
-          * (1 - COALESCE(sil."discountPercent", 0))
-        + COALESCE(sil."addOnCost", 0)
-        + COALESCE(sil."nonTaxableAddOnCost", 0)
-      ) AS invoice_sales,
-      0::numeric AS credits
-    FROM "salesInvoice" si
-    JOIN "salesInvoiceLine" sil
-      ON sil."invoiceId" = si.id AND sil."companyId" = si."companyId"
-    WHERE si."companyId" = ${companyId}
-      AND si.status NOT IN ('Draft', 'Pending', 'Voided')
-      AND si."postingDate" BETWEEN ${startDate}::date AND ${endDate}::date
-      ${invoiceCustomer}
-    GROUP BY si."postingDate", si."customerId"
-    UNION ALL
-    SELECT m."postingDate" AS day,
-      COALESCE(cc."customerId", m."customerId") AS customer_id,
-      0::numeric AS invoice_sales,
-      SUM(ROUND(m.amount / NULLIF(m."exchangeRate", 0), 5)) AS credits
-    FROM memo m
-    LEFT JOIN "customerContract" cc
-      ON cc.id = m."customerContractId" AND cc."companyId" = m."companyId"
-    WHERE m."companyId" = ${companyId}
-      AND m."customerId" IS NOT NULL
-      AND m.direction = 'Credit' AND m.status = 'Posted'
-      AND m."postingDate" BETWEEN ${startDate}::date AND ${endDate}::date
-      ${memoCustomer}
-    GROUP BY m."postingDate", COALESCE(cc."customerId", m."customerId")
-  `;
-
-  const [daily, customers] = await Promise.all([
-    sql<{ day: string; invoiceSales: string; credits: string }>`
-      WITH facts AS (${facts})
-      SELECT to_char(day, 'YYYY-MM-DD') AS day,
-        SUM(invoice_sales) AS "invoiceSales", SUM(credits) AS credits
-      FROM facts GROUP BY day ORDER BY day
-    `.execute(db),
-    sql<{
-      customerId: string;
-      customerName: string;
-      invoiceSales: string;
-      credits: string;
-    }>`
-      WITH facts AS (${facts})
-      SELECT facts.customer_id AS "customerId",
-        COALESCE(c.name, facts.customer_id) AS "customerName",
-        SUM(facts.invoice_sales) AS "invoiceSales",
-        SUM(facts.credits) AS credits
-      FROM facts
-      LEFT JOIN customer c ON c.id = facts.customer_id
-        AND c."companyId" = ${companyId}
-      GROUP BY facts.customer_id, c.name
-      ORDER BY SUM(facts.invoice_sales - facts.credits) DESC,
-        facts.customer_id
-      LIMIT 10
-    `.execute(db)
+  let invoicesQuery = db
+    .selectFrom("salesInvoice as si")
+    .innerJoin("salesInvoiceLine as sil", (join) =>
+      join
+        .onRef("sil.invoiceId", "=", "si.id")
+        .onRef("sil.companyId", "=", "si.companyId")
+    )
+    .select(["si.postingDate as day", "si.customerId as customerId"])
+    .select((eb) =>
+      eb.fn
+        .sum<number>(
+          eb(
+            eb(
+              eb(
+                "sil.quantity",
+                "*",
+                eb.fn.coalesce("sil.netUnitPrice", eb.val(0))
+              ),
+              "+",
+              "sil.addOnCost"
+            ),
+            "+",
+            "sil.nonTaxableAddOnCost"
+          )
+        )
+        .as("invoiceSales")
+    )
+    .where("si.companyId", "=", companyId)
+    .where("si.status", "not in", ["Draft", "Pending", "Voided"])
+    .where("si.postingDate", ">=", startDate)
+    .where("si.postingDate", "<=", endDate)
+    .groupBy(["si.postingDate", "si.customerId"]);
+  let creditsQuery = db
+    .selectFrom("memo as m")
+    .leftJoin("customerContract as cc", (join) =>
+      join
+        .onRef("cc.id", "=", "m.customerContractId")
+        .onRef("cc.companyId", "=", "m.companyId")
+    )
+    .select("m.postingDate as day")
+    .select((eb) => [
+      eb.fn.coalesce("cc.customerId", "m.customerId").as("customerId"),
+      eb.fn
+        .sum<number>(
+          eb.fn<number>("round", [
+            eb("m.amount", "/", "m.exchangeRate"),
+            eb.val(5)
+          ])
+        )
+        .as("credits")
+    ])
+    .where("m.companyId", "=", companyId)
+    .where("m.customerId", "is not", null)
+    .where("m.direction", "=", "Credit")
+    .where("m.status", "=", "Posted")
+    .where("m.postingDate", ">=", startDate)
+    .where("m.postingDate", "<=", endDate)
+    .groupBy((eb) => [
+      "m.postingDate",
+      eb.fn.coalesce("cc.customerId", "m.customerId")
+    ]);
+  if (customerId) {
+    invoicesQuery = invoicesQuery.where("si.customerId", "=", customerId);
+    creditsQuery = creditsQuery.where((eb) =>
+      eb(eb.fn.coalesce("cc.customerId", "m.customerId"), "=", customerId)
+    );
+  }
+  const [invoiceRows, creditRows] = await Promise.all([
+    invoicesQuery.execute(),
+    creditsQuery.execute()
   ]);
-
-  return {
-    daily: daily.rows.map((row) => ({
+  const daily = new Map<
+    string,
+    { day: string; invoiceSales: number; credits: number }
+  >();
+  const customers = new Map<
+    string,
+    { customerId: string; invoiceSales: number; credits: number }
+  >();
+  for (const row of invoiceRows) {
+    if (!row.day) continue;
+    const value = Number(row.invoiceSales);
+    const day = daily.get(row.day) ?? {
       day: row.day,
-      invoiceSales: Number(row.invoiceSales),
-      credits: Number(row.credits)
-    })),
-    customers: customers.rows.map((row) => ({
+      invoiceSales: 0,
+      credits: 0
+    };
+    day.invoiceSales += value;
+    daily.set(row.day, day);
+    const customer = customers.get(row.customerId) ?? {
       customerId: row.customerId,
-      customerName: row.customerName,
-      invoiceSales: Number(row.invoiceSales),
-      credits: Number(row.credits)
+      invoiceSales: 0,
+      credits: 0
+    };
+    customer.invoiceSales += value;
+    customers.set(row.customerId, customer);
+  }
+  for (const row of creditRows) {
+    if (!row.day || !row.customerId) continue;
+    const value = Number(row.credits);
+    const day = daily.get(row.day) ?? {
+      day: row.day,
+      invoiceSales: 0,
+      credits: 0
+    };
+    day.credits += value;
+    daily.set(row.day, day);
+    const customer = customers.get(row.customerId) ?? {
+      customerId: row.customerId,
+      invoiceSales: 0,
+      credits: 0
+    };
+    customer.credits += value;
+    customers.set(row.customerId, customer);
+  }
+  const topCustomers = [...customers.values()]
+    .sort(
+      (a, b) =>
+        b.invoiceSales - b.credits - (a.invoiceSales - a.credits) ||
+        a.customerId.localeCompare(b.customerId)
+    )
+    .slice(0, 10);
+  const names = topCustomers.length
+    ? await db
+        .selectFrom("customer")
+        .select(["id", "name"])
+        .where("companyId", "=", companyId)
+        .where(
+          "id",
+          "in",
+          topCustomers.map((customer) => customer.customerId)
+        )
+        .execute()
+    : [];
+  const namesById = new Map(
+    names.map((customer) => [customer.id, customer.name])
+  );
+  return {
+    daily: [...daily.values()].sort((a, b) => a.day.localeCompare(b.day)),
+    customers: topCustomers.map((customer) => ({
+      ...customer,
+      customerName: namesById.get(customer.customerId) ?? customer.customerId
     }))
   };
 }
@@ -2144,47 +2208,63 @@ export async function getSalesDashboardBacklog(
   companyId: string,
   customerId: string | null
 ) {
-  const customerFilter = customerId
-    ? sql`AND so."customerId" = ${customerId}`
-    : sql``;
-  const result = await sql<{
-    id: string;
-    salesOrderId: string;
-    customerName: string;
-    amount: string;
-    totalAmount: string;
-    orderCount: string;
-  }>`
-    WITH open_orders AS (
-      SELECT so.id, so."salesOrderId", COALESCE(c.name, so."customerId") AS "customerName",
-        SUM(sol."quantityToInvoice" * COALESCE(sol."unitPrice", 0)) AS amount
-      FROM "salesOrder" so
-      JOIN "salesOrderLine" sol
-        ON sol."salesOrderId" = so.id AND sol."companyId" = so."companyId"
-      LEFT JOIN customer c ON c.id = so."customerId"
-        AND c."companyId" = so."companyId"
-      WHERE so."companyId" = ${companyId}
-        AND so.status IN (
-          'Confirmed', 'In Progress', 'Completed',
-          'To Ship and Invoice', 'To Ship', 'To Invoice'
+  const result = await db
+    .with("openOrders", (query) => {
+      let orders = query
+        .selectFrom("salesOrder as so")
+        .innerJoin("salesOrderLine as sol", (join) =>
+          join
+            .onRef("sol.salesOrderId", "=", "so.id")
+            .onRef("sol.companyId", "=", "so.companyId")
         )
-        AND sol."quantityToInvoice" > 0
-        AND NOT sol."invoicedComplete"
-        ${customerFilter}
-      GROUP BY so.id, so."salesOrderId", so."customerId", c.name
-    )
-    SELECT id, "salesOrderId", "customerName", amount,
-      SUM(amount) OVER () AS "totalAmount",
-      COUNT(*) OVER () AS "orderCount"
-    FROM open_orders
-    ORDER BY amount DESC, id
-    LIMIT 5
-  `.execute(db);
+        .leftJoin("customer as c", (join) =>
+          join
+            .onRef("c.id", "=", "so.customerId")
+            .onRef("c.companyId", "=", "so.companyId")
+        )
+        .select(["so.id", "so.salesOrderId"])
+        .select((eb) => [
+          eb.fn.coalesce("c.name", "so.customerId").as("customerName"),
+          eb.fn
+            .sum<number>(
+              eb(
+                "sol.quantityToInvoice",
+                "*",
+                eb.fn.coalesce("sol.unitPrice", eb.val(0))
+              )
+            )
+            .as("amount")
+        ])
+        .where("so.companyId", "=", companyId)
+        .where("so.status", "in", [
+          "Confirmed",
+          "In Progress",
+          "Completed",
+          "To Ship and Invoice",
+          "To Ship",
+          "To Invoice"
+        ])
+        .where("sol.quantityToInvoice", ">", 0)
+        .where("sol.invoicedComplete", "=", false)
+        .groupBy(["so.id", "so.salesOrderId", "so.customerId", "c.name"]);
+      if (customerId) orders = orders.where("so.customerId", "=", customerId);
+      return orders;
+    })
+    .selectFrom("openOrders")
+    .selectAll()
+    .select((eb) => [
+      eb.fn.sum<number>("amount").over().as("totalAmount"),
+      eb.fn.countAll<number>().over().as("orderCount")
+    ])
+    .orderBy("amount", "desc")
+    .orderBy("id")
+    .limit(5)
+    .execute();
 
   return {
-    amount: Number(result.rows[0]?.totalAmount ?? 0),
-    count: Number(result.rows[0]?.orderCount ?? 0),
-    orders: result.rows.map((row) => ({
+    amount: Number(result[0]?.totalAmount ?? 0),
+    count: Number(result[0]?.orderCount ?? 0),
+    orders: result.map((row) => ({
       id: row.id,
       salesOrderId: row.salesOrderId,
       customerName: row.customerName,
