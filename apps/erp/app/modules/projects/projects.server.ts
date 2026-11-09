@@ -4372,7 +4372,10 @@ export const saveTimesheetEntry = defineServiceFn({
     rdActivityRole: z
       .union([z.enum(rdActivityRoles), z.literal("")])
       .nullable()
-      .optional()
+      .optional(),
+    // The grid sends "" for a row with no job; the posting input maps it to null.
+    jobId: z.string().nullable().optional(),
+    jobOperationId: z.string().nullable().optional()
   }),
   // Your own time needs company membership; another employee's is decided
   // in the body (their manager, or `update: projects`).

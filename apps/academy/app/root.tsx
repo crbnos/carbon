@@ -94,6 +94,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     SUPABASE_ANON_KEY
   } = getBrowserEnv();
 
@@ -144,6 +145,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
+        TENANT_TYPE,
         SUPABASE_ANON_KEY
       },
       lessonCompletions,

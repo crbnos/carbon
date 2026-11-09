@@ -29,9 +29,13 @@ describe("shippableEntityStatuses", () => {
     );
   });
 
-  it("ships returned stock, On Hold, back to the customer on a sales return", () => {
-    expect(shippableEntityStatuses("Sales Return Order")).toEqual(["On Hold"]);
-    expect(isShippableEntityStatus("Sales Return Order", "Available")).toBe(
+  it("ships returned stock (On Hold) and serviced units (Available) back to the customer on a sales return", () => {
+    expect(shippableEntityStatuses("Sales Return Order")).toEqual([
+      "On Hold",
+      "Available"
+    ]);
+    // A unit that already left on a shipment cannot ship again.
+    expect(isShippableEntityStatus("Sales Return Order", "Consumed")).toBe(
       false
     );
   });

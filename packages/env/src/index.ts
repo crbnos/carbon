@@ -129,7 +129,8 @@ export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
 // self-hosted install), so the server's own settings, such as its mail, are
 // theirs to share across their companies. Anything else, unset included, is
 // Carbon Cloud's "multi": many customers, one server.
-export const SINGLE_TENANT = getEnv("TENANT_TYPE") === "single";
+export const TENANT_TYPE = getEnv("TENANT_TYPE");
+export const SINGLE_TENANT = TENANT_TYPE === "single";
 
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
 
@@ -405,6 +406,7 @@ export function getBrowserEnv() {
     RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     APP_ENV,
     APP_URL,
     VERCEL_ENV,
