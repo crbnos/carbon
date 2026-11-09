@@ -168,6 +168,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Writing a new spec | `.claude/skills/spec-writing/SKILL.md` + `.claude/rules/writing-ste.md` |
 | Explain a spec/plan as an HTML page (diagram + plain prose) | `.claude/skills/explain/SKILL.md` |
 | **Workflows** | |
+| Screenshots / visual check of shell UI (MES, ERP) without a backend | `.claude/skills/ui-harness/SKILL.md` (`node scripts/harness-shot.mjs --app mes\|erp`) |
 | Skills index — pipelines + all skills | `.claude/skills/README.md` |
 | Competitor research for a feature | `.claude/skills/research/SKILL.md` |
 | Feature pipeline (research→spec→plan→execute) | `.claude/skills/feature/SKILL.md` |
