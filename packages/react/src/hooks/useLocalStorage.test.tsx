@@ -93,3 +93,40 @@ it("uses defaults for invalid storage and keeps a stable setter when writes fail
   errorToast.mockRestore();
   vi.unstubAllGlobals();
 });
+
+it("migrates a legacy preference only when the scoped key is empty", () => {
+  const values = new Map<string, string>([["legacy", '{"empty":false}']]);
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value)
+  });
+  (
+    globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+  ).IS_REACT_ACT_ENVIRONMENT = true;
+  const element = document.createElement("div");
+  const root = createRoot(element);
+  const defaults = { empty: true, thumbnail: true };
+
+  function Display({ storageKey }: { storageKey: string }) {
+    const [settings] = useLocalStorage(storageKey, defaults, {
+      key: "legacy",
+      parse: (value) =>
+        value && typeof value === "object" && !Array.isArray(value)
+          ? { ...defaults, ...(value as Partial<typeof defaults>) }
+          : null
+    });
+    return <span>{JSON.stringify(settings)}</span>;
+  }
+
+  act(() => root.render(<Display storageKey="scoped-a" />));
+  expect(element.textContent).toBe('{"empty":false,"thumbnail":true}');
+  expect(values.get("scoped-a")).toBe(element.textContent);
+
+  values.set("scoped-b", '{"empty":true,"thumbnail":false}');
+  act(() => root.render(<Display storageKey="scoped-b" />));
+  expect(element.textContent).toBe('{"empty":true,"thumbnail":false}');
+  expect(values.get("scoped-b")).toBe('{"empty":true,"thumbnail":false}');
+
+  act(() => root.unmount());
+  vi.unstubAllGlobals();
+});
