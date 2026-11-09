@@ -154,6 +154,8 @@ export const ProductionPlanningOrderDrawer = memo(
         setOpenJobsVersion((version) => version + 1);
         if (refused.length > 0) {
           toast.error(pastStartToast(created, refused.length));
+        } else if (created > 0) {
+          toast.success(t`Orders submitted`);
         }
       }
     });

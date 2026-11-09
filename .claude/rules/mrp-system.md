@@ -1079,7 +1079,7 @@ never offered a Cancel, Defer or Expedite.
     are placed, that draft also hides any other remainder of the row; it
     returns when the draft goes. A row with none drops its draft and re-seeds
     from the suggestions. A drawer with
-    refusals stays open and reloads its Open Jobs / Open Orders, and the toast
+    refusals or `errors` stays open and reloads its Open Jobs / Open Orders, and the toast
     (`usePastStartToast`) counts the orders placed. When every order was
     refused the call fails with only that message. A drawer cannot close
     while its order is in flight: the result is what clears the draft.

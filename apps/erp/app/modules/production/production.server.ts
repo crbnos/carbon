@@ -4473,6 +4473,8 @@ export const orderPlannedJobs = defineServiceFn({
         item.readableIdWithRevision ?? item.readableId
       ])
     );
+    const readableIdOf = (itemId: string) =>
+      readableIdByItem.get(itemId) ?? itemId;
     const today = datetime
       .today(await getLocationTimeZone(client, locationId, companyId))
       .toString();
@@ -4571,21 +4573,19 @@ export const orderPlannedJobs = defineServiceFn({
       const manufacturing = manufacturingByItem.get(item.id);
       if (manufacturingRows.error || !manufacturing) {
         errors.push(
-          `Failed to retrieve manufacturing data for ${readableIdByItem.get(item.id) ?? item.id}: ${
+          `Failed to retrieve manufacturing data for ${readableIdOf(item.id)}: ${
             manufacturingRows.error?.message ?? "No replenishment record"
           }`
         );
         continue;
       }
       if (manufacturing.manufacturingBlocked) {
-        errors.push(
-          `Manufacturing is blocked for ${readableIdByItem.get(item.id) ?? item.id}`
-        );
+        errors.push(`Manufacturing is blocked for ${readableIdOf(item.id)}`);
         continue;
       }
       if (manufacturing.requiresConfiguration) {
         errors.push(
-          `Manufacturing requires configuration for ${readableIdByItem.get(item.id) ?? item.id}`
+          `Manufacturing requires configuration for ${readableIdOf(item.id)}`
         );
         continue;
       }
@@ -4596,7 +4596,7 @@ export const orderPlannedJobs = defineServiceFn({
         today,
         leadTime
       );
-      const readableId = readableIdByItem.get(item.id) ?? item.id;
+      const readableId = readableIdOf(item.id);
       if (invalid.length > 0) {
         errors.push(invalidOrderDateMessage(readableId, invalid.length));
       }
@@ -4640,8 +4640,8 @@ export const orderPlannedJobs = defineServiceFn({
         if (created.error || !created.data?.id) {
           errors.push(
             created.error
-              ? `Failed to create job for ${readableIdByItem.get(item.id) ?? item.id}: ${created.error.message}`
-              : `Job was not returned after creation for ${readableIdByItem.get(item.id) ?? item.id}`
+              ? `Failed to create job for ${readableIdOf(item.id)}: ${created.error.message}`
+              : `Job was not returned after creation for ${readableIdOf(item.id)}`
           );
           continue;
         }
@@ -4750,7 +4750,7 @@ export const orderPlannedJobs = defineServiceFn({
           ignoreDuplicates: false
         });
       if (forecasts.error) {
-        errors.push(
+        warnings.push(
           `Failed to insert supply forecasts: ${forecasts.error.message}`
         );
       }
@@ -4772,12 +4772,8 @@ export const orderPlannedJobs = defineServiceFn({
     }
 
     const problems = [
-      ...pastStartRefusalMessages(
-        refusedOrders,
-        (itemId) => readableIdByItem.get(itemId) ?? itemId,
-        today
-      ),
-      ...errors
+      ...errors,
+      ...pastStartRefusalMessages(refusedOrders, readableIdOf, today)
     ];
     if (problems.length > 0 && processedItems === 0) {
       return ctx.error(

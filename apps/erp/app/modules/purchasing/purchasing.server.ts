@@ -3734,7 +3734,7 @@ export const orderPlannedPurchases = defineServiceFn({
       if (forecasts.error) {
         const message = `Failed to insert supply forecasts: ${forecasts.error.message}`;
         logger.error(message, { companyId, locationId });
-        errors.push(message);
+        warnings.push(message);
       }
     }
 
@@ -3754,16 +3754,17 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    const problems = [...pastStartErrors, ...errors];
+    const problems = [...errors, ...pastStartErrors];
     if (processedItems === 0) {
-      logger.error("Failed to process any planning orders", {
-        companyId,
-        locationId,
-        itemIds: Array.from(itemIds),
-        supplierIds: Array.from(supplierIds),
-        periodIds: Array.from(periodIds),
-        errors
-      });
+      if (problems.length > 0)
+        logger.error("Failed to process any planning orders", {
+          companyId,
+          locationId,
+          itemIds: Array.from(itemIds),
+          supplierIds: Array.from(supplierIds),
+          periodIds: Array.from(periodIds),
+          errors
+        });
       return ctx.error(
         "rule",
         problems.length === 0
