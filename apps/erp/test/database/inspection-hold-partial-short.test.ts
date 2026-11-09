@@ -147,7 +147,7 @@ describe.skipIf(!hasLocalDatabase)("an untracked Partial short of stock", () => 
         requireSource: "Receipt"
       });
 
-      expect(partial.error).not.toBeNull();
+      expect(partial.error?.message).toMatch(/in the held storage unit/);
       expect(
         await f.db
           .selectFrom("inspection")

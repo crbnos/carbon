@@ -356,7 +356,12 @@ BEGIN
   PERFORM set_config('app.inspection_release', '', true);
   PERFORM pg_temp.expect('closing the NCR under the release flag releases the remainder',
     public.inspection_held_quantity(company, item, unit)::text, '0');
+  PERFORM pg_temp.expect('the link of a lot its NCR released cannot be removed',
+    pg_temp.refused_edit(format('DELETE FROM "nonConformanceInspection" WHERE "nonConformanceId" = %L', open_ncr),
+      '%decided by this NCR%')::text, 'true');
+  PERFORM set_config('app.inspection_release', 'on', true);
   DELETE FROM "nonConformanceInspection" WHERE "nonConformanceId" = open_ncr;
+  PERFORM set_config('app.inspection_release', '', true);
 
   INSERT INTO "nonConformance" ("nonConformanceId", "name", "source", "locationId", "nonConformanceTypeId", "openDate", "companyId", "createdBy", "status")
   VALUES ('NCR-HOLD-TEST', 'Hold test', 'Internal', location, ncr_type, CURRENT_DATE, company, usr, 'Closed')
@@ -369,7 +374,9 @@ BEGIN
     public.inspection_held_quantity(company, item, unit)::text, '0');
   PERFORM pg_temp.expect('its remainder moves once the NCR closed',
     pg_temp.refused(company, item, location, unit, NULL, -1, usr)::text, 'false');
+  PERFORM set_config('app.inspection_release', 'on', true);
   DELETE FROM "nonConformanceInspection" WHERE "nonConformanceId" = ncr;
+  PERFORM set_config('app.inspection_release', '', true);
   INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
   VALUES ('Positive Adjmt.', 'Direct Transfer', item, location, unit, 1, company, usr);
   INSERT INTO "itemLedger" ("entryType", "documentType", "itemId", "locationId", "storageUnitId", "quantity", "companyId", "createdBy")
@@ -559,13 +566,13 @@ BEGIN
         '%holds its rejected part%')::text, 'false');
     PERFORM pg_temp.expect('the link is not re-pointed to a Closed NCR',
       pg_temp.refused_edit(format('UPDATE "nonConformanceInspection" SET "nonConformanceId" = %L WHERE "inspectionId" = %L', closed_ncr, partial_lot),
-        '%holds its rejected part%')::text, 'true');
+        '%decided by this NCR%')::text, 'true');
     PERFORM pg_temp.expect('the link is not re-pointed to another NCR',
       pg_temp.refused_edit(format('UPDATE "nonConformanceInspection" SET "nonConformanceId" = %L WHERE "inspectionId" = %L', other_ncr, partial_lot),
-        '%holds its rejected part%')::text, 'true');
+        '%decided by this NCR%')::text, 'true');
     PERFORM pg_temp.expect('the link is not removed',
       pg_temp.refused_edit(format('DELETE FROM "nonConformanceInspection" WHERE "inspectionId" = %L', partial_lot),
-        '%holds its rejected part%')::text, 'true');
+        '%decided by this NCR%')::text, 'true');
     PERFORM pg_temp.expect('the linked open NCR is not deleted',
       pg_temp.refused_edit(format('DELETE FROM "nonConformance" WHERE "id" = %L', held_ncr),
         '%holds the rejected part%')::text, 'true');

@@ -96,7 +96,10 @@ import type {
   ReceiptLine,
   RentalReceiptLine
 } from "~/modules/inventory/types";
-import { getInspectionStatusVariant } from "~/modules/quality/ui/Inspections/InspectionStatus";
+import {
+  getInspectionStatusVariant,
+  useInspectionLotStatusLabel
+} from "~/modules/quality/ui/Inspections/InspectionStatus";
 import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -129,7 +132,8 @@ const ReceiptLines = () => {
     }[];
     rentalLines: RentalReceiptLine[];
     receiptInspections: ReceiptLineInspection[];
-    inspectedItemIds: string[];
+    inspectedLineIds: string[];
+    heldLineIds: string[];
     nonNettableStorageUnitIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
@@ -299,10 +303,11 @@ const ReceiptLines = () => {
                       receipt={routeData?.receipt}
                       inspection={inspection}
                       requiresInspection={
-                        !!line.requiresInspection ||
                         !!inspection ||
-                        (!!line.itemId &&
-                          !!routeData?.inspectedItemIds?.includes(line.itemId))
+                        !!routeData?.inspectedLineIds?.includes(line.id ?? "")
+                      }
+                      needsHeldUnit={
+                        !!routeData?.heldLineIds?.includes(line.id ?? "")
                       }
                       inNonNettableUnit={
                         !!line.storageUnitId &&
@@ -685,31 +690,12 @@ function ReceiptLineInspectionBadge({
   );
 }
 
-function useInspectionLotStatusLabel(status: string | undefined): string {
-  const { t } = useLingui();
-  switch (status) {
-    case "Pending":
-      return t`Pending`;
-    case "In Progress":
-      return t`In Progress`;
-    case "Passed":
-      return t`Passed`;
-    case "Failed":
-      return t`Failed`;
-    case "Partial":
-      return t`Partial`;
-    case "Cancelled":
-      return t`Cancelled`;
-    default:
-      return status ?? "";
-  }
-}
-
 function ReceiptLineItem({
   line,
   receipt,
   inspection,
   requiresInspection,
+  needsHeldUnit,
   inNonNettableUnit,
   className,
   isReadOnly,
@@ -728,6 +714,7 @@ function ReceiptLineItem({
   receipt?: Receipt;
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
+  needsHeldUnit: boolean;
   inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
@@ -774,7 +761,7 @@ function ReceiptLineItem({
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
   const showNettableWarning =
-    requiresInspection &&
+    needsHeldUnit &&
     !isReadOnly &&
     receipt?.sourceDocument === "Purchase Order" &&
     (line.receivedQuantity ?? 0) > 0 &&

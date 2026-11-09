@@ -53,10 +53,13 @@ Both pickers offer only active, <Term id="non-nettable">non-nettable</Term> stor
 
 A new purchase-order receipt puts each line that needs inspection in the location's inspection storage unit. The line and the receipt header show an **"Inspection required"** badge. You can change the line to another non-nettable unit at the same location, for an overflow area. If you choose a nettable unit, the line warns you.
 
-Posting refuses a line that needs inspection in two cases:
+Posting refuses a line that needs inspection in three cases:
 
 - The location has no inspection storage unit.
-- The line's storage unit is nettable.
+- The line's storage unit is nettable, or the line has none.
+- The line's storage unit is at another location.
+
+A non-inventory part is not checked. It has no stock to hold, so its lot names no storage unit and the receipt's inspection status ignores it.
 
 A sales return receipt line also defaults to the location's inspection storage unit, when the location has one. It opens no inspection lot.
 
@@ -83,7 +86,7 @@ The receipts list has an **Inspection** column with a filter. The **Inventory** 
 
 ### What the hold blocks
 
-Held stock cannot leave its storage unit. Carbon refuses a stock transfer, a pick, a sales shipment or a job issue that takes it. A return shipment, to a supplier or to a customer, can still ship held stock of an untracked part. A serial or batch unit that is On Hold cannot go on a return to a supplier: that shipment takes only **Available** and **Rejected** units.
+Held stock cannot leave its storage unit. Carbon refuses a stock transfer, a pick, a sales shipment, a job issue or a return shipment that takes it. The rejected remainder of an untracked **Partial** lot can ship to a supplier while its NCR is open, but not to a customer. A return to a supplier takes only **Available** and **Rejected** serial or batch units.
 
 - **Serial and batch parts.** Each unit is **On Hold** until its lot is decided.
 - **Untracked parts.** An open lot holds its lot size at its storage unit. Other stock of the same part in that unit stays free: with 100 bolts held and 20 more on the shelf, you can move 20.
@@ -96,8 +99,8 @@ A count records where stock really is, so it posts even when held stock was foun
 
 When passed stock waits in the inspection storage unit, a posted receipt shows a **Put Away** button. It needs create permission for Inventory.
 
-1. Click **Put Away**. Carbon creates a **"Released"** stock transfer linked to the receipt and opens it.
-2. Check each line's To storage unit. Carbon fills in the part's default nettable storage unit at the location. With none, the line has no To unit and you choose one.
+1. Click **Put Away**. Carbon creates a **"Released"** stock transfer linked to the receipt and opens it. If a line has no To storage unit, the transfer is **"Draft"**: set the unit, then release it.
+2. Check each line's To storage unit. Carbon fills in the part's default nettable storage unit at the location. With none, the line has no To unit. Choose one before you pick the line: Carbon refuses the pick without it.
 3. Pick and complete the transfer as usual. The receipt moves to **"Put Away"** when completed transfers cover all passed stock.
 
 The transfer takes only passed stock. For a serial or batch part, that is its **Available** units. For an untracked part, it is the lot size of a passed lot, or the accepted quantity of a Partial lot. If more lots pass later, click **Put Away** again: the new transfer takes only the stock that no linked transfer has yet. The receipt's menu lists each linked transfer as **"Putaway"** and its number.
@@ -106,7 +109,9 @@ A sales return receipt has no Put Away button. Move its stock with an ordinary s
 
 ### Voiding a receipt with open lots
 
-Voiding the receipt sets each **Pending** or **In Progress** lot to **Cancelled**. A cancelled lot holds nothing. A lot that is already **Passed**, **Failed** or **Partial** keeps its status, and the receipt's inspection status follows those lots. It goes back to **"Not Required"** only when every lot was open and is now cancelled.
+Voiding the receipt sets each **Pending** or **In Progress** lot to **Cancelled**. A cancelled lot holds nothing. A lot that is already **Passed**, **Failed** or **Partial** keeps its status. A voided receipt always reads **"Not Required"**, whatever its lots.
+
+A void deletes an open Put Away transfer of the receipt that has picked nothing, and refuses an open one with picked stock: unpick it first. Carbon also refuses a receipt with an untracked lot that is **Failed** or **Partial**. A serial or batch unit moved to the rejected storage unit goes back with the void.
 
 ## Rental receipts
 
@@ -165,11 +170,11 @@ A posted receipt is history and can't be deleted. Void it instead, which writes 
 ### "… has no inspection storage unit. Set one in Settings → Quality."
 A line's part has an inspection plan assigned to Receipt, and the receipt's location has no inspection storage unit. Set one on the **Goods-in storage** card in Settings → Quality, then post again. Outside processing receipts never need one.
 
-### "… needs inspection. Choose a non-nettable storage unit."
-A line that needs inspection sits in a nettable storage unit, or in none. Change the line to the location's inspection storage unit or another non-nettable unit at that location.
+### "… needs inspection. Choose a non-nettable storage unit at …."
+A line that needs inspection sits in a nettable storage unit, in a unit of another location, or in none. Change the line to the location's inspection storage unit or another non-nettable unit at that location.
 
 ### "… is held for inspection in …. Quality must decide its inspection lot before it can move."
-The movement would take stock that an open inspection lot holds. For an untracked part, only the held quantity is blocked: other stock of the part in that unit can still move. A Partial lot keeps holding its rejected quantity until its NCR is Closed. The variant without "in …" is a serial or batch unit at **On Hold**. Decide the lot on the inspection page first.
+The movement would take stock that an open inspection lot holds. For an untracked part, only the held quantity is blocked: other stock of the part in that unit can still move. An untracked Partial lot keeps holding its rejected quantity until its NCR is Closed. The variant without "in …" is a serial or batch unit at **On Hold**. Decide the lot on the inspection page first.
 
 ### "Nothing is ready for putaway on this receipt." / "Only a posted receipt can be put away."
 Put Away found no passed stock still in the unit it was received into and not already on a linked transfer, or the receipt is not Posted. Check the receipt's inspection status and its linked putaway transfers in the menu.

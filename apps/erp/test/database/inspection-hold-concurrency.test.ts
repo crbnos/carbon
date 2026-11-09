@@ -238,4 +238,98 @@ describe.skipIf(!hasLocalDatabase)("concurrent inspection decisions", () => {
       }
     }
   );
+
+  databaseTest(
+    "two moves out of one held unit cannot both pass on the same on-hand",
+    async () => {
+      const receiptId = await draftReceiptFromPurchaseOrder(f, "race");
+      await seed(f, (trx) =>
+        trx
+          .updateTable("receiptLine")
+          .set({ storageUnitId: inspectionUnit })
+          .where("receiptId", "=", receiptId)
+          .where("companyId", "=", f.companyId)
+          .execute()
+      );
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "post-receipt",
+          { type: "post", receiptId },
+          postReceipt
+        )
+      );
+      const onHandNow = async () =>
+        Number(
+          (
+            await f.db
+              .selectFrom("itemLedger")
+              .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
+              .where("storageUnitId", "=", inspectionUnit)
+              .where("itemId", "=", f.partId)
+              .where("trackedEntityId", "is", null)
+              .executeTakeFirstOrThrow()
+          ).quantity
+        );
+      const heldNow = Number(
+        (
+          await sql<{ held: number }>`
+            SELECT public.inspection_held_quantity(${f.companyId}, ${f.partId}, ${inspectionUnit}) AS held
+          `.execute(f.db)
+        ).rows[0]!.held
+      );
+      const on = await onHandNow();
+      await seed(f, (trx) =>
+        trx
+          .insertInto("itemLedger")
+          .values({
+            entryType: "Positive Adjmt.",
+            documentType: "Direct Transfer",
+            itemId: f.partId,
+            locationId: f.locationId,
+            storageUnitId: inspectionUnit,
+            quantity: heldNow + 4 - on,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      const take = {
+        entryType: "Transfer" as const,
+        documentType: "Direct Transfer" as const,
+        itemId: f.partId,
+        locationId: f.locationId,
+        storageUnitId: inspectionUnit,
+        quantity: -3,
+        companyId: f.companyId,
+        createdBy: USER
+      };
+      const left = await connectWithTriggers();
+      const right = await connectWithTriggers();
+      try {
+        let release!: () => void;
+        const released = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        let entered!: () => void;
+        const inFirst = new Promise<void>((resolve) => {
+          entered = resolve;
+        });
+        const first = left.transaction().execute(async (trx) => {
+          await trx.insertInto("itemLedger").values(take).execute();
+          entered();
+          await released;
+        });
+        await inFirst;
+        const second = right.insertInto("itemLedger").values(take).execute();
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        release();
+        await first;
+        await expect(second).rejects.toThrow(/held for inspection/);
+      } finally {
+        await left.destroy();
+        await right.destroy();
+      }
+    }
+  );
 });

@@ -16,7 +16,8 @@ import {
   insertReceiptPutAway,
   postInventoryAdjustment,
   postReceipt,
-  postStockTransfer
+  postStockTransfer,
+  unheldInspectedLineRefusal
 } from "../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
@@ -364,17 +365,19 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
       toStorageUnitId: shelf
     });
     expect(line.receiptLineId).not.toBeNull();
-    const pick = await invokePosting(
-      handlesOf(f.ctx),
-      "post-stock-transfer",
-      {
-        type: "inventory",
-        stockTransferId: result.created.id,
-        stockTransferLineId: line.id,
-        quantity: picked,
-        locationId: f.locationId
-      },
-      postStockTransfer
+    const pick = await withGuard(() =>
+      invokePosting(
+        handlesOf(f.ctx),
+        "post-stock-transfer",
+        {
+          type: "inventory",
+          stockTransferId: result.created.id,
+          stockTransferLineId: line.id,
+          quantity: picked,
+          locationId: f.locationId
+        },
+        postStockTransfer
+      )
     );
     expect(pick.error).toBeNull();
     // A transfer picked in full completes itself; one picked short is
@@ -763,6 +766,44 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
         .where("id", "=", lot)
         .executeTakeFirstOrThrow();
       expect(after).toEqual({ status: "Partial", acceptedQuantity: 2 });
+    }
+  );
+
+  databaseTest(
+    "a line delivering to another location is held at that location's unit",
+    async () => {
+      const check = (storageUnitId: string) =>
+        unheldInspectedLineRefusal(f.db, f.companyId, {
+          locationId: f.locationId,
+          plannedItemIds: new Set([f.partId]),
+          lines: [
+            {
+              itemId: f.partId,
+              storageUnitId,
+              receivedQuantity: 1,
+              locationId: f.otherLocationId
+            }
+          ]
+        });
+      await seed(f, (trx) =>
+        trx
+          .updateTable("location")
+          .set({ inspectionStorageUnitId: otherSiteUnit })
+          .where("id", "=", f.otherLocationId)
+          .execute()
+      );
+      try {
+        expect(await check(otherSiteUnit)).toBeNull();
+        expect(await check(inspectionUnit)).toMatch(/needs inspection/);
+      } finally {
+        await seed(f, (trx) =>
+          trx
+            .updateTable("location")
+            .set({ inspectionStorageUnitId: null })
+            .where("id", "=", f.otherLocationId)
+            .execute()
+        );
+      }
     }
   );
 });

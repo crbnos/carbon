@@ -7,19 +7,25 @@ DECLARE
   v_line TEXT;
   v_item TEXT;
 BEGIN
-  IF p_operation <> 'UPDATE' OR p_old->>'status' IS DISTINCT FROM 'On Hold' THEN
+  IF p_operation NOT IN ('UPDATE', 'DELETE') OR p_old->>'status' IS DISTINCT FROM 'On Hold' THEN
     RETURN;
   END IF;
   v_line := p_old->'attributes'->>'Receipt Line';
   IF v_line IS NULL THEN
     RETURN;
   END IF;
-  IF p_new->>'status' = 'On Hold'
+  IF p_operation = 'UPDATE'
+     AND p_new->>'status' = 'On Hold'
      AND (p_new->'attributes'->>'Receipt Line') IS NOT DISTINCT FROM v_line THEN
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+
+  IF p_operation = 'DELETE'
+     AND NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
     RETURN;
   END IF;
 

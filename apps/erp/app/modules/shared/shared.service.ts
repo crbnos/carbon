@@ -12334,32 +12334,43 @@ export async function createDocument(
 
       // A part with a Receipt inspection plan is received into the location's
       // inspection storage unit, and the line keeps a snapshot of that.
-      const [inspectionAssignments, receiptLocation] = await Promise.all([
+      const lineLocationIds = [
+        ...new Set(
+          [
+            locationId,
+            ...purchaseOrderLines.data.map((d) => d.locationId)
+          ].filter((id): id is string => !!id)
+        )
+      ];
+      const [inspectionAssignments, receiptLocations] = await Promise.all([
         many(
           db,
           "itemInspectionDocumentAssignment",
           { companyId, usage: "Receipt", itemId: receiptItemIds },
           { columns: ["itemId"] }
         ),
-        locationId
-          ? maybeSingle(
-              db,
-              "location",
-              { id: locationId, companyId },
-              { columns: ["inspectionStorageUnitId"] }
-            )
-          : Promise.resolve({ data: null, error: null })
+        many(
+          db,
+          "location",
+          { companyId, id: lineLocationIds },
+          { columns: ["id", "inspectionStorageUnitId"] }
+        )
       ]);
       if (inspectionAssignments.error)
         throw new Error(inspectionAssignments.error.message);
-      if (receiptLocation.error) throw new Error(receiptLocation.error.message);
+      if (receiptLocations.error)
+        throw new Error(receiptLocations.error.message);
       const inspectedItemIds = new Set(
         isOutsideOperation
           ? []
           : (inspectionAssignments.data ?? []).map((row) => row.itemId)
       );
-      const inspectionStorageUnitId =
-        receiptLocation.data?.inspectionStorageUnitId ?? null;
+      const inspectionUnitByLocation = new Map(
+        (receiptLocations.data ?? []).map((row) => [
+          row.id,
+          row.inspectionStorageUnitId
+        ])
+      );
 
       const previouslyReceivedQuantitiesByLine = (
         purchaseOrderLines.data ?? []
@@ -12411,7 +12422,9 @@ export async function createDocument(
           locationId: d.locationId ?? null,
           requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
-            (inspectedItemIds.has(d.itemId) ? inspectionStorageUnitId : null) ??
+            (inspectedItemIds.has(d.itemId)
+              ? inspectionUnitByLocation.get(d.locationId ?? locationId ?? "")
+              : null) ??
             d.storageUnitId ??
             defaultStorageUnitByItemLocation.get(
               pickMethodKey(d.itemId!, d.locationId ?? null)

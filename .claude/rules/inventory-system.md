@@ -418,10 +418,11 @@ cancelled lots run under it; the stock moves, write-offs and unit changes that
 follow run with the guard on, because a decided lot (or a closed NCR, or a
 cancelled lot) no longer holds stock: the guard lets that stock go and keeps
 what other lots hold. A sales-return receipt void opens no lot and needs no
-flag. `setInspectionRelease(trx)` (the whole transaction) stays only for
+flag. `setInspectionRelease(trx)` (the whole transaction) stays for
 `postInventoryCount` (a count records where held stock really is, and
 `heldStockMovedByCount` names what it found elsewhere), the four return-shipment
-transactions and a company restore or import's load transaction. A return
+transactions and the delete of an NCR that failed to open; a company restore or
+import sets the flag with `SET LOCAL`. A return
 shipment also calls `refuseShippingOpenLotStock` after its ledger rows, so it
 cannot ship stock an open lot still holds (checked only where an open lot
 holds stock). The guard also steps aside under

@@ -5,7 +5,7 @@
 import {
   InvalidInputError,
   NotFoundError,
-  RAISED_EXCEPTION,
+  raisedMessage,
   ServerFnError
 } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
@@ -6886,55 +6886,99 @@ export async function refuseUnheldInspectedReceiptLines(
       storageUnitId: string | null;
       receivedQuantity: number | null;
       requiresInspection: boolean | null;
+      locationId?: string | null;
     }>;
   }
 ): Promise<string | null> {
-  const client = ctx.asSystem.supabase;
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
-  // Outside processing returns the company's own part; it opens no lot.
-  if (args.purchaseOrderId) {
-    const purchaseOrder = await client
-      .from("purchaseOrder")
-      .select("purchaseOrderType")
-      .eq("id", args.purchaseOrderId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (purchaseOrder.data?.purchaseOrderType === "Outside Processing") {
-      return null;
-    }
-  }
   const received = args.lines.filter(
     (line): line is typeof line & { itemId: string } =>
       !!line.itemId && Number(line.receivedQuantity ?? 0) > 0
   );
   if (received.length === 0) return null;
+  const lots = await receiptLinesOpeningLots(db, companyId, {
+    purchaseOrderId: args.purchaseOrderId,
+    lines: received
+  }).catch((error) => {
+    logger.error("Failed to read the parts' inspection plans", {
+      companyId,
+      error
+    });
+    return undefined;
+  });
+  if (lots === undefined) return "Failed to read the parts' inspection plans";
+  if (lots === null) return null;
+  const held = lots.filter((line) => line.holdsStock);
+  return unheldInspectedLineRefusal(db, companyId, {
+    locationId: args.locationId,
+    plannedItemIds: new Set(held.map((line) => line.itemId)),
+    lines: held
+  });
+}
 
-  // The current plan decides, as it decides whether the posting opens a lot.
-  const assignments = await client
-    .from("itemInspectionDocumentAssignment")
-    .select("itemId")
-    .eq("companyId", companyId)
-    .eq("usage", "Receipt")
-    .in("itemId", [...new Set(received.map((line) => line.itemId))]);
-  if (assignments.error) return "Failed to read the parts' inspection plans";
-  const plannedItemIds = new Set(
-    (assignments.data ?? []).map((row) => row.itemId)
+/**
+ * The lines of a receipt that open an inspection lot when posted: a part with a
+ * Receipt inspection plan, unless the order is outside processing or its project
+ * consumes it at receipt. `holdsStock` is false for a non-inventory part, which
+ * has no stock to hold. Null when a line's project cannot take the charge: the
+ * posting refuses that receipt in its own words.
+ */
+export async function receiptLinesOpeningLots<
+  Line extends { itemId: string; lineId: string | null }
+>(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  args: { purchaseOrderId?: string | null; lines: Line[] }
+): Promise<Array<Line & { holdsStock: boolean }> | null> {
+  if (args.lines.length === 0) return [];
+  if (args.purchaseOrderId) {
+    const purchaseOrder = await db
+      .selectFrom("purchaseOrder")
+      .select("purchaseOrderType")
+      .where("id", "=", args.purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (purchaseOrder?.purchaseOrderType === "Outside Processing") return [];
+  }
+  const itemIds = [...new Set(args.lines.map((line) => line.itemId))];
+  const assignments = await db
+    .selectFrom("itemInspectionDocumentAssignment")
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "itemInspectionDocumentAssignment.itemId")
+        .onRef(
+          "item.companyId",
+          "=",
+          "itemInspectionDocumentAssignment.companyId"
+        )
+    )
+    .select([
+      "itemInspectionDocumentAssignment.itemId",
+      "item.itemTrackingType"
+    ])
+    .where("itemInspectionDocumentAssignment.companyId", "=", companyId)
+    .where("itemInspectionDocumentAssignment.usage", "=", "Receipt")
+    .where("itemInspectionDocumentAssignment.itemId", "in", itemIds)
+    .execute();
+  const trackingByItemId = new Map(
+    assignments.map((row) => [row.itemId, row.itemTrackingType])
   );
-
+  const planned = args.lines.filter((line) =>
+    trackingByItemId.has(line.itemId)
+  );
   const consumedPoLineIds = await projectConsumedPurchaseOrderLineIds(
     db,
     companyId,
-    received.filter((line) => plannedItemIds.has(line.itemId))
+    planned
   );
   if (consumedPoLineIds === null) return null;
-  return unheldInspectedLineRefusal(db, companyId, {
-    locationId: args.locationId,
-    plannedItemIds,
-    lines: received.filter(
-      (line) => !line.lineId || !consumedPoLineIds.has(line.lineId)
-    )
-  });
+  return planned
+    .filter((line) => !line.lineId || !consumedPoLineIds.has(line.lineId))
+    .map((line) => ({
+      ...line,
+      holdsStock: trackingByItemId.get(line.itemId) !== "Non-Inventory"
+    }));
 }
 
 export async function refuseShippingOpenLotStock(
@@ -7161,7 +7205,11 @@ async function projectConsumedPurchaseOrderLineIds(
       isOutsideProcessing: false,
       postingDate: datetime.today(timeZone).toString()
     });
-  } catch {
+  } catch (error) {
+    logger.error("Failed to read the receipt's project routes", {
+      companyId,
+      error
+    });
     return null;
   }
   const projectStock = await loadProjectStock(
@@ -7206,6 +7254,7 @@ export async function unheldInspectedLineRefusal(
       itemId: string | null;
       storageUnitId: string | null;
       receivedQuantity: number | string | null;
+      locationId?: string | null;
     }>;
   }
 ): Promise<string | null> {
@@ -7217,16 +7266,27 @@ export async function unheldInspectedLineRefusal(
   );
   if (inspected.length === 0) return null;
 
-  if (!args.locationId) return "The receipt has no location";
-  const location = await db
+  const locationOf = (line: { locationId?: string | null }) =>
+    line.locationId ?? args.locationId;
+  if (inspected.some((line) => !locationOf(line))) {
+    return "The receipt has no location";
+  }
+  const locationIds = [
+    ...new Set(inspected.flatMap((line) => locationOf(line) ?? []))
+  ];
+  const locations = await db
     .selectFrom("location")
-    .select(["name", "inspectionStorageUnitId"])
-    .where("id", "=", args.locationId)
+    .select(["id", "name", "inspectionStorageUnitId"])
+    .where("id", "in", locationIds)
     .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!location) return "Failed to read the location";
-  if (!location.inspectionStorageUnitId) {
-    return `${location.name} has no inspection storage unit. Set one in Settings → Quality.`;
+    .execute();
+  const locationById = new Map(locations.map((row) => [row.id, row]));
+  if (locationIds.some((id) => !locationById.has(id))) {
+    return "Failed to read the location";
+  }
+  const unconfigured = locations.find((row) => !row.inspectionStorageUnitId);
+  if (unconfigured) {
+    return `${unconfigured.name} has no inspection storage unit. Set one in Settings → Quality.`;
   }
 
   const unitIds = [
@@ -7236,22 +7296,25 @@ export async function unheldInspectedLineRefusal(
         .filter((id): id is string => !!id)
     )
   ];
-  // Held: non-nettable, and at the receipt's location, where its lot and
-  // ledger rows are booked.
+  // Held: non-nettable, and at the line's location, where its lot and ledger
+  // rows are booked.
   const held =
     unitIds.length > 0
       ? await db
           .selectFrom("storageUnit")
-          .select("id")
+          .select(["id", "locationId"])
           .where("id", "in", unitIds)
           .where("companyId", "=", companyId)
-          .where("locationId", "=", args.locationId)
           .where("effectiveNettable", "=", false)
           .execute()
       : [];
-  const heldIds = new Set(held.map((unit) => unit.id));
+  const heldLocationById = new Map(
+    held.map((unit) => [unit.id, unit.locationId])
+  );
   const offending = inspected.find(
-    (line) => !line.storageUnitId || !heldIds.has(line.storageUnitId)
+    (line) =>
+      !line.storageUnitId ||
+      heldLocationById.get(line.storageUnitId) !== locationOf(line)
   );
   if (!offending) return null;
 
@@ -7262,7 +7325,8 @@ export async function unheldInspectedLineRefusal(
     .where("companyId", "=", companyId)
     .executeTakeFirst();
   const readableId = item?.readableIdWithRevision ?? offending.itemId;
-  return `${readableId} needs inspection. Choose a non-nettable storage unit at ${location.name}.`;
+  const atLocation = locationById.get(locationOf(offending) ?? "")?.name;
+  return `${readableId} needs inspection. Choose a non-nettable storage unit at ${atLocation}.`;
 }
 
 export type HeldStockWarning = {
@@ -7355,6 +7419,7 @@ type EntityStockRow = {
 export type ReceiptPutAwayLine = {
   receiptLineId: string;
   itemId: string;
+  locationId: string | null;
   fromStorageUnitId: string;
   toStorageUnitId: string | null;
   quantity: number;
@@ -7572,6 +7637,7 @@ export async function getReceiptPutAwayLines(
     result.push({
       receiptLineId: line.receiptLineId,
       itemId: line.itemId,
+      locationId: line.locationId,
       fromStorageUnitId: line.storageUnitId,
       toStorageUnitId:
         defaultUnit.get(`${line.itemId}::${line.locationId}`) ?? null,
@@ -7612,41 +7678,54 @@ export async function insertReceiptPutAway(
     const lines = await getReceiptPutAwayLines(trx, companyId, receiptId);
     if (lines.length === 0) return { refusal: "nothingReady" as const };
 
-    const stockTransferId = await sequence.getNextSequence(
-      trx,
-      "stockTransfer",
-      companyId
-    );
-    const header = await trx
-      .insertInto("stockTransfer")
-      .values({
-        stockTransferId,
-        locationId: receipt.locationId,
-        status: "Released",
-        receiptId,
-        companyId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    await trx
-      .insertInto("stockTransferLine")
-      .values(
-        expandSerialTrackedLines(lines).map((line) => ({
-          itemId: line.itemId,
-          fromStorageUnitId: line.fromStorageUnitId,
-          toStorageUnitId: line.toStorageUnitId,
-          quantity: line.quantity,
-          requiresSerialTracking: line.requiresSerialTracking,
-          requiresBatchTracking: line.requiresBatchTracking,
-          receiptLineId: line.receiptLineId,
-          stockTransferId: header.id,
+    const headerLocationId = receipt.locationId;
+    const byLocation = new Map<string, ReceiptPutAwayLine[]>();
+    for (const line of lines) {
+      const locationId = line.locationId ?? headerLocationId;
+      byLocation.set(locationId, [...(byLocation.get(locationId) ?? []), line]);
+    }
+
+    let first: { id: string; stockTransferId: string } | null = null;
+    for (const [locationId, locationLines] of byLocation) {
+      const stockTransferId = await sequence.getNextSequence(
+        trx,
+        "stockTransfer",
+        companyId
+      );
+      const header = await trx
+        .insertInto("stockTransfer")
+        .values({
+          stockTransferId,
+          locationId,
+          status: locationLines.every((line) => line.toStorageUnitId)
+            ? "Released"
+            : "Draft",
+          receiptId,
           companyId,
           createdBy: userId
-        }))
-      )
-      .execute();
-    return { created: { id: header.id, stockTransferId } };
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("stockTransferLine")
+        .values(
+          expandSerialTrackedLines(locationLines).map((line) => ({
+            itemId: line.itemId,
+            fromStorageUnitId: line.fromStorageUnitId,
+            toStorageUnitId: line.toStorageUnitId,
+            quantity: line.quantity,
+            requiresSerialTracking: line.requiresSerialTracking,
+            requiresBatchTracking: line.requiresBatchTracking,
+            receiptLineId: line.receiptLineId,
+            stockTransferId: header.id,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+      first ??= { id: header.id, stockTransferId };
+    }
+    return { created: first as { id: string; stockTransferId: string } };
   });
 }
 
@@ -8256,7 +8335,9 @@ export async function updateStockTransferLineStorageUnits(
     field: "fromStorageUnitId" | "toStorageUnitId";
     value: string | null;
   }
-): Promise<"locked" | "same" | "unknownUnit" | "notFound" | null> {
+): Promise<
+  "locked" | "putAwaySource" | "same" | "unknownUnit" | "notFound" | null
+> {
   const { companyId, userId, ids, field } = input;
   const value = input.value || null;
   return db.transaction().execute(async (trx) => {
@@ -8288,6 +8369,7 @@ export async function updateStockTransferLineStorageUnits(
         "l.id",
         "l.fromStorageUnitId",
         "l.toStorageUnitId",
+        "l.receiptLineId",
         "t.status",
         "t.locationId"
       ])
@@ -8298,6 +8380,12 @@ export async function updateStockTransferLineStorageUnits(
     if (lines.length !== new Set(ids).size) return "notFound";
     if (lines.some((line) => isStockTransferLocked(line.status))) {
       return "locked";
+    }
+    if (
+      field === "fromStorageUnitId" &&
+      lines.some((line) => line.receiptLineId)
+    ) {
+      return "putAwaySource";
     }
     if (
       lines.some((line) =>
@@ -8331,6 +8419,28 @@ export async function updateStockTransferLineStorageUnits(
       .execute();
     return null;
   });
+}
+
+export const PUT_AWAY_LINE_FIXED =
+  "A Put Away line moves what the receipt holds. Only its To storage unit can change.";
+
+export const PUT_AWAY_NEEDS_TO_UNIT =
+  "Choose the To storage unit of every Put Away line first.";
+
+export function isPutAwayMissingToUnit(line: {
+  receiptLineId: string | null;
+  toStorageUnitId: string | null;
+}): boolean {
+  return !!line.receiptLineId && !line.toStorageUnitId;
+}
+
+function assertPutAwayHasToUnit(line: {
+  receiptLineId: string | null;
+  toStorageUnitId: string | null;
+}) {
+  if (isPutAwayMissingToUnit(line)) {
+    throw new InvalidInputError(PUT_AWAY_NEEDS_TO_UNIT);
+  }
 }
 
 export async function putAwayPickShortfall(
@@ -8406,7 +8516,8 @@ export class StockTransferPickRefusal extends Error {}
 
 /**
  * Pick every untracked line with quantity left, in one transaction, writing
- * the same ledger rows a single pick does. Returns the picked line ids.
+ * the same ledger rows a single pick does. A Put Away line with no To unit is
+ * left, unless no line is pickable. Returns the picked line ids.
  */
 export async function pickUntrackedStockTransferLines(
   db: Kysely<KyselyDatabase>,
@@ -8467,17 +8578,21 @@ export async function pickUntrackedStockTransferLines(
       }))
       .filter((line) => line.remaining > 0);
     if (toPick.length === 0) return [];
+    const pickable = toPick.filter((line) => !isPutAwayMissingToUnit(line));
+    if (pickable.length === 0) {
+      throw new StockTransferPickRefusal(PUT_AWAY_NEEDS_TO_UNIT);
+    }
     const shortfall = await putAwayPickShortfall(
       trx,
       companyId,
-      toPick.map((line) => ({ ...line, quantity: line.remaining }))
+      pickable.map((line) => ({ ...line, quantity: line.remaining }))
     );
     if (shortfall) throw new StockTransferPickRefusal(shortfall);
 
     await trx
       .insertInto("itemLedger")
       .values(
-        toPick.flatMap((line) =>
+        pickable.flatMap((line) =>
           [
             {
               quantity: -line.remaining,
@@ -8511,13 +8626,13 @@ export async function pickUntrackedStockTransferLines(
       .where(
         "id",
         "in",
-        toPick.map((line) => line.id)
+        pickable.map((line) => line.id)
       )
       .where("stockTransferId", "=", stockTransferId)
       .where("companyId", "=", companyId)
       .execute();
 
-    return toPick.map((line) => line.id);
+    return pickable.map((line) => line.id);
   });
 }
 
@@ -11074,6 +11189,7 @@ export async function postStockTransfer(
               : "This line is already fully picked"
           );
         }
+        assertPutAwayHasToUnit(stockTransferLine);
         const shortfall = await putAwayPickShortfall(trx, companyId, [
           { ...stockTransferLine, quantity: round(quantity) }
         ]);
@@ -11245,6 +11361,8 @@ export async function postStockTransfer(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+
+        assertPutAwayHasToUnit(stockTransferLine);
 
         // Refuse a scan that would exceed the line's serial count.
         const newPickedQuantity = resolvePick({
@@ -11427,6 +11545,8 @@ export async function postStockTransfer(
           .selectAll()
           .forUpdate()
           .executeTakeFirstOrThrow();
+
+        assertPutAwayHasToUnit(stockTransferLine);
 
         // Get tracked entity details. Lock it too so the on-hand this pick
         // draws against cannot be spent by a concurrent transaction.
@@ -13698,10 +13818,8 @@ async function refusingHeldStock<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    const e = error as { code?: unknown; message?: unknown } | null;
-    if (e?.code === RAISED_EXCEPTION && typeof e.message === "string") {
-      throw new InvalidInputError(`Cannot void: ${e.message}`);
-    }
+    const raised = raisedMessage(error);
+    if (raised) throw new InvalidInputError(`Cannot void: ${raised}`);
     throw error;
   }
 }
@@ -13741,6 +13859,92 @@ export async function assertNoRejectedUntrackedLot(
       `Cannot void: inspection ${rejected.inspectionId} rejected this stock and wrote it off. Correct the remainder with an inventory adjustment instead.`
     );
   }
+}
+
+/**
+ * Deletes the receipt's Put Away transfers that picked nothing, so a void leaves
+ * none behind. Refuses the void when an open one has picked stock.
+ */
+export async function removeUnpickedPutAways(
+  trx: VoidGuardDb,
+  companyId: string,
+  receiptId: string
+): Promise<void> {
+  const open = await trx
+    .selectFrom("stockTransfer")
+    .select(["id", "stockTransferId"])
+    .where("companyId", "=", companyId)
+    .where("receiptId", "=", receiptId)
+    .where("status", "!=", "Completed")
+    .orderBy("stockTransferId")
+    .forUpdate()
+    .execute();
+  const ids = open.map((transfer) => transfer.id);
+  if (ids.length === 0) return;
+  const pickedLine = await trx
+    .selectFrom("stockTransferLine")
+    .select("stockTransferId")
+    .where("stockTransferId", "in", ids)
+    .where("companyId", "=", companyId)
+    .where("pickedQuantity", ">", 0)
+    .executeTakeFirst();
+  if (pickedLine) {
+    const picked = open.find(
+      (transfer) => transfer.id === pickedLine.stockTransferId
+    );
+    throw new InvalidInputError(
+      `Cannot void: Put Away ${picked?.stockTransferId} has picked stock. Unpick it first.`
+    );
+  }
+  await trx
+    .deleteFrom("stockTransferLine")
+    .where("stockTransferId", "in", ids)
+    .where("companyId", "=", companyId)
+    .execute();
+  await trx
+    .deleteFrom("stockTransfer")
+    .where("id", "in", ids)
+    .where("companyId", "=", companyId)
+    .execute();
+}
+
+/** The ledger rows that put a void's rejected units back where they were received. */
+async function rejectedMoveReversals(
+  trx: VoidGuardDb,
+  args: { companyId: string; receiptId: string; userId: string; today: string }
+): Promise<Database["public"]["Tables"]["itemLedger"]["Insert"][]> {
+  const moves = await trx
+    .selectFrom("itemLedger")
+    .innerJoin("inspection", (join) =>
+      join
+        .onRef("inspection.id", "=", "itemLedger.documentId")
+        .onRef("inspection.companyId", "=", "itemLedger.companyId")
+    )
+    .select([
+      "itemLedger.itemId",
+      "itemLedger.locationId",
+      "itemLedger.storageUnitId",
+      "itemLedger.trackedEntityId",
+      "itemLedger.projectId",
+      "itemLedger.documentId",
+      "itemLedger.quantity"
+    ])
+    .where("itemLedger.companyId", "=", args.companyId)
+    .where("itemLedger.documentType", "=", "Direct Transfer")
+    .where("itemLedger.trackedEntityId", "is not", null)
+    .where("inspection.sourceDocument", "=", "Receipt")
+    .where("inspection.sourceDocumentId", "=", args.receiptId)
+    .execute();
+  return moves.map((move) => ({
+    ...move,
+    postingDate: args.today,
+    entryType: "Transfer" as const,
+    documentType: "Direct Transfer" as const,
+    quantity: -Number(move.quantity),
+    comment: "Receipt voided",
+    companyId: args.companyId,
+    createdBy: args.userId
+  }));
 }
 
 /** An item ledger row the void is about to insert, as a stock position. */
@@ -14632,14 +14836,33 @@ export async function postReceipt(
 
       await refusingHeldStock(() =>
         db.transaction().execute(async (trx) => {
+          // Transfer before receipt: the order a pick takes them in.
+          await trx
+            .selectFrom("stockTransfer")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("receiptId", "=", receiptId)
+            .where("status", "!=", "Completed")
+            .orderBy("id")
+            .forUpdate()
+            .execute();
           await lockPostedReceipt(trx, companyId, receiptId);
           await assertPostingStatusUnchanged(trx, companyId, postingStatus);
           await assertNoRejectedUntrackedLot(trx, companyId, receiptId);
-          await assertReceivedStockOnHand(
-            trx,
+          await removeUnpickedPutAways(trx, companyId, receiptId);
+          const moveReversals = await rejectedMoveReversals(trx, {
             companyId,
-            reversingItemLedger.map(toReversingRow)
-          );
+            receiptId,
+            userId,
+            today
+          });
+          await assertReceivedStockOnHand(trx, companyId, [
+            ...reversingItemLedger.map(toReversingRow),
+            ...moveReversals.map(toReversingRow)
+          ]);
+          if (moveReversals.length > 0) {
+            await trx.insertInto("itemLedger").values(moveReversals).execute();
+          }
           await withInspectionRelease(trx, () =>
             trx
               .updateTable("inspection")
@@ -15231,7 +15454,10 @@ export async function postReceipt(
             severity: plan.severity ?? null,
             codeLetter: snapshot.codeLetter,
             inspectionDocumentId: assignedDocumentId,
-            storageUnitId: receiptLine.storageUnitId ?? null,
+            storageUnitId:
+              trackingByItemId.get(receiptLine.itemId) === "Non-Inventory"
+                ? null
+                : (receiptLine.storageUnitId ?? null),
             status: "Pending",
             companyId,
             createdBy: userId
@@ -16061,7 +16287,15 @@ export async function postReceipt(
           if (!isOutsideProcessing) {
             const unheld = await unheldInspectedLineRefusal(trx, companyId, {
               locationId: receiptHeader.locationId,
-              plannedItemIds: new Set(assignmentByItemId.keys()),
+              plannedItemIds: new Set(
+                items.data
+                  .filter(
+                    (item) =>
+                      item.itemTrackingType !== "Non-Inventory" &&
+                      assignmentByItemId.has(item.id)
+                  )
+                  .map((item) => item.id)
+              ),
               lines: receiptLines.data.filter(
                 (line) => !projectConsumedLineIds.has(line.id)
               )

@@ -359,6 +359,9 @@ export function buildRowTransforms(
     if (table.name === "documentEdit" && col.name === "settings") {
       return (v) => rewriteDocumentEditRowKeys(v, ctx.idRewrite);
     }
+    if (table.name === "trackedEntity" && col.name === "attributes") {
+      return (v) => rewriteTrackedEntityReceiptRefs(v, ctx.idRewrite);
+    }
     if (!fk && ID_REF_COLUMNS[table.name]?.includes(col.name)) {
       const { idRewrite } = ctx;
       const rewrite = (id: unknown) =>
@@ -585,6 +588,28 @@ export async function getUniqueColumnGroups(
     GROUP BY ix.indexrelid
   `.execute(db);
   return result.rows.map((r) => r.cols);
+}
+
+/** A received unit names its receipt and line in `attributes`, which no FK can remap. */
+export function rewriteTrackedEntityReceiptRefs(
+  attributes: unknown,
+  idRewrite: ReadonlyMap<string, string>
+): unknown {
+  const parsed =
+    typeof attributes === "string" ? JSON.parse(attributes) : attributes;
+  if (!parsed || typeof parsed !== "object") return attributes;
+  const next = { ...(parsed as Record<string, unknown>) };
+  let changed = false;
+  for (const key of ["Receipt", "Receipt Line"]) {
+    const remapped =
+      typeof next[key] === "string" ? idRewrite.get(next[key]) : undefined;
+    if (remapped) {
+      next[key] = remapped;
+      changed = true;
+    }
+  }
+  if (!changed) return attributes;
+  return typeof attributes === "string" ? JSON.stringify(next) : next;
 }
 
 /** A document's changed row values are keyed by record ids that a restore changes. */

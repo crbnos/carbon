@@ -130,6 +130,7 @@ export const attachments = {
   },
   itarCertification: { events: true },
   item: {
+    before: ["check_item_inspection_hold"],
     after: [
       "sync_create_item_related_records",
       "sync_create_make_method_related_records",

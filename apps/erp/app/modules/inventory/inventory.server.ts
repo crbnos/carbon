@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { NotFoundError } from "@carbon/api/errors";
+import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import {
   CarbonError,
   createServiceContext,
@@ -23,6 +23,7 @@ import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
 import {
   datetime,
+  EPSILON,
   getErrorMessage,
   getOverReceiptViolations,
   isUniqueViolation,
@@ -353,18 +354,20 @@ export const updateReceipt = defineServiceFn({
  * In order:
  *   1. A Posted or Voided receipt is refused (`conflict`): posting it again
  *      would duplicate its ledger entries, cost layers and journal lines.
- *   2. Storage rules run on the `receipt` and `place` surfaces (and
+ *   2. A purchase order receipt refuses a line that needs inspection unless
+ *      it is in a non-nettable storage unit at the receipt's location.
+ *   3. Storage rules run on the `receipt` and `place` surfaces (and
  *      `warehouseTransfer` for an inbound transfer), and a purchase order
  *      receipt is checked for over-receipt against the live order lines. A
  *      blocking rule returns its `violations` and `ruleNames` and changes
  *      nothing; send `acknowledged: true` to post past warnings.
- *   3. The receipt is set Pending (only from Draft or Pending: `conflict`
+ *   4. The receipt is set Pending (only from Draft or Pending: `conflict`
  *      otherwise).
- *   4. Stale serial entities on serial-tracked lines are deleted, so they
+ *   5. Stale serial entities on serial-tracked lines are deleted, so they
  *      are not made Available as phantom serials, and the receipt is posted:
  *      ledger entries, cost layers, the journal and tracked entities. A
  *      failed post sets it back to Draft.
- *   5. Supplier lead times are refreshed when the company setting is on,
+ *   6. Supplier lead times are refreshed when the company setting is on,
  *      labels print when the receiving printer auto-prints, and the
  *      receipt-posted workflow moment is raised.
  *
@@ -720,8 +723,9 @@ export const splitReceiptLine = defineServiceFn({
  *
  * @remarks
  * `storageUnitId` or `receivedQuantity`, on every line in `ids`. An empty
- * value clears the field. Storage rules run when the receipt is posted, not
- * here.
+ * value clears the field. A negative received quantity is refused on a line
+ * that needs inspection, unless it is a return line (a negative order
+ * quantity). Storage rules run when the receipt is posted, not here.
  *
  * @mcp
  */
@@ -2674,7 +2678,8 @@ export const createStockTransfer = defineServiceFn({
  * @remarks
  * Moves the remaining quantity of each line that is not serial or batch
  * tracked from its source to its destination storage unit, in one
- * transaction. Tracked lines are left: each needs its unit picked. A
+ * transaction. Tracked lines are left: each needs its unit picked. So is a
+ * Put Away line with no To unit, unless no line can be picked (refused). A
  * Draft or Completed transfer is refused.
  *
  * @mcp
@@ -2725,6 +2730,8 @@ export const pickAllStockTransferLines = defineServiceFn({
       if (error instanceof service.StockTransferPickRefusal) {
         return ctx.error("rule", error.message);
       }
+      const raised = raisedMessage(error);
+      if (raised) return ctx.error("rule", raised, error);
       return ctx.error("internal", "Failed to pick lines", error);
     }
   }
@@ -2902,7 +2909,7 @@ export const setStockTransferStatus = defineServiceFn({
     if (status === "Released" || status === "Completed") {
       const lines = await ctx.asSystem.supabase
         .from("stockTransferLine")
-        .select("id, itemId, toStorageUnitId, quantity")
+        .select("id, itemId, toStorageUnitId, quantity, receiptLineId")
         .eq("stockTransferId", id)
         .eq("companyId", ctx.company.id);
       if (lines.error) {
@@ -2911,6 +2918,10 @@ export const setStockTransferStatus = defineServiceFn({
           "Failed to load stock transfer lines",
           lines.error
         );
+      }
+
+      if (lines.data.some(service.isPutAwayMissingToUnit)) {
+        return ctx.error("rule", service.PUT_AWAY_NEEDS_TO_UNIT);
       }
 
       const rules = await service.storageRuleViolations(
@@ -3138,6 +3149,9 @@ export const updateStockTransferLines = defineServiceFn({
     }
     if (refusal === "locked") {
       return ctx.error("rule", service.STOCK_TRANSFER_LOCKED);
+    }
+    if (refusal === "putAwaySource") {
+      return ctx.error("rule", service.PUT_AWAY_LINE_FIXED);
     }
     if (refusal === "same") {
       return ctx.error("validation", SAME_STORAGE_UNIT_MESSAGE);
@@ -3472,12 +3486,14 @@ export const createInventoryCount = defineServiceFn({
  * unit) and on no linked transfer: to the part's nettable default storage
  * unit, or with no To unit for stores to choose. Rejected and On Hold units
  * are never on it. Stores pick and complete it like any stock transfer; the
- * receipt's inspection status becomes Put Away once linked transfers cover
- * all passed quantity. Refuses when nothing is ready. The transfer is created
- * Released, so storage rules run on the `stockTransfer` surface against each
- * line's destination first: a blocking rule returns its `violations` and
- * `ruleNames` and creates nothing; send `acknowledged: true` to create past
- * warnings.
+ * receipt's inspection status becomes Put Away once the picked quantity on
+ * Completed linked transfers covers the passed quantity. A line with no To
+ * unit must get one before it is picked. Refuses when nothing is ready. The
+ * transfer is created Released, or Draft when a line has no To unit, for stores
+ * to set it and release the transfer. Storage rules run on the `stockTransfer`
+ * surface against each named destination first: a blocking rule returns its
+ * `violations` and `ruleNames` and creates nothing; send `acknowledged: true`
+ * to create past warnings.
  *
  * @mcp
  */
@@ -3514,13 +3530,15 @@ export const createReceiptPutAway = defineServiceFn({
     const rules = await service.storageRuleViolations(
       ctx,
       ["stockTransfer"],
-      planned.map((line) => ({
-        lineId: line.receiptLineId,
-        itemId: line.itemId,
-        storageUnitId: line.toStorageUnitId,
-        quantity: line.quantity,
-        locationId
-      }))
+      planned
+        .filter((line) => line.toStorageUnitId)
+        .map((line) => ({
+          lineId: line.receiptLineId,
+          itemId: line.itemId,
+          storageUnitId: line.toStorageUnitId,
+          quantity: line.quantity,
+          locationId: line.locationId ?? locationId
+        }))
     );
     if (
       rules.violations.length > 0 &&
@@ -3557,8 +3575,9 @@ export const createReceiptPutAway = defineServiceFn({
  * anything but 0 or 1) is not posted and returns `invalidLineIds` with the
  * reason in `message`. A count may move stock held for inspection (it records
  * where the stock really is); `heldStockWarnings` names each part it found
- * outside its inspection unit, with `awaitingInspection` set for a serial or
- * batch unit whose inspection lot Quality has still to decide.
+ * outside its inspection unit, and untracked stock counted short in its
+ * inspection unit, with `awaitingInspection` set for a serial or batch unit
+ * whose inspection lot Quality has still to decide.
  *
  * @mcp
  */
@@ -3615,8 +3634,9 @@ export const postInventoryCount = defineServiceFn({
  * A positive or negative adjustment, a set quantity, a scrap (with its scrap
  * reason) or an unscrap of a Scrapped tracked entity. It writes the ledger
  * entry, updates the tracked entity, maintains cost layers and posts the
- * journal in one transaction. Storage rules run first on the
- * `inventoryAdjustment` surface and, when a storage unit is named, on `pick`
+ * journal in one transaction. Stock held for inspection is refused first.
+ * Then storage rules run on the `inventoryAdjustment` surface and, when a
+ * storage unit is named, on `pick`
  * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
  * returns its `violations` and `ruleNames` and changes nothing; send
  * `acknowledged: true` to adjust past warnings.
@@ -7085,7 +7105,9 @@ export const updateStockTransferLine = defineServiceFn({
     // off a locked one.
     const line = await ctx.asCaller.supabase
       .from("stockTransferLine")
-      .select("id")
+      .select(
+        "id, receiptLineId, itemId, fromStorageUnitId, quantity, requiresSerialTracking, requiresBatchTracking"
+      )
       .eq("id", input.id)
       .eq("stockTransferId", input.stockTransferId)
       .eq("companyId", ctx.company.id)
@@ -7100,11 +7122,27 @@ export const updateStockTransferLine = defineServiceFn({
     if (!line.data) {
       return ctx.error("notFound", "Stock transfer line not found");
     }
+    if (
+      line.data.receiptLineId &&
+      (line.data.itemId !== input.itemId ||
+        (line.data.fromStorageUnitId ?? undefined) !==
+          input.fromStorageUnitId ||
+        Math.abs(Number(line.data.quantity) - input.quantity) > EPSILON)
+    ) {
+      return ctx.error("rule", service.PUT_AWAY_LINE_FIXED);
+    }
+    const update = line.data.receiptLineId
+      ? {
+          ...input,
+          requiresSerialTracking: line.data.requiresSerialTracking,
+          requiresBatchTracking: line.data.requiresBatchTracking
+        }
+      : input;
     return unwrap(
       ctx,
       await service.upsertStockTransferLine(
         ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        payload(ctx, update).forUpdate() as never
       )
     );
   }

@@ -27,7 +27,7 @@ import { sanitize } from "~/utils/supabase";
 const logger = getLogger("erp", "quality");
 
 import { openai } from "@ai-sdk/openai";
-import { NotFoundError } from "@carbon/api/errors";
+import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
   CarbonError,
@@ -2373,30 +2373,6 @@ export async function getReceiptInspections(
     .order("createdAt", { ascending: true });
 }
 
-/**
- * The items, of those given, that are inspected at receipt: each has a
- * Receipt-usage inspection document assigned, which is what makes posting a
- * purchase receipt open an inspection lot for the line.
- */
-export async function getReceiptInspectedItemIds(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  itemIds: string[]
-) {
-  if (itemIds.length === 0) return { data: [] as string[], error: null };
-  const assignments = await client
-    .from("itemInspectionDocumentAssignment")
-    .select("itemId")
-    .eq("usage", "Receipt")
-    .eq("companyId", companyId)
-    .in("itemId", itemIds);
-  if (assignments.error) return { data: null, error: assignments.error };
-  return {
-    data: [...new Set(assignments.data.map((a) => a.itemId))],
-    error: null
-  };
-}
-
 // Receipt-sourced lots only: the received tracked entities are linked to the
 // receipt line through their attributes.
 export async function getInspectionTrackedEntities(
@@ -4327,8 +4303,55 @@ export async function closeIssue(
 
   // Non-tracked origin: an inspection-rejected Inventory lot was already written
   // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
-  // scrap must be written off now. Detected via the NCR's inspection link (only
-  // the reject route creates one).
+  // scrap must be written off now. Detected via the NCR's inspection link.
+  const linkedLots = await readLinkedLotStates(
+    db,
+    companyId,
+    nonConformanceId
+  ).catch((error) => {
+    logger.error("closeIssue: failed to read the linked lots", {
+      companyId,
+      nonConformanceId,
+      error
+    });
+    return null;
+  });
+  if (linkedLots === null) {
+    return errResult("Failed to load the disposition origin");
+  }
+  const partialLot = linkedLots.find(
+    (row) => row.sourceDocument === "Receipt" && row.status === "Partial"
+  );
+  if (partialLot && linkedLots.length > 1) {
+    return errResult(
+      "A Partial inspection lot must be the only lot on its NCR. Remove the other lots from this NCR, then close it."
+    );
+  }
+  if (partialLot && !plan.some((row) => row.itemId === partialLot.itemId)) {
+    const partialItem = await db
+      .selectFrom("item")
+      .select("itemTrackingType")
+      .where("id", "=", partialLot.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+      .catch((error) => {
+        logger.error("closeIssue: failed to read the lot's item", {
+          companyId,
+          nonConformanceId,
+          error
+        });
+        return null;
+      });
+    if (partialItem === null) {
+      return errResult("Failed to load the disposition origin");
+    }
+    if (partialItem?.itemTrackingType === "Inventory") {
+      return errResult(
+        "Add a disposition for the rejected part of the lot, then close this NCR."
+      );
+    }
+  }
+
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
@@ -4344,7 +4367,7 @@ export async function closeIssue(
     requested: number;
   } | null = null;
   let fromPartialReceiptLot = false;
-  let plannedLots: string | null = null;
+  const plannedLots = lotStateKey(linkedLots);
   let writtenOffLotIds: string[] | null = null;
   let writtenOffKey = "";
   let writtenOffAtReject: {
@@ -4357,32 +4380,18 @@ export async function closeIssue(
   let restoreCappedAtWriteOff = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
-    const [trackingRes, lotRows] = await Promise.all([
-      client
-        .from("item")
-        .select("id, itemTrackingType")
-        .in("id", linklessItemIds)
-        .eq("companyId", companyId),
-      readLinkedLotStates(db, companyId, nonConformanceId).catch((error) => {
-        logger.error("closeIssue: failed to read the linked lots", {
-          companyId,
-          nonConformanceId,
-          error
-        });
-        return null;
-      })
-    ]);
-    if (trackingRes.error || lotRows === null) {
+    const trackingRes = await client
+      .from("item")
+      .select("id, itemTrackingType")
+      .in("id", linklessItemIds)
+      .eq("companyId", companyId);
+    if (trackingRes.error) {
       return errResult("Failed to load the disposition origin");
     }
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    plannedLots = lotStateKey(lotRows);
-    const linkedLot =
-      lotRows.find(
-        (row) => row.sourceDocument === "Receipt" && row.status === "Partial"
-      ) ?? null;
+    const linkedLot = partialLot ?? null;
     fromPartialReceiptLot = !!linkedLot;
     if (linkedLot) {
       const receiptLine = await inspectionReceiptLine(
@@ -4414,12 +4423,12 @@ export async function closeIssue(
         requested: 0
       };
     }
-    inspectionOriginated = lotRows.length > 0 && !fromPartialReceiptLot;
+    inspectionOriginated = linkedLots.length > 0 && !fromPartialReceiptLot;
     if (inspectionOriginated) {
-      restoreCappedAtWriteOff = lotRows.every(
+      restoreCappedAtWriteOff = linkedLots.every(
         (row) => row.sourceDocument === "Receipt"
       );
-      writtenOffLotIds = lotRows.map((row) => row.inspectionId);
+      writtenOffLotIds = linkedLots.map((row) => row.inspectionId);
       writtenOffAtReject = await readRejectWriteOffs(
         db,
         companyId,
@@ -4699,18 +4708,11 @@ export async function closeIssue(
           .map((l) => `${l.trackedEntityId}:${round(l.quantity)}`)
           .sort()
           .join(",");
-      if (plannedLots !== null) {
-        const lots = await readLinkedLotStates(
-          trx,
-          companyId,
-          nonConformanceId,
-          {
-            lock: true
-          }
-        );
-        if (lotStateKey(lots) !== plannedLots) {
-          throw new Error("Disposition changed while closing; please retry.");
-        }
+      const lots = await readLinkedLotStates(trx, companyId, nonConformanceId, {
+        lock: true
+      });
+      if (lotStateKey(lots) !== plannedLots) {
+        throw new Error("Disposition changed while closing; please retry.");
       }
       if (
         writtenOffLotIds &&
@@ -5779,44 +5781,48 @@ export async function linkJobOperationContext(
     .select("id")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", ctx.company.id);
-  await linkMissingTrackedEntities(ctx, {
+  await linkMissingTrackedEntities(ctx.asSystem.pg, {
     nonConformanceId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
     trackedEntityIds: (entities.data ?? []).map((e) => e.id)
+  }).catch((error) => {
+    logger.error("Failed to create association", { error });
   });
 }
 
 async function linkMissingTrackedEntities(
-  ctx: ServiceContext,
-  {
-    nonConformanceId,
-    trackedEntityIds
-  }: { nonConformanceId: string; trackedEntityIds: string[] }
-) {
-  if (trackedEntityIds.length === 0) return;
-  const client = ctx.asCaller.supabase;
-
-  const existing = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", trackedEntityIds);
-  const already = new Set(
-    (existing.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const rows = trackedEntityIds
-    .filter((id) => !already.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      createdBy: ctx.auditUserId,
-      companyId: ctx.company.id
-    }));
-  if (rows.length === 0) return;
-
-  const result = await client.from("nonConformanceTrackedEntity").insert(rows);
-  if (result.error) {
-    logger.error("Failed to create association", { error: result.error });
+  db: Kysely<KyselyDatabase>,
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    trackedEntityIds: string[];
   }
+) {
+  const { nonConformanceId, companyId, userId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return;
+  const existing = await db
+    .selectFrom("nonConformanceTrackedEntity")
+    .select("trackedEntityId")
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "in", trackedEntityIds)
+    .execute();
+  const linked = new Set(existing.map((row) => row.trackedEntityId));
+  const missing = trackedEntityIds.filter((id) => !linked.has(id));
+  if (missing.length === 0) return;
+  await db
+    .insertInto("nonConformanceTrackedEntity")
+    .values(
+      missing.map((trackedEntityId) => ({
+        nonConformanceId,
+        trackedEntityId,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
 }
 
 /**
@@ -5824,7 +5830,7 @@ async function linkMissingTrackedEntities(
  * disposition row with it. The inspection link and the row writes share one
  * transaction under the issue lock, so a concurrent quantity edit either
  * lands before (and the row write overwrites it) or sees the inspection link
- * and is refused. False when any step failed.
+ * and is refused. `refusal` carries the words of a link the database refused.
  */
 export async function linkInspectionToIssue(
   ctx: ServiceContext,
@@ -5832,7 +5838,7 @@ export async function linkInspectionToIssue(
     nonConformanceId,
     inspectionId
   }: { nonConformanceId: string; inspectionId: string }
-): Promise<boolean> {
+): Promise<{ ok: true } | { ok: false; refusal?: string }> {
   const client = ctx.asCaller.supabase;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -5848,7 +5854,7 @@ export async function linkInspectionToIssue(
     .single();
   if (inspection.error) {
     logger.error("Failed to create association", { error: inspection.error });
-    return false;
+    return { ok: false };
   }
 
   const sampledIds = (
@@ -5875,7 +5881,7 @@ export async function linkInspectionToIssue(
       logger.error("Failed to create association", {
         error: receiptLineEntities.error
       });
-      return false;
+      return { ok: false };
     }
     lotEntityIds = [
       ...new Set([
@@ -5899,13 +5905,8 @@ export async function linkInspectionToIssue(
     logger.error("Failed to create association", {
       error: entityQuantities.error
     });
-    return false;
+    return { ok: false };
   }
-
-  await linkMissingTrackedEntities(ctx, {
-    nonConformanceId,
-    trackedEntityIds: lotEntityIds
-  });
 
   const quantityById = new Map(
     (entityQuantities.data ?? []).map((e) => [e.id, Number(e.quantity ?? 1)])
@@ -5930,6 +5931,13 @@ export async function linkInspectionToIssue(
         })
         .execute();
 
+      await linkMissingTrackedEntities(trx, {
+        nonConformanceId,
+        companyId,
+        userId,
+        trackedEntityIds: lotEntityIds
+      });
+
       if (itemId) {
         await linkEntitiesToIssueItemRow(trx, {
           nonConformanceId,
@@ -5944,11 +5952,13 @@ export async function linkInspectionToIssue(
         });
       }
     });
-    return true;
   } catch (err) {
+    const refusal = raisedMessage(err);
+    if (refusal) return { ok: false, refusal };
     logger.error("Failed to create association", { error: err });
-    return false;
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /** A document-driven lot's failed features, measured values against spec. */
@@ -6638,7 +6648,6 @@ export async function openInspectionNcr(
     outcome: string;
     quantity: number | null;
     trackedEntityIds: string[] | null;
-    oncePerLot?: boolean;
   }
 ): Promise<{ issueId: string } | CarbonError> {
   const { id, nonConformanceTypeId, reason } = args;
@@ -6800,17 +6809,15 @@ export async function openInspectionNcr(
   // shares, so a quantity edit cannot land between them.
   try {
     await ctx.asSystem.pg.transaction().execute(async (trx) => {
-      if (args.oncePerLot) {
-        await trx
-          .selectFrom("inspection")
-          .select("id")
-          .where("id", "=", id)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .executeTakeFirst();
-        const existing = await getInspectionNcrLink(trx, companyId, id);
-        if (existing) throw new LotHasNcrError();
-      }
+      await trx
+        .selectFrom("inspection")
+        .select("id")
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      const existing = await getInspectionNcrLink(trx, companyId, id);
+      if (existing) throw new LotHasNcrError();
       await lockIssueDispositions(trx, {
         nonConformanceId: issueId,
         companyId

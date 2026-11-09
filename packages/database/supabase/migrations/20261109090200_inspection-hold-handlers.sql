@@ -239,6 +239,51 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.check_item_inspection_hold(p_table text, p_operation text, p_new jsonb, p_old jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_lot TEXT;
+BEGIN
+  IF p_operation <> 'UPDATE'
+     OR (p_new->'itemTrackingType') IS NOT DISTINCT FROM (p_old->'itemTrackingType') THEN
+    RETURN;
+  END IF;
+  IF current_setting('app.inspection_release', true) = 'on'
+     OR current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+
+  SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+  FROM "inspection" i
+  WHERE i."itemId" = p_old->>'id'
+    AND i."companyId" = p_old->>'companyId'
+    AND i."sourceDocument" = 'Receipt'
+    AND (
+      i."status" IN ('Pending', 'In Progress')
+      OR (
+        i."status" = 'Partial'
+        AND i."acceptedQuantity" IS NOT NULL
+        AND 'Inventory' IN (p_old->>'itemTrackingType', p_new->>'itemTrackingType')
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "nonConformanceInspection" nci
+          JOIN "nonConformance" nc ON nc."id" = nci."nonConformanceId"
+          WHERE nci."inspectionId" = i."id" AND nc."status" = 'Closed'
+        )
+      )
+    )
+  ORDER BY 1
+  LIMIT 1;
+  IF FOUND THEN
+    RAISE EXCEPTION 'This item is held for inspection under lot %. Finish that lot and its NCR before its tracking type can change.',
+      v_lot;
+  END IF;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.check_location_goods_in_storage_units(p_table text, p_operation text, p_new jsonb, p_old jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -293,6 +338,9 @@ CREATE OR REPLACE FUNCTION public.check_nonconformance_inspection_link(p_table t
 AS $function$
 DECLARE
   v_lot TEXT;
+  v_status TEXT;
+  v_source TEXT;
+  v_tracking TEXT;
 BEGIN
   IF p_operation = 'UPDATE'
      AND (p_new->'inspectionId') IS NOT DISTINCT FROM (p_old->'inspectionId')
@@ -312,15 +360,23 @@ BEGIN
       AND i."sourceDocument" = 'Receipt'
       AND i."status" = 'Partial'
       AND it."itemTrackingType" = 'Inventory'
-      AND i."lotSize" - COALESCE(i."acceptedQuantity", 0) > 0
-      AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
+      AND i."acceptedQuantity" IS NOT NULL
+      AND i."lotSize" - i."acceptedQuantity" > 0
+      AND NOT EXISTS (
+        SELECT 1 FROM "nonConformanceInspection" sibling
+        WHERE sibling."nonConformanceId" = p_old->>'nonConformanceId'
+          AND sibling."inspectionId" <> p_old->>'inspectionId'
+      );
     IF FOUND AND EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
-      RAISE EXCEPTION 'Inspection lot % holds its rejected part until its NCR is completed. Complete the NCR instead of moving or removing its link.',
+      RAISE EXCEPTION 'Inspection lot % is decided by this NCR, so its link cannot be moved or removed.',
         v_lot;
     END IF;
   END IF;
 
   IF p_operation IN ('INSERT', 'UPDATE') THEN
+    PERFORM 1 FROM "nonConformance" nc WHERE nc."id" = p_new->>'nonConformanceId' FOR NO KEY UPDATE;
+    PERFORM 1 FROM "inspection" i WHERE i."id" = p_new->>'inspectionId' FOR NO KEY UPDATE;
+
     SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
     FROM "inspection" i
     JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
@@ -334,6 +390,37 @@ BEGIN
       AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity");
     IF FOUND THEN
       RAISE EXCEPTION 'Inspection lot % holds its rejected part until its own NCR is completed. Link it to an open NCR.',
+        v_lot;
+    END IF;
+
+    SELECT COALESCE(i."inspectionId", i."id"), i."status"::TEXT, i."sourceDocument"::TEXT, it."itemTrackingType"::TEXT
+      INTO v_lot, v_status, v_source, v_tracking
+    FROM "inspection" i
+    LEFT JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+    WHERE i."id" = p_new->>'inspectionId';
+    IF v_source = 'Receipt'
+       AND v_status NOT IN ('Passed', 'Cancelled')
+       AND v_tracking = 'Inventory'
+       AND EXISTS (
+      SELECT 1 FROM "nonConformanceInspection" nci
+      WHERE nci."inspectionId" = p_new->>'inspectionId'
+        AND nci."nonConformanceId" <> p_new->>'nonConformanceId'
+        AND nci."id" IS DISTINCT FROM p_old->>'id'
+    ) THEN
+      RAISE EXCEPTION 'Inspection lot % already has its NCR. A receipt lot belongs to one NCR.',
+        v_lot;
+    END IF;
+    IF EXISTS (
+      SELECT 1
+      FROM "nonConformanceInspection" nci
+      JOIN "inspection" other ON other."id" = nci."inspectionId"
+      WHERE nci."nonConformanceId" = p_new->>'nonConformanceId'
+        AND nci."inspectionId" <> p_new->>'inspectionId'
+        AND nci."id" IS DISTINCT FROM p_old->>'id'
+        AND ((v_source = 'Receipt' AND v_status = 'Partial')
+          OR (other."sourceDocument" = 'Receipt' AND other."status" = 'Partial'))
+    ) THEN
+      RAISE EXCEPTION 'A Partial inspection lot must be the only lot on its NCR. Lot % cannot join this NCR.',
         v_lot;
     END IF;
   END IF;
@@ -350,6 +437,29 @@ DECLARE
   v_lot TEXT;
 BEGIN
   IF p_operation = 'UPDATE' THEN
+    IF p_old->>'status' = 'Closed' AND p_new->>'status' IS DISTINCT FROM 'Closed' THEN
+      IF current_setting('app.inspection_release', true) = 'on'
+         OR current_setting('app.sync_in_progress', true) = 'true' THEN
+        RETURN;
+      END IF;
+      SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+      FROM "nonConformanceInspection" nci
+      JOIN "inspection" i ON i."id" = nci."inspectionId"
+      JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+      WHERE nci."nonConformanceId" = p_new->>'id'
+        AND i."sourceDocument" = 'Receipt'
+        AND i."status" = 'Partial'
+        AND it."itemTrackingType" = 'Inventory'
+        AND i."acceptedQuantity" IS NOT NULL
+        AND i."lotSize" - i."acceptedQuantity" > 0
+      ORDER BY 1
+      LIMIT 1;
+      IF FOUND THEN
+        RAISE EXCEPTION 'This NCR released the rejected part of inspection lot %, so it cannot be reopened.',
+          v_lot;
+      END IF;
+      RETURN;
+    END IF;
     IF p_new->>'status' IS DISTINCT FROM 'Closed'
        OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
       RETURN;
@@ -357,6 +467,27 @@ BEGIN
     v_ncr := p_new;
   ELSIF p_operation = 'DELETE' THEN
     IF p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+      IF current_setting('app.inspection_release', true) = 'on'
+         OR current_setting('app.sync_in_progress', true) = 'true'
+         OR NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
+        RETURN;
+      END IF;
+      SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+      FROM "nonConformanceInspection" nci
+      JOIN "inspection" i ON i."id" = nci."inspectionId"
+      JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+      WHERE nci."nonConformanceId" = p_old->>'id'
+        AND i."sourceDocument" = 'Receipt'
+        AND i."status" = 'Partial'
+        AND it."itemTrackingType" = 'Inventory'
+        AND i."acceptedQuantity" IS NOT NULL
+        AND i."lotSize" - i."acceptedQuantity" > 0
+      ORDER BY 1
+      LIMIT 1;
+      IF FOUND THEN
+        RAISE EXCEPTION 'This NCR released the rejected part of inspection lot %, so it cannot be deleted.',
+          v_lot;
+      END IF;
       RETURN;
     END IF;
     v_ncr := p_old;
@@ -404,19 +535,25 @@ DECLARE
   v_line TEXT;
   v_item TEXT;
 BEGIN
-  IF p_operation <> 'UPDATE' OR p_old->>'status' IS DISTINCT FROM 'On Hold' THEN
+  IF p_operation NOT IN ('UPDATE', 'DELETE') OR p_old->>'status' IS DISTINCT FROM 'On Hold' THEN
     RETURN;
   END IF;
   v_line := p_old->'attributes'->>'Receipt Line';
   IF v_line IS NULL THEN
     RETURN;
   END IF;
-  IF p_new->>'status' = 'On Hold'
+  IF p_operation = 'UPDATE'
+     AND p_new->>'status' = 'On Hold'
      AND (p_new->'attributes'->>'Receipt Line') IS NOT DISTINCT FROM v_line THEN
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
+    RETURN;
+  END IF;
+
+  IF p_operation = 'DELETE'
+     AND NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
     RETURN;
   END IF;
 
@@ -463,6 +600,7 @@ $function$;
 -- event triggers (packages/database/src/event-system/attachments.ts)
 SET lock_timeout = '5s';
 SELECT set_event_triggers('inspection', ARRAY['check_inspection_lot_release']::text[], ARRAY['sync_receipt_inspection_status']::text[], false, ARRAY['broadcast_table_changes']::text[]);
+SELECT set_event_triggers('item', ARRAY['check_item_inspection_hold']::text[], ARRAY['sync_create_item_related_records', 'sync_create_make_method_related_records', 'sync_propagate_item_readable_id_to_tracked_entity']::text[], true, ARRAY['broadcast_table_changes', 'log_table_changes', 'queue_pmi_inspection_plans']::text[]);
 SELECT set_event_triggers('itemLedger', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['apply_item_stock_quantities', 'broadcast_table_changes', 'check_inspection_hold', 'queue_kanban_level_checks']::text[]);
 SELECT set_event_triggers('location', ARRAY['check_location_goods_in_storage_units']::text[], ARRAY['sync_create_location_related_records']::text[], true, ARRAY['broadcast_reference_changes']::text[]);
 SELECT set_event_triggers('nonConformance', ARRAY['check_nonconformance_inspection_release']::text[], ARRAY['sync_advance_document_sequence']::text[], true, ARRAY['broadcast_table_changes']::text[]);

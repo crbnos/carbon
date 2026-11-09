@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { idsWithLiveStockHistory } from "@carbon/database/receipt-serials";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import {
   dispositionInspection,
@@ -37,6 +38,10 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
   let projectId: string;
   const unitOf = (key: string) => `${f.prefix}-qc-${key}`;
   const UNIT_KEYS = [
+    "acc",
+    "spn",
+    "del",
+    "vs",
     "a",
     "b",
     "c",
@@ -269,7 +274,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
     );
 
   databaseTest(
-    "a rejected lot is decided once; repeating Reject retries the write-off only",
+    "a rejected lot is decided once; repeating Reject moves no stock",
     async () => {
       const { lotId } = await receiveInto("a");
       const rejected = await decide(lotId, "Reject");
@@ -288,18 +293,9 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
 
       const retry = await decide(lotId, "Reject");
       expect(retry.error).toBeNull();
-      expect(retry.data?.writeOff?.stripes).toEqual([
-        { projectId: null, quantity: -10 }
-      ]);
+      expect(retry.data?.writeOff).toBeNull();
       expect(await lotMoves(lotId)).toEqual([]);
-      expect((await postWriteOff(lotId, retry.data!.writeOff)).error).toBeNull();
-      expect(await stripesAt(unitOf("a"))).toEqual({ "": 0 });
-
-      const again = await decide(lotId, "Reject");
-      expect(again.error).toBeNull();
-      expect((await postWriteOff(lotId, again.data!.writeOff)).error).toBeNull();
-      expect(await stripesAt(unitOf("a"))).toEqual({ "": 0 });
-      expect(await lotMoves(lotId)).toEqual([]);
+      expect(await stripesAt(unitOf("a"))).toEqual({ "": 10 });
     }
   );
 
@@ -695,6 +691,185 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold worst cases", () =>
         { id: passed, status: "Available" },
         { id: failed, status: "Rejected" }
       ]);
+    }
+  );
+
+  const settleOtherLots = (keepLot: string, receiptId: string) =>
+    seed(f, (trx) =>
+      trx
+        .updateTable("inspection")
+        .set({ status: "Cancelled" })
+        .where("sourceDocumentId", "=", receiptId)
+        .where("id", "!=", keepLot)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    );
+
+  const receiptOf = async (lotId: string) =>
+    (
+      await f.db
+        .selectFrom("inspection")
+        .select("sourceDocumentId")
+        .where("id", "=", lotId)
+        .executeTakeFirstOrThrow()
+    ).sourceDocumentId as string;
+
+  databaseTest(
+    "a serial lot accepted with a failed unit reaches Put Away on its passed units",
+    async () => {
+      const [passed, failed] = ["a1", "a2"].map((k) => `${f.prefix}-sn-${k}`);
+      const lot = await serialLot("acc", [passed!, failed!], {
+        status: "Pending"
+      });
+      const receiptId = await receiptOf(lot);
+      await settleOtherLots(lot, receiptId);
+      await seed(f, (trx) =>
+        trx
+          .insertInto("inspectionSample")
+          .values({
+            inspectionId: lot,
+            trackedEntityId: failed,
+            status: "Failed",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      expect((await decide(lot, "Accept")).error).toBeNull();
+      const line = await f.db
+        .selectFrom("inspection")
+        .select(["sourceDocumentLineId", "itemId", "acceptedQuantity"])
+        .where("id", "=", lot)
+        .executeTakeFirstOrThrow();
+      expect(Number(line.acceptedQuantity)).toBe(1);
+
+      await seed(f, async (trx) => {
+        const transfer = await trx
+          .insertInto("stockTransfer")
+          .values({
+            stockTransferId: `${f.prefix}-ST-acc`,
+            locationId: f.locationId,
+            receiptId,
+            status: "Completed",
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("stockTransferLine")
+          .values({
+            stockTransferId: transfer.id,
+            receiptLineId: line.sourceDocumentLineId,
+            itemId: line.itemId,
+            quantity: 1,
+            pickedQuantity: 1,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute();
+      });
+      await sql`SELECT public.refresh_receipt_inspection_status(${receiptId})`.execute(
+        f.db
+      );
+      const receipt = await f.db
+        .selectFrom("receipt")
+        .select("inspectionStatus")
+        .where("id", "=", receiptId)
+        .executeTakeFirstOrThrow();
+      expect(receipt.inspectionStatus).toBe("Put Away");
+    }
+  );
+
+  databaseTest(
+    "a decided serial Partial lot with no NCR frees its storage unit",
+    async () => {
+      const [passed, failed] = ["p1", "p2"].map((k) => `${f.prefix}-sn-${k}`);
+      const lot = await serialLot("spn", [passed!, failed!], {
+        status: "Partial",
+        acceptedQuantity: 1
+      });
+      await settleOtherLots(lot, await receiptOf(lot));
+      await expect(
+        withGuard(() =>
+          f.db
+            .updateTable("storageUnit")
+            .set({ active: false })
+            .where("id", "=", unitOf("spn"))
+            .where("companyId", "=", f.companyId)
+            .execute()
+        )
+      ).resolves.toBeDefined();
+      const unit = await f.db
+        .selectFrom("storageUnit")
+        .select("active")
+        .where("id", "=", unitOf("spn"))
+        .executeTakeFirstOrThrow();
+      expect(unit.active).toBe(false);
+    }
+  );
+
+  databaseTest(
+    "a receipt voids after Reject moved its serial units to the rejected unit",
+    async () => {
+      const unit = `${f.prefix}-sn-vs`;
+      const lot = await serialLot("vs", [unit], { status: "Pending" });
+      const receiptId = await receiptOf(lot);
+      await seed(f, (trx) =>
+        trx
+          .insertInto("itemLedger")
+          .values({
+            entryType: "Purchase",
+            documentType: "Purchase Receipt",
+            documentId: receiptId,
+            itemId: `${f.prefix}-serial-vs`,
+            locationId: f.locationId,
+            storageUnitId: unitOf("vs"),
+            trackedEntityId: unit,
+            quantity: 1,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
+      expect((await decide(lot, "Reject")).error).toBeNull();
+      const voided = await withGuard(() =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-receipt",
+          { type: "void", receiptId },
+          postReceipt
+        )
+      );
+      expect(voided.error).toBeNull();
+      const onHand = await f.db
+        .selectFrom("itemLedger")
+        .select(["storageUnitId", sql<number>`SUM("quantity")`.as("quantity")])
+        .where("trackedEntityId", "=", unit)
+        .groupBy("storageUnitId")
+        .execute();
+      expect(onHand.every((row) => Number(row.quantity) === 0)).toBe(true);
+      expect(await idsWithLiveStockHistory(f.db, f.companyId, [unit])).toEqual(
+        new Set()
+      );
+    }
+  );
+
+  databaseTest(
+    "deleting a serial unit held under an open lot is refused",
+    async () => {
+      const held = `${f.prefix}-sn-del`;
+      const lot = await serialLot("del", [held], { status: "Pending" });
+      await expect(
+        withGuard(() =>
+          f.db
+            .deleteFrom("trackedEntity")
+            .where("id", "=", held)
+            .where("companyId", "=", f.companyId)
+            .execute()
+        )
+      ).rejects.toThrow(/held for inspection/);
+      expect(await statusOf(lot)).toBe("Pending");
     }
   );
 

@@ -113,7 +113,7 @@ in the migrations — **newest wins**; core tables created in
 - **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`
   → `setIssueStatus`, which takes only Registered / In Progress.
 - **Complete** (when `In Progress`) → `path.to.closeIssue(id)` → `completeIssue`
-  (posts the dispositions, sets `Closed`, clears assignee, sets `closeDate`).
+  (posts the dispositions, sets `Closed`, sets `closeDate`).
 - **Reopen** (when `In Progress`/`Closed`, not locked) → `issueStatus` `{status:"Registered"}`.
 - **Delete Issue** → `path.to.deleteIssue(id)`.
 

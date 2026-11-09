@@ -109,8 +109,9 @@ Before `postReceipt` sets `Pending`, it checks every line with
 
 1. If the location has no inspection storage unit, refuse the post with
    "{Location} has no inspection storage unit. Set one in Settings → Quality."
-2. If the line's storage unit is nettable, refuse the post with "{Part} needs
-   inspection. Choose a non-nettable storage unit."
+2. If the line's storage unit is nettable or at another location, refuse the
+   post with "{Part} needs inspection. Choose a non-nettable storage unit at
+   {Location}."
 
 The post then works as today. It also stamps `inspection.storageUnitId` with the
 line's storage unit.
@@ -146,16 +147,18 @@ The error reads "{Part} is held for inspection in {storage unit}. Quality must
 decide its inspection lot before it can move." A fast path skips step 3 when no
 open hold names the row's storage unit.
 
-These postings set `app.inspection_release` (`SET LOCAL`) because they are the
-release itself:
+`withInspectionRelease` sets `app.inspection_release` for one step only: the
+write that IS the release. Stock moves and write-offs after that step run with
+the guard on. `post-nonconformance` sets no flag. Two posting families set the
+flag for the whole transaction (`setInspectionRelease`):
 
-| Posting | Why |
-|---|---|
-| `dispositionInspection` (the rejected move) | Moves rejected stock to the rejected storage unit |
-| `post-nonconformance` (`Inbound Inspection`, `Non-Conformance`) | Writes off or restores rejected stock |
-| Purchase receipt void | Reverses the receipt |
-| `postInventoryCount` | Records where stock really is (see below) |
-| `Sales Return Shipment` and `Purchase Return Shipment` | RMA return flows ship `On Hold` units today (`shippableEntityStatuses`) |
+| Posting | Scope | Why |
+|---|---|---|
+| `dispositionInspection` | The lot's own update | The decision ends the hold |
+| `closeIssue` | The NCR's status update | The close ends a Partial lot's hold |
+| Purchase receipt void | The update that cancels open lots | A cancelled lot holds nothing |
+| `postInventoryCount` | Whole transaction | Records where stock really is (see below) |
+| `Sales Return Shipment` and `Purchase Return Shipment` | Whole transaction | RMA return flows ship `On Hold` units today (`shippableEntityStatuses`) |
 
 **Inventory counts record reality.** A count may move held stock on the books.
 A serial or batch unit keeps `On Hold`, so its hold travels with it. An
@@ -164,8 +167,8 @@ on-hand there. When a count moves held stock, the count post shows a warning: "{
 is held for inspection and was found outside {storage unit}." Stores then move
 it back.
 
-The guard also fixes the stock transfer unpick: unpick restores the unit's
-status from before the pick, not `Available`.
+The stock transfer unpick leaves the unit's status alone, so a held unit stays
+`On Hold`.
 
 ### 5. Disposition changes
 
@@ -173,7 +176,7 @@ status from before the pick, not `Available`.
 |---|---|---|
 | Accept | Non-failed units → `Available`, failed units → `Rejected` | Lot → `Passed`; the hold ends |
 | Reject | Existing: units → `Rejected`. New: a `Transfer` moves them to the rejected storage unit, when one is set | Write-off through `post-nonconformance`, in the decision's transaction, booked from `inspection.storageUnitId` instead of `null` |
-| Partial | Needs a failed unit, a passed sample and complete sampling. Every unit that did not fail becomes `Available`, as on Accept (sampled and unsampled); failed units become `Rejected`, and a `Transfer` moves them to the rejected storage unit | New: the dialog asks for the accepted quantity and requires an NCR. The rejected remainder moves to the rejected storage unit by `Transfer` and stays held until the NCR closes |
+| Partial | Serial only: a batch lot is accepted or rejected as a whole. Needs a failed unit, a passed sample and complete sampling. Every unit that did not fail becomes `Available`, as on Accept (sampled and unsampled); failed units become `Rejected`, and a `Transfer` moves them to the rejected storage unit | New: the dialog asks for the accepted quantity and requires an NCR. The rejected remainder moves to the rejected storage unit by `Transfer` and stays held until the NCR closes |
 
 A sample verdict does not change a receipt unit's status: the unit stays
 `On Hold` until the decision.
@@ -256,7 +259,7 @@ each with a preset filter:
 | Location with no inspection storage unit | Refuse the post of an inspected line | User answer: otherwise held stock counts as supply in a normal unit |
 | Settings unit must be non-nettable | Yes | User answer |
 | Where the settings live | Columns on `location`, card on Settings → Quality | Sibling: `location.responsibleEmployee` and `ResponsibleEmployeeCard`. Quality owns inspection setup (`samplingStandard`) |
-| Deleting a configured storage unit | FK `ON DELETE RESTRICT` | A silent `SET NULL` would make the next inspected receipt fail with no clue why |
+| Deleting a configured storage unit | FK `NO ACTION DEFERRABLE INITIALLY DEFERRED` | A silent `SET NULL` would make the next inspected receipt fail with no clue why. Deferred, because a restore or company delete loads and clears `location` and `storageUnit` in one transaction |
 | Inspection flag on the line | Stored snapshot `receiptLine.requiresInspection` | Epicor pattern. A later plan change does not rewrite a past receipt |
 | Header flag | Derived (`EXISTS` over lines) in the loader | No second copy to keep in step |
 | Putaway | "Put Away" button creates a Released stock transfer linked by `stockTransfer.receiptId` and `stockTransferLine.receiptLineId` | User answer. Sibling: `stockTransfer.kanbanId`. Reuses pick, scan and post |
@@ -271,7 +274,7 @@ each with a preset filter:
 | Multi-tenancy (heuristic 1) | No new table. New columns sit on tables that already have `companyId` | — |
 | Service shape (heuristic 2) | New operations are `defineServiceFn` in `inventory.server.ts`, `quality.server.ts` and `settings.server.ts`; building blocks take `db` | `.claude/rules/module-files.md` |
 | RLS (heuristic 3) | No new table, so no new policy. The SQL functions run `SECURITY INVOKER` except the interceptors, which follow the existing interceptor pattern | — |
-| Permissions (heuristic 4) | Settings card: `settings_update`. Put Away: `inventory_create`. Partial dialog: `quality_update` (existing) | Matches the sibling routes |
+| Permissions (heuristic 4) | Settings card: `settings_update` plus `resources_update`. Put Away: `inventory_create`. Partial dialog: `quality_update` (existing) | Matches the sibling routes |
 | Forms (heuristic 5) | Settings rows save through `useAction`, like `ResponsibleEmployeeCard`. The new Partial Lot modal copies `RejectLotModal` | The ERP has no Partial dialog today: `$id.partial.tsx` exists, but no button calls it |
 | Module layout (heuristic 6) | No new module files and no barrel | — |
 | Backward compatibility (heuristic 7) | `inspectionStatusType` gains `Cancelled`. Readers that switch on lot status must handle it | Additive enum value |
@@ -283,7 +286,7 @@ each with a preset filter:
 ALTER TABLE "location"
   ADD COLUMN "inspectionStorageUnitId" TEXT,
   ADD COLUMN "rejectedStorageUnitId" TEXT;
--- FKs to "storageUnit" with ON DELETE RESTRICT. The plan confirms the
+-- FKs to "storageUnit", NO ACTION DEFERRABLE INITIALLY DEFERRED. The plan confirms the
 -- storageUnit key columns and the same-location rule (enforced in the action).
 
 -- 2. Receipt inspection roll-up
@@ -345,14 +348,14 @@ the new columns where a tier writes them.
 
 | Operation or building block | File | Change |
 |---|---|---|
-| `setLocationGoodsInStorage` (new operation) | `settings.server.ts` | Writes the two location columns. Refuses a nettable unit or a unit from another location |
+| `setLocationGoodsInStorage` (new building block, called from `updateQualitySettings`) | `settings.service.ts` | Writes the two location columns. Refuses a nettable unit or a unit from another location |
 | `createDocument` (receipt branch) | `shared.service.ts:12027-12115`, `:12450-12490` | Sets `requiresInspection` and the new storage unit order |
-| `postReceipt` | `inventory.server.ts:348`, `inventory.service.ts:11540` | The two post checks. Stamps `inspection.storageUnitId` |
-| Purchase receipt void | `inventory.service.ts:12608` | Sets open lots `Cancelled`. Sets `app.inspection_release` |
-| `dispositionInspection` | `packages/database/src/quality.ts:417` | Partial: `acceptedQuantity`, NCR required for an untracked remainder. Reject and Partial: the rejected `Transfer` and the new `inspection.storageUnitId`. Sets `app.inspection_release` |
-| `postNonconformance` | `quality.service.ts:5884` | Books from `inspection.storageUnitId`, not `null`. Sets `app.inspection_release` |
+| `postReceipt` | `inventory.server.ts:348`, `inventory.service.ts:11540` | The post checks. Stamps `inspection.storageUnitId` |
+| Purchase receipt void | `inventory.service.ts:12608` | Sets open lots `Cancelled` under `withInspectionRelease`. The reversal runs with the guard on |
+| `dispositionInspection` | `packages/database/src/quality.ts:417` | Partial: `acceptedQuantity`, NCR required for an untracked remainder. Reject and Partial: the rejected `Transfer` and the new `inspection.storageUnitId`. Runs the lot's own update under `withInspectionRelease` |
+| `postNonconformance` | `quality.service.ts:5884` | Books from `inspection.storageUnitId`, not `null`. Sets no release flag |
 | `createReceiptPutAway` (new operation) | `inventory.server.ts` | Builds the transfer with `insertStockTransfer` (`inventory.service.ts:6205`), extended to take `receiptId` and `receiptLineId` |
-| `unpickStockTransferLine` | `inventory.service.ts:9650-9662` | Restores the status from before the pick |
+| `unpickStockTransferLine` | `inventory.service.ts:9650-9662` | Leaves the unit's status alone |
 | `postInventoryCount` | `inventory.service.ts:8187` | Sets `app.inspection_release`. Returns the held-stock warnings |
 | Return shipments | `postShipment` (`Sales Return Order`, `Purchase Return Order` branches) | Set `app.inspection_release` |
 | `getReceipts` | `inventory.service.ts:942` | Reads `inspectionStatus` (already `select *`) |
@@ -514,8 +517,8 @@ These came out of the research and are not part of this spec:
   - The post check also catches a part whose plan was assigned after its line
     was created, the same test the posting uses to open a lot, and the posting
     sets that line's `requiresInspection`.
-  - The sales return receipt void also sets `app.inspection_release`: its units
-    come back `On Hold`.
+  - The sales return receipt void sets no release flag. It opens no lot, so it
+    runs with the guard on.
   - The batch-split child status is left as it is. The guard already refuses a
     pick of an `On Hold` batch, so no `On Hold` lot reaches the split.
   - The MES closed-status checks are unchanged: a job-operation lot is never
@@ -572,8 +575,8 @@ These came out of the research and are not part of this spec:
   deployed, so they are replaced by one generated handler migration (now
   `20261105231600`), and no migration ships the old signature.
 - 2026-11-05: The PR's migrations are squashed to three, since none was ever
-  deployed: `20261106020101` (enum values, which must commit on their own),
-  `20261106020122` (columns, functions, the receipt-line index and one
+  deployed: `20261109090117` (enum values, which must commit on their own),
+  `20261109090141` (columns, functions, the receipt-line index and one
   backfill) and `20261105231600` (every handler and event trigger, generated by
   `authz migration`). No migration drops a function.
 - 2026-11-05: Second review fixes:
@@ -680,7 +683,7 @@ These came out of the research and are not part of this spec:
     and every MES Remove Inventory. A tracked lot's Open NCR is a secondary
     action with neutral wording. The picking list marks a non-nettable source
     unit.
-  - The handler migration was generated again as `20261106061223`. The PR
+  - The handler migration was generated again as `20261109090200`. The PR
     still has three migrations.
 - 2026-11-06: Browser round 2 fixes:
   - Use As Is or Rework on a receipt lot's NCR restores no more than the
@@ -716,3 +719,40 @@ These came out of the research and are not part of this spec:
     under its lock.
   - `inspection_line_lot_open` and `inspection_holds_at` are the one
     definition of each hold test.
+- 2026-11-09: Final review fixes:
+  - The PR's migrations have new timestamps: `20261109090117`,
+    `20261109090141` and `20261109090200`.
+  - A receipt lot belongs to one NCR. A Partial lot must be the only lot on its
+    NCR. `closeIssue` refuses an NCR with a Partial lot beside another lot.
+  - `closeIssue` refuses a Partial untracked lot's NCR that has no disposition
+    row for the lot's item.
+  - `check_nonconformance_inspection_release` refuses a reopen of a Closed NCR
+    that released a Partial untracked lot's remainder.
+  - `check_item_inspection_hold` refuses a change of `itemTrackingType` while a
+    receipt lot holds stock. `check_tracked_entity_inspection_hold` also
+    refuses a DELETE of an `On Hold` unit under an open lot.
+  - A Partial lot holds stock only when its item is `Inventory`, so a serial
+    Partial with no NCR holds no unit.
+  - An Accept of a serial or batch lot with failed units records the passed
+    units as `acceptedQuantity`. The roll-up reads
+    `COALESCE(acceptedQuantity, lotSize)` for a `Passed` lot.
+  - The roll-up ignores Non-Inventory lots. A Non-Inventory part needs no held
+    unit, its lot has no `storageUnitId`, and its lot cannot be Partial.
+  - A repeated Reject on a `Failed` lot writes off no new stock, because the
+    write-off is atomic with the decision. It keeps the lot's notes,
+    `dispositionedBy` and `dispositionedAt`, and adds no `inspectionHistory`
+    row. It can still open a missing NCR. A lot from before the hold, with no
+    `storageUnitId`, still returns its lot size, and `post-nonconformance`
+    books that once per lot.
+  - A Put Away line with no To storage unit cannot be picked. Pick All shows
+    the hold's refusal. A receipt void deletes an unpicked Put Away, refuses
+    one with picked stock, and reverses the rejected moves of serial and batch
+    units.
+  - A serial Partial with `createNcr` checks the NCR prerequisites before the
+    lot closes. Open NCR refuses a voided receipt.
+  - The `location` goods-in FKs are `NO ACTION DEFERRABLE INITIALLY DEFERRED`.
+  - `receiptLinesOpeningLots` decides the Draft "Inspection required" marks.
+    `getReceiptInspectedItemIds` is gone.
+  - The goods-in pickers need `resources` update.
+  - A foreign restore remaps `trackedEntity.attributes` `Receipt` and
+    `Receipt Line` (`rewriteTrackedEntityReceiptRefs`).

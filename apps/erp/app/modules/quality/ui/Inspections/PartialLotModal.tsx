@@ -209,7 +209,7 @@ const PartialLotModal = ({
               isDisabled={
                 fetcher.state !== "idle" ||
                 !acceptedValid ||
-                (ncrRequired && !hasIssueTypes) ||
+                (openNcr && !hasIssueTypes) ||
                 (openNcr && hasIssueTypes && !issueTypeId)
               }
             >

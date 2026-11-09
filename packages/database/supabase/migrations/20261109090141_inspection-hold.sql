@@ -5,20 +5,28 @@
 -- (event-system/handlers/check_inspection_hold.sql); this file adds the
 -- columns, the two functions it and the receipt roll-up read, and a backfill.
 
+SET lock_timeout = '5s';
+
 -- 1. Per-location inspection and rejected storage units -----------------------
 
 ALTER TABLE "location"
   ADD COLUMN IF NOT EXISTS "inspectionStorageUnitId" TEXT,
   ADD COLUMN IF NOT EXISTS "rejectedStorageUnitId" TEXT;
 
--- RESTRICT: silently nulling a configured unit would make the next inspected
--- receipt fail with no clue why. Clear the setting first.
+-- Not SET NULL: silently nulling a configured unit would make the next inspected
+-- receipt fail with no clue why. Clear the setting first. Deferred, because
+-- storageUnit references location: a restore or company delete loads and clears
+-- the two tables in one transaction, in either order.
 ALTER TABLE "location" DROP CONSTRAINT IF EXISTS "location_inspectionStorageUnitId_fkey";
 ALTER TABLE "location" ADD CONSTRAINT "location_inspectionStorageUnitId_fkey"
-  FOREIGN KEY ("inspectionStorageUnitId") REFERENCES "storageUnit"("id") ON DELETE RESTRICT;
+  FOREIGN KEY ("inspectionStorageUnitId") REFERENCES "storageUnit"("id") DEFERRABLE INITIALLY DEFERRED;
 ALTER TABLE "location" DROP CONSTRAINT IF EXISTS "location_rejectedStorageUnitId_fkey";
 ALTER TABLE "location" ADD CONSTRAINT "location_rejectedStorageUnitId_fkey"
-  FOREIGN KEY ("rejectedStorageUnitId") REFERENCES "storageUnit"("id") ON DELETE RESTRICT;
+  FOREIGN KEY ("rejectedStorageUnitId") REFERENCES "storageUnit"("id") DEFERRABLE INITIALLY DEFERRED;
+CREATE INDEX IF NOT EXISTS "location_inspectionStorageUnitId_idx"
+  ON "location" ("inspectionStorageUnitId");
+CREATE INDEX IF NOT EXISTS "location_rejectedStorageUnitId_idx"
+  ON "location" ("rejectedStorageUnitId");
 
 -- 2. Receipt inspection roll-up and the line flag -----------------------------
 
@@ -59,6 +67,8 @@ ALTER TABLE "inspection" ADD CONSTRAINT "inspection_storageUnitId_fkey"
 CREATE INDEX IF NOT EXISTS "inspection_hold_idx"
   ON "inspection" ("storageUnitId", "itemId")
   WHERE "status" IN ('Pending', 'In Progress', 'Partial') AND "storageUnitId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "inspection_storageUnitId_idx"
+  ON "inspection" ("storageUnitId");
 
 -- 4. Putaway link (sibling: stockTransfer.kanbanId) ---------------------------
 
@@ -90,6 +100,12 @@ AS $$
     OR (
       p_status = 'Partial'
       AND p_accepted_quantity IS NOT NULL
+      AND EXISTS (
+        SELECT 1
+        FROM public."inspection" lot
+        JOIN public."item" it ON it."id" = lot."itemId" AND it."companyId" = lot."companyId"
+        WHERE lot."id" = p_inspection_id AND it."itemTrackingType" = 'Inventory'
+      )
       AND NOT EXISTS (
         SELECT 1
         FROM public."nonConformanceInspection" nci
@@ -189,22 +205,31 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Locked first: two writers on one receipt would otherwise each miss the
+  -- other's uncommitted change, and neither refresh would see both.
+  PERFORM 1 FROM "receipt" WHERE "id" = p_receipt_id FOR NO KEY UPDATE;
+
   WITH lots AS (
     SELECT
       i."sourceDocumentLineId" AS "receiptLineId",
       i."status",
       CASE
-        WHEN i."status" = 'Passed' THEN i."lotSize"
+        WHEN i."status" = 'Passed' THEN COALESCE(i."acceptedQuantity", i."lotSize")
         WHEN i."status" = 'Partial' THEN COALESCE(i."acceptedQuantity", 0)
         ELSE 0
       END AS "passed"
     FROM "inspection" i
+    LEFT JOIN "receiptLine" rl ON rl."id" = i."sourceDocumentLineId"
     JOIN "storageUnit" su
-      ON su."id" = i."storageUnitId"
+      ON su."id" = COALESCE(i."storageUnitId", CASE WHEN i."status" = 'Failed' THEN rl."storageUnitId" END)
      AND su."effectiveNettable" = false
     JOIN "receipt" r
       ON r."id" = i."sourceDocumentId"
      AND r."status" <> 'Voided'
+    JOIN "item" it
+      ON it."id" = i."itemId"
+     AND it."companyId" = i."companyId"
+     AND it."itemTrackingType" <> 'Non-Inventory'
     WHERE i."sourceDocument" = 'Receipt'
       AND i."sourceDocumentId" = p_receipt_id
       AND i."status" <> 'Cancelled'
@@ -215,6 +240,7 @@ BEGIN
     JOIN "stockTransfer" st
       ON st."id" = stl."stockTransferId" AND st."companyId" = stl."companyId"
     WHERE st."receiptId" = p_receipt_id
+      AND st."companyId" = (SELECT "companyId" FROM "receipt" WHERE "id" = p_receipt_id)
       AND st."status" = 'Completed'
       AND stl."receiptLineId" IS NOT NULL
     GROUP BY stl."receiptLineId"
@@ -272,7 +298,17 @@ SET "storageUnitId" = rl."storageUnitId"
 FROM "receiptLine" rl
 WHERE i."sourceDocument" = 'Receipt'
   AND i."sourceDocumentLineId" = rl."id"
-  AND i."storageUnitId" IS NULL;
+  AND i."storageUnitId" IS NULL
+  AND i."status" <> 'Failed';
+
+UPDATE "inspection" i
+SET "storageUnitId" = NULL
+FROM "item" it
+WHERE it."id" = i."itemId"
+  AND it."companyId" = i."companyId"
+  AND it."itemTrackingType" = 'Non-Inventory'
+  AND i."sourceDocument" = 'Receipt'
+  AND i."storageUnitId" IS NOT NULL;
 
 -- A voided receipt left its open lots Pending; close them.
 UPDATE "inspection" i
@@ -299,3 +335,5 @@ WHERE EXISTS (
 );
 
 NOTIFY pgrst, 'reload schema';
+
+RESET lock_timeout;

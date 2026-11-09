@@ -84,6 +84,7 @@ import { path } from "~/utils/path";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
 import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";
+import { InspectionStatus } from "./InspectionStatus";
 import OpenNcrModal from "./OpenNcrModal";
 import PartialLotModal from "./PartialLotModal";
 import type { FailedFeatureSummary } from "./RejectLotModal";
@@ -506,9 +507,11 @@ const InspectionView = ({
   const canPartial =
     canReject &&
     !isBatch &&
+    itemTrackingType !== "Non-Inventory" &&
     (!isSerial || (hasFailedUnit && passes > 0 && sampledComplete));
   const ncrMissing =
     isReceiptSource &&
+    !receiptVoided &&
     inspection.status === "Partial" &&
     issues.length === 0 &&
     ((itemTrackingType === "Inventory" &&
@@ -580,15 +583,6 @@ const InspectionView = ({
 
   const hasMeasurements = effectiveMeasurements.size > 0;
 
-  const statusBadgeVariant =
-    inspection.status === "Passed"
-      ? ("green" as const)
-      : inspection.status === "Failed"
-        ? ("red" as const)
-        : inspection.status === "Partial"
-          ? ("yellow" as const)
-          : ("secondary" as const);
-
   const planSummary =
     inspection.samplingPlanType === "AQL"
       ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
@@ -617,7 +611,7 @@ const InspectionView = ({
 
   const statusBadge = (
     <HStack spacing={1}>
-      <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+      <InspectionStatus status={inspection.status} />
       {receiptVoided && (
         <Badge variant="red">
           <Trans>Receipt voided</Trans>
@@ -758,7 +752,7 @@ const InspectionView = ({
                   <Button
                     variant="secondary"
                     onClick={partialDisclosure.onOpen}
-                    isDisabled={!canUpdate || !canPartial}
+                    isDisabled={!canUpdate || !canPartial || gridBusy}
                   >
                     <Trans>Partial</Trans>
                   </Button>

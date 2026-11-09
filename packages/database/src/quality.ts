@@ -929,6 +929,42 @@ export async function dispositionInspection(
       ) {
         throw new Error("A batch lot is accepted or rejected as a whole.");
       }
+      if (
+        args.decision === "Partial" &&
+        isReceiptSource &&
+        item?.itemTrackingType === "Non-Inventory"
+      ) {
+        throw new Error(
+          "A non-inventory lot is accepted or rejected as a whole."
+        );
+      }
+      if (args.decision === "Partial" && isReceiptSource) {
+        const links = await trx
+          .selectFrom("nonConformanceInspection as link")
+          .innerJoin("nonConformance as ncr", "ncr.id", "link.nonConformanceId")
+          .leftJoin("nonConformanceInspection as sibling", (join) =>
+            join
+              .onRef("sibling.nonConformanceId", "=", "link.nonConformanceId")
+              .onRef("sibling.inspectionId", "!=", "link.inspectionId")
+          )
+          .select(["ncr.status", "sibling.inspectionId as siblingId"])
+          .where("link.inspectionId", "=", args.id)
+          .where("link.companyId", "=", args.companyId)
+          .execute();
+        if (links.some((link) => link.siblingId)) {
+          throw new Error(
+            "This lot shares its NCR with other lots. A Partial lot must be the only lot on its NCR."
+          );
+        }
+        if (
+          item?.itemTrackingType === "Inventory" &&
+          links.some((link) => link.status === "Closed")
+        ) {
+          throw new Error(
+            "This lot's NCR is already closed, so nothing would decide its rejected part. Remove the link or reject the lot."
+          );
+        }
+      }
       const isTrackedReceiptLot = isReceiptSource && allLotIds.length > 0;
       if (
         args.decision === "Partial" &&
@@ -1025,9 +1061,11 @@ export async function dispositionInspection(
         acceptedQuantity = accepted;
         rejectedQuantity = round(inspection.lotSize - accepted);
       } else if (
-        args.decision === "Partial" &&
         isReceiptSource &&
-        allLotIds.length > 0
+        allLotIds.length > 0 &&
+        (args.decision === "Partial" ||
+          (args.decision === "Accept" &&
+            allLotIds.some((id) => failedEntityIds.has(id))))
       ) {
         // A tracked lot's passed part is its Available units; the receipt's
         // inspection status reads it to tell when putaway is done.
@@ -1132,9 +1170,9 @@ export async function dispositionInspection(
           }
         }
         if (args.decision === "Reject" && holdsStock && !writtenOff) {
-          writeOffQuantity = round(
-            Math.min(inspection.lotSize, await claimable())
-          );
+          writeOffQuantity = wasOpen
+            ? round(Math.min(inspection.lotSize, await claimable()))
+            : 0;
         }
         if (args.decision === "Reject") {
           if (!holdsStock || writtenOff) {
@@ -1251,13 +1289,17 @@ export async function dispositionInspection(
           .updateTable("inspection")
           .set({
             status: lotStatus,
-            notes: args.notes || args.reason?.trim() || null,
+            ...(wasOpen
+              ? {
+                  notes: args.notes || args.reason?.trim() || null,
+                  dispositionedBy: args.dispositionedBy,
+                  dispositionedAt: nowIso
+                }
+              : {}),
             ...(acceptedQuantity !== null ? { acceptedQuantity } : {}),
             ...((movedToStorageUnitId ?? legacyHoldUnitId)
               ? { storageUnitId: movedToStorageUnitId ?? legacyHoldUnitId }
               : {}),
-            dispositionedBy: args.dispositionedBy,
-            dispositionedAt: nowIso,
             updatedBy: args.dispositionedBy,
             updatedAt: nowIso
           })
@@ -1288,29 +1330,31 @@ export async function dispositionInspection(
         await trx.insertInto("itemLedger").values(moveRows).execute();
       }
 
-      await trx
-        .insertInto("inspectionHistory")
-        .values({
-          inspectionId: args.id,
-          itemId: inspection.itemId,
-          supplierId: inspection.supplierId ?? null,
-          samplingStandard: inspection.samplingStandard,
-          severity: inspection.severity ?? "Normal",
-          inspectionLevel: inspection.inspectionLevel ?? null,
-          aql: inspection.aql ?? null,
-          lotSize: inspection.lotSize,
-          sampleSize: inspection.sampleSize,
-          defectsFound: failures,
-          outcome:
-            args.decision === "Accept"
-              ? "Accepted"
-              : args.decision === "Reject"
-                ? "Rejected"
-                : "Partial",
-          companyId: args.companyId,
-          createdBy: args.dispositionedBy
-        })
-        .execute();
+      if (wasOpen) {
+        await trx
+          .insertInto("inspectionHistory")
+          .values({
+            inspectionId: args.id,
+            itemId: inspection.itemId,
+            supplierId: inspection.supplierId ?? null,
+            samplingStandard: inspection.samplingStandard,
+            severity: inspection.severity ?? "Normal",
+            inspectionLevel: inspection.inspectionLevel ?? null,
+            aql: inspection.aql ?? null,
+            lotSize: inspection.lotSize,
+            sampleSize: inspection.sampleSize,
+            defectsFound: failures,
+            outcome:
+              args.decision === "Accept"
+                ? "Accepted"
+                : args.decision === "Reject"
+                  ? "Rejected"
+                  : "Partial",
+            companyId: args.companyId,
+            createdBy: args.dispositionedBy
+          })
+          .execute();
+      }
 
       return {
         id: updated.id,

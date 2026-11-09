@@ -16,7 +16,7 @@ Inspection is **lot-based**: one inspection per received line (the `receiptLineI
   <Status name="In Progress">At least one sample has been inspected. The inspector is working through the sample size, recording each unit as Passed or Failed.</Status>
   <Status name="Passed" accent>The lot was **accepted** on disposition. Un-sampled entities are released to Available; sampled passes stay Available, sampled failures stay Rejected.</Status>
   <Status name="Failed" terminal>The lot was **rejected**. Every entity in the lot flips to Rejected, and an issue can be opened automatically.</Status>
-  <Status name="Partial" terminal>Part of the lot passed and part failed. The passed part can be put away; the rest stays held.</Status>
+  <Status name="Partial" terminal>Part of the lot passed and part failed. The passed part can be put away. An untracked lot holds the rest until its NCR is Closed, so it cannot be marked Partial while linked to a Closed NCR; a serial lot's failed units are Rejected.</Status>
   <Status name="Cancelled" terminal>The receipt was voided while the lot was still Pending or In Progress. A cancelled lot holds nothing.</Status>
 </StatusFlow>
 
@@ -42,11 +42,11 @@ The inspection page has three disposition buttons:
 
 - **Accept Lot** is available once the inspected count reaches the sample size and failures are at or below the **acceptance number**.
 - **Reject Lot** is available on any open lot. Without a statistical failure, the reject dialog asks for a reason.
-- **Partial** is available on any open lot.
+- **Partial** is available on an open lot of an untracked part, and on an open lot of a serial part that has a failed unit, a passed sample and complete sampling. A batch or non-inventory lot is accepted or rejected as a whole.
 
 Disposition writes the terminal status, stamps `dispositionedBy` / `dispositionedAt`, and appends a row to `inspectionHistory` (a log kept for future plan auto-switching). Rejecting a **non-tracked Inventory** lot also posts a compensating `itemLedger` negative adjustment under the `Inbound Inspection` document type, booked from the storage unit that holds the lot.
 
-A reject can also open an <Term id="nonconformance">issue</Term> automatically: the reject dialog has an "Open an NCR" checkbox, on by default. See [Quality](/docs/reference/quality) for how those issues run to closure.
+A reject can also open an <Term id="nonconformance">issue</Term> automatically: the reject dialog has an "Open an NCR" checkbox, on by default. An untracked receipt lot belongs to one NCR, and a Partial lot must be the only lot on its NCR. See [Quality](/docs/reference/quality) for how those issues run to closure.
 
 ### Partial lots
 
@@ -54,8 +54,8 @@ A reject can also open an <Term id="nonconformance">issue</Term> automatically: 
 
 | Tracking | What Partial does |
 |---|---|
-| Serial or batch | Units that failed a sample stay **Rejected**. Every other unit, including units never sampled, becomes **Available** and is ready for putaway. |
-| Untracked | You enter the **Accepted quantity**, at least 0 and less than the lot size. The accepted quantity is ready for putaway. The rest stays held until its NCR is **Closed**, so the dialog always opens an NCR and needs an **Issue Type**. |
+| Serial | Units that failed a sample stay **Rejected**. Every other unit, including units never sampled, becomes **Available** and is ready for putaway. |
+| Untracked | You enter the **Accepted quantity**, more than 0 and less than the lot size. The accepted quantity is ready for putaway. The rest stays held until its NCR is **Closed**, so the dialog always opens an NCR and needs an **Issue Type**. |
 
 ### Where rejected stock goes
 
@@ -177,8 +177,8 @@ The sample or disposition references an inspection that doesn't exist in this co
 ### "Failed to save sample" / "Failed to accept lot" / "Failed to reject lot" / "Failed to mark partial"
 The underlying transaction failed (inspection missing, an entity conflict, or a permission denial). Retry; if it persists the lot may already be in a terminal state — see below.
 
-### "Enter the accepted quantity: at least 0 and less than the lot size"
-Partial on an untracked receipt lot needs an accepted quantity from 0 up to, but not including, the lot size. To accept the whole lot, use **Accept Lot**. The rest of the lot stays held, in the rejected storage unit when the location has one, until the lot's NCR is Closed.
+### "Enter the accepted quantity: more than 0 and less than the lot size"
+Partial on an untracked receipt lot needs an accepted quantity above 0 and below the lot size. To accept the whole lot, use **Accept Lot**. An accepted quantity of 0 is refused with "That is the whole lot rejected. Use Reject Lot instead." The rest of the lot stays held, in the rejected storage unit when the location has one, until the lot's NCR is Closed.
 
 ### The inspection page shows a Cancelled lot
 The lot's receipt was voided while the lot was Pending or In Progress. A Cancelled lot holds no stock and takes no samples or decisions.

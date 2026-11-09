@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { raisedMessage } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -85,7 +86,9 @@ const customFieldValues = z.record(
  * items, customer, supplier, `trackedEntityIds`) must be the company's, or nothing is
  * created. The issue is inserted, the tracked entities are linked to it, and
  * an issue filed against a job operation links the lot that operation's make
- * method produced onto the item's disposition row. Its action and approval
+ * method produced onto the item's disposition row. Each linked unit still in
+ * stock goes onto its item's disposition row, so Scrap or Use As Is acts on
+ * it. The issue's action and approval
  * tasks are then created; when that fails the issue is deleted again. The
  * company's integrations are told. With `changeOrderId` the new issue is
  * linked onto that change notice; a failed link comes back as `warning`.
@@ -422,6 +425,8 @@ export const setIssueStatus = defineServiceFn({
       updatedBy: userId
     });
     if (update.error) {
+      const refusal = raisedMessage(update.error);
+      if (refusal) return ctx.error("rule", refusal, update.error);
       return ctx.error(
         "internal",
         "Failed to update issue status",
@@ -455,12 +460,13 @@ export const setIssueStatus = defineServiceFn({
  *
  * @remarks
  * Every disposition row must be decided (not Pending), and the issue cannot
- * close while a linked supplier return is open. The inventory value the
- * dispositions move (scrap and return write-offs, the restore of an
- * inspection lot used as is) posts first, through `post-nonconformance`; a
- * failed posting leaves the issue open. Then the issue is Closed, its
- * assignee cleared and its close date stamped. The company's integrations
- * are told.
+ * close while a linked supplier return is open. In one transaction the issue
+ * is Closed with its close date stamped, the inventory value the dispositions
+ * move (scrap and return write-offs, the restore of an inspection lot used as
+ * is) posts through `post-nonconformance`, and the units change status; a
+ * failure leaves the issue open. An NCR with a Partial receipt lot beside
+ * another lot is refused, and so is a Partial untracked lot's NCR with no
+ * disposition row for the lot's item. The company's integrations are told.
  *
  * @mcp
  */
@@ -839,7 +845,11 @@ export const createIssueAssociation = defineServiceFn({
           nonConformanceId,
           inspectionId: id
         });
-        if (!linked) return failed("inbound inspection");
+        if (!linked.ok) {
+          return linked.refusal
+            ? ctx.error("rule", linked.refusal)
+            : failed("inbound inspection");
+        }
         break;
       }
       default: {
@@ -1311,12 +1321,13 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * `post-nonconformance` in the decision's transaction; when the write-off
  * fails the lot is not rejected. With `createNcr` false that is all
  * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId` or the
- * first issue type, at the caller's default location: its item's disposition
- * row takes the lot quantity and Scrap, the lot's entities and receipt line
- * are linked to it, and its tasks are created. The failed features, with
- * their measured values against spec, and the `reason` go in its description.
- * A failure after the issue was inserted deletes it again; the lot stays
- * rejected.
+ * first issue type, at the receipt line's location, else the caller's default
+ * location: its item's disposition row takes the lot quantity and Scrap, the
+ * lot's entities and receipt line are linked to it, and its tasks are
+ * created. The failed features, with their measured values against spec, and
+ * the `reason` go in its description. A failure after the issue was inserted
+ * deletes it again; the lot stays rejected. A repeated Reject on a Failed lot
+ * posts nothing new and keeps the lot's NCR; it can still open a missing one.
  *
  * @param reason - Why the lot is rejected. Required when no characteristic
  * reached its rejection number and no sample failed (a suspected counterfeit,
@@ -1397,8 +1408,7 @@ export const rejectInspection = defineServiceFn({
       title: "Rejected lot",
       outcome: "Lot rejected",
       quantity: null,
-      trackedEntityIds: null,
-      oncePerLot: true
+      trackedEntityIds: null
     });
     if (opened instanceof CarbonError) {
       const raced = opened.category === "conflict" && (await existingNcr());
@@ -1417,11 +1427,12 @@ export const rejectInspection = defineServiceFn({
  * of the lot stays held, in the location's rejected storage unit when one is
  * set, until that NCR closes. For a serial part every unit that did not fail
  * is accepted, as on Accept, and the failed units move to the rejected
- * storage unit. A batch lot is accepted or rejected as a whole. An NCR opens
- * for the failed part when one is required or `createNcr` is true. The
+ * storage unit. A batch or non-inventory lot is accepted or rejected as a
+ * whole. An NCR opens for the failed part when one is required or `createNcr`
+ * is true, and its prerequisites are checked before the lot closes. The
  * accepted part can then be put away. A Partial lot refuses a second decision;
  * a Partial lot whose NCR failed to open gets the NCR when it is marked
- * partial again, and nothing else changes.
+ * partial again, and nothing else changes, unless its receipt was voided.
  *
  * @mcp
  */
@@ -1446,7 +1457,7 @@ export const partialInspection = defineServiceFn({
     const lot = await ctx.asSystem.supabase
       .from("inspection")
       .select(
-        "lotSize, status, sourceDocument, acceptedQuantity, item(itemTrackingType), nonConformanceInspection(id)"
+        "lotSize, status, sourceDocument, sourceDocumentId, acceptedQuantity, item(itemTrackingType), nonConformanceInspection(id)"
       )
       .eq("id", id)
       .eq("companyId", companyId)
@@ -1489,13 +1500,34 @@ export const partialInspection = defineServiceFn({
       }
       ncrMissing = (failed.data ?? []).length > 0;
     }
+    if (ncrMissing) {
+      const receipt = await ctx.asSystem.supabase
+        .from("receipt")
+        .select("status")
+        .eq("id", lot.data.sourceDocumentId ?? "")
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (receipt.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the lot's receipt",
+          receipt.error
+        );
+      }
+      if (receipt.data?.status === "Voided") {
+        return ctx.error("rule", "This lot's receipt was voided.");
+      }
+    }
 
+    const lotIsOpen =
+      lot.data.status === "Pending" || lot.data.status === "In Progress";
     if (
-      untracked &&
-      (ncrMissing ||
-        (acceptedQuantity !== null &&
-          acceptedQuantity !== undefined &&
-          acceptedQuantity < lotSize))
+      (untracked &&
+        (ncrMissing ||
+          (acceptedQuantity !== null &&
+            acceptedQuantity !== undefined &&
+            acceptedQuantity < lotSize))) ||
+      (tracked && createNcr && (ncrMissing || lotIsOpen))
     ) {
       const missing = await service.inspectionNcrPrerequisite(ctx, {
         id,
@@ -1520,10 +1552,7 @@ export const partialInspection = defineServiceFn({
         requireSource: "Receipt"
       });
       if (partial.error || !partial.data) {
-        if (
-          lot.data.status === "Pending" ||
-          lot.data.status === "In Progress"
-        ) {
+        if (lotIsOpen) {
           const now = await ctx.asSystem.pg
             .selectFrom("inspection")
             .select("status")
@@ -1587,8 +1616,7 @@ export const partialInspection = defineServiceFn({
       title: "Partly rejected lot",
       outcome: "Lot marked partial",
       quantity,
-      trackedEntityIds,
-      oncePerLot: true
+      trackedEntityIds
     });
     if (opened instanceof CarbonError) {
       if (opened.category === "conflict") {

@@ -52,7 +52,7 @@ const ReceiptHeader = () => {
     receiptLineTracking: ItemTracking[];
     fixedAssetLines: { id: string; received: boolean }[];
     rentalLines: { id: string; received: boolean }[];
-    inspectedItemIds: string[];
+    inspectedLineIds: string[];
     putAwayReadyCount: number;
     putAwayTransfers: { id: string; stockTransferId: string; status: string }[];
   }>(path.to.receipt(receiptId));
@@ -95,15 +95,11 @@ const ReceiptHeader = () => {
 
   const hasTrackingLabels = (routeData?.receiptLineTracking ?? []).length > 0;
 
-  const inspectedItemIds = routeData?.inspectedItemIds ?? [];
+  const inspectedLineIds = routeData?.inspectedLineIds ?? [];
   const requiresInspection =
     !isPosted &&
     !isVoided &&
-    receiptLines.some(
-      (line) =>
-        line.requiresInspection ||
-        (!!line.itemId && inspectedItemIds.includes(line.itemId))
-    );
+    receiptLines.some((line) => inspectedLineIds.includes(line.id ?? ""));
   const putAwayReadyCount = routeData?.putAwayReadyCount ?? 0;
   const putAwayTransfers = routeData?.putAwayTransfers ?? [];
   const canPutAway =

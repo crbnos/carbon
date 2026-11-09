@@ -8,6 +8,29 @@ DECLARE
   v_lot TEXT;
 BEGIN
   IF p_operation = 'UPDATE' THEN
+    IF p_old->>'status' = 'Closed' AND p_new->>'status' IS DISTINCT FROM 'Closed' THEN
+      IF current_setting('app.inspection_release', true) = 'on'
+         OR current_setting('app.sync_in_progress', true) = 'true' THEN
+        RETURN;
+      END IF;
+      SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+      FROM "nonConformanceInspection" nci
+      JOIN "inspection" i ON i."id" = nci."inspectionId"
+      JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+      WHERE nci."nonConformanceId" = p_new->>'id'
+        AND i."sourceDocument" = 'Receipt'
+        AND i."status" = 'Partial'
+        AND it."itemTrackingType" = 'Inventory'
+        AND i."acceptedQuantity" IS NOT NULL
+        AND i."lotSize" - i."acceptedQuantity" > 0
+      ORDER BY 1
+      LIMIT 1;
+      IF FOUND THEN
+        RAISE EXCEPTION 'This NCR released the rejected part of inspection lot %, so it cannot be reopened.',
+          v_lot;
+      END IF;
+      RETURN;
+    END IF;
     IF p_new->>'status' IS DISTINCT FROM 'Closed'
        OR p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
       RETURN;
@@ -15,6 +38,27 @@ BEGIN
     v_ncr := p_new;
   ELSIF p_operation = 'DELETE' THEN
     IF p_old->>'status' IS NOT DISTINCT FROM 'Closed' THEN
+      IF current_setting('app.inspection_release', true) = 'on'
+         OR current_setting('app.sync_in_progress', true) = 'true'
+         OR NOT EXISTS (SELECT 1 FROM "company" c WHERE c."id" = p_old->>'companyId') THEN
+        RETURN;
+      END IF;
+      SELECT COALESCE(i."inspectionId", i."id") INTO v_lot
+      FROM "nonConformanceInspection" nci
+      JOIN "inspection" i ON i."id" = nci."inspectionId"
+      JOIN "item" it ON it."id" = i."itemId" AND it."companyId" = i."companyId"
+      WHERE nci."nonConformanceId" = p_old->>'id'
+        AND i."sourceDocument" = 'Receipt'
+        AND i."status" = 'Partial'
+        AND it."itemTrackingType" = 'Inventory'
+        AND i."acceptedQuantity" IS NOT NULL
+        AND i."lotSize" - i."acceptedQuantity" > 0
+      ORDER BY 1
+      LIMIT 1;
+      IF FOUND THEN
+        RAISE EXCEPTION 'This NCR released the rejected part of inspection lot %, so it cannot be deleted.',
+          v_lot;
+      END IF;
       RETURN;
     END IF;
     v_ncr := p_old;

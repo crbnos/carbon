@@ -16,6 +16,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useId, useMemo } from "react";
 import { LuMapPin } from "react-icons/lu";
+import { usePermissions } from "~/hooks";
 
 // Both goods-in units must be non-nettable, so the loader passes only
 // non-nettable, active storage units.
@@ -49,6 +50,7 @@ export function GoodsInStorageCard({
   storageUnits: GoodsInStorageUnit[];
 }) {
   const { t } = useLingui();
+  const canEditLocations = usePermissions().can("update", "resources");
   const fetcher = useAction({
     onSuccess: ({ data }) => {
       if (data?.locationGoodsInStorage) {
@@ -128,6 +130,7 @@ export function GoodsInStorageCard({
                     options={options}
                     placeholder={placeholder}
                     isPending={fetcher.isPending}
+                    canEdit={canEditLocations}
                     onChange={(selected) =>
                       submit(location.id, "inspectionStorageUnitId", selected)
                     }
@@ -140,6 +143,7 @@ export function GoodsInStorageCard({
                     options={options}
                     placeholder={placeholder}
                     isPending={fetcher.isPending}
+                    canEdit={canEditLocations}
                     onChange={(selected) =>
                       submit(location.id, "rejectedStorageUnitId", selected)
                     }
@@ -162,6 +166,7 @@ function GoodsInStorageSelect({
   options,
   placeholder,
   isPending,
+  canEdit,
   onChange
 }: {
   label: string;
@@ -171,6 +176,7 @@ function GoodsInStorageSelect({
   options: Option[];
   placeholder: string;
   isPending: boolean;
+  canEdit: boolean;
   onChange: (storageUnitId: string | null) => void;
 }) {
   const { t } = useLingui();
@@ -207,7 +213,7 @@ function GoodsInStorageSelect({
           warning ? warningId : noneAvailable ? noneAvailableId : undefined
         }
         aria-invalid={warning ? true : undefined}
-        disabled={isPending || noneAvailable}
+        disabled={isPending || noneAvailable || !canEdit}
         placeholder={placeholder}
         title={noneAvailableText}
       />
