@@ -171,6 +171,21 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   purchaseOrder.id`) SHARES its parent's map rather than minting a second id,
   which would split the pair — and under `session_replication_role='replica'`
   the break would commit.
+- Derived groups (`src/backups/derived-groups.ts`): the database makes a `group`
+  per employee type, customer type, supplier type, customer and supplier (its id IS
+  that row's id) plus the company-wide groups (`groups` / `getGroupId` in
+  `@carbon/database/seed-data`), and their memberships, in interceptors that a
+  replica-mode load never fires. On a remap `buildIdMaps` gives such a group the new
+  id of the row it mirrors, of the same-named kept employee type, or of the target
+  company, so approver and notification groups naming it stay connected. Both loads
+  insert `group` rows with `ON CONFLICT ("id") DO NOTHING` (`groupConflictClause`):
+  without replica mode the interceptor has already made the group. After the load,
+  in the same transaction, `rebuildDerivedGroups` (`wipeAndLoad` and the import)
+  removes derived groups whose row isn't there, recreates the missing groups and
+  memberships, and, on a restore, removes memberships still pointing at a group the
+  wipe removed (`membership` survives an own restore). Its SQL restates the
+  `sync_create_*_group` / `sync_add_*_to_group` interceptors; a change to those must
+  change it too. Tested in `apps/erp/test/database/rebuild-derived-groups.test.ts`.
 - Storage path rewriting: `rewriteStoragePath` (swap `{sourceCompanyId}/` →
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =

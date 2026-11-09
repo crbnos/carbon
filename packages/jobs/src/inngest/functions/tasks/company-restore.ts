@@ -12,6 +12,10 @@ import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import {
+  groupConflictClause,
+  rebuildDerivedGroups
+} from "../../../backups/derived-groups";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
@@ -117,8 +121,21 @@ export async function wipeAndLoad(
   // Foreign: assign a fresh id to every id-bearing row up front so FKs (and the
   // ids embedded in storage paths) can be rewritten in a single pass. See
   // `buildIdMaps` for what qualifies and why.
+  const keptEmployeeTypes = remap
+    ? await db
+        .selectFrom("employeeType")
+        .select(["id", "name"])
+        .where("companyId", "=", companyId)
+        .execute()
+    : [];
   const idMaps = remap
-    ? buildIdMaps(loadTables, backup.data)
+    ? buildIdMaps(loadTables, backup.data, {
+        source: backup.manifest.sourceCompanyId,
+        target: companyId,
+        employeeTypeIdsByName: new Map(
+          keptEmployeeTypes.map((t) => [t.name, t.id])
+        )
+      })
     : new Map<string, Map<string, string>>();
   const idRewrite = new Map<string, string>();
   if (remap) {
@@ -134,6 +151,14 @@ export async function wipeAndLoad(
     if (replicaMode) {
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
+
+    // The company's groups before the wipe: memberships survive an own
+    // restore, and any left pointing at a group that doesn't come back go.
+    const wipedGroups = await trx
+      .selectFrom("group")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .execute();
 
     await onProgress?.({ phase: "wipe", done: 0, total: wipeTables.length });
     await wipeScopedData(
@@ -206,7 +231,7 @@ export async function wipeAndLoad(
                   columns.map((c) => sql`${bindValue(row[c.name], c)}`)
                 )})`
             )
-          )}
+          )}${groupConflictClause(table.name)}
         `.execute(trx);
       }
       inserted += rows.length;
@@ -236,6 +261,12 @@ export async function wipeAndLoad(
         });
       }
     }
+
+    await rebuildDerivedGroups(
+      trx,
+      companyId,
+      wipedGroups.map((g) => g.id)
+    );
 
     // Every list an open client keeps a copy of has just been replaced. With
     // triggers off nothing logged that, so say it here: a null row id tells

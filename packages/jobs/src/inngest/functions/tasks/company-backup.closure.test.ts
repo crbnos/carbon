@@ -656,6 +656,45 @@ describe("buildIdMaps", () => {
       false
     );
   });
+
+  it("gives a derived group the new id of the row or company it mirrors", () => {
+    // The database derives these groups' ids (a customer's group IS the
+    // customer's id), so a membership or an approver group keeps reaching them.
+    const group = table("group", [col("id"), col("companyId")]);
+    const customer = table("customer", [col("id"), col("companyId")]);
+    const maps = buildIdMaps(
+      [group, customer],
+      {
+        customer: [{ id: "cust_1" }],
+        group: [
+          { id: "cust_1", isCustomerOrgGroup: true },
+          {
+            id: "00000000-0000-SMBH-QP55-H46bdEGV7acn",
+            isEmployeeTypeGroup: true
+          },
+          { id: "etype_1", isEmployeeTypeGroup: true, name: "Admin" },
+          { id: "etype_2", isEmployeeTypeGroup: true, name: "Contractor" },
+          { id: "grp_own" }
+        ]
+      },
+      {
+        source: "SMBHQP55H46bdEGV7acnir",
+        target: "JA3FVgHNVwTixe1jLMwPix",
+        employeeTypeIdsByName: new Map([["Admin", "etype_kept"]])
+      }
+    );
+    const groups = maps.get("group")!;
+    expect(groups.get("cust_1")).toBe(maps.get("customer")?.get("cust_1"));
+    expect(groups.get("00000000-0000-SMBH-QP55-H46bdEGV7acn")).toBe(
+      "00000000-0000-JA3F-VgHN-VwTixe1jLMwP"
+    );
+    // A restore keeps the company's own employee types: the backup's type
+    // group follows the same-named kept type, so approver groups still reach it.
+    expect(groups.get("etype_1")).toBe("etype_kept");
+    // No kept type of that name, and a group of the person's own: fresh ids.
+    expect(groups.get("etype_2")).not.toBe("etype_2");
+    expect(groups.get("grp_own")).not.toBe("grp_own");
+  });
 });
 
 describe("isUserScopedIdentityTable", () => {
