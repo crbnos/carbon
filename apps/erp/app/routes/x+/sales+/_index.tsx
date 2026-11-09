@@ -324,7 +324,7 @@ export default function SalesDashboard() {
             <MetricCard
               icon={<LuReceiptText />}
               title={<Trans>Customer credits</Trans>}
-              value={currency.format(-credits)}
+              value={currency.format(credits === 0 ? 0 : -credits)}
               description={
                 <Trans>Full posted credits, including any tax or freight</Trans>
               }
@@ -446,7 +446,11 @@ export default function SalesDashboard() {
                             </Hyperlink>
                           </Td>
                           <Td>{currency.format(customer.invoiceSales)}</Td>
-                          <Td>{currency.format(-customer.credits)}</Td>
+                          <Td>
+                            {currency.format(
+                              customer.credits === 0 ? 0 : -customer.credits
+                            )}
+                          </Td>
                           <Td>
                             {currency.format(
                               customer.invoiceSales - customer.credits
