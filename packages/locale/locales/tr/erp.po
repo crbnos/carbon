@@ -24744,7 +24744,7 @@ msgid "Request date"
 msgstr "İstek tarihi"
 
 msgid "Requested"
-msgstr ""
+msgstr "İstenen"
 
 msgid "Requested By"
 msgstr "Talep Eden"

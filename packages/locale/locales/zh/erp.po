@@ -24744,7 +24744,7 @@ msgid "Request date"
 msgstr "请求日期"
 
 msgid "Requested"
-msgstr ""
+msgstr "已请求"
 
 msgid "Requested By"
 msgstr "请求人"
