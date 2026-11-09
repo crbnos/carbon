@@ -321,6 +321,11 @@ without components, so the push writes no BOM for it. It says nothing about Buy 
 Make. The review warns when an item's Buy or Make and Onshape's BOM disagree: a Buy
 item that would get a BOM, or a Make item Onshape shows as one unit.
 
+If Onshape's BOM lists any other sub-assembly from the open document with no
+components, the review and the result of the push both name it, because the push
+writes no BOM for it. Push it from its own Onshape tab. A chosen **Item** column that
+doesn't hold item numbers has the same effect, so check that column first.
+
 **A released make method is never edited.** When an assembly's method is Active and
 Onshape's BOM differs from it, the push takes a new **Draft** version and writes
 there, the same way a Version change works in Carbon. Nothing live moves until

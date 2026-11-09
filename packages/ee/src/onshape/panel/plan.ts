@@ -1411,7 +1411,7 @@ export type AssemblyPlan = {
   root: AssemblyPlanRoot;
   items: AssemblyPlanItem[];
   methods: AssemblyPlanMethod[];
-  /** BOM rows the push cannot place ("<name>: no part number in Onshape"). */
+  /** BOM rows the push cannot place or fill ("<name>: no part number in Onshape"). */
   skipped: string[];
   options: PlanOptions;
   depth: AssemblyPlanDepth;
@@ -1457,7 +1457,8 @@ export function buildAssemblyPlan({
   reusableDraftByItemId = new Map(),
   mapping,
   rootProperties = null,
-  released = new Map()
+  released = new Map(),
+  assemblyElementIds
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -1492,6 +1493,8 @@ export function buildAssemblyPlan({
   /** Element metadata; BOM rows carry their own. */
   rootProperties?: OnshapePropertyValue[] | null;
   released?: ReadonlyMap<string, ReleasedRevision>;
+  /** The open document's assemblies; absent when they could not be read. */
+  assemblyElementIds?: ReadonlySet<string>;
 }): AssemblyPlan {
   const rowsByReadableId = new Map<string, PlanItemRow[]>();
   // A link to any revision of a part is a link to that part.
@@ -1704,6 +1707,18 @@ export function buildAssemblyPlan({
         proposed: null
       });
       continue;
+    }
+    // A sub-assembly listed with no components reads like a part; only its
+    // element's type tells them apart.
+    if (
+      !madePartNumbers.has(node.partNumber) &&
+      !node.shownAsUnit &&
+      node.itemSource?.elementId &&
+      assemblyElementIds?.has(node.itemSource.elementId)
+    ) {
+      skipped.push(
+        `${node.partNumber}: Onshape's BOM shows this sub-assembly with no components, so this push writes no BOM for it. Push it from its own Onshape tab.`
+      );
     }
     const assets = rowAssets(node.partNumber, existing);
     if (existing) {

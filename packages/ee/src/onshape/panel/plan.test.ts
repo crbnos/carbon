@@ -1264,6 +1264,85 @@ describe("released parts in workspace pushes", () => {
   });
 });
 
+describe("buildAssemblyPlan sub-assemblies listed without components", () => {
+  // A leaf row looks like a part; only its element's type says otherwise.
+  const assemblies = new Set(["asm-element"]);
+  const leaf = node({
+    partNumber: "ASM-009",
+    name: "Foot",
+    itemSource: { elementId: "asm-element" }
+  });
+  const pad = node({ index: "2.1", level: 2, partNumber: "PAD-005" });
+
+  it("says no BOM is written for it and still plans the row", () => {
+    const plan = planAssembly({
+      nodes: [leaf],
+      assemblyElementIds: assemblies
+    });
+    expect(plan.skipped).toEqual([expect.stringMatching(/^ASM-009:/)]);
+    expect(plan.items.map((item) => item.partNumber)).toEqual(["ASM-009"]);
+    expect(plan.methods.map((method) => method.parentPartNumber)).toEqual([
+      "WB-100"
+    ]);
+  });
+
+  it("names a repeated part number once", () => {
+    const plan = planAssembly({
+      nodes: [leaf, { ...leaf, index: "2" }],
+      assemblyElementIds: assemblies
+    });
+    expect(plan.skipped).toEqual([expect.stringMatching(/^ASM-009:/)]);
+  });
+
+  it.each<[string, Partial<OnshapeBomNode>]>([
+    ["a Part Studio part", { itemSource: { elementId: "studio-element" } }],
+    ["a row set to Show assembly only", { shownAsUnit: true }],
+    ["a row Onshape expanded", { children: [pad] }]
+  ])("stays silent on %s", (_, over) => {
+    const plan = planAssembly({
+      nodes: [{ ...leaf, ...over }],
+      assemblyElementIds: assemblies
+    });
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("stays silent on a part number another row expands", () => {
+    const plan = planAssembly({
+      nodes: [leaf, { ...leaf, index: "2", children: [pad] }],
+      assemblyElementIds: assemblies
+    });
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("claims nothing when the element types could not be read", () => {
+    expect(planAssembly({ nodes: [leaf] }).skipped).toEqual([]);
+  });
+
+  it("stays silent on a sub-assembly released in Carbon", () => {
+    const plan = planAssembly({
+      nodes: [leaf],
+      items: [{ id: "asm-c", readableId: "ASM-009", revision: "C", name: "F" }],
+      released: new Map([["ASM-009", { itemId: "asm-c", revision: "C" }]]),
+      assemblyElementIds: assemblies
+    });
+    expect(plan.skipped).toEqual([]);
+  });
+
+  it("names only the level a top-level push writes", () => {
+    const parent = node({
+      partNumber: "ASM-007",
+      itemSource: { elementId: "asm-element" },
+      children: [{ ...leaf, index: "1.1", level: 2 }]
+    });
+    const plan = planAssembly({
+      nodes: [parent, { ...leaf, index: "2", partNumber: "ASM-008" }],
+      depth: "top",
+      assemblyElementIds: assemblies
+    });
+    expect(plan.skipped).toEqual([expect.stringMatching(/^ASM-008:/)]);
+  });
+});
+
 describe("buildAssemblyPlan descriptions", () => {
   const source = (partId: string) => ({
     documentId: "d2",

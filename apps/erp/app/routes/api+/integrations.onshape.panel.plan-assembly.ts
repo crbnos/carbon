@@ -38,6 +38,7 @@ import {
   loadReusableDrafts,
   loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
+  OnshapeElementType,
   OnshapeWVMType,
   onshapeFailure,
   readAssemblyDrawings,
@@ -419,6 +420,22 @@ export async function action({ request }: ActionFunctionArgs) {
     }))
   );
 
+  // A failed read only costs the note on sub-assemblies with no components.
+  let assemblyElementIds: Set<string> | undefined;
+  try {
+    const assemblies = await onshape.client.getElementsIn(
+      document,
+      OnshapeElementType.ASSEMBLY
+    );
+    assemblyElementIds = new Set(assemblies.map((element) => element.id));
+  } catch (error) {
+    logger.warn("Onshape assembly list failed", {
+      companyId,
+      documentId,
+      error
+    });
+  }
+
   const built = buildAssemblyPlan({
     documentId,
     wv,
@@ -444,7 +461,8 @@ export async function action({ request }: ActionFunctionArgs) {
     mapping,
     rootProperties:
       elementMetadata !== null ? parseProperties(elementMetadata) : null,
-    released
+    released,
+    assemblyElementIds
   });
   const refused = withRefusedMethods(built, refusals);
 
