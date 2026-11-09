@@ -15,7 +15,7 @@ describe("planPegTransfer", () => {
     expect(
       planPegTransfer(
         [peg(20), peg(30)],
-        [{ supplyId: "job_1", quantity: 50 }],
+        [{ supplyId: "job_1", quantity: 50, dueDate: "2026-11-30" }],
         false
       )
     ).toEqual([
@@ -29,8 +29,8 @@ describe("planPegTransfer", () => {
       planPegTransfer(
         [peg(60)],
         [
-          { supplyId: "job_1", quantity: 50 },
-          { supplyId: "job_2", quantity: 50 }
+          { supplyId: "job_1", quantity: 50, dueDate: "2026-11-30" },
+          { supplyId: "job_2", quantity: 50, dueDate: "2026-11-30" }
         ],
         false
       )
@@ -45,8 +45,8 @@ describe("planPegTransfer", () => {
       planPegTransfer(
         [peg(40, "2026-11-20"), peg(40, "2026-11-05")],
         [
-          { supplyId: "job_1", quantity: 40 },
-          { supplyId: "job_2", quantity: 40 }
+          { supplyId: "job_1", quantity: 40, dueDate: "2026-11-30" },
+          { supplyId: "job_2", quantity: 40, dueDate: "2026-11-30" }
         ],
         false
       )
@@ -61,7 +61,7 @@ describe("planPegTransfer", () => {
     expect(
       planPegTransfer(
         [peg(60), peg(40)],
-        [{ supplyId: "job_1", quantity: 50 }],
+        [{ supplyId: "job_1", quantity: 50, dueDate: "2026-11-30" }],
         true
       )
     ).toEqual([
@@ -73,7 +73,11 @@ describe("planPegTransfer", () => {
 
   it("puts what is left on the last supply once the action is settled", () => {
     expect(
-      planPegTransfer([peg(70)], [{ supplyId: "pol_1", quantity: 60 }], false)
+      planPegTransfer(
+        [peg(70)],
+        [{ supplyId: "pol_1", quantity: 60, dueDate: "2026-11-30" }],
+        false
+      )
     ).toEqual([{ pegIndex: 0, supplyId: "pol_1", quantity: 70 }]);
   });
 
@@ -81,7 +85,7 @@ describe("planPegTransfer", () => {
     expect(
       planPegTransfer(
         [peg(10, null), peg(0), peg(10, "2026-11-01")],
-        [{ supplyId: "job_1", quantity: 10 }],
+        [{ supplyId: "job_1", quantity: 10, dueDate: "2026-11-30" }],
         true
       )
     ).toEqual([
@@ -95,8 +99,8 @@ describe("planPegTransfer", () => {
       planPegTransfer(
         [peg(10)],
         [
-          { supplyId: "job_1", quantity: 0.000001 },
-          { supplyId: "job_2", quantity: 10 }
+          { supplyId: "job_1", quantity: 0.000001, dueDate: "2026-11-30" },
+          { supplyId: "job_2", quantity: 10, dueDate: "2026-11-30" }
         ],
         false
       )
@@ -107,7 +111,7 @@ describe("planPegTransfer", () => {
     expect(
       planPegTransfer(
         [peg(10)],
-        [{ supplyId: "job_1", quantity: 0.000001 }],
+        [{ supplyId: "job_1", quantity: 0.000001, dueDate: "2026-11-30" }],
         true
       )
     ).toEqual([{ pegIndex: 0, supplyId: null, quantity: 10 }]);
@@ -117,7 +121,7 @@ describe("planPegTransfer", () => {
     expect(
       planPegTransfer(
         [peg(0.000001), peg(5)],
-        [{ supplyId: "job_1", quantity: 5 }],
+        [{ supplyId: "job_1", quantity: 5, dueDate: "2026-11-30" }],
         false
       )
     ).toEqual([
@@ -126,13 +130,55 @@ describe("planPegTransfer", () => {
     ]);
   });
 
+  it("gives the earliest need the earliest due supply, whatever the order placed", () => {
+    expect(
+      planPegTransfer(
+        [peg(40, "2026-11-20"), peg(40, "2026-11-05")],
+        [
+          { supplyId: "job_late", quantity: 40, dueDate: "2026-12-01" },
+          { supplyId: "job_early", quantity: 40, dueDate: "2026-11-10" }
+        ],
+        false
+      )
+    ).toEqual([
+      { pegIndex: 1, supplyId: "job_early", quantity: 40 },
+      { pegIndex: 0, supplyId: "job_late", quantity: 40 }
+    ]);
+  });
+
+  it("uses a supply with no due date last, and overflows onto it", () => {
+    expect(
+      planPegTransfer(
+        [peg(30)],
+        [
+          { supplyId: "job_undated", quantity: 10, dueDate: null },
+          { supplyId: "job_dated", quantity: 10, dueDate: "2026-11-10" }
+        ],
+        false
+      )
+    ).toEqual([
+      { pegIndex: 0, supplyId: "job_dated", quantity: 10 },
+      { pegIndex: 0, supplyId: "job_undated", quantity: 20 }
+    ]);
+  });
+
+  it("still moves the peg off a settled action when every supply is too small", () => {
+    expect(
+      planPegTransfer(
+        [peg(10)],
+        [{ supplyId: "job_1", quantity: 0.000001, dueDate: "2026-11-30" }],
+        false
+      )
+    ).toEqual([{ pegIndex: 0, supplyId: "job_1", quantity: 10 }]);
+  });
+
   it("keeps decimal quantities exact at 5 places", () => {
     expect(
       planPegTransfer(
         [peg(0.3)],
         [
-          { supplyId: "job_1", quantity: 0.1 },
-          { supplyId: "job_2", quantity: 0.2 }
+          { supplyId: "job_1", quantity: 0.1, dueDate: "2026-11-30" },
+          { supplyId: "job_2", quantity: 0.2, dueDate: "2026-11-30" }
         ],
         false
       )

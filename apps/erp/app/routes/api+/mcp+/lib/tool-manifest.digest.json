@@ -820,7 +820,7 @@
     {"name":"production_movePersonWeek","classification":"WRITE","schema":"c8630903a9e2","response":"3d90cb5d0437","permission":"production:update","paginates":false},
     {"name":"production_moveScheduleJob","classification":"WRITE","schema":"1b85184b3b72","response":"3797626bd17e","permission":"production:update","paginates":false},
     {"name":"production_notifyScheduleInputsChanged","classification":"WRITE","schema":"a2cb3b753e9c","response":"b520ca8e3ab4","permission":"production:update","paginates":false},
-    {"name":"production_orderPlannedJobs","classification":"WRITE","schema":"ea89eba79bc6","response":"8177aa3dfe27","permission":"production:create","paginates":false},
+    {"name":"production_orderPlannedJobs","classification":"WRITE","schema":"ea89eba79bc6","response":"e4283ffbd4ca","permission":"production:create","paginates":false},
     {"name":"production_pauseJob","classification":"WRITE","schema":"e3efee9a18c7","response":"64aaffa78287","permission":"production:update","paginates":false},
     {"name":"production_planJobFromPlanning","classification":"WRITE","schema":"322915079b66","response":"8e58a21e4c94","permission":"production:update","paginates":false},
     {"name":"production_reassignAssemblyComponents","classification":"DESTRUCTIVE","schema":"3614ea28d76c","response":"3797626bd17e","permission":"production:update","paginates":false},

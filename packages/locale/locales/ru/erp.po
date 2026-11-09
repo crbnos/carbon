@@ -1141,8 +1141,8 @@ msgstr "{received} из {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} не найден"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "Заказы ({refused}) начинаются раньше сегодняшнего дня и не были созданы. Перепланируйте их с сегодняшнего дня."
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# заказ начинается раньше сегодняшнего дня и не был создан. Перепланируйте его с сегодняшнего дня.} few {# заказа начинаются раньше сегодняшнего дня и не были созданы. Перепланируйте их с сегодняшнего дня.} many {# заказов начинаются раньше сегодняшнего дня и не были созданы. Перепланируйте их с сегодняшнего дня.} other {# заказа начинаются раньше сегодняшнего дня и не были созданы. Перепланируйте их с сегодняшнего дня.}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} завершен. # единица не доставлена} other {{jobId} завершен. # единиц не доставлено}}"
@@ -1333,9 +1333,6 @@ msgstr "1 группируемая операция не входит в сер�
 msgid "1 check"
 msgstr "1 проверка"
 
-msgid "1 created."
-msgstr "Создано: 1."
-
 msgid "1 day"
 msgstr "1 день"
 
@@ -1362,9 +1359,6 @@ msgstr "1 задание создано"
 
 msgid "1 line"
 msgstr "1 строка"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 заказ начинается раньше сегодняшнего дня и не был создан. Перепланируйте его с сегодняшнего дня."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 деталь пропущена — у неё уже есть открытое задание"

@@ -12036,9 +12036,10 @@ export async function markPlanningActionsActioned(
  *
  * An order settles the action named by its `planningActionId` (kept through
  * drawer edits, so a row moved to another week settles the week it came
- * from); without one, or when MRP has replaced that row, it settles its
- * (item, week, segment) action. Only actions of the same item, segment, type,
- * location and company match. Runs under MRP's advisory lock
+ * from), and nothing else: an id that no longer matches means that need was
+ * settled or is gone. An order with no id (a row the planner added) settles
+ * its (item, week, segment) action. Only actions of the same item, segment,
+ * type, location and company match. Runs under MRP's advisory lock
  * (`planning-actions:<companyId>`) and returns the rows it changed, each with
  * the indexes (in `ordered`) of the orders that answered it.
  */
@@ -12085,8 +12086,9 @@ export async function settleNewSupplyPlanningActions(
             AND "type" = ${args.type}::"planningActionType"
             AND "status" IN ('Open', 'Dismissed')
         `;
-        // Each order answers one action, by id else by week (the natural key
-        // holds one per week); an action is settled once, by their sum.
+        // Each order answers one action, by id or, with none, by week (the
+        // natural key holds one per week); an action is settled once, by
+        // their sum.
         const result = await sql<{
           id: string;
           itemId: string;
@@ -12115,7 +12117,7 @@ export async function settleNewSupplyPlanningActions(
               ON s."itemId" = o."itemId"
              AND s."planningSegmentId" = o."planningSegmentId"
              AND s."periodId" = o."periodId"
-            WHERE o."index" NOT IN (SELECT "index" FROM by_id)
+            WHERE o."planningActionId" IS NULL
           ),
           answered AS (
             SELECT m.id, SUM(o."quantity") AS "quantity",

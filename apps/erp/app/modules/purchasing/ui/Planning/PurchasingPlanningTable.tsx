@@ -74,7 +74,8 @@ import {
 import {
   openNewSupplyActions,
   plannedOrdersFromActions,
-  supplierConversionFactor
+  supplierConversionFactor,
+  withoutRowDraft
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
   PLANNING_SEGMENT_COLUMN,
@@ -274,7 +275,6 @@ const PlanningTable = memo(
         };
         if (refusedOrders.length > 0) {
           toast.error(pastStartToast(processedItems, refusedOrders.length));
-          if (processedItems === 0) return;
         }
 
         if (purchaseOrders.length === 0) {
@@ -551,13 +551,7 @@ const PlanningTable = memo(
 
     // After an order the row's draft is stale: drop it so the drawer re-seeds.
     const dropOrders = useCallback((item: PurchasingPlanningItem) => {
-      if (!item.id) return;
-      const key = planningRowKey(item);
-      setOrdersMap((prev) => {
-        if (!(key in prev)) return prev;
-        const { [key]: _dropped, ...rest } = prev;
-        return rest;
-      });
+      if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
     }, []);
 
     // The drawer's own Planning Horizon control: the same on-screen override

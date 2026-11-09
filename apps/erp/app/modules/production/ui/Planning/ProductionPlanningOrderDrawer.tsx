@@ -118,6 +118,12 @@ export const ProductionPlanningOrderDrawer = memo(
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
     const pastStartToast = usePastStartToast();
+    // Bumped when the rows are re-read, to close any cell editor left open.
+    const [suggestionsVersion, setSuggestionsVersion] = useState(0);
+    const reseedSuggestions = useCallback(() => {
+      onSuggestionsStale(row);
+      setSuggestionsVersion((version) => version + 1);
+    }, [onSuggestionsStale, row]);
     // A refusal is toasted by useAction. Success runs after the loaders have
     // reloaded, so the drawer re-seeds from the suggestions as they are now:
     // a week ordered in part, or refused for starting in the past, keeps
@@ -129,7 +135,10 @@ export const ProductionPlanningOrderDrawer = memo(
           data && "refusedOrders" in data ? data.refusedOrders : [],
           row
         );
-        onSuggestionsStale(row);
+        reseedSuggestions();
+        for (const warning of data && "warnings" in data ? data.warnings : []) {
+          toast.error(warning);
+        }
         if (refused === 0) {
           toast.success(t`Orders submitted`);
           onClose();
@@ -340,7 +349,7 @@ export const ProductionPlanningOrderDrawer = memo(
             if (result.data.warning) toast.error(result.data.warning);
             else toast.success(t`Planned job`);
             // MRP ran: the suggestions, the grid row and this list all moved
-            onSuggestionsStale(row);
+            reseedSuggestions();
             setOpenJobsVersion((version) => version + 1);
             void revalidate();
           } else {
@@ -352,7 +361,7 @@ export const ProductionPlanningOrderDrawer = memo(
           setPlanningJobId(null);
         }
       },
-      [locationId, onSuggestionsStale, revalidate, row, t]
+      [locationId, reseedSuggestions, revalidate, t]
     );
 
     const renderPlanCommand = useCallback(
@@ -529,6 +538,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   todayIso={locationToday}
                   quantityHeader={t`Quantity`}
                   orderByHeader={t`Start By`}
+                  resetKey={suggestionsVersion}
                   onChange={onSuggestedOrdersChange}
                   onAdd={onAddOrder}
                 />
@@ -582,6 +592,7 @@ export const ProductionPlanningOrderDrawer = memo(
         onAddOrder,
         onSubmit,
         onSuggestedOrdersChange,
+        suggestionsVersion,
         lastBeyondFenceDate,
         beyondFenceOrders,
         onIncludeBeyondFence,

@@ -1141,8 +1141,8 @@ msgstr "{received} sur {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} non trouvé"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "{refused} ordres commencent avant aujourd'hui et n'ont pas été créés. Replanifiez-les à partir d'aujourd'hui."
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# ordre commence avant aujourd'hui et n'a pas été créé. Replanifiez-le à partir d'aujourd'hui.} other {# ordres commencent avant aujourd'hui et n'ont pas été créés. Replanifiez-les à partir d'aujourd'hui.}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} est terminé. # unité n'est pas livrée} other {{jobId} est terminé. # unités ne sont pas livrées}}"
@@ -1333,9 +1333,6 @@ msgstr "1 opération pouvant être mise en lot n'est pas dans un lot — elle s'
 msgid "1 check"
 msgstr "1 vérification"
 
-msgid "1 created."
-msgstr "1 créé."
-
 msgid "1 day"
 msgstr "1 jour"
 
@@ -1362,9 +1359,6 @@ msgstr "1 tâche créée"
 
 msgid "1 line"
 msgstr "1 ligne"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 ordre commence avant aujourd'hui et n'a pas été créé. Replanifiez-le à partir d'aujourd'hui."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 pièce ignorée — elle a déjà une tâche ouverte"

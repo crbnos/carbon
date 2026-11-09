@@ -1141,8 +1141,8 @@ msgstr "{ordered} 中 {received}"
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "{refused} 件のオーダーは開始日が今日より前のため作成されませんでした。今日から再スケジュールしてください。"
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {# 件の注文は開始日が今日より前のため作成されませんでした。今日から再スケジュールしてください。}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId}は完了しました。#個が納品されていません} other {{jobId}は完了しました。#個が納品されていません}}"
@@ -1333,9 +1333,6 @@ msgstr "1 つのバッチ対象の工程はバッチに含まれていません 
 msgid "1 check"
 msgstr "1チェック"
 
-msgid "1 created."
-msgstr "1 件作成しました。"
-
 msgid "1 day"
 msgstr "1日"
 
@@ -1362,9 +1359,6 @@ msgstr "1件のジョブが作成されました"
 
 msgid "1 line"
 msgstr "1明細"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 件のオーダーは開始日が今日より前のため作成されませんでした。今日から再スケジュールしてください。"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"

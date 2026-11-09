@@ -1141,8 +1141,8 @@ msgstr "{received} de {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} no encontrado"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "{refused} órdenes empiezan antes de hoy y no se crearon. Reprográmelas desde hoy."
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# orden empieza antes de hoy y no se creó. Reprográmela desde hoy.} other {# órdenes empiezan antes de hoy y no se crearon. Reprográmelas desde hoy.}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} está completado. # unidad no está entregada} other {{jobId} está completado. # unidades no están entregadas}}"
@@ -1333,9 +1333,6 @@ msgstr "1 operación agrupable no está en un lote de producción — se ejecuta
 msgid "1 check"
 msgstr "1 verificación"
 
-msgid "1 created."
-msgstr "1 creado."
-
 msgid "1 day"
 msgstr "1 día"
 
@@ -1362,9 +1359,6 @@ msgstr "1 trabajo creado"
 
 msgid "1 line"
 msgstr "1 línea"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 orden empieza antes de hoy y no se creó. Reprográmela desde hoy."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 pieza omitida — ya tiene un trabajo abierto"

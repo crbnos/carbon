@@ -128,7 +128,7 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
           {
             planningActionId: "pa_1",
             supplyType: "Job",
-            supplies: [{ supplyId: "job_1", quantity: 50 }],
+            supplies: [{ supplyId: "job_1", quantity: 50, dueDate: "2026-11-30" }],
             keepRemainder: false
           }
         ]
@@ -155,8 +155,8 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
             planningActionId: "pa_1",
             supplyType: "Job",
             supplies: [
-              { supplyId: "job_1", quantity: 50 },
-              { supplyId: "job_2", quantity: 20 }
+              { supplyId: "job_1", quantity: 50, dueDate: "2026-11-30" },
+              { supplyId: "job_2", quantity: 20, dueDate: "2026-11-30" }
             ],
             keepRemainder: false
           }
@@ -184,7 +184,7 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
           {
             planningActionId: "pa_1",
             supplyType: "Purchase Order Line",
-            supplies: [{ supplyId: "pol_1", quantity: 35 }],
+            supplies: [{ supplyId: "pol_1", quantity: 35, dueDate: "2026-11-30" }],
             keepRemainder: true
           }
         ]
@@ -218,7 +218,7 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
           {
             planningActionId: "pa_1",
             supplyType: "Purchase Order Line",
-            supplies: [{ supplyId: "pol_2", quantity: 15 }],
+            supplies: [{ supplyId: "pol_2", quantity: 15, dueDate: "2026-11-30" }],
             keepRemainder: false
           }
         ]
@@ -247,7 +247,7 @@ describe.skipIf(!hasLocalDatabase)("moveActionPegsToSupply", () => {
         {
           planningActionId: "pa_1",
           supplyType: "Job",
-          supplies: [{ supplyId: "job_1", quantity: 10 }],
+          supplies: [{ supplyId: "job_1", quantity: 10, dueDate: "2026-11-30" }],
           keepRemainder: false
         }
       ]

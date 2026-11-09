@@ -253,18 +253,19 @@ describe.skipIf(!hasLocalDatabase)("settleNewSupplyPlanningActions", () => {
   );
 
   databaseTest(
-    "an id MRP has since replaced falls back to the order's week",
+    "an id MRP has since replaced settles nothing, not another action of its week",
     async () => {
       const id = await action({ suggestedQuantity: 60 }, "replaced");
-      await settle([
+      const result = await settle([
         { quantity: 25, planningActionId: `${f.prefix}-action-gone` }
       ]);
-      expect(await read(id)).toEqual({ status: "Open", quantity: 35 });
+      expect(result.data).toEqual([]);
+      expect(await read(id)).toEqual({ status: "Open", quantity: 60 });
     }
   );
 
   databaseTest(
-    "another item's action id never settles it, and the order counts for its own item",
+    "another item's action id never settles it, nor its own week's action",
     async () => {
       const otherItems = await action(
         { suggestedQuantity: 10, itemId: f.assemblyId },
@@ -273,7 +274,7 @@ describe.skipIf(!hasLocalDatabase)("settleNewSupplyPlanningActions", () => {
       const own = await action({ suggestedQuantity: 10 }, "own-item");
       await settle([{ quantity: 10, planningActionId: otherItems }]);
       expect(await read(otherItems)).toEqual({ status: "Open", quantity: 10 });
-      expect(await read(own)).toEqual({ status: "Actioned", quantity: 10 });
+      expect(await read(own)).toEqual({ status: "Open", quantity: 10 });
     }
   );
 

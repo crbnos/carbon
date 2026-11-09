@@ -1141,8 +1141,8 @@ msgstr "{received} / {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} bulunamadı"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "{refused} emir bugünden önce başlıyor ve oluşturulmadı. Bugünden itibaren yeniden planlayın."
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# sipariş bugünden önce başlıyor ve oluşturulmadı. Bugünden itibaren yeniden planlayın.} other {# sipariş bugünden önce başlıyor ve oluşturulmadı. Bugünden itibaren yeniden planlayın.}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} tamamlandı. # adet teslim edilmedi} other {{jobId} tamamlandı. # adet teslim edilmedi}}"
@@ -1333,9 +1333,6 @@ msgstr "1 partiye alınabilir operasyon partide değil — partiye alınıncaya 
 msgid "1 check"
 msgstr "1 denetim"
 
-msgid "1 created."
-msgstr "1 oluşturuldu."
-
 msgid "1 day"
 msgstr "1 gün"
 
@@ -1362,9 +1359,6 @@ msgstr "1 iş oluşturuldu"
 
 msgid "1 line"
 msgstr "1 satır"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 emir bugünden önce başlıyor ve oluşturulmadı. Bugünden itibaren yeniden planlayın."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 parça atlandı — zaten açık bir işi var"

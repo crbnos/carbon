@@ -9,9 +9,13 @@ import { round } from "@carbon/utils";
 
 export type PegToTransfer = { quantity: number; needDate: string | null };
 
-/** A PO line or job created for the action, and how much of it answers the
- *  action. */
-export type SupplyShare = { supplyId: string; quantity: number };
+/** A PO line or job created for the action, how much of it answers the
+ *  action, and when it is due. */
+export type SupplyShare = {
+  supplyId: string;
+  quantity: number;
+  dueDate: string | null;
+};
 
 /** A piece of the peg at `pegIndex`: onto `supplyId`, or left on the action
  *  (`null`). */
@@ -21,13 +25,21 @@ export type PegSplit = {
   quantity: number;
 };
 
+/** ISO dates order as strings; a missing date sorts last. */
+function compareDates(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return a < b ? -1 : 1;
+}
+
 /**
  * Splits an action's pegs across the supplies ordered for it: the earliest
- * need takes the first supply, and a peg larger than what a supply has left
- * is split across the next ones. What the supplies do not cover stays on the
- * action while it is still open for a remainder (`keepRemainder`); an action
- * ordered in full puts it on the last supply, so no peg is left on a settled
- * action.
+ * need takes the earliest supply, and a peg larger than what a supply has
+ * left is split across the next ones. What the supplies do not cover stays
+ * on the action while it is still open for a remainder (`keepRemainder`); an
+ * action ordered in full puts it on the last supply, so no peg is left on a
+ * settled action.
  */
 export function planPegTransfer(
   pegs: PegToTransfer[],
@@ -37,20 +49,20 @@ export function planPegTransfer(
   const order = pegs
     .map((peg, pegIndex) => ({ ...peg, pegIndex }))
     .filter((peg) => peg.quantity > 0)
-    .sort((a, b) => {
-      if (a.needDate === b.needDate) return a.pegIndex - b.pegIndex;
-      if (a.needDate === null) return 1;
-      if (b.needDate === null) return -1;
-      // ISO dates order as strings
-      return a.needDate < b.needDate ? -1 : 1;
-    });
+    .sort(
+      (a, b) => compareDates(a.needDate, b.needDate) || a.pegIndex - b.pegIndex
+    );
   // A supply too small to hold 5 places takes nothing: skipped up front, so
   // the walk below always advances.
-  const left = supplies
+  const byDueDate = supplies
+    .map((supply, index) => ({ ...supply, index }))
+    .sort((a, b) => compareDates(a.dueDate, b.dueDate) || a.index - b.index);
+  const left = byDueDate
     .map((supply) => ({ ...supply, quantity: round(supply.quantity, 5) }))
     .filter((supply) => supply.quantity > 0);
-  const lastSupplyId = left.at(-1)?.supplyId ?? null;
-  const overflowSupplyId = keepRemainder ? null : lastSupplyId;
+  const overflowSupplyId = keepRemainder
+    ? null
+    : (byDueDate.at(-1)?.supplyId ?? null);
 
   const splits: PegSplit[] = [];
   const add = (pegIndex: number, supplyId: string | null, quantity: number) => {

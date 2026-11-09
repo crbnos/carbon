@@ -29,6 +29,7 @@ import type {
   RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
+import { planningRowKey } from "./planning-action-scope";
 
 type NewSupplyActionFields = {
   id: string;
@@ -242,4 +243,16 @@ export function refusedOrderCount(
       order.itemId === row.id &&
       order.planningSegmentId === (row.planningSegmentId ?? "")
   ).length;
+}
+
+/** The drafts without this row's, so its drawer re-seeds from the suggestions.
+ *  The same object when the row has none. */
+export function withoutRowDraft<O>(
+  drafts: Record<string, O[]>,
+  row: { id: string; planningSegmentId?: string | null }
+): Record<string, O[]> {
+  const key = planningRowKey(row);
+  if (!(key in drafts)) return drafts;
+  const { [key]: _dropped, ...rest } = drafts;
+  return rest;
 }

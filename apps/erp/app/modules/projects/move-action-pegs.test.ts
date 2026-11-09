@@ -104,7 +104,7 @@ it("supersedes an applied action's pegs and copies them onto its PO line", async
       {
         planningActionId: "pa_1",
         supplyType: "Purchase Order Line",
-        supplies: [{ supplyId: "pol_1", quantity: 50 }],
+        supplies: [{ supplyId: "pol_1", quantity: 50, dueDate: "2026-11-30" }],
         keepRemainder: false
       }
     ]
@@ -151,7 +151,7 @@ it("leaves the pegs a partial order does not cover on the action", async () => {
       {
         planningActionId: "pa_1",
         supplyType: "Job",
-        supplies: [{ supplyId: "job_1", quantity: 35 }],
+        supplies: [{ supplyId: "job_1", quantity: 35, dueDate: "2026-11-30" }],
         keepRemainder: true
       }
     ]

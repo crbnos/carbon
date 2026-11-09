@@ -1141,8 +1141,8 @@ msgstr "{received} / {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "오더 {refused}개는 시작일이 오늘 이전이라 생성되지 않았습니다. 오늘부터 일정을 변경하세요."
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {#개 주문은 시작일이 오늘 이전이라 생성되지 않았습니다. 오늘부터 일정을 다시 잡으세요.}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음} other {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음}}"
@@ -1333,9 +1333,6 @@ msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치
 msgid "1 check"
 msgstr "1 검사"
 
-msgid "1 created."
-msgstr "1개 생성됨."
-
 msgid "1 day"
 msgstr "1일"
 
@@ -1362,9 +1359,6 @@ msgstr "1개 작업이 생성됨"
 
 msgid "1 line"
 msgstr "1 라인"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "오더 1개는 시작일이 오늘 이전이라 생성되지 않았습니다. 오늘부터 일정을 변경하세요."
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1개 부품이 건너뜀 — 이미 활성 작업이 있음"

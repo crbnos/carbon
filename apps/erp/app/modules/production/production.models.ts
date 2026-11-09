@@ -173,6 +173,31 @@ export function planningOrderStartsInPast(
   return start !== null && start < today;
 }
 
+/**
+ * Sorts an item's suggested orders by what Make / Order does with each, by
+ * their place in `orders`: `invalid` has a date that is not a real day, `past`
+ * starts before `today`, and `placeable` is everything else. An order is in
+ * exactly one list.
+ */
+export function classifyPlanningOrders(
+  orders: { startDate?: string | null; dueDate?: string | null }[],
+  today: string,
+  leadTime: number
+): { invalid: number[]; past: number[]; placeable: number[] } {
+  const result = {
+    invalid: [] as number[],
+    past: [] as number[],
+    placeable: [] as number[]
+  };
+  orders.forEach((order, index) => {
+    if (!planningOrderDatesAreValid(order)) result.invalid.push(index);
+    else if (planningOrderStartsInPast(order, today, leadTime))
+      result.past.push(index);
+    else result.placeable.push(index);
+  });
+  return result;
+}
+
 /** A suggested order planning's Make / Order did not create because it
  *  starts in the past: its item's row and its place in that row's orders. */
 export type RefusedPlanningOrder = {

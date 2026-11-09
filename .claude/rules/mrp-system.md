@@ -418,7 +418,7 @@ one gate in this package (`packages/planning/AGENTS.md`). The posting side
   answered it (`orderIndexes`, below) to `moveActionPegsToSupply`
   (`projects.service.ts`): one transaction supersedes the action's pegs and
   splits them across those PO lines or jobs by quantity (`planPegTransfer`,
-  `projects/peg-transfer-plan.ts`, earliest need first). What they do not cover
+  `projects/peg-transfer-plan.ts`: the earliest need takes the earliest due supply). What they do not cover
   stays on an action still open for a remainder, and goes to the last supply of
   one settled in full. If it fails, the order stands and the next run re-pegs.
 - **History.** Every peg row stays. The pegs current at an instant are
@@ -952,7 +952,8 @@ never offered a Cancel, Defer or Expedite.
     date; editing either moves the other so they stay a lead time apart
     (`withDatesInStep`, `ui/Planning/suggested-order-dates.ts`). A late one
     shows a "Reschedule from today" button (start today, due today + lead
-    time).
+    time). The drawers pass `resetKey`, bumped when the rows are re-seeded, so
+    a cell editor left open cannot show one row's value on another.
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
     at the page's location (both drawer reads filter on `locationId`, and
     `updateLine` / `updateJob` refuse another location's record with 409).
@@ -1063,8 +1064,9 @@ never offered a Cancel, Defer or Expedite.
   filters, read on page 1 only (`getPurchasingPlanningSuppliers`); a failed
   read falls back to every supplier.
 - **Create planned orders** — `planning.update.tsx` in each module:
-  - Both refuse an order that starts before the location's today
-    (`planningOrderStartsInPast`, `production.models.ts`): its start date,
+  - Both sort each order with `classifyPlanningOrders`
+    (`production.models.ts`: invalid dates, past, placeable) and refuse an
+    order that starts before the location's today: its start date,
     else its due date less the item's lead time (`planningOrderStart`, the
     date `insertJob` would give it, which `orderPlannedJobs` then passes it).
     Nothing can start in the past. The item's other orders are still placed;
@@ -1084,15 +1086,20 @@ never offered a Cancel, Defer or Expedite.
     suggested order carries its action's id (`planningActionId`, set by
     `productionOrdersFromActions` / `plannedOrdersFromActions` and kept
     through drawer edits) and settles that action even when moved to another
-    week; an order without one, or with an id MRP has replaced, settles its
-    (item, week, segment) action. A PO line counts in inventory units
-    (purchase quantity after the supplier minimum × the conversion factor of
-    the line it lands on, a merged line's own). The settle returns, per
+    week; an order without one (a row the planner added) settles its
+    (item, week, segment) action. An id that no longer names an open action
+    of the item settles nothing, not a neighbour of its week: the next MRP
+    run nets the new order. A PO line counts in inventory units (purchase
+    quantity after the supplier minimum × the supplier part's conversion
+    factor; a line with another factor is not merged into,
+    `findMergeablePlanningLine`). The settle returns, per
     action, the indexes of the orders that answered it (`orderIndexes`), for
     the peg move. `orderPlannedJobs` settles right after the job rows are
-    inserted, before Get Method: an MRP run that reads a job in between would
-    net it and the settle would take it off again. A job whose method fails is
-    still supply and still settles.
+    inserted, before Get Method, and `orderPlannedPurchases` right after the
+    PO lines: an MRP run that reads a job in between would net it and the
+    settle would take it off again. A job whose method fails is still supply
+    and still settles; it stays in `jobs` and is named in `warnings`, which
+    the drawer and the grid toast.
   - production (`orderPlannedJobs`, `create: "production"`): inserts the jobs,
     settles, then the job methods, upserts `supplyForecast`
     (`'Production Order'`), then `recalculateJobRequirements()`.

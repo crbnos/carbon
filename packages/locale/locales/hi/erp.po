@@ -1141,8 +1141,8 @@ msgstr "{received} / {ordered}"
 msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "{refused} ऑर्डर आज से पहले शुरू होते हैं और नहीं बनाए गए। इन्हें आज से पुनर्निर्धारित करें।"
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# ऑर्डर आज से पहले शुरू होता है और नहीं बनाया गया। इसे आज से पुनर्निर्धारित करें।} other {# ऑर्डर आज से पहले शुरू होते हैं और नहीं बनाए गए। इन्हें आज से पुनर्निर्धारित करें।}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} पूर्ण है। # इकाई वितरित नहीं की गई है} other {{jobId} पूर्ण है। # इकाइयां वितरित नहीं की गई हैं}}"
@@ -1333,9 +1333,6 @@ msgstr "1 बैचेबल ऑपरेशन बैच में नहीं
 msgid "1 check"
 msgstr "1 जाँच"
 
-msgid "1 created."
-msgstr "1 बनाया गया।"
-
 msgid "1 day"
 msgstr "1 दिन"
 
@@ -1362,9 +1359,6 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 ऑर्डर आज से पहले शुरू होता है और नहीं बनाया गया। इसे आज से पुनर्निर्धारित करें।"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"

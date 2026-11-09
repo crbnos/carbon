@@ -1141,8 +1141,8 @@ msgstr "已收 {received} / 已订购 {ordered}"
 msgid "{ref} not found"
 msgstr "未找到 {ref}"
 
-msgid "{refused} orders start before today and were not created. Reschedule them from today."
-msgstr "{refused} 个订单的开始日期早于今天，未创建。请从今天起重新安排。"
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {# 个订单的开始日期早于今天，未创建。请从今天起重新安排。}}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} 已完成。# 件未交付} other {{jobId} 已完成。# 件未交付}}"
@@ -1333,9 +1333,6 @@ msgstr "1 个可分组的工序不在生产批次中 — 它单独运行，直�
 msgid "1 check"
 msgstr "1 个检查"
 
-msgid "1 created."
-msgstr "已创建 1 个。"
-
 msgid "1 day"
 msgstr "1 天"
 
@@ -1362,9 +1359,6 @@ msgstr "1 个作业已创建"
 
 msgid "1 line"
 msgstr "1 行"
-
-msgid "1 order starts before today and was not created. Reschedule it from today."
-msgstr "1 个订单的开始日期早于今天，未创建。请从今天起重新安排。"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1个零件已跳过——它已有未结的工单"

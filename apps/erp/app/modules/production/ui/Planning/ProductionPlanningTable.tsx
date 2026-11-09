@@ -68,7 +68,8 @@ import {
 } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   openNewSupplyActions,
-  productionOrdersFromActions
+  productionOrdersFromActions,
+  withoutRowDraft
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import {
   PLANNING_SEGMENT_COLUMN,
@@ -219,6 +220,7 @@ const ProductionPlanningTable = ({
       if (refusedCount > 0) {
         toast.error(pastStartToast(data.jobs.length, refusedCount));
       }
+      for (const warning of data.warnings) toast.error(warning);
       const { jobs, alreadyPlannedItemCount, noDemandItemCount } = data;
 
       const skipped: string[] = [];
@@ -238,11 +240,9 @@ const ProductionPlanningTable = ({
       }
 
       if (jobs.length === 0) {
-        if (refusedCount === 0 || skipped.length > 0) {
-          toast.info(
-            skipped.length > 0 ? skipped.join(" · ") : t`No jobs were created`
-          );
-        }
+        toast.info(
+          skipped.length > 0 ? skipped.join(" · ") : t`No jobs were created`
+        );
         return;
       }
 
@@ -442,13 +442,7 @@ const ProductionPlanningTable = ({
   // After a Draft job is planned (MRP re-runs) or an order is placed, the
   // row's draft is stale: drop it so the drawer re-seeds.
   const dropOrders = useCallback((item: ProductionPlanningItem) => {
-    if (!item.id) return;
-    const key = planningRowKey(item);
-    setOrdersMap((prev) => {
-      if (!(key in prev)) return prev;
-      const { [key]: _dropped, ...rest } = prev;
-      return rest;
-    });
+    if (item.id) setOrdersMap((prev) => withoutRowDraft(prev, item));
   }, []);
 
   // The drawer's own Planning Horizon control: the same on-screen override as

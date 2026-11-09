@@ -26,6 +26,7 @@ import { Hyperlink } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { useAfterFirstPaint, useQuantityFormatter } from "~/hooks";
+import { planningOrderStart } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import type { PlanningActionHandlers } from "./PlanningActionLines";
 import {
@@ -107,6 +108,9 @@ type SuggestedOrdersGridProps<O extends SuggestedOrder> = {
    *  day, a job is started by it. */
   orderByHeader: string;
   isDisabled?: boolean;
+  /** Changes when the rows were re-read from the suggestions, so a cell
+   *  editor left open cannot show one row's value on another. */
+  resetKey?: number;
   onChange: (orders: O[]) => void;
   onAdd: () => void;
 };
@@ -151,6 +155,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
   quantityHeader,
   orderByHeader,
   isDisabled = false,
+  resetKey,
   onChange,
   onAdd
 }: SuggestedOrdersGridProps<O>) {
@@ -167,27 +172,9 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
     []
   );
 
-  // Rows replaced from outside (the suggestions re-read after an order, a
-  // new row) remount the grid, so an editor left open never shows one row's
-  // value on another. The grid's own edits keep it mounted.
-  const emitted = useRef<O[] | null>(null);
-  const seen = useRef(orders);
-  const gridVersion = useRef(0);
-  if (seen.current !== orders) {
-    if (orders !== emitted.current) gridVersion.current += 1;
-    seen.current = orders;
-  }
-  const emit = useCallback(
-    (next: O[]) => {
-      emitted.current = next;
-      onChange(next);
-    },
-    [onChange]
-  );
-
   const onGridChange = useCallback(
-    (next: O[]) => emit(withDatesInStep(next, orders, leadTime, todayIso)),
-    [emit, orders, leadTime, todayIso]
+    (next: O[]) => onChange(withDatesInStep(next, orders, leadTime, todayIso)),
+    [onChange, orders, leadTime, todayIso]
   );
 
   const rescheduledDue = formatDate(
@@ -227,12 +214,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
         header: orderByHeader,
         size: 172,
         cell: ({ row }) => {
-          const { startDate, dueDate } = row.original;
-          const orderBy =
-            startDate ??
-            (dueDate
-              ? parseDate(dueDate).subtract({ days: leadTime }).toString()
-              : null);
+          const orderBy = planningOrderStart(row.original, leadTime);
           if (!orderBy) return "—";
           const isLate = orderBy < todayIso;
           return (
@@ -257,7 +239,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
                       onClick={(event) => {
                         // keep the click from opening the cell's editor
                         event.stopPropagation();
-                        emit(
+                        onChange(
                           orders.map((order, index) =>
                             index === row.index
                               ? withStartDate(
@@ -297,7 +279,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
             className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
             onClick={(event) => {
               event.stopPropagation();
-              emit(orders.filter((_, index) => index !== row.index));
+              onChange(orders.filter((_, index) => index !== row.index));
             }}
           >
             <LuTrash className="size-4" />
@@ -317,7 +299,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
     rescheduledDue,
     isDisabled,
     orders,
-    emit,
+    onChange,
     t
   ]);
 
@@ -325,7 +307,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
     <div className="flex w-full flex-col gap-2">
       <SectionTitle action={titleAction}>{title}</SectionTitle>
       <Grid<O>
-        key={gridVersion.current}
+        key={resetKey}
         data={orders}
         columns={columns}
         canEdit={!isDisabled}

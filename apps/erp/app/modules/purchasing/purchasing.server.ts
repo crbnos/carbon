@@ -56,10 +56,9 @@ import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  classifyPlanningOrders,
   invalidOrderDateMessage,
   pastStartRefusalMessage,
-  planningOrderDatesAreValid,
-  planningOrderStartsInPast,
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import {
@@ -3115,9 +3114,12 @@ export const confirmReturnOrder = defineServiceFn({
  * raised to the supplier part's minimum; the price is the supplier part's,
  * converted at today's rate (refused for a currency with no rate); the tax is
  * the supplier's. An item whose purchasing is blocked is skipped. An order
- * that starts (else is due) before the location's today is refused and
- * listed in `refusedOrders` (item, segment and its index in the item's
- * `orders`) and in `errors`; the item's other orders are still placed. The orders
+ * with a date that is not a real `YYYY-MM-DD` day is named in `errors`. An
+ * order that starts (its order date, else its due date less the item's lead
+ * time) before the location's today is refused and listed in `refusedOrders`
+ * (item, segment and its index in the item's `orders`) and in `errors`; the
+ * item's other orders are still placed. An order joins an existing line only
+ * when the line has the same conversion factor. The orders
  * raised keep their planning approval bypass, the supply forecast is
  * recorded, and the Order suggestions they answer are settled.
  *
@@ -3196,6 +3198,7 @@ export const orderPlannedPurchases = defineServiceFn({
       planningSegmentId: string;
       purchaseOrderLineId: string;
       quantity: number;
+      dueDate: string | null;
       planningActionId?: string;
     }[] = [];
 
@@ -3223,24 +3226,29 @@ export const orderPlannedPurchases = defineServiceFn({
 
     for (const item of itemsToOrder) {
       itemIds.add(item.id);
-      let itemHasUsableOrder = false;
-      for (const [index, order] of item.orders.entries()) {
-        if (!planningOrderDatesAreValid(order)) {
-          invalidCountByItem.set(
-            item.id,
-            (invalidCountByItem.get(item.id) ?? 0) + 1
-          );
-          continue;
-        }
-        const leadTime = purchasingByItem.get(item.id)?.leadTime ?? 0;
-        if (planningOrderStartsInPast(order, today, leadTime)) {
-          refusedOrders.push({
+      const replenishment = purchasingByItem.get(item.id);
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        replenishment?.leadTime ?? 0
+      );
+      if (invalid.length > 0) invalidCountByItem.set(item.id, invalid.length);
+      // a blocked item is reported as blocked below, whatever its dates
+      const orderable = replenishment?.purchasingBlocked
+        ? [...placeable, ...past].sort((a, b) => a - b)
+        : placeable;
+      if (!replenishment?.purchasingBlocked) {
+        refusedOrders.push(
+          ...past.map((index) => ({
             itemId: item.id,
             planningSegmentId: item.planningSegmentId,
             index
-          });
-          continue;
-        }
+          }))
+        );
+      }
+      let itemHasUsableOrder = false;
+      for (const index of orderable) {
+        const order = item.orders[index]!;
         if (order.supplierId) supplierIds.add(order.supplierId);
         if (order.periodId) periodIds.add(order.periodId);
         if (order.supplierId && order.periodId) {
@@ -3255,11 +3263,7 @@ export const orderPlannedPurchases = defineServiceFn({
           itemHasUsableOrder = true;
         }
       }
-      if (
-        !itemHasUsableOrder &&
-        !invalidCountByItem.has(item.id) &&
-        !refusedOrders.some((refused) => refused.itemId === item.id)
-      ) {
+      if (orderable.length > 0 && !itemHasUsableOrder) {
         errors.push(
           `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
         );
@@ -3295,10 +3299,14 @@ export const orderPlannedPurchases = defineServiceFn({
         (refusedCountByItem.get(refused.itemId) ?? 0) + 1
       );
     }
-    const readableIdOf = (itemId: string) => {
-      const item = ownedItems.data.find((owned) => owned.id === itemId);
-      return item?.readableIdWithRevision ?? item?.readableId ?? itemId;
-    };
+    const readableIdByItem = new Map(
+      ownedItems.data.map((item) => [
+        item.id,
+        item.readableIdWithRevision ?? item.readableId
+      ])
+    );
+    const readableIdOf = (itemId: string) =>
+      readableIdByItem.get(itemId) ?? itemId;
     const pastStartErrors = [...refusedCountByItem].map(([itemId, count]) =>
       pastStartRefusalMessage(readableIdOf(itemId), count, today)
     );
@@ -3668,6 +3676,7 @@ export const orderPlannedPurchases = defineServiceFn({
             planningSegmentId,
             purchaseOrderLineId: purchaseOrderLineId!,
             quantity: adjustedQuantity * conversionFactor,
+            dueDate: order.dueDate ?? null,
             planningActionId: order.planningActionId
           });
           allSupplyForecasts.push({
@@ -3711,7 +3720,8 @@ export const orderPlannedPurchases = defineServiceFn({
                 supplyType: "Purchase Order Line" as const,
                 supplies: action.orderIndexes.map((index) => ({
                   supplyId: ordered[index]!.purchaseOrderLineId,
-                  quantity: ordered[index]!.quantity
+                  quantity: ordered[index]!.quantity,
+                  dueDate: ordered[index]!.dueDate
                 })),
                 keepRemainder: action.status !== "Actioned"
               }
@@ -3778,9 +3788,9 @@ export const orderPlannedPurchases = defineServiceFn({
 
     return {
       message:
-        processedItems === itemsToOrder.length
-          ? `Successfully processed all ${processedItems} items`
-          : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
+        errors.length === 0
+          ? `Successfully processed ${processedItems} orders`
+          : `Processed ${processedItems} orders. ${
               errors.length
             } errors occurred: ${errors.slice(0, 2).join("; ")}${
               errors.length > 2 ? "..." : ""

@@ -72,6 +72,7 @@ import {
   baseJobOperationValidator,
   bulkJobValidator,
   CANCELLABLE_JOB_STATUSES,
+  classifyPlanningOrders,
   copyPeopleBoardValidator,
   copyPeopleWeekValidator,
   deadlineTypes,
@@ -103,9 +104,7 @@ import {
   peopleWeekAssignValidator,
   peopleWeekMoveValidator,
   peopleWeekUnassignValidator,
-  planningOrderDatesAreValid,
   planningOrderStart,
-  planningOrderStartsInPast,
   procedureStatus,
   productionEventValidator,
   productionOrderValidator,
@@ -4393,14 +4392,16 @@ export const markPersonAbsentRange = defineServiceFn({
  * `updatePlannedJob` or Apply. The location and every item must
  * be this company's. Per item: one whose manufacturing is blocked, needs
  * configuration or is held by an unreleased change notice is skipped and
- * named in `errors`. An order that starts (else is due) before the location's
- * today is refused and listed in `refusedOrders` (item, segment and its index
- * in the item's `orders`) and in `errors`; the item's other orders are still
- * made. Each becomes a Planned job (ASAP or Soft Deadline) at the location
- * with the item's method.
- * Then the Make suggestions those orders answer are settled, the jobs' supply
- * is recorded per week (`supplyForecast`) and their requirements are
- * recalculated. An item with no orders is counted as already planned (it has
+ * named in `errors`. An order with a date that is not a real `YYYY-MM-DD` day
+ * is named in `errors`. An order that starts (its start date, else its due
+ * date less the item's lead time) before the location's today is refused and
+ * listed in `refusedOrders` (item, segment and its index in the item's
+ * `orders`) and in `errors`. The item's other orders are still made. Each
+ * becomes a Planned job (ASAP or Soft Deadline) at the location with the
+ * item's method; the Make suggestions the orders answer are settled by the
+ * quantity ordered. A job whose method could not be copied is kept and named
+ * in `warnings`. The jobs' supply is recorded per week (`supplyForecast`) and
+ * their requirements are recalculated. An item with no orders is counted as already planned (it has
  * an open job) or as needing nothing. When not one item could be ordered the
  * call fails with the first errors.
  *
@@ -4520,11 +4521,14 @@ export const orderPlannedJobs = defineServiceFn({
       planningSegmentId: string;
       jobId: string;
       quantity: number;
+      dueDate: string | null;
       planningActionId?: string;
     }[] = [];
     const errors: string[] = [];
     // The jobs made, before their methods.
     const inserted: { itemId: string; id: string; readableId: string }[] = [];
+    // A job kept without its method: the planner must Get Method on it.
+    const warnings: string[] = [];
 
     const manufacturingRows = await client
       .from("itemReplenishment")
@@ -4584,47 +4588,29 @@ export const orderPlannedJobs = defineServiceFn({
 
       // insertJob's own default when the item has no lead time
       const leadTime = manufacturing.leadTime ?? 7;
-      const invalidOrders = item.orders.filter(
-        (order) => !planningOrderDatesAreValid(order)
-      ).length;
-      if (invalidOrders > 0) {
-        errors.push(
-          invalidOrderDateMessage(
-            readableIdByItem.get(item.id) ?? item.id,
-            invalidOrders
-          )
-        );
-      }
-      const pastIndexes = new Set(
-        item.orders.flatMap((order, index) =>
-          planningOrderDatesAreValid(order) &&
-          planningOrderStartsInPast(order, today, leadTime)
-            ? [index]
-            : []
-        )
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        leadTime
       );
-      if (pastIndexes.size > 0) {
-        for (const index of pastIndexes) {
-          refusedOrders.push({
+      const readableId = readableIdByItem.get(item.id) ?? item.id;
+      if (invalid.length > 0) {
+        errors.push(invalidOrderDateMessage(readableId, invalid.length));
+      }
+      if (past.length > 0) {
+        refusedOrders.push(
+          ...past.map((index) => ({
             itemId: item.id,
             planningSegmentId: item.planningSegmentId,
             index
-          });
-        }
-        errors.push(
-          pastStartRefusalMessage(
-            readableIdByItem.get(item.id) ?? item.id,
-            pastIndexes.size,
-            today
-          )
+          }))
         );
+        errors.push(pastStartRefusalMessage(readableId, past.length, today));
         pastStartErrorCount++;
       }
 
-      for (const [index, order] of item.orders.entries()) {
-        if (pastIndexes.has(index) || !planningOrderDatesAreValid(order)) {
-          continue;
-        }
+      for (const index of placeable) {
+        const order = item.orders[index]!;
         const created = await service.insertJob(
           client,
           db,
@@ -4659,11 +4645,9 @@ export const orderPlannedJobs = defineServiceFn({
           continue;
         }
         const id = created.data.id;
-        inserted.push({
-          itemId: item.id,
-          id,
-          readableId: created.data.jobId ?? ""
-        });
+        const readableId = created.data.jobId ?? "";
+        createdJobs.push({ id, readableId });
+        inserted.push({ itemId: item.id, id, readableId });
         // the job is supply from here on, with or without its method
         ordered.push({
           itemId: item.id,
@@ -4671,6 +4655,7 @@ export const orderPlannedJobs = defineServiceFn({
           planningSegmentId: item.planningSegmentId,
           jobId: id,
           quantity: order.quantity,
+          dueDate: order.dueDate ?? null,
           planningActionId: order.planningActionId
         });
         const key = [item.id, order.periodId, item.planningSegmentId].join(
@@ -4721,7 +4706,8 @@ export const orderPlannedJobs = defineServiceFn({
                 supplyType: "Job" as const,
                 supplies: action.orderIndexes.map((index) => ({
                   supplyId: ordered[index]!.jobId,
-                  quantity: ordered[index]!.quantity
+                  quantity: ordered[index]!.quantity,
+                  dueDate: ordered[index]!.dueDate
                 })),
                 keepRemainder: action.status !== "Actioned"
               }
@@ -4731,7 +4717,9 @@ export const orderPlannedJobs = defineServiceFn({
       await moveActionPegsToSupply(db, { companyId, userId, moves });
     }
 
-    const processedItemIds = new Set<string>();
+    // A job is made once it exists: one whose method fails stays, named in
+    // `warnings`, so a retry cannot make it a second time.
+    const jobsWithMethods: string[] = [];
     for (const job of inserted) {
       const method = await service.upsertJobMethod(client, db, "itemToJob", {
         sourceId: job.itemId,
@@ -4740,15 +4728,19 @@ export const orderPlannedJobs = defineServiceFn({
         userId
       });
       if (method.error) {
-        errors.push(
-          `Failed to create job method for item ${job.itemId}: ${method.error.message}`
+        logger.error("Failed to create a planned job's method", {
+          companyId,
+          jobId: job.id,
+          error: method.error
+        });
+        warnings.push(
+          `${job.readableId} was created without its method. Open it and use Get Method.`
         );
         continue;
       }
-      createdJobs.push({ id: job.id, readableId: job.readableId });
-      processedItemIds.add(job.itemId);
+      jobsWithMethods.push(job.id);
     }
-    const processedItems = processedItemIds.size;
+    const processedItems = new Set(inserted.map((job) => job.itemId)).size;
     for (const error of errors) logger.error(error, { companyId, locationId });
 
     if (supplyByKey.size > 0) {
@@ -4765,20 +4757,20 @@ export const orderPlannedJobs = defineServiceFn({
       }
     }
 
-    for (const job of createdJobs) {
+    for (const jobId of jobsWithMethods) {
       const recalc = await service.recalculateJobRequirements(client, db, {
-        id: job.id,
+        id: jobId,
         companyId,
         userId
       });
       if (recalc.error) {
         logger.error("Failed to recalculate a planned job", {
           companyId,
-          jobId: job.id,
+          jobId,
           error: recalc.error
         });
         errors.push(
-          `Created job ${job.id}, but its requirements could not be recalculated`
+          `Created job ${jobId}, but its requirements could not be recalculated`
         );
       }
     }
@@ -4818,6 +4810,7 @@ export const orderPlannedJobs = defineServiceFn({
       processedItems,
       totalItems: items.length,
       refusedOrders,
+      warnings,
       errors
     };
   }

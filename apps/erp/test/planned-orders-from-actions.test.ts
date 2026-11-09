@@ -14,16 +14,19 @@ vi.mock("@carbon/content/glossary", () => ({
 }));
 
 import {
+  classifyPlanningOrders,
   planningOrderDatesAreValid,
   planningOrderStart,
   planningOrderStartsInPast
 } from "../app/modules/production/production.models";
+import { planningRowKey } from "../app/modules/production/ui/Planning/planning-action-scope";
 import {
   openNewSupplyActions,
   plannedOrdersFromActions,
   productionOrdersFromActions,
   refusedOrderCount,
-  supplierConversionFactor
+  supplierConversionFactor,
+  withoutRowDraft
 } from "../app/modules/production/ui/Planning/planned-orders-from-actions";
 
 type Action = Parameters<typeof plannedOrdersFromActions>[0][number];
@@ -440,6 +443,48 @@ describe("planningOrderDatesAreValid", () => {
     ["text", { startDate: "soon", dueDate: "2026-11-12" }, false]
   ] as const)("an order with %s is valid: %s", (_, order, expected) => {
     expect(planningOrderDatesAreValid(order)).toBe(expected);
+  });
+});
+
+describe("classifyPlanningOrders", () => {
+  it("sorts each order by its place in the list, a bad date before a late one", () => {
+    expect(
+      classifyPlanningOrders(
+        [
+          { startDate: "2026-11-05", dueDate: "2026-11-12" },
+          { startDate: "2026-11-04", dueDate: "2026-11-11" },
+          // a bad due date is invalid even with a start in the past
+          { startDate: "2026-11-01", dueDate: "2026-02-31" },
+          { startDate: null, dueDate: null }
+        ],
+        "2026-11-05",
+        7
+      )
+    ).toEqual({ invalid: [2], past: [1], placeable: [0, 3] });
+  });
+
+  it("is empty for no orders", () => {
+    expect(classifyPlanningOrders([], "2026-11-05", 7)).toEqual({
+      invalid: [],
+      past: [],
+      placeable: []
+    });
+  });
+});
+
+describe("withoutRowDraft", () => {
+  const drafts = { item1: [1], "item1:proj1": [2] };
+
+  it("drops only the draft of the row's own segment", () => {
+    const key = planningRowKey({ id: "item1", planningSegmentId: "proj1" });
+    const seeded = { item1: [1], [key]: [2] };
+    expect(
+      withoutRowDraft(seeded, { id: "item1", planningSegmentId: "proj1" })
+    ).toEqual({ item1: [1] });
+  });
+
+  it("returns the same object when the row has no draft, so nothing re-renders", () => {
+    expect(withoutRowDraft(drafts, { id: "item2" })).toBe(drafts);
   });
 });
 

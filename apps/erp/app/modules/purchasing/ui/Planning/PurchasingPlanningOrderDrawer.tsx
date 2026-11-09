@@ -186,6 +186,8 @@ export const PurchasingPlanningOrderDrawer = memo(
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
     // ...and after an order that left the drawer open placed new lines.
     const [openLinesVersion, setOpenLinesVersion] = useState(0);
+    // Bumped when the rows are re-read, to close any cell editor left open.
+    const [suggestionsVersion, setSuggestionsVersion] = useState(0);
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -593,6 +595,7 @@ export const PurchasingPlanningOrderDrawer = memo(
         // suggestions as they are now. A week ordered in part, or refused for
         // starting in the past, keeps what was not ordered.
         onSuggestionsStale(selectedItem);
+        setSuggestionsVersion((version) => version + 1);
         if (refused > 0) {
           setOpenLinesVersion((version) => version + 1);
           toast.error(pastStartToast(processedItems, refused));
@@ -873,6 +876,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       todayIso={locationToday}
                       quantityHeader={t`Purchase Qty`}
                       orderByHeader={t`Order By`}
+                      resetKey={suggestionsVersion}
                       onChange={onSuggestedOrdersChange}
                       onAdd={onAddOrder}
                     />
