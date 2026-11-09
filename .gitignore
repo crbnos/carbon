@@ -102,4 +102,3 @@ llm/
 # Produced by `pnpm generate:mcp` (postinstall + turbo). The committed record of
 # the published contract is its small companion, tool-manifest.digest.json.
 apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
-.harness-shots/

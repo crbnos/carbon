@@ -119,8 +119,6 @@
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "portless --script dev:app run --force",
     "dev:app": "react-router dev",
-    "harness": "vite --config harness/vite.config.ts",
-    "harness:shot": "node ../../scripts/harness-shot.mjs --app mes",
     "lint": "biome lint --write ",
     "start": "NODE_ENV=production node ./server/node.ts",
     "test": "vitest run",
