@@ -952,7 +952,8 @@ never offered a Cancel, Defer or Expedite.
     date; editing either moves the other so they stay a lead time apart
     (`withDatesInStep`, `ui/Planning/suggested-order-dates.ts`). A late one
     shows a "Reschedule from today" button (start today, due today + lead
-    time). The drawers pass `resetKey`, bumped when the rows are re-seeded, so
+    time; `rescheduledFromToday` keeps the row's ASAP flag, so the job is
+    created ASAP, while a date the planner types clears it). The drawers pass `resetKey`, bumped when the rows are re-seeded, so
     a cell editor left open cannot show one row's value on another.
   - **Open Orders / Open Jobs** (`OpenOrdersGrid`) — existing PO lines / jobs
     at the page's location (both drawer reads filter on `locationId`, and

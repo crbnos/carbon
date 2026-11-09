@@ -30,6 +30,20 @@ export function withStartDate<O extends SuggestedOrderDates>(
   };
 }
 
+/** Reschedule from today: starts today and is due a lead time later. Late
+ *  work stays ASAP so it keeps its place at the front of the queue; a date the
+ *  planner types is what clears the flag. */
+export function rescheduledFromToday<O extends SuggestedOrderDates>(
+  order: O,
+  leadTime: number,
+  todayIso: string
+): O {
+  return {
+    ...withStartDate(order, todayIso, leadTime, todayIso),
+    ...(order.isASAP !== undefined && { isASAP: order.isASAP })
+  };
+}
+
 /** After a cell edit, moves the other date of each changed row so start and
  *  due stay a lead time apart. A grid edit changes one date at a time. */
 export function withDatesInStep<O extends SuggestedOrderDates>(

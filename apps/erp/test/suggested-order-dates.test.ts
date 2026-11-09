@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  rescheduledFromToday,
   withDatesInStep,
   withStartDate
 } from "../app/modules/production/ui/Planning/suggested-order-dates";
@@ -37,6 +38,29 @@ describe("withStartDate", () => {
     expect(
       withStartDate({ quantity: 1, dueDate: null }, TODAY, LEAD, TODAY)
     ).toEqual({ quantity: 1, startDate: TODAY, dueDate: "2026-11-12" });
+  });
+});
+
+describe("rescheduledFromToday", () => {
+  it("starts a late ASAP order today, due a lead time later, and keeps it ASAP", () => {
+    expect(rescheduledFromToday(order(), LEAD, TODAY)).toEqual({
+      quantity: 5,
+      startDate: TODAY,
+      dueDate: "2026-11-12",
+      isASAP: true
+    });
+  });
+
+  it("does not make an order ASAP that was not", () => {
+    expect(
+      rescheduledFromToday(order({ isASAP: false }), LEAD, TODAY).isASAP
+    ).toBe(false);
+  });
+
+  it("adds no flag to a purchase order, which has none", () => {
+    expect(
+      rescheduledFromToday({ quantity: 1, dueDate: null }, LEAD, TODAY)
+    ).not.toHaveProperty("isASAP");
   });
 });
 

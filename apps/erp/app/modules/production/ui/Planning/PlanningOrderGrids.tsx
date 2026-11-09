@@ -36,9 +36,9 @@ import {
 import type { PlanningPurchaseOrder } from "./planning-review";
 import { isPlanningActionLate } from "./planning-review";
 import {
+  rescheduledFromToday,
   type SuggestedOrderDates,
-  withDatesInStep,
-  withStartDate
+  withDatesInStep
 } from "./suggested-order-dates";
 
 // The two tables of the planning order drawer. They look alike and save
@@ -242,12 +242,7 @@ export function SuggestedOrdersGrid<O extends SuggestedOrder>({
                         onChange(
                           orders.map((order, index) =>
                             index === row.index
-                              ? withStartDate(
-                                  order,
-                                  todayIso,
-                                  leadTime,
-                                  todayIso
-                                )
+                              ? rescheduledFromToday(order, leadTime, todayIso)
                               : order
                           )
                         );
