@@ -17,11 +17,7 @@ export function addDragSample(
   ];
 }
 
-/**
- * The finger's speed as it lifted, in px per ms, downward positive. A
- * `pointerup` reports the same position as the last `pointermove`, so the speed
- * has to come from the moves; a finger that rested before lifting has none.
- */
+/** Read from the moves: a `pointerup` reports the last move's position. */
 export function releaseVelocity(
   samples: DragSample[],
   releasedAt: number

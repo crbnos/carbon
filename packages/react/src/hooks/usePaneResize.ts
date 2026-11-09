@@ -5,12 +5,7 @@
 import type { PointerEvent } from "react";
 import { useRef, useState } from "react";
 
-/**
- * Sets a pane's height from a drag on a splitter, by mouse, pen or finger.
- * Spread `handleProps` on the handle (which needs `touch-none`) and put
- * `paneRef` on the pane. A move writes the height straight to the pane, so it
- * never re-renders the page; `onCommit` gets the final height.
- */
+/** Resizes a pane from a splitter. The handle needs `touch-none`. */
 export function usePaneResize<T extends HTMLElement = HTMLDivElement>({
   height,
   clamp,

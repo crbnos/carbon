@@ -162,7 +162,6 @@ const BottomSheetContent = forwardRef<
               // Phones: a sheet settles in on the iOS curve and leaves faster.
               "max-md:ease-drawer max-md:data-[state=open]:[animation-duration:300ms] max-md:data-[state=closed]:[animation-duration:200ms]",
               "max-md:max-h-[88dvh] max-md:rounded-t-[14px] max-md:bg-popover max-md:pb-safe",
-              // Fills the gap under the sheet while it is dragged up.
               "max-md:after:absolute max-md:after:inset-x-0 max-md:after:top-full max-md:after:h-10 max-md:after:bg-popover",
               size === "full" &&
                 "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none",
@@ -176,8 +175,6 @@ const BottomSheetContent = forwardRef<
               className={cn(
                 "flex shrink-0 justify-center pt-3 pb-2 max-md:pt-2 max-md:pb-1",
                 canDrag && "touch-none cursor-grab active:cursor-grabbing",
-                // 44px tall, clear of Back and close. Only over a header, or it
-                // would take taps meant for the body's first row.
                 canDrag &&
                   "relative has-[+[data-bottom-sheet-header]]:after:absolute has-[+[data-bottom-sheet-header]]:after:inset-x-14 has-[+[data-bottom-sheet-header]]:after:top-0 has-[+[data-bottom-sheet-header]]:after:z-[1] has-[+[data-bottom-sheet-header]]:after:h-11"
               )}

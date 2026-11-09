@@ -457,8 +457,6 @@ function WeekBar({
           className={cn(
             "absolute inset-x-0 bottom-0 cursor-ns-resize touch-none",
             size === "lg" ? "h-5" : "h-2",
-            // Grows inward because the bar clips its overflow; a short bar
-            // needs its body left free to tap.
             height >= 88 &&
               "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:bottom-0 pointer-coarse:after:h-11"
           )}
