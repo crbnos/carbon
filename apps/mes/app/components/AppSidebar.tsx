@@ -234,7 +234,10 @@ function CompanySwitcher({
           trailing={<LuChevronsUpDown />}
         />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[240px]">
+      <DropdownMenuContent
+        align="start"
+        className="min-w-[240px] max-w-[360px]"
+      >
         {canSwitchCompany ? (
           <>
             <DropdownMenuLabel>{t`Companies`}</DropdownMenuLabel>
@@ -252,13 +255,13 @@ function CompanySwitcher({
                       }
                     }}
                   >
-                    <HStack>
+                    <HStack className="min-w-0">
                       <Avatar
                         size="xs"
                         name={c.name ?? undefined}
                         src={companyLogo ?? undefined}
                       />
-                      <span>{c.name}</span>
+                      <span className="truncate">{c.name}</span>
                     </HStack>
                   </DropdownMenuRadioItem>
                 );
@@ -279,9 +282,9 @@ function CompanySwitcher({
                     if (loc.id !== optimisticLocation) updateLocation(loc.id);
                   }}
                 >
-                  <HStack>
-                    <LuMapPin className="size-4 text-muted-foreground" />
-                    <span>{loc.name}</span>
+                  <HStack className="min-w-0">
+                    <LuMapPin className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{loc.name}</span>
                   </HStack>
                 </DropdownMenuRadioItem>
               ))}
