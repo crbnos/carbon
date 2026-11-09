@@ -268,11 +268,13 @@ const PlanningTable = memo(
           purchaseOrders = [],
           refusedOrders = [],
           processedItems = 0,
+          warnings = [],
           errors = []
         } = bulkUpdateFetcher.data as {
           purchaseOrders?: { id: string; readableId: string }[];
           refusedOrders?: RefusedPlanningOrder[];
           processedItems?: number;
+          warnings?: string[];
           errors?: string[];
         };
         // A refused late order stays a draft as it was sent; every other row
@@ -280,7 +282,8 @@ const PlanningTable = memo(
         setOrdersMap(
           draftsOfRefusedOrders(submittedRows.current, refusedOrders)
         );
-        if (errors.length > 0) toast.error(errors.join(" · "));
+        const problems = [...warnings, ...errors];
+        if (problems.length > 0) toast.error(problems.join(" · "));
         if (refusedOrders.length > 0) {
           toast.error(pastStartToast(processedItems, refusedOrders.length));
         }

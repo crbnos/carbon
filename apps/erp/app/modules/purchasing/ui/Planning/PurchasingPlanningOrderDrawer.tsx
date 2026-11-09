@@ -590,19 +590,17 @@ export const PurchasingPlanningOrderDrawer = memo(
       }
 
       if (fetcher.data?.success === true) {
-        const purchaseOrders =
-          (
-            fetcher.data as {
-              purchaseOrders?: { id: string; readableId: string }[];
-            }
-          )?.purchaseOrders ?? [];
         const {
+          purchaseOrders = [],
           refusedOrders,
           processedItems = 0,
+          warnings = [],
           errors = []
         } = fetcher.data as {
+          purchaseOrders?: { id: string; readableId: string }[];
           refusedOrders?: RefusedPlanningOrder[];
           processedItems?: number;
+          warnings?: string[];
           errors?: string[];
         };
         const refused = refusedOrdersOfRow(
@@ -613,7 +611,8 @@ export const PurchasingPlanningOrderDrawer = memo(
           },
           refusedOrders
         );
-        if (errors.length > 0) toast.error(errors.join(" · "));
+        const problems = [...warnings, ...errors];
+        if (problems.length > 0) toast.error(problems.join(" · "));
         setSuggestionsVersion((version) => version + 1);
         // The orders refused for starting in the past stay in the drawer as
         // they were sent. With none it re-seeds from the suggestions, which

@@ -93,7 +93,7 @@ import {
   jobValidator,
   makeToAssetItemError,
   PLANNING_EDITABLE_JOB_STATUSES,
-  pastStartRefusalMessage,
+  pastStartRefusalMessages,
   peopleAbsenceRangeValidator,
   peopleAbsenceValidator,
   peopleAssignmentValidator,
@@ -4476,7 +4476,6 @@ export const orderPlannedJobs = defineServiceFn({
       .today(await getLocationTimeZone(client, locationId, companyId))
       .toString();
     const refusedOrders: RefusedPlanningOrder[] = [];
-    const refusals: string[] = [];
 
     // A job in a project segment is charged to that project and receives
     // its output into the project's stock. A job in a planning group
@@ -4606,7 +4605,6 @@ export const orderPlannedJobs = defineServiceFn({
             index
           }))
         );
-        refusals.push(pastStartRefusalMessage(readableId, past.length, today));
       }
 
       for (const index of placeable) {
@@ -4770,15 +4768,23 @@ export const orderPlannedJobs = defineServiceFn({
       }
     }
 
-    if (errors.length + refusals.length > 0 && processedItems === 0) {
+    const problems = [
+      ...pastStartRefusalMessages(
+        refusedOrders,
+        (itemId) => readableIdByItem.get(itemId) ?? itemId,
+        today
+      ),
+      ...errors
+    ];
+    if (problems.length > 0 && processedItems === 0) {
       return ctx.error(
         "rule",
         errors.length === 0
-          ? `No jobs were created. ${refusals.slice(0, 3).join(" ")}${
-              refusals.length > 3 ? ` And ${refusals.length - 3} more.` : ""
+          ? `No jobs were created. ${problems.slice(0, 3).join(" ")}${
+              problems.length > 3 ? ` And ${problems.length - 3} more.` : ""
             }`
-          : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-              errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+          : `Failed to process any items. Errors: ${problems.slice(0, 3).join("; ")}${
+              problems.length > 3 ? ` and ${problems.length - 3} more...` : ""
             }`
       );
     }

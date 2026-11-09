@@ -1107,8 +1107,9 @@ never offered a Cancel, Defer or Expedite.
     and still settles; it stays in `jobs` and is named in `warnings`, which
     the drawer and the grid toast.
   - production (`orderPlannedJobs`, `create: "production"`): inserts the jobs,
-    settles, then the job methods, upserts `supplyForecast`
-    (`'Production Order'`), then `recalculateJobRequirements()`.
+    settles, then the job methods (`upsertJobMethod`, which recalculates each
+    job's requirements), then upserts `supplyForecast`
+    (`'Production Order'`).
   - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier
     per WEEK (`planningPurchaseOrderWeek`: Sunday-start, as the grid's
     periods; a late or undated order is in the current week). It reuses the

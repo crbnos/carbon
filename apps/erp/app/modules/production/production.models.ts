@@ -207,7 +207,7 @@ export type RefusedPlanningOrder = {
 };
 
 /** The `errors` line for an item's orders that start in the past. */
-export function pastStartRefusalMessage(
+function pastStartRefusalMessage(
   itemReadableId: string,
   count: number,
   today: string
@@ -215,6 +215,21 @@ export function pastStartRefusalMessage(
   return count === 1
     ? `1 order for ${itemReadableId} starts before today (${today}) and was not created. Reschedule it from today.`
     : `${count} orders for ${itemReadableId} start before today (${today}) and were not created. Reschedule them from today.`;
+}
+
+/** One message per item for the orders refused for starting in the past. */
+export function pastStartRefusalMessages(
+  refused: RefusedPlanningOrder[],
+  readableIdOf: (itemId: string) => string,
+  today: string
+): string[] {
+  const countByItem = new Map<string, number>();
+  for (const { itemId } of refused) {
+    countByItem.set(itemId, (countByItem.get(itemId) ?? 0) + 1);
+  }
+  return [...countByItem].map(([itemId, count]) =>
+    pastStartRefusalMessage(readableIdOf(itemId), count, today)
+  );
 }
 
 // The one definition lives in @carbon/utils, shared with the OEE sync.

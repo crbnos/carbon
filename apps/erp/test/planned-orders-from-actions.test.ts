@@ -15,6 +15,7 @@ vi.mock("@carbon/content/glossary", () => ({
 
 import {
   classifyPlanningOrders,
+  pastStartRefusalMessages,
   planningOrderDatesAreValid,
   planningOrderStart,
   planningOrderStartsInPast
@@ -470,6 +471,23 @@ describe("classifyPlanningOrders", () => {
       past: [],
       placeable: []
     });
+  });
+});
+
+describe("pastStartRefusalMessages", () => {
+  it("writes one message per item, counting across its segments", () => {
+    const messages = pastStartRefusalMessages(
+      [
+        { itemId: "i1", planningSegmentId: "", index: 0 },
+        { itemId: "i1", planningSegmentId: "proj1", index: 0 },
+        { itemId: "i2", planningSegmentId: "", index: 3 }
+      ],
+      (itemId) => `P-${itemId}`,
+      "2026-11-05"
+    );
+    expect(messages).toHaveLength(2);
+    expect(messages[0]).toContain("2 orders for P-i1");
+    expect(messages[1]).toContain("1 order for P-i2");
   });
 });
 

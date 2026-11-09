@@ -58,7 +58,7 @@ import { upsertDocument } from "~/modules/documents/documents.service";
 import {
   classifyPlanningOrders,
   invalidOrderDateMessage,
-  pastStartRefusalMessage,
+  pastStartRefusalMessages,
   type RefusedPlanningOrder
 } from "~/modules/production/production.models";
 import {
@@ -3227,28 +3227,35 @@ export const orderPlannedPurchases = defineServiceFn({
 
     for (const item of itemsToOrder) {
       itemIds.add(item.id);
+      // Nothing of such an item can be placed, so no PO is raised for it.
       const replenishment = purchasingByItem.get(item.id);
+      if (purchasingRows.error || !replenishment) {
+        errors.push(
+          `Failed to retrieve purchasing data for item ${item.id}: ${
+            purchasingRows.error?.message ?? "No replenishment record"
+          }`
+        );
+        continue;
+      }
+      if (replenishment.purchasingBlocked) {
+        errors.push(`Purchasing is blocked for item ${item.id}`);
+        continue;
+      }
       const { invalid, past, placeable } = classifyPlanningOrders(
         item.orders,
         today,
-        replenishment?.leadTime ?? 0
+        replenishment.leadTime ?? 0
       );
       if (invalid.length > 0) invalidCountByItem.set(item.id, invalid.length);
-      // a blocked item is reported as blocked below, whatever its dates
-      const orderable = replenishment?.purchasingBlocked
-        ? [...placeable, ...past].sort((a, b) => a - b)
-        : placeable;
-      if (!replenishment?.purchasingBlocked) {
-        refusedOrders.push(
-          ...past.map((index) => ({
-            itemId: item.id,
-            planningSegmentId: item.planningSegmentId,
-            index
-          }))
-        );
-      }
+      refusedOrders.push(
+        ...past.map((index) => ({
+          itemId: item.id,
+          planningSegmentId: item.planningSegmentId,
+          index
+        }))
+      );
       let itemHasUsableOrder = false;
-      for (const index of orderable) {
+      for (const index of placeable) {
         const order = item.orders[index]!;
         if (order.supplierId) supplierIds.add(order.supplierId);
         if (order.periodId) periodIds.add(order.periodId);
@@ -3264,7 +3271,11 @@ export const orderPlannedPurchases = defineServiceFn({
           itemHasUsableOrder = true;
         }
       }
-      if (orderable.length > 0 && !itemHasUsableOrder) {
+      // an item whose orders were all refused is reported as refused
+      if (
+        !itemHasUsableOrder &&
+        (placeable.length > 0 || item.orders.length === 0)
+      ) {
         errors.push(
           `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
         );
@@ -3293,13 +3304,6 @@ export const orderPlannedPurchases = defineServiceFn({
       });
       return ctx.error("notFound", "Item not found");
     }
-    const refusedCountByItem = new Map<string, number>();
-    for (const refused of refusedOrders) {
-      refusedCountByItem.set(
-        refused.itemId,
-        (refusedCountByItem.get(refused.itemId) ?? 0) + 1
-      );
-    }
     const readableIdByItem = new Map(
       ownedItems.data.map((item) => [
         item.id,
@@ -3308,8 +3312,10 @@ export const orderPlannedPurchases = defineServiceFn({
     );
     const readableIdOf = (itemId: string) =>
       readableIdByItem.get(itemId) ?? itemId;
-    const pastStartErrors = [...refusedCountByItem].map(([itemId, count]) =>
-      pastStartRefusalMessage(readableIdOf(itemId), count, today)
+    const pastStartErrors = pastStartRefusalMessages(
+      refusedOrders,
+      readableIdOf,
+      today
     );
     for (const [itemId, count] of invalidCountByItem) {
       errors.push(invalidOrderDateMessage(readableIdOf(itemId), count));
@@ -3517,22 +3523,6 @@ export const orderPlannedPurchases = defineServiceFn({
             (sp) => sp.itemId === itemId && sp.supplierId === supplierId
           );
 
-          const purchasingError =
-            purchasingRows.error ??
-            (purchasingByItem.has(itemId)
-              ? null
-              : { message: "No replenishment record" });
-          if (purchasingError) {
-            errors.push(
-              `Failed to retrieve purchasing data for item ${itemId}: ${purchasingError.message}`
-            );
-            continue;
-          }
-          if (purchasingByItem.get(itemId)?.purchasingBlocked) {
-            errors.push(`Purchasing is blocked for item ${itemId}`);
-            continue;
-          }
-
           const minimumOrderQuantity = supplierPart?.minimumOrderQuantity ?? 0;
           const adjustedQuantity =
             minimumOrderQuantity > 0 && order.quantity < minimumOrderQuantity
@@ -3696,6 +3686,7 @@ export const orderPlannedPurchases = defineServiceFn({
 
     // Settled as soon as the lines exist, to keep short the window in which an
     // MRP run could net a line and the settle then take it off again.
+    const warnings: string[] = [];
     const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
       companyId,
       locationId,
@@ -3710,7 +3701,7 @@ export const orderPlannedPurchases = defineServiceFn({
         locationId,
         error: settled.error
       });
-      errors.push(
+      warnings.push(
         "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
       );
     } else if (segments.planningGroupIds.size > 0) {
@@ -3777,8 +3768,8 @@ export const orderPlannedPurchases = defineServiceFn({
           ? `No orders were created. ${problems.slice(0, 3).join(" ")}${
               problems.length > 3 ? ` And ${problems.length - 3} more.` : ""
             }`
-          : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
-              errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+          : `Failed to process any items. Errors: ${problems.slice(0, 3).join("; ")}${
+              problems.length > 3 ? ` and ${problems.length - 3} more...` : ""
             }`
       );
     }
@@ -3799,6 +3790,7 @@ export const orderPlannedPurchases = defineServiceFn({
         new Map(Array.from(poCache.values()).map((po) => [po.id, po])).values()
       ),
       refusedOrders,
+      warnings,
       errors: errors.length > 0 ? errors : undefined
     };
   }
