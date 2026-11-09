@@ -94,6 +94,8 @@ type HeaderProps<T> = {
   // The selection's size: the matching count when every matching row is
   // selected, else `selectedRows.length`.
   selectedCount?: number;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
   table?: string;
@@ -137,6 +139,8 @@ const TableHeader = <T extends object>({
   headerActions,
   selectedRows,
   selectedCount,
+  hasRememberedChanges,
+  onResetRememberedState,
   renderActions,
   setColumnOrder,
   setEditMode,
@@ -332,7 +336,7 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      {!isEmpty && !hideToolbar && (
+      {(!isEmpty || hasRememberedChanges) && !hideToolbar && (
         <HStack
           className={cn(
             compact
@@ -367,6 +371,15 @@ const TableHeader = <T extends object>({
             {headerActions}
           </HStack>
           <HStack>
+            {hasRememberedChanges && table && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetRememberedState}
+              >
+                <Trans>Reset</Trans>
+              </Button>
+            )}
             {sort === undefined ? (
               <Sort sortKeyToLabel={sortKeyToLabel} />
             ) : (
@@ -383,27 +396,36 @@ const TableHeader = <T extends object>({
             )}
 
             {canSaveView && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <IconButton
-                    aria-label={hasView ? t`Edit View` : t`Save View`}
-                    variant={
-                      savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
-                    }
-                    icon={<LuLayers />}
-                    onClick={savedViewDisclosure.onToggle}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {hasView ? (
-                      <Trans>Edit View</Trans>
-                    ) : (
-                      <Trans>Save View</Trans>
-                    )}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <>
+                {hasRememberedChanges && !hasView && (
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Save View</Trans>
+                  </span>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      aria-label={hasView ? t`Edit View` : t`Save View`}
+                      variant={
+                        savedViewDisclosure.isOpen || hasView
+                          ? "active"
+                          : "ghost"
+                      }
+                      icon={<LuLayers />}
+                      onClick={savedViewDisclosure.onToggle}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {hasView ? (
+                        <Trans>Edit View</Trans>
+                      ) : (
+                        <Trans>Save View</Trans>
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
 
             {withCsvExport && (

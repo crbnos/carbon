@@ -29,10 +29,11 @@ import { useCallback, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuDownload, LuEllipsis } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarAction } from "~/components/New";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { getDepartmentsTree } from "~/modules/people/people.service";
 import {
   DepartmentsListView,
@@ -74,6 +75,13 @@ export default function Route() {
   const { departments } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
+  const [, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = usePersistentPageTab(
+    "view",
+    ["tree", "list"],
+    "tree",
+    "tab"
+  );
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -127,7 +135,19 @@ export default function Route() {
     "max-md:hit-area max-md:min-h-9 max-md:rounded-md max-md:border-b-0 max-md:px-3 max-md:data-[state=active]:bg-card max-md:data-[state=active]:shadow-button-base";
 
   return (
-    <Tabs defaultValue="tree" className="w-full">
+    <Tabs
+      value={activeTab}
+      onValueChange={(tab) => {
+        setActiveTab(tab);
+        setSearchParams((previous) => {
+          const next = new URLSearchParams(previous);
+          if (tab === "list") next.set("tab", "list");
+          else next.delete("tab");
+          return next;
+        });
+      }}
+      className="w-full"
+    >
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
         {/* The app bar already names the section on phones. */}
         <Heading size="h3" className="max-md:hidden">

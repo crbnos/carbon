@@ -48,6 +48,7 @@ import { useFetcher, useParams, useSearchParams } from "react-router";
 import { Empty } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { action as replanAction } from "~/routes/x+/assembly+/$id.plan.rerun";
 import type { action as generateAction } from "~/routes/x+/assembly+/$id.steps.generate";
 import { path } from "~/utils/path";
@@ -199,7 +200,11 @@ function AssemblyInstructionExplorer({
 
   // Controlled so the Components tab knows when it becomes active — it scrolls the
   // current selection into view on activation
-  const [tab, setTab] = useState<"steps" | "components">("steps");
+  const [tab, setTab] = usePersistentPageTab(
+    "assembly-explorer",
+    ["steps", "components"],
+    "steps"
+  );
   // A pre-existing Failed job stays the latest row until the freshly
   // triggered run inserts its own — remember it so it doesn't read as the
   // outcome of the run we're waiting on. Persisted next to the awaiting flag:

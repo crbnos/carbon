@@ -513,6 +513,7 @@ const DISPLAY_SETTINGS_KEY = "kanban-schedule-display-settings";
 
 function KanbanSchedule() {
   const { t } = useLingui();
+  const { id: userId, company } = useUser();
   const {
     columns,
     items: initialItems,
@@ -529,10 +530,28 @@ function KanbanSchedule() {
     setItems(initialItems);
   }, [initialItems]);
 
+  const displayKey = `${DISPLAY_SETTINGS_KEY}:${userId}:${company.id}`;
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    DISPLAY_SETTINGS_KEY,
+    displayKey,
     defaultDisplaySettings
   );
+  // Keep existing display choices when moving from the old browser-wide key.
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(displayKey)) return;
+      const legacy = window.localStorage.getItem(DISPLAY_SETTINGS_KEY);
+      if (!legacy) return;
+      const parsed: unknown = JSON.parse(legacy);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        setDisplaySettings({
+          ...defaultDisplaySettings,
+          ...(parsed as Partial<DisplaySettings>)
+        });
+      }
+    } catch {
+      // An invalid older preference keeps the defaults.
+    }
+  }, [displayKey, setDisplaySettings]);
   const mergedDisplaySettings = useMemo(
     () => ({ ...defaultDisplaySettings, ...displaySettings }),
     [displaySettings]

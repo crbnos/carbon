@@ -9,6 +9,7 @@ const useLocalStorage = <T>(
   initialValue: T
 ): [T, (value: T | ((prev: T) => T)) => void] => {
   const [storedValue, setStoredValue] = useState(initialValue);
+  const storedValueRef = useRef(storedValue);
   const initialValueRef = useRef(initialValue);
   initialValueRef.current = initialValue;
 
@@ -16,12 +17,16 @@ const useLocalStorage = <T>(
     // Retrieve from localStorage. A key with nothing stored falls back to the
     // initial value, so switching keys never carries the previous key's value.
     const item = window.localStorage.getItem(key);
-    setStoredValue(item ? JSON.parse(item) : initialValueRef.current);
+    const nextValue = item ? JSON.parse(item) : initialValueRef.current;
+    storedValueRef.current = nextValue;
+    setStoredValue(nextValue);
   }, [key]);
 
   const setValue = (value: T | ((prev: T) => T)) => {
     // Save state
-    const newValue = value instanceof Function ? value(storedValue) : value;
+    const newValue =
+      value instanceof Function ? value(storedValueRef.current) : value;
+    storedValueRef.current = newValue;
     setStoredValue(newValue);
     // Save to localStorage
     window.localStorage.setItem(key, JSON.stringify(newValue));
