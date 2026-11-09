@@ -2076,10 +2076,10 @@ export async function getSalesDashboardRevenue(
                 eb.fn.coalesce("sil.netUnitPrice", eb.val(0))
               ),
               "+",
-              "sil.addOnCost"
+              eb.ref("sil.addOnCost")
             ),
             "+",
-            "sil.nonTaxableAddOnCost"
+            eb.ref("sil.nonTaxableAddOnCost")
           )
         )
         .as("invoiceSales")
@@ -2102,7 +2102,7 @@ export async function getSalesDashboardRevenue(
       eb.fn
         .sum<number>(
           eb.fn<number>("round", [
-            eb("m.amount", "/", "m.exchangeRate"),
+            eb("m.amount", "/", eb.ref("m.exchangeRate")),
             eb.val(5)
           ])
         )
