@@ -15947,8 +15947,8 @@ export async function postReceipt(
           // Return for Service / Warranty: the customer's unit comes in to be
           // worked on and shipped back. It never enters company stock or
           // stock value, so the line writes no stock ledger, no cost layer
-          // and no journal, and its serial stays Consumed (the customer's).
-          // One service job per line is created in the transaction below.
+          // and no journal. Its serial is Available while it is here. One
+          // service job per line is created in the transaction below.
           if (isServiceReturnType(returnLine.returnType)) {
             const serial =
               (receiptLineTracking.data ?? []).find(
@@ -21841,8 +21841,8 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
-              // A Service or Warranty line's unit never left stock, so it
-              // stays Consumed and its asset goes back At Depot.
+              // A Service or Warranty line's unit never left stock: it goes
+              // back to Available at the depot, and its asset At Depot.
               const shippedByReturnLine = new Map<string, number>();
               for (const line of shipmentLines.data) {
                 const shipped = Number(line.shippedQuantity ?? 0);
@@ -21876,20 +21876,18 @@ export async function postShipment(
                 trx,
                 "trackedEntity",
                 companyId,
-                shipmentLineTrackingEntities
-                  .filter((entity) => {
-                    const shipmentLineId = (
-                      entity.attributes as TrackedEntityAttributes | undefined
-                    )?.["Shipment Line"];
-                    return !(
-                      typeof shipmentLineId === "string" &&
-                      serviceShipmentLineIds.has(shipmentLineId)
-                    );
-                  })
-                  .map((entity) => ({
+                shipmentLineTrackingEntities.map((entity) => {
+                  const shipmentLineId = (
+                    entity.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"];
+                  const isServiceUnit =
+                    typeof shipmentLineId === "string" &&
+                    serviceShipmentLineIds.has(shipmentLineId);
+                  return {
                     id: entity.id,
-                    data: { status: "On Hold" }
-                  }))
+                    data: { status: isServiceUnit ? "Available" : "On Hold" }
+                  };
+                })
               );
               if (voidActivityId) {
                 const activityRows = shipmentLineTrackingEntities.map(

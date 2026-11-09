@@ -2099,8 +2099,8 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
  * @remarks
  * Tags the batch, or the serial unit at `index`, with the shipment line;
  * posting ships it. The entity must be the line's item and Available (On
- * Hold for a return-to-customer shipment, and then it must have come back on
- * a receipt of that return order). A batch must hold at least `quantity`.
+ * Hold or Available for a return-to-customer shipment, and then it must have
+ * come back on a receipt of that return order). A batch must hold at least `quantity`.
  * Whatever entity held the slot before is cleared once the new one is set.
  *
  * @mcp
@@ -2178,10 +2178,10 @@ export const assignShipmentLineEntity = defineServiceFn({
 
     // The statuses this source may ship (`shippableEntityStatuses`): a
     // return-to-customer ships returned stock, On Hold until it is
-    // dispositioned; a return-to-supplier also ships rejected units;
-    // everything else ships Available stock only. On Hold alone is not
-    // provenance: the entity must have COME BACK on a receipt of this return
-    // order.
+    // dispositioned, and serviced units, Available at the depot; a
+    // return-to-supplier also ships rejected units; everything else ships
+    // Available stock only. The status alone is not provenance: the entity
+    // must have COME BACK on a receipt of this return order.
     const isReturn = shipment.data.sourceDocument === "Sales Return Order";
     const allowedStatuses = utils.shippableEntityStatuses(
       shipment.data.sourceDocument
