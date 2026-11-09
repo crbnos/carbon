@@ -339,7 +339,8 @@ describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
           pullReimbursements: true,
           pushPurchaseOrders: true,
           pushInvoices: true
-        }
+        },
+        allowVendorsWithoutContact: false
       },
       baseCurrency: fixture.baseCurrency,
       companyGroupId: fixture.companyGroupId,
@@ -462,7 +463,8 @@ describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
           pullReimbursements: true,
           pushPurchaseOrders: true,
           pushInvoices: true
-        }
+        },
+        allowVendorsWithoutContact: false
       },
       baseCurrency: fixture.baseCurrency,
       companyGroupId: fixture.companyGroupId,

@@ -51,11 +51,14 @@ describe("Ramp settings by install mode", () => {
     );
   });
 
-  it("offers only the entity scope and the outbound pushes in push-only mode", () => {
+  it("offers only the entity scope, the outbound pushes, and vendor creation in push-only mode", () => {
+    // Both modes create Ramp vendors, so the vendor-without-contact beta applies
+    // to push-only too.
     expect(offeredSettings("push-only")).toEqual([
       "entityId",
       "pushPurchaseOrders",
-      "pushInvoices"
+      "pushInvoices",
+      "allowVendorsWithoutContact"
     ]);
   });
 

@@ -61,7 +61,8 @@ const RampSettingsSchema = z.object({
   pullBills: z.string().optional(),
   pullReimbursements: z.string().optional(),
   pushPurchaseOrders: z.string().optional(),
-  pushInvoices: z.string().optional()
+  pushInvoices: z.string().optional(),
+  allowVendorsWithoutContact: z.string().optional()
 });
 
 export const Ramp = defineIntegration({
@@ -207,6 +208,10 @@ export const Ramp = defineIntegration({
       // Deliberately direction-neutral: push-only renders this group with only
       // the outbound toggles, so "flows into and out of Carbon" was false there.
       description: "What Carbon keeps in sync with Ramp"
+    },
+    {
+      name: "Vendors",
+      description: "How Carbon creates Ramp vendors from your suppliers"
     }
   ],
   settings: [
@@ -314,6 +319,17 @@ export const Ramp = defineIntegration({
       type: "switch" as const,
       required: false,
       value: "true"
+    },
+    {
+      // Both modes create vendors, so no `availableWhen`.
+      name: "allowVendorsWithoutContact",
+      label: "Allow vendors without a contact (Ramp beta)",
+      description:
+        "Create Ramp vendors for suppliers that have no contact email, such as suppliers you pay by ACH. Only turn this on if Ramp has enabled the beta for your business — otherwise Ramp rejects the vendor. Suppliers still need a country (and a state for US).",
+      group: "Vendors",
+      type: "switch" as const,
+      required: false,
+      value: "false"
     }
   ],
   schema: RampSettingsSchema
@@ -381,6 +397,50 @@ function SetupInstructions({
             </span>{" "}
             under Sync — charges, bills, and reimbursements flow in; purchase
             orders and invoices push out. All are on by default.
+          </li>
+        )}
+        <li>
+          <span className="font-medium text-foreground">
+            Get your suppliers ready.
+          </span>{" "}
+          Ramp only accepts a purchase order or bill against a vendor it can
+          create, so each supplier you buy from needs:
+          <ul className="mt-1 list-disc space-y-1 pl-4">
+            <li>
+              A location with a <span className="font-medium">country</span> —
+              and a <span className="font-medium">state</span> when the country
+              is the US.
+            </li>
+            <li>
+              A contact with an <span className="font-medium">email</span>.
+              Carbon uses the supplier's purchasing contact, or its first
+              contact with an email. A phone-only contact does not count. If you
+              pay suppliers by ACH and Ramp has enabled its beta for vendors
+              without a contact, turn on{" "}
+              <span className="font-medium">
+                Allow vendors without a contact
+              </span>{" "}
+              under Vendors instead.
+            </li>
+          </ul>
+          Connecting Ramp turns on the supplier contact and location requirement
+          in Settings → Purchasing, so purchase orders and invoices cannot be
+          released for an incomplete supplier. That setting checks the contact
+          and the location together, so with the vendor beta on Carbon no longer
+          turns it on — turn it off yourself if it is already on and you release
+          orders to suppliers with no contact. A purchase order whose supplier
+          is incomplete still pushes to Ramp without a vendor; an invoice does
+          not push until the supplier is fixed.
+        </li>
+        {pushOnly ? null : (
+          <li>
+            <span className="font-medium text-foreground">
+              Set the card liability account.
+            </span>{" "}
+            It is required. Until it is set, the integration reports unhealthy
+            and card charges, transfers, cashback, and repayments do not sync.
+            Purchase orders, invoices, bills, and reimbursements are not
+            affected.
           </li>
         )}
         <li>

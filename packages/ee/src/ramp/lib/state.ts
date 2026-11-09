@@ -22,7 +22,8 @@ const RAMP_SETTINGS_PATHS = [
   "pullBills",
   "pullReimbursements",
   "pushPurchaseOrders",
-  "pushInvoices"
+  "pushInvoices",
+  "allowVendorsWithoutContact"
 ] as const;
 
 type RampSettingsPath = (typeof RAMP_SETTINGS_PATHS)[number];

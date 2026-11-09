@@ -449,6 +449,19 @@ function flatSyncFlagEnabled(
   return value !== "false" && value !== false;
 }
 
+/**
+ * Opt-in flags read the other way round: only an explicit `"true"`/`true`
+ * turns one on, so an install that has never seen the setting keeps the
+ * stricter behaviour.
+ */
+function flatOptInFlagEnabled(
+  raw: Record<string, unknown>,
+  key: string
+): boolean {
+  const value = raw[key];
+  return value === "true" || value === true;
+}
+
 export const RampIntegrationMetadataSchema = z
   .object({
     credentials: RampCredentialsSchema,
@@ -493,7 +506,16 @@ export const RampIntegrationMetadataSchema = z
         pullReimbursements: flatSyncFlagEnabled(raw, "pullReimbursements"),
         pushPurchaseOrders: flatSyncFlagEnabled(raw, "pushPurchaseOrders"),
         pushInvoices: flatSyncFlagEnabled(raw, "pushInvoices")
-      }
+      },
+      /**
+       * Ramp beta: create spend vendors with no `business_vendor_contacts`, for
+       * suppliers paid by ACH who have no contact on file. Off by default —
+       * without the beta on the Ramp side, Ramp still refuses such a vendor.
+       */
+      allowVendorsWithoutContact: flatOptInFlagEnabled(
+        raw,
+        "allowVendorsWithoutContact"
+      )
     };
   });
 

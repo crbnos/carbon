@@ -377,7 +377,8 @@ async function recordSpendVendor(
  * `external_vendor_id`.
  *
  * Returns `null` (never throws) when the supplier has no name, or has no
- * matching vendor AND lacks the email/country a create requires — the caller
+ * matching vendor AND lacks the email/country a create requires (the email
+ * only when `allowWithoutContact` is off) — the caller
  * decides (a PO omits the optional `vendor_id`; a bill, which requires one, is
  * skipped). Accounting vendors (`/accounting/vendors`) are a DIFFERENT id space
  * a PO/bill `vendor_id` rejects — see `linkAccountingVendor`.
@@ -399,6 +400,12 @@ export async function resolveOrCreateRampSpendVendor(
      * cause reaching only a server console.
      */
     surfaceCreateError?: boolean;
+    /**
+     * Ramp beta: create the vendor with no `business_vendor_contacts` when the
+     * supplier has no contact email (ACH-paid suppliers). Without the beta on
+     * Ramp's side the create is refused, which lands in the normal error path.
+     */
+    allowWithoutContact?: boolean;
   }
 ): Promise<string | null> {
   const decision = decideRampSpendVendor(resolution, supplier);
@@ -431,7 +438,8 @@ export async function resolveOrCreateRampSpendVendor(
   // without a vendor and a bill is skipped rather than crashing the family.
   const email = supplier.contact?.email?.trim();
   const country = supplier.country?.trim();
-  if (!email || !country) return null;
+  if (!country) return null;
+  if (!email && !opts?.allowWithoutContact) return null;
 
   const { contact, address } = supplier;
   // `business_vendor_contacts` is a SINGLE object despite the plural name
@@ -449,12 +457,20 @@ export async function resolveOrCreateRampSpendVendor(
         country,
         ...(address?.stateProvince ? { state: address.stateProvince } : {}),
         external_vendor_id: supplier.id,
-        business_vendor_contacts: {
-          email,
-          ...(contact?.firstName ? { first_name: contact.firstName } : {}),
-          ...(contact?.lastName ? { last_name: contact.lastName } : {}),
-          ...(contact?.phone ? { phone: contact.phone } : {})
-        },
+        // Omitted entirely without an email: Ramp refuses a contact that has
+        // no email, so a phone-only contact cannot be sent either.
+        ...(email
+          ? {
+              business_vendor_contacts: {
+                email,
+                ...(contact?.firstName
+                  ? { first_name: contact.firstName }
+                  : {}),
+                ...(contact?.lastName ? { last_name: contact.lastName } : {}),
+                ...(contact?.phone ? { phone: contact.phone } : {})
+              }
+            }
+          : {}),
         ...(address?.line1 && address.city && address.postalCode
           ? {
               address: {

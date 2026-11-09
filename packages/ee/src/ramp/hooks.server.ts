@@ -72,12 +72,18 @@ async function convergeRamp(
   // edit here.
   //
   // Best-effort: a settings write must never fail an otherwise-good connection.
+  //
+  // Skipped under the vendor-without-contact beta: the company setting demands
+  // a contact AND a location together, so turning it on would block releasing
+  // to exactly the ACH-paid suppliers the beta exists for.
   try {
-    const enabled = await applyPartyContactRequirements(
-      serviceRole,
-      companyId,
-      resolveCapabilities(resolveRampModeProfile(metadata).capabilities)
-    );
+    const enabled = metadata.allowVendorsWithoutContact
+      ? []
+      : await applyPartyContactRequirements(
+          serviceRole,
+          companyId,
+          resolveCapabilities(resolveRampModeProfile(metadata).capabilities)
+        );
     if (enabled.length > 0) {
       console.log(
         `[ramp] enabled ${enabled.join(", ")} for company ${companyId} — Ramp cannot create a vendor without a contact email and a country`

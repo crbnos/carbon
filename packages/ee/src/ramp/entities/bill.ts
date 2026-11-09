@@ -181,7 +181,10 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
         [local.supplier],
         { accountingIntegration: delegatedTo }
       ),
-      { surfaceCreateError: true }
+      {
+        surfaceCreateError: true,
+        allowWithoutContact: this.rampProvider.allowVendorsWithoutContact
+      }
     );
     if (!vendorId) {
       throw new Error(
@@ -189,7 +192,10 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
         // message listed all three requirements without saying which one was
         // absent or whose supplier it was, so acting on it meant reading the
         // database.
-        `Cannot push invoice ${local.readableId} to Ramp: ${describeMissingVendorFields(local.supplier)}`
+        `Cannot push invoice ${local.readableId} to Ramp: ${describeMissingVendorFields(
+          local.supplier,
+          { contactOptional: this.rampProvider.allowVendorsWithoutContact }
+        )}`
       );
     }
 

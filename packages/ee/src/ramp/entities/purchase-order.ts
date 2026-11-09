@@ -196,7 +196,10 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
                 accountingIntegration:
                   this.rampProvider.codingIdentityIntegrationId
               }
-            ))
+            )),
+          {
+            allowWithoutContact: this.rampProvider.allowVendorsWithoutContact
+          }
         )) ?? undefined);
 
     return {

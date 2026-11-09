@@ -60,6 +60,9 @@ export class RampProvider implements SyncProvider {
    */
   public readonly codingIdentityIntegrationId?: string;
 
+  /** Ramp beta: create spend vendors with no contact (ACH-paid suppliers). */
+  public readonly allowVendorsWithoutContact: boolean;
+
   constructor(
     public readonly client: RampClient,
     public readonly companyId: string,
@@ -68,6 +71,7 @@ export class RampProvider implements SyncProvider {
   ) {
     this.codingIdentityIntegrationId = options.codingIdentityIntegrationId;
     this.configuredEntityId = metadata.entityId ?? undefined;
+    this.allowVendorsWithoutContact = metadata.allowVendorsWithoutContact;
 
     const profile = resolveRampModeProfile(metadata);
     this.mode = resolveRampMode(metadata);

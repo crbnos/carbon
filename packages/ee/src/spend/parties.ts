@@ -341,11 +341,14 @@ export const STATE_REQUIRED_VENDOR_COUNTRIES = new Set(["US", "USA"]);
  * true, and useless to the person who has to fix the record.
  */
 export function describeMissingVendorFields(
-  supplier: SpendVendorParty
+  supplier: SpendVendorParty,
+  opts: { contactOptional?: boolean } = {}
 ): string {
   const missing: string[] = [];
   if (!supplier.name?.trim()) missing.push("a name");
-  if (!supplier.contact?.email?.trim()) missing.push("a contact email");
+  if (!opts.contactOptional && !supplier.contact?.email?.trim()) {
+    missing.push("a contact email");
+  }
   const country = supplier.country?.trim();
   if (!country) {
     missing.push("a country on one of its locations");
