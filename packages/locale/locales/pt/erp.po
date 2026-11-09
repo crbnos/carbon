@@ -24744,12 +24744,10 @@ msgid "Request date"
 msgstr "Data da solicitação"
 
 msgid "Requested"
-msgstr "Solicitado"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Solicitado por"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Data Solicitada"
