@@ -1460,6 +1460,9 @@ msgstr "ローカル"
 msgid "Location"
 msgstr "ロケーション"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "完了をログ記録"
 

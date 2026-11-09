@@ -3,9 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The receipt of a Return for Service or Return for Warranty line on an RMA.
-// The unit stays the customer's: no stock ledger, no cost layer, no journal,
-// and its serial stays Consumed. Each received line gets one Open service job
-// at the receiving location (the depot), and its customer asset goes At Depot.
+// The unit stays the customer's: no stock ledger, no cost layer, no journal.
+// Its serial goes from Consumed to Available while it is at the depot, and is
+// Consumed again when it ships back. Each received line gets one Open service
+// job at the receiving location (the depot), and its customer asset goes At
+// Depot.
 // Spec: .ai/specs/2026-10-22-service-jobs-and-returns.md (The RMA, item 4).
 
 import { InvalidInputError } from "@carbon/api/errors";
@@ -41,7 +43,8 @@ export type ServiceReturnUnit = {
 
 /**
  * Creates the service jobs of an RMA receipt, in the posting transaction:
- * 1. Skips a line that already has a live (not Cancelled) job.
+ * 1. Sets every received serial Available, and skips a line that already has
+ *    a live (not Cancelled) job.
  * 2. Finds or creates the customer asset of each received serial, and sets
  *    every unit's asset At Depot.
  * 3. Inserts one Open Depot job per line: Billable for Return for Service,
@@ -68,6 +71,20 @@ export async function createServiceJobsForReturn(
 ): Promise<void> {
   const { companyId, userId, salesReturnOrder } = args;
   if (args.units.length === 0) return;
+
+  // The unit is back in our hands: Available until it ships back. It has no
+  // stock ledger, so it never counts as on-hand stock.
+  const receivedSerialIds = args.units.flatMap((unit) =>
+    unit.trackedEntityId ? [unit.trackedEntityId] : []
+  );
+  if (receivedSerialIds.length > 0) {
+    await trx
+      .updateTable("trackedEntity")
+      .set({ status: "Available" })
+      .where("id", "in", receivedSerialIds)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
 
   const live = await trx
     .selectFrom("serviceJob")

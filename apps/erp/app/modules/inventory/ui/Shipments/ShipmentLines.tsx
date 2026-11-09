@@ -796,8 +796,8 @@ function ShipmentLineItem({
 }
 
 // The statuses lines.tracking accepts for this shipment's source: On Hold
-// returned stock on a sales return, Available or Rejected units on a supplier
-// return, Available stock otherwise.
+// returned stock or an Available serviced unit on a sales return, Available
+// or Rejected units on a supplier return, Available stock otherwise.
 export function isShippable(
   shipment: Pick<Shipment, "sourceDocument"> | undefined,
   status: unknown
