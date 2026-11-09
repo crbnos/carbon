@@ -21,10 +21,11 @@ import {
 } from "../app/modules/production/production.models";
 import { planningRowKey } from "../app/modules/production/ui/Planning/planning-action-scope";
 import {
+  draftsOfRefusedOrders,
   openNewSupplyActions,
   plannedOrdersFromActions,
   productionOrdersFromActions,
-  refusedOrderCount,
+  refusedOrdersOfRow,
   supplierConversionFactor,
   withoutRowDraft
 } from "../app/modules/production/ui/Planning/planned-orders-from-actions";
@@ -488,20 +489,55 @@ describe("withoutRowDraft", () => {
   });
 });
 
-describe("refusedOrderCount", () => {
+describe("refusedOrdersOfRow", () => {
   const refused = [
     { itemId: "item1", planningSegmentId: "", index: 0 },
     { itemId: "item1", planningSegmentId: "", index: 2 },
-    { itemId: "item1", planningSegmentId: "proj1", index: 0 },
+    { itemId: "item1", planningSegmentId: "proj1", index: 1 },
     { itemId: "item2", planningSegmentId: "", index: 1 }
   ];
 
-  it("counts a row's refused orders, by item and segment", () => {
-    expect(refusedOrderCount(refused, { id: "item1" })).toBe(2);
+  it("returns the row's refused orders as sent, by item and segment", () => {
     expect(
-      refusedOrderCount(refused, { id: "item1", planningSegmentId: "proj1" })
-    ).toBe(1);
-    expect(refusedOrderCount(refused, { id: "item3" })).toBe(0);
-    expect(refusedOrderCount(undefined, { id: "item1" })).toBe(0);
+      refusedOrdersOfRow({ id: "item1", orders: ["a", "b", "c"] }, refused)
+    ).toEqual(["a", "c"]);
+    expect(
+      refusedOrdersOfRow(
+        { id: "item1", planningSegmentId: "proj1", orders: ["a", "b"] },
+        refused
+      )
+    ).toEqual(["b"]);
+  });
+
+  it("is empty for a row with no refusal, or no refusals at all", () => {
+    expect(refusedOrdersOfRow({ id: "item3", orders: ["a"] }, refused)).toEqual(
+      []
+    );
+    expect(refusedOrdersOfRow({ id: "item1", orders: ["a"] }, undefined)).toEqual(
+      []
+    );
+  });
+
+  it("skips an index the sent orders do not have", () => {
+    expect(
+      refusedOrdersOfRow({ id: "item2", orders: ["a"] }, refused)
+    ).toEqual([]);
+  });
+});
+
+describe("draftsOfRefusedOrders", () => {
+  it("keeps a draft only for the rows with a refused order", () => {
+    const refused = [{ itemId: "item1", planningSegmentId: "", index: 1 }];
+    expect(
+      draftsOfRefusedOrders(
+        [
+          { id: "item1", planningSegmentId: "", orders: ["a", "b"] },
+          { id: "item2", planningSegmentId: "", orders: ["c"] }
+        ],
+        refused
+      )
+    ).toEqual({
+      [planningRowKey({ id: "item1", planningSegmentId: "" })]: ["b"]
+    });
   });
 });

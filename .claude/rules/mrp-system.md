@@ -1071,13 +1071,16 @@ never offered a Cancel, Defer or Expedite.
     date `insertJob` would give it, which `orderPlannedJobs` then passes it).
     Nothing can start in the past. The item's other orders are still placed;
     the refused ones come back as `refusedOrders` (item, segment, index in
-    the item's `orders`) plus an `errors` line. The drawers' and grids'
-    success handlers run after the loaders reload, so they drop the row's
-    draft and re-seed from the suggestions as they now are: a refused order's
-    action is untouched and shows again (late, with its reschedule button),
-    a drawer with refusals stays open and reloads its Open Jobs / Open Orders,
-    and the toast (`usePastStartToast`) counts the orders placed. When every
-    order was refused the call fails with only that message.
+    the item's `orders`), and only there: `errors` holds what else went
+    wrong, which the drawers and grids toast. The refused orders stay the
+    row's draft exactly as they were sent (`refusedOrdersOfRow`,
+    `draftsOfRefusedOrders`), so an edit or a row the planner added survives
+    and the drawer shows them late with their reschedule button; a row with
+    none drops its draft and re-seeds from the suggestions. A drawer with
+    refusals stays open and reloads its Open Jobs / Open Orders, and the toast
+    (`usePastStartToast`) counts the orders placed. When every order was
+    refused the call fails with only that message. A drawer cannot close
+    while its order is in flight: the result is what clears the draft.
   - Both then settle the Order / Make actions they answered BY QUANTITY
     (`settleNewSupplyPlanningActions`, `production.service.ts`): an action is
     Actioned only when what was ordered against it covers it; otherwise it
@@ -1096,8 +1099,11 @@ never offered a Cancel, Defer or Expedite.
     action, the indexes of the orders that answered it (`orderIndexes`), for
     the peg move. `orderPlannedJobs` settles right after the job rows are
     inserted, before Get Method, and `orderPlannedPurchases` right after the
-    PO lines: an MRP run that reads a job in between would net it and the
-    settle would take it off again. A job whose method fails is still supply
+    PO lines, to keep short the window in which an MRP run could net an order
+    and the settle then take it off again; the inserts and the settle are not
+    one transaction, so the window is not closed. A settle that fails is
+    reported, since the suggestions then still show what was just ordered.
+    A job whose method fails is still supply
     and still settles; it stays in `jobs` and is named in `warnings`, which
     the drawer and the grid toast.
   - production (`orderPlannedJobs`, `create: "production"`): inserts the jobs,

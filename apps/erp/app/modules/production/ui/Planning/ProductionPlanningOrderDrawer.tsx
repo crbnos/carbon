@@ -19,7 +19,7 @@ import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
@@ -46,7 +46,7 @@ import {
   OpenOrdersGrid,
   SuggestedOrdersGrid
 } from "~/modules/production/ui/Planning/PlanningOrderGrids";
-import { refusedOrderCount } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import { refusedOrdersOfRow } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { chartedOrderQuantity } from "~/modules/production/ui/Planning/planning-increase";
 import { usePastStartToast } from "~/modules/production/ui/Planning/usePastStartToast";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
@@ -124,29 +124,34 @@ export const ProductionPlanningOrderDrawer = memo(
       onSuggestionsStale(row);
       setSuggestionsVersion((version) => version + 1);
     }, [onSuggestionsStale, row]);
-    // A refusal is toasted by useAction. Success runs after the loaders have
-    // reloaded, so the drawer re-seeds from the suggestions as they are now:
-    // a week ordered in part, or refused for starting in the past, keeps
-    // what was not ordered.
+    const submittedOrders = useRef<ProductionOrder[]>([]);
+    // A refusal is toasted by useAction. On success the orders refused for
+    // starting in the past stay in the drawer as they were sent; with none,
+    // it re-seeds from the suggestions, which keep what was not ordered.
     const fetcher = useAction<typeof bulkUpdateAction>({
       onSuccess: (result) => {
         const data = "data" in result ? result.data : null;
-        const refused = refusedOrderCount(
-          data && "refusedOrders" in data ? data.refusedOrders : [],
-          row
+        const refused = refusedOrdersOfRow(
+          { ...row, id: row.id!, orders: submittedOrders.current },
+          data && "refusedOrders" in data ? data.refusedOrders : []
         );
-        reseedSuggestions();
-        for (const warning of data && "warnings" in data ? data.warnings : []) {
-          toast.error(warning);
+        if (refused.length > 0) {
+          setOrders(row, refused);
+          setSuggestionsVersion((version) => version + 1);
+        } else {
+          reseedSuggestions();
         }
-        if (refused === 0) {
+        const problems =
+          data && "warnings" in data ? [...data.warnings, ...data.errors] : [];
+        if (problems.length > 0) toast.error(problems.join(" · "));
+        if (refused.length === 0) {
           toast.success(t`Orders submitted`);
           onClose();
           return;
         }
         const created = data && "jobs" in data ? data.jobs.length : 0;
         setOpenJobsVersion((version) => version + 1);
-        toast.error(pastStartToast(created, refused));
+        toast.error(pastStartToast(created, refused.length));
       }
     });
     const { locale } = useLocale();
@@ -443,9 +448,17 @@ export const ProductionPlanningOrderDrawer = memo(
       [beyondFenceOrders]
     );
 
+    // A new fence re-seeds the rows too.
+    const onFenceChange = useCallback(
+      (date: Parameters<typeof onTimeFenceChange>[0]) => {
+        onTimeFenceChange(date);
+        setSuggestionsVersion((version) => version + 1);
+      },
+      [onTimeFenceChange]
+    );
     const onIncludeBeyondFence = useCallback(() => {
-      if (lastBeyondFenceDate) onTimeFenceChange(lastBeyondFenceDate);
-    }, [lastBeyondFenceDate, onTimeFenceChange]);
+      if (lastBeyondFenceDate) onFenceChange(lastBeyondFenceDate);
+    }, [lastBeyondFenceDate, onFenceChange]);
 
     // Memoize handlers
     const onAddOrder = useCallback(() => {
@@ -473,6 +486,7 @@ export const ProductionPlanningOrderDrawer = memo(
           };
         });
 
+        submittedOrders.current = ordersWithPeriods;
         const payload = {
           locationId,
           items: [
@@ -517,7 +531,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 item={row}
                 fenceDate={timeFenceDate}
                 isFenceOverridden={isTimeFenceOverridden}
-                onFenceChange={onTimeFenceChange}
+                onFenceChange={onFenceChange}
               />
 
               <DeferredDrawerSections>
@@ -568,7 +582,11 @@ export const ProductionPlanningOrderDrawer = memo(
             </div>
           </DrawerBody>
           <DrawerFooter>
-            <Button variant="secondary" onClick={onClose}>
+            <Button
+              variant="secondary"
+              onClick={onClose}
+              isDisabled={fetcher.state !== "idle"}
+            >
               <Trans>Close</Trans>
             </Button>
             <Button
@@ -606,14 +624,20 @@ export const ProductionPlanningOrderDrawer = memo(
         locationToday,
         timeFenceDate,
         isTimeFenceOverridden,
-        onTimeFenceChange,
+        onFenceChange,
         fenceLabel,
         t
       ]
     );
 
     return (
-      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Drawer
+        open={isOpen}
+        onOpenChange={(open) => {
+          // closing mid-order would lose the result that clears the draft
+          if (!open && fetcher.state === "idle") onClose();
+        }}
+      >
         {drawerContent}
       </Drawer>
     );

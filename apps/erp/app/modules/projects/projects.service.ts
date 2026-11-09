@@ -15046,10 +15046,9 @@ export async function moveActionPegsToSupply(
 
       const pegsByAction = new Map<string, typeof superseded>();
       for (const peg of superseded) {
-        pegsByAction.set(peg.supplyId, [
-          ...(pegsByAction.get(peg.supplyId) ?? []),
-          peg
-        ]);
+        const pegs = pegsByAction.get(peg.supplyId);
+        if (pegs) pegs.push(peg);
+        else pegsByAction.set(peg.supplyId, [peg]);
       }
       const rows = [...pegsByAction].flatMap(([actionId, pegs]) => {
         const move = moveByAction.get(actionId)!;

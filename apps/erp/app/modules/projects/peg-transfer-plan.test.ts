@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { planPegTransfer } from "./peg-transfer-plan";
+import {
+  pegMovesForSettledActions,
+  planPegTransfer
+} from "./peg-transfer-plan";
 
 const peg = (quantity: number, needDate: string | null = "2026-11-10") => ({
   quantity,
@@ -186,5 +189,48 @@ describe("planPegTransfer", () => {
       { pegIndex: 0, supplyId: "job_1", quantity: 0.1 },
       { pegIndex: 0, supplyId: "job_2", quantity: 0.2 }
     ]);
+  });
+});
+
+describe("pegMovesForSettledActions", () => {
+  const supply = (supplyId: string) => ({
+    supplyId,
+    quantity: 10,
+    dueDate: "2026-11-30"
+  });
+  const action = (id: string, planningSegmentId: string, status: string) => ({
+    id,
+    planningSegmentId,
+    status,
+    orderIndexes: [1, 2]
+  });
+
+  it("moves only a planning group's actions, to the supplies that answered them", () => {
+    expect(
+      pegMovesForSettledActions(
+        [action("a1", "group", "Actioned"), action("a2", "project", "Open")],
+        [supply("s0"), supply("s1"), supply("s2")],
+        "Job",
+        new Set(["group"])
+      )
+    ).toEqual([
+      {
+        planningActionId: "a1",
+        supplyType: "Job",
+        supplies: [supply("s1"), supply("s2")],
+        keepRemainder: false
+      }
+    ]);
+  });
+
+  it("keeps the remainder on an action still open", () => {
+    expect(
+      pegMovesForSettledActions(
+        [action("a1", "group", "Open")],
+        [supply("s0"), supply("s1"), supply("s2")],
+        "Purchase Order Line",
+        new Set(["group"])
+      )[0]!.keepRemainder
+    ).toBe(true);
   });
 });

@@ -25,7 +25,7 @@ import { distinctItemText } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBookMarked,
   LuCircleCheck,
@@ -72,6 +72,7 @@ import {
   usePlanningActionTypeOptions
 } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
+  draftsOfRefusedOrders,
   openNewSupplyActions,
   plannedOrdersFromActions,
   supplierConversionFactor,
@@ -175,6 +176,9 @@ const PlanningTable = memo(
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
     const pastStartToast = usePastStartToast();
+    const submittedRows = useRef<
+      { id: string; planningSegmentId: string; orders: PlannedOrder[] }[]
+    >([]);
 
     // Every loaded row, each with its own actions. The open drawer's param
     // does not change the list.
@@ -260,19 +264,23 @@ const PlanningTable = memo(
       }
 
       if (bulkUpdateFetcher.data?.success === true) {
-        // The next open re-seeds from the suggestions as they are now: what
-        // an order left unordered, a refused late order included, is still
-        // there.
-        setOrdersMap({});
         const {
           purchaseOrders = [],
           refusedOrders = [],
-          processedItems = 0
+          processedItems = 0,
+          errors = []
         } = bulkUpdateFetcher.data as {
           purchaseOrders?: { id: string; readableId: string }[];
           refusedOrders?: RefusedPlanningOrder[];
           processedItems?: number;
+          errors?: string[];
         };
+        // A refused late order stays a draft as it was sent; every other row
+        // re-seeds from the suggestions, which keep what was not ordered.
+        setOrdersMap(
+          draftsOfRefusedOrders(submittedRows.current, refusedOrders)
+        );
+        if (errors.length > 0) toast.error(errors.join(" · "));
         if (refusedOrders.length > 0) {
           toast.error(pastStartToast(processedItems, refusedOrders.length));
         }
@@ -486,6 +494,7 @@ const PlanningTable = memo(
             }),
           action: action
         };
+        submittedRows.current = payload.items;
         bulkUpdateFetcher.submit(payload, {
           method: "post",
           action: path.to.bulkUpdatePurchasingPlanning,

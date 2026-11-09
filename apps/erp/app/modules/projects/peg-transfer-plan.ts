@@ -99,3 +99,30 @@ export function planPegTransfer(
   }
   return splits;
 }
+
+/**
+ * The peg moves for the actions an order settled, for a planning group's
+ * actions only: each action's pegs go to the supplies at `orderIndexes` (the
+ * order's place in `supplies`), and what they leave stays on an action still
+ * open for a remainder.
+ */
+export function pegMovesForSettledActions(
+  settled: {
+    id: string;
+    planningSegmentId: string;
+    status: string;
+    orderIndexes: number[];
+  }[],
+  supplies: SupplyShare[],
+  supplyType: "Purchase Order Line" | "Job",
+  planningGroupIds: Set<string>
+) {
+  return settled
+    .filter((action) => planningGroupIds.has(action.planningSegmentId))
+    .map((action) => ({
+      planningActionId: action.id,
+      supplyType,
+      supplies: action.orderIndexes.map((index) => supplies[index]!),
+      keepRemainder: action.status !== "Actioned"
+    }));
+}

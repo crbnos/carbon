@@ -69,6 +69,7 @@ import {
   runMRP,
   settleNewSupplyPlanningActions
 } from "~/modules/production/production.service";
+import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
   checkProjectBudget,
@@ -3117,8 +3118,8 @@ export const confirmReturnOrder = defineServiceFn({
  * with a date that is not a real `YYYY-MM-DD` day is named in `errors`. An
  * order that starts (its order date, else its due date less the item's lead
  * time) before the location's today is refused and listed in `refusedOrders`
- * (item, segment and its index in the item's `orders`) and in `errors`; the
- * item's other orders are still placed. An order joins an existing line only
+ * (item, segment and its index in the item's `orders`); the item's other
+ * orders are still placed. An order joins an existing line only
  * when the line has the same conversion factor. The orders
  * raised keep their planning approval bypass, the supply forecast is
  * recorded, and the Order suggestions they answer are settled.
@@ -3310,7 +3311,6 @@ export const orderPlannedPurchases = defineServiceFn({
     const pastStartErrors = [...refusedCountByItem].map(([itemId, count]) =>
       pastStartRefusalMessage(readableIdOf(itemId), count, today)
     );
-    errors.push(...pastStartErrors);
     for (const [itemId, count] of invalidCountByItem) {
       errors.push(invalidOrderDateMessage(readableIdOf(itemId), count));
     }
@@ -3694,8 +3694,8 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    // Settled as soon as the lines exist: an MRP run that reads a line before
-    // the settle would net it, and the settle would take it off again.
+    // Settled as soon as the lines exist, to keep short the window in which an
+    // MRP run could net a line and the settle then take it off again.
     const settled = await settleNewSupplyPlanningActions(ctx.asSystem.pg, {
       companyId,
       locationId,
@@ -3710,28 +3710,24 @@ export const orderPlannedPurchases = defineServiceFn({
         locationId,
         error: settled.error
       });
+      errors.push(
+        "The orders were placed, but their suggestions were not updated. Recalculate before ordering them again."
+      );
     } else if (segments.planningGroupIds.size > 0) {
       // A grouped Order's pegs move to the PO lines that answered it.
-      const moves = (settled.data ?? []).flatMap((action) =>
-        segments.planningGroupIds.has(action.planningSegmentId)
-          ? [
-              {
-                planningActionId: action.id,
-                supplyType: "Purchase Order Line" as const,
-                supplies: action.orderIndexes.map((index) => ({
-                  supplyId: ordered[index]!.purchaseOrderLineId,
-                  quantity: ordered[index]!.quantity,
-                  dueDate: ordered[index]!.dueDate
-                })),
-                keepRemainder: action.status !== "Actioned"
-              }
-            ]
-          : []
-      );
       await moveActionPegsToSupply(ctx.asSystem.pg, {
         companyId,
         userId,
-        moves
+        moves: pegMovesForSettledActions(
+          settled.data ?? [],
+          ordered.map((entry) => ({
+            supplyId: entry.purchaseOrderLineId,
+            quantity: entry.quantity,
+            dueDate: entry.dueDate
+          })),
+          "Purchase Order Line",
+          segments.planningGroupIds
+        )
       });
     }
 
@@ -3765,7 +3761,8 @@ export const orderPlannedPurchases = defineServiceFn({
       }
     }
 
-    if (errors.length > 0 && processedItems === 0) {
+    const problems = [...pastStartErrors, ...errors];
+    if (problems.length > 0 && processedItems === 0) {
       logger.error("Failed to process any planning orders", {
         companyId,
         locationId,
@@ -3776,9 +3773,9 @@ export const orderPlannedPurchases = defineServiceFn({
       });
       return ctx.error(
         "rule",
-        errors.length === pastStartErrors.length
-          ? `No orders were created. ${errors.slice(0, 3).join(" ")}${
-              errors.length > 3 ? ` And ${errors.length - 3} more.` : ""
+        errors.length === 0
+          ? `No orders were created. ${problems.slice(0, 3).join(" ")}${
+              problems.length > 3 ? ` And ${problems.length - 3} more.` : ""
             }`
           : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
               errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
@@ -3788,12 +3785,12 @@ export const orderPlannedPurchases = defineServiceFn({
 
     return {
       message:
-        errors.length === 0
+        problems.length === 0
           ? `Successfully processed ${processedItems} orders`
           : `Processed ${processedItems} orders. ${
-              errors.length
-            } errors occurred: ${errors.slice(0, 2).join("; ")}${
-              errors.length > 2 ? "..." : ""
+              problems.length
+            } errors occurred: ${problems.slice(0, 2).join("; ")}${
+              problems.length > 2 ? "..." : ""
             }`,
       processedItems,
       totalItems: itemsToOrder.length,

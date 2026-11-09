@@ -40,6 +40,7 @@ import {
   unreleasedChangeOrderItemsMessage,
   withLockNotice
 } from "~/modules/items/items.service";
+import { pegMovesForSettledActions } from "~/modules/projects/peg-transfer-plan";
 import {
   applyTransferPlanningActions,
   getPlanningSegmentOwners,
@@ -4396,7 +4397,7 @@ export const markPersonAbsentRange = defineServiceFn({
  * is named in `errors`. An order that starts (its start date, else its due
  * date less the item's lead time) before the location's today is refused and
  * listed in `refusedOrders` (item, segment and its index in the item's
- * `orders`) and in `errors`. The item's other orders are still made. Each
+ * `orders`). The item's other orders are still made. Each
  * becomes a Planned job (ASAP or Soft Deadline) at the location with the
  * item's method; the Make suggestions the orders answer are settled by the
  * quantity ordered. A job whose method could not be copied is kept and named
@@ -4475,7 +4476,7 @@ export const orderPlannedJobs = defineServiceFn({
       .today(await getLocationTimeZone(client, locationId, companyId))
       .toString();
     const refusedOrders: RefusedPlanningOrder[] = [];
-    let pastStartErrorCount = 0;
+    const refusals: string[] = [];
 
     // A job in a project segment is charged to that project and receives
     // its output into the project's stock. A job in a planning group
@@ -4605,8 +4606,7 @@ export const orderPlannedJobs = defineServiceFn({
             index
           }))
         );
-        errors.push(pastStartRefusalMessage(readableId, past.length, today));
-        pastStartErrorCount++;
+        refusals.push(pastStartRefusalMessage(readableId, past.length, today));
       }
 
       for (const index of placeable) {
@@ -4679,9 +4679,9 @@ export const orderPlannedJobs = defineServiceFn({
       }
     }
 
-    // Settled as soon as the jobs exist, before their methods: an MRP run
-    // that reads a job between its insert and the settle would net it, and
-    // the settle would take it off the suggestion a second time.
+    // Settled as soon as the jobs exist, before their methods, to keep short
+    // the window in which an MRP run could net a job and the settle then take
+    // it off the suggestion a second time.
     const settled = await service.settleNewSupplyPlanningActions(db, {
       companyId,
       locationId,
@@ -4696,30 +4696,30 @@ export const orderPlannedJobs = defineServiceFn({
         locationId,
         error: settled.error
       });
+      warnings.push(
+        "The jobs were created, but their suggestions were not updated. Recalculate before making them again."
+      );
     } else if (segments.planningGroupIds.size > 0) {
       // A grouped Make's pegs move to the jobs that answered it.
-      const moves = (settled.data ?? []).flatMap((action) =>
-        segments.planningGroupIds.has(action.planningSegmentId)
-          ? [
-              {
-                planningActionId: action.id,
-                supplyType: "Job" as const,
-                supplies: action.orderIndexes.map((index) => ({
-                  supplyId: ordered[index]!.jobId,
-                  quantity: ordered[index]!.quantity,
-                  dueDate: ordered[index]!.dueDate
-                })),
-                keepRemainder: action.status !== "Actioned"
-              }
-            ]
-          : []
-      );
-      await moveActionPegsToSupply(db, { companyId, userId, moves });
+      await moveActionPegsToSupply(db, {
+        companyId,
+        userId,
+        moves: pegMovesForSettledActions(
+          settled.data ?? [],
+          ordered.map((entry) => ({
+            supplyId: entry.jobId,
+            quantity: entry.quantity,
+            dueDate: entry.dueDate
+          })),
+          "Job",
+          segments.planningGroupIds
+        )
+      });
     }
 
     // A job is made once it exists: one whose method fails stays, named in
-    // `warnings`, so a retry cannot make it a second time.
-    const jobsWithMethods: string[] = [];
+    // `warnings`, so a retry cannot make it a second time. This also
+    // recalculates each job's requirements.
     for (const job of inserted) {
       const method = await service.upsertJobMethod(client, db, "itemToJob", {
         sourceId: job.itemId,
@@ -4734,11 +4734,9 @@ export const orderPlannedJobs = defineServiceFn({
           error: method.error
         });
         warnings.push(
-          `${job.readableId} was created without its method. Open it and use Get Method.`
+          `${job.readableId} was created, but copying its method did not finish. Open it and use Get Method.`
         );
-        continue;
       }
-      jobsWithMethods.push(job.id);
     }
     const processedItems = new Set(inserted.map((job) => job.itemId)).size;
     for (const error of errors) logger.error(error, { companyId, locationId });
@@ -4753,24 +4751,6 @@ export const orderPlannedJobs = defineServiceFn({
       if (forecasts.error) {
         errors.push(
           `Failed to insert supply forecasts: ${forecasts.error.message}`
-        );
-      }
-    }
-
-    for (const jobId of jobsWithMethods) {
-      const recalc = await service.recalculateJobRequirements(client, db, {
-        id: jobId,
-        companyId,
-        userId
-      });
-      if (recalc.error) {
-        logger.error("Failed to recalculate a planned job", {
-          companyId,
-          jobId,
-          error: recalc.error
-        });
-        errors.push(
-          `Created job ${jobId}, but its requirements could not be recalculated`
         );
       }
     }
@@ -4790,12 +4770,12 @@ export const orderPlannedJobs = defineServiceFn({
       }
     }
 
-    if (errors.length > 0 && processedItems === 0) {
+    if (errors.length + refusals.length > 0 && processedItems === 0) {
       return ctx.error(
         "rule",
-        errors.length === pastStartErrorCount
-          ? `No jobs were created. ${errors.slice(0, 3).join(" ")}${
-              errors.length > 3 ? ` And ${errors.length - 3} more.` : ""
+        errors.length === 0
+          ? `No jobs were created. ${refusals.slice(0, 3).join(" ")}${
+              refusals.length > 3 ? ` And ${refusals.length - 3} more.` : ""
             }`
           : `Failed to process any items. Errors: ${errors.slice(0, 3).join("; ")}${
               errors.length > 3 ? ` and ${errors.length - 3} more...` : ""

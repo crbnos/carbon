@@ -232,17 +232,37 @@ export function supplierConversionFactor(
   );
 }
 
-/** How many of a planning row's orders Make / Order refused for starting in
- *  the past (`refusedOrders`). */
-export function refusedOrderCount(
-  refused: RefusedPlanningOrder[] | null | undefined,
-  row: { id: string; planningSegmentId?: string | null }
-): number {
-  return (refused ?? []).filter(
-    (order) =>
-      order.itemId === row.id &&
-      order.planningSegmentId === (row.planningSegmentId ?? "")
-  ).length;
+/** A planning row's orders Make / Order refused for starting in the past
+ *  (`refusedOrders`), as they were sent: a refused row keeps its edits, and a
+ *  row the planner added has no suggestion to come back from. */
+export function refusedOrdersOfRow<O>(
+  row: { id: string; planningSegmentId?: string | null; orders: O[] },
+  refused: RefusedPlanningOrder[] | null | undefined
+): O[] {
+  return (refused ?? []).flatMap((order) => {
+    if (
+      order.itemId !== row.id ||
+      order.planningSegmentId !== (row.planningSegmentId ?? "")
+    ) {
+      return [];
+    }
+    const sent = row.orders[order.index];
+    return sent ? [sent] : [];
+  });
+}
+
+/** The drafts a bulk Make / Order leaves: each row's refused orders, and no
+ *  draft for a row with none, so its drawer re-seeds from the suggestions. */
+export function draftsOfRefusedOrders<O>(
+  rows: { id: string; planningSegmentId?: string | null; orders: O[] }[],
+  refused: RefusedPlanningOrder[] | null | undefined
+): Record<string, O[]> {
+  return Object.fromEntries(
+    rows.flatMap((row) => {
+      const orders = refusedOrdersOfRow(row, refused);
+      return orders.length > 0 ? [[planningRowKey(row), orders]] : [];
+    })
+  );
 }
 
 /** The drafts without this row's, so its drawer re-seeds from the suggestions.
