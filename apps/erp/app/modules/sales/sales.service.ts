@@ -2048,6 +2048,147 @@ export async function getSalesDocumentsAssignedToMe(
   return merged;
 }
 
+export async function getSalesDashboardRevenue(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  customerId: string | null
+) {
+  // Sales line amounts are in base currency. A memo amount is in document
+  // currency, so convert each posted memo before summing it.
+  const invoiceCustomer = customerId
+    ? sql`AND si."customerId" = ${customerId}`
+    : sql``;
+  const memoCustomer = customerId
+    ? sql`AND m."customerId" = ${customerId}`
+    : sql``;
+  const facts = sql`
+    SELECT si."postingDate" AS day, si."customerId" AS customer_id,
+      SUM(
+        COALESCE(sil."quantity", 0) * COALESCE(sil."unitPrice", 0)
+          * (1 - COALESCE(sil."discountPercent", 0))
+        + COALESCE(sil."addOnCost", 0)
+        + COALESCE(sil."nonTaxableAddOnCost", 0)
+      ) AS invoice_sales,
+      0::numeric AS credits
+    FROM "salesInvoice" si
+    JOIN "salesInvoiceLine" sil
+      ON sil."invoiceId" = si.id AND sil."companyId" = si."companyId"
+    WHERE si."companyId" = ${companyId}
+      AND si.status NOT IN ('Draft', 'Pending', 'Voided')
+      AND si."postingDate" BETWEEN ${startDate}::date AND ${endDate}::date
+      ${invoiceCustomer}
+    GROUP BY si."postingDate", si."customerId"
+    UNION ALL
+    SELECT m."postingDate" AS day, m."customerId" AS customer_id,
+      0::numeric AS invoice_sales,
+      SUM(ROUND(m.amount / NULLIF(m."exchangeRate", 0), 5)) AS credits
+    FROM memo m
+    WHERE m."companyId" = ${companyId}
+      AND m."customerId" IS NOT NULL
+      AND m.direction = 'Credit' AND m.status = 'Posted'
+      AND m."postingDate" BETWEEN ${startDate}::date AND ${endDate}::date
+      ${memoCustomer}
+    GROUP BY m."postingDate", m."customerId"
+  `;
+
+  const [daily, customers] = await Promise.all([
+    sql<{ day: string; invoiceSales: string; credits: string }>`
+      WITH facts AS (${facts})
+      SELECT to_char(day, 'YYYY-MM-DD') AS day,
+        SUM(invoice_sales) AS "invoiceSales", SUM(credits) AS credits
+      FROM facts GROUP BY day ORDER BY day
+    `.execute(db),
+    sql<{
+      customerId: string;
+      customerName: string;
+      invoiceSales: string;
+      credits: string;
+    }>`
+      WITH facts AS (${facts})
+      SELECT facts.customer_id AS "customerId",
+        COALESCE(c.name, facts.customer_id) AS "customerName",
+        SUM(facts.invoice_sales) AS "invoiceSales",
+        SUM(facts.credits) AS credits
+      FROM facts
+      LEFT JOIN customer c ON c.id = facts.customer_id
+        AND c."companyId" = ${companyId}
+      GROUP BY facts.customer_id, c.name
+      ORDER BY SUM(facts.invoice_sales - facts.credits) DESC,
+        facts.customer_id
+      LIMIT 10
+    `.execute(db)
+  ]);
+
+  return {
+    daily: daily.rows.map((row) => ({
+      day: row.day,
+      invoiceSales: Number(row.invoiceSales),
+      credits: Number(row.credits)
+    })),
+    customers: customers.rows.map((row) => ({
+      customerId: row.customerId,
+      customerName: row.customerName,
+      invoiceSales: Number(row.invoiceSales),
+      credits: Number(row.credits)
+    }))
+  };
+}
+
+export async function getSalesDashboardBacklog(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  customerId: string | null
+) {
+  const customerFilter = customerId
+    ? sql`AND so."customerId" = ${customerId}`
+    : sql``;
+  const result = await sql<{
+    id: string;
+    salesOrderId: string;
+    customerName: string;
+    amount: string;
+    totalAmount: string;
+    orderCount: string;
+  }>`
+    WITH open_orders AS (
+      SELECT so.id, so."salesOrderId", COALESCE(c.name, so."customerId") AS "customerName",
+        SUM(sol."quantityToInvoice" * COALESCE(sol."unitPrice", 0)) AS amount
+      FROM "salesOrder" so
+      JOIN "salesOrderLine" sol
+        ON sol."salesOrderId" = so.id AND sol."companyId" = so."companyId"
+      LEFT JOIN customer c ON c.id = so."customerId"
+        AND c."companyId" = so."companyId"
+      WHERE so."companyId" = ${companyId}
+        AND so.status IN (
+          'Confirmed', 'In Progress', 'Completed',
+          'To Ship and Invoice', 'To Ship', 'To Invoice'
+        )
+        AND sol."quantityToInvoice" > 0
+        ${customerFilter}
+      GROUP BY so.id, so."salesOrderId", so."customerId", c.name
+    )
+    SELECT id, "salesOrderId", "customerName", amount,
+      SUM(amount) OVER () AS "totalAmount",
+      COUNT(*) OVER () AS "orderCount"
+    FROM open_orders
+    ORDER BY amount DESC, id
+    LIMIT 5
+  `.execute(db);
+
+  return {
+    amount: Number(result.rows[0]?.totalAmount ?? 0),
+    count: Number(result.rows[0]?.orderCount ?? 0),
+    orders: result.rows.map((row) => ({
+      id: row.id,
+      salesOrderId: row.salesOrderId,
+      customerName: row.customerName,
+      amount: Number(row.amount)
+    }))
+  };
+}
+
 export async function getSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string

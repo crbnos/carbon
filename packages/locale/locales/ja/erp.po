@@ -595,6 +595,11 @@ msgstr "{0} 作業 · {1} 個"
 msgid "{0} orders"
 msgstr "{0}件の注文"
 
+#. placeholder {0}: number.format(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} 部品リンクは工程上の一致するBOM明細がありません"
@@ -9179,6 +9184,9 @@ msgstr "得意先契約明細"
 msgid "Customer Country"
 msgstr "得意先国"
 
+msgid "Customer credits"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "得意先デポジット"
 
@@ -9615,6 +9623,9 @@ msgstr "製造指図{target}を{amount}に減少"
 
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "発注書{target}を{amount}に減少"
+
+msgid "Deducted from invoiced sales"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "真夜中ですね、{name}さん。"
@@ -12498,6 +12509,9 @@ msgstr "除外 ({excludedCount})"
 
 msgid "Excluded from Missing Time"
 msgstr "不足時間から除外"
+
+msgid "Excludes tax and freight"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "経営幹部向けP&L"
@@ -15459,6 +15473,9 @@ msgstr "{readableId} の請求書を今すぐ作成しますか？"
 msgid "Invoice Address"
 msgstr "請求書住所"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "請求書担当者"
 
@@ -15556,6 +15573,12 @@ msgstr "請求済み"
 msgid "Invoiced Amount:"
 msgstr "請求済み金額:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "別々に請求済"
 
@@ -15573,6 +15596,9 @@ msgstr "請求済: {shipmentId}"
 
 msgid "Invoices"
 msgstr "請求書"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "会計を有効化すると、請求書と買掛金請求書が同期されます"
@@ -15607,6 +15633,9 @@ msgstr "請求書は、請求顧客にすでにリンクされているStripeの
 msgid "Invoices could not be loaded"
 msgstr "請求書を読み込めませんでした"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "このメモが適用された請求書。行をクリックして文書を開きます。"
 
@@ -15618,6 +15647,9 @@ msgstr "請求"
 
 msgid "Invoicing Dashboard"
 msgstr "請求ダッシュボード"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "です"
@@ -16265,6 +16297,9 @@ msgstr "より大きい"
 
 msgid "Largest child"
 msgstr "最大子"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
@@ -18221,6 +18256,9 @@ msgstr "MRP 提案"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP は、既存の注文の日付がこの日数以上ずれている場合だけ、既存の注文の移動を提案します。より小さなギャップは放置されて、ワークリストは静かなままです。"
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "複数の製造指図がこの工法上で同時に実行できます—例：レーザーテーブル、炉、またはめっき槽"
 
@@ -18370,6 +18408,9 @@ msgstr "リース投資純額"
 msgid "Net Investment in Leases (default)"
 msgstr "リース投資純額（デフォルト）"
 
+msgid "Net invoiced sales"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "純使用権資産"
 
@@ -18378,6 +18419,13 @@ msgstr "純使用権資産:"
 
 msgid "Net ROU Asset"
 msgstr "純ROU資産"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "純単価"
@@ -20806,6 +20854,9 @@ msgstr "マイタイムを表示"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "レビュアーが承認してから適用される下書きで計画を変更するために1つ開いてください。"
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "オープン注文"
 
@@ -20827,22 +20878,13 @@ msgstr "未処理の発注書"
 msgid "Open Purchase Orders"
 msgstr "未処理の発注書"
 
-msgid "Open Quotes"
-msgstr "オープン見積"
-
 msgid "Open Reactive"
 msgstr "オープン反応"
 
 msgid "Open receivables by customer and age"
 msgstr "得意先別および期間別のオープン売掛金"
 
-msgid "Open RFQs"
-msgstr "オープンRFQ"
-
 msgid "Open sales orders"
-msgstr "オープン受注"
-
-msgid "Open Sales Orders"
 msgstr "オープン受注"
 
 msgid "Open Scheduled"
@@ -22340,6 +22382,9 @@ msgstr "投稿者"
 
 msgid "Posted hours"
 msgstr "転記済時間"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "これらのソースタイプの転記済仕訳は常に同期されます。毎日サマリーは1日の仕訳を勘定科目ごとに1つのプロバイダーエントリにグループ化します。"
@@ -24744,12 +24789,10 @@ msgid "Request date"
 msgstr "リクエスト日付"
 
 msgid "Requested"
-msgstr "リクエスト済み"
+msgstr ""
 
 msgid "Requested By"
 msgstr "要求者"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "希望納期"
@@ -25715,9 +25758,6 @@ msgstr "販売値引"
 msgid "Sales Discounts (default)"
 msgstr "販売値引（デフォルト）"
 
-msgid "Sales Funnel"
-msgstr "販売ファネル"
-
 msgid "Sales invoice"
 msgstr "売上請求書"
 
@@ -25783,9 +25823,6 @@ msgstr "販売返品"
 
 msgid "Sales return receipts"
 msgstr "販売返品入荷"
-
-msgid "Sales Revenue"
-msgstr "販売売上高"
 
 msgid "Sales Rule"
 msgstr "販売ルール"
@@ -31755,6 +31792,9 @@ msgstr "ツール"
 msgid "Tools"
 msgstr "ツール"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "トップレベル"
 
@@ -32330,6 +32370,9 @@ msgstr "{0}をアンインストールしてください"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "まず{conflictsWith}をアンインストールしてください"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "未請求の出荷"
@@ -33177,6 +33220,9 @@ msgstr "原価を表示"
 msgid "View Count"
 msgstr "カウントを表示"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "カスタムフィールドを表示"
 
@@ -33252,17 +33298,8 @@ msgstr "オープンな請求書を表示"
 msgid "View Open Issues"
 msgstr "オープンな問題を表示"
 
-msgid "View Open Orders"
-msgstr "オープンオーダーを表示"
-
 msgid "View Open POs"
 msgstr "オープンPOを表示"
-
-msgid "View Open Quotes"
-msgstr "オープンな見積もりを表示"
-
-msgid "View Open RFQs"
-msgstr "オープンなRFQを表示"
 
 msgid "View or open"
 msgstr "表示または開く"
@@ -33311,6 +33348,12 @@ msgstr "代替受注を表示"
 
 msgid "View Run"
 msgstr "実行を表示"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "スケジュールを表示"

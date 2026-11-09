@@ -595,6 +595,11 @@ msgstr "{0} ops · {1} peças"
 msgid "{0} orders"
 msgstr "{0} pedidos"
 
+#. placeholder {0}: number.format(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} ligações de peças não tiveram nenhuma linha de BOM correspondente na operação"
@@ -9179,6 +9184,9 @@ msgstr "Linha de contrato do cliente"
 msgid "Customer Country"
 msgstr "País do Cliente"
 
+msgid "Customer credits"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "Depósito do cliente"
 
@@ -9615,6 +9623,9 @@ msgstr "Reduzir ordem de produção {target} para {amount}"
 
 msgid "Decrease purchase order {target} to {amount}"
 msgstr "Reduzir pedido de compra {target} para {amount}"
+
+msgid "Deducted from invoiced sales"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "Bem na madrugada, {name}."
@@ -12498,6 +12509,9 @@ msgstr "Excluído ({excludedCount})"
 
 msgid "Excluded from Missing Time"
 msgstr "Excluído de Tempo Faltante"
+
+msgid "Excludes tax and freight"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "P&L Executivo"
@@ -15459,6 +15473,9 @@ msgstr "Faturar {readableId} agora?"
 msgid "Invoice Address"
 msgstr "Endereço da Fatura"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "Contato da Fatura"
 
@@ -15556,6 +15573,12 @@ msgstr "Faturado"
 msgid "Invoiced Amount:"
 msgstr "Valor Faturado:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "Faturado separadamente"
 
@@ -15573,6 +15596,9 @@ msgstr "Faturado: {shipmentId}"
 
 msgid "Invoices"
 msgstr "Faturas"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Faturas e contas sincronizam depois que você ativa a contabilidade"
@@ -15607,6 +15633,9 @@ msgstr "Faturas são enviadas para o cliente do Stripe já vinculado ao cliente 
 msgid "Invoices could not be loaded"
 msgstr "As faturas não puderam ser carregadas"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Faturas às quais este memorando foi aplicado. Clique em uma linha para abrir o documento."
 
@@ -15618,6 +15647,9 @@ msgstr "Faturamento"
 
 msgid "Invoicing Dashboard"
 msgstr "Painel de faturamento"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "é"
@@ -16265,6 +16297,9 @@ msgstr "Maior"
 
 msgid "Largest child"
 msgstr "Maior filho"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
@@ -18221,6 +18256,9 @@ msgstr "Sugestões MRP"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP sugere mover um pedido existente apenas quando sua data está fora de prazo por mais de vários dias. Diferenças menores são ignoradas para manter a lista de trabalho tranquila."
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Múltiplas ordens de produção podem ser executadas neste processo ao mesmo tempo — por exemplo, uma mesa a laser, forno ou banho de galvanização"
 
@@ -18370,6 +18408,9 @@ msgstr "Investimento Líquido em Arrendamentos"
 msgid "Net Investment in Leases (default)"
 msgstr "Investimento Líquido em Arrendamentos (padrão)"
 
+msgid "Net invoiced sales"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Ativo de direito de uso líquido"
 
@@ -18378,6 +18419,13 @@ msgstr "Ativo de Direito de Uso Líquido:"
 
 msgid "Net ROU Asset"
 msgstr "Ativo ROU Líquido"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "Preço Unitário Líquido"
@@ -20806,6 +20854,9 @@ msgstr "Abrir Meu Tempo"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Abra um para alterar o plano em um rascunho que revisores aprovam antes de ser aplicado."
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Pedidos Abertos"
 
@@ -20827,23 +20878,14 @@ msgstr "Pedidos de compra abertos"
 msgid "Open Purchase Orders"
 msgstr "Pedidos de Compra Abertos"
 
-msgid "Open Quotes"
-msgstr "Cotações Abertas"
-
 msgid "Open Reactive"
 msgstr "Reativo Aberto"
 
 msgid "Open receivables by customer and age"
 msgstr "Contas a receber em aberto por cliente e idade"
 
-msgid "Open RFQs"
-msgstr "RFQs Abertos"
-
 msgid "Open sales orders"
 msgstr "Pedidos de venda abertos"
-
-msgid "Open Sales Orders"
-msgstr "Pedidos de Venda Abertos"
 
 msgid "Open Scheduled"
 msgstr "Agendado Aberto"
@@ -22340,6 +22382,9 @@ msgstr "Postado Por"
 
 msgid "Posted hours"
 msgstr "Horas Contabilizadas"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Os diários lançados com esses tipos de origem sempre sincronizam. O resumo diário agrupa os diários de um dia em uma única entrada do provedor por conta."
@@ -24744,12 +24789,10 @@ msgid "Request date"
 msgstr "Data da solicitação"
 
 msgid "Requested"
-msgstr "Solicitado"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Solicitado por"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Data Solicitada"
@@ -25715,9 +25758,6 @@ msgstr "Descontos de vendas"
 msgid "Sales Discounts (default)"
 msgstr "Descontos de vendas (padrão)"
 
-msgid "Sales Funnel"
-msgstr "Funil de Vendas"
-
 msgid "Sales invoice"
 msgstr "Fatura de vendas"
 
@@ -25783,9 +25823,6 @@ msgstr "Devolução de venda"
 
 msgid "Sales return receipts"
 msgstr "Recebimentos de devolução de vendas"
-
-msgid "Sales Revenue"
-msgstr "Receita de Vendas"
 
 msgid "Sales Rule"
 msgstr "Regra de Vendas"
@@ -31755,6 +31792,9 @@ msgstr "Ferramentas"
 msgid "Tools"
 msgstr "Ferramentas"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "Nível superior"
 
@@ -32330,6 +32370,9 @@ msgstr "Desinstale {0} primeiro"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Desinstale {conflictsWith} primeiro"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "Remessas não faturadas"
@@ -33177,6 +33220,9 @@ msgstr "Visualizar custos"
 msgid "View Count"
 msgstr "Ver Contagem"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "Ver Campos Personalizados"
 
@@ -33252,17 +33298,8 @@ msgstr "Ver Faturas Abertas"
 msgid "View Open Issues"
 msgstr "Ver Problemas Abertos"
 
-msgid "View Open Orders"
-msgstr "Ver Pedidos Abertos"
-
 msgid "View Open POs"
 msgstr "Ver POs Abertos"
-
-msgid "View Open Quotes"
-msgstr "Ver Cotações Abertas"
-
-msgid "View Open RFQs"
-msgstr "Ver RFQs Abertos"
 
 msgid "View or open"
 msgstr "Visualizar ou abrir"
@@ -33311,6 +33348,12 @@ msgstr "Visualizar pedido de venda de reposição"
 
 msgid "View Run"
 msgstr "Visualizar Execução"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "Visualizar programação"
