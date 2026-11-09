@@ -4498,7 +4498,8 @@ export const orderPlannedJobs = defineServiceFn({
       return ctx.error("notFound", "Project not found");
     }
 
-    const createdJobs: { id: string; readableId: string }[] = [];
+    const createdJobs: { itemId: string; id: string; readableId: string }[] =
+      [];
     const itemsWithoutOrders: string[] = [];
     const supplyByKey = new Map<
       string,
@@ -4526,8 +4527,6 @@ export const orderPlannedJobs = defineServiceFn({
       planningActionId?: string;
     }[] = [];
     const errors: string[] = [];
-    // The jobs made, before their methods.
-    const inserted: { itemId: string; id: string; readableId: string }[] = [];
     // A job kept without its method: the planner must Get Method on it.
     const warnings: string[] = [];
 
@@ -4572,18 +4571,22 @@ export const orderPlannedJobs = defineServiceFn({
       const manufacturing = manufacturingByItem.get(item.id);
       if (manufacturingRows.error || !manufacturing) {
         errors.push(
-          `Failed to retrieve manufacturing data for item ${item.id}: ${
+          `Failed to retrieve manufacturing data for ${readableIdByItem.get(item.id) ?? item.id}: ${
             manufacturingRows.error?.message ?? "No replenishment record"
           }`
         );
         continue;
       }
       if (manufacturing.manufacturingBlocked) {
-        errors.push(`Manufacturing is blocked for item ${item.id}`);
+        errors.push(
+          `Manufacturing is blocked for ${readableIdByItem.get(item.id) ?? item.id}`
+        );
         continue;
       }
       if (manufacturing.requiresConfiguration) {
-        errors.push(`Manufacturing requires configuration for item ${item.id}`);
+        errors.push(
+          `Manufacturing requires configuration for ${readableIdByItem.get(item.id) ?? item.id}`
+        );
         continue;
       }
 
@@ -4637,15 +4640,14 @@ export const orderPlannedJobs = defineServiceFn({
         if (created.error || !created.data?.id) {
           errors.push(
             created.error
-              ? `Failed to create job for item ${item.id}: ${created.error.message}`
-              : `Job was not returned after creation for item ${item.id}`
+              ? `Failed to create job for ${readableIdByItem.get(item.id) ?? item.id}: ${created.error.message}`
+              : `Job was not returned after creation for ${readableIdByItem.get(item.id) ?? item.id}`
           );
           continue;
         }
         const id = created.data.id;
         const readableId = created.data.jobId ?? "";
-        createdJobs.push({ id, readableId });
-        inserted.push({ itemId: item.id, id, readableId });
+        createdJobs.push({ itemId: item.id, id, readableId });
         // the job is supply from here on, with or without its method
         ordered.push({
           itemId: item.id,
@@ -4719,7 +4721,7 @@ export const orderPlannedJobs = defineServiceFn({
     // A job is made once it exists: one whose method fails stays, named in
     // `warnings`, so a retry cannot make it a second time. This also
     // recalculates each job's requirements.
-    for (const job of inserted) {
+    for (const job of createdJobs) {
       const method = await service.upsertJobMethod(client, db, "itemToJob", {
         sourceId: job.itemId,
         targetId: job.id,
@@ -4733,11 +4735,11 @@ export const orderPlannedJobs = defineServiceFn({
           error: method.error
         });
         warnings.push(
-          `${job.readableId} was created, but copying its method did not finish. Open it and use Get Method.`
+          `${job.readableId} was created, but its method or requirements could not be completed. Open it and use Get Method.`
         );
       }
     }
-    const processedItems = new Set(inserted.map((job) => job.itemId)).size;
+    const processedItems = new Set(createdJobs.map((job) => job.itemId)).size;
     for (const error of errors) logger.error(error, { companyId, locationId });
 
     if (supplyByKey.size > 0) {
@@ -4785,7 +4787,7 @@ export const orderPlannedJobs = defineServiceFn({
     }
 
     return {
-      jobs: createdJobs,
+      jobs: createdJobs.map(({ id, readableId }) => ({ id, readableId })),
       alreadyPlannedItemCount: alreadyPlannedItemIds.size,
       noDemandItemCount: itemsWithoutOrders.length - alreadyPlannedItemIds.size,
       processedItems,

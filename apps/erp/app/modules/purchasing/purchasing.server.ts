@@ -3168,7 +3168,7 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     const supplierIds = new Set<string>();
-    const itemIds = new Set<string>();
+    const itemIds = new Set(itemsToOrder.map((item) => item.id));
     const periodIds = new Set<string>();
     const allSupplyForecasts: Array<{
       itemId: string;
@@ -3226,63 +3226,6 @@ export const orderPlannedPurchases = defineServiceFn({
       (purchasingRows.data ?? []).map((row) => [row.itemId, row])
     );
 
-    for (const item of itemsToOrder) {
-      itemIds.add(item.id);
-      // Nothing of such an item can be placed, so no PO is raised for it.
-      const replenishment = purchasingByItem.get(item.id);
-      if (purchasingRows.error || !replenishment) {
-        errors.push(
-          `Failed to retrieve purchasing data for item ${item.id}: ${
-            purchasingRows.error?.message ?? "No replenishment record"
-          }`
-        );
-        continue;
-      }
-      if (replenishment.purchasingBlocked) {
-        errors.push(`Purchasing is blocked for item ${item.id}`);
-        continue;
-      }
-      const { invalid, past, placeable } = classifyPlanningOrders(
-        item.orders,
-        today,
-        replenishment.leadTime
-      );
-      if (invalid.length > 0) invalidCountByItem.set(item.id, invalid.length);
-      refusedOrders.push(
-        ...past.map((index) => ({
-          itemId: item.id,
-          planningSegmentId: item.planningSegmentId,
-          index
-        }))
-      );
-      let itemHasUsableOrder = false;
-      for (const index of placeable) {
-        const order = item.orders[index]!;
-        if (order.supplierId) supplierIds.add(order.supplierId);
-        if (order.periodId) periodIds.add(order.periodId);
-        if (order.supplierId && order.periodId) {
-          ordersBySupplier.set(order.supplierId, [
-            ...(ordersBySupplier.get(order.supplierId) ?? []),
-            {
-              itemId: item.id,
-              planningSegmentId: item.planningSegmentId,
-              order
-            }
-          ]);
-          itemHasUsableOrder = true;
-        }
-      }
-      // an item whose orders were all refused is reported as refused
-      if (
-        !itemHasUsableOrder &&
-        (placeable.length > 0 || item.orders.length === 0)
-      ) {
-        errors.push(
-          `Item ${item.id} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
-        );
-      }
-    }
-
     // Every id comes from the caller and the writes bypass RLS: the location
     // and items must be this company's (supplyForecast upserts on
     // (itemId, locationId, periodId, planningSegmentId) alone).
@@ -3313,6 +3256,63 @@ export const orderPlannedPurchases = defineServiceFn({
     );
     const readableIdOf = (itemId: string) =>
       readableIdByItem.get(itemId) ?? itemId;
+    for (const item of itemsToOrder) {
+      // Nothing of such an item can be placed, so no PO is raised for it.
+      const replenishment = purchasingByItem.get(item.id);
+      if (purchasingRows.error || !replenishment) {
+        errors.push(
+          `Failed to retrieve purchasing data for ${readableIdOf(item.id)}: ${
+            purchasingRows.error?.message ?? "No replenishment record"
+          }`
+        );
+        continue;
+      }
+      if (replenishment.purchasingBlocked) {
+        errors.push(`Purchasing is blocked for ${readableIdOf(item.id)}`);
+        continue;
+      }
+      const { invalid, past, placeable } = classifyPlanningOrders(
+        item.orders,
+        today,
+        replenishment.leadTime
+      );
+      if (invalid.length > 0) {
+        invalidCountByItem.set(
+          item.id,
+          (invalidCountByItem.get(item.id) ?? 0) + invalid.length
+        );
+      }
+      refusedOrders.push(
+        ...past.map((index) => ({
+          itemId: item.id,
+          planningSegmentId: item.planningSegmentId,
+          index
+        }))
+      );
+      let itemHasUsableOrder = false;
+      for (const index of placeable) {
+        const order = item.orders[index]!;
+        if (order.supplierId) supplierIds.add(order.supplierId);
+        if (order.periodId) periodIds.add(order.periodId);
+        if (order.supplierId && order.periodId) {
+          ordersBySupplier.set(order.supplierId, [
+            ...(ordersBySupplier.get(order.supplierId) ?? []),
+            {
+              itemId: item.id,
+              planningSegmentId: item.planningSegmentId,
+              order
+            }
+          ]);
+          itemHasUsableOrder = true;
+        }
+      }
+      if (placeable.length > 0 && !itemHasUsableOrder) {
+        errors.push(
+          `${readableIdOf(item.id)} skipped: no order had both a supplier and a period (check that the item has a preferred supplier)`
+        );
+      }
+    }
+
     const pastStartErrors = pastStartRefusalMessages(
       refusedOrders,
       readableIdOf,
@@ -3566,7 +3566,7 @@ export const orderPlannedPurchases = defineServiceFn({
               .eq("companyId", companyId);
             if (updateLine.error) {
               errors.push(
-                `Failed to update PO line for item ${itemId}: ${updateLine.error.message}`
+                `Failed to update PO line for ${readableIdOf(itemId)}: ${updateLine.error.message}`
               );
               continue;
             }
@@ -3640,7 +3640,7 @@ export const orderPlannedPurchases = defineServiceFn({
             });
             if (createLine.error) {
               errors.push(
-                `Failed to create PO line for item ${itemId}: ${createLine.error.message}`
+                `Failed to create PO line for ${readableIdOf(itemId)}: ${createLine.error.message}`
               );
               continue;
             }
@@ -3755,7 +3755,7 @@ export const orderPlannedPurchases = defineServiceFn({
     }
 
     const problems = [...pastStartErrors, ...errors];
-    if (problems.length > 0 && processedItems === 0) {
+    if (processedItems === 0) {
       logger.error("Failed to process any planning orders", {
         companyId,
         locationId,
@@ -3766,7 +3766,9 @@ export const orderPlannedPurchases = defineServiceFn({
       });
       return ctx.error(
         "rule",
-        nothingOrderedMessage("orders", problems, errors.length === 0)
+        problems.length === 0
+          ? "There were no orders to place"
+          : nothingOrderedMessage("orders", problems, errors.length === 0)
       );
     }
 
