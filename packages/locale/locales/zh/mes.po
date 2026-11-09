@@ -1460,6 +1460,9 @@ msgstr "本地"
 msgid "Location"
 msgstr "位置"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "记录完成"
 

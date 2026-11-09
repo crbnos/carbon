@@ -213,7 +213,7 @@
     {"name":"inventory_getReceipt","classification":"READ","schema":"01d5b5b2ab72","response":"2480e9f5446b","permission":"inventory:view","paginates":false},
     {"name":"inventory_getReceiptFiles","classification":"READ","schema":"72a93572f55f","response":"5483e69d7515","permission":"inventory:view","paginates":false},
     {"name":"inventory_getReceiptLines","classification":"READ","schema":"01d5b5b2ab72","response":"63983fb2cdf8","permission":"inventory:view","paginates":false},
-    {"name":"inventory_getReceiptRelatedItems","classification":"READ","schema":"dfd19a240692","response":"ccfc2551d69d","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getReceiptRelatedItems","classification":"READ","schema":"dfd19a240692","response":"2d38e3a4dc0a","permission":"inventory:view","paginates":false},
     {"name":"inventory_getReceipts","classification":"READ","schema":"cd40ae40fad5","response":"d9d46175dcbc","permission":"inventory:view","paginates":true},
     {"name":"inventory_getReceiptTracking","classification":"READ","schema":"01d5b5b2ab72","response":"ec54684c77fb","permission":"inventory:view","paginates":false},
     {"name":"inventory_getRentalReceiptLines","classification":"READ","schema":"01d5b5b2ab72","response":"7fb4d944b992","permission":"inventory:view","paginates":false},

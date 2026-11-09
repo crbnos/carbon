@@ -1460,6 +1460,9 @@ msgstr "Yerel"
 msgid "Location"
 msgstr "Konum"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "Tamamlandı kaydı"
 

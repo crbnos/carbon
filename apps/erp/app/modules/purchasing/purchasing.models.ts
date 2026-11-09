@@ -1235,7 +1235,7 @@ export function purchaseOrderLineDateRefusal(
   switch (field) {
     case "requiredDate":
       return isPurchaseOrderEditLocked(line.status)
-        ? "Cannot change the requested date of a purchase order in approval or completed."
+        ? "Cannot change the required date of a purchase order in approval or completed."
         : null;
     case "promisedDate":
       return (

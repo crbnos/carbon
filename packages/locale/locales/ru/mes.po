@@ -1460,6 +1460,9 @@ msgstr "Локально"
 msgid "Location"
 msgstr "Расположение"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "Записать завершение"
 
