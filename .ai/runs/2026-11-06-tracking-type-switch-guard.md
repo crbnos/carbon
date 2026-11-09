@@ -42,7 +42,7 @@
 - Regression 1: the guard refused Inventory to Batch while the item held untracked stock. `assignBatchToUnnumberedStock` (#2112) exists to number that stock in place, so the guard blocked a supported workflow.
 - Regression 2: the guard refused a change back to Batch while lots were left on an Inventory item. That change is how an item already hit by the original bug is repaired.
 - Fix: Batch takes any stock. Serial refuses untracked stock and a lot of more than one unit, because nothing numbers untracked stock as serials. Inventory refuses lots. Non-Inventory refuses any stock. The messages give the number of places and the total, because stock that nets to zero across bins is still stock.
-  - Shipped in the one generated migration, `20261106214206_item-tracking-type-change.sql`.
+  - Shipped in the one generated migration, `20261109234253_item-tracking-type-change.sql`.
   - Red: under the old rule both cases are refused (scratch `.context/scratch/red-regression.sql`). Green: the SQL test, now 16 cases, passes.
   - Scratch ERP proof (deleted): a part with 5 untracked changes to Batch, then `assignBatchToUnnumberedStock` books -5 unnumbered and +5 as B-100. Serial is still refused.
 - Regression 3: after a refused change, the properties panels kept showing the refused value. `@carbon/form` seeds a controlled field from `defaultValues` only at hydration. Seen in the browser on FST-M4-TI: the toast said why, the field showed Serial, a reload showed Inventory.
@@ -66,6 +66,21 @@
 
 - Red: under the previous handler (f2), (o) and (q) fail; under the previous backflush, (d) fails. Green: both SQL tests pass, and 9 ERP database files on job completion, backflush and receipts pass (86 tests).
 - `function-redefinition-keeps-changes` flagged the third generated handler migration, because it replaced lines the second one added. None of the three had reached `main`, so they were squashed into one.
+
+## Follow-up: second CodeRabbit review (2026-11-10)
+
+| # | Finding | Result |
+|---|---|---|
+| 1-4 | Another field's refusal reset the tracking field, even while a tracking change was still saving | Fixed: the tracking field has its own fetcher, and only its refusal remounts it. |
+| 5 | The Serial refusal paired one lot's name with another lot's balance | Fixed: the lot and its balance come from one ordered aggregate. Test (b2). |
+| 6, 8 | A receipt posting or a new job material in the same instant as the change | Not changed: the cross-module item lock is a follow-up, as in the first review. |
+| 7 | MES cannot issue stock with no batch number | Not changed: Assign Batch (#2112) gives it a number first, by design. |
+| 9 | A Draft shipment kept the serial or batch chosen for the old type | Fixed: the change clears the choice, as removing it from the line does. Test (r). |
+| 10 | Two backflushes at once could both add a Non-Inventory issue | Fixed: the issue sets the cumulative target, not an increment. |
+| 11 | Rounding left over in prorated draws | Not changed: it was already in `backflush_job_materials` before this PR. |
+
+- Red: (b2) and (r) fail under the previous handler. Green: the SQL tests pass. ERP database files on jobs, backflush, receipts and shipments: 81 pass. ERP unit tests: 3,715 pass.
+- The handler's generated migration was squashed again (not on `main`): `20261109234253_item-tracking-type-change.sql`.
 
 ## Outcome
 

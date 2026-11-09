@@ -77,6 +77,7 @@ DECLARE
   v_batch text; v_plain text; v_empty text; v_running text; v_draft_part text; v_assembly text;
   v_stranded text; v_split text; v_units text; v_service text; v_bin text;
   v_moved text; v_received text; v_receipt text; v_line text; v_unit text; v_returned text;
+  v_pair text; v_shipped text; v_shipment text; v_ship_line text; v_chosen text;
   v_lot text; v_job text; v_message text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Tracking type test', 'system') RETURNING id INTO v_group_id;
@@ -105,6 +106,16 @@ BEGIN
     $$UPDATE item SET "itemTrackingType" = 'Serial' WHERE id = %L$$, v_batch));
   ASSERT v_message = 'TT-BATCH has 12 on hand in batch LOT-1. A serial number holds one unit: adjust that stock before you change the tracking type to Serial.',
     format('A lot of 12 must refuse the change to Serial, got: %s', v_message);
+
+  -- (b2) The message names the first lot that cannot be a serial number and
+  -- that lot's own balance: A-LOT with 2, not Z-LOT's 5.
+  v_pair := pg_temp.item(v_company_id, 'TT-PAIR', 'Batch');
+  PERFORM pg_temp.lot(v_company_id, v_location_id, v_pair, 'Z-LOT', 5);
+  PERFORM pg_temp.lot(v_company_id, v_location_id, v_pair, 'A-LOT', 2);
+  v_message := pg_temp.refusal(format(
+    $$UPDATE item SET "itemTrackingType" = 'Serial' WHERE id = %L$$, v_pair));
+  ASSERT v_message = 'TT-PAIR has 2 on hand in batch A-LOT. A serial number holds one unit: adjust that stock before you change the tracking type to Serial.',
+    format('The message must pair the lot with its own balance, got: %s', v_message);
 
   -- (c) Once the lot is adjusted to zero the change goes through.
   PERFORM pg_temp.stock(v_company_id, v_location_id, v_batch, -12, v_lot);
@@ -263,6 +274,26 @@ BEGIN
     'A receipt serial with history must keep its other attributes and lose its receipt link';
   ASSERT (SELECT NOT "requiresSerialTracking" FROM "receiptLine" WHERE id = v_line),
     'The Draft receipt line must take the new type';
+
+  -- (r) A Draft shipment line's chosen serial was chosen for Serial. A change
+  -- to Inventory (the unit holds no stock: it was scrapped) clears the choice
+  -- and keeps the unit's other attributes.
+  v_shipped := pg_temp.item(v_company_id, 'TT-SHIPPED', 'Serial');
+  INSERT INTO shipment ("shipmentId", status, "companyId", "createdBy")
+    VALUES ('TT-S1', 'Draft', v_company_id, 'system') RETURNING id INTO v_shipment;
+  INSERT INTO "shipmentLine" ("shipmentId", "itemId", "shippedQuantity", "unitOfMeasure", "unitPrice", "requiresSerialTracking", "companyId", "createdBy")
+    VALUES (v_shipment, v_shipped, 1, 'EA', 0, true, v_company_id, 'system') RETURNING id INTO v_ship_line;
+  INSERT INTO "trackedEntity" (quantity, status, "sourceDocument", "sourceDocumentId", "readableId", "itemId", attributes, "companyId", "createdBy")
+    VALUES (1, 'Scrapped', 'Item', v_shipped, 'SN-S1', v_shipped,
+      jsonb_build_object('Shipment', v_shipment, 'Shipment Line', v_ship_line, 'Shipment Line Index', 0, 'Job', 'JOB-OLD'), v_company_id, 'system')
+    RETURNING id INTO v_chosen;
+  PERFORM pg_temp.stock(v_company_id, v_location_id, v_shipped, 1, v_chosen);
+  PERFORM pg_temp.stock(v_company_id, v_location_id, v_shipped, -1, v_chosen);
+  ASSERT pg_temp.refusal(format(
+    $$UPDATE item SET "itemTrackingType" = 'Inventory' WHERE id = %L$$, v_shipped)) IS NULL,
+    'A unit with no stock must not block the change';
+  ASSERT (SELECT attributes FROM "trackedEntity" WHERE id = v_chosen) = jsonb_build_object('Job', 'JOB-OLD'),
+    'The Draft shipment''s choice must be cleared and the other attributes kept';
 END;
 $cases$;
 

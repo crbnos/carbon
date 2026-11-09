@@ -263,9 +263,11 @@ BEGIN
 
     -- A Non-Inventory material holds no stock: issue it with no ledger row and
     -- no cost, as the operation backflush (issueJobOperationMaterials) does.
+    -- It takes the cumulative target, not an increment, so two backflushes of
+    -- the job at once cannot both add it.
     IF COALESCE(v_material."itemTrackingType", 'Inventory') = 'Non-Inventory' THEN
       UPDATE "jobMaterial"
-      SET "quantityIssued" = COALESCE("quantityIssued", 0) + v_material_qty_to_issue
+      SET "quantityIssued" = GREATEST(COALESCE("quantityIssued", 0), v_target)
       WHERE id = v_material.id;
       CONTINUE;
     END IF;

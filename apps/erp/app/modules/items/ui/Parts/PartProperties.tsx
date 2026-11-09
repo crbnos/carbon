@@ -196,13 +196,19 @@ const PartProperties = ({
   //     ? optimisticAssignment
   //     : routeData?.partSummary?.assignee;
 
-  // A refused update leaves a select showing the value that was refused; a
-  // new key remounts the tracking type field on the stored value.
-  const [refusals, setRefusals] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       toastServiceError(data);
-      setRefusals((count) => count + 1);
+    }
+  });
+  // A refused change leaves the tracking type select showing the refused
+  // value; a new key remounts it on the stored value. It has its own fetcher,
+  // so a refusal of another field never resets it.
+  const [trackingRefusals, setTrackingRefusals] = useState(0);
+  const trackingFetcher = useAction<typeof action>({
+    onError: (data) => {
+      toastServiceError(data);
+      setTrackingRefusals((count) => count + 1);
     }
   });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -228,10 +234,13 @@ const PartProperties = ({
       formData.append("field", field);
 
       formData.append("value", value?.toString() ?? "");
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateItems
-      });
+      (field === "itemTrackingType" ? trackingFetcher : fetcher).submit(
+        formData,
+        {
+          method: "post",
+          action: path.to.bulkUpdateItems
+        }
+      );
     },
 
     [routeData?.partSummary?.id]
@@ -568,7 +577,7 @@ const PartProperties = ({
       </ValidatedForm>
 
       <ValidatedForm
-        key={`itemTrackingType-${refusals}`}
+        key={`itemTrackingType-${trackingRefusals}`}
         defaultValues={{
           itemTrackingType:
             routeData?.partSummary?.itemTrackingType ?? undefined

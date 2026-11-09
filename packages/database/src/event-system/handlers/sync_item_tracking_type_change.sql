@@ -32,12 +32,13 @@ BEGIN
     -- A lot counts by each place it is in: +5 in one bin and -5 in another
     -- is stock in two places, not none. A serial unit is one unit in one place.
     SELECT count(*) AS lots, sum(per_lot.net) AS quantity,
-           min(te."readableId") FILTER (
+           -- The first such lot, and that lot's own balance.
+           (array_agg(te."readableId" ORDER BY te."readableId", per_lot."trackedEntityId") FILTER (
              WHERE per_lot.places > 1 OR round(per_lot.net, 5) <> 1
-           ) AS "multiUnitLot",
-           max(per_lot.net) FILTER (
+           ))[1] AS "multiUnitLot",
+           (array_agg(per_lot.net ORDER BY te."readableId", per_lot."trackedEntityId") FILTER (
              WHERE per_lot.places > 1 OR round(per_lot.net, 5) <> 1
-           ) AS "multiUnitQuantity"
+           ))[1] AS "multiUnitQuantity"
     FROM (
       SELECT per_place."trackedEntityId", sum(per_place.net) AS net, count(*) AS places
       FROM (
@@ -235,6 +236,19 @@ BEGIN
   WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
     AND te."companyId" = n."companyId"
     AND te.attributes ->> 'Receipt Line' = rl.id;
+
+  -- A Draft shipment line's chosen serial or batch was chosen for the old type,
+  -- and posting would ship it under the new one. Clear the choice, as removing
+  -- it from the line does.
+  UPDATE "trackedEntity" te
+  SET attributes = te.attributes - 'Shipment' - 'Shipment Line' - 'Shipment Line Index'
+  FROM batched_new n
+  JOIN batched_old o ON o.id = n.id AND o."companyId" = n."companyId"
+  JOIN "shipmentLine" sl ON sl."itemId" = n.id AND sl."companyId" = n."companyId"
+  JOIN "shipment" sh ON sh.id = sl."shipmentId" AND sh."companyId" = sl."companyId" AND sh.status = 'Draft'
+  WHERE n."itemTrackingType" IS DISTINCT FROM o."itemTrackingType"
+    AND te."companyId" = n."companyId"
+    AND te.attributes ->> 'Shipment Line' = sl.id;
 
   RETURN NULL;
 END;
