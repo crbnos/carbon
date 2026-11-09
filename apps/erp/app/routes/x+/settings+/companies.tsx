@@ -31,11 +31,14 @@ import {
 } from "~/modules/settings/ui/Companies";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringTabDisplay } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Companies`,
   to: path.to.companies
 };
+
+export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyGroupId, companyId, email } = await requirePermissions(
@@ -102,12 +105,15 @@ export default function SubsidiariesRoute() {
       value={activeTab}
       onValueChange={(tab) => {
         setActiveTab(tab);
-        setSearchParams((previous) => {
-          const next = new URLSearchParams(previous);
-          if (tab === "list") next.set("tab", "list");
-          else next.delete("tab");
-          return next;
-        });
+        setSearchParams(
+          (previous) => {
+            const next = new URLSearchParams(previous);
+            if (tab === "list") next.set("tab", "list");
+            else next.delete("tab");
+            return next;
+          },
+          { replace: true, preventScrollReset: true }
+        );
       }}
       className="w-full"
     >

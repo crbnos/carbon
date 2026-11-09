@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRouteData } from "@carbon/react";
-import { useCallback, useEffect, useState } from "react";
+import { useIsomorphicLayoutEffect, useRouteData } from "@carbon/react";
+import { useCallback, useState } from "react";
 import { useLocation } from "react-router";
 import { path } from "~/utils/path";
 
@@ -33,7 +33,8 @@ export function usePersistentPageTab<T extends string>(
       ? (queryValue as T)
       : null;
 
-  useEffect(() => {
+  // Match server markup during hydration, then restore before the first paint.
+  useIsomorphicLayoutEffect(() => {
     if (!storageKey) return;
     try {
       if (explicitValue) {

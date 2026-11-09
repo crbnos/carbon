@@ -490,6 +490,13 @@ function AssemblyInstructionExplorer({
     });
   };
 
+  const retryGenerate = () => {
+    // A new run must not be mistaken for the previous failed planner job.
+    setIgnoredFailedJobId(planJob?.status === "Failed" ? planJob.id : null);
+    setIsAwaitingPlan(false);
+    submitGenerate("generate");
+  };
+
   return (
     <>
       <Tabs
@@ -505,6 +512,27 @@ function AssemblyInstructionExplorer({
             Components
           </TabsTrigger>
         </TabsList>
+        {planFailed && steps.length === 0 && tab === "components" && (
+          <div
+            role="alert"
+            className="mx-3 mt-3 flex flex-none items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs"
+          >
+            <span className="text-destructive">
+              {planJob?.error ??
+                "Motion planning failed. Retry to run it again."}
+            </span>
+            {permissions.can("update", "production") && (
+              <Button
+                size="sm"
+                variant="secondary"
+                isDisabled={isDisabled || isConverting || !assemblerAvailable}
+                onClick={retryGenerate}
+              >
+                Retry Generate Steps
+              </Button>
+            )}
+          </div>
+        )}
         <TabsContent
           value="steps"
           className="flex min-h-0 flex-1 flex-col justify-between"
@@ -597,16 +625,7 @@ function AssemblyInstructionExplorer({
                       }
                       isLoading={isSolving}
                       leftIcon={planFailed ? undefined : <LuSparkles />}
-                      onClick={() => {
-                        // The action starts a fresh planner run when the
-                        // latest one failed — don't read that stale failure
-                        // as this run's outcome
-                        setIgnoredFailedJobId(
-                          planJob?.status === "Failed" ? planJob.id : null
-                        );
-                        setIsAwaitingPlan(false);
-                        submitGenerate("generate");
-                      }}
+                      onClick={retryGenerate}
                     >
                       {planFailed ? "Retry Generate Steps" : "Generate Steps"}
                     </Button>

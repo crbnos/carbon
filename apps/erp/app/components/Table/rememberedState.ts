@@ -68,9 +68,16 @@ export function columnsForTable(
 ): TableColumnsState {
   if (savedView) return savedView;
   if (!remembered) return defaults;
-  return remembered.columnOrder.length
-    ? remembered
-    : { ...remembered, columnOrder: defaults.columnOrder };
+  return {
+    ...remembered,
+    columnVisibility: {
+      ...defaults.columnVisibility,
+      ...remembered.columnVisibility
+    },
+    columnOrder: remembered.columnOrder.length
+      ? remembered.columnOrder
+      : defaults.columnOrder
+  };
 }
 
 /** Explicit URL values always win; a selected view never borrows local state. */

@@ -45,6 +45,15 @@ describe("remembered table state", () => {
     ).toEqual(defaults.columnOrder);
   });
 
+  it("applies new default-hidden columns without losing an explicit user choice", () => {
+    expect(
+      columnsForTable(null, remembered, {
+        ...defaults,
+        columnVisibility: { supplierId: false, newColumn: false }
+      }).columnVisibility
+    ).toEqual({ supplierId: true, newColumn: false });
+  });
+
   it("restores missing query values while keeping explicit URL filters", () => {
     expect(
       rememberedQuery(new URLSearchParams(), remembered, false)?.toString()

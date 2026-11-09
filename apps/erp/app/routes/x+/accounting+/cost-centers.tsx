@@ -30,11 +30,14 @@ import {
 } from "~/modules/accounting/ui/CostCenters";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringTabDisplay } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Cost Centers`,
   to: path.to.costCenters
 };
+
+export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -101,12 +104,15 @@ export default function Route() {
       value={activeTab}
       onValueChange={(tab) => {
         setActiveTab(tab);
-        setSearchParams((previous) => {
-          const next = new URLSearchParams(previous);
-          if (tab === "list") next.set("tab", "list");
-          else next.delete("tab");
-          return next;
-        });
+        setSearchParams(
+          (previous) => {
+            const next = new URLSearchParams(previous);
+            if (tab === "list") next.set("tab", "list");
+            else next.delete("tab");
+            return next;
+          },
+          { replace: true, preventScrollReset: true }
+        );
       }}
       className="w-full"
     >

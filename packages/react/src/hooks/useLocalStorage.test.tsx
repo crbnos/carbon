@@ -7,6 +7,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
+import { toast } from "../Toast";
 import useLocalStorage from "./useLocalStorage";
 
 it("keeps both display changes made before React renders again", () => {
@@ -49,5 +50,46 @@ it("keeps both display changes made before React renders again", () => {
   });
 
   act(() => root.unmount());
+  vi.unstubAllGlobals();
+});
+
+it("uses defaults for invalid storage and keeps a stable setter when writes fail", () => {
+  vi.stubGlobal("localStorage", {
+    getItem: () => "{invalid",
+    setItem: () => {
+      throw new Error("Storage is full");
+    }
+  });
+  const errorToast = vi.spyOn(toast, "error").mockReturnValue("storage-error");
+  (
+    globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+  ).IS_REACT_ACT_ENVIRONMENT = true;
+  const element = document.createElement("div");
+  const root = createRoot(element);
+  const setters: Array<(value: boolean) => void> = [];
+
+  function Display() {
+    const [showCustomer, setShowCustomer] = useLocalStorage(
+      "schedule-display-invalid",
+      true
+    );
+    setters.push(setShowCustomer);
+    return <span>{String(showCustomer)}</span>;
+  }
+
+  act(() => root.render(<Display />));
+  expect(element.textContent).toBe("true");
+  const setDisplay = setters[0];
+  if (!setDisplay) throw new Error("The storage hook did not render");
+  act(() => setDisplay(false));
+  expect(element.textContent).toBe("false");
+  expect(setters.at(-1)).toBe(setDisplay);
+  expect(errorToast).toHaveBeenCalledWith(
+    "Could not save this preference in your browser.",
+    { id: "local-storage-preference-error" }
+  );
+
+  act(() => root.unmount());
+  errorToast.mockRestore();
   vi.unstubAllGlobals();
 });

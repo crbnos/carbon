@@ -23,7 +23,6 @@ import {
   Tr,
   useEscape,
   useIsomorphicLayoutEffect,
-  useMount,
   useOutsideClick,
   useRouteData,
   useViewport,
@@ -436,6 +435,7 @@ const Table = <T extends object>({
   const { t } = useLingui();
   const location = useLocation();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const [params] = useUrlParams();
   const identity = useRouteData<{
     user?: { id?: string };
@@ -590,15 +590,16 @@ const Table = <T extends object>({
       getAccessorKey(column) ??
       (typeof column.header === "string" ? column.header : undefined)
   );
-  const naturalColumnOrder =
-    tableName && inferredColumnOrder.every((id): id is string => !!id)
-      ? [
-          ...(renderExpandedRow ? ["Expand"] : []),
-          ...(withSelectableRows ? ["Select"] : []),
-          ...inferredColumnOrder,
-          ...(renderContextMenu ? ["Actions"] : [])
-        ]
-      : [];
+  const naturalColumnOrder = inferredColumnOrder.every(
+    (id): id is string => !!id
+  )
+    ? [
+        ...(tableName && renderExpandedRow ? ["Expand"] : []),
+        ...(tableName && withSelectableRows ? ["Select"] : []),
+        ...inferredColumnOrder,
+        ...(tableName && renderContextMenu ? ["Actions"] : [])
+      ]
+    : [];
   const defaultColumnsSignature = JSON.stringify({
     columnVisibility: defaultColumnVisibility ?? {},
     columnOrder: defaultColumnOrder ?? naturalColumnOrder,
@@ -656,7 +657,12 @@ const Table = <T extends object>({
   useEffect(() => {
     if (!storageKey || hydratedKey !== storageKey) return;
     if (restoringQuery.current) {
-      if (location.search !== restoringQuery.current) return;
+      if (location.search !== restoringQuery.current) {
+        if (navigation.state !== "idle") return;
+        // A newer navigation superseded restoration. Try from the settled URL
+        // rather than leaving future preference writes blocked.
+        previousQuery.current = null;
+      }
       restoringQuery.current = null;
     }
     if (resetting.current) {
@@ -668,7 +674,7 @@ const Table = <T extends object>({
       previousQuery.current = { search: location.search, view };
       return;
     }
-    if (!previous || previous.view) {
+    if (!previous || previous.view || location.state?.restoreRememberedTable) {
       const next = rememberedQuery(params, remembered.current, false);
       if (next) {
         const search = `?${next}`;
@@ -716,8 +722,10 @@ const Table = <T extends object>({
     hydratedKey,
     view,
     location.search,
+    location.state?.restoreRememberedTable,
     params,
     navigate,
+    navigation.state,
     columnVisibility,
     columnOrder,
     columnPinning,
@@ -1173,10 +1181,6 @@ const Table = <T extends object>({
     if (selectedCell) setSelectedCell(null);
   }, [editMode]);
 
-  useMount(() => {
-    setColumnOrder(table.getAllLeafColumns().map((column) => column.id));
-  });
-
   const filters = useMemo(
     () =>
       columns.reduce<ColumnFilter[]>((acc, column) => {
@@ -1539,7 +1543,6 @@ const Table = <T extends object>({
     };
   };
 
-  const navigation = useNavigation();
   const { hasFilters, clearFilters } = useFilters();
   const isLoading = useSpinDelay(navigation.state === "loading", {
     delay: 300

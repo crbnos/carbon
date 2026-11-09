@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useIsomorphicLayoutEffect } from "@carbon/react";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useUIStore } from "~/stores/ui";
@@ -9,6 +10,20 @@ import { path } from "~/utils/path";
 
 const preferencesKey = (identity: string) => `carbon:navigation:${identity}`;
 const lastPageKey = (identity: string) => `carbon:lastPage:${identity}`;
+
+function stablePagePath(pathname: string) {
+  const manualPegging = pathname.match(
+    /^\/x\/project\/([^/]+)\/pegging\/manual$/
+  );
+  if (manualPegging) return path.to.projectPegging(manualPegging[1]);
+
+  const stockTransferScan = pathname.match(
+    /^\/x\/stock-transfer\/([^/]+)\/scan\/[^/]+$/
+  );
+  if (stockTransferScan) return path.to.stockTransfer(stockTransferScan[1]);
+
+  return pathname;
+}
 
 function readLastPage(identity: string): string | null {
   try {
@@ -24,7 +39,7 @@ function readLastPage(identity: string): string | null {
     }
     const tab = url.searchParams.get("tab");
     const search = tab ? `?${new URLSearchParams({ tab })}` : "";
-    return `${url.pathname}${search}`;
+    return `${stablePagePath(url.pathname)}${search}`;
   } catch {
     return null;
   }
@@ -41,7 +56,9 @@ export function usePersistentNavigation(
   const restoredFor = useRef<string | null>(null);
   const identity = userId && companyId ? `${userId}:${companyId}` : null;
 
-  useEffect(() => {
+  // The server and first hydration render use the same defaults. Apply the
+  // browser preference before the first paint, including on company changes.
+  useIsomorphicLayoutEffect(() => {
     if (!enabled || !identity) return;
     try {
       const saved = window.localStorage.getItem(preferencesKey(identity));
@@ -102,7 +119,7 @@ export function usePersistentNavigation(
     try {
       window.localStorage.setItem(
         lastPageKey(identity),
-        `${location.pathname}${search}`
+        `${stablePagePath(location.pathname)}${search}`
       );
     } catch {
       // Browsing still works without local storage.
