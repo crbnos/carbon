@@ -42,7 +42,8 @@ import {
 } from "~/modules/projects/projects.service";
 import {
   deletePurchaseInvoiceLineReleasingLeases,
-  deletePurchaseInvoiceReleasingLeases
+  deletePurchaseInvoiceReleasingLeases,
+  purchaseOrderFundsGate
 } from "~/modules/purchasing/purchasing.service";
 import {
   customerContactHasEmail,
@@ -1074,6 +1075,10 @@ export const postPurchaseInvoice = defineServiceFn({
     );
     if (contactRequired) return ctx.error("rule", contactRequired);
 
+    // The funds gate (approved, released orders within their approved
+    // amounts) runs in the posting itself, so Ramp's bill sync and every
+    // other caller of `post-purchase-invoice` get the same refusal.
+
     const claimed = await client
       .from("purchaseInvoice")
       .update({ status: "Pending" })
@@ -1485,8 +1490,9 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
  *
  * @remarks
  * A deposit (`salesOrderId` / `rentalAgreementId` / `customerContractId`)
- * must name this company's and this customer's document, and a new deposit
- * an open one; that refusal is a `validation` error. The currency must be
+ * must name this company's and this customer's document, and a supplier
+ * prepayment (`purchaseOrderId`) this supplier's purchase order; a new one
+ * needs an open document. That refusal is a `validation` error. The currency must be
  * configured for the company. Without a `paymentId` the next number is used.
  * A contract deposit made from a financing request (`financingRequestId`)
  * receives that request; a failed link is logged and the payment kept. Then
@@ -2218,6 +2224,13 @@ export const createPurchaseInvoiceFromPurchaseOrder = defineServiceFn({
   input: z.looseObject({ purchaseOrderId: z.string() }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    // As the system: approval requests have no API read policy.
+    const refused = await purchaseOrderFundsGate(
+      ctx,
+      input.purchaseOrderId as string,
+      { intent: "invoice" }
+    );
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.createPurchaseInvoiceFromPurchaseOrder(
@@ -2678,6 +2691,12 @@ export const createPurchaseInvoiceLine = defineServiceFn({
       input
     );
     if (chargeError) return ctx.error("validation", chargeError.message);
+
+    const refused = await purchaseOrderFundsGate(ctx, input.purchaseOrderId, {
+      intent: "invoice",
+      purchaseOrderLineIds: [input.purchaseOrderLineId]
+    });
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
@@ -2769,6 +2788,36 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
       input
     );
     if (chargeError) return ctx.error("validation", chargeError.message);
+
+    // An update that leaves an order reference out keeps the stored one, so
+    // the gate reads it: a price edit still bills the order's line, and an
+    // edit that sends only the line still bills the stored order.
+    let { purchaseOrderId, purchaseOrderLineId } = input;
+    if (purchaseOrderId === undefined || purchaseOrderLineId === undefined) {
+      const stored = await ctx.asCaller.supabase
+        .from("purchaseInvoiceLine")
+        .select("purchaseOrderId, purchaseOrderLineId")
+        .eq("id", input.id)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (stored.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the purchase invoice line",
+          stored.error
+        );
+      }
+      if (!stored.data) {
+        return ctx.error("notFound", "Purchase invoice line not found");
+      }
+      purchaseOrderId ??= stored.data.purchaseOrderId ?? undefined;
+      purchaseOrderLineId ??= stored.data.purchaseOrderLineId ?? undefined;
+    }
+    const refused = await purchaseOrderFundsGate(ctx, purchaseOrderId, {
+      intent: "invoice",
+      purchaseOrderLineIds: [purchaseOrderLineId]
+    });
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
@@ -3252,13 +3301,15 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
+    // Invoicing staff can use deposits without access to the underlying journals.
     return unwrap(
       ctx,
       await service.getAvailableOnAccountCreditSources(
         ctx.asCaller.supabase,
         ctx.company.id,
         payload(ctx, input.party).build() as never,
-        input.currencyCode as never
+        input.currencyCode as never,
+        ctx.asSystem.supabase
       )
     );
   }

@@ -17,12 +17,14 @@ export const jobTravelerBlockRegistry: Partial<
 > = {
   ...extensionBlocks,
   header: ({ data }) => <HeaderBlock data={data} />,
-  jobDetails: ({ data }) => <JobDetailsBlock data={data} />,
+  jobDetails: ({ block, data }) => (
+    <JobDetailsBlock block={block} data={data} />
+  ),
   operations: ({ block, data }) =>
     block.type === "operations" ? (
       <OperationsBlock block={block} data={data} />
     ) : null,
-  notes: ({ data }) => <NotesBlock data={data} />,
+  notes: ({ block, data }) => <NotesBlock block={block} data={data} />,
   customField: ({ block, data }) =>
     block.type === "customField" ? (
       <CustomFieldBlock

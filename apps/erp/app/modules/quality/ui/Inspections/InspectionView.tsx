@@ -32,7 +32,11 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getReadableIdWithRevision } from "@carbon/utils";
+import {
+  formatSpecLabel,
+  getReadableIdWithRevision,
+  INSPECTION_DRAWING_HIDDEN_STORAGE_KEY
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -46,6 +50,8 @@ import {
 import {
   LuChevronDown,
   LuChevronUp,
+  LuEye,
+  LuEyeOff,
   LuFileText,
   LuScan,
   LuShieldAlert,
@@ -194,7 +200,40 @@ const InspectionView = ({
   // the lot has an assigned PDF; per-feature feature rows show when the
   // document resolved features, otherwise the grid collapses to one pass/fail
   // "Overall result" row.
-  const showDrawing = pdfUrl != null || model != null;
+  const hasDrawing = pdfUrl != null || model != null;
+  // "Hide drawing" gives the grid the whole body (a large batch needs the
+  // rows); the choice persists per browser.
+  const [drawingHidden, setDrawingHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setDrawingHidden(
+        window.localStorage.getItem(INSPECTION_DRAWING_HIDDEN_STORAGE_KEY) ===
+          "true"
+      );
+    } catch {
+      // Storage unavailable: keep the drawing shown.
+    }
+  }, []);
+  const toggleDrawing = useCallback(() => {
+    setDrawingHidden((hidden) => {
+      try {
+        window.localStorage.setItem(
+          INSPECTION_DRAWING_HIDDEN_STORAGE_KEY,
+          String(!hidden)
+        );
+      } catch {
+        // Storage unavailable: the choice lasts for this page only.
+      }
+      return !hidden;
+    });
+  }, []);
+  const showDrawing = hasDrawing && !drawingHidden;
+  // Grid position -> sample id, kept here so it survives the grid remount
+  // when the drawing is hidden or shown.
+  const placementRef = useRef<Record<number, string>>({});
+  // A save or bulk run in flight: Accept / Reject wait until every reading
+  // has landed, and the drawing toggle waits so no save is cut off.
+  const [gridBusy, setGridBusy] = useState(false);
   const hasFeatures = liveFeatures.length > 0;
 
   const scannerDisclosure = useDisclosure();
@@ -218,6 +257,7 @@ const InspectionView = ({
   const hasUserResizedRef = useRef(false);
   const stackRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
   useEffect(() => {
     if (!stackRef.current) return;
     const el = stackRef.current;
@@ -234,7 +274,7 @@ const InspectionView = ({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [gridExpanded]);
+  }, [gridExpanded, showDrawing]);
 
   useEffect(() => {
     if (!isResizingSplit) return;
@@ -452,16 +492,11 @@ const InspectionView = ({
           void key;
         }
         if (failedValues.length === 0) return null;
-        const spec = [
-          feature.nominalValue,
-          feature.tolerancePlus != null || feature.toleranceMinus != null
-            ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
-            : null,
-          feature.unit
-        ]
-          .filter(Boolean)
-          .join(" ");
-        return { label: feature.label, spec, failedValues };
+        return {
+          label: feature.label,
+          spec: formatSpecLabel(feature),
+          failedValues
+        };
       })
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
@@ -625,7 +660,7 @@ const InspectionView = ({
                 <Button
                   variant="destructive"
                   onClick={rejectConfirmDisclosure.onOpen}
-                  isDisabled={!canUpdate || !canReject}
+                  isDisabled={!canUpdate || !canReject || gridBusy}
                 >
                   <Trans>Reject Lot</Trans>
                 </Button>
@@ -633,7 +668,7 @@ const InspectionView = ({
               <RecordAction slot="primary">
                 <Button
                   onClick={acceptConfirmDisclosure.onOpen}
-                  isDisabled={!canUpdate || !canAccept}
+                  isDisabled={!canUpdate || !canAccept || gridBusy}
                 >
                   <Trans>Accept Lot</Trans>
                 </Button>
@@ -768,26 +803,40 @@ const InspectionView = ({
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
                   onMeasurementSaved={onMeasurementSaved}
+                  placementRef={placementRef}
+                  onBusyChange={setGridBusy}
                   primaryAction={
-                    <IconButton
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-expanded={gridExpanded}
-                      aria-label={
-                        gridExpanded
-                          ? t`Collapse characteristics table`
-                          : t`Expand characteristics table`
-                      }
-                      icon={
-                        gridExpanded ? (
-                          <LuChevronDown className="h-4 w-4" />
-                        ) : (
-                          <LuChevronUp className="h-4 w-4" />
-                        )
-                      }
-                      onClick={() => setGridExpanded((v) => !v)}
-                    />
+                    <>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t`Hide drawing`}
+                        title={t`Hide drawing`}
+                        icon={<LuEyeOff className="h-4 w-4" />}
+                        isDisabled={gridBusy}
+                        onClick={toggleDrawing}
+                      />
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-expanded={gridExpanded}
+                        aria-label={
+                          gridExpanded
+                            ? t`Collapse characteristics table`
+                            : t`Expand characteristics table`
+                        }
+                        icon={
+                          gridExpanded ? (
+                            <LuChevronDown className="h-4 w-4" />
+                          ) : (
+                            <LuChevronUp className="h-4 w-4" />
+                          )
+                        }
+                        onClick={() => setGridExpanded((v) => !v)}
+                      />
+                    </>
                   }
                 />
               </div>
@@ -817,6 +866,22 @@ const InspectionView = ({
                 activeFeatureId={activeFeatureId}
                 onActiveFeatureChange={setActiveFeatureId}
                 onMeasurementSaved={onMeasurementSaved}
+                placementRef={placementRef}
+                onBusyChange={setGridBusy}
+                primaryAction={
+                  hasDrawing ? (
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t`Show drawing`}
+                      title={t`Show drawing`}
+                      icon={<LuEye className="h-4 w-4" />}
+                      isDisabled={gridBusy}
+                      onClick={toggleDrawing}
+                    />
+                  ) : undefined
+                }
               />
             </div>
           </div>
@@ -936,7 +1001,7 @@ function DocumentSwitchModal({
               </Trans>
             </p>
             <Select value={documentId} onValueChange={setDocumentId}>
-              <SelectTrigger>
+              <SelectTrigger aria-label={t`Inspection document`}>
                 <SelectValue placeholder={t`Select a document`} />
               </SelectTrigger>
               <SelectContent>

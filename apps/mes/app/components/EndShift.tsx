@@ -7,7 +7,7 @@
 import { useCarbon } from "@carbon/auth";
 import { Button, NavRailItem, Spinner, toast, toastError } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuCircleStop } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -27,6 +27,8 @@ export function EndShift() {
   const { carbon } = useCarbon();
   const [operations, setOperations] = useState<Operation[]>([]);
   const [loading, setLoading] = useState(false);
+  // Ending every operation is destructive: open on Cancel, not on the submit.
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -96,7 +98,12 @@ export function EndShift() {
   );
   const actions = (
     <>
-      <Button type="button" onClick={surface.close} variant="secondary">
+      <Button
+        ref={cancelRef}
+        type="button"
+        onClick={surface.close}
+        variant="secondary"
+      >
         <Trans>Cancel</Trans>
       </Button>
       <Button
@@ -122,6 +129,7 @@ export function EndShift() {
         description={description}
         body={list}
         footer={actions}
+        initialFocusRef={cancelRef}
         wrap={(children) => (
           <fetcher.Form method="post" action={path.to.endShift}>
             {children}

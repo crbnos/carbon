@@ -4,13 +4,13 @@
 
 import {
   Badge,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -153,15 +153,18 @@ const ProceduresTable = memo((props: ProceduresTableProps) => {
           }>;
 
           return (
-            <HoverCard>
-              <HoverCardTrigger>
+            <Popover>
+              <PopoverTrigger
+                aria-label={t`Versions of ${row.original.name} (${versions?.length ?? 0})`}
+                className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <Badge variant="secondary" className="cursor-pointer">
                   {versions?.length ?? 0} Version
                   {versions?.length === 1 ? "" : "s"}
                   <LuEllipsisVertical className="w-3 h-3 ml-2" />
                 </Badge>
-              </HoverCardTrigger>
-              <HoverCardContent>
+              </PopoverTrigger>
+              <PopoverContent aria-label={t`Versions of ${row.original.name}`}>
                 <div className="flex flex-col w-full gap-4 text-sm">
                   {(versions ?? [])
                     .sort((a, b) => a.version - b.version)
@@ -182,8 +185,8 @@ const ProceduresTable = memo((props: ProceduresTableProps) => {
                       </div>
                     ))}
                 </div>
-              </HoverCardContent>
-            </HoverCard>
+              </PopoverContent>
+            </Popover>
           );
         },
         meta: {

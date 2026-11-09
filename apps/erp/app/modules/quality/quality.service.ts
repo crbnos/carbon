@@ -400,7 +400,13 @@ export async function getGauges(
   if (args?.search) {
     query = query.or(
       searchFilter(
-        ["gaugeId", "description", "modelNumber", "serialNumber"],
+        [
+          "gaugeId",
+          "description",
+          "manufacturer",
+          "modelNumber",
+          "serialNumber"
+        ],
         args.search
       )
     );
@@ -1514,7 +1520,7 @@ export async function insertGauge(
     gaugeTypeId: string;
     gaugeRole: (typeof gaugeRole)[number];
     gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
-    supplierId?: string;
+    manufacturer?: string;
     modelNumber?: string;
     serialNumber?: string;
     description?: string;
@@ -1558,7 +1564,7 @@ export async function insertGauge(
       gaugeTypeId: input.gaugeTypeId,
       gaugeRole: input.gaugeRole,
       gaugeCalibrationStatus: input.gaugeCalibrationStatus,
-      supplierId: input.supplierId ?? null,
+      manufacturer: input.manufacturer ?? null,
       modelNumber: input.modelNumber ?? null,
       serialNumber: input.serialNumber ?? null,
       description: input.description ?? null,
@@ -1593,7 +1599,7 @@ export async function updateGauge(
     gaugeTypeId?: string;
     gaugeRole?: (typeof gaugeRole)[number];
     gaugeCalibrationStatus?: (typeof gaugeCalibrationStatus)[number];
-    supplierId?: string | null;
+    manufacturer?: string | null;
     modelNumber?: string | null;
     serialNumber?: string | null;
     description?: string | null;
@@ -2322,13 +2328,19 @@ export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return (client as any)
-    .from("inspection")
-    .select(
-      "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
-    )
-    .eq("id", id)
-    .single();
+  return (
+    (client as any)
+      .from("inspection")
+      .select(
+        "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      )
+      .eq("id", id)
+      // Samples in the order they were made: an embed has no order of its own,
+      // and an UPDATE moves a row, so the grids' positions would shift.
+      .order("createdAt", { referencedTable: "inspectionSample" })
+      .order("id", { referencedTable: "inspectionSample" })
+      .single()
+  );
 }
 
 // All inspection lots created for a receipt (one per inspected receipt line),

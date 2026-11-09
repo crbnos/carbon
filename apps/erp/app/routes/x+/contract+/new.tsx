@@ -25,7 +25,10 @@ import {
 } from "~/modules/sales/ui/Contracts";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Contract");
 
 export const handle: Handle = {
   breadcrumb: (_params: unknown, data: unknown) => [

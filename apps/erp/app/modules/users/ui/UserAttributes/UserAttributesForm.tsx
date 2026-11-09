@@ -499,7 +499,11 @@ function TypedDisplay(
             <p className="self-center">{displayValue}</p>
           ) : (
             <div>
-              <Switch disabled checked={displayValue === true} />
+              <Switch
+                aria-label={attribute.name ?? undefined}
+                disabled
+                checked={displayValue === true}
+              />
             </div>
           )}
           <HStack className="justify-end w-full self-center">

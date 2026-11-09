@@ -206,6 +206,7 @@ export function OptionsField({
         />
       ) : (
         <Combobox
+          aria-label={label}
           options={options}
           value={literalValue(value)}
           isClearable

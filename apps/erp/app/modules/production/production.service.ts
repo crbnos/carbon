@@ -189,6 +189,7 @@ import {
   checkProjectBudget,
   insertTimesheetDraft
 } from "~/modules/projects/projects.service";
+import { copyDocumentEdit } from "~/modules/settings/settings.service";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -1419,6 +1420,25 @@ export async function getJobByOperationId(
     .select("...job(id, companyId, customerId)")
     .eq("id", operationId)
     .single();
+}
+
+// The file an operator recorded on a File step of the operation: the only
+// files the customer portal links to, and so the only ones it serves.
+export async function getJobOperationFileRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  path: string
+) {
+  return client
+    .from("jobOperationStepRecord")
+    .select("id, jobOperationStep!inner(operationId, type)")
+    .eq("companyId", companyId)
+    .eq("value", path)
+    .eq("jobOperationStep.operationId", operationId)
+    .eq("jobOperationStep.type", "File")
+    .limit(1)
+    .maybeSingle();
 }
 
 export async function getJobPurchaseOrderLines(
@@ -21792,6 +21812,7 @@ export async function getMethod(
       let newQuoteId = "";
 
       const oldLineToNewLineMap: Record<string, string> = {};
+      const newLineIds = new Map<string, string>();
 
       const [
         sourceQuote,
@@ -21968,6 +21989,8 @@ export async function getMethod(
             throw new Error("Failed to insert quote line");
           }
 
+          newLineIds.set(id, newLine.id);
+
           if (line.methodType === "Make to Order") {
             // we only need further processing on make lines
             oldLineToNewLineMap[id] = newLine.id;
@@ -22009,6 +22032,18 @@ export async function getMethod(
               )
               .execute();
           }
+        }
+
+        // A revision prints like the quote it revises; a new quote starts clean.
+        if (asRevision) {
+          await copyDocumentEdit(trx, {
+            companyId,
+            documentType: "quote",
+            fromId: sourceQuoteId,
+            toId: newQuoteId,
+            userId,
+            rowIds: newLineIds
+          });
         }
       });
 

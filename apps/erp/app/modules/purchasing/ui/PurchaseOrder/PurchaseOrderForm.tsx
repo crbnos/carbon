@@ -43,7 +43,10 @@ import {
   purchaseOrderValidator
 } from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import {
+  isPurchaseOrderAmendable,
+  isPurchaseOrderEditLocked
+} from "../../purchasing.models";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderValidator>;
 
@@ -71,7 +74,10 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
   const routeData = useRouteData<{ purchaseOrder: { status: string } }>(
     orderId ? path.to.purchaseOrder(orderId) : ""
   );
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
+  // A released order never changes who it buys from or in what currency.
+  const isPartyLocked =
+    isEditing && isPurchaseOrderAmendable(routeData?.purchaseOrder?.status);
 
   const onSupplierChange = async (
     newValue: {
@@ -126,7 +132,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? "Purchase Order" : "New Purchase Order"}
           </CardTitle>
           {!isEditing && (
@@ -158,6 +164,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 autoFocus={!isEditing}
                 name="supplierId"
                 label={t`Supplier`}
+                isReadOnly={isPartyLocked}
                 onChange={onSupplierChange}
                 onlyApproved={supplierApprovalRequired}
               />
@@ -186,6 +193,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               <Currency
                 name="currencyCode"
                 label={t`Currency`}
+                isReadOnly={isPartyLocked}
                 value={supplier.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {

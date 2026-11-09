@@ -123,6 +123,17 @@ export function SerialSelectorModal({
                   <Input
                     autoFocus
                     size="lg"
+                    aria-label={t`Serial number`}
+                    // The ✓/✗ beside the field is the only other cue.
+                    aria-invalid={
+                      serial &&
+                      !availableEntities.some(
+                        (entity) =>
+                          entity.id === serial || entity.readableId === serial
+                      )
+                        ? true
+                        : undefined
+                    }
                     placeholder={t`Scan or enter serial number`}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {

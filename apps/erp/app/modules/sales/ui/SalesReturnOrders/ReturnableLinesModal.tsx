@@ -228,6 +228,7 @@ const ReturnableLinesModal = ({
                 <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search returnable lines`}
                 value={searchInput}
                 placeholder={t`Search by shipment, sales order, or item`}
                 onChange={(e) => {
@@ -280,6 +281,7 @@ const ReturnableLinesModal = ({
                   <VStack spacing={2} className="w-full">
                     {lines.map((line) => {
                       const isSelected = line.shipmentLineId in selected;
+                      const itemReadableId = line.itemReadableId;
                       return (
                         <HStack
                           key={line.shipmentLineId}
@@ -287,6 +289,7 @@ const ReturnableLinesModal = ({
                         >
                           <HStack spacing={3} className="min-w-0">
                             <Checkbox
+                              aria-label={t`Select ${itemReadableId}`}
                               isChecked={isSelected}
                               onCheckedChange={() => toggle(line)}
                             />
@@ -317,6 +320,7 @@ const ReturnableLinesModal = ({
                             </span>
                             {isSelected && (
                               <NumberField
+                                aria-label={t`Quantity to return for ${itemReadableId}`}
                                 formatOptions={INPUT_FORMAT.quantity}
                                 step={INPUT_STEP.quantity}
                                 value={selected[line.shipmentLineId]?.quantity}

@@ -2,72 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cancel, intro, log } from "@clack/prompts";
-import { confirmReset } from "../prompts.js";
+import { intro, log } from "@clack/prompts";
+import pc from "picocolors";
+import { confirmDestructive } from "../prompts.js";
 import {
-  destroyProject,
-  ensureDockerRunning,
-  flushDb,
-  listCarbonProjects,
-  REDIS_CONTAINER
+  bootSharedServices,
+  ensureDockerRunning
 } from "../services/compose.js";
-import {
-  getSlot,
-  getWorktreeRoot,
-  listSlugs,
-  projectName,
-  resolveSlug
-} from "../worktree.js";
+import { currentStack } from "../stack.js";
+import { teardown } from "../teardown.js";
+import { readDevJwt } from "../worktree.js";
 import { up } from "./up.js";
 
+// Wipe this worktree's data, then boot it again. Orphaned stacks of deleted
+// worktrees are `crbn prune`'s.
 export async function reset() {
   intro("Carbon · dev reset");
-  const root = await getWorktreeRoot();
-  const slug = resolveSlug(root);
-  const project = projectName(slug);
-
-  // Fail fast with an actionable message instead of a silent partial reset.
+  const stack = await currentStack();
   await ensureDockerRunning();
 
-  // No ensureSlugAvailable guard — the user confirmed via confirmReset below.
-  // The guard (meant for `up`) would block resetting moved/borrowed/stale
-  // worktrees, leaving volumes intact and defeating the purpose of `reset`.
-
-  if (!(await confirmReset(project))) {
-    cancel("reset aborted");
-    process.exit(0);
-  }
-
-  log.warn(`resetting ${project}`);
-
-  // Use destroyProject directly (not stopStack) — it doesn't depend on the
-  // compose file or .env.local, finds containers/networks/volumes by project
-  // label, and force-removes them. stopStack tries compose first (which can
-  // fail silently when .env.local is missing) then falls back to this anyway.
-  await destroyProject(project, true);
-
-  const slot = getSlot(slug);
-  if (slot && typeof slot.redisDb === "number") {
-    await flushDb(slot.redisDb);
-  }
-
-  // Clean up orphan docker projects from deleted worktrees.
-  const knownProjects = new Set(
-    Object.keys(listSlugs()).map((s) => projectName(s))
+  await confirmDestructive(
+    "Confirming a reset",
+    `Destroy all volumes for ${pc.bold(stack.project)}? (postgres, storage, inngest data will be wiped, redis db flushed)`
   );
-  // The current project is known — it was already cleaned above.
-  knownProjects.add(projectName(slug));
+  log.warn(`resetting ${stack.project}`);
 
-  const allProjects = await listCarbonProjects();
-  const orphans = allProjects.filter(
-    (p) => !knownProjects.has(p) && p !== REDIS_CONTAINER
-  );
-  if (orphans.length > 0) {
-    log.warn(
-      `cleaning ${orphans.length} orphan project(s): ${orphans.join(", ")}`
-    );
-    await Promise.all(orphans.map((p) => destroyProject(p)));
+  // A reset that can't drop the database would keep the data.
+  if (stack.recordedMode === "shared") {
+    const warning = await bootSharedServices(readDevJwt());
+    if (warning) log.warn(warning);
   }
+  const failures = await teardown(stack, { volumes: true });
+  if (failures.length > 0) throw new Error(failures.join("\n"));
 
-  await up();
+  await up({ isolated: stack.mode === "isolated" });
 }

@@ -16,6 +16,9 @@ import { reset } from "./commands/reset.js";
 import { type RestoreMode, restore } from "./commands/restore.js";
 import { status } from "./commands/status.js";
 import { up } from "./commands/up.js";
+import { mainCheckoutRoot } from "./git.js";
+import { APPS_IDLE_MINUTES, IDLE_MINUTES } from "./services/hibernate.js";
+import { worktreePath } from "./worktree.js";
 
 const main = defineCommand({
   meta: {
@@ -61,11 +64,11 @@ const main = defineCommand({
           description:
             "Pick another worktree's running containers to use instead of booting a new stack"
         },
+        // No default: unset falls back to CARBON_PORTLESS.
         portless: {
           type: "boolean",
-          default: true,
           description:
-            "Use portless .dev URLs (use --no-portless for localhost mode)"
+            "Use portless .dev URLs (--no-portless for localhost mode; default: on, or CARBON_PORTLESS=0 for off)"
         },
         run: {
           type: "string",
@@ -82,7 +85,7 @@ const main = defineCommand({
           type: "boolean",
           default: false,
           description:
-            "Also start Studio, Postgres-Meta, the edge runtime and imgproxy (off by default; `crbn reload studio` / `crbn reload imgproxy` starts one on a running stack)"
+            "Also start Studio, Postgres-Meta, a private edge runtime (used instead of the shared one, for editing functions) and imgproxy (off by default; `crbn reload studio` / `crbn reload imgproxy` starts one on a running stack)"
         },
         minimal: {
           type: "boolean",
@@ -90,11 +93,16 @@ const main = defineCommand({
           description:
             "Also skip Inbucket, for headless/CI builds that sign in by bypass"
         },
+        isolated: {
+          type: "boolean",
+          default: false,
+          description:
+            "Run a private stack with its own Postgres, PgBouncer, Storage and Inbucket instead of the shared containers (for a branch that changes their images)"
+        },
         hibernate: {
           type: "boolean",
           default: true,
-          description:
-            "Stop the containers after 30 min without ERP/MES traffic, and the dev servers after 2 h; the next request starts them again (--no-hibernate to keep them up; CRBN_IDLE_MINUTES / CRBN_APPS_IDLE_MINUTES change the waits)"
+          description: `Stop the containers after ${IDLE_MINUTES} min without ERP/MES traffic, and the dev servers after ${APPS_IDLE_MINUTES} min; the next request starts them again (--no-hibernate to keep them up; CRBN_IDLE_MINUTES / CRBN_APPS_IDLE_MINUTES change the waits)`
         }
       },
       run: ({ args }) =>
@@ -105,12 +113,13 @@ const main = defineCommand({
           all: args.all === true,
           pull: args.pull === true,
           borrow: args.borrow === true,
-          portless: args.portless !== false,
+          portless: args.portless as boolean | undefined,
           run: typeof args.run === "string" ? args.run : undefined,
           volumes: args.volumes === true,
           full: args.full === true,
           minimal: args.minimal === true,
-          hibernate: args.hibernate !== false
+          hibernate: args.hibernate !== false,
+          isolated: args.isolated === true
         })
     }),
     down: defineCommand({
@@ -149,13 +158,13 @@ const main = defineCommand({
     reload: defineCommand({
       meta: {
         description:
-          "Recreate specific compose services to apply docker-compose/.env.local edits (memory, env, image, ports) WITHOUT restarting the app dev servers — `crbn reload <service...>` (e.g. storage kong)"
+          "Recreate specific compose services to apply docker-compose/.env.local edits (memory, env, image, ports) WITHOUT restarting the app dev servers — `crbn reload <service...>` (e.g. storage api-gw)"
       },
       args: {
         service: {
           type: "positional",
           required: true,
-          description: "Service name(s) to recreate, e.g. storage kong"
+          description: "Service name(s) to recreate, e.g. storage api-gw"
         }
       },
       run: ({ rawArgs }) =>
@@ -411,6 +420,19 @@ const main = defineCommand({
         })
       }
     }),
+    // For bin/crbn: the directory `crbn checkout` gives a branch's worktree.
+    "worktree-path": defineCommand({
+      meta: {
+        description: "Print the directory crbn gives <branch>'s worktree"
+      },
+      args: { branch: { type: "positional", required: true } },
+      run: async ({ args }) => {
+        const mainRoot = await mainCheckoutRoot();
+        process.stdout.write(
+          `${worktreePath(mainRoot, String(args.branch))}\n`
+        );
+      }
+    }),
     // Stubs so shell completion lists these — the bash router (`bin/crbn`)
     // intercepts them before tsx is invoked. Direct invocation lands here.
     checkout: defineCommand({
@@ -426,10 +448,7 @@ const main = defineCommand({
   }
 });
 
-try {
-  const { default: tab } = await import("@bomb.sh/tab/citty");
-  await tab(main);
-} catch {
-  // Optional: shell completions only; continue if the package is missing (run `pnpm install`).
-}
+// Shell completions only: a worktree without `pnpm install` runs without.
+const completions = await import("@bomb.sh/tab/citty").catch(() => null);
+if (completions) await completions.default(main);
 await runMain(main);

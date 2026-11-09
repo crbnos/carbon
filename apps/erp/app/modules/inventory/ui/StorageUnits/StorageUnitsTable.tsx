@@ -349,6 +349,7 @@ const StorageUnitsTable = memo(
                   <Spinner className="size-3" />
                 ) : (
                   <button
+                    aria-expanded={isExpanded}
                     type="button"
                     aria-label={
                       isExpanded ? t`Collapse subtree` : t`Expand subtree`
@@ -476,9 +477,15 @@ const StorageUnitsTable = memo(
           // effectiveNettable: its own flag, a parent's or a storage type's.
           accessorKey: "effectiveNettable",
           header: t`Non-nettable`,
-          cell: (item) => (
-            <Checkbox isChecked={item.getValue<boolean | null>() === false} />
-          ),
+          cell: (item) => {
+            const name = item.row.original.name;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean | null>() === false}
+                aria-label={t`Non-nettable: ${name}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -496,7 +503,15 @@ const StorageUnitsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const name = item.row.original.name;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${name}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -607,6 +622,7 @@ const StorageUnitsTable = memo(
             </Button>
           )}
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}

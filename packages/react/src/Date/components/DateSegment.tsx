@@ -34,9 +34,6 @@ export const DateSegment = ({
   if ("id" in segmentProps && segmentProps.id) {
     segmentProps.id = instanceId;
   }
-  if ("aria-describedby" in segmentProps && segmentProps["aria-describedby"]) {
-    segmentProps["aria-describedby"] = instanceId;
-  }
 
   return (
     <div

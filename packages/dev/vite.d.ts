@@ -6,9 +6,7 @@ import type { Plugin, PluginOption } from "vite";
 
 export function applyDotenvToProcessEnv(mode: string, appDir: string): void;
 export function clientOnlyAlias(specifier: string, file: string): Plugin;
-export function stackActivity(): Plugin;
-export function iconImports(): Plugin;
-export function datasetAssets(): Plugin;
+export function dropStalledHmrClients(): Plugin;
 export function assetModuleUrl(code: string): string | null;
 export function listDatasetAssetFiles(
   directory: string
@@ -27,11 +25,6 @@ export function extractIcons(
   set: string,
   names: Iterable<string>
 ): string;
-export function precompressedAssets(env: {
-  command: "build" | "serve";
-  mode: string;
-}): Promise<Plugin[]>;
-export function compressRemaining(directory: string): Promise<void>;
 
 export function linguiWithoutIdQuery<T>(plugins: T[]): T[];
 
@@ -43,7 +36,7 @@ export type CarbonOptions = {
   locales?: boolean;
   /** Specifier → stub file, replaced in the browser build only. */
   clientOnly?: Record<string, string>;
-  /** Split the production server build per package (see `splitServerByPackage`). */
+  /** Split the production server build per package. */
   splitServer?: boolean;
   /** Write a Brotli `.br` beside each client asset (not on Vercel). */
   precompress?: boolean;
@@ -51,4 +44,3 @@ export type CarbonOptions = {
 
 /** Every Carbon app's own Vite plugins; React Router and Tailwind stay separate. */
 export function carbon(options?: CarbonOptions): Promise<PluginOption[]>;
-export function splitServerByPackage(): Plugin;

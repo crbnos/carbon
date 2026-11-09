@@ -870,6 +870,7 @@ function WorkCenterFact({ batch }: { batch: JobOperationBatchDetail }) {
       </dt>
       <dd className="min-w-0">
         <Combobox
+          aria-label={t`Work center`}
           size="sm"
           value={batch.workCenterId ?? ""}
           options={options}

@@ -73,7 +73,7 @@ export function HeaderBlock({ data }: { data: PurchasingRfqData }) {
             { color: data.theme.accent }
           ]}
         >
-          Request for Quote
+          {data.documentTitle}
         </Text>
       ) : null}
     </View>

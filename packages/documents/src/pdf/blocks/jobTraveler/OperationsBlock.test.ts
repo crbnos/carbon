@@ -5,6 +5,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { Children, isValidElement } from "react";
 import { describe, expect, it } from "vitest";
+import { documentValues } from "../../../template";
 import { SAMPLE_JOB_TRAVELER } from "../../jobTraveler.samples";
 import { OperationsBlock } from "./OperationsBlock";
 
@@ -15,6 +16,7 @@ function render(operation: Record<string, unknown>): Rendered {
   const tree = OperationsBlock({
     block: { type: "operations", showWorkInstructions: false },
     data: {
+      values: documentValues(),
       ...SAMPLE_JOB_TRAVELER,
       jobOperations: [{ ...SAMPLE_JOB_TRAVELER.jobOperations[0], ...operation }]
     }

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261104215223",
+  "schemaVersion": "20261106203716",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-04T22:08:56.501Z",
+  "exportedAt": "2026-11-09T10:15:29.473Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -316,7 +316,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "decisionSignaturePath"
+        "decisionSignaturePath",
+        "hasPriorVersion"
       ]
     },
     {
@@ -505,14 +506,15 @@
         "standardWeeklyHours",
         "burdenRateType",
         "postAppliedBurden",
-        "serviceLaborCostRate",
-        "serviceLaborBillRate",
         "requirePurchaseOrderApprovalSignature",
         "serialNumberTiming",
         "useCalendarWeeks",
         "kanbanLabelSize",
+        "serviceLaborCostRate",
+        "serviceLaborBillRate",
         "requireSupplierContactEmail",
-        "requireCustomerContactEmail"
+        "requireCustomerContactEmail",
+        "includeSupplierPartFiles"
       ]
     },
     {
@@ -730,6 +732,22 @@
         "updatedAt",
         "sourceDocument",
         "sourceDocumentId"
+      ]
+    },
+    {
+      "name": "documentEdit",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3980,6 +3998,35 @@
       ]
     },
     {
+      "name": "gauge",
+      "rows": 0,
+      "columns": [
+        "id",
+        "gaugeId",
+        "modelNumber",
+        "serialNumber",
+        "description",
+        "dateAcquired",
+        "gaugeTypeId",
+        "gaugeCalibrationStatus",
+        "gaugeStatus",
+        "gaugeRole",
+        "calibrationIntervalInMonths",
+        "lastCalibrationDate",
+        "nextCalibrationDate",
+        "locationId",
+        "storageUnitId",
+        "companyId",
+        "customFields",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "lastCalibrationStatus",
+        "manufacturer"
+      ]
+    },
+    {
       "name": "pickMethod",
       "rows": 0,
       "columns": [
@@ -5230,35 +5277,6 @@
       ]
     },
     {
-      "name": "gauge",
-      "rows": 0,
-      "columns": [
-        "id",
-        "gaugeId",
-        "supplierId",
-        "modelNumber",
-        "serialNumber",
-        "description",
-        "dateAcquired",
-        "gaugeTypeId",
-        "gaugeCalibrationStatus",
-        "gaugeStatus",
-        "gaugeRole",
-        "calibrationIntervalInMonths",
-        "lastCalibrationDate",
-        "nextCalibrationDate",
-        "locationId",
-        "storageUnitId",
-        "companyId",
-        "customFields",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "lastCalibrationStatus"
-      ]
-    },
-    {
       "name": "gaugeCalibrationRecord",
       "rows": 0,
       "columns": [
@@ -5979,41 +5997,6 @@
         "updatedAt",
         "customFields",
         "tags"
-      ]
-    },
-    {
-      "name": "payment",
-      "rows": 0,
-      "columns": [
-        "id",
-        "paymentId",
-        "paymentType",
-        "status",
-        "customerId",
-        "supplierId",
-        "paymentDate",
-        "postingDate",
-        "currencyCode",
-        "exchangeRate",
-        "totalAmount",
-        "bankAccount",
-        "reference",
-        "memo",
-        "journalId",
-        "postedAt",
-        "postedBy",
-        "voidedAt",
-        "voidedBy",
-        "companyId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields",
-        "employeeId",
-        "salesOrderId",
-        "rentalAgreementId",
-        "customerContractId"
       ]
     },
     {
@@ -7445,6 +7428,78 @@
       ]
     },
     {
+      "name": "purchaseOrderVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "approvalRequestId",
+        "purchaseOrderId",
+        "exchangeRate",
+        "hasDelivery",
+        "locationId",
+        "shippingMethodId",
+        "shippingTermId",
+        "receiptRequestedDate",
+        "notes",
+        "trackingNumber",
+        "dropShipment",
+        "customerId",
+        "customerLocationId",
+        "customFields",
+        "supplierShippingCost",
+        "incoterm",
+        "incotermLocation",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "purchaseOrderLineVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderVersionId",
+        "purchaseOrderLineId",
+        "purchaseOrderLineType",
+        "itemId",
+        "description",
+        "purchaseQuantity",
+        "purchaseUnitOfMeasureCode",
+        "inventoryUnitOfMeasureCode",
+        "conversionFactor",
+        "supplierUnitPrice",
+        "supplierShippingCost",
+        "supplierTaxAmount",
+        "taxPercent",
+        "setupPrice",
+        "exchangeRate",
+        "locationId",
+        "storageUnitId",
+        "accountId",
+        "assetId",
+        "costCenterId",
+        "jobId",
+        "jobOperationId",
+        "supplierPartId",
+        "requiredDate",
+        "customFields",
+        "tags",
+        "sortOrder",
+        "externalNotes",
+        "internalNotes",
+        "modelUploadId",
+        "ownerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "purchaseReturnOrderLineTrackedEntity",
       "rows": 0,
       "columns": [
@@ -8461,6 +8516,42 @@
       ]
     },
     {
+      "name": "payment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "paymentId",
+        "paymentType",
+        "status",
+        "customerId",
+        "supplierId",
+        "paymentDate",
+        "postingDate",
+        "currencyCode",
+        "exchangeRate",
+        "totalAmount",
+        "bankAccount",
+        "reference",
+        "memo",
+        "journalId",
+        "postedAt",
+        "postedBy",
+        "voidedAt",
+        "voidedBy",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "employeeId",
+        "salesOrderId",
+        "rentalAgreementId",
+        "customerContractId",
+        "purchaseOrderId"
+      ]
+    },
+    {
       "name": "purchaseInvoiceLine",
       "rows": 0,
       "columns": [
@@ -8625,7 +8716,8 @@
         "updatedBy",
         "sourcePaymentId",
         "sourceAmount",
-        "targetReimbursementId"
+        "targetReimbursementId",
+        "targetPaymentId"
       ]
     },
     {
@@ -8809,7 +8901,8 @@
         "updatedBy",
         "supplierInteractionId",
         "supplierQuoteType",
-        "externalLinkId"
+        "externalLinkId",
+        "sharedFilePaths"
       ]
     },
     {

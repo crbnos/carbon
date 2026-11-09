@@ -52,6 +52,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   ],
   demandForecast: ["planningSegmentId"],
   document: ["sourceDocumentId"],
+  documentEdit: ["documentId"],
   documentExtraction: ["sourceDocumentId"],
   documentTemplate: ["footerSectionId", "headerSectionId"],
   enforcementRule: ["filteredItemGroupIds"],

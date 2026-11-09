@@ -31,7 +31,7 @@ import {
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderDeliveryValidator
 } from "~/modules/purchasing/purchasing.models";
 import type { PurchaseOrder } from "~/modules/purchasing/types";
@@ -62,7 +62,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
     purchaseOrder: PurchaseOrder;
   }>(path.to.purchaseOrder(orderId));
 
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
 
   const { t } = useLingui();
   // Settlement amount — digits follow the document currency's own decimals.
@@ -151,12 +151,12 @@ const PurchaseOrderDeliveryForm = forwardRef<
 
             <DatePicker
               name="receiptRequestedDate"
-              label={t`Requested Date`}
+              label={t`Receipt Requested Date`}
               termId="purchase-order-delivery-requested-date"
             />
             <DatePicker
               name="receiptPromisedDate"
-              label={t`Promised Date`}
+              label={t`Receipt Promised Date`}
               termId="purchase-order-delivery-promised-date"
             />
             <DatePicker

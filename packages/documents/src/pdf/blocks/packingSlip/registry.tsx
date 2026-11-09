@@ -19,9 +19,9 @@ export const packingSlipBlockRegistry: Partial<
 > = {
   ...extensionBlocks,
   header: ({ data }) => <HeaderBlock data={data} />,
-  parties: ({ data }) => <PartiesBlock data={data} />,
-  notes: ({ data }) => <NotesBlock data={data} />,
-  details: ({ data }) => <DetailsBlock data={data} />,
+  parties: ({ block, data }) => <PartiesBlock block={block} data={data} />,
+  notes: ({ block, data }) => <NotesBlock block={block} data={data} />,
+  details: ({ block, data }) => <DetailsBlock block={block} data={data} />,
   lineItems: ({ block, data }) =>
     block.type === "lineItems" ? (
       <LineItemsBlock block={block} data={data} />

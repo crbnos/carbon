@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Skeleton } from "@carbon/react";
+import { cn, Skeleton } from "@carbon/react";
 import type { ReactNode } from "react";
 import { LuChevronRight, LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
@@ -28,7 +28,10 @@ export function RelatedDocumentGroup({
 }
 
 type RelatedDocumentProps = {
-  to: string;
+  /** Where the row goes; leave it out and pass `onClick` for an action row. */
+  to?: string;
+  /** An action instead of a link (e.g. open a modal). */
+  onClick?: () => void;
   /** A file (a PDF, a label) rather than a page: opens in a new tab. */
   external?: boolean;
   icon: ReactNode;
@@ -45,6 +48,7 @@ const rowClassName =
 /** One related document: identity on the left, its status on the right. */
 export function RelatedDocument({
   to,
+  onClick,
   external = false,
   icon,
   title,
@@ -74,12 +78,20 @@ export function RelatedDocument({
 
   return (
     <li>
-      {external ? (
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className={cn(rowClassName, "w-full text-left")}
+        >
+          {content}
+        </button>
+      ) : external ? (
         <a href={to} target="_blank" rel="noreferrer" className={rowClassName}>
           {content}
         </a>
       ) : (
-        <Link to={to} className={rowClassName}>
+        <Link to={to ?? ""} className={rowClassName}>
           {content}
         </Link>
       )}

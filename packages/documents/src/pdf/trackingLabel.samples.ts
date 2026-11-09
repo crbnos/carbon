@@ -6,11 +6,11 @@
 export const SAMPLE_TRACKING_LABEL = {
   items: [
     {
-      itemId: "SD08810002",
+      itemId: "DEMO-LABEL-01",
       revision: "0",
       quantity: 1,
       number: "04/06/2026",
-      trackedEntityId: "dtClCvNm9blDY0H3FXmDC",
+      trackedEntityId: "trk_demo_0042",
       trackingType: "Serial"
     }
   ],

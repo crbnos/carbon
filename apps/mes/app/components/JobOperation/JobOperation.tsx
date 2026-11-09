@@ -79,9 +79,17 @@ import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { flushSync } from "react-dom";
 import { FaCheck, FaPlus, FaTrash } from "react-icons/fa6";
 import {
@@ -364,6 +372,10 @@ export const JobOperation = ({
   const isModalOpen =
     attributeRecordModal.isOpen || attributeRecordDeleteModal.isOpen;
 
+  // The More actions sheet closes as its action's modal opens, so the modal
+  // returns focus to the button that opened the sheet.
+  const actionsSheetOpenerRef = useRef<HTMLElement | null>(null);
+
   const {
     actionsSheet,
     availableEntities,
@@ -485,6 +497,7 @@ export const JobOperation = ({
         )
       : 0;
   const isBehindTarget = daysBehindTarget > 0;
+  const behindTargetLabel = useBehindTargetLabel(daysBehindTarget);
 
   // The status bar's quantity meter counts the whole run when batched.
   const quantityProgress = useMemo(() => {
@@ -812,7 +825,10 @@ export const JobOperation = ({
               gradient
               invertGradient
               stackOnPhone
-              progress={hasPlan ? (meter.elapsed / meter.planned) * 100 : 0}
+              // A whole percent: the bar's aria-valuenow read "0.9259".
+              progress={
+                hasPlan ? round((meter.elapsed / meter.planned) * 100, 0) : 0
+              }
               activeClassName={
                 meter.elapsed > meter.planned ? "bg-red-500" : "bg-emerald-500"
               }
@@ -1057,8 +1073,12 @@ export const JobOperation = ({
         {scope === "batch" && batchFacts
           ? batchFacts.customers.length > 0 && (
               <HStack className="min-w-0 justify-start space-x-2 max-md:order-3">
-                <LuSquareUser className="text-muted-foreground shrink-0" />
+                <LuSquareUser
+                  aria-hidden
+                  className="text-muted-foreground shrink-0"
+                />
                 <span className="text-sm truncate">
+                  <span className="sr-only">{t`Customer:`} </span>
                   {batchFacts.customers.length === 1
                     ? batchFacts.customers[0]
                     : t`${batchFacts.customers.length} customers`}
@@ -1067,19 +1087,28 @@ export const JobOperation = ({
             )
           : job.customer?.name && (
               <HStack className="min-w-0 justify-start space-x-2 max-md:order-3">
-                <LuSquareUser className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate">{job.customer.name}</span>
+                <LuSquareUser
+                  aria-hidden
+                  className="text-muted-foreground shrink-0"
+                />
+                <span className="text-sm truncate">
+                  <span className="sr-only">{t`Customer:`} </span>
+                  {job.customer.name}
+                </span>
               </HStack>
             )}
         {operation.description && (
           <HStack className="min-w-0 justify-start space-x-2 max-md:order-4">
-            <LuClipboardCheck className="text-muted-foreground shrink-0" />
+            <LuClipboardCheck
+              aria-hidden
+              className="text-muted-foreground shrink-0"
+            />
             <span className="text-sm truncate">{operation.description}</span>
           </HStack>
         )}
         {scope === "batch" && batch ? (
           <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-1">
-            <LuLayers className="text-muted-foreground shrink-0" />
+            <LuLayers aria-hidden className="text-muted-foreground shrink-0" />
             <span className="text-sm truncate">
               {isCompleting ? t`Completing` : t`Released`}
             </span>
@@ -1087,13 +1116,15 @@ export const JobOperation = ({
         ) : (
           operation.operationStatus && (
             <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-1">
-              <OperationStatusIcon
-                status={
-                  operation.jobStatus === "Paused"
-                    ? "Paused"
-                    : operation.operationStatus
-                }
-              />
+              <span className="inline-flex" aria-hidden="true">
+                <OperationStatusIcon
+                  status={
+                    operation.jobStatus === "Paused"
+                      ? "Paused"
+                      : operation.operationStatus
+                  }
+                />
+              </span>
               <span className="text-sm truncate">
                 {operation.jobStatus === "Paused"
                   ? "Paused"
@@ -1108,8 +1139,9 @@ export const JobOperation = ({
         {typeof displayOperation.duration === "number" &&
           displayOperation.duration > 1 && (
             <HStack className="min-w-0 shrink-0 justify-start space-x-2 max-md:order-5">
-              <LuTimer className="text-muted-foreground shrink-0" />
+              <LuTimer aria-hidden className="text-muted-foreground shrink-0" />
               <span className="text-sm truncate tabular-nums">
+                <span className="sr-only">{t`Planned duration:`} </span>
                 {formatDurationMilliseconds(displayOperation.duration)}
               </span>
             </HStack>
@@ -1190,22 +1222,39 @@ export const JobOperation = ({
             back={{ to: origin.to }}
             actions={renderJobMenu({ size: "lg", align: "end" })}
           />
+          {/* Phones get the h1 from MesAppBar; from md the header shows tabs,
+              so the page's h1 names the job and operation for assistive tech. */}
+          {!isPhone && (
+            <h1 className="sr-only">
+              {[
+                scope === "batch" && batch
+                  ? batch.readableId
+                  : operation.jobReadableId,
+                operation.description
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </h1>
+          )}
           <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b px-2 max-md:h-auto max-md:py-0">
             <HStack className="w-full justify-between max-md:flex-wrap max-md:gap-y-1">
               <div className="flex items-center gap-0 max-md:hidden">
                 <SidebarTrigger />
 
                 <Button
+                  asChild
                   variant="ghost"
                   leftIcon={<LuChevronLeft />}
-                  onClick={() => navigate(origin.to)}
                   className="pl-2"
                 >
-                  {origin.label}
+                  <Link to={origin.to}>{origin.label}</Link>
                 </Button>
               </div>
               <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x max-md:w-full">
-                <TabsList className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1">
+                <TabsList
+                  aria-label={t`Operation sections`}
+                  className="ml-auto shrink-0 max-md:ml-0 max-md:w-full max-md:border-b-0 max-md:[&>*]:flex-1"
+                >
                   <TabsTrigger value="details">
                     <Trans>Details</Trans>
                   </TabsTrigger>
@@ -1241,7 +1290,7 @@ export const JobOperation = ({
           value="details"
           className="[grid-area:main] mt-0 h-full min-h-0"
         >
-          <div className="h-full w-full min-w-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          <div className="h-full w-full min-w-0 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             {contextInPane && (
               <>
                 {renderContextRow("border-b border-border")}
@@ -1358,10 +1407,17 @@ export const JobOperation = ({
                     </div>
                   </HStack>
                   <div className="flex flex-col shrink-0 items-end">
+                    {/* A stat, not a heading: name it before its value. */}
                     <Heading
+                      as="p"
                       size="h2"
                       className="font-sans max-md:text-base max-md:text-muted-foreground"
                     >
+                      <span className="sr-only">
+                        {operation.itemUnitOfMeasure
+                          ? t`Time per ${operation.itemUnitOfMeasure}:`
+                          : t`Time per piece:`}{" "}
+                      </span>
                       {formatDurationMilliseconds(
                         ((progress.setup ?? 0) +
                           (progress.labor ?? 0) +
@@ -1384,7 +1440,10 @@ export const JobOperation = ({
                         }
                       )}
                     </Heading>
-                    <p className="text-muted-foreground line-clamp-1">
+                    <p
+                      aria-hidden
+                      className="text-muted-foreground line-clamp-1"
+                    >
                       {operation.itemUnitOfMeasure}
                     </p>
                   </div>
@@ -1401,7 +1460,7 @@ export const JobOperation = ({
                       </CardHeader>
 
                       <CardContent>
-                        <Heading size="h1" className="font-sans">
+                        <Heading as="p" size="h1" className="font-sans">
                           <Trans>
                             {operation.quantityComplete} of{" "}
                             {operation.targetQuantity}
@@ -1417,7 +1476,7 @@ export const JobOperation = ({
                         <FaTrash className="h-3 w-3 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <Heading size="h1" className="font-sans">
+                        <Heading as="p" size="h1" className="font-sans">
                           {operation.quantityScrapped}
                         </Heading>
                       </CardContent>
@@ -1435,6 +1494,7 @@ export const JobOperation = ({
                       <CardContent>
                         <VStack className="justify-start" spacing={0}>
                           <Heading
+                            as="p"
                             size="h3"
                             className={cn(
                               "w-full truncate font-sans",
@@ -1475,17 +1535,33 @@ export const JobOperation = ({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Badge variant="red" className="gap-1">
-                                    <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                    <LuSquareChartGantt
+                                      aria-hidden
+                                      className="size-3.5 shrink-0"
+                                    />
+                                    <span className="sr-only">
+                                      {t`Projected completion:`}
+                                    </span>
                                     {formatDate(projectedCompletionDate)}
+                                    <span className="sr-only">
+                                      {", "}
+                                      {behindTargetLabel}
+                                    </span>
                                   </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                                  {behindTargetLabel}
                                 </TooltipContent>
                               </Tooltip>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                                <LuSquareChartGantt className="size-3.5 shrink-0" />
+                                <LuSquareChartGantt
+                                  aria-hidden
+                                  className="size-3.5 shrink-0"
+                                />
+                                <span className="sr-only">
+                                  {t`Projected completion:`}
+                                </span>
                                 {formatDate(projectedCompletionDate)}
                               </span>
                             ))}
@@ -1575,7 +1651,7 @@ export const JobOperation = ({
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    {t`Behind target by ${daysBehindTarget} day(s)`}
+                                    {behindTargetLabel}
                                   </TooltipContent>
                                 </Tooltip>
                               ) : (
@@ -1771,6 +1847,7 @@ export const JobOperation = ({
                                               </div>
 
                                               <BarProgress
+                                                className="w-40"
                                                 label={t`Steps`}
                                                 gradient
                                                 invertGradient
@@ -1814,6 +1891,7 @@ export const JobOperation = ({
                                       .map((step, index) => (
                                         <StepsListItem
                                           key={`step-${step.id}`}
+                                          stepNumber={index + 1}
                                           activeStep={activeStep}
                                           step={step}
                                           onRecord={onRecordStepRecord}
@@ -2005,6 +2083,17 @@ export const JobOperation = ({
                                     )}
                                     {resolvedFiles.map((file) => {
                                       const type = getFileType(file.name);
+                                      const canPreview = [
+                                        "PDF",
+                                        "Image"
+                                      ].includes(type);
+                                      const openPreview = () =>
+                                        window.open(
+                                          path.to.file.previewFile(
+                                            `${"private"}/${getFilePath(file)}`
+                                          ),
+                                          "_blank"
+                                        );
                                       return (
                                         <Tr
                                           key={`file-${file.id}`}
@@ -2013,44 +2102,38 @@ export const JobOperation = ({
                                           <Td>
                                             <HStack>
                                               <FileIcon type={type} />
-                                              <span
-                                                className="font-medium"
-                                                onClick={() => {
-                                                  if (
-                                                    ["PDF", "Image"].includes(
-                                                      type
-                                                    )
-                                                  ) {
-                                                    window.open(
-                                                      path.to.file.previewFile(
-                                                        `${"private"}/${getFilePath(
-                                                          file
-                                                        )}`
-                                                      ),
-                                                      "_blank"
-                                                    );
-                                                  }
-                                                }}
-                                              >
-                                                {["PDF", "Image"].includes(
-                                                  type
-                                                ) ? (
+                                              {canPreview ? (
+                                                <span
+                                                  className="font-medium"
+                                                  role="button"
+                                                  tabIndex={0}
+                                                  onClick={openPreview}
+                                                  onKeyDown={(event) => {
+                                                    if (
+                                                      event.key === "Enter" ||
+                                                      event.key === " "
+                                                    ) {
+                                                      event.preventDefault();
+                                                      openPreview();
+                                                    }
+                                                  }}
+                                                >
                                                   <FilePreview
                                                     bucket="private"
                                                     pathToFile={getFilePath(
                                                       file
                                                     )}
                                                     // @ts-expect-error
-                                                    type={getFileType(
-                                                      file.name
-                                                    )}
+                                                    type={type}
                                                   >
                                                     {file.name}
                                                   </FilePreview>
-                                                ) : (
-                                                  file.name
-                                                )}
-                                              </span>
+                                                </span>
+                                              ) : (
+                                                <span className="font-medium">
+                                                  {file.name}
+                                                </span>
+                                              )}
                                             </HStack>
                                           </Td>
                                           <Td className="text-sm font-mono">
@@ -2382,7 +2465,7 @@ export const JobOperation = ({
                                     );
 
                                   return (
-                                    <div className="flex items-end justify-between gap-1 w-full px-4 pb-2 border-b">
+                                    <div className="flex flex-wrap items-end justify-between gap-1 w-full px-4 pb-2 border-b">
                                       <div className="flex items-center gap-1">
                                         {showNavigation && !parentIsSerial && (
                                           <>
@@ -2449,8 +2532,9 @@ export const JobOperation = ({
                                         )}
                                       </div>
 
-                                      <div className="flex flex-col justify-center items-end gap-1">
+                                      <div className="ml-auto flex min-w-0 max-w-full flex-col justify-center items-end gap-1">
                                         <BarProgress
+                                          className="w-40 max-w-full"
                                           label={t`Steps`}
                                           gradient
                                           invertGradient
@@ -2494,6 +2578,7 @@ export const JobOperation = ({
                                           .map((step, index) => (
                                             <StepsListItem
                                               key={`step-${step.id}`}
+                                              stepNumber={index + 1}
                                               activeStep={activeStep}
                                               step={step}
                                               compact={true}
@@ -2563,7 +2648,7 @@ export const JobOperation = ({
 
               <ScrollArea className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
                 <div
-                  className="prose dark:prose-invert"
+                  className="prose max-w-none dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
                   dangerouslySetInnerHTML={{
                     __html: generateHTML(
                       (operation.workInstruction ?? {}) as JSONContent
@@ -2651,9 +2736,21 @@ export const JobOperation = ({
                   batchId={batch?.id}
                   startDisabled={abilityBlocked}
                 />
+                {/* What is running, for assistive tech at every width: the
+                    caption below is hidden on tablets and in the collapsed
+                    dock, and the button already says what it will do. */}
+                {runningType && (
+                  <span role="timer" className="sr-only">
+                    {t`${workTypeLabels[runningType]} running: ${formatDurationMilliseconds(
+                      progress[runningType],
+                      { style: "short" }
+                    )}`}
+                  </span>
+                )}
                 {/* What the big button will do, or what is running — the dock
                     only; the rail and the phone bar stay icon-sized. */}
                 <div
+                  aria-hidden
                   className={cn(
                     "flex flex-col items-center gap-0.5 text-center md:max-lg:hidden lg:group-data-[collapsed=true]/dock:hidden",
                     // Phones: the caption beside the button, the type over the time.
@@ -2716,7 +2813,10 @@ export const JobOperation = ({
                       <LuEllipsisVertical className="text-accent-foreground group-hover:text-accent-foreground/80" />
                     }
                     tooltip={t`More Actions`}
-                    onClick={actionsSheet.onOpen}
+                    onClick={(e) => {
+                      actionsSheetOpenerRef.current = e.currentTarget;
+                      actionsSheet.onOpen();
+                    }}
                   />
                 </div>
               </div>
@@ -2752,7 +2852,10 @@ export const JobOperation = ({
                   variant="ghost"
                   className="w-full"
                   leftIcon={<LuEllipsisVertical />}
-                  onClick={actionsSheet.onOpen}
+                  onClick={(e) => {
+                    actionsSheetOpenerRef.current = e.currentTarget;
+                    actionsSheet.onOpen();
+                  }}
                 >
                   <Trans>More actions</Trans>
                 </Button>
@@ -2891,6 +2994,7 @@ export const JobOperation = ({
           trackedEntities={trackedEntities}
           parentIsSerial={parentIsSerial}
           parentIsBatch={parentIsBatch}
+          returnFocusRef={actionsSheetOpenerRef}
         />
       )}
       {scrapModal.isOpen && (
@@ -2907,6 +3011,7 @@ export const JobOperation = ({
             trackedEntities.find((entity) => entity.id === trackedEntityId)
               ?.readableId ?? undefined
           }
+          returnFocusRef={actionsSheetOpenerRef}
           onClose={scrapModal.onClose}
         />
       )}
@@ -2925,6 +3030,7 @@ export const JobOperation = ({
                   parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  returnFocusRef={actionsSheetOpenerRef}
                   onClose={completeModal.onClose}
                 />
               );
@@ -2949,6 +3055,7 @@ export const JobOperation = ({
                   operation={operation}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  returnFocusRef={actionsSheetOpenerRef}
                   onClose={finishModal.onClose}
                 />
               );
@@ -2962,6 +3069,7 @@ export const JobOperation = ({
           batch={batch}
           isCompleting={isCompleting}
           fetcher={batchCompleteFetcher}
+          returnFocusRef={actionsSheetOpenerRef}
           onClose={batchCompleteModal.onClose}
         />
       )}
@@ -3033,6 +3141,16 @@ export const JobOperation = ({
     </>
   );
 };
+
+// A function declaration, so Lingui folds `plural()` into the `t` message
+// (see .claude/rules/i18n-lingui-system.md → Plurals).
+function useBehindTargetLabel(days: number) {
+  const { t } = useLingui();
+  return t`${plural(days, {
+    one: "Behind target by # day",
+    other: "Behind target by # days"
+  })}`;
+}
 
 function recordSetIsStarted(
   attributes: JobOperationStep[],

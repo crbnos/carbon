@@ -1,0 +1,596 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DOCUMENT_PDFS > prints every text of the issue catalog it reaches 1`] = `
+[
+  "issueDetails:unknown",
+  "associations:supplier",
+  "associations:supplierValue",
+  "associations:purchaseOrder",
+  "associations:purchaseOrderValue",
+  "associations:shipment",
+  "associations:shipmentValue",
+  "associations:receipt",
+  "associations:receiptValue",
+  "associations:trackedEntity",
+  "associations:trackedEntityValue",
+  "actionTasks:unknown",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the jobTraveler catalog it reaches 1`] = `
+[
+  "jobDetails:service",
+  "jobDetails:serviceValue",
+  "jobDetails:makeToOrder",
+  "jobDetails:inventory",
+  "operations:batch",
+  "operations:batchValue",
+  "operations:openInMes",
+  "operations:batchInstructions",
+  "operations:batchNotes",
+  "operations:procedureStep",
+  "operations:workInstructions",
+  "notes:jobNotes",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the packingSlip catalog it reaches 1`] = `
+[
+  "parties:contractNumber",
+  "lineItems:serialBatch",
+  "lineItems:serialBatchCell",
+  "document:receivingReportTitle",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the purchaseOrder catalog it reaches 1`] = `
+[
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the purchaseReturnOrder catalog it reaches 1`] = `
+[
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the purchasingRfq catalog it reaches 1`] = `
+[
+  "terms:termsAndConditions",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the quote catalog it reaches 1`] = `
+[
+  "notes:none",
+  "lineItems:columnTaxAndFees",
+  "lineItems:columnTaxAndFeesCell",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the salesInvoice catalog it reaches 1`] = `
+[
+  "parties:salesOrders",
+  "parties:shipTo",
+  "parties:shipToName",
+  "parties:shipToAddressLine1",
+  "parties:shipToAddressLine2",
+  "parties:shipToCity",
+  "parties:shipToStatePostal",
+  "parties:shipToCountry",
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the salesOrder catalog it reaches 1`] = `
+[
+  "parties:billTo",
+  "parties:billToName",
+  "parties:billToAddressLine1",
+  "parties:billToAddressLine2",
+  "parties:billToCity",
+  "parties:billToStatePostal",
+  "parties:billToCountry",
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the salesReturnOrder catalog it reaches 1`] = `
+[
+  "notes:none",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints every text of the stockTransfer catalog it reaches 1`] = `
+[
+  "lineItems:any",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the issue sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Issue Report
+NCR-000241
+ISSUE DETAILS
+Surface finish out of spec
+Type: Cosmetic Defect
+Status: In Progress
+Initiated By: Dana Cruz
+DATES
+Started: Jun 2, 2026
+ASSOCIATIONS
+Item: WIDGET-100 - Rework - Qty: 12
+Customer: Globex Corporation
+Job Operation: JOB-002310 / Op 30
+Sales Order: SO-001188
+DESCRIPTION OF ISSUE
+Anodized surface shows visible streaking on 12 of 100 parts. Suspected rack contact points during the anodize bath.
+CORRECTIVE ACTION
+Completed by: Dana Cruz
+Completed on: 2026-06-04
+Re-racked affected parts and re-anodized.
+SUPPLIER CONTAINMENT
+Supplier: Apex Anodizing
+MRB
+Quality Manager Approved
+Disposition: use as-is after rework.
+Engineering Pending
+Issue #NCR-000241 Page 1 of 1",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the jobTraveler sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Job Traveler
+JOB-002310
+SO# SO-001188
+Job ID: JOB-002310
+Part ID: WIDGET-100 / A
+Method Revision: V2
+Tracking: Batch Number: BATCH-44021
+Item: Precision Widget, anodized
+Quantity: 100 EA
+Scrap Qty: 5 EA
+Target: Sales Order: SO-001188
+Customer: Globex Corporation
+Start Date: Jun 1, 2026
+Due Date: Jun 18, 2026
+Deadline Type: Hard Deadline
+SEQ OPERATION EXPECTED TIMES
+1 CNC Mill — rough + finish Setup: 0.5 hr
+Labor: 2 hr
+Machine: 1.5 hr
+ACTIONS
+Setup Labor Machine Complete
+2 Deburr & inspect Labor: 0.75 hr
+ACTIONS
+Labor Complete
+JOB-002310 Page 1 of 2",
+  "3 Anodize (outside vendor)
+ACTIONS
+Complete
+JOB-002310 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the packingSlip sample 1`] = `
+[
+  "Acme Manufacturing Co.
+Detroit
+Packing Slip
+SHP-001042
+SHIP TO
+Globex Corporation
+500 Commerce Blvd
+Chicago
+IL 60601
+US
+SHIPMENT DETAILS
+Date: Jun 5, 2026
+Sales Order: SO-001042
+Customer PO #: PO-88421
+Tracking: 1Z999AA10123456784
+SHIPPING
+Method: Ground
+PAYMENT
+Terms: Net 30
+Description Qty
+WIDGET-100
+Precision Widget, anodized
+10 / 10 EA
+BRACKET-22
+Mounting Bracket
+4 / 4 EA
+NOTES
+Handle with care.
+STANDARD TERMS & CONDITIONS
+Goods received in good condition.
+Acme Manufacturing Co. is registered in United States SHP-001042 Page 1 of 1",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the purchaseOrder sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Purchase Order
+PO-001042
+SUPPLIER
+Steelworks Ltd
+200 Foundry Rd
+Pittsburgh
+PA 15201
+United States
+ORDER INFO
+PO Number: PO-001042
+Date: Jun 1, 2026
+Currency: USD
+Reference: Q-55120
+Payment Terms: Net 30
+DELIVER TO
+Acme Manufacturing Co.
+1 Industrial Way
+Detroit
+MI 48201
+United States
+NOTES
+Please confirm lead times.
+# Description Qty UOM Required Unit Price Net Value Tax Value Total
+1 STEEL-BAR-50
+Steel Bar, 50mm
+Supplier Part ID: SW-1045-50R
+Shipping: 5.00
+100 EA Jun 20,
+2026
+5.22 522.00 78.30
+15%
+605.30
+2 BOLT-M8
+M8 Bolt, zinc
+500 EA Jun 20,
+2026
+0.12 60.00 9.00
+15%
+69.00
+Subtotal (USD) 587.00
+Taxes (USD) 87.30
+Total (USD) 674.30
+Acme Manufacturing Co. is registered in United States PO-001042 Page 1 of 2",
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Purchase Order
+PO-001042
+TERMS & CONDITIONS
+Goods remain the property of the buyer until inspection and acceptance.
+APPROVED BY
+Jordan Lee
+Jun 2, 2026
+Acme Manufacturing Co. is registered in United States PO-001042 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the purchaseReturnOrder sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Return to Supplier
+PRO-000007
+Supplier RMA #: SUP-RMA-4471
+RETURN TO
+Initech Components Ltd.
+42 Supplier Park
+Cleveland
+OH 44101
+United States
+RETURN DETAILS
+Return Number: PRO-000007
+Supplier RMA #: SUP-RMA-4471
+Date: Jun 1, 2026
+Expires: Jul 1, 2026
+SHIP FROM
+Acme Manufacturing Co. — Main Plant
+1 Industrial Way
+Detroit
+MI 48201
+United States
+# Item Qty Authorized Unit Price Reason
+1 SCREW-M8-40
+Hex Cap Screw, M8 x 40
+12 EA 8.75 Failed incoming in-
+spection
+2 MOTOR-400W
+Servo Motor, 400W
+2 EA 145.00 Over-shipment
+Total (USD) 395.00
+NOTES
+Reference the supplier RMA number on all shipping documents.
+Acme Manufacturing Co. is registered in United States PRO-000007 Page 1 of 2",
+  "TERMS & CONDITIONS
+Goods are returned per the supplier's return authorization. Credit is expected within 30 days of receipt.
+Acme Manufacturing Co. is registered in United States PRO-000007 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the purchasingRfq sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+(313) 555-0100
+purchasing@acme.example
+acme.example
+Request for Quote
+Date Jun 1, 2026
+Reference PRFQ000012
+Quotation due Jun 15, 2026
+Dear Supplier,
+We invite you to quote for the items listed below. Please send your quotation in your usual format by Jun 15,
+2026, quoting reference PRFQ000012.
+Your quotation should include:
+• a unit price for each quantity, in the unit of measure shown
+• your lead time from receipt of order
+• how long your prices remain valid
+• freight and delivery terms to the address below
+Deliver to
+Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+United States
+Send your quotation to
+Jane Doe
+jane.doe@acme.example
+# Item Quantity Unit
+1 A500-RECTTUBE-1.5X3X.188
+A500 Gr B steel rectangular tube, 1.5" x 3" x .188"
+Mill certs required.
+18,500
+73,900
+922,800
+LB
+LB
+LB
+2 SCREW-M8-40
+Hex Cap Screw, M8 x 40
+500
+2,000
+EA
+EA
+Notes
+Please quote each quantity break and include freight to our dock.
+Thank you. We look forward to receiving your quotation.
+Sincerely,
+Jane Doe
+Acme Manufacturing Co.
+jane.doe@acme.example
+Acme Manufacturing Co. is registered in United States PRFQ000012 Page 1 of 1",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the quote sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Quote
+QUO-001042
+TO
+Globex Corporation
+500 Commerce Blvd
+Chicago
+IL 60601
+United States
+QUOTE DETAILS
+Date: Jun 1, 2026
+Expires: Jul 1, 2026
+Reference: RFQ-88421
+Max Lead Time: 21 days
+Payment Terms: Net 30
+NOTES
+Pricing valid for 30 days.
+Description Qty Unit Price Lead Time Total
+WIDGET-100
+Precision Widget, anodized
+Tax & Fees
+- Tax (6%) 14.70
+10 EA 24.50 14 days 245.00
+BRACKET-22
+Mounting Bracket
+Tax & Fees
+- Tax (6%) 2.88
+4 EA 12.00 7 days 48.00
+ASSEMBLY-HOUSING-AN…
+Fully machined precision aluminium hous…
+Tax & Fees
+- Tax (6%) 14.40
+2 EA 120.00 21 days 240.00
+Subtotal (USD) 533.00
+Shipping (USD) 0.00
+Taxes (USD) 31.98
+Total (USD) 564.98
+Acme Manufacturing Co. is registered in United States QUO-001042 Page 1 of 2",
+  "TERMS & CONDITIONS
+Prices exclude applicable duties and taxes.
+Acme Manufacturing Co. is registered in United States QUO-001042 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the salesInvoice sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Invoice
+INV-001042
+BILL TO
+Globex Corporation
+500 Commerce Blvd
+Chicago
+IL 60601
+United States
+Contact: Hank Scorpio
+Email: hank@globex.example
+INVOICE DETAILS
+Date Issued: Jun 1, 2026
+Due Date: Jul 1, 2026
+Customer Ref: PO-88421
+Payment Terms: Net 30
+Shipping: Ground
+Shipping Terms: FOB Origin
+NOTES
+Thank you for your business.
+# Description Qty Unit Price Total
+1 WIDGET-100
+Precision Widget, anodized
+Tax & Fees
+- Tax (6%) 11.76
+10 EA 24.50
+-20%
+207.76
+2 BRACKET-22
+Mounting Bracket
+Tax & Fees
+- Add-On 5.00
+- Tax (6%) 3.18
+4 EA 12.00 56.18
+Subtotal (USD) 293.00
+Discount (USD) -49.00
+Add-Ons (USD) 5.00
+Taxes (USD) 14.94
+Total (USD) 263.94
+Acme Manufacturing Co. is registered in United States INV-001042 Page 1 of 2",
+  "TERMS & CONDITIONS
+Payment due within 30 days. Late payments accrue 1.5% monthly interest.
+Acme Manufacturing Co. is registered in United States INV-001042 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the salesOrder sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Sales Order
+SO-001042
+CUSTOMER
+Globex Corporation
+500 Commerce Blvd
+Chicago
+IL 60601
+United States
+ORDER DETAILS
+Date: Jun 1, 2026
+Customer Ref: PO-88421
+Requested: Jun 20, 2026
+Payment Terms: Net 30
+Shipping: Ground
+NOTES
+Thank you for your business.
+Description Qty Unit Price Total
+WIDGET-100
+Precision Widget, anodized
+Tax & Fees
+- Tax (6%) 14.70
+10 EA 24.50 259.70
+BRACKET-22
+Mounting Bracket
+Tax & Fees
+- Add-On 5.00
+- Tax (6%) 3.18
+4 EA 12.00 56.18
+Subtotal (USD) 293.00
+Add-Ons (USD) 5.00
+Taxes (USD) 17.88
+Total (USD) 315.88
+Acme Manufacturing Co. is registered in United States SO-001042 Page 1 of 2",
+  "TERMS & CONDITIONS
+Payment due within 30 days. Late payments accrue 1.5% monthly interest.
+Acme Manufacturing Co. is registered in United States SO-001042 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the salesReturnOrder sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Return Merchandise Authorization
+RMA-000012
+CUSTOMER
+Globex Corporation
+500 Commerce Blvd
+Chicago
+IL 60601
+United States
+RETURN DETAILS
+RMA Number: RMA-000012
+Date: Jun 1, 2026
+Expires: Jul 1, 2026
+Customer Ref: CR-2201
+RETURN TO
+Acme Manufacturing Co. — Main Plant
+1 Industrial Way
+Detroit
+MI 48201
+United States
+# Item Qty Authorized Unit Price Reason
+1 WIDGET-100
+Precision Widget, anodized
+4 EA 24.50 Defective
+2 BRACKET-22
+Mounting Bracket
+1 EA 12.00 Wrong item shipped
+Total (USD) 110.00
+NOTES
+Please include this RMA number on all packages.
+Acme Manufacturing Co. is registered in United States RMA-000012 Page 1 of 2",
+  "TERMS & CONDITIONS
+Returned goods must be received within 30 days of authorization. Items must be in original packaging.
+Acme Manufacturing Co. is registered in United States RMA-000012 Page 2 of 2",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the stockTransfer sample 1`] = `
+[
+  "Acme Manufacturing Co.
+1 Industrial Way
+Detroit, MI 48201
+Stock Transfer
+ST-001042
+Acme Manufacturing Co.
+1 Industrial Way
+Detroit
+MI 48201
+Date: Jun 5, 2026
+Stock Transfer: ST-001042
+Location: Main Warehouse
+Assignee: Jordan Lee
+Description Transfer Qty Pick
+Precision Widget, anodized
+WIDGET-100
+Bin A1 ’ Bin B3 50 EA
+Mounting Bracket
+BRACKET-22
+Bin A2 ’ Bin C1 20 EA
+ST-001042 Page 1 of 1",
+]
+`;
+
+exports[`DOCUMENT_PDFS > prints the trackingLabel sample 1`] = `
+[
+  "DEMO-LABEL-01
+Rev: 0
+Qty: 1
+S/N: 04/06/2026
+trk_demo_0042",
+]
+`;

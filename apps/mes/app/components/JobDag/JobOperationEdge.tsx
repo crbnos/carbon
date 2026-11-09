@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -24,6 +25,7 @@ function JobOperationEdgeImpl({
   targetPosition,
   data
 }: EdgeProps) {
+  const { t } = useLingui();
   const d = data as unknown as JobOperationEdgeData | undefined;
   const [edgePath, labelX, labelY] = getSimpleBezierPath({
     sourceX,
@@ -65,6 +67,7 @@ function JobOperationEdgeImpl({
                 : "bg-background text-foreground border-border"
             }`}
           >
+            <span className="sr-only">{t`Quantity:`} </span>
             {d.quantity}
           </div>
         </EdgeLabelRenderer>

@@ -112,7 +112,7 @@ export const riskRegisterType = ["Risk", "Opportunity"] as const;
 export const gaugeValidator = z.object({
   id: zfd.text(z.string().optional()),
   gaugeId: zfd.text(z.string().optional()),
-  supplierId: zfd.text(z.string().optional()),
+  manufacturer: zfd.text(z.string().optional()),
   modelNumber: zfd.text(z.string().optional()),
   serialNumber: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),

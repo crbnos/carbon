@@ -28,6 +28,7 @@ import {
   hasOpenDialog,
   IconButton,
   ImageZoomViewer,
+  isBareKeyForAnotherControl,
   Modal,
   ModalBody,
   ModalContent,
@@ -60,7 +61,7 @@ import {
 } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuBox,
@@ -1016,6 +1017,9 @@ export function AssemblyView({
   // the step is done, gated, or submitting — the key is inert exactly when the
   // button is.
   const primaryStepActionRef = useRef<(() => void) | null>(null);
+  // Wraps the primary action button: Space/Enter on it is the shortcut's own
+  // key (so a clicker press still arms the RecordModal swallow below).
+  const primaryStepActionContainerRef = useRef<HTMLDivElement>(null);
 
   // Open production events per work type (to pass to the complete flow so it
   // can close them on completion).
@@ -1272,7 +1276,12 @@ export function AssemblyView({
     <button
       key={s.id}
       type="button"
-      aria-label={`Go to step ${i + 1}`}
+      aria-label={
+        isStepDone(s)
+          ? t`Go to step ${i + 1}: ${s.name ?? ""} (done)`
+          : t`Go to step ${i + 1}: ${s.name ?? ""}`
+      }
+      aria-current={i === currentStep ? "step" : undefined}
       onClick={() => goToStep(i)}
       className={cn(
         "h-3 flex-1 rounded-[2px] transition-colors",
@@ -1349,7 +1358,9 @@ export function AssemblyView({
   // preventDefault in the action stops a focused button's native click (Space
   // clicks on keyup only if keydown wasn't prevented; Enter's click is the
   // keydown's default action) — otherwise one press could both record and
-  // re-trigger the focused button.
+  // re-trigger the focused button. It cannot stop a control that handles the
+  // key in its own keydown handler (a role="button" element, a tab), so those
+  // keep the key.
   const ARMED_SWALLOW_MS = 750;
   const shortcutArmedAtRef = useRef<number | null>(null);
 
@@ -1364,6 +1375,17 @@ export function AssemblyView({
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
       // key semantics — the armed-clicker swallow below is the one exception.
       !hasOpenDialog() &&
+      // A control that handles the key in its own keydown (a role="button"
+      // part, a tab) keeps it. A native button or link does not: the clicker
+      // records even with Skip focused, and preventDefault stops its click.
+      !(
+        isBareKeyForAnotherControl(
+          event,
+          primaryStepActionContainerRef.current
+        ) &&
+        event.target instanceof Element &&
+        !event.target.closest("button, a[href]")
+      ) &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
@@ -1480,6 +1502,13 @@ export function AssemblyView({
     const fd = new FormData();
     fd.set("jobOperationId", operation.id);
     fd.set("quantity", "1");
+    // The route skips the completion if another one recorded this unit. The
+    // stored quantity, not the rounded one shown: a fraction must still match.
+    if (!isTracked)
+      fd.set(
+        "expectedQuantityComplete",
+        String(operation.quantityComplete ?? 0)
+      );
     if (requiresSerialTracking) fd.set("trackingType", "Serial");
     else if (requiresBatchTracking) fd.set("trackingType", "Batch");
     if (isTracked && currentEntity?.id)
@@ -1782,7 +1811,7 @@ export function AssemblyView({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label="Filter steps"
+              aria-label={t`Filter steps`}
               variant={stepFilter === "all" ? "ghost" : "active"}
               size="sm"
               icon={<LuListFilter />}
@@ -1941,7 +1970,7 @@ export function AssemblyView({
             </div>
           ) : null}
 
-          <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
+          <h1 className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
             <span className="truncate text-sm font-semibold">
               {job?.itemReadableIdWithRevision ?? "—"}
             </span>
@@ -1955,7 +1984,7 @@ export function AssemblyView({
                 </span>
               </>
             ) : null}
-          </div>
+          </h1>
 
           <div className="flex-1" />
 
@@ -1967,7 +1996,7 @@ export function AssemblyView({
             className="hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex"
           >
             <LuFlag className="size-4" />
-            Flag issue
+            <Trans>Flag issue</Trans>
           </button>
           {headerActions}
         </header>
@@ -2210,10 +2239,14 @@ export function AssemblyView({
         </aside>
 
         {/* ── MAIN: tabbed — details (image + step) · model · chat ── */}
-        <main className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+        <div className="flex w-full flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           {/* Tab bar */}
           {/* Phones: 44px underline tabs, as on the operation page. */}
-          <div className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1">
+          <div
+            role="group"
+            aria-label={t`Assembly view`}
+            className="flex shrink-0 items-center gap-1 border-b border-border px-3 py-1.5 max-md:gap-5 max-md:px-4 max-md:py-0 max-md:[&>*]:flex-1"
+          >
             <TabButton
               active={tab === "details"}
               onClick={() => setTab("details")}
@@ -2483,7 +2516,7 @@ export function AssemblyView({
               </div>
             </div>
           )}
-        </main>
+        </div>
 
         {/* ── SIDEBAR: materials, tools, NCRs, parameters ── */}
         <aside className="flex w-full shrink-0 flex-col border-t border-border bg-card lg:w-[280px] lg:overflow-hidden lg:border-l lg:border-t-0 xl:w-[320px]">
@@ -2497,7 +2530,7 @@ export function AssemblyView({
               scrollable={visibleMaterialsWithState.length > 0}
               action={
                 <IconButton
-                  aria-label="Issue material"
+                  aria-label={t`Issue another material`}
                   variant="ghost"
                   size="lg"
                   icon={<LuCirclePlus />}
@@ -2649,7 +2682,10 @@ export function AssemblyView({
             )}
             <div className="flex w-full items-stretch gap-2">
               {step && (
-                <div className="min-w-0 flex-1">
+                <div
+                  ref={primaryStepActionContainerRef}
+                  className="min-w-0 flex-1"
+                >
                   <StepCompleteAction
                     step={step}
                     activeIndex={activeIndex}
@@ -2665,9 +2701,11 @@ export function AssemblyView({
                 className="shrink-0"
                 isDisabled={isLastStep}
                 onClick={() => goToStep(currentStep + 1)}
+                aria-keyshortcuts="ArrowRight"
               >
                 Skip
                 <ShortcutKey
+                  aria-hidden
                   shortcut="arrowright"
                   variant="medium"
                   className="hidden md:flex"
@@ -3067,6 +3105,7 @@ function TimerControl({
     Labor: t`Labor`,
     Machine: t`Machine`
   } as const;
+  const elapsedId = useId();
 
   // Optimistic state: the moment Start/End is submitted, flip immediately
   // instead of waiting for the (slow) post-production-event round-trip. This
@@ -3079,6 +3118,19 @@ function TimerControl({
       : pendingAction === "End"
         ? false
         : !!openEvent;
+
+  // A disabled button drops focus to the page: when the press settles, put
+  // focus back on the button the user pressed.
+  const timerButtonRef = useRef<HTMLButtonElement>(null);
+  const refocusTimer = useRef(false);
+  const isTimerBusy = fetcher.state !== "idle";
+  useEffect(() => {
+    if (isTimerBusy || !refocusTimer.current) return;
+    refocusTimer.current = false;
+    if (!document.activeElement || document.activeElement === document.body) {
+      timerButtonRef.current?.focus();
+    }
+  }, [isTimerBusy]);
 
   // Freeze the clock while a stop is in flight; otherwise tick live.
   const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
@@ -3114,18 +3166,35 @@ function TimerControl({
         <input type="hidden" name="unitIndex" value={unitIndex} />
       ) : null}
       <button
-        disabled={(startDisabled && !openEvent) || fetcher.state !== "idle"}
+        ref={timerButtonRef}
+        // Disabled while the press is in flight, so a second press can't post
+        // again; the effect above gives focus back once it settles.
+        disabled={isTimerBusy || (startDisabled && !openEvent)}
+        onClick={() => {
+          refocusTimer.current =
+            document.activeElement === timerButtonRef.current;
+        }}
         type="submit"
-        aria-label={active ? t`Pause timer` : t`Start timer`}
+        aria-label={
+          active
+            ? t`Pause ${workTypeLabels[workType]} timer`
+            : t`Start ${workTypeLabels[workType]} timer`
+        }
+        // The elapsed time, which the label above replaces as the name.
+        aria-describedby={elapsedId}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:min-w-11 max-md:justify-center md:gap-2 md:px-4"
       >
         <span className="flex flex-col items-end leading-none">
-          <span className="text-sm font-medium tabular-nums">
+          <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
             <ClientOnly fallback={formatElapsed(0)}>
               {() => formatElapsed(elapsed)}
             </ClientOnly>
+            {/* The running state, read with the elapsed time. */}
+            <span className="sr-only">
+              {active ? t`, running` : t`, not running`}
+            </span>
           </span>
           <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
             {workTypeLabels[workType]}
@@ -3244,8 +3313,11 @@ function MaterialRow({
   // first step is recorded, so their status mirrors that trigger directly.
   issuedOverride?: number;
 }) {
+  const { t } = useLingui();
   const isTracked =
     material.requiresSerialTracking || material.requiresBatchTracking;
+  const partName: string =
+    material.description || material.itemReadableId || "";
   const { required, issued, fullyIssued } = getIssuedForUnit(material, {
     unitIndex,
     issuedIsPerUnit,
@@ -3292,7 +3364,7 @@ function MaterialRow({
         ? {
             type: "button" as const,
             onClick: onIssue,
-            "aria-label": isTracked ? "Scan material" : "Issue material"
+            "aria-label": isTracked ? t`Scan ${partName}` : t`Issue ${partName}`
           }
         : {})}
       className={cn(
@@ -3484,9 +3556,11 @@ function StepCompleteAction({
         isDisabled={disabled}
         className="w-full"
         onClick={markTaskDone}
+        aria-keyshortcuts="Enter Space"
       >
         Mark done
         <ShortcutKey
+          aria-hidden
           shortcut="enter"
           variant="medium"
           className="hidden md:flex"
@@ -3504,9 +3578,11 @@ function StepCompleteAction({
         isDisabled={disabled}
         className="w-full"
         onClick={recordModal.onOpen}
+        aria-keyshortcuts="Enter Space"
       >
         Record
         <ShortcutKey
+          aria-hidden
           shortcut="enter"
           variant="medium"
           className="hidden md:flex"
@@ -3712,6 +3788,7 @@ function TabButton({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         "rounded-md px-3 py-1 text-xs font-medium transition-colors",

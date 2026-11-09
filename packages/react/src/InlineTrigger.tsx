@@ -4,6 +4,7 @@
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef } from "react";
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 
 /** The classes of an inline field's trigger, for a trigger that is not this button. */
@@ -39,22 +40,28 @@ export const InlineTrigger = forwardRef<HTMLButtonElement, InlineTriggerProps>(
   (
     { placeholder, isEmpty, isDisabled, className, children, ...props },
     ref
-  ) => (
-    <button
-      ref={ref}
-      type="button"
-      disabled={isDisabled}
-      {...props}
-      className={cn(inlineTriggerClassName, className)}
-    >
-      {isEmpty ? (
-        <span className="truncate text-muted-foreground">{placeholder}</span>
-      ) : (
-        <span className="flex min-w-0 flex-1 items-center overflow-hidden">
-          {children}
-        </span>
-      )}
-    </button>
-  )
+  ) => {
+    // Inside a FormControl the field's error, helper text and glossary
+    // definition describe the trigger.
+    const { ariaProps } = useFormControl(props);
+    return (
+      <button
+        ref={ref}
+        type="button"
+        disabled={isDisabled}
+        {...props}
+        aria-describedby={ariaProps["aria-describedby"]}
+        className={cn(inlineTriggerClassName, className)}
+      >
+        {isEmpty ? (
+          <span className="truncate text-muted-foreground">{placeholder}</span>
+        ) : (
+          <span className="flex min-w-0 flex-1 items-center overflow-hidden">
+            {children}
+          </span>
+        )}
+      </button>
+    );
+  }
 );
 InlineTrigger.displayName = "InlineTrigger";

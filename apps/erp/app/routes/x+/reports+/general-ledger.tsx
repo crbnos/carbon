@@ -8,6 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useLocation } from "react-router";
 import {
@@ -157,6 +158,9 @@ export default function GeneralLedgerRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>General Ledger</Trans>
+      </h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={[selectedCompanyId]}

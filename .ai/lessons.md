@@ -609,7 +609,7 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** The upload fails with "Invalid key", but the modal had already rendered the file card (`setFile` before the await), so the operator saw the file "attached" with the Record button permanently disabled — no actionable error. Separately, the customer-portal file route (`share+/customer.$id.$.tsx`) validated paths with a regex hardcoded to the *old* flat layout `companyId/job/operationId/file`; when `032f8d0e` nested step uploads under `/stepId/nanoid/`, every portal file link started returning 403 and nobody noticed for months.
 
-**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
+**Rule:** (1) Any storage key that embeds a user-controlled filename must pass it through `stripSpecialCharacters` (canonical copy in `@carbon/utils`, re-exported by `~/utils/string` in ERP) with a `|| "file"` fallback for names that sanitize to empty. (2) The share-route path validation (`parseJobFilePath` in `apps/erp/app/utils/supabase.ts`, unit-tested) is coupled to every writer of the `companyId/job/...` prefix — changing an upload path shape requires updating the parser and its test in the same PR. The route also serves a file only when a File step's `jobOperationStepRecord.value` is that exact path (`getJobOperationFileRecord`) and its extension is a photo or PDF (`customerPortalServesFile`, `sales.utils.ts`), so a writer that stores a different value than the uploaded key breaks portal downloads the same way (`apps/erp/test/database/customer-portal.test.ts`). (3) On upload failure, reset the picker UI so the user can retry; never leave a dead-end state.
 
 **Applies to:** all `storage.from(...).upload(...)` call sites in `apps/mes` and `apps/erp`; `share+/customer.$id.$.tsx`; any new externally-shared file route.
 
@@ -4422,6 +4422,68 @@ the error set against an untouched checkout of `main`.
 **Rule:** After a codemod declares or renames variables, scan each new name for an earlier use in the same function. Run the database tests that cover the touched writes before committing.
 **Applies to:** Scripted refactors in service files.
 
+## A catalog default holding a variable changes what a stored word means
+
+- **Context:** document texts store only the words a user changed, keyed by catalog key.
+- **Problem:** when a key's default goes from `Date:` to `Date: {order.date}`, a stored `Order date:` keeps the key and prints no value, because the block no longer adds it.
+- **Rule:** before moving a value into a catalog default, confirm no stored row holds that key. If one can, migrate the stored words too. Nothing checks a default's variables except `texts.test.ts`, so keep it passing.
+- **Applies to:** `packages/documents/src/template/texts/`, `documentTemplate`, `documentEdit`.
+
+## Content sized from its own scroll box needs a fixed scrollbar
+
+- **Context:** The document preview draws PDF pages at the width of the box that scrolls them.
+- **Problem:** A page about as tall as the box looped forever: the scrollbar narrowed the box, the narrower page fit, the scrollbar left, the wider page no longer fit. It redrew about 60 times a second, at only some window heights, so it looked like a random flicker on open.
+- **Rule:** When a box's content takes its size from the box, keep the scrollbar's space fixed (`overflow-y-scroll`) so the width cannot depend on the content's height.
+- **Applies to:** Any `useResizeObserver` width that sizes content inside the observed scroll box.
+
+## A tagged `t` only works in the component that called `useLingui`
+
+- **Context:** a helper took `t` as a parameter and used it as a tagged template.
+- **Problem:** the Lingui macro transforms `t` only where `useLingui` binds it. Typecheck passes, but `extract` drops the message and the call receives a template array at runtime.
+- **Rule:** keep the tagged `t` in the component or a closure inside it. Pass finished strings to helpers. If a new message is missing after `lingui:extract`, look for this first.
+- **Applies to:** every `t` passed through a function parameter.
+
+## A fetcher's failed load replaces the whole page
+
+- **Context:** A modal loaded an optional extra (the values behind its pencils) with `useFetcher().load`.
+- **Problem:** A loader that throws sends a fetcher's error to the nearest route boundary (`setFetcherError`). The record page became an error screen, and the modal and its unsaved draft went with it.
+- **Rule:** When a page can work without the data, load it with a plain `fetch` and handle the failure there, or return the failure from the loader as data.
+- **Applies to:** Every `fetcher.load` for something optional, especially behind unsaved work.
+
+## Lingui `plural()` must be the whole message, with no variables in its branches
+
+**Context:** Accessibility labels like "3 jobs for SO000001, in progress" were written as `` t`${plural(n, { one: "# job for", other: "# jobs for" })} ${orderId}` `` and later with `${orderId}` inside the branches.
+
+**Problem:** The macro only folds `plural()` into the ICU message when it is the entire `t` template and its branches are plain strings. Text around it, or template variables inside a branch, leave `plural()` to run at render through Lingui's global instance, which has no active locale on the server — the whole route throws ("Attempted to call a translation function without setting a locale"). Typecheck and unit tests pass; only rendering the cell shows it.
+
+**Rule:** Use `` t`${plural(n, { one: "# job", other: "# jobs" })}` `` with literal branches and nothing else in the template, or phrase the string so the count needs no agreement (`` t`Jobs for ${orderId}: ${n}` ``). Load the page after adding any `plural()`.
+
+**Applies to:** every `plural()` / `select()` from `@lingui/core/macro` inside `t`/`msg`, especially in table cell renderers.
+
+## A clickable row made keyboard-reachable must not wrap its own controls
+
+**Context:** Turning on Biome's `useKeyWithClickEvents` / `noStaticElementInteractions` meant giving every clickable `div` a role, `tabIndex` and an Enter/Space handler.
+
+**Problem:** The quick fix, `role="button"` on the row, was applied to rows that already held a link, a chevron button or a date picker (document line summaries, share pages, the BOM list title). A button's children are presentational, so a screen reader hears one button named after the whole row and cannot reach the controls inside. A keyboard user gets two tab stops for one toggle. And a row handler that calls `preventDefault()` on Enter with no target check swallows Enter on the link inside, which then opens the row instead of following the link. Lint, typecheck and tests all pass.
+
+**Rule:** Before adding `role="button"`, look inside the element. If it holds a link, button or field, keep the row pointer-only (`biome-ignore` with the reason, ignore clicks on `a, button`) and make the existing chevron or a stretched link the control. Any `role="button"` Enter/Space handler starts with `if (e.target !== e.currentTarget) return;`. A page-wide bare-key shortcut (MES Space) checks `isBareKeyForAnotherControl` in its guard.
+
+**Applies to:** every a11y lint fix on a clickable container; `conventions-ui.md` → Accessibility tree.
+
+## A posting that restates a document's status can release it past its approval
+
+**Context:** Purchase order approval enforcement (TCK-36). Receipt and invoice postings set the order's status from its lines: Completed, To Receive, To Invoice or To Receive and Invoice.
+**Problem:** The postings were gated, but their voids were not, and none of the four writes checked the status they replaced. Voiding an invoice on an order waiting for re-approval set it to a released status with no approval, and posting an invoice against a Closed order reopened it.
+**Rule:** A write that derives a document's status from its lines matches the statuses it may replace in its own `WHERE` (`.where("status", "in", PURCHASE_ORDER_RELEASED_STATUSES)`). Audit the voids and reversals along with the posts.
+**Applies to:** Every posting and void that writes `purchaseOrder.status`, `salesOrder.status` or a similar derived header status.
+
+## A rule on a posting belongs in the posting, not in the operation that wraps it
+
+**Context:** The purchase order funds gate was first placed in the `postPurchaseInvoice` operation (`invoicing.server.ts`), ahead of the `post-purchase-invoice` posting.
+**Problem:** The Ramp bill sync and `@carbon/jobs` call the posting through `posting()` from `@carbon/api/postings.server`, never the operation. They posted invoices against unapproved orders, and the PR had to list it as a known gap.
+**Rule:** A check that must hold for every caller of a posting goes in the posting body (`<module>.service.ts`), thrown as a `ServerFnError` with a status whose category fits (422 for a rule). The operation adds only what is specific to the route's caller.
+**Applies to:** every posting registered in `apps/erp/app/modules/postings.server.ts`.
+
 ## `permission: {}` admits a read-only API key
 
 **Context:** A person logs their own time, so `logTimesheetEntry` and its siblings gate on
@@ -4454,6 +4516,13 @@ that exports `config` gets its own bundle and keeps its routes, and each one sti
 
 **Applies to:** `apps/erp/react-router.config.ts`, and MES or another app if it nears 1016
 dynamic routes.
+
+## A grid position must name a sample id, not `samples[index]` of a reloaded list
+
+- **Context:** Inspection grids (ERP `InspectionMeasurementGrid`, MES `InspectionMeasurementMatrix`) map each column or row to an `inspectionSample`.
+- **Problem:** The loader embedded `inspectionSample(*)` with no order, and an UPDATE moves a row. Each save broadcasts `inspectionSample`, so the page reloaded and `samples[index]` named another sample: the next reading was saved on the wrong part. A stubbed harness never showed it; only the running stack (realtime + Postgres) did.
+- **Rule:** Order embedded children explicitly (`.order(col, { referencedTable })`). Bind a UI position to the record's id once (`placeSamples`), key per-cell state by that id, and never re-derive a position from a reloaded array's index. Test write paths on `crbn up`, not only against a stub.
+- **Applies to:** any grid or list that writes through positions over data a realtime reload can reorder.
 
 ## A cookie-only save must not re-run every loader on the page
 
@@ -4534,3 +4603,123 @@ answer that the class did not reach the animation.
 
 **Applies to:** `packages/config/tailwind/theme.css` tokens and any check of
 compiled Tailwind output.
+
+## An inline editor built in a memo with changing dependencies drops keystrokes
+
+**Context:** The inspection grid (`InspectionMeasurementGrid.tsx`) moves to the next
+cell on Enter. Typing "0.139" straight after Enter saved "39".
+
+**Problem:** `editableComponents` was a `useMemo` that called `EditableNumber(...)`
+per column, with the grid's cell status among its dependencies. The previous cell's
+save landed while the inspector typed: its status changed, the memo made new editor
+component types, and React remounted the open input. The new input started from the
+saved value, so the characters typed before the remount were lost. A slow, step-by-step
+test passed because the save had landed before the first key.
+
+A browser stress run found two more remounts of the same kind. The By part rows were
+keyed by sample id, so the first save of a part (which creates the sample) re-keyed the
+row; and the editors were rebuilt whenever a spare sample column was added. A first fix
+also passed Lingui's `t` through the ref and crashed: `t` is a macro bound to
+`useLingui()`, not a function value. Typecheck passed; only the browser showed it.
+
+**Rule:** The components in a Table's `editableComponents` keep one identity while a
+cell is open: make each column's editor once (cache it by column key) and read changing
+state (statuses, callbacks) through a ref. Translate strings before they go into the
+ref; never pass `t` itself. A row's `getRowId` never changes while the row is on
+screen — key a row by something that exists before its first save. To test an inline
+editor, hold the save (wrap `fetch` with a delay), type half a value, let the save land,
+then type the rest.
+
+**Applies to:** every `<Table editableComponents>` whose editors are made inside
+`useMemo`/`useCallback` (`EditableNumber`, `EditableText`, `EditableList`, …).
+
+## react-pdf: `wrap={false}` loses text when the node is taller than the page
+
+**Context:** A list item in a PDF note rendered its bullet on one page and its text on the
+next (TCK-57). The obvious fix was `wrap={false}` on the item row.
+
+**Problem:** react-pdf 3.x keeps a paragraph of three lines or fewer whole, because
+`widows` and `orphans` default to 2. The paragraph moved to the next page and left its
+one-line bullet behind. `wrap={false}` fixes that, but react-pdf cannot split an unbreakable
+node that is taller than the page. It draws the node past the page bottom and the text is
+lost. Height does not follow text length: many line breaks or short paragraphs make a tall
+node from little text.
+
+**Rule:** Put `wrap={false}` only on a node you can prove fits on a page. Decide it in a pure
+function and count each line break or block as a full line, as `keepListItemTogether` in
+`Note.tsx` does. Prove a page-break change by rendering at many offsets and reading each
+page's text back (pdfjs). A single render can land away from the boundary.
+
+**Applies to:** `packages/documents/src/pdf/**`, any `wrap={false}` or `minPresenceAhead`.
+## Moving a list building block out of its module drops the published tool's filters
+
+**Context:** A review asked to move the customer portal reads from `shared.service.ts` to
+`sales.service.ts`. `shared_getCustomerPortals` (in `shared.server.ts`) calls the list read.
+
+**Problem:** The MCP generator gives a published list tool its `filters` and `sorts` inputs
+only when its `run` calls `service.<name>(…)` and `<name>` calls `setGenericQueryFilters` in
+the same module's `.service.ts` (`appliesGenericFilters`, `scripts/lib/input-docs.ts`). After
+the move the tool silently lost both inputs. Typecheck and tests stayed green; only the
+`schema` hash in `tool-manifest.digest.json` changed.
+
+**Rule:** A list building block stays in the `.service.ts` of the module whose `.server.ts`
+publishes it. After moving any building block, check `git diff` on
+`tool-manifest.digest.json`: a changed `schema` hash is a changed public contract, so
+regenerate (`pnpm generate:mcp`) and diff the tool's entry in `tool-metadata.json`.
+
+**Applies to:** any building block a `defineServiceFn` with `@mcp` calls, `scripts/lib/input-docs.ts`.
+
+## `null` as "no bin chosen" and `null` as "no storage unit" are different things
+
+**Context:** The untracked draw planner (`planStripedUntrackedDraw`) and its SQL twin in
+`backflush_job_materials` took a preferred bin, where `null` meant "no bin chosen", and
+listed the other bins as "every bin that is not the preferred one".
+
+**Problem:** With no bin chosen, "not the preferred one" also dropped the bin whose id
+is `null`: stock with no storage unit. A draw with 8 in a bin and 3 in no storage unit
+took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
+`IS DISTINCT FROM NULL` both excluded it, so the twins agreed and unit tests passed.
+
+**Rule:** When one value can mean "nothing chosen" and also name a real bucket, test the
+"nothing chosen" case against stock in that bucket. In code, guard the comparison:
+`preferred === null || id !== preferred`, and in SQL
+`v_preferred IS NULL OR id IS DISTINCT FROM v_preferred`.
+
+**Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
+and any bin or stripe filter where `null` is both a key and "unset".
+
+## The edge runtime reuses a worker, env and all, per pool key
+
+**Context:** One shared `supabase/edge-runtime` serving every worktree, with the
+dispatcher (`packages/dev/docker/edge-main/index.ts`) passing each request's
+worktree API as `SUPABASE_URL` in `EdgeRuntime.userWorkers.create({ envVars })`.
+
+**Problem:** The runtime keeps a live worker per pool key and returns it for the
+next `create` with the same key (`crates/base/src/worker/pool.rs`). The key
+defaults to the service path, so a worker created with worktree A's env would
+serve worktree B's next request with A's `SUPABASE_URL`. Nothing errors.
+
+**Rule:** A dispatcher that varies `envVars` per request must pass `poolKey` that
+includes every value that varies (here `${api} ${servicePath}`).
+
+**Applies to:** `packages/dev/docker/edge-main/index.ts` and any other
+`--main-service` dispatcher.
+
+## On carbon-shared, a shared service's bare name answers in every worktree
+
+**Context:** Envoy's `functions` cluster listed the worktree's private
+`edge-runtime` first and the shared `carbon-edge-runtime` second.
+
+**Problem:** crbn-shared's service is also called `edge-runtime` and joins
+`carbon-shared`, which every worktree's gateway joins too. With no private runtime
+the bare name resolved to the shared one; with one, Docker happened to answer with
+the private one only. "Private first" depended on Docker's DNS order, and the
+fallback was never used.
+
+**Rule:** A worktree container on `carbon-shared` reaches its own services by a
+`local-*` alias on its default network (`local-meta`, `local-edge-runtime`), and
+shared ones by `container_name` (`carbon-*`). Check a new name with
+`docker exec <api-gw> getent ahostsv4 <name>` with and without the other side up.
+
+**Applies to:** `packages/dev/docker/envoy/cds.template.yaml`,
+`packages/dev/docker/docker-compose.dev.yml`, `.claude/rules/dev-shared-services.md`.

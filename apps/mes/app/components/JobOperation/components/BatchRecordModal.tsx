@@ -312,7 +312,11 @@ export function BatchRecordModal({
                   <span className="text-sm font-medium">
                     <Trans>Passed inspection</Trans>
                   </span>
-                  <Switch checked={passed} onCheckedChange={setPassed} />
+                  <Switch
+                    aria-label={t`Passed inspection`}
+                    checked={passed}
+                    onCheckedChange={setPassed}
+                  />
                 </div>
               )}
             </div>

@@ -411,7 +411,7 @@ const KanbansTable = memo(
                         className="flex flex-row items-center gap-1"
                       >
                         {kanban.jobReadableId}
-                        <PulsingDot />
+                        <PulsingDot label={t`In progress`} />
                       </Link>
                     </Badge>
                   )}
@@ -535,6 +535,7 @@ const KanbansTable = memo(
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={locationId}

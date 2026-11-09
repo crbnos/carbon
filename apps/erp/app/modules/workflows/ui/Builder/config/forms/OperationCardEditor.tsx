@@ -158,7 +158,14 @@ export function OperationCardEditor({
           onValueChange={onOperationChange}
           disabled={isReadOnly}
         >
-          <SelectTrigger className="w-full" disabled={isReadOnly}>
+          <SelectTrigger
+            aria-label={t({
+              message: "Operation",
+              context: "workflow data step"
+            })}
+            className="w-full"
+            disabled={isReadOnly}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -234,7 +241,11 @@ function FieldPicker({
           }}
           disabled={isReadOnly}
         >
-          <SelectTrigger className="w-full" disabled={isReadOnly}>
+          <SelectTrigger
+            aria-label={t`Field`}
+            className="w-full"
+            disabled={isReadOnly}
+          >
             <SelectValue placeholder={t`Pick a field…`} />
           </SelectTrigger>
           <SelectContent>

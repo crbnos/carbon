@@ -230,7 +230,7 @@ const PivotControlBar = ({
   };
 
   const viewMenu = (
-    <ActionMenu>
+    <ActionMenu label={t`Saved view actions`}>
       <DropdownMenuItem onClick={() => setSaveModalOpen(true)}>
         <DropdownMenuIcon icon={<LuBookmarkPlus />} />
         <Trans>Save view</Trans>

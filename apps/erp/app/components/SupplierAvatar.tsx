@@ -40,6 +40,7 @@ const SupplierAvatar = ({
         {...props}
         name={supplier?.name ?? ""}
         imageUrl={imageUrl}
+        decorative
       />
       <span className={className}>{supplier.name}</span>
     </HStack>
