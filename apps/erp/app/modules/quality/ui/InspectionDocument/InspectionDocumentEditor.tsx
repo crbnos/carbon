@@ -885,7 +885,7 @@ export default function InspectionDocumentEditor({
     height: pdfPaneHeightPx,
     clamp: (height) =>
       clampPdfPaneHeight(height, editorStackHeightPx, featuresTableExpanded),
-    enabled: featuresTableExpanded,
+    enabled: featuresTableExpanded && editorStackHeightPx > 0,
     onCommit: setPdfPaneHeightPx
   });
 

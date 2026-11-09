@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { PointerEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /** Resizes a pane from a splitter. The handle needs `touch-none`. */
 export function usePaneResize<T extends HTMLElement = HTMLDivElement>({
@@ -21,38 +21,66 @@ export function usePaneResize<T extends HTMLElement = HTMLDivElement>({
 }) {
   const paneRef = useRef<T>(null);
   const drag = useRef<{
+    pointerId: number;
     startY: number;
     startHeight: number;
     height: number;
+    moved: boolean;
   } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
 
-  const end = () => {
+  const end = (save: boolean) => {
     const state = drag.current;
     if (!state) return;
     drag.current = null;
     setIsResizing(false);
-    onCommit(state.height);
+    if (!state.moved) return;
+    const final = save ? clamp(state.height) : state.startHeight;
+    if (paneRef.current) paneRef.current.style.height = `${final}px`;
+    if (save) onCommit(final);
   };
+  const endRef = useRef(end);
+  endRef.current = end;
+
+  useEffect(() => {
+    if (!enabled) endRef.current(true);
+  }, [enabled]);
 
   const handleProps = {
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      if (!enabled || event.button !== 0) return;
+      if (!enabled || event.button !== 0 || drag.current) return;
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      drag.current = { startY: event.clientY, startHeight: height, height };
+      drag.current = {
+        pointerId: event.pointerId,
+        startY: event.clientY,
+        startHeight: height,
+        height,
+        moved: false
+      };
       setIsResizing(true);
-      onStart?.();
     },
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
       const state = drag.current;
       const pane = paneRef.current;
-      if (!state || !pane) return;
+      if (!state || !pane || event.pointerId !== state.pointerId) return;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        end(true);
+        return;
+      }
+      if (!state.moved) {
+        state.moved = true;
+        onStart?.();
+      }
       state.height = clamp(state.startHeight + event.clientY - state.startY);
       pane.style.height = `${state.height}px`;
     },
-    onPointerUp: end,
-    onPointerCancel: end
+    onPointerUp: (event: PointerEvent<HTMLElement>) => {
+      if (event.pointerId === drag.current?.pointerId) end(true);
+    },
+    onPointerCancel: (event: PointerEvent<HTMLElement>) => {
+      if (event.pointerId === drag.current?.pointerId) end(false);
+    }
   };
 
   return { paneRef, isResizing, handleProps };

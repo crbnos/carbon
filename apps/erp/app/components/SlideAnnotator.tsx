@@ -58,6 +58,7 @@ export function SlideAnnotator({
     id: string;
     moved: boolean;
     button: HTMLButtonElement;
+    origin: { x: number; y: number };
     point?: { x: number; y: number };
   } | null>(null);
   const justDragged = useRef(false);
@@ -124,6 +125,14 @@ export function SlideAnnotator({
     );
   };
 
+  const cancelDrag = () => {
+    const cancelled = drag.current;
+    drag.current = null;
+    if (!cancelled?.moved) return;
+    cancelled.button.style.left = `${cancelled.origin.x * 100}%`;
+    cancelled.button.style.top = `${cancelled.origin.y * 100}%`;
+  };
+
   const updateSelected = (patch: Partial<SlideAnnotation>) => {
     if (!selected) return;
     setPins((prev) =>
@@ -158,7 +167,7 @@ export function SlideAnnotator({
                 onClick={addPin}
                 onPointerMove={onPointerMove}
                 onPointerUp={endDrag}
-                onPointerCancel={endDrag}
+                onPointerCancel={cancelDrag}
               >
                 <img
                   src={imageUrl}
@@ -177,11 +186,16 @@ export function SlideAnnotator({
                       drag.current = {
                         id: pin.id,
                         moved: false,
-                        button: e.currentTarget
+                        button: e.currentTarget,
+                        origin: { x: pin.x, y: pin.y }
                       };
                       setSelectedId(pin.id);
                     }}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // A captured drag releases its click here, not on the image.
+                      justDragged.current = false;
+                    }}
                     className={cn(
                       "absolute flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-xs font-semibold text-white shadow-md",
                       "cursor-grab touch-none active:cursor-grabbing",

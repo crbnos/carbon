@@ -166,6 +166,7 @@ function WeekCard({
               aria-label="Remove"
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400 max-md:hit-area"
               onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               onClick={() => onRemove(item)}
             >
               <LuX className="h-3.5 w-3.5" />

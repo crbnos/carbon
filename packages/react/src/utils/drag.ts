@@ -32,3 +32,21 @@ export function releaseVelocity(
 export function rubberBand(distance: number, max: number): number {
   return max * (1 - 1 / (1 + (distance * RUBBER_BAND_RESISTANCE) / max));
 }
+
+const FLICK_VELOCITY = 0.5;
+const FLICK_MIN_DISTANCE_PX = 20;
+
+export function shouldDismissSheet({
+  offset,
+  height,
+  velocity
+}: {
+  offset: number;
+  height: number;
+  velocity: number;
+}): boolean {
+  return (
+    offset > height / 3 ||
+    (velocity > FLICK_VELOCITY && offset >= FLICK_MIN_DISTANCE_PX)
+  );
+}

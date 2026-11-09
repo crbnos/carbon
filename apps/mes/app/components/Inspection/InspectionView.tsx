@@ -291,7 +291,7 @@ export function InspectionView({
   const splitResize = usePaneResize({
     height: pdfPaneHeightPx,
     clamp: (height) => clampPdfPaneHeight(height, stackHeightPx, gridExpanded),
-    enabled: gridExpanded,
+    enabled: gridExpanded && stackHeightPx > 0,
     onStart: () => {
       hasUserResizedRef.current = true;
     },

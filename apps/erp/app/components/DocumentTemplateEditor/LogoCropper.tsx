@@ -5,6 +5,7 @@
 import type { LabelLogoBlock } from "@carbon/documents/template";
 import {
   Button,
+  cn,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,7 +15,7 @@ import {
 } from "@carbon/react";
 import { round } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Crop = NonNullable<LabelLogoBlock["crop"]>;
 
@@ -190,15 +191,28 @@ function CropDialog({
       );
     };
 
-  const endDrag = useCallback(() => {
-    const moved = drag.current?.current;
+  const detach = useRef<(() => void) | null>(null);
+  const finishDrag = (save: boolean) => {
+    const d = drag.current;
     drag.current = null;
     setActive(false);
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", endDrag);
-    window.removeEventListener("pointercancel", endDrag);
-    if (moved) onChange(moved);
-  }, [onChange, onPointerMove]);
+    detach.current?.();
+    detach.current = null;
+    if (!d?.current) return;
+    if (save) {
+      onChange(d.current);
+      return;
+    }
+    if (areaRef.current) {
+      Object.assign(areaRef.current.style, areaPosition(d.start));
+    }
+    if (handleRef.current) {
+      Object.assign(handleRef.current.style, handlePosition(d.start));
+    }
+  };
+  const finishDragRef = useRef(finishDrag);
+  finishDragRef.current = finishDrag;
+  useEffect(() => () => finishDragRef.current(true), []);
 
   const startDrag = useCallback(
     (mode: "move" | "resize") => (e: React.PointerEvent) => {
@@ -211,11 +225,18 @@ function CropDialog({
         start: crop ?? { ...FULL, aspect: aspectOf(1, 1) }
       };
       setActive(true);
+      const end = () => finishDragRef.current(true);
+      const cancel = () => finishDragRef.current(false);
       window.addEventListener("pointermove", onPointerMove);
-      window.addEventListener("pointerup", endDrag);
-      window.addEventListener("pointercancel", endDrag);
+      window.addEventListener("pointerup", end);
+      window.addEventListener("pointercancel", cancel);
+      detach.current = () => {
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", end);
+        window.removeEventListener("pointercancel", cancel);
+      };
     },
-    [aspectOf, crop, endDrag, onPointerMove]
+    [aspectOf, crop, onPointerMove]
   );
 
   return (
@@ -269,7 +290,12 @@ function CropDialog({
                 aria-label={t`Crop size: ${round(c.width * 100, 0)}% wide, ${round(c.height * 100, 0)}% tall. Arrow keys resize it.`}
                 onPointerDown={startDrag("resize")}
                 onKeyDown={onNudge("resize")}
-                className="absolute h-3 w-3 cursor-se-resize rounded-sm border-2 border-white bg-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-coarse:after:absolute pointer-coarse:after:-inset-4"
+                className={cn(
+                  "absolute h-3 w-3 cursor-se-resize rounded-sm border-2 border-white bg-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                  c.width >= 0.25 &&
+                    c.height >= 0.25 &&
+                    "pointer-coarse:after:absolute pointer-coarse:after:-inset-4"
+                )}
                 style={handlePosition(c)}
               />
             </div>

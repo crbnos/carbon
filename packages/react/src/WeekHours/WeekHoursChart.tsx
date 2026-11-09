@@ -356,6 +356,7 @@ function WeekBar({
   const drag = useRef<{ startY: number; base: number; last: number } | null>(
     null
   );
+  const resized = useRef(false);
   const height = hours * hourPx;
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -363,6 +364,7 @@ function WeekBar({
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = { startY: event.clientY, base: hours, last: hours };
+    resized.current = false;
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
@@ -379,6 +381,7 @@ function WeekBar({
     if (!drag.current) return;
     const { last, base } = drag.current;
     drag.current = null;
+    resized.current = !equals(last, base);
     onDrag(null);
     if (!equals(last, base)) onCommit(last);
   };
@@ -464,7 +467,11 @@ function WeekBar({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!resized.current) onSelect();
+            resized.current = false;
+          }}
         >
           <span
             className={cn(

@@ -7,7 +7,8 @@ import {
   addDragSample,
   type DragSample,
   releaseVelocity,
-  rubberBand
+  rubberBand,
+  shouldDismissSheet
 } from "./drag";
 
 function drag(points: [y: number, t: number][]): DragSample[] {
@@ -80,5 +81,31 @@ describe("rubberBand", () => {
   it("grows with the drag but never reaches its limit", () => {
     expect(rubberBand(200, 32)).toBeGreaterThan(rubberBand(100, 32));
     expect(rubberBand(100_000, 32)).toBeLessThan(32);
+  });
+});
+
+describe("shouldDismissSheet", () => {
+  it("closes when dragged past a third of the sheet", () => {
+    expect(shouldDismissSheet({ offset: 240, height: 700, velocity: 0 })).toBe(
+      true
+    );
+  });
+
+  it("closes on a short, fast flick", () => {
+    expect(shouldDismissSheet({ offset: 60, height: 700, velocity: 1 })).toBe(
+      true
+    );
+  });
+
+  it("stays open for a few pixels of fast jitter", () => {
+    expect(shouldDismissSheet({ offset: 3, height: 700, velocity: 1.5 })).toBe(
+      false
+    );
+  });
+
+  it("stays open after a slow, short drag", () => {
+    expect(
+      shouldDismissSheet({ offset: 100, height: 700, velocity: 0.1 })
+    ).toBe(false);
   });
 });

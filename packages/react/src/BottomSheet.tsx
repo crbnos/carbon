@@ -23,7 +23,8 @@ import {
   addDragSample,
   type DragSample,
   releaseVelocity,
-  rubberBand
+  rubberBand,
+  shouldDismissSheet
 } from "./utils/drag";
 import { mergeRefs } from "./utils/react";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
@@ -65,9 +66,13 @@ type BottomSheetContentProps = ComponentPropsWithoutRef<
 
 const SHEET_SPRING = "transform 200ms cubic-bezier(0.32, 0.72, 0, 1)";
 const BACKDROP_SPRING = "opacity 200ms cubic-bezier(0.32, 0.72, 0, 1)";
-/** px per ms: a flick this fast dismisses whatever the distance. */
-const FLICK_VELOCITY = 0.5;
 const OVERDRAG_LIMIT_PX = 32;
+
+function restore(sheet: HTMLElement, backdrop: HTMLElement | null) {
+  sheet.style.transform = "";
+  sheet.style.removeProperty("--tw-exit-translate-y");
+  if (backdrop) backdrop.style.opacity = "";
+}
 
 const BottomSheetContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
@@ -128,8 +133,11 @@ const BottomSheetContent = forwardRef<
     if (backdrop) backdrop.style.transition = BACKDROP_SPRING;
     if (
       event.type === "pointerup" &&
-      (offset > state.height / 3 ||
-        releaseVelocity(state.samples, event.timeStamp) > FLICK_VELOCITY)
+      shouldDismissSheet({
+        offset,
+        height: state.height,
+        velocity: releaseVelocity(state.samples, event.timeStamp)
+      })
     ) {
       // Reduced motion zeroes the exit movement, which would slide the sheet
       // back up before it closes.
@@ -142,9 +150,12 @@ const BottomSheetContent = forwardRef<
       }
       // The exit animation starts from where the finger left the sheet.
       closeRef.current?.click();
+      // A controlled sheet may refuse to close.
+      requestAnimationFrame(() => {
+        if (sheet.dataset.state === "open") restore(sheet, backdrop);
+      });
     } else {
-      sheet.style.transform = "";
-      if (backdrop) backdrop.style.opacity = "";
+      restore(sheet, backdrop);
     }
   };
 
