@@ -304,7 +304,7 @@ export default function SalesDashboard() {
 
       {revenue ? (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <MetricCard
               icon={<LuChartNoAxesCombined />}
               title={<Trans>Net invoiced sales</Trans>}
@@ -409,7 +409,7 @@ export default function SalesDashboard() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>
