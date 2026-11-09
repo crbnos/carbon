@@ -400,6 +400,12 @@ msgstr "Approve and Complete"
 msgid "Approve and Log Scrap"
 msgstr "Approve and Log Scrap"
 
+msgid "Approve and Record Partial"
+msgstr "Approve and Record Partial"
+
+msgid "Approve and Reject Lot"
+msgstr "Approve and Reject Lot"
+
 msgid "Approve and Scrap"
 msgstr "Approve and Scrap"
 

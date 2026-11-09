@@ -1979,6 +1979,7 @@ msgstr "Uma tarefa de não conformidade que impede que o problema se repita em o
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "Um número ou sinal ao lado de um valor muda o que ele diz. Coloque uma palavra entre os dois."
+msgstr "Um número ou sinal ao lado de um valor muda o seu sentido. Coloque uma palavra entre os dois."
 
 msgid "A part"
 msgstr "Uma peça"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "Aprovado <0/> por <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "Aprovado em"
 
 msgid "Approved By"
 msgstr "Aprovado Por"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "Tempo estimado"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "Valor estimado"
 
 msgid "Estimated versus actual time by job"
 msgstr "Tempo estimado versus real por ordem de produção"
@@ -18119,7 +18120,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "Quantidade Mínima de Reserva"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "Valor mínimo de refugo"
 
 msgid "Minute"
 msgstr "Minuto"
@@ -20373,7 +20374,7 @@ msgid "Not Configured"
 msgstr "Não Configurado"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "Não confirmado"
 
 msgid "Not delivered"
 msgstr "Não entregue"
@@ -20664,7 +20665,7 @@ msgid "of {budgetText}"
 msgstr "de {budgetText}"
 
 msgid "of any value"
-msgstr ""
+msgstr "de qualquer valor"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Do custo financiado, de 75% a 85%"
@@ -25149,7 +25150,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "Exigir um Contato e Local do Fornecedor"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "Exigir o PIN de um aprovador no chão de fábrica antes de registrar refugo acima de um valor estimado de material"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Exigir um operador atribuído antes que o programador coloque trabalho em um local. Quando ativado, centros de trabalho sem pessoal não recebem trabalho e uma operação sem cobertura de pessoal aparece como improgramável. Centros de trabalho lights-out (24×7) são isentos."
@@ -26497,7 +26498,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "Refugo / Custo da qualidade"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "Aprovações de refugo"
 
 msgid "Scrap Percent"
 msgstr "Percentual de refugo"
@@ -26536,7 +26537,7 @@ msgid "Scrap Unit"
 msgstr "Unidade de Refugo"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "Refugo cujo valor estimado de material seja igual ou superior a este, até o mínimo da regra seguinte, exige o PIN de um aprovador no tablet. 0 significa todo refugo."
 
 msgid "Scrapped"
 msgstr "Sucatada"
@@ -28225,6 +28226,7 @@ msgstr "Alguém"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "Outra pessoa acabou de salvar este modelo. Recarregue a página para carregar a versão dela, ou continue editando para sobrescrever o modelo ao salvar."
+msgstr "Outra pessoa acabou de salvar este modelo. Recarregue a página para carregar a versão dela, ou continue editando para sobrescrevê-la ao salvar."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Alguém que possa atualizar a contabilidade deve inserir o custo para fabricar antes que possa ser capitalizado."
@@ -30798,6 +30800,7 @@ msgstr "O pacote predefinido de tarefas e requisitos de aprovação aplicados a 
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "A pré-visualização não pôde ser gerada. Exibindo a última que foi gerada."
+msgstr "Não foi possível gerar a pré-visualização. Exibe a última que foi gerada."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "O preço de uma hora em uma linha de Tempo & Materiais: a taxa da linha para o funcionário, senão para a categoria de mão de obra, senão a Taxa de Faturamento padrão da categoria de mão de obra, em vigor no dia."
@@ -31672,6 +31675,7 @@ msgstr "Este PIN não será exibido novamente. Você precisará dele para sair d
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "A pré-visualização está pausada porque um texto altera um valor."
+msgstr "Esta pré-visualização está pausada porque um texto altera um valor."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Este preço foi inserido manualmente, portanto nenhuma regra de precificação foi aplicada."

@@ -101,11 +101,13 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import type { ScrapSubject } from "@carbon/ee/approvals";
 import {
   authorizeScrapApprover,
   describeScrap,
   discardScrapApproval,
   getScrapApprovalRequirement,
+  hasEnabledScrapRule,
   hasScrapApprovalRules,
   markScrapApprovalPosted,
   recordScrapApproval
@@ -4164,20 +4166,13 @@ export async function upsertProductionQuantity(
  */
 export async function approveErpScrap(
   ctx: ServiceContext,
-  scrap: {
-    jobOperationId: string;
-    quantity: number;
-    scrapReasonId?: string | null;
-    notes?: string | null;
-  }
+  scrap: Extract<ScrapSubject, { type: "operation" | "item" }>
 ): Promise<{ scrapRequestId: string | null } | CarbonError> {
   const companyId = ctx.company.id;
   const serviceRole = ctx.asSystem.supabase;
   const db = ctx.asSystem.pg;
   // The platform itself (a seed, a posting) records scrap as the system.
-  if (ctx.actor.type === "system" || scrap.quantity <= 0) {
-    return { scrapRequestId: null };
-  }
+  if (ctx.actor.type === "system") return { scrapRequestId: null };
 
   let description: Awaited<ReturnType<typeof describeScrap>>;
   let estimatedValue: number;
@@ -4185,10 +4180,8 @@ export async function approveErpScrap(
     if (!(await hasScrapApprovalRules(serviceRole, companyId))) {
       return { scrapRequestId: null };
     }
-    description = await describeScrap(db, companyId, {
-      type: "operation",
-      ...scrap
-    });
+    description = await describeScrap(db, companyId, scrap);
+    if (description.quantity <= 0) return { scrapRequestId: null };
     const requirement = await getScrapApprovalRequirement(serviceRole, db, {
       companyId,
       recordedBy: ctx.auditUserId,
@@ -4204,15 +4197,20 @@ export async function approveErpScrap(
     );
   }
 
+  // Operation scrap can go to the tablet; stock scrap has no tablet step.
+  const atTablet = scrap.type === "operation";
   if (ctx.actor.type !== "user") {
     return ctx.error(
       "forbidden",
-      "Scrap of this value needs an approver's sign-off, which an API key cannot give. Record it on the shop floor, where an approver enters their PIN."
+      atTablet
+        ? "Scrap of this value needs an approver's sign-off, which an API key cannot give. Record it on the shop floor, where an approver enters their PIN."
+        : "Scrap of this value needs an approver's sign-off, which an API key cannot give. Ask an approver for this value to record it."
     );
   }
   // An approver of a lower tier is refused too, so the message speaks of the value.
-  const needsApprover =
-    "You cannot approve scrap of this value. Record it on the shop floor, where an approver enters their PIN, or ask an approver for this value to record it.";
+  const needsApprover = atTablet
+    ? "You cannot approve scrap of this value. Record it on the shop floor, where an approver enters their PIN, or ask an approver for this value to record it."
+    : "You cannot approve scrap of this value. Ask an approver for this value to record it.";
 
   const authority = await authorizeScrapApprover(serviceRole, {
     companyId,
@@ -4235,6 +4233,18 @@ export async function approveErpScrap(
   } catch (error) {
     return ctx.error("internal", "Failed to record the scrap approval", error);
   }
+}
+
+/**
+ * The client a Scrap row is written with. While a scrap rule is enabled the
+ * database refuses one from an API role, so it goes in as the system after
+ * `approveErpScrap`. With no rule the caller writes it like any other row,
+ * which keeps the row's workflow run tag.
+ */
+export async function scrapQuantityClient(ctx: ServiceContext) {
+  return (await hasEnabledScrapRule(ctx.asSystem.supabase, ctx.company.id))
+    ? ctx.asSystem.supabase
+    : ctx.asCaller.supabase;
 }
 
 /**

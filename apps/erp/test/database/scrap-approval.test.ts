@@ -7,20 +7,27 @@
 // matched against, who may sign it, the record written before the posting,
 // and the ERP's job quantity entry, which only an approver may use.
 
+import { createHash } from "node:crypto";
 import {
   type Actor,
   createServiceContext
 } from "@carbon/api/service-fn.server";
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   alwaysPostFixture,
   type Fixture,
   jobFixture,
+  stockPart,
   USER
 } from "./fixtures/always-post";
 import { hasLocalDatabase } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  localApiKeyClient,
+  localServiceRoleClient
+} from "./fixtures/local-supabase";
 
 // Approval rules are a commercial feature, off in the community edition that
 // an unset CARBON_EDITION reads as. Set before @carbon/env is imported.
@@ -32,6 +39,9 @@ const scrapApproval = await import("@carbon/ee/approvals/scrap.server");
 const { createProductionQuantity } = await import(
   "../../app/modules/production/production.server"
 );
+const { adjustInventory } = await import(
+  "../../app/modules/inventory/inventory.server"
+);
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 const describeLocal = describe.skipIf(!client);
@@ -39,23 +49,28 @@ const describeLocal = describe.skipIf(!client);
 let f: Fixture;
 let job: Awaited<ReturnType<typeof jobFixture>>;
 let people: { approver: string; operator: string };
+/** Reaches PostgREST with an API key, as any integration can. */
+let keyClient: SupabaseClient<Database>;
 
-function userActor(userId: string): Actor {
+function modulePermissions() {
   const all = [f.companyId];
-  return {
-    type: "user",
-    userId,
-    permissions: {
-      production: { view: all, create: all, update: all, delete: all }
-    }
-  };
+  const access = { view: all, create: all, update: all, delete: all };
+  return { production: access, inventory: access };
 }
 
-function contextFor(actor: Actor) {
+function userActor(userId: string): Actor {
+  return { type: "user", userId, permissions: modulePermissions() };
+}
+
+function apiKeyActor(): Actor {
+  return { type: "apiKey", createdBy: USER, scopes: modulePermissions() };
+}
+
+function contextFor(actor: Actor, caller: SupabaseClient<Database> = client!) {
   return createServiceContext({
     actor,
     company: { id: f.companyId, groupId: f.groupId },
-    caller: client!,
+    caller,
     system: () => client!,
     pg: () => f.db,
     kv: () => {
@@ -93,6 +108,39 @@ const scrapOf = (quantity: number) =>
     jobOperationId: job.operationId,
     quantity
   });
+
+/** Only `people.approver` may sign; every tier floor given applies to them. */
+async function approverOnlyRules(...floors: number[]) {
+  await scrapRules(...floors);
+  await f.db
+    .updateTable("approvalRule")
+    .set({ approverGroupIds: [people.approver] })
+    .where("companyId", "=", f.companyId)
+    .where("documentType", "=", "scrap")
+    .execute();
+}
+
+async function newScrapReason(name: string) {
+  const reason = await f.db
+    .insertInto("scrapReason")
+    .values({
+      name: `${f.prefix} ${name}`,
+      companyId: f.companyId,
+      createdBy: USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return reason.id;
+}
+
+async function scrappedOnOperation() {
+  const operation = await f.db
+    .selectFrom("jobOperation")
+    .select("quantityScrapped")
+    .where("id", "=", job.operationId)
+    .executeTakeFirstOrThrow();
+  return Number(operation.quantityScrapped);
+}
 
 beforeAll(async () => {
   if (!client) return;
@@ -149,6 +197,25 @@ beforeAll(async () => {
       f.db
     );
   }
+  const rawKey = `crbn_test_${f.prefix}`;
+  const all = [f.companyId];
+  await f.db
+    .insertInto("apiKey")
+    .values({
+      name: `${f.prefix} key`,
+      companyId: f.companyId,
+      createdBy: USER,
+      keyHash: createHash("sha256").update(rawKey).digest("hex"),
+      scopes: JSON.stringify({
+        production_view: all,
+        production_create: all,
+        production_update: all,
+        production_delete: all
+      }),
+      expiresAt: null
+    })
+    .execute();
+  keyClient = localApiKeyClient(rawKey)!;
 });
 
 afterAll(async () => {
@@ -450,5 +517,208 @@ describeLocal("scrap approval", () => {
       expect(record.postedAt).not.toBeNull();
       expect(record.decisionBy).toBe(record.createdBy);
     }
+  });
+
+  it("refuses scrap written straight to the database while a rule is on", async () => {
+    await scrapRules(0);
+    const before = await scrappedOnOperation();
+    const row = {
+      jobOperationId: job.operationId,
+      type: "Scrap" as const,
+      quantity: 1,
+      companyId: f.companyId,
+      createdBy: USER
+    };
+
+    const inserted = await keyClient
+      .from("productionQuantity")
+      .insert(row)
+      .select("id");
+    expect(inserted.error?.code).toBe("42501");
+
+    const edited = await keyClient
+      .from("jobOperation")
+      .update({ quantityScrapped: before + 5 })
+      .eq("id", job.operationId)
+      .select("id");
+    expect(edited.error?.code).toBe("42501");
+    expect(await scrappedOnOperation()).toBe(before);
+
+    const rework = await keyClient
+      .from("productionQuantity")
+      .insert({ ...row, type: "Rework" })
+      .select("id");
+    expect(rework.error).toBeNull();
+  });
+
+  it("allows direct scrap with no rule on, and removing it with one on", async () => {
+    await scrapRules();
+    const before = await scrappedOnOperation();
+    const inserted = await keyClient
+      .from("productionQuantity")
+      .insert({
+        jobOperationId: job.operationId,
+        type: "Scrap",
+        quantity: 1,
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .select("id")
+      .single();
+    expect(inserted.error).toBeNull();
+    expect(await scrappedOnOperation()).toBe(before + 1);
+
+    await scrapRules(0);
+    const removed = await keyClient
+      .from("productionQuantity")
+      .delete()
+      .eq("id", inserted.data!.id)
+      .select("id");
+    expect(removed.error).toBeNull();
+    expect(await scrappedOnOperation()).toBe(before);
+  });
+
+  it("records scrap under every tier through the API while a rule is on", async () => {
+    const input = {
+      jobOperationId: job.operationId,
+      type: "Scrap" as const,
+      scrapReasonId: await newScrapReason("api"),
+      quantity: 1
+    };
+    const context = contextFor(apiKeyActor(), keyClient);
+
+    await scrapRules(1000);
+    const before = await scrappedOnOperation();
+    expect((await createProductionQuantity(context, input)).error).toBeNull();
+    expect(await scrappedOnOperation()).toBe(before + 1);
+
+    await scrapRules(0);
+    const refused = await createProductionQuantity(context, input);
+    expect(refused.error?.category).toBe("forbidden");
+    expect(await scrappedOnOperation()).toBe(before + 1);
+
+    await scrapRules();
+    expect((await createProductionQuantity(context, input)).error).toBeNull();
+    expect(await scrappedOnOperation()).toBe(before + 2);
+  });
+
+  it("lets only an approver scrap stock through an inventory adjustment", async () => {
+    await approverOnlyRules(0);
+    await stockPart(f, 5);
+    const input = {
+      itemId: f.partId,
+      adjustmentType: "Scrap" as const,
+      quantity: 2,
+      locationId: f.locationId,
+      scrapReasonId: await newScrapReason("stock")
+    };
+
+    const operator = await adjustInventory(
+      contextFor(userActor(people.operator)),
+      input
+    );
+    expect(operator.error?.category).toBe("forbidden");
+    const apiKey = await adjustInventory(contextFor(apiKeyActor()), input);
+    expect(apiKey.error?.category).toBe("forbidden");
+
+    const approved = await adjustInventory(
+      contextFor(userActor(people.approver)),
+      input
+    );
+    expect(approved.error).toBeNull();
+
+    const ledger = await f.db
+      .selectFrom("itemLedger")
+      .select(["quantity"])
+      .where("companyId", "=", f.companyId)
+      .where("itemId", "=", f.partId)
+      .where("documentType", "=", "Scrap")
+      .execute();
+    expect(ledger.map((row) => Number(row.quantity))).toEqual([-2]);
+
+    const listed = await scrapApproval.getScrapApprovals(client!, f.companyId, {
+      limit: 50,
+      offset: 0
+    });
+    const record = listed.data?.find((row) => row.itemId === f.partId);
+    expect(record).toMatchObject({
+      jobId: null,
+      quantity: 2,
+      // Two parts at a unit cost of 10.
+      estimatedValue: 20,
+      createdBy: people.approver,
+      approvedBy: people.approver,
+      approvalStatus: "Approved"
+    });
+    expect(record?.postedAt).not.toBeNull();
+  });
+
+  it("removes the approval of an inventory scrap the posting refused", async () => {
+    await approverOnlyRules(0);
+    const before = await f.db
+      .selectFrom("scrapRequest")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .execute();
+
+    const refused = await adjustInventory(
+      contextFor(userActor(people.approver)),
+      {
+        itemId: f.partId,
+        adjustmentType: "Scrap",
+        quantity: 100000,
+        locationId: f.locationId,
+        scrapReasonId: await newScrapReason("too many")
+      }
+    );
+    expect(refused.error).not.toBeNull();
+
+    const after = await f.db
+      .selectFrom("scrapRequest")
+      .select("id")
+      .where("companyId", "=", f.companyId)
+      .execute();
+    expect(after).toHaveLength(before.length);
+  });
+
+  it("values a tracked scrap with no quantity at the whole entity", async () => {
+    // The posting reads quantity 0 as "all of it", as the serial screens send.
+    const entity = await f.db
+      .insertInto("trackedEntity")
+      .values({
+        companyId: f.companyId,
+        itemId: f.partId,
+        quantity: 4,
+        status: "Available",
+        sourceDocument: "Item",
+        sourceDocumentId: f.partId,
+        createdBy: USER
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    expect(
+      await scrapApproval.describeScrap(f.db, f.companyId, {
+        type: "item",
+        itemId: f.partId,
+        trackedEntityId: entity.id,
+        quantity: 0
+      })
+    ).toMatchObject({
+      itemId: f.partId,
+      trackedEntityId: entity.id,
+      quantity: 4,
+      estimatedValue: 40
+    });
+
+    // The posting values the item it is given, so the lot must be that item.
+    await expect(
+      scrapApproval.describeScrap(f.db, f.companyId, {
+        type: "item",
+        itemId: f.assemblyId,
+        trackedEntityId: entity.id,
+        quantity: 100
+      })
+    ).rejects.toThrow();
   });
 });

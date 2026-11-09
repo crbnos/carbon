@@ -1979,6 +1979,7 @@ msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "数値のすぐ隣に数字や記号があると、表示内容が変わります。間に文字を入れてください。"
+msgstr "数値の隣に数字や記号があると意味が変わります。間に語を入れてください。"
 
 msgid "A part"
 msgstr "部品"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "承認済 <0/> 〜 <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "承認日時"
 
 msgid "Approved By"
 msgstr "承認者"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "推定時間"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "見積金額"
 
 msgid "Estimated versus actual time by job"
 msgstr "製造指図ごとの見積時間と実績時間"
@@ -18119,7 +18120,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "最小予備数量"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "スクラップ最小金額"
 
 msgid "Minute"
 msgstr "分"
@@ -20373,7 +20374,7 @@ msgid "Not Configured"
 msgstr "未設定"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "未確定"
 
 msgid "Not delivered"
 msgstr "未配送"
@@ -20664,7 +20665,7 @@ msgid "of {budgetText}"
 msgstr "{budgetText}の"
 
 msgid "of any value"
-msgstr ""
+msgstr "値を問わず"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "資金化されたコストの75％から85％"
@@ -25149,7 +25150,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "仕入先の担当者と拠点が必須"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "見積材料費を超えるスクラップを記録する前に、製造現場で承認者のPINを必須にする"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"
@@ -26497,7 +26498,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "スクラップ/品質原価"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "スクラップ承認"
 
 msgid "Scrap Percent"
 msgstr "スクラップ率"
@@ -26536,7 +26537,7 @@ msgid "Scrap Unit"
 msgstr "スクラップユニット"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "見積材料費がこの金額以上で、次のルールの最小金額未満のスクラップには、タブレットで承認者のPINが必要です。0の場合はすべてのスクラップが対象です。"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
@@ -28225,6 +28226,7 @@ msgstr "誰か"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "ほかのユーザーがこのテンプレートを保存したところです。最新版を読み込むには再読み込みしてください。このまま編集を続けると、保存時に上書きされます。"
+msgstr "他のユーザーがこのテンプレートを保存しました。最新版を読み込むには再読み込みしてください。保存時に上書きするには、そのまま編集を続けてください。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
@@ -30798,6 +30800,7 @@ msgstr "このイシューに適用されるタスクと承認要件のプリセ
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "プレビューを描画できませんでした。直前に描画できたプレビューを表示しています。"
+msgstr "プレビューを描画できませんでした。前回のプレビューを表示しています。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "タイム & マテリアル明細の 1 時間の価格：従業員の明細レート。それ以外の場合は労務カテゴリ。それ以外の場合は労務カテゴリの既定請求レート。その日から有効。"
@@ -31672,6 +31675,7 @@ msgstr "このPINは再度表示されません。MES 端末でコンソール�
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "テキストが数値を変更しているため、このプレビューは一時停止しています。"
+msgstr "テキストが数値を変更するため、プレビューを一時停止しています。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
@@ -31738,6 +31742,7 @@ msgstr "このシリアル"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
 msgstr "この共有セクションは存在しません。ブロックを除去するか、セクションを作成し直してください。"
+msgstr "この共有セクションは存在しません。ブロックを除去するか、セクションを再作成してください。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"

@@ -384,7 +384,7 @@ msgid "Apply link"
 msgstr "Zastosuj link"
 
 msgid "Approval needed"
-msgstr ""
+msgstr "Wymagane zatwierdzenie"
 
 msgid "Approvals"
 msgstr "Zatwierdzenia"
@@ -395,13 +395,19 @@ msgstr "AQL"
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Poz. {level} · {severity}"
 msgid "Approve and Complete"
-msgstr ""
+msgstr "Zatwierdź i zakończ"
 
 msgid "Approve and Log Scrap"
-msgstr ""
+msgstr "Zatwierdź i zarejestruj braki"
+
+msgid "Approve and Record Partial"
+msgstr "Zatwierdź i zapisz częściowe wykonanie"
+
+msgid "Approve and Reject Lot"
+msgstr "Zatwierdź i odrzuć partię"
 
 msgid "Approve and Scrap"
-msgstr ""
+msgstr "Zatwierdź i oznacz jako braki"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Czy na pewno chcesz usunąć ten klucz dostępu? Nie będziesz już mógł go używać do logowania."
@@ -1721,7 +1727,7 @@ msgid "No active work centers at this location."
 msgstr "Brak czynnych stanowisk roboczych w tej lokalizacji."
 
 msgid "No approver available"
-msgstr ""
+msgstr "Brak dostępnych osób zatwierdzających"
 
 msgid "No assigned operations"
 msgstr "Brak przypisanych operacji"
@@ -1805,7 +1811,7 @@ msgstr "Brak materiałów w tej partii produkcyjnej."
 msgid "No open inspections"
 msgstr "Brak otwartych kontroli"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
-msgstr ""
+msgstr "Żadna osoba uprawniona do zatwierdzenia tych braków nie ma kodu PIN do konsoli. Poproś administratora o ustawienie kodu dla osoby zatwierdzającej."
 
 msgid "No open jobs"
 msgstr "Brak otwartych zleceń produkcyjnych"
@@ -3148,7 +3154,7 @@ msgid "This sample was removed"
 msgstr "Ta próbka została usunięta"
 
 msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
-msgstr ""
+msgstr "Te braki są warte około <0>{value}</0> w materiale. Osoba zatwierdzająca musi wprowadzić swój kod PIN, zanim zostaną zapisane."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "To zatrzymuje Twój zegar i zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."

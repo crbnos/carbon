@@ -100,6 +100,15 @@ export type ScrapSubject =
       type: "batch";
       jobOperationBatchId: string;
       members: { jobOperationId: string; scrapQuantity: number }[];
+    }
+  | {
+      // Stock scrapped by an inventory adjustment: no job is involved.
+      type: "item";
+      itemId: string;
+      quantity: number;
+      trackedEntityId?: string | null;
+      scrapReasonId?: string | null;
+      notes?: string | null;
     };
 
 /** The `scrapRequest` a scrap would be recorded as, with its estimated value. */

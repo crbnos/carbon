@@ -66,8 +66,10 @@ redirects kinds it does not serve (no loops).
   mirrors (`complete.tsx` `willBeFinished`, `InspectionView`/`quality.server`
   `opRemaining`) also dropped the scrap term.
 - **Scrap approval** (`.ai/specs/2026-10-24-scrap-approval.md`): the operation
-  scrap route, the component scrap route and `batch.$batchId.complete.tsx`
-  (when a member scraps) wrap their posting in `postScrapWithApproval`
+  scrap route, the component scrap route, `batch.$batchId.complete.tsx`
+  (when a member scraps) and `inspection-lot.$id.disposition.tsx` (when the
+  disposition scraps; `DispositionModal` holds the step) wrap their posting in
+  `postScrapWithApproval`
   (`services/scrap-approval.server.ts`). With an enabled `scrap` approval rule
   whose tier the estimated value meets, the first submit answers
   `{ scrapApproval: prompt }` (value, currency, the approvers with a console

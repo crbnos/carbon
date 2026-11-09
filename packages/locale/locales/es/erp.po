@@ -1979,6 +1979,7 @@ msgstr "Una tarea de inconformidad que evita que el problema se repita en otra p
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "Un número o un signo junto a una cifra cambia lo que dice. Escriba una palabra entre ellos."
+msgstr "Un número o un signo junto a una cifra cambia lo que esta expresa. Coloque una palabra entre ambos."
 
 msgid "A part"
 msgstr "Una Pieza"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "Aprobado <0/> por <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "Fecha de aprobación"
 
 msgid "Approved By"
 msgstr "Aprobado por"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "Tiempo estimado"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "Valor estimado"
 
 msgid "Estimated versus actual time by job"
 msgstr "Tiempo estimado frente a real por orden de trabajo"
@@ -18119,7 +18120,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "Cantidad Mínima de Reserva"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "Valor mínimo de desperdicio"
 
 msgid "Minute"
 msgstr "Minuto"
@@ -20373,7 +20374,7 @@ msgid "Not Configured"
 msgstr "No configurado"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "No confirmado"
 
 msgid "Not delivered"
 msgstr "No entregado"
@@ -20664,7 +20665,7 @@ msgid "of {budgetText}"
 msgstr "de {budgetText}"
 
 msgid "of any value"
-msgstr ""
+msgstr "de cualquier valor"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Del costo financiado, de 75% a 85%"
@@ -25149,7 +25150,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "Requerir un contacto de proveedor y una ubicación"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "Exigir el PIN de un aprobador en planta antes de registrar desperdicio por encima de un valor estimado de material"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Requerir un operario asignado antes de que el programador coloque trabajo en una ubicación. Cuando está activado, los centros de trabajo sin personal no reciben trabajo y una operación sin cobertura de personal se muestra como no programable. Los centros de trabajo automáticos (24×7) están exentos."
@@ -26497,7 +26498,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "Desperdicio / Costo de Calidad"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "Aprobaciones de desperdicio"
 
 msgid "Scrap Percent"
 msgstr "Porcentaje de desperdicio"
@@ -26536,7 +26537,7 @@ msgid "Scrap Unit"
 msgstr "Unidad de Desperdicio"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "El desperdicio cuyo valor estimado de material sea igual o superior a este, hasta el mínimo de la siguiente regla, requiere el PIN de un aprobador en la tableta. 0 significa todo el desperdicio."
 
 msgid "Scrapped"
 msgstr "Descartada"

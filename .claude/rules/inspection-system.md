@@ -811,7 +811,10 @@ Mechanics (in order, per POST):
 2. `dispositionInspection({ requireOpen: true })` closes the lot FIRST — its
    locked first read is the serialization point; a concurrent second POST
    dies before any posting can re-run (a re-POST can never re-clone the rework
-   path).
+   path). A disposition that scraps asks `postScrapWithApproval` before this
+   step, because a closed lot cannot ask again: with a scrap approval rule the
+   first POST answers `{ scrapApproval }` and closes nothing, and the close,
+   the completions and the Scrap row run as its `post`.
 3. Postings, each carrying provenance links (`productionQuantity.inspectionId`
    + `inspectionSampleId`; serial completes processed in ascending sample order;
    non-serial bulk rows link the lowest unlinked passed sample as a serializing

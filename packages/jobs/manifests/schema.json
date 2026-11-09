@@ -1,7 +1,7 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261111091953",
+  "schemaVersion": "20261111092514",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,

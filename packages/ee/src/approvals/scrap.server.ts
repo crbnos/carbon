@@ -52,6 +52,18 @@ export async function hasScrapApprovalRules(
     return false;
   }
 
+  return hasEnabledScrapRule(serviceRole, companyId);
+}
+
+/**
+ * Whether the company has an enabled scrap rule, whatever its plan. This is
+ * what the database's `prevent_direct_scrap_write` reads, so a server write
+ * asks it to learn whether a Scrap row must go in as the system.
+ */
+export async function hasEnabledScrapRule(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string
+): Promise<boolean> {
   const rules = await serviceRole
     .from("approvalRule")
     .select("id")
@@ -291,6 +303,40 @@ export async function describeScrap(
       notes: subject.notes ?? null,
       quantity,
       estimatedValue: round((costs.get(itemId) ?? 0) * quantity)
+    };
+  }
+
+  if (subject.type === "item") {
+    // The posting scraps the entity it is given: with no quantity, all of it.
+    const entity = subject.trackedEntityId
+      ? await db
+          .selectFrom("trackedEntity")
+          .select(["itemId", "quantity"])
+          .where("id", "=", subject.trackedEntityId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+    // The posting values the item it is given and never compares the two, so
+    // a cheap lot named with a costly item would be priced under its tier.
+    if (entity?.itemId && entity.itemId !== subject.itemId) {
+      throw new Error("Tracked entity is not of this item");
+    }
+    const quantity =
+      subject.quantity > 0 ? subject.quantity : Number(entity?.quantity) || 0;
+    const costs = await unitCosts(db, companyId, [subject.itemId]);
+    const unitCost = costs.get(subject.itemId);
+    if (unitCost === undefined) throw new Error("Item not found");
+    return {
+      jobId: null,
+      jobOperationId: null,
+      jobOperationBatchId: null,
+      jobMaterialId: null,
+      trackedEntityId: subject.trackedEntityId ?? null,
+      itemId: subject.itemId,
+      scrapReasonId: subject.scrapReasonId ?? null,
+      notes: subject.notes ?? null,
+      quantity,
+      estimatedValue: round(unitCost * quantity)
     };
   }
 

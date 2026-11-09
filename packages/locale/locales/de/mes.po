@@ -384,7 +384,7 @@ msgid "Apply link"
 msgstr "Link anwenden"
 
 msgid "Approval needed"
-msgstr ""
+msgstr "Genehmigung erforderlich"
 
 msgid "Approvals"
 msgstr "Genehmigungen"
@@ -395,13 +395,19 @@ msgstr "AQL"
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Stufe {level} · {severity}"
 msgid "Approve and Complete"
-msgstr ""
+msgstr "Genehmigen und abschließen"
 
 msgid "Approve and Log Scrap"
-msgstr ""
+msgstr "Genehmigen und Ausschuss erfassen"
+
+msgid "Approve and Record Partial"
+msgstr "Genehmigen und teilweise erfassen"
+
+msgid "Approve and Reject Lot"
+msgstr "Genehmigen und Charge ablehnen"
 
 msgid "Approve and Scrap"
-msgstr ""
+msgstr "Genehmigen und als Ausschuss buchen"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Sind Sie sicher, dass Sie diesen Passkey löschen möchten? Sie können sich damit nicht mehr anmelden."
@@ -1721,7 +1727,7 @@ msgid "No active work centers at this location."
 msgstr "Keine aktiven Arbeitsplätze an diesem Standort."
 
 msgid "No approver available"
-msgstr ""
+msgstr "Kein Genehmiger verfügbar"
 
 msgid "No assigned operations"
 msgstr "Keine zugewiesenen Arbeitsgänge"
@@ -1805,7 +1811,7 @@ msgstr "Keine Werkstoffe in diesem Los."
 msgid "No open inspections"
 msgstr "Keine offenen Prüfungen"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
-msgstr ""
+msgstr "Niemand, der diesen Ausschuss genehmigen kann, hat eine Konsolen-PIN. Bitten Sie einen Administrator, für einen Genehmiger eine PIN festzulegen."
 
 msgid "No open jobs"
 msgstr "Keine offenen Fertigungsaufträge"
@@ -3148,7 +3154,7 @@ msgid "This sample was removed"
 msgstr "Diese Probe wurde entfernt"
 
 msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
-msgstr ""
+msgstr "Der Materialwert dieses Ausschusses liegt bei etwa <0>{value}</0. Ein Genehmiger muss seine PIN eingeben, bevor der Ausschuss erfasst wird."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Dies stoppt Ihre Uhr und bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann sich nicht mehr ändern."

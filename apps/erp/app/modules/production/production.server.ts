@@ -5379,10 +5379,16 @@ export const createProductionQuantity = defineServiceFn({
 
     const scrapReasonId =
       quantity.type === "Scrap" ? quantity.scrapReasonId : undefined;
+    // Read first: a failed read must not leave an approval behind.
+    const writer =
+      quantity.type === "Scrap"
+        ? await service.scrapQuantityClient(ctx)
+        : ctx.asCaller.supabase;
     // A scrap approval rule: only an approver at the scrap's tier records it.
     const approval =
       quantity.type === "Scrap"
         ? await service.approveErpScrap(ctx, {
+            type: "operation",
             jobOperationId: quantity.jobOperationId,
             quantity: quantity.quantity,
             scrapReasonId,
@@ -5391,16 +5397,13 @@ export const createProductionQuantity = defineServiceFn({
         : { scrapRequestId: null };
     if (approval instanceof CarbonError) return approval;
 
-    const insert = await service.upsertProductionQuantity(
-      ctx.asCaller.supabase,
-      {
-        ...quantity,
-        // The form names the employee who produced it; else the caller.
-        createdBy: quantity.createdBy || ctx.auditUserId,
-        scrapReasonId,
-        companyId
-      }
-    );
+    const insert = await service.upsertProductionQuantity(writer, {
+      ...quantity,
+      // The form names the employee who produced it; else the caller.
+      createdBy: quantity.createdBy || ctx.auditUserId,
+      scrapReasonId,
+      companyId
+    });
     const written = !insert.error && Boolean(insert.data?.id);
     await service.settleErpScrapApproval(ctx, approval.scrapRequestId, written);
     if (insert.error || !insert.data?.id) {
@@ -5452,7 +5455,17 @@ export const updateProductionQuantity = defineServiceFn({
     // Scrap added by a correction meets the scrap approval rules for the
     // added quantity: raised, turned into scrap, or moved to an operation.
     let approval: { scrapRequestId: string | null } = { scrapRequestId: null };
+    let writer = ctx.asCaller.supabase;
     if (quantity.type === "Scrap") {
+      // A Scrap row can be written as the system below, which RLS does not
+      // check; the table's own write permission still applies.
+      if (!ctx.can({ update: "production" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change production quantities"
+        );
+      }
+      writer = await service.scrapQuantityClient(ctx);
       const current = await ctx.asCaller.supabase
         .from("productionQuantity")
         .select("type, quantity, jobOperationId")
@@ -5478,6 +5491,7 @@ export const updateProductionQuantity = defineServiceFn({
       const added = quantity.quantity - alreadyScrapped;
       if (added > 0) {
         const approved = await service.approveErpScrap(ctx, {
+          type: "operation",
           jobOperationId: quantity.jobOperationId,
           quantity: added,
           scrapReasonId,
@@ -5488,16 +5502,13 @@ export const updateProductionQuantity = defineServiceFn({
       }
     }
 
-    const update = await service.upsertProductionQuantity(
-      ctx.asCaller.supabase,
-      {
-        ...quantity,
-        id,
-        scrapReasonId,
-        companyId: ctx.company.id,
-        updatedBy: ctx.auditUserId
-      }
-    );
+    const update = await service.upsertProductionQuantity(writer, {
+      ...quantity,
+      id,
+      scrapReasonId,
+      companyId: ctx.company.id,
+      updatedBy: ctx.auditUserId
+    });
     await service.settleErpScrapApproval(
       ctx,
       approval.scrapRequestId,

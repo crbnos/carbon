@@ -1979,6 +1979,7 @@ msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "Bir rakamın yanındaki bir sayı veya işaret, yazdığı anlamı değiştirir. Aralarına bir kelime koyun."
+msgstr "Bir rakamın yanındaki sayı veya işaret, rakamın anlamını değiştirir. Aralarına bir sözcük ekleyin."
 
 msgid "A part"
 msgstr "Bir parça"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "Onaylandı <0/> tarafından <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "Onaylanma Tarihi"
 
 msgid "Approved By"
 msgstr "Onaylayan"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "Tahmini zaman"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "Tahmini Değer"
 
 msgid "Estimated versus actual time by job"
 msgstr "İş emrine göre tahmini ve gerçek süre"
@@ -17095,6 +17096,7 @@ msgstr "Bağlantılı Kayıt"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
 msgstr "Ortak bir bölüme bağlı. Her yerde güncellemek için kitaplıkta düzenleyin."
+msgstr "Paylaşılan bir bölüme bağlı. Her yerde güncellemek için kitaplıkta düzenleyin."
 
 msgid "Links"
 msgstr "Bağlantılar"
@@ -18119,7 +18121,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "Minimum Rezerv Miktarı"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "Minimum Fire Değeri"
 
 msgid "Minute"
 msgstr "Dakika"
@@ -20373,7 +20375,7 @@ msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "Teyit edilmedi"
 
 msgid "Not delivered"
 msgstr "Teslim Edilmedi"
@@ -20664,7 +20666,7 @@ msgid "of {budgetText}"
 msgstr "{budgetText} içinde"
 
 msgid "of any value"
-msgstr ""
+msgstr "herhangi bir değerde"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Finanse edilen maliyetin %75'inden %85'ine kadarı"
@@ -25149,7 +25151,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "Tedarikçi İlgili Kişisi ve Lokasyonu İste"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "Atölyede, tahmini malzeme değerinin üzerindeki fire kaydedilmeden önce onaylayıcının PIN kodu istensin"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."
@@ -26497,7 +26499,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "Fire / Kalite Maliyeti"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "Fire Onayları"
 
 msgid "Scrap Percent"
 msgstr "Fire Oranı"
@@ -26536,7 +26538,7 @@ msgid "Scrap Unit"
 msgstr "Fire Adet"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "Tahmini malzeme değeri bu değere eşit veya bu değerden büyük olup bir sonraki kuralın minimum değerine kadar kalan fire, tablette onaylayıcının PIN kodunu gerektirir. 0 değeri her fire anlamına gelir."
 
 msgid "Scrapped"
 msgstr "Çıkartıldı"
@@ -27577,6 +27579,7 @@ msgstr "Paylaşılan kanal"
 
 msgid "Shared Section (deleted)"
 msgstr "Ortak bölüm (silindi)"
+msgstr "Paylaşılan Bölüm (silindi)"
 
 msgid "Shared Sections"
 msgstr "Paylaşılan Bölümler"
@@ -28225,6 +28228,7 @@ msgstr "Birisi"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "Bir başkası bu şablonu az önce kaydetti. Onların sürümünü yüklemek için yenileyin ya da düzenlemeye devam edip kaydettiğinizde üzerine yazın."
+msgstr "Bir başkası bu şablonu az önce kaydetti. Onların sürümünü yüklemek için yenileyin ya da düzenlemeye devam edip kaydettiğinizde onun üzerine yazın."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
@@ -30798,6 +30802,7 @@ msgstr "Bu sorun türüne uygulanan Görev ve Onay gereksinimlerinin önceden ay
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "Önizleme çizilemedi. Son çizilen önizleme gösteriliyor."
+msgstr "Önizleme oluşturulamadı. Son oluşturulan önizleme gösteriliyor."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Bir Zaman ve Malzeme satırında bir saatin fiyatı: satır için çalışanın oranı, yoksa işçilik kategorisinin oranı, yoksa işçilik kategorisinin varsayılan Faturalandırma Oranı, o gün geçerli."
@@ -31738,6 +31743,7 @@ msgstr "Bu seri numarası"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
 msgstr "Bu ortak bölüm artık mevcut değil. Bloğu kaldırın veya bölümü yeniden oluşturun."
+msgstr "Bu paylaşılan bölüm artık yok. Bloğu kaldırın ya da bölümü yeniden oluşturun."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."

@@ -1979,6 +1979,7 @@ msgstr "एक गैर-अनुरूपता कार्य जो सम�
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "आंकड़े के बगल में कोई संख्या या चिह्न हो तो उसका अर्थ बदल जाता है। दोनों के बीच एक शब्द रखें।"
+msgstr "किसी आंकड़े के आगे लगा अंक या चिह्न उसका अर्थ बदल देता है। दोनों के बीच एक शब्द रखें।"
 
 msgid "A part"
 msgstr "एक पार्ट"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "अनुमोदित <0/> द्वारा <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "अनुमोदित तिथि"
 
 msgid "Approved By"
 msgstr "द्वारा अनुमोदित"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "अनुमानित समय"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "अनुमानित मूल्य"
 
 msgid "Estimated versus actual time by job"
 msgstr "जॉब के अनुसार अनुमानित बनाम वास्तविक समय"
@@ -16344,6 +16345,7 @@ msgstr "मेल खाने वाले आइटम रखें"
 
 msgid "Keep mine"
 msgstr "मेरे बदलाव रखें"
+msgstr "मेरा रखें"
 
 msgid "Keep navigation open"
 msgstr "नेविगेशन खुला रखें"
@@ -17095,6 +17097,7 @@ msgstr "लिंक किया गया रिकॉर्ड"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
 msgstr "एक साझा अनुभाग से जुड़ा है। हर जगह अपडेट करने के लिए इसे लाइब्रेरी में संपादित करें।"
+msgstr "साझा खंड से जुड़ा है। हर जगह अपडेट करने के लिए इसे लाइब्रेरी में संपादित करें।"
 
 msgid "Links"
 msgstr "लिंक"
@@ -18119,7 +18122,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "न्यूनतम आरक्षित मात्रा"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "न्यूनतम स्क्रैप मूल्य"
 
 msgid "Minute"
 msgstr "मिनट"
@@ -20373,7 +20376,7 @@ msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "पुष्टि नहीं की गई"
 
 msgid "Not delivered"
 msgstr "डिलीवर नहीं किया गया"
@@ -20664,7 +20667,7 @@ msgid "of {budgetText}"
 msgstr "{budgetText} का"
 
 msgid "of any value"
-msgstr ""
+msgstr "किसी भी मान का"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "फंडेड लागत का, 75% से 85% तक"
@@ -25149,7 +25152,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान की आवश्यकता है"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "अनुमानित सामग्री मूल्य से अधिक का स्क्रैप दर्ज करने से पहले शॉप फ्लोर पर अनुमोदक का PIN अनिवार्य करें"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
@@ -26497,7 +26500,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "स्क्रैप / गुणवत्ता की लागत"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "स्क्रैप अनुमोदन"
 
 msgid "Scrap Percent"
 msgstr "स्क्रैप प्रतिशत"
@@ -26536,7 +26539,7 @@ msgid "Scrap Unit"
 msgstr "स्क्रैप इकाई"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "जिस स्क्रैप का अनुमानित सामग्री मूल्य इससे अधिक या इसके बराबर हो, और अगले नियम की न्यूनतम सीमा से पहले तक हो, उसके लिए टैबलेट पर अनुमोदक का PIN चाहिए। 0 का अर्थ है हर स्क्रैप।"
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
@@ -27577,6 +27580,7 @@ msgstr "साझा चैनल"
 
 msgid "Shared Section (deleted)"
 msgstr "साझा अनुभाग (हटाया गया)"
+msgstr "साझा खंड (हटाया गया)"
 
 msgid "Shared Sections"
 msgstr "साझा अनुभाग"
@@ -28225,6 +28229,7 @@ msgstr "कोई"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "किसी और ने अभी यह टेम्पलेट सहेजा है। उनका संस्करण लोड करने के लिए रीफ़्रेश करें, या सहेजते समय इसे ओवरराइट करने के लिए संपादन जारी रखें।"
+msgstr "किसी और ने अभी यह टेम्पलेट सहेजा है। उनका संस्करण लोड करने के लिए रीफ़्रेश करें, या संपादन जारी रखें, तो सहेजते समय यह उसे ओवरराइट कर देगा।"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "जो कोई भी लेखांकन को अपडेट कर सकता है, उसे इसे पूंजीकृत करने से पहले इसे बनाने की लागत दर्ज करनी होगी।"
@@ -30225,6 +30230,7 @@ msgstr "दस्तावेज़ डाउनलोड नहीं किय
 
 msgid "The document could not be opened."
 msgstr "दस्तावेज़ खोला नहीं जा सका।"
+msgstr "दस्तावेज़ नहीं खोला जा सका।"
 
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
@@ -30798,6 +30804,7 @@ msgstr "कार्यों और अनुमोदन आवश्यकत
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "पूर्वावलोकन नहीं बन सका। यह आख़िरी सफल पूर्वावलोकन दिखा रहा है।"
+msgstr "पूर्वावलोकन नहीं बन सका। यह पिछला पूर्वावलोकन दिखा रहा है।"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Time & Materials लाइन पर एक घंटे की मूल्य: कर्मचारी के लिए लाइन की दर, अन्यथा श्रम श्रेणी के लिए, अन्यथा श्रम श्रेणी की डिफ़ॉल्ट Bill Rate, दिन में प्रभाव में।"
@@ -31672,6 +31679,7 @@ msgstr "यह PIN फिर से नहीं दिखाया जाएग
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "एक पाठ आंकड़ा बदल रहा है, इसलिए यह पूर्वावलोकन रोका गया है।"
+msgstr "यह पूर्वावलोकन रुका हुआ है क्योंकि एक टेक्स्ट किसी आंकड़े को बदल रहा है।"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "यह मूल्य मैन्युअल रूप से दर्ज किया गया था, इसलिए कोई मूल्य नियम लागू नहीं किए गए।"
@@ -31738,6 +31746,7 @@ msgstr "यह सीरियल"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
 msgstr "यह साझा अनुभाग अब मौजूद नहीं है। ब्लॉक निकालें या अनुभाग दोबारा बनाएँ।"
+msgstr "यह साझा खंड अब मौजूद नहीं है। ब्लॉक निकालें या खंड दोबारा बनाएं।"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "यह स्टेशन कौशल-गेटेड कार्य चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मानिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आगे आकार देते हैं।"

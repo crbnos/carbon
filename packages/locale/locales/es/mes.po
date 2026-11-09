@@ -384,7 +384,7 @@ msgid "Apply link"
 msgstr "Aplicar enlace"
 
 msgid "Approval needed"
-msgstr ""
+msgstr "Se requiere aprobación"
 
 msgid "Approvals"
 msgstr "Aprobaciones"
@@ -395,13 +395,19 @@ msgstr "AQL"
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Nivel {level} · {severity}"
 msgid "Approve and Complete"
-msgstr ""
+msgstr "Aprobar y completar"
 
 msgid "Approve and Log Scrap"
-msgstr ""
+msgstr "Aprobar y registrar desperdicio"
+
+msgid "Approve and Record Partial"
+msgstr "Aprobar y registrar parcial"
+
+msgid "Approve and Reject Lot"
+msgstr "Aprobar y rechazar lote"
 
 msgid "Approve and Scrap"
-msgstr ""
+msgstr "Aprobar y desperdiciar"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "¿Está seguro de que desea eliminar esta llave de acceso? No podrá usarla para iniciar sesión."
@@ -1721,7 +1727,7 @@ msgid "No active work centers at this location."
 msgstr "Sin centros de trabajo activos en esta ubicación."
 
 msgid "No approver available"
-msgstr ""
+msgstr "No hay ningún aprobador disponible"
 
 msgid "No assigned operations"
 msgstr "No hay operaciones asignadas"
@@ -1805,7 +1811,7 @@ msgstr "Sin materiales en este lote de producción."
 msgid "No open inspections"
 msgstr "No hay inspecciones abiertas"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
-msgstr ""
+msgstr "Ningún usuario que pueda aprobar este desperdicio tiene un PIN de consola. Pida a un administrador que asigne uno a un aprobador."
 
 msgid "No open jobs"
 msgstr "Sin órdenes de trabajo abiertas"
@@ -3148,7 +3154,7 @@ msgid "This sample was removed"
 msgstr "Esta muestra se eliminó"
 
 msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
-msgstr ""
+msgstr "Este desperdicio equivale aproximadamente a <0>{value}</0> en material. Un aprobador debe introducir su PIN antes de que se registre."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Esto detiene tu reloj y contabiliza el tiempo de la orden de trabajo. La orden de trabajo ya no puede cambiar."

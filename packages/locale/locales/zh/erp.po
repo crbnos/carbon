@@ -1979,6 +1979,7 @@ msgstr "一项不合格任务，用于防止问题在其他地方重复出现—
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "数字或符号紧挨数值时会改变其含义。请在二者之间加入文字。"
+msgstr "紧挨数值的数字或符号会改变数值的含义。请在两者之间加一个词。"
 
 msgid "A part"
 msgstr "一个零件"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "由<1/>审批的<0/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "已审批时间"
 
 msgid "Approved By"
 msgstr "批准人"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "预计时间"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "预估价值"
 
 msgid "Estimated versus actual time by job"
 msgstr "按工单统计的预估与实际工时"
@@ -17095,6 +17096,7 @@ msgstr "关联记录"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
 msgstr "已关联到共享章节。在库中编辑即可在所有位置更新。"
+msgstr "已链接到共享章节。请在资料库中编辑该章节，以更新所有位置的内容。"
 
 msgid "Links"
 msgstr "链接"
@@ -18119,7 +18121,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "最小储备数量"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "最低报废价值"
 
 msgid "Minute"
 msgstr "分钟"
@@ -20234,6 +20236,7 @@ msgstr "没有可用的值"
 
 msgid "No values found"
 msgstr "未找到值"
+msgstr "未找到任何值"
 
 msgid "No variable matches {query}"
 msgstr "没有变量匹配{query}"
@@ -20373,7 +20376,7 @@ msgid "Not Configured"
 msgstr "未配置"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "未确认"
 
 msgid "Not delivered"
 msgstr "未交付"
@@ -20664,7 +20667,7 @@ msgid "of {budgetText}"
 msgstr "共{budgetText}"
 
 msgid "of any value"
-msgstr ""
+msgstr "任意价值的"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "在拨款成本中，从75%到85%"
@@ -22553,6 +22556,7 @@ msgstr "回放"
 
 msgid "Please <0>change it</0>."
 msgstr "请<0>更改</0>。"
+msgstr "请<0>修改它</0>。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "请联系您的管理员以启用审计日志。"
@@ -25149,7 +25153,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "需要供应商联系人和地点"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "在车间记录预估原材料价值以上的报废前，要求审批人输入PIN码"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"
@@ -26497,7 +26501,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "报废审批"
 
 msgid "Scrap Percent"
 msgstr "报废率"
@@ -26536,7 +26540,7 @@ msgid "Scrap Unit"
 msgstr "报废件"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "预估原材料价值达到或超过此值、且未达到下一条规则最低值的报废，需要审批人在平板上输入PIN码。0 表示所有报废。"
 
 msgid "Scrapped"
 msgstr "已报废"
@@ -28225,6 +28229,7 @@ msgstr "某人"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "其他人刚刚保存了此模板。刷新以加载其版本，或继续编辑，保存时将覆盖该版本。"
+msgstr "其他人刚刚保存了此模板。请刷新以加载其版本，或继续编辑，保存时将覆盖该版本。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "能够更新会计的人员必须先输入该资产的制造成本，才能将其资本化。"
@@ -30225,6 +30230,7 @@ msgstr "无法下载文档。"
 
 msgid "The document could not be opened."
 msgstr "无法打开文件。"
+msgstr "无法打开该文件。"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -30798,6 +30804,7 @@ msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "无法绘制预览。当前显示的是上一次成功绘制的预览。"
+msgstr "无法生成预览，当前显示的是上一次成功生成的预览。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "时间和物料订单行上一小时的价格：员工的订单行费率，或劳动力分类的费率，或劳动力分类的默认账单费率，有效期为当天。"
@@ -31672,6 +31679,7 @@ msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "由于某段文字改变了数值，此预览已暂停。"
+msgstr "因有文字会改变数值，此预览已暂停。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"
@@ -31738,6 +31746,7 @@ msgstr "此序列号"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
 msgstr "此共享章节已不存在。请移除该区块或重新创建该章节。"
+msgstr "该共享章节已不存在。请移除该区块，或重新创建该章节。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"

@@ -1979,6 +1979,7 @@ msgstr "Un'attività di non conformità che impedisce il ripetersi del problema 
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "Un numero o un segno accanto a un valore ne cambia il significato. Inserisci una parola tra i due."
+msgstr "Un numero o un segno accanto a una cifra ne altera il significato. Separali con una parola."
 
 msgid "A part"
 msgstr "Un componente"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "Approvato <0/> da <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "Approvato il"
 
 msgid "Approved By"
 msgstr "Approvato da"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "Tempo stimato"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "Valore stimato"
 
 msgid "Estimated versus actual time by job"
 msgstr "Tempo stimato rispetto a quello effettivo per ordine di produzione"
@@ -16344,6 +16345,7 @@ msgstr "Mantieni articoli corrispondenti"
 
 msgid "Keep mine"
 msgstr "Mantieni le mie"
+msgstr "Mantieni la mia"
 
 msgid "Keep navigation open"
 msgstr "Mantieni navigazione aperta"
@@ -17095,6 +17097,7 @@ msgstr "Record Collegato"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
 msgstr "Collegata a una sezione condivisa. Modificala nella libreria per aggiornarla ovunque."
+msgstr "Collegato a una sezione condivisa. Modificala nella libreria per aggiornarla ovunque."
 
 msgid "Links"
 msgstr "Collegamenti"
@@ -18119,7 +18122,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "Quantità Minima di Riserva"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "Valore minimo di scarto"
 
 msgid "Minute"
 msgstr "Minuto"
@@ -20373,7 +20376,7 @@ msgid "Not Configured"
 msgstr "Non Configurato"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "Non confermato"
 
 msgid "Not delivered"
 msgstr "Non consegnato"
@@ -20664,7 +20667,7 @@ msgid "of {budgetText}"
 msgstr "di {budgetText}"
 
 msgid "of any value"
-msgstr ""
+msgstr "di qualsiasi valore"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Del costo finanziato, dal 75% all'85%"
@@ -22553,6 +22556,7 @@ msgstr "Riproduzione"
 
 msgid "Please <0>change it</0>."
 msgstr "Per favore <0>modificalo</0>."
+msgstr "Per favore <0>cambialo</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Contatta il tuo amministratore per abilitare la registrazione di audit."
@@ -25149,7 +25153,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "Richiedi un contatto fornitore e un'ubicazione"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "Richiedi il PIN di un approvatore in officina prima di registrare uno scarto con valore stimato del materiale superiore a una soglia"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Richiedi un operatore assegnato prima che lo scheduler assegni il lavoro a un'ubicazione. Quando attivato, i centri di lavoro non staffati non ricevono lavoro e un'operazione senza copertura di manodopera appare come non programmabile. I centri di lavoro lights-out (24×7) sono esentati."
@@ -26497,7 +26501,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "Scarto / Costo della Qualità"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "Approvazioni scarti"
 
 msgid "Scrap Percent"
 msgstr "Percentuale di Scarto"
@@ -26536,7 +26540,7 @@ msgid "Scrap Unit"
 msgstr "Unità da scartare"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "Lo scarto il cui valore stimato di materiale è pari o superiore a questo valore, fino al minimo della regola successiva, richiede il PIN di un approvatore sul tablet. 0 indica tutti gli scarti."
 
 msgid "Scrapped"
 msgstr "Scartato"
@@ -28225,6 +28229,7 @@ msgstr "Qualcuno"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "Un altro utente ha appena salvato questo modello. Ricarica la pagina per caricare la sua versione, oppure continua a modificare per sovrascriverla quando salvi."
+msgstr "Un altro utente ha appena salvato questo modello. Ricarica per caricare la sua versione, oppure continua a modificare per sovrascriverla quando salvi."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Qualcuno che può aggiornare la contabilità deve inserire il costo di produzione prima che possa essere capitalizzato."
@@ -30798,6 +30803,7 @@ msgstr "Il pacchetto predefinito di attività e requisiti di approvazione applic
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "Impossibile generare l'anteprima. Viene mostrata l'ultima generata con successo."
+msgstr "Impossibile generare l'anteprima. Viene mostrata l'ultima disponibile."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Il prezzo di un'ora su una riga Tempo e Materiali: la tariffa della riga per il dipendente, altrimenti per la categoria di manodopera, altrimenti la tariffa di fatturazione predefinita della categoria di manodopera, in vigore nel giorno."
@@ -31672,6 +31678,7 @@ msgstr "Questo PIN non verrà più visualizzato. Ne avrai bisogno per uscire dal
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Questa anteprima è in pausa perché un testo modifica un valore."
+msgstr "L'anteprima è in pausa perché un testo altera una cifra."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Questo prezzo è stato inserito manualmente, quindi nessuna regola di prezzo è stata applicata."

@@ -384,7 +384,7 @@ msgid "Apply link"
 msgstr "Bağlantıyı uygula"
 
 msgid "Approval needed"
-msgstr ""
+msgstr "Onay gerekli"
 
 msgid "Approvals"
 msgstr "Onaylar"
@@ -395,13 +395,19 @@ msgstr "AQL"
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Seviye {level} · {severity}"
 msgid "Approve and Complete"
-msgstr ""
+msgstr "Onayla ve Tamamla"
 
 msgid "Approve and Log Scrap"
-msgstr ""
+msgstr "Onayla ve Fire Kaydet"
+
+msgid "Approve and Record Partial"
+msgstr "Onayla ve Kısmi Kaydet"
+
+msgid "Approve and Reject Lot"
+msgstr "Onayla ve Lot'u Reddet"
 
 msgid "Approve and Scrap"
-msgstr ""
+msgstr "Onayla ve Fireye Ayır"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Bu geçiş anahtarını silmek istediğinizden emin misiniz? Artık bununla oturum açamayacaksınız."
@@ -1721,7 +1727,7 @@ msgid "No active work centers at this location."
 msgstr "Bu konumda etkin iş merkezi yok."
 
 msgid "No approver available"
-msgstr ""
+msgstr "Kullanılabilir onaylayıcı yok"
 
 msgid "No assigned operations"
 msgstr "Atanmış operasyon yok"
@@ -1805,7 +1811,7 @@ msgstr "Bu Partide Malzeme yok."
 msgid "No open inspections"
 msgstr "Açık muayene yok"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
-msgstr ""
+msgstr "Bu fireyi onaylayabilecek hiç kimsenin konsol PIN'i yok. Bir onaylayıcı için yönetici tarafından bir PIN tanımlamasını isteyin."
 
 msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
@@ -3148,7 +3154,7 @@ msgid "This sample was removed"
 msgstr "Bu numune kaldırıldı"
 
 msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
-msgstr ""
+msgstr "Bu firenin malzeme değeri yaklaşık <0>{value}</0>. Kaydedilmeden önce bir onaylayıcı PIN'ini girmelidir."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."

@@ -37,9 +37,11 @@ import { getItemReplenishment } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import { releaseCheckedJobs } from "~/modules/production/production.server";
 import {
+  approveErpScrap,
   getActiveJobOperationByJobId,
   getJobReleaseReadiness,
   insertJob,
+  settleErpScrapApproval,
   updateKanbanJob,
   upsertJobMethod
 } from "~/modules/production/production.service";
@@ -3703,7 +3705,9 @@ export const postInventoryCount = defineServiceFn({
  * storage unit is named, on `pick`
  * (a decrease or scrap) or `place` (an increase or unscrap): a blocking rule
  * returns its `violations` and `ruleNames` and changes nothing; send
- * `acknowledged: true` to adjust past warnings.
+ * `acknowledged: true` to adjust past warnings. When a scrap approval rule
+ * applies to a scrap's estimated value, only an approver at that tier may
+ * record it, and an API key is refused.
  *
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
@@ -3776,12 +3780,28 @@ export const adjustInventory = defineServiceFn({
       return { violations, ruleNames: rules.ruleNames } satisfies Blocked;
     }
 
+    // After the storage rules, so a warning sent back to be acknowledged
+    // records no approval. Only an approver at the scrap's tier records it.
+    const approval =
+      adjustment.adjustmentType === "Scrap"
+        ? await approveErpScrap(ctx, {
+            type: "item",
+            itemId: adjustment.itemId,
+            quantity: adjustment.quantity,
+            trackedEntityId: adjustment.trackedEntityId,
+            scrapReasonId: adjustment.scrapReasonId,
+            notes: adjustment.comment
+          })
+        : { scrapRequestId: null };
+    if (approval instanceof CarbonError) return approval;
+
     const posted = await invokePosting(
       ctx,
       "post-inventory-adjustment",
       adjustment,
       service.postInventoryAdjustment
     );
+    await settleErpScrapApproval(ctx, approval.scrapRequestId, !posted.error);
     if (posted.error) {
       return fromServerFn(
         ctx,

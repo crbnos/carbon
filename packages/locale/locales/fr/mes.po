@@ -384,7 +384,7 @@ msgid "Apply link"
 msgstr "Appliquer le lien"
 
 msgid "Approval needed"
-msgstr ""
+msgstr "Approbation requise"
 
 msgid "Approvals"
 msgstr "Approbations"
@@ -395,13 +395,19 @@ msgstr "AQL"
 msgid "AQL {aql} · Lvl {level} · {severity}"
 msgstr "AQL {aql} · Niv. {level} · {severity}"
 msgid "Approve and Complete"
-msgstr ""
+msgstr "Approuver et terminer"
 
 msgid "Approve and Log Scrap"
-msgstr ""
+msgstr "Approuver et enregistrer le rebut"
+
+msgid "Approve and Record Partial"
+msgstr "Approuver et enregistrer une quantité partielle"
+
+msgid "Approve and Reject Lot"
+msgstr "Approuver et rejeter le lot"
 
 msgid "Approve and Scrap"
-msgstr ""
+msgstr "Approuver et mettre au rebut"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourrez plus l'utiliser pour vous connecter."
@@ -1721,7 +1727,7 @@ msgid "No active work centers at this location."
 msgstr "Aucun poste de travail actif à ce site."
 
 msgid "No approver available"
-msgstr ""
+msgstr "Aucun approbateur disponible"
 
 msgid "No assigned operations"
 msgstr "Aucune opération assignée"
@@ -1805,7 +1811,7 @@ msgstr "Aucune matière sur ce lot de production."
 msgid "No open inspections"
 msgstr "Aucun contrôle ouvert"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
-msgstr ""
+msgstr "Aucune personne pouvant approuver ce rebut n'a de code PIN de console. Demandez à un administrateur d'en définir un pour un approbateur."
 
 msgid "No open jobs"
 msgstr "Aucun ordre de fabrication ouvert"
@@ -3148,7 +3154,7 @@ msgid "This sample was removed"
 msgstr "Cet échantillon a été supprimé"
 
 msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
-msgstr ""
+msgstr "Ce rebut représente environ <0>{value}</0> de matière. Un approbateur doit saisir son code PIN avant son enregistrement."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Cela arrête votre chronomètre et comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."

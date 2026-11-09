@@ -1979,6 +1979,7 @@ msgstr "Zadanie niezgodności, które uniemożliwia powtarzanie się problemu gd
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "Liczba lub znak obok wartości zmienia jej znaczenie. Wstaw między nimi słowo."
+msgstr "Liczba lub znak przy wartości zmienia jej znaczenie. Wstaw między nimi słowo."
 
 msgid "A part"
 msgstr "Część"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "Zatwierdzono <0/> przez <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "Zatwierdzono dnia"
 
 msgid "Approved By"
 msgstr "Zatwierdzone przez"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "Szacowany czas"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "Szacowana wartość"
 
 msgid "Estimated versus actual time by job"
 msgstr "Czas szacowany i rzeczywisty wg zlecenia produkcyjnego"
@@ -18119,7 +18120,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "Minimalna ilość rezerwy"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "Minimalna wartość braków"
 
 msgid "Minute"
 msgstr "Minuta"
@@ -20373,7 +20374,7 @@ msgid "Not Configured"
 msgstr "Nie skonfigurowane"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "Niepotwierdzono"
 
 msgid "Not delivered"
 msgstr "Nie dostarczone"
@@ -20664,7 +20665,7 @@ msgid "of {budgetText}"
 msgstr "z {budgetText}"
 
 msgid "of any value"
-msgstr ""
+msgstr "o dowolnej wartości"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Z sfinansowanego kosztu od 75% do 85%"
@@ -25149,7 +25150,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "Wymagaj kontaktu dostawcy i lokalizacji"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "Wymagaj PIN-u osoby zatwierdzającej na hali produkcyjnej, zanim zostaną zapisane braki o szacowanej wartości materiału powyżej określonego progu"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Wymagaj przypisanego operatora, zanim harmonogram umieści pracę w lokalizacji. Gdy włączone, stanowiska robocze bez obsady nie otrzymują pracy, a operacja bez pokrycia obsługą personelu wyświetla się jako nieplanowalna. Stanowiska robocze bez oświetlenia (24×7) są zwolnione."
@@ -26497,7 +26498,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "Braki / Koszt jakości"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "Zatwierdzenia braków"
 
 msgid "Scrap Percent"
 msgstr "Procent braków"
@@ -26536,7 +26537,7 @@ msgid "Scrap Unit"
 msgstr "Braki jednostki"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "Braki, których szacowana wartość materiału jest równa tej wartości lub wyższa, a niższa od minimum następnej reguły, wymagają PIN-u osoby zatwierdzającej na tablecie. 0 oznacza wszystkie braki."
 
 msgid "Scrapped"
 msgstr "Złomowany"
@@ -30798,6 +30799,7 @@ msgstr "Wstępnie ustawiony pakiet zadań i wymagań zatwierdzenia stosowany do 
 
 msgid "The preview could not be drawn. It shows the last one that was."
 msgstr "Nie udało się wygenerować podglądu. Pokazano ostatni poprawnie wygenerowany."
+msgstr "Nie udało się wygenerować podglądu. Pokazano ostatni, który został wygenerowany."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Cena godziny w linii Time & Materials: stawka linii dla pracownika, inaczej dla kategorii robocizny, inaczej domyślna stawka rozliczeniowa kategorii robocizny, obowiązująca w dniu."
@@ -31672,6 +31674,7 @@ msgstr "Ten PIN nie będzie już więcej wyświetlany. Będzie ci potrzebny do w
 
 msgid "This preview is paused because a text changes a figure."
 msgstr "Podgląd jest wstrzymany, ponieważ tekst zmienia wartość."
+msgstr "Podgląd jest wstrzymany, ponieważ tekst zmienia wartość liczbową."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ta cena została wprowadzona ręcznie, dlatego nie zastosowano żadnych reguł cenowych."
@@ -31738,6 +31741,7 @@ msgstr "Ten numer seryjny"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
 msgstr "Ta sekcja współdzielona już nie istnieje. Usuń z listy blok lub utwórz sekcję ponownie."
+msgstr "Ta sekcja współdzielona już nie istnieje. Usuń z listy blok albo utwórz sekcję ponownie."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "To stanowisko robocze wykonuje pracę ograniczoną do uprawnień — działa tylko gdy na zmianie jest wykwalifikowany operator; operatorzy przypisani na tablicy obsady dalej kształtują dostępną roboczyzną."

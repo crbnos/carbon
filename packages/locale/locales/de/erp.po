@@ -1979,6 +1979,7 @@ msgstr "Eine Nichtkonformitätsaufgabe, die verhindert, dass das Problem andersw
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
 msgstr "Eine Zahl oder ein Zeichen direkt neben einem Wert verändert dessen Aussage. Setzen Sie ein Wort dazwischen."
+msgstr "Eine Zahl oder ein Zeichen direkt neben einem Wert verändert dessen Aussage. Fügen Sie ein Wort dazwischen ein."
 
 msgid "A part"
 msgstr "Ein Teil"
@@ -4336,7 +4337,7 @@ msgid "Approved <0/> by <1/>"
 msgstr "Genehmigt durch <0/> von <1/>"
 
 msgid "Approved At"
-msgstr ""
+msgstr "Genehmigt am"
 
 msgid "Approved By"
 msgstr "Genehmigt von"
@@ -12445,7 +12446,7 @@ msgid "Estimated time"
 msgstr "Geschätzte Zeit"
 
 msgid "Estimated Value"
-msgstr ""
+msgstr "Geschätzter Wert"
 
 msgid "Estimated versus actual time by job"
 msgstr "Geschätzte und tatsächliche Zeit je Fertigungsauftrag"
@@ -18119,7 +18120,7 @@ msgid "Minimum Reserve Quantity"
 msgstr "Mindestbestandsmenge"
 
 msgid "Minimum Scrap Value"
-msgstr ""
+msgstr "Mindestwert für Ausschuss"
 
 msgid "Minute"
 msgstr "Minute"
@@ -20373,7 +20374,7 @@ msgid "Not Configured"
 msgstr "Nicht konfiguriert"
 
 msgid "Not confirmed"
-msgstr ""
+msgstr "Nicht bestätigt"
 
 msgid "Not delivered"
 msgstr "Nicht geliefert"
@@ -20664,7 +20665,7 @@ msgid "of {budgetText}"
 msgstr "von {budgetText}"
 
 msgid "of any value"
-msgstr ""
+msgstr "mit beliebigem Wert"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Von den finanzierten Kosten zwischen 75% und 85%"
@@ -25149,7 +25150,7 @@ msgid "Require a Supplier Contact and Location"
 msgstr "Lieferantenkontakt und Standort erforderlich"
 
 msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
-msgstr ""
+msgstr "Die PIN eines Genehmigers in der Werkstatt verlangen, bevor Ausschuss über einem geschätzten Materialwert erfasst wird"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Erfordert einen zugewiesenen Werker, bevor der Planer Arbeiten an einem Standort platziert. Wenn aktiviert, erhalten unbesetzte Arbeitsplätze keine Arbeiten und ein Arbeitsgang ohne bemannte Abdeckung wird als nicht planbar angezeigt. Lichter-aus (24×7) Arbeitsplätze sind ausgenommen."
@@ -26497,7 +26498,7 @@ msgid "Scrap / Cost of Quality"
 msgstr "Ausschuss / Qualitätskosten"
 
 msgid "Scrap Approvals"
-msgstr ""
+msgstr "Ausschussgenehmigungen"
 
 msgid "Scrap Percent"
 msgstr "Ausschussquote"
@@ -26536,7 +26537,7 @@ msgid "Scrap Unit"
 msgstr "Ausschuss-Einheit"
 
 msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
-msgstr ""
+msgstr "Ausschuss, dessen geschätzter Materialwert mindestens diesem Wert entspricht und unter dem Mindestwert der nächsten Regel liegt, benötigt die PIN eines Genehmigers am Tablet. 0 bedeutet: jeder Ausschuss."
 
 msgid "Scrapped"
 msgstr "Verschrottet"
@@ -28225,6 +28226,7 @@ msgstr "Jemand"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
 msgstr "Jemand anderes hat diese Vorlage gerade gespeichert. Laden Sie die Seite neu, um die andere Version zu laden, oder bearbeiten Sie weiter und überschreiben Sie sie beim Speichern."
+msgstr "Jemand anderes hat diese Vorlage gerade gespeichert. Laden Sie die Seite neu, um dessen Version zu sehen, oder arbeiten Sie weiter und überschreiben Sie sie beim Speichern."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Jemand mit Berechtigung zur Aktualisierung der Buchhaltung muss eingeben, was die Herstellung gekostet hat, bevor es aktiviert werden kann."

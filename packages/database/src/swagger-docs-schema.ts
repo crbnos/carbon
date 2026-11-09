@@ -133662,6 +133662,51 @@ export default {
         tags: ["(rpc) sync_job_recompute_service_line"]
       }
     },
+    "/rpc/prevent_direct_scrap_write": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) prevent_direct_scrap_write"]
+      }
+    },
     "/rpc/uuid_generate_v4": {
       get: {
         produces: [
