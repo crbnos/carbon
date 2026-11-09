@@ -186,6 +186,10 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   operation), `itemLedger.documentId`, `...Ids` arrays. `buildRowTransforms` rewrites
   them through the combined `idRewrite` map on a remap load (element-wise for arrays,
   lookup-only so non-id values pass through; an FK column is never treated this way).
+  The few columns that only ever hold a row id (`ROW_ID_REF_COLUMNS`:
+  `inspection.sourceDocumentLineId`) are nulled instead when unmapped, like a
+  nullable FK: the row is not in the backup (an inspection whose job operation
+  was deleted), and its source id would collide on the unique index below.
   Unlisted, a cross-company restore keeps the SOURCE ids: the
   `inspection_sourceDocumentLineId_key` unique index (cross-company, on
   `("sourceDocument","sourceDocumentLineId")`) then collides with the source

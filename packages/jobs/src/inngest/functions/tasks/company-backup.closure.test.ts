@@ -541,6 +541,33 @@ describe("buildRowTransforms", () => {
     expect(out.sourceDocumentLineId).toBe("line-new");
   });
 
+  it("nulls an inspection's line ref whose line is not in the backup", () => {
+    // A job operation deleted after its inspection: the source id kept verbatim
+    // collides with the source company's live inspection on the unique index.
+    const t = table("inspection", [
+      col("id"),
+      col("companyId"),
+      col("sourceDocumentId"),
+      col("sourceDocumentLineId", { nullable: true })
+    ]);
+    const out = apply(
+      t,
+      {
+        id: "i1",
+        companyId: "src-co",
+        sourceDocumentId: "job-gone",
+        sourceDocumentLineId: "op-gone"
+      },
+      ctx({ idRewrite: new Map([["other-old", "other-new"]]) })
+    );
+    expect(out).toEqual({
+      id: "i1",
+      companyId: "target-co",
+      sourceDocumentId: "job-gone",
+      sourceDocumentLineId: null
+    });
+  });
+
   it("rewrites each element of a FK-less id-array ref, keeping unmapped values", () => {
     const t = table("pricingRule", [
       col("id"),

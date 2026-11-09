@@ -8,7 +8,7 @@ import {
   type ValueEdits
 } from "@carbon/documents/template";
 import { type Kysely, sql } from "kysely";
-import { ID_REF_COLUMNS } from "../../../backups/id-refs";
+import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "../../../backups/id-refs";
 import {
   type Catalog,
   type ColumnInfo,
@@ -361,8 +361,12 @@ export function buildRowTransforms(
     }
     if (!fk && ID_REF_COLUMNS[table.name]?.includes(col.name)) {
       const { idRewrite } = ctx;
+      const unmapped =
+        col.isNullable && ROW_ID_REF_COLUMNS[table.name]?.includes(col.name)
+          ? () => null
+          : (id: string) => id;
       const rewrite = (id: unknown) =>
-        typeof id === "string" ? (idRewrite.get(id) ?? id) : id;
+        typeof id === "string" ? (idRewrite.get(id) ?? unmapped(id)) : id;
       return (v) => (Array.isArray(v) ? v.map(rewrite) : rewrite(v));
     }
     if (fk) {
