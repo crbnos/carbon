@@ -2065,7 +2065,7 @@ export async function getSalesDashboardRevenue(
         .onRef("sil.companyId", "=", "si.companyId")
     )
     .select(["si.postingDate as day", "si.customerId as customerId"])
-    .select((eb) =>
+    .select((eb) => [
       eb.fn
         .sum<number>(
           eb(
@@ -2082,8 +2082,9 @@ export async function getSalesDashboardRevenue(
             eb.ref("sil.nonTaxableAddOnCost")
           )
         )
-        .as("invoiceSales")
-    )
+        .as("invoiceSales"),
+      eb.val(0).as("credits")
+    ])
     .where("si.companyId", "=", companyId)
     .where("si.status", "not in", ["Draft", "Pending", "Voided"])
     .where("si.postingDate", ">=", startDate)
@@ -2098,7 +2099,10 @@ export async function getSalesDashboardRevenue(
     )
     .select("m.postingDate as day")
     .select((eb) => [
-      eb.fn.coalesce("cc.customerId", "m.customerId").as("customerId"),
+      eb.fn
+        .coalesce("cc.customerId", "m.customerId", eb.val(""))
+        .as("customerId"),
+      eb.val(0).as("invoiceSales"),
       eb.fn
         .sum<number>(
           eb.fn<number>("round", [
@@ -2116,7 +2120,7 @@ export async function getSalesDashboardRevenue(
     .where("m.postingDate", "<=", endDate)
     .groupBy((eb) => [
       "m.postingDate",
-      eb.fn.coalesce("cc.customerId", "m.customerId")
+      eb.fn.coalesce("cc.customerId", "m.customerId", eb.val(""))
     ]);
   if (customerId) {
     invoicesQuery = invoicesQuery.where("si.customerId", "=", customerId);
@@ -2124,61 +2128,46 @@ export async function getSalesDashboardRevenue(
       eb(eb.fn.coalesce("cc.customerId", "m.customerId"), "=", customerId)
     );
   }
-  const [invoiceRows, creditRows] = await Promise.all([
-    invoicesQuery.execute(),
-    creditsQuery.execute()
+  const facts = invoicesQuery.unionAll(creditsQuery);
+  const [dailyRows, customerRows] = await Promise.all([
+    db
+      .with("revenueFacts", () => facts)
+      .selectFrom("revenueFacts")
+      .select("day")
+      .select((eb) => [
+        eb.fn.sum<number>("invoiceSales").as("invoiceSales"),
+        eb.fn.sum<number>("credits").as("credits")
+      ])
+      .where("day", "is not", null)
+      .groupBy("day")
+      .orderBy("day")
+      .execute(),
+    db
+      .with("revenueFacts", () => facts)
+      .selectFrom("revenueFacts")
+      .select("customerId")
+      .select((eb) => [
+        eb.fn.sum<number>("invoiceSales").as("invoiceSales"),
+        eb.fn.sum<number>("credits").as("credits")
+      ])
+      .where("customerId", "is not", null)
+      .groupBy("customerId")
+      .orderBy(
+        (eb) =>
+          eb(
+            eb.fn.sum<number>("invoiceSales"),
+            "-",
+            eb.fn.sum<number>("credits")
+          ),
+        "desc"
+      )
+      .orderBy("customerId")
+      .limit(10)
+      .execute()
   ]);
-  const daily = new Map<
-    string,
-    { day: string; invoiceSales: number; credits: number }
-  >();
-  const customers = new Map<
-    string,
-    { customerId: string; invoiceSales: number; credits: number }
-  >();
-  for (const row of invoiceRows) {
-    if (!row.day) continue;
-    const value = Number(row.invoiceSales);
-    const day = daily.get(row.day) ?? {
-      day: row.day,
-      invoiceSales: 0,
-      credits: 0
-    };
-    day.invoiceSales += value;
-    daily.set(row.day, day);
-    const customer = customers.get(row.customerId) ?? {
-      customerId: row.customerId,
-      invoiceSales: 0,
-      credits: 0
-    };
-    customer.invoiceSales += value;
-    customers.set(row.customerId, customer);
-  }
-  for (const row of creditRows) {
-    if (!row.day || !row.customerId) continue;
-    const value = Number(row.credits);
-    const day = daily.get(row.day) ?? {
-      day: row.day,
-      invoiceSales: 0,
-      credits: 0
-    };
-    day.credits += value;
-    daily.set(row.day, day);
-    const customer = customers.get(row.customerId) ?? {
-      customerId: row.customerId,
-      invoiceSales: 0,
-      credits: 0
-    };
-    customer.credits += value;
-    customers.set(row.customerId, customer);
-  }
-  const topCustomers = [...customers.values()]
-    .sort(
-      (a, b) =>
-        b.invoiceSales - b.credits - (a.invoiceSales - a.credits) ||
-        a.customerId.localeCompare(b.customerId)
-    )
-    .slice(0, 10);
+  const topCustomers = customerRows.filter(
+    (row): row is typeof row & { customerId: string } => !!row.customerId
+  );
   const names = topCustomers.length
     ? await db
         .selectFrom("customer")
@@ -2195,9 +2184,17 @@ export async function getSalesDashboardRevenue(
     names.map((customer) => [customer.id, customer.name])
   );
   return {
-    daily: [...daily.values()].sort((a, b) => a.day.localeCompare(b.day)),
+    daily: dailyRows
+      .filter((row): row is typeof row & { day: string } => !!row.day)
+      .map((row) => ({
+        day: row.day,
+        invoiceSales: Number(row.invoiceSales),
+        credits: Number(row.credits)
+      })),
     customers: topCustomers.map((customer) => ({
-      ...customer,
+      customerId: customer.customerId,
+      invoiceSales: Number(customer.invoiceSales),
+      credits: Number(customer.credits),
       customerName: namesById.get(customer.customerId) ?? customer.customerId
     }))
   };
