@@ -180,7 +180,9 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                   aria-label={`${t`Edit Assignee`}: ${assigneeName}`}
                   ref={ref}
                   isEmpty={!value}
-                  placeholder={canAssign ? t`Add assignee` : t`Unassigned`}
+                  placeholder={
+                    canAssign ? (placeholder ?? t`Add assignee`) : t`Unassigned`
+                  }
                   isDisabled={!canAssign}
                 >
                   <EmployeeAvatar

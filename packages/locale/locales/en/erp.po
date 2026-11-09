@@ -5003,6 +5003,9 @@ msgstr "Assign machine run time that no loaded operation claimed to the right jo
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 
+msgid "Assign selected"
+msgstr "Assign selected"
+
 msgid "Assign To"
 msgstr "Assign To"
 
@@ -24749,9 +24752,6 @@ msgstr "Requested"
 msgid "Requested By"
 msgstr "Requested By"
 
-msgid "Requested"
-msgstr "Requested"
-
 msgid "Requested Date"
 msgstr "Requested Date"
 
@@ -26484,6 +26484,9 @@ msgstr "Select all"
 
 msgid "Select all jobs"
 msgstr "Select all jobs"
+
+msgid "Select all operations"
+msgstr "Select all operations"
 
 msgid "Select all rows"
 msgstr "Select all rows"

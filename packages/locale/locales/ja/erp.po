@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "数字の隣に数字や記号があると、意味が変わります。その間に文字を入力してください。"
 
 msgid "A part"
 msgstr "部品"
@@ -5002,6 +5002,9 @@ msgstr "読み込まれた工程に割り当てられていない機械加工時
 
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、在庫管理、かんばん、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
+
+msgid "Assign selected"
+msgstr "選択項目を割り当て"
 
 msgid "Assign To"
 msgstr "割り当て先"
@@ -16099,7 +16102,7 @@ msgid "Keep matching items"
 msgstr "一致する品目を保持"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "自分の内容を保持"
 
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
@@ -16844,7 +16847,7 @@ msgid "Linked Record"
 msgstr "リンクされたレコード"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "共有セクションにリンクされています。ライブラリで編集すると、すべての場所に反映されます。"
 
 msgid "Links"
 msgstr "リンク"
@@ -19942,7 +19945,7 @@ msgid "No values available"
 msgstr "利用可能な値がありません"
 
 msgid "No values found"
-msgstr ""
+msgstr "値が見つかりません"
 
 msgid "No variable matches {query}"
 msgstr "{query}に一致する変数がありません"
@@ -22209,7 +22212,7 @@ msgid "Playback"
 msgstr "再生"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "<0>変更してください</0>。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "監査ログを有効にするには、管理者にお問い合わせください。"
@@ -23849,7 +23852,7 @@ msgid "Received By"
 msgstr "受け取った人"
 
 msgid "Received Date"
-msgstr ""
+msgstr "入荷日"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
@@ -24352,7 +24355,7 @@ msgid "Remove authenticator app"
 msgstr "認証アプリを除去"
 
 msgid "Remove block"
-msgstr ""
+msgstr "ブロックを除去"
 
 msgid "Remove clause"
 msgstr "条項を除去"
@@ -24744,12 +24747,10 @@ msgid "Request date"
 msgstr "リクエスト日付"
 
 msgid "Requested"
-msgstr "リクエスト済み"
+msgstr "希望"
 
 msgid "Requested By"
 msgstr "要求者"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "希望納期"
@@ -26484,6 +26485,9 @@ msgstr "すべて選択"
 msgid "Select all jobs"
 msgstr "すべての製造指図を選択"
 
+msgid "Select all operations"
+msgstr "すべての工程を選択"
+
 msgid "Select all rows"
 msgstr "すべての行を選択"
 
@@ -27185,7 +27189,7 @@ msgid "Shared channel"
 msgstr "共有チャネル"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "共有セクション（削除済み）"
 
 msgid "Shared Sections"
 msgstr "共有セクション"
@@ -27828,7 +27832,7 @@ msgid "Someone"
 msgstr "誰か"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "別のユーザーがこのテンプレートを保存しました。更新してそのバージョンを読み込むか、編集を続けて保存時に上書きしてください。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
@@ -29812,7 +29816,7 @@ msgid "The document could not be downloaded."
 msgstr "文書をダウンロードできませんでした。"
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "文書を開けませんでした。"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -30382,7 +30386,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "このイシューに適用されるタスクと承認要件のプリセットバンドル。設定されると、イシュータイプのデフォルトワークフローを置き換えます。"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "プレビューを描画できませんでした。最後に表示されたプレビューを表示しています。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "タイム & マテリアル明細の 1 時間の価格：従業員の明細レート。それ以外の場合は労務カテゴリ。それ以外の場合は労務カテゴリの既定請求レート。その日から有効。"
@@ -31232,7 +31236,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "テキストによって数値が変更されるため、プレビューを一時停止しています。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
@@ -31298,7 +31302,7 @@ msgid "This serial"
 msgstr "このシリアル"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "この共有セクションは存在しません。ブロックを除去するか、セクションを再作成してください。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"
@@ -33820,10 +33824,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "購買担当者が品物を希望した日です。仕入先は、入荷回答納期に別の日を約束し、納期にはさらに別の日を計上することがあります。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "購買担当者がこの明細の品物を荷受場で必要とする日です。新しい明細には、注文の入荷希望納期が初期設定されます。計画ではこの日付を在庫の引当可能性の確認と外注加工のスケジュールに使用します。"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "契約の実行期間と完了時のアクション。"

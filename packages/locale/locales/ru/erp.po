@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Число или знак рядом с числовым значением меняет его смысл. Поставьте между ними слово."
 
 msgid "A part"
 msgstr "Деталь"
@@ -5002,6 +5002,9 @@ msgstr "Назначьте машинное время обработки, ко�
 
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение, запасы, канбаны и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
+
+msgid "Assign selected"
+msgstr "Назначить выбранные"
 
 msgid "Assign To"
 msgstr "Назначить"
@@ -16099,7 +16102,7 @@ msgid "Keep matching items"
 msgstr "Сохранить соответствующие элементы"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Оставить мой вариант"
 
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
@@ -16844,7 +16847,7 @@ msgid "Linked Record"
 msgstr "Связанная запись"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Связано с общей секцией. Измените её в библиотеке, чтобы обновить во всех местах."
 
 msgid "Links"
 msgstr "Ссылки"
@@ -19942,7 +19945,7 @@ msgid "No values available"
 msgstr "Нет доступных значений"
 
 msgid "No values found"
-msgstr ""
+msgstr "Значения не найдены"
 
 msgid "No variable matches {query}"
 msgstr "Нет переменных соответствующих {query}"
@@ -22209,7 +22212,7 @@ msgid "Playback"
 msgstr "Воспроизведение"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Пожалуйста, <0>измените это</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Пожалуйста, обратитесь к администратору для включения логирования аудита."
@@ -23849,7 +23852,7 @@ msgid "Received By"
 msgstr "Получено от"
 
 msgid "Received Date"
-msgstr ""
+msgstr "Дата поступления"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
@@ -24352,7 +24355,7 @@ msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Убрать блок"
 
 msgid "Remove clause"
 msgstr "Убрать условие"
@@ -24748,8 +24751,6 @@ msgstr "Запрошено"
 
 msgid "Requested By"
 msgstr "Запрошено"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Запрошенная дата"
@@ -26484,6 +26485,9 @@ msgstr "Выбрать все"
 msgid "Select all jobs"
 msgstr "Выбрать все производственные заказы"
 
+msgid "Select all operations"
+msgstr "Выбрать все операции"
+
 msgid "Select all rows"
 msgstr "Выбрать все строки"
 
@@ -27185,7 +27189,7 @@ msgid "Shared channel"
 msgstr "Общий канал"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Общая секция (удалена)"
 
 msgid "Shared Sections"
 msgstr "Общие разделы"
@@ -27828,7 +27832,7 @@ msgid "Someone"
 msgstr "Кто-то"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Кто-то только что сохранил этот шаблон. Обновите страницу, чтобы загрузить его версию, или продолжайте редактирование — при сохранении вы перезапишете её."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
@@ -29812,7 +29816,7 @@ msgid "The document could not be downloaded."
 msgstr "Не удалось скачать документ."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Не удалось открыть документ."
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -30382,7 +30386,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Не удалось сформировать предварительный просмотр. Показана последняя сформированная версия."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Цена часа на строке Time & Materials: ставка строки для сотрудника, иначе для категории труда, иначе стандартная ставка выставления счета категории труда, действующая на день."
@@ -31232,7 +31236,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Предварительный просмотр приостановлен, так как текст изменяет числовое значение."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
@@ -31298,7 +31302,7 @@ msgid "This serial"
 msgstr "Этот серийный номер"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Эта общая секция больше не существует. Уберите блок или создайте секцию заново."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."
@@ -33820,10 +33824,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Дата, на которую закупщик запросил товары; поставщик может указать другую дату в поле «Подтвержденная дата поступления», а в поле «Дата поставки» указать ещё одну дату."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Дата, когда закупщику нужны товары по этой строке на приемочной площадке. Для новой строки устанавливается «Запрошенная дата поступления» заказа; планирование использует её для проверки наличия на складе и планирования внешней обработки."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Когда контракт вступает в действие и что происходит при его завершении."

@@ -518,6 +518,7 @@ const JobBillOfProcess = ({
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useAction();
   const deleteOperationFetcher = useAction();
+  const assignOperationFetcher = useAction();
   const permissions = usePermissions();
   const {
     id: userId,
@@ -608,7 +609,7 @@ const JobBillOfProcess = ({
     checked: checkedState[item.id] ?? false
   }));
 
-  const isDisabled = ["Completed", "Cancelled"].includes(
+  const isDisabled = ["Completed", "Closed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
   const isReadOnly = isDisabled || !permissions.can("update", "production");
@@ -674,6 +675,21 @@ const JobBillOfProcess = ({
   const checkedIds = items
     .filter((item) => item.checked)
     .map((item) => item.id);
+  const savedIds = initialOperations
+    .map((operation) => operation.id)
+    .filter((id): id is string => !!id);
+  const selectedSavedIds = savedIds.filter((id) => checkedState[id]);
+
+  const onAssignSelected = (assignee: string) => {
+    if (isReadOnly || selectedSavedIds.length === 0) return;
+    const formData = new FormData();
+    for (const id of selectedSavedIds) formData.append("id", id);
+    formData.append("assignee", assignee);
+    assignOperationFetcher.submit(formData, {
+      method: "post",
+      action: path.to.jobOperationsAssign(jobId)
+    });
+  };
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "production") || isDisabled) return;
@@ -1061,6 +1077,40 @@ const JobBillOfProcess = ({
 
         <CardAction>
           <div className="flex items-center gap-2">
+            {!isReadOnly && savedIds.length > 1 && (
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setCheckedState((prev) => ({
+                    ...prev,
+                    ...Object.fromEntries(
+                      savedIds.map((id) => [
+                        id,
+                        selectedSavedIds.length !== savedIds.length
+                      ])
+                    )
+                  }))
+                }
+              >
+                {selectedSavedIds.length === savedIds.length ? (
+                  <Trans>Clear selection</Trans>
+                ) : (
+                  <Trans>Select all operations</Trans>
+                )}
+              </Button>
+            )}
+            {selectedSavedIds.length > 0 && (
+              <Assignee
+                id={jobId}
+                table="jobOperation"
+                variant="inline"
+                placeholder={t`Assign selected`}
+                isReadOnly={
+                  isReadOnly || assignOperationFetcher.state !== "idle"
+                }
+                onAssign={onAssignSelected}
+              />
+            )}
             {checkedIds.length > 1 && (
               <Button
                 variant="destructive"

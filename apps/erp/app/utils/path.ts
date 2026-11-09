@@ -1643,6 +1643,8 @@ export const path = {
       generatePath(`${x}/job/${id}/steps`),
     jobOperationStepTool: `${x}/job/methods/operation/step/tool`,
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
+    jobOperationsAssign: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/operation/assign`),
     jobOperationsDelete: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/delete`),
     jobOperationsOrder: (jobId: string) =>

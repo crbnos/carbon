@@ -59,6 +59,7 @@ import {
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
 import {
+  assignmentEvent,
   invokeCreate,
   invokePosting,
   setOperationWorkInstruction,
@@ -2872,6 +2873,90 @@ export const updateJobOperation = defineServiceFn({
       );
     }
     return { id: update.data.id };
+  }
+});
+
+/** Assign several saved operations from one job's bill of process at once. */
+export const assignJobOperations = defineServiceFn({
+  input: z.object({
+    jobId: z.string().min(1),
+    ids: z.array(z.string().min(1)).min(1),
+    assignee: z.string()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { jobId, ids, assignee }) {
+    const job = await service.requireJob(ctx, jobId);
+    if (job instanceof CarbonError) return job;
+    if (
+      assignee &&
+      !(await isActiveCompanyEmployee(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        assignee
+      ))
+    ) {
+      return ctx.error("rule", "Assignee must be an active employee");
+    }
+
+    const uniqueIds = [...new Set(ids)];
+    const client = ctx.asCaller.supabase;
+    const existing = await client
+      .from("jobOperation")
+      .select("id, jobMakeMethod(id, parentMaterialId)")
+      .in("id", uniqueIds)
+      .eq("jobId", jobId)
+      .eq("companyId", ctx.company.id);
+    if (existing.error)
+      return ctx.error(
+        "internal",
+        "Failed to read job operations",
+        existing.error
+      );
+    if (existing.data?.length !== uniqueIds.length)
+      return ctx.error(
+        "notFound",
+        "One or more operations were not found on this job"
+      );
+
+    const updated = await client
+      .from("jobOperation")
+      .update({ assignee: assignee || null, updatedBy: ctx.auditUserId })
+      .in("id", uniqueIds)
+      .eq("jobId", jobId)
+      .eq("companyId", ctx.company.id)
+      .select("id");
+    if (updated.error)
+      return ctx.error(
+        "internal",
+        "Failed to assign job operations",
+        updated.error
+      );
+    if (updated.data?.length !== uniqueIds.length)
+      return ctx.error("conflict", "Some operations could not be assigned");
+
+    if (assignee) {
+      const event = assignmentEvent("jobOperation");
+      if (event) {
+        try {
+          await batchTrigger(
+            "notify",
+            (existing.data ?? []).map((operation) => ({
+              payload: {
+                companyId: ctx.company.id,
+                documentId: `${jobId}:${operation.id}:${operation.jobMakeMethod?.id}:${operation.jobMakeMethod?.parentMaterialId ?? ""}`,
+                event,
+                recipient: { type: "user" as const, userId: assignee },
+                from: ctx.auditUserId
+              }
+            }))
+          );
+        } catch (error) {
+          return ctx.error("internal", "Failed to notify assignee", error);
+        }
+      }
+    }
+    return { ids: uniqueIds };
   }
 });
 

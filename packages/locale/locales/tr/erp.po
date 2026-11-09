@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Bir rakamın yanındaki sayı veya işaret, rakamın anlamını değiştirir. Aralarına bir kelime koyun."
 
 msgid "A part"
 msgstr "Bir parça"
@@ -5002,6 +5002,9 @@ msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe ata
 
 msgid "Assign printers to locations. Shipping, receiving, inventory, kanbans, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul, envanter, kanbanlar ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
+
+msgid "Assign selected"
+msgstr "Seçilenleri ata"
 
 msgid "Assign To"
 msgstr "Ata"
@@ -16099,7 +16102,7 @@ msgid "Keep matching items"
 msgstr "Eşleşen öğeleri sakla"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Benimkini koru"
 
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
@@ -16844,7 +16847,7 @@ msgid "Linked Record"
 msgstr "Bağlantılı Kayıt"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Paylaşılan bir bölüme bağlı. Her yerde güncellemek için kitaplıkta düzenleyin."
 
 msgid "Links"
 msgstr "Bağlantılar"
@@ -19942,7 +19945,7 @@ msgid "No values available"
 msgstr "Kullanılabilir değer yok"
 
 msgid "No values found"
-msgstr ""
+msgstr "Değer bulunamadı"
 
 msgid "No variable matches {query}"
 msgstr "Değişken {query} ile eşleşmiyor"
@@ -22209,7 +22212,7 @@ msgid "Playback"
 msgstr "Oynatma"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Lütfen <0>değiştirin</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Denetim günlüğünü etkinleştirmek için lütfen yöneticinizle iletişime geçin."
@@ -23849,7 +23852,7 @@ msgid "Received By"
 msgstr "Kim Aldığı Kişi"
 
 msgid "Received Date"
-msgstr ""
+msgstr "Mal kabul tarihi"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
@@ -24352,7 +24355,7 @@ msgid "Remove authenticator app"
 msgstr "Kimlik Doğrulayıcı Uygulamasını Kaldır"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Bloğu kaldır"
 
 msgid "Remove clause"
 msgstr "Maddeyi kaldır"
@@ -24744,12 +24747,10 @@ msgid "Request date"
 msgstr "İstek tarihi"
 
 msgid "Requested"
-msgstr "İstenen"
+msgstr "Talep edildi"
 
 msgid "Requested By"
 msgstr "Talep Eden"
-msgid "Requested"
-msgstr ""
 
 msgid "Requested Date"
 msgstr "Talep Edilen Tarih"
@@ -26484,6 +26485,9 @@ msgstr "Tümünü seç"
 msgid "Select all jobs"
 msgstr "Tüm iş emirlerini seç"
 
+msgid "Select all operations"
+msgstr "Tüm operasyonları seç"
+
 msgid "Select all rows"
 msgstr "Tüm satırları seç"
 
@@ -27185,7 +27189,7 @@ msgid "Shared channel"
 msgstr "Paylaşılan kanal"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Paylaşılan bölüm (silinmiş)"
 
 msgid "Shared Sections"
 msgstr "Paylaşılan Bölümler"
@@ -27828,7 +27832,7 @@ msgid "Someone"
 msgstr "Birisi"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Bu şablonu az önce başka biri kaydetti. Onun sürümünü yüklemek için yenileyin veya düzenlemeye devam edin; kaydettiğinizde onun sürümünün üzerine yazılır."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
@@ -29812,7 +29816,7 @@ msgid "The document could not be downloaded."
 msgstr "Belge indirilemedi."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Belge açılamadı."
 
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."
@@ -30382,7 +30386,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Bu sorun türüne uygulanan Görev ve Onay gereksinimlerinin önceden ayarlanmış kümesi; ayarlandığında sorun türünün varsayılan İş akışını geçersiz kılar."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Önizleme oluşturulamadı. Son oluşturulan önizleme gösteriliyor."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Bir Zaman ve Malzeme satırında bir saatin fiyatı: satır için çalışanın oranı, yoksa işçilik kategorisinin oranı, yoksa işçilik kategorisinin varsayılan Faturalandırma Oranı, o gün geçerli."
@@ -31232,7 +31236,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Bir metin bir rakamı değiştirdiği için bu önizleme duraklatıldı."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
@@ -31298,7 +31302,7 @@ msgid "This serial"
 msgstr "Bu seri numarası"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Bu paylaşılan bölüm artık mevcut değil. Bloğu kaldırın veya bölümü yeniden oluşturun."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."
@@ -33820,10 +33824,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Satın almacının malları talep ettiği tarih; tedarikçi Mal Kabul Taahhüt Tarihi için başka bir tarih taahhüt edebilir ve Teslim Tarihi için yine başka bir tarih girebilir."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Satın almacının bu satırdaki malları rıhtımda istediği tarih. Yeni bir satır, siparişin Mal Kabul Talep Tarihi ile başlar; planlama bu tarihi stok uygunluğunu ve dış işlemeyi planlamak için kullanır."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."
