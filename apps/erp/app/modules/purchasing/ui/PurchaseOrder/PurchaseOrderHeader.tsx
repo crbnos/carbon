@@ -178,7 +178,6 @@ const PurchaseOrderHeader = () => {
     variant: "dropdown"
   });
 
-  // The finalize modal seeds its form state at its top level; a new key per open resets it.
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
   const cancelModal = useDisclosure();
@@ -703,17 +702,14 @@ const PurchaseOrderHeader = () => {
         }
       />
 
-      {finalizeDisclosure.openCount > 0 && (
-        <PurchaseOrderFinalizeModal
-          key={`finalizeDisclosure-${finalizeDisclosure.openCount}`}
-          fetcher={statusFetcher}
-          purchaseOrder={routeData?.purchaseOrder}
-          open={finalizeDisclosure.isOpen}
-          onClose={finalizeDisclosure.onClose}
-          defaultCc={routeData?.defaultCc ?? []}
-          resolvedAttachments={resolvedAttachments}
-        />
-      )}
+      <PurchaseOrderFinalizeModal
+        fetcher={statusFetcher}
+        purchaseOrder={routeData?.purchaseOrder}
+        open={finalizeDisclosure.isOpen}
+        onClose={finalizeDisclosure.onClose}
+        defaultCc={routeData?.defaultCc ?? []}
+        resolvedAttachments={resolvedAttachments}
+      />
       <ConfirmDelete
         action={path.to.deletePurchaseOrder(orderId)}
         isOpen={deleteModal.isOpen}
@@ -755,7 +751,6 @@ const PurchaseOrderHeader = () => {
       </Confirm>
       {approval.item && routeData?.approvalRequest?.id && (
         <PurchaseOrderApprovalModal
-          key={`approval-${approval.key}`}
           purchaseOrder={routeData?.purchaseOrder}
           approvalRequestId={routeData.approvalRequest.id}
           decision={approval.item}

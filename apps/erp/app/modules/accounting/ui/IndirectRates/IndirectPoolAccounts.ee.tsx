@@ -71,7 +71,6 @@ const IndirectPoolAccounts = ({
   isDisabled
 }: IndirectPoolAccountsProps) => {
   const { t } = useLingui();
-  // Keyed per open, so the modal's state and fetcher start fresh each time.
   const addModal = useDisclosure();
   const [deleting, setDeleting] = useState<IndirectPoolAccountRow | null>(null);
   const deleteDisclosure = useDisclosure();
@@ -175,16 +174,13 @@ const IndirectPoolAccounts = ({
         </div>
       )}
 
-      {addModal.openCount > 0 && (
-        <IndirectPoolAccountModal
-          key={addModal.openCount}
-          open={addModal.isOpen}
-          poolId={poolId}
-          action={action}
-          dimensions={dimensions}
-          onClose={addModal.onClose}
-        />
-      )}
+      <IndirectPoolAccountModal
+        open={addModal.isOpen}
+        poolId={poolId}
+        action={action}
+        dimensions={dimensions}
+        onClose={addModal.onClose}
+      />
 
       {deleting && (
         <Confirm
@@ -218,6 +214,37 @@ function IndirectPoolAccountModal({
   dimensions: DimensionWithValues[];
   onClose: () => void;
 }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <IndirectPoolAccountBody
+          poolId={poolId}
+          action={action}
+          dimensions={dimensions}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function IndirectPoolAccountBody({
+  poolId,
+  action,
+  dimensions,
+  onClose
+}: {
+  poolId: string;
+  action: string;
+  dimensions: DimensionWithValues[];
+  onClose: () => void;
+}) {
   const { t } = useLingui();
   const fetcher = useAction({ onSuccess: onClose });
   const [dimensionId, setDimensionId] = useState<string>("");
@@ -229,77 +256,68 @@ function IndirectPoolAccountModal({
     choosable.find((d) => d.dimensionId === dimensionId)?.values ?? [];
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={indirectPoolAccountValidator}
+      method="post"
+      action={action}
+      defaultValues={{
+        indirectPoolId: poolId,
+        role: "Cost",
+        accountId: "",
+        dimensionId: "",
+        dimensionValueId: ""
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={indirectPoolAccountValidator}
-          method="post"
-          action={action}
-          defaultValues={{
-            indirectPoolId: poolId,
-            role: "Cost",
-            accountId: "",
-            dimensionId: "",
-            dimensionValueId: ""
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Account</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="account-add" />
-            <Hidden name="indirectPoolId" />
-            <div className="flex flex-col gap-4">
-              <Select
-                name="role"
-                label={t`Role`}
-                options={indirectPoolAccountRoles.map((role) => ({
-                  label: role === "Cost" ? t`Cost` : t`Base`,
-                  value: role
-                }))}
-                helperText={t`Cost goes into the pool. Base is what the pool's rate applies to.`}
-              />
-              <Account name="accountId" label={t`Account`} />
-              <SelectControlled
-                name="dimensionId"
-                label={t`Dimension`}
-                isOptional
-                options={choosable.map((d) => ({
-                  label: d.dimensionName,
-                  value: d.dimensionId
-                }))}
-                value={dimensionId}
-                onChange={(option) => setDimensionId(option?.value ?? "")}
-              />
-              {dimensionId && (
-                <Select
-                  key={dimensionId}
-                  name="dimensionValueId"
-                  label={t`Value`}
-                  options={values.map((v) => ({ label: v.name, value: v.id }))}
-                />
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add Account</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value="account-add" />
+        <Hidden name="indirectPoolId" />
+        <div className="flex flex-col gap-4">
+          <Select
+            name="role"
+            label={t`Role`}
+            options={indirectPoolAccountRoles.map((role) => ({
+              label: role === "Cost" ? t`Cost` : t`Base`,
+              value: role
+            }))}
+            helperText={t`Cost goes into the pool. Base is what the pool's rate applies to.`}
+          />
+          <Account name="accountId" label={t`Account`} />
+          <SelectControlled
+            name="dimensionId"
+            label={t`Dimension`}
+            isOptional
+            options={choosable.map((d) => ({
+              label: d.dimensionName,
+              value: d.dimensionId
+            }))}
+            value={dimensionId}
+            onChange={(option) => setDimensionId(option?.value ?? "")}
+          />
+          {dimensionId && (
+            <Select
+              key={dimensionId}
+              name="dimensionValueId"
+              label={t`Value`}
+              options={values.map((v) => ({ label: v.name, value: v.id }))}
+            />
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

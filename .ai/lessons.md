@@ -3083,9 +3083,12 @@ box closed in 200ms, and Radix removes both when the backdrop ends.
 and navigates only when Radix has removed the dialog. With unsaved changes it navigates at once,
 so the `Submit` blocker asks over the open dialog — closing first would unmount the blocker and
 lose the edits silently. A conditional dialog passes its condition as `open`/`isOpen` and keeps
-its record until the next open. A dialog with state or a mount-time fetch at its top level renders
-as `{d.openCount > 0 && <D key={d.openCount} open={d.isOpen} />}`: fresh per open, nothing at page
-load. Enforced by `no-unmounting-dialog`.
+its record until the next open. State or a mount-time fetch that must be fresh per open goes in a
+body component inside `ModalContent` / `DrawerContent`, which Radix unmounts on close. A `key` that
+counts opens is only for state that cannot move there (a `ModalCard` form, or `Modal` /
+`ModalContent` props that read it). The first attempt keyed about 150 dialogs per open: it worked,
+but it fought Radix's own unmount, and the guard around it mounted nothing until the first open for
+no reason. Enforced by `no-unmounting-dialog`.
 
 **Applies to:** every `Modal`, `Drawer`, `ModalDrawer`, `Confirm`, `ConfirmDelete` and
 `*Modal`/`*Drawer` component; `ModalOverlay` and `ModalContent` durations must match.

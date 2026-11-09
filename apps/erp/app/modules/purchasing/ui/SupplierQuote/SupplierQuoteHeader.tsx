@@ -107,7 +107,6 @@ const SupplierQuoteHeader = () => {
   const deleteModal = useDisclosure();
   const shareModal = useDisclosure();
   const finalizeModal = useDisclosure();
-  // The send modal seeds its state at its top level; a new key per open resets it.
   const sendModal = useDisclosure();
 
   const finalizeFetcher = useFetcher<{}>();
@@ -362,28 +361,24 @@ const SupplierQuoteHeader = () => {
         onClose={finalizeModal.onClose}
         fetcher={finalizeFetcher}
       />
-      {sendModal.openCount > 0 && (
-        <SupplierQuoteSendModal
-          key={sendModal.openCount}
-          quote={routeData?.quote}
-          lines={routeData?.lines ?? []}
-          open={sendModal.isOpen}
-          onClose={sendModal.onClose}
-          fetcher={sendFetcher}
-          externalLinkId={routeData?.quote?.externalLinkId ?? ""}
-          // @ts-expect-error TS2339 - TODO: fix type
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SupplierQuoteSendModal
+        quote={routeData?.quote}
+        lines={routeData?.lines ?? []}
+        open={sendModal.isOpen}
+        onClose={sendModal.onClose}
+        fetcher={sendFetcher}
+        externalLinkId={routeData?.quote?.externalLinkId ?? ""}
+        // @ts-expect-error TS2339 - TODO: fix type
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <ShareQuoteModal
         id={id}
         externalLinkId={routeData?.quote?.externalLinkId || ""}
         onClose={shareModal.onClose}
         isOpen={shareModal.isOpen}
       />
-      {compareModal.openCount > 0 && linkedRfqId && (
+      {linkedRfqId && (
         <SupplierQuoteCompareDrawer
-          key={`compare-${compareModal.openCount}`}
           isOpen={compareModal.isOpen}
           onClose={compareModal.onClose}
           purchasingRfqId={linkedRfqId}

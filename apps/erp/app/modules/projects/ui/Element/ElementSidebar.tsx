@@ -641,15 +641,12 @@ function CapitalAssetLink({
           <Trans>Place in service</Trans>
         </Button>
       )}
-      {placeModal.openCount > 0 && (
-        <PlaceInServiceModal
-          key={placeModal.openCount}
-          open={placeModal.isOpen}
-          projectId={projectId}
-          fixedAssetId={asset.id}
-          onClose={placeModal.onClose}
-        />
-      )}
+      <PlaceInServiceModal
+        open={placeModal.isOpen}
+        projectId={projectId}
+        fixedAssetId={asset.id}
+        onClose={placeModal.onClose}
+      />
     </div>
   );
 }

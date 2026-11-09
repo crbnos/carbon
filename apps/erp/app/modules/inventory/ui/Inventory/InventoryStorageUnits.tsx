@@ -394,7 +394,6 @@ const InventoryStorageUnits = ({
   const retainedEarningsAccountId = serialCosts?.retainedEarningsAccountId;
   const recostModal = useDrawerItem<ItemStorageUnitQuantities>();
   const recostItem = recostModal.item;
-  // Keyed per open: the move modal seeds its quantity and bin from the row.
   const moveModal = useDrawerItem<ItemStorageUnitQuantities>();
   const moveItem = moveModal.item;
   const canMove = permissions.can("create", "inventory");
@@ -795,7 +794,6 @@ const InventoryStorageUnits = ({
       ) : null}
       {moveItem && (
         <StockTransferMoveModal
-          key={moveModal.key}
           open={moveModal.isOpen}
           itemId={pickMethod.itemId}
           locationId={locationId}

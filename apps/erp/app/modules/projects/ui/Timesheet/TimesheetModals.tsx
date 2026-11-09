@@ -67,22 +67,7 @@ type LaborCategoryOption = {
   rdActivityRole?: RdActivityRole | null;
 };
 
-/**
- * Adds a charge number to the week, or one of the user's open service jobs
- * (**Service job** tab). `pto` offers only the leave elements (an Indirect
- * project's elements marked Leave), and says how to set one up when the
- * company has none.
- */
-export function AddRowModal({
-  open = true,
-  laborCategories,
-  jobLocationId,
-  pto = false,
-  serviceJobs,
-  onAdd,
-  onAddServiceJob,
-  onClose
-}: {
+type AddRowModalProps = {
   open?: boolean;
   laborCategories: LaborCategoryOption[];
   jobLocationId: string | null;
@@ -92,7 +77,39 @@ export function AddRowModal({
   onAdd: (row: AddedRow) => void;
   onAddServiceJob?: (serviceJobId: string) => void;
   onClose: () => void;
-}) {
+};
+
+/**
+ * Adds a charge number to the week, or one of the user's open service jobs
+ * (**Service job** tab). `pto` offers only the leave elements (an Indirect
+ * project's elements marked Leave), and says how to set one up when the
+ * company has none.
+ */
+export function AddRowModal({
+  open = true,
+  onClose,
+  ...props
+}: AddRowModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <AddRowBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function AddRowBody({
+  laborCategories,
+  jobLocationId,
+  pto = false,
+  serviceJobs,
+  onAdd,
+  onAddServiceJob,
+  onClose
+}: Omit<AddRowModalProps, "open">) {
   const [kind, setKind] = useState<"charge" | "service">("charge");
   const tabs =
     pto || !onAddServiceJob ? null : (
@@ -113,28 +130,25 @@ export function AddRowModal({
     );
 
   return (
-    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        {kind === "service" && onAddServiceJob ? (
-          <AddServiceJobForm
-            tabs={tabs}
-            serviceJobs={serviceJobs ?? []}
-            onAdd={onAddServiceJob}
-            onClose={onClose}
-          />
-        ) : (
-          <AddChargeNumberForm
-            tabs={tabs}
-            laborCategories={laborCategories}
-            jobLocationId={jobLocationId}
-            pto={pto}
-            onAdd={onAdd}
-            onClose={onClose}
-          />
-        )}
-      </ModalContent>
-    </Modal>
+    <>
+      {kind === "service" && onAddServiceJob ? (
+        <AddServiceJobForm
+          tabs={tabs}
+          serviceJobs={serviceJobs ?? []}
+          onAdd={onAddServiceJob}
+          onClose={onClose}
+        />
+      ) : (
+        <AddChargeNumberForm
+          tabs={tabs}
+          laborCategories={laborCategories}
+          jobLocationId={jobLocationId}
+          pto={pto}
+          onAdd={onAdd}
+          onClose={onClose}
+        />
+      )}
+    </>
   );
 }
 
@@ -343,20 +357,7 @@ function AddChargeNumberForm({
   );
 }
 
-/**
- * Corrects posted time: a reversal and the new hours. **Move to another
- * charge number** makes it a labor transfer, with the new charge number and
- * labor category defaulted to the original's.
- */
-export function CorrectionModal({
-  open = true,
-  entryId,
-  hours,
-  label,
-  original,
-  laborCategories,
-  onClose
-}: {
+type CorrectionModalProps = {
   open?: boolean;
   entryId: string;
   hours: number;
@@ -368,7 +369,36 @@ export function CorrectionModal({
   };
   laborCategories: { id: string; name: string }[];
   onClose: () => void;
-}) {
+};
+
+/**
+ * Corrects posted time: a reversal and the new hours. **Move to another
+ * charge number** makes it a labor transfer, with the new charge number and
+ * labor category defaulted to the original's.
+ */
+export function CorrectionModal({
+  open = true,
+  onClose,
+  ...props
+}: CorrectionModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <CorrectionBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function CorrectionBody({
+  entryId,
+  hours,
+  label,
+  original,
+  laborCategories,
+  onClose
+}: Omit<CorrectionModalProps, "open">) {
   const { t } = useLingui();
   const [moving, setMoving] = useState(false);
   const fetcher = useAction<{
@@ -379,80 +409,75 @@ export function CorrectionModal({
     fetcher.state === "idle" ? fetcher.data?.error?.message : undefined;
 
   return (
-    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={timesheetCorrectionValidator}
-          method="post"
-          action={path.to.timesheetCorrect}
-          fetcher={fetcher}
-          defaultValues={{
-            timesheetEntryId: entryId,
-            hours,
-            correctionReason: "",
-            projectId: original.projectId,
-            projectElementId: original.projectElementId ?? "",
-            laborCategoryId: original.laborCategoryId
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Correct Posted Time</Trans>
-            </ModalTitle>
-            <ModalDescription>{label}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="timesheetEntryId" />
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              <NumberFormField
-                name="hours"
-                label={t`Correct hours`}
-                minValue={0}
-                maxValue={24}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-                helperText={t`The posted hours are reversed and these hours are charged instead`}
+    <ValidatedForm
+      validator={timesheetCorrectionValidator}
+      method="post"
+      action={path.to.timesheetCorrect}
+      fetcher={fetcher}
+      defaultValues={{
+        timesheetEntryId: entryId,
+        hours,
+        correctionReason: "",
+        projectId: original.projectId,
+        projectElementId: original.projectElementId ?? "",
+        laborCategoryId: original.laborCategoryId
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Correct Posted Time</Trans>
+        </ModalTitle>
+        <ModalDescription>{label}</ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="timesheetEntryId" />
+        <VStack spacing={4}>
+          {errorMessage && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <NumberFormField
+            name="hours"
+            label={t`Correct hours`}
+            minValue={0}
+            maxValue={24}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+            helperText={t`The posted hours are reversed and these hours are charged instead`}
+          />
+          <Switch
+            variant="small"
+            label={t`Move to another charge number`}
+            checked={moving}
+            onCheckedChange={setMoving}
+          />
+          {/* Unrendered, the fields send nothing: the original's stay. */}
+          {moving && (
+            <>
+              <ChargeNumber label={t`Charge Number`} />
+              <Select
+                name="laborCategoryId"
+                label={t`Labor Category`}
+                options={laborCategories.map((category) => ({
+                  value: category.id,
+                  label: category.name
+                }))}
               />
-              <Switch
-                variant="small"
-                label={t`Move to another charge number`}
-                checked={moving}
-                onCheckedChange={setMoving}
-              />
-              {/* Unrendered, the fields send nothing: the original's stay. */}
-              {moving && (
-                <>
-                  <ChargeNumber label={t`Charge Number`} />
-                  <Select
-                    name="laborCategoryId"
-                    label={t`Labor Category`}
-                    options={laborCategories.map((category) => ({
-                      value: category.id,
-                      label: category.name
-                    }))}
-                  />
-                </>
-              )}
-              <TextArea name="correctionReason" label={t`Reason`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Submit Correction</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+            </>
+          )}
+          <TextArea name="correctionReason" label={t`Reason`} />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          <Trans>Submit Correction</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

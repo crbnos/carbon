@@ -24972,7 +24972,7 @@ msgstr "opłata za uzupełnienie zapasów"
 msgid "Restock Fee Percent"
 msgstr "Procent opłaty za uzupełnienie zapasów"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Opłata za zwrot do magazynu {0}"
 

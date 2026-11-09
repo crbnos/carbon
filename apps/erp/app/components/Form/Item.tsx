@@ -479,73 +479,71 @@ const Item = ({
           helperText && <FormHelperText>{helperText}</FormHelperText>
         )}
       </FormControl>
-      {selectTypeModal.openCount > 0 && (
-        <Modal
-          open={selectTypeModal.isOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              selectTypeModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Select Item Type</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <div className="grid grid-cols-1 gap-4">
-                {itemType
-                  .filter((option) =>
-                    // Same narrowing as the dropdown above: BOM/method pickers
-                    // never surface Tool or Service; order-line forms opt in
-                    // via validItemTypes.
-                    (validItemTypes ?? methodItemType).some((t) => t === option)
-                  )
-                  .map((option) => (
-                    <Button
-                      key={option}
-                      leftIcon={<MethodItemTypeIcon type={option} />}
-                      className="flex w-full"
-                      variant={type === option ? "primary" : "secondary"}
-                      size="lg"
-                      onClick={() => {
-                        // Same contravariance cast as the dropdown emit above.
-                        onTypeChange?.(option as MethodItemType);
-                        setTimeout(() => {
-                          submitRef.current?.focus();
-                        }, 0);
-                      }}
-                    >
-                      {translateItemType(option)}
-                    </Button>
-                  ))}
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  selectTypeModal.onClose();
-                }}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                ref={submitRef}
-                isDisabled={type === "Item"}
-                onClick={() => {
-                  selectTypeModal.onClose();
-                  newItem.open(type);
-                }}
-              >
-                <Trans>Create</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={selectTypeModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            selectTypeModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Select Item Type</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <div className="grid grid-cols-1 gap-4">
+              {itemType
+                .filter((option) =>
+                  // Same narrowing as the dropdown above: BOM/method pickers
+                  // never surface Tool or Service; order-line forms opt in
+                  // via validItemTypes.
+                  (validItemTypes ?? methodItemType).some((t) => t === option)
+                )
+                .map((option) => (
+                  <Button
+                    key={option}
+                    leftIcon={<MethodItemTypeIcon type={option} />}
+                    className="flex w-full"
+                    variant={type === option ? "primary" : "secondary"}
+                    size="lg"
+                    onClick={() => {
+                      // Same contravariance cast as the dropdown emit above.
+                      onTypeChange?.(option as MethodItemType);
+                      setTimeout(() => {
+                        submitRef.current?.focus();
+                      }, 0);
+                    }}
+                  >
+                    {translateItemType(option)}
+                  </Button>
+                ))}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                selectTypeModal.onClose();
+              }}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              ref={submitRef}
+              isDisabled={type === "Item"}
+              onClick={() => {
+                selectTypeModal.onClose();
+                newItem.open(type);
+              }}
+            >
+              <Trans>Create</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       {newItem.item === "Part" && (
         <PartForm
           key={newItem.key}

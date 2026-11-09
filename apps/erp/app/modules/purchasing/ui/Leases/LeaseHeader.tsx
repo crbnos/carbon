@@ -82,7 +82,6 @@ const LeaseHeader = ({
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
-  // The modal's typed terms live at its top level; a new key per open resets them.
   const modify = useDisclosure();
 
   const id = lease.id!;
@@ -312,17 +311,14 @@ const LeaseHeader = ({
         </Confirm>
       )}
 
-      {modify.openCount > 0 && (
-        <LeaseModifyModal
-          key={modify.openCount}
-          lease={lease}
-          lines={lines}
-          payments={payments}
-          schedule={schedule}
-          open={modify.isOpen}
-          onClose={modify.onClose}
-        />
-      )}
+      <LeaseModifyModal
+        lease={lease}
+        lines={lines}
+        payments={payments}
+        schedule={schedule}
+        open={modify.isOpen}
+        onClose={modify.onClose}
+      />
 
       <ConfirmDelete
         action={path.to.deleteLease(id)}

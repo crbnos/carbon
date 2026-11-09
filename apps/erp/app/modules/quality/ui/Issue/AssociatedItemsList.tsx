@@ -183,7 +183,6 @@ export function AssociatedItemsList({
   });
   const splitFetcher = useFetcher<typeof splitAction>();
   const assignFetcher = useFetcher<typeof assignAction>();
-  // Keyed per open: both modals keep their selection from the last open.
   const splitModal = useDrawerItem<SplitTarget>();
   const moveModal = useDrawerItem<MoveTarget>();
   const { item: splitTarget, close: closeSplitModal } = splitModal;
@@ -567,7 +566,6 @@ export function AssociatedItemsList({
 
       {splitTarget && (
         <SplitLineModal
-          key={`splitModal-${splitModal.key}`}
           open={splitModal.isOpen}
           target={splitTarget}
           fetcher={splitFetcher}
@@ -577,7 +575,6 @@ export function AssociatedItemsList({
 
       {moveTarget && (
         <MoveEntitiesModal
-          key={`moveModal-${moveModal.key}`}
           open={moveModal.isOpen}
           target={moveTarget}
           fetcher={assignFetcher}
@@ -588,17 +585,34 @@ export function AssociatedItemsList({
   );
 }
 
-function SplitLineModal({
-  target,
-  fetcher,
-  open,
-  onClose
-}: {
+type SplitLineModalProps = {
   target: SplitTarget;
   fetcher: ReturnType<typeof useFetcher<typeof splitAction>>;
   open: boolean;
   onClose: () => void;
-}) {
+};
+
+function SplitLineModal({ open, onClose, ...props }: SplitLineModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <ModalContent>
+        <SplitLineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function SplitLineBody({
+  target,
+  fetcher,
+  onClose
+}: Omit<SplitLineModalProps, "open">) {
   const { t } = useLingui();
   const isSubmitting = fetcher.state !== "idle";
   const hasMultipleEntities = target.links.length > 1;
@@ -628,6 +642,136 @@ function SplitLineModal({
     : splitQtyValid;
 
   return (
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Split line</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Move some of the quantity into a new disposition row so MRB can
+            decide each portion separately (e.g. scrap some, rework some).
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ValidatedForm
+        fetcher={fetcher}
+        method="post"
+        action={path.to.splitIssueItem}
+        validator={splitIssueItemValidator}
+        defaultValues={{
+          id: target.id,
+          itemId: target.itemId,
+          splitQuantity: hasMultipleEntities ? undefined : 1
+        }}
+      >
+        <ModalBody>
+          <Hidden name="id" />
+          <Hidden name="itemId" />
+          <input
+            type="hidden"
+            name="entityAssignments"
+            value={
+              hasMultipleEntities ? JSON.stringify(selectedAssignments) : ""
+            }
+          />
+          <div className="flex flex-col gap-4 w-full">
+            <Input
+              name="currentQuantity"
+              label={t`Current quantity`}
+              isReadOnly
+              value={String(target.maxQuantity)}
+            />
+            {hasMultipleEntities ? (
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">
+                  <Trans>Entities to split off</Trans>
+                </label>
+                <ul className="flex flex-col divide-y divide-border border border-border rounded-md max-h-64 overflow-y-auto">
+                  {target.links.map((link) => (
+                    <li
+                      key={link.id}
+                      className="flex items-center gap-2 text-sm px-3 py-2"
+                    >
+                      <Checkbox
+                        aria-labelledby={`split-entity-${link.id}`}
+                        checked={!!selected[link.trackedEntityId]}
+                        onCheckedChange={(checked) =>
+                          setSelected((prev) => ({
+                            ...prev,
+                            [link.trackedEntityId]: checked === true
+                          }))
+                        }
+                      />
+                      <div
+                        id={`split-entity-${link.id}`}
+                        className="text-xs flex-1 min-w-0"
+                      >
+                        <EntityLabel link={link} />
+                      </div>
+                      <TrackedEntityStatus
+                        status={link.trackedEntity?.status as any}
+                      />
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  <Trans>
+                    Selected: {selectedSum} / remaining after split:{" "}
+                    {target.maxQuantity - selectedSum}
+                  </Trans>
+                </p>
+              </div>
+            ) : (
+              <NumberInput
+                name="splitQuantity"
+                label={t`Split off quantity`}
+                minValue={1}
+                maxValue={target.maxQuantity - 1}
+                onChange={setSplitQty}
+                helperText={t`Remaining after split stays on the original row.`}
+              />
+            )}
+            {!hasMultipleEntities && !splitQtyValid && (
+              <p className="text-xs text-destructive-foreground">
+                <Trans>
+                  Enter a quantity between 1 and {target.maxQuantity - 1}.
+                </Trans>
+              </p>
+            )}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <HStack spacing={2}>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit
+              isDisabled={isSubmitting || !canSubmit}
+              isLoading={isSubmitting}
+            >
+              <Trans>Split</Trans>
+            </Submit>
+          </HStack>
+        </ModalFooter>
+      </ValidatedForm>
+    </>
+  );
+}
+
+type MoveEntitiesModalProps = {
+  target: MoveTarget;
+  fetcher: ReturnType<typeof useFetcher<typeof assignAction>>;
+  open: boolean;
+  onClose: () => void;
+};
+
+function MoveEntitiesModal({
+  open,
+  onClose,
+  ...props
+}: MoveEntitiesModalProps) {
+  return (
     <Modal
       open={open}
       onOpenChange={(next) => {
@@ -635,134 +779,17 @@ function SplitLineModal({
       }}
     >
       <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Split line</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Move some of the quantity into a new disposition row so MRB can
-              decide each portion separately (e.g. scrap some, rework some).
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ValidatedForm
-          fetcher={fetcher}
-          method="post"
-          action={path.to.splitIssueItem}
-          validator={splitIssueItemValidator}
-          defaultValues={{
-            id: target.id,
-            itemId: target.itemId,
-            splitQuantity: hasMultipleEntities ? undefined : 1
-          }}
-        >
-          <ModalBody>
-            <Hidden name="id" />
-            <Hidden name="itemId" />
-            <input
-              type="hidden"
-              name="entityAssignments"
-              value={
-                hasMultipleEntities ? JSON.stringify(selectedAssignments) : ""
-              }
-            />
-            <div className="flex flex-col gap-4 w-full">
-              <Input
-                name="currentQuantity"
-                label={t`Current quantity`}
-                isReadOnly
-                value={String(target.maxQuantity)}
-              />
-              {hasMultipleEntities ? (
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">
-                    <Trans>Entities to split off</Trans>
-                  </label>
-                  <ul className="flex flex-col divide-y divide-border border border-border rounded-md max-h-64 overflow-y-auto">
-                    {target.links.map((link) => (
-                      <li
-                        key={link.id}
-                        className="flex items-center gap-2 text-sm px-3 py-2"
-                      >
-                        <Checkbox
-                          aria-labelledby={`split-entity-${link.id}`}
-                          checked={!!selected[link.trackedEntityId]}
-                          onCheckedChange={(checked) =>
-                            setSelected((prev) => ({
-                              ...prev,
-                              [link.trackedEntityId]: checked === true
-                            }))
-                          }
-                        />
-                        <div
-                          id={`split-entity-${link.id}`}
-                          className="text-xs flex-1 min-w-0"
-                        >
-                          <EntityLabel link={link} />
-                        </div>
-                        <TrackedEntityStatus
-                          status={link.trackedEntity?.status as any}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-muted-foreground">
-                    <Trans>
-                      Selected: {selectedSum} / remaining after split:{" "}
-                      {target.maxQuantity - selectedSum}
-                    </Trans>
-                  </p>
-                </div>
-              ) : (
-                <NumberInput
-                  name="splitQuantity"
-                  label={t`Split off quantity`}
-                  minValue={1}
-                  maxValue={target.maxQuantity - 1}
-                  onChange={setSplitQty}
-                  helperText={t`Remaining after split stays on the original row.`}
-                />
-              )}
-              {!hasMultipleEntities && !splitQtyValid && (
-                <p className="text-xs text-destructive-foreground">
-                  <Trans>
-                    Enter a quantity between 1 and {target.maxQuantity - 1}.
-                  </Trans>
-                </p>
-              )}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={2}>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Submit
-                isDisabled={isSubmitting || !canSubmit}
-                isLoading={isSubmitting}
-              >
-                <Trans>Split</Trans>
-              </Submit>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
+        <MoveEntitiesBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
   );
 }
 
-function MoveEntitiesModal({
+function MoveEntitiesBody({
   target,
   fetcher,
-  open,
   onClose
-}: {
-  target: MoveTarget;
-  fetcher: ReturnType<typeof useFetcher<typeof assignAction>>;
-  open: boolean;
-  onClose: () => void;
-}) {
+}: Omit<MoveEntitiesModalProps, "open">) {
   const isSubmitting = fetcher.state !== "idle";
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [targetItemId, setTargetItemId] = useState<string>(
@@ -779,113 +806,106 @@ function MoveEntitiesModal({
   const canSubmit = selectedAssignments.length > 0 && targetItemId !== "";
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Move entities</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Reassign specific tracked entities from this row to another
-              disposition row.
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ValidatedForm
-          fetcher={fetcher}
-          method="post"
-          action={path.to.assignIssueItemEntities}
-          validator={assignIssueItemEntitiesValidator}
-          defaultValues={{
-            nonConformanceItemId: target.sourceRowId,
-            targetItemId
-          }}
-        >
-          <ModalBody>
-            <div className="flex flex-col gap-4 w-full">
-              <Hidden name="nonConformanceItemId" />
-              <input type="hidden" name="targetItemId" value={targetItemId} />
-              <input
-                type="hidden"
-                name="entityAssignments"
-                value={JSON.stringify(selectedAssignments)}
-              />
-              <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="move-target-disposition-row"
-                  className="text-sm font-medium"
-                >
-                  <Trans>Target disposition row</Trans>
-                </label>
-                <select
-                  id="move-target-disposition-row"
-                  className="border border-border rounded-md px-3 py-2 text-sm bg-background"
-                  value={targetItemId}
-                  onChange={(e) => setTargetItemId(e.target.value)}
-                >
-                  {target.siblings.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.disposition}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">
-                  <Trans>Entities to move</Trans>
-                </label>
-                <ul className="flex flex-col divide-y divide-border border border-border rounded-md max-h-64 overflow-y-auto">
-                  {target.links.map((link) => (
-                    <li
-                      key={link.id}
-                      className="flex items-center gap-2 text-sm px-3 py-2"
-                    >
-                      <Checkbox
-                        aria-labelledby={`move-entity-${link.id}`}
-                        checked={!!selected[link.trackedEntityId]}
-                        onCheckedChange={(checked) =>
-                          setSelected((prev) => ({
-                            ...prev,
-                            [link.trackedEntityId]: checked === true
-                          }))
-                        }
-                      />
-                      <div
-                        id={`move-entity-${link.id}`}
-                        className="text-xs flex-1 min-w-0"
-                      >
-                        <EntityLabel link={link} />
-                      </div>
-                      <TrackedEntityStatus
-                        status={link.trackedEntity?.status as any}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={2}>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Submit
-                isDisabled={isSubmitting || !canSubmit}
-                isLoading={isSubmitting}
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Move entities</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Reassign specific tracked entities from this row to another
+            disposition row.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ValidatedForm
+        fetcher={fetcher}
+        method="post"
+        action={path.to.assignIssueItemEntities}
+        validator={assignIssueItemEntitiesValidator}
+        defaultValues={{
+          nonConformanceItemId: target.sourceRowId,
+          targetItemId
+        }}
+      >
+        <ModalBody>
+          <div className="flex flex-col gap-4 w-full">
+            <Hidden name="nonConformanceItemId" />
+            <input type="hidden" name="targetItemId" value={targetItemId} />
+            <input
+              type="hidden"
+              name="entityAssignments"
+              value={JSON.stringify(selectedAssignments)}
+            />
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="move-target-disposition-row"
+                className="text-sm font-medium"
               >
-                <Trans>Move</Trans>
-              </Submit>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+                <Trans>Target disposition row</Trans>
+              </label>
+              <select
+                id="move-target-disposition-row"
+                className="border border-border rounded-md px-3 py-2 text-sm bg-background"
+                value={targetItemId}
+                onChange={(e) => setTargetItemId(e.target.value)}
+              >
+                {target.siblings.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.disposition}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">
+                <Trans>Entities to move</Trans>
+              </label>
+              <ul className="flex flex-col divide-y divide-border border border-border rounded-md max-h-64 overflow-y-auto">
+                {target.links.map((link) => (
+                  <li
+                    key={link.id}
+                    className="flex items-center gap-2 text-sm px-3 py-2"
+                  >
+                    <Checkbox
+                      aria-labelledby={`move-entity-${link.id}`}
+                      checked={!!selected[link.trackedEntityId]}
+                      onCheckedChange={(checked) =>
+                        setSelected((prev) => ({
+                          ...prev,
+                          [link.trackedEntityId]: checked === true
+                        }))
+                      }
+                    />
+                    <div
+                      id={`move-entity-${link.id}`}
+                      className="text-xs flex-1 min-w-0"
+                    >
+                      <EntityLabel link={link} />
+                    </div>
+                    <TrackedEntityStatus
+                      status={link.trackedEntity?.status as any}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <HStack spacing={2}>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit
+              isDisabled={isSubmitting || !canSubmit}
+              isLoading={isSubmitting}
+            >
+              <Trans>Move</Trans>
+            </Submit>
+          </HStack>
+        </ModalFooter>
+      </ValidatedForm>
+    </>
   );
 }

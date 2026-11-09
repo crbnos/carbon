@@ -442,16 +442,13 @@ export default function ProcedureExplorer() {
           </TabsContent>
         </Tabs>
       </VStack>
-      {procedureStepDisclosure.openCount > 0 && (
-        <ProcedureStepForm
-          key={`procedureStepDisclosure-${procedureStepDisclosure.openCount}`}
-          open={procedureStepDisclosure.isOpen}
-          // @ts-expect-error
-          initialValues={procedureAttribtueInitialValues}
-          isDisabled={isDisabled}
-          onClose={procedureStepDisclosure.onClose}
-        />
-      )}
+      <ProcedureStepForm
+        open={procedureStepDisclosure.isOpen}
+        // @ts-expect-error
+        initialValues={procedureAttribtueInitialValues}
+        isDisabled={isDisabled}
+        onClose={procedureStepDisclosure.onClose}
+      />
       {selectedAttribute && (
         <DeleteProcedureStep
           attribute={selectedAttribute}
@@ -459,15 +456,12 @@ export default function ProcedureExplorer() {
           onCancel={onDeleteCancel}
         />
       )}
-      {procedureParameterDisclosure.openCount > 0 && (
-        <ProcedureParameterForm
-          key={`procedureParameterDisclosure-${procedureParameterDisclosure.openCount}`}
-          open={procedureParameterDisclosure.isOpen}
-          initialValues={procedureParameterInitialValues}
-          isDisabled={isDisabled}
-          onClose={procedureParameterDisclosure.onClose}
-        />
-      )}
+      <ProcedureParameterForm
+        open={procedureParameterDisclosure.isOpen}
+        initialValues={procedureParameterInitialValues}
+        isDisabled={isDisabled}
+        onClose={procedureParameterDisclosure.onClose}
+      />
       {selectedParameter && (
         <DeleteProcedureParameter
           parameter={selectedParameter}
@@ -704,17 +698,40 @@ function ProcedureParameterItem({
     </VStack>
   );
 }
-function ProcedureStepForm({
-  initialValues,
-  isDisabled,
-  open = true,
-  onClose
-}: {
+type ProcedureStepFormProps = {
   initialValues: z.infer<typeof procedureStepValidator>;
   isDisabled: boolean;
   open?: boolean;
   onClose: () => void;
-}) {
+};
+
+function ProcedureStepForm({
+  open = true,
+  onClose,
+  ...props
+}: ProcedureStepFormProps) {
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DrawerContent position="left">
+        <ProcedureStepFormBody onClose={onClose} {...props} />
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function ProcedureStepFormBody({
+  initialValues,
+  isDisabled,
+  onClose
+}: Omit<ProcedureStepFormProps, "open">) {
   const { id: procedureId } = useParams();
   if (!procedureId) throw new Error("id not found");
 
@@ -782,125 +799,110 @@ function ProcedureStepForm({
   const onUploadImage = useImageUpload("parts");
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ValidatedForm
+      method="post"
+      action={
+        isEditing
+          ? path.to.procedureStep(procedureId, initialValues.id!)
+          : path.to.newProcedureStep(procedureId)
+      }
+      defaultValues={initialValues}
+      validator={procedureStepValidator}
+      fetcher={fetcher}
+      className="flex flex-col h-full"
     >
-      <DrawerContent position="left">
-        <ValidatedForm
-          method="post"
-          action={
-            isEditing
-              ? path.to.procedureStep(procedureId, initialValues.id!)
-              : path.to.newProcedureStep(procedureId)
-          }
-          defaultValues={initialValues}
-          validator={procedureStepValidator}
-          fetcher={fetcher}
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>{isEditing ? "Edit Step" : "Add Step"}</DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="procedureId" />
-            <Hidden name="sortOrder" />
-            <Hidden name="id" />
-            <Hidden name="description" value={JSON.stringify(description)} />
-            <VStack spacing={4}>
-              <SelectControlled
-                name="type"
-                label={t`Type`}
-                options={typeOptions}
-                value={type}
-                onChange={(option) => {
-                  if (option) {
-                    setType(option.value as ProcedureStep["type"]);
-                  }
-                }}
+      <DrawerHeader>
+        <DrawerTitle>{isEditing ? "Edit Step" : "Add Step"}</DrawerTitle>
+      </DrawerHeader>
+      <DrawerBody>
+        <Hidden name="procedureId" />
+        <Hidden name="sortOrder" />
+        <Hidden name="id" />
+        <Hidden name="description" value={JSON.stringify(description)} />
+        <VStack spacing={4}>
+          <SelectControlled
+            name="type"
+            label={t`Type`}
+            options={typeOptions}
+            value={type}
+            onChange={(option) => {
+              if (option) {
+                setType(option.value as ProcedureStep["type"]);
+              }
+            }}
+          />
+          <Input name="name" label={t`Name`} />
+          <VStack spacing={2} className="w-full">
+            <Label>
+              <Trans>Description</Trans>
+            </Label>
+            <Editor
+              label={t`Description`}
+              initialValue={description}
+              onUpload={onUploadImage}
+              onChange={(value) => {
+                setDescription(value);
+              }}
+              className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+            />
+          </VStack>
+          {type === "Measurement" && (
+            <>
+              <UnitOfMeasure
+                name="unitOfMeasureCode"
+                label={t`Unit of Measure`}
               />
-              <Input name="name" label={t`Name`} />
-              <VStack spacing={2} className="w-full">
-                <Label>
-                  <Trans>Description</Trans>
-                </Label>
-                <Editor
-                  label={t`Description`}
-                  initialValue={description}
-                  onUpload={onUploadImage}
-                  onChange={(value) => {
-                    setDescription(value);
+
+              <ToggleGroup
+                type="multiple"
+                value={numericControls}
+                onValueChange={setNumericControls}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="min">
+                  <LuMinimize2 className="mr-2" /> Minimum
+                </ToggleGroupItem>
+                <ToggleGroupItem value="max">
+                  <LuMaximize2 className="mr-2" /> Maximum
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              {numericControls.includes("min") && (
+                <Number
+                  name="minValue"
+                  label={t`Minimum`}
+                  formatOptions={{
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 10
                   }}
-                  className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
-                />
-              </VStack>
-              {type === "Measurement" && (
-                <>
-                  <UnitOfMeasure
-                    name="unitOfMeasureCode"
-                    label={t`Unit of Measure`}
-                  />
-
-                  <ToggleGroup
-                    type="multiple"
-                    value={numericControls}
-                    onValueChange={setNumericControls}
-                    className="justify-start"
-                  >
-                    <ToggleGroupItem value="min">
-                      <LuMinimize2 className="mr-2" /> Minimum
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="max">
-                      <LuMaximize2 className="mr-2" /> Maximum
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-
-                  {numericControls.includes("min") && (
-                    <Number
-                      name="minValue"
-                      label={t`Minimum`}
-                      formatOptions={{
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 10
-                      }}
-                    />
-                  )}
-                  {numericControls.includes("max") && (
-                    <Number
-                      name="maxValue"
-                      label={t`Maximum`}
-                      formatOptions={{
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 10
-                      }}
-                    />
-                  )}
-                </>
-              )}
-              {type === "List" && (
-                <ArrayInput
-                  name="listValues"
-                  label={t`List Options`}
-                  isRequired
                 />
               )}
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit isDisabled={isDisabled}>
-              <Trans>Save</Trans>
-            </Submit>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+              {numericControls.includes("max") && (
+                <Number
+                  name="maxValue"
+                  label={t`Maximum`}
+                  formatOptions={{
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 10
+                  }}
+                />
+              )}
+            </>
+          )}
+          {type === "List" && (
+            <ArrayInput name="listValues" label={t`List Options`} isRequired />
+          )}
+        </VStack>
+      </DrawerBody>
+      <DrawerFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit isDisabled={isDisabled}>
+          <Trans>Save</Trans>
+        </Submit>
+      </DrawerFooter>
+    </ValidatedForm>
   );
 }
 
@@ -912,11 +914,24 @@ interface ProcedureParameterFormProps {
 }
 
 function ProcedureParameterForm({
+  open = true,
+  onClose,
+  ...props
+}: ProcedureParameterFormProps) {
+  return (
+    <Drawer open={open} onOpenChange={onClose}>
+      <DrawerContent position="left">
+        <ProcedureParameterFormBody onClose={onClose} {...props} />
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function ProcedureParameterFormBody({
   initialValues,
   isDisabled = false,
-  open = true,
   onClose
-}: ProcedureParameterFormProps) {
+}: Omit<ProcedureParameterFormProps, "open">) {
   const { t } = useLingui();
   const { id: procedureId } = useParams();
   if (!procedureId) throw new Error("id not found");
@@ -934,44 +949,42 @@ function ProcedureParameterForm({
   const isEditing = !!initialValues?.id;
 
   return (
-    <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent position="left">
-        <DrawerHeader>
-          <DrawerTitle>
-            {isEditing ? "Edit Parameter" : "New Parameter"}
-          </DrawerTitle>
-        </DrawerHeader>
-        <ValidatedForm
-          action={
-            isEditing
-              ? path.to.procedureParameter(procedureId, initialValues.id!)
-              : path.to.newProcedureParameter(procedureId)
-          }
-          method="post"
-          validator={procedureParameterValidator}
-          defaultValues={initialValues}
-          fetcher={fetcher}
-          className="flex flex-col h-full"
-        >
-          <DrawerBody>
-            <Hidden name="id" />
-            <Hidden name="procedureId" />
-            <VStack>
-              <Input name="key" label={t`Key`} isDisabled={isDisabled} />
-              <Input name="value" label={t`Value`} isDisabled={isDisabled} />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit isDisabled={isDisabled}>
-              <Trans>Save</Trans>
-            </Submit>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+    <>
+      <DrawerHeader>
+        <DrawerTitle>
+          {isEditing ? "Edit Parameter" : "New Parameter"}
+        </DrawerTitle>
+      </DrawerHeader>
+      <ValidatedForm
+        action={
+          isEditing
+            ? path.to.procedureParameter(procedureId, initialValues.id!)
+            : path.to.newProcedureParameter(procedureId)
+        }
+        method="post"
+        validator={procedureParameterValidator}
+        defaultValues={initialValues}
+        fetcher={fetcher}
+        className="flex flex-col h-full"
+      >
+        <DrawerBody>
+          <Hidden name="id" />
+          <Hidden name="procedureId" />
+          <VStack>
+            <Input name="key" label={t`Key`} isDisabled={isDisabled} />
+            <Input name="value" label={t`Value`} isDisabled={isDisabled} />
+          </VStack>
+        </DrawerBody>
+        <DrawerFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Submit isDisabled={isDisabled}>
+            <Trans>Save</Trans>
+          </Submit>
+        </DrawerFooter>
+      </ValidatedForm>
+    </>
   );
 }
 

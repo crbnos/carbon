@@ -24972,7 +24972,7 @@ msgstr "canone di rifornimento"
 msgid "Restock Fee Percent"
 msgstr "Percentuale Canone di Rifornimento"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Costo di ristoccaggio {0}"
 

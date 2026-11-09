@@ -24972,7 +24972,7 @@ msgstr "yeniden stok alma ücreti"
 msgid "Restock Fee Percent"
 msgstr "Yeniden Stok Alma Ücreti Yüzdesi"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Yeniden stoklama ücreti {0}"
 

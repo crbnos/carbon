@@ -368,14 +368,11 @@ export default function ServiceRoute() {
         </div>
       </main>
 
-      {newJob.openCount > 0 && (
-        <NewServiceJobModal
-          key={newJob.openCount}
-          open={newJob.isOpen}
-          today={today}
-          onClose={newJob.onClose}
-        />
-      )}
+      <NewServiceJobModal
+        open={newJob.isOpen}
+        today={today}
+        onClose={newJob.onClose}
+      />
     </div>
   );
 }

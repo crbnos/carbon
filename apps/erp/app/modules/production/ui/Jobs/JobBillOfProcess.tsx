@@ -2409,21 +2409,18 @@ function StepsListItem({
           )}
         </div>
       )}
-      {deleteModalDisclosure.openCount > 0 && (
-        <ConfirmDelete
-          key={`delete-step-${deleteModalDisclosure.openCount}`}
-          action={path.to.deleteJobOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -2777,21 +2774,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.openCount > 0 && (
-        <ConfirmDelete
-          key={`delete-parameter-${deleteModalDisclosure.openCount}`}
-          action={path.to.deleteJobOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3592,15 +3586,12 @@ function OperationForm({
                       >
                         Sync Procedure
                       </Button>
-                      {procedureSyncDisclosure.openCount > 0 && (
-                        <ProcedureSyncModal
-                          key={`procedureSyncDisclosure-${procedureSyncDisclosure.openCount}`}
-                          open={procedureSyncDisclosure.isOpen}
-                          operationId={item.id}
-                          procedureId={processData.procedureId}
-                          onClose={procedureSyncDisclosure.onClose}
-                        />
-                      )}
+                      <ProcedureSyncModal
+                        open={procedureSyncDisclosure.isOpen}
+                        operationId={item.id}
+                        procedureId={processData.procedureId}
+                        onClose={procedureSyncDisclosure.onClose}
+                      />
                     </div>
                   </div>
                 )}
@@ -3688,17 +3679,14 @@ function OperationForm({
                         >
                           Sync Assembly Steps
                         </Button>
-                        {assemblySyncDisclosure.openCount > 0 && (
-                          <AssemblyStepsSyncModal
-                            key={`assemblySyncDisclosure-${assemblySyncDisclosure.openCount}`}
-                            open={assemblySyncDisclosure.isOpen}
-                            operationId={item.id}
-                            assemblyInstructionId={
-                              processData.assemblyInstructionId
-                            }
-                            onClose={assemblySyncDisclosure.onClose}
-                          />
-                        )}
+                        <AssemblyStepsSyncModal
+                          open={assemblySyncDisclosure.isOpen}
+                          operationId={item.id}
+                          assemblyInstructionId={
+                            processData.assemblyInstructionId
+                          }
+                          onClose={assemblySyncDisclosure.onClose}
+                        />
                       </div>
                     </div>
                   )}
@@ -3753,20 +3741,18 @@ function OperationForm({
   );
 }
 
-function ProcedureSyncModal({
-  open = true,
-  operationId,
-  procedureId,
-  onClose
-}: {
+type ProcedureSyncModalProps = {
   open?: boolean;
   operationId: string;
   procedureId: string;
   onClose: () => void;
-}) {
-  const fetcher = useAction<typeof syncProcedureAction>({
-    onSuccess: onClose
-  });
+};
+
+function ProcedureSyncModal({
+  open = true,
+  onClose,
+  ...props
+}: ProcedureSyncModalProps) {
   return (
     <Modal
       open={open}
@@ -3777,64 +3763,100 @@ function ProcedureSyncModal({
       }}
     >
       <ModalContent>
-        <ValidatedForm
-          validator={procedureSyncValidator}
-          action={path.to.jobOperationProcedureSync}
-          method="post"
-          fetcher={fetcher}
-          defaultValues={{
-            operationId,
-            procedureId
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Are you sure?</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="py-4">
-            <Hidden name="operationId" />
-            <Hidden name="procedureId" />
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Potential Data Loss</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                Syncing the procedure will update the operation with the new
-                work instructions, steps, and parameters. Any steps that are not
-                part of the procedure will be removed.
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              Sync
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
+        <ProcedureSyncBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
   );
 }
 
-function AssemblyStepsSyncModal({
-  open = true,
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function ProcedureSyncBody({
   operationId,
-  assemblyInstructionId,
+  procedureId,
   onClose
-}: {
+}: Omit<ProcedureSyncModalProps, "open">) {
+  const fetcher = useAction<typeof syncProcedureAction>({
+    onSuccess: onClose
+  });
+  return (
+    <ValidatedForm
+      validator={procedureSyncValidator}
+      action={path.to.jobOperationProcedureSync}
+      method="post"
+      fetcher={fetcher}
+      defaultValues={{
+        operationId,
+        procedureId
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Are you sure?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody className="py-4">
+        <Hidden name="operationId" />
+        <Hidden name="procedureId" />
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Potential Data Loss</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            Syncing the procedure will update the operation with the new work
+            instructions, steps, and parameters. Any steps that are not part of
+            the procedure will be removed.
+          </AlertDescription>
+        </Alert>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={fetcher.state !== "idle"}
+        >
+          Sync
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
+  );
+}
+
+type AssemblyStepsSyncModalProps = {
   open?: boolean;
   operationId: string;
   assemblyInstructionId: string;
   onClose: () => void;
-}) {
+};
+
+function AssemblyStepsSyncModal({
+  open = true,
+  onClose,
+  ...props
+}: AssemblyStepsSyncModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <AssemblyStepsSyncBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AssemblyStepsSyncBody({
+  operationId,
+  assemblyInstructionId,
+  onClose
+}: Omit<AssemblyStepsSyncModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<typeof syncAssemblyAction>({
     onSuccess: ({ data }) => {
@@ -3851,57 +3873,46 @@ function AssemblyStepsSyncModal({
     }
   });
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      validator={syncAssemblyToBopValidator}
+      action={path.to.assemblySyncBop(assemblyInstructionId)}
+      method="post"
+      fetcher={fetcher}
+      defaultValues={{
+        operationId
       }}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={syncAssemblyToBopValidator}
-          action={path.to.assemblySyncBop(assemblyInstructionId)}
-          method="post"
-          fetcher={fetcher}
-          defaultValues={{
-            operationId
-          }}
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Are you sure?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody className="py-4">
+        <Hidden name="operationId" />
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Potential Data Loss</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            Syncing updates the operation's steps from the assembly instruction.
+            Steps previously synced from an instruction are updated or removed
+            to match; hand-authored steps are kept.
+          </AlertDescription>
+        </Alert>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={fetcher.state !== "idle"}
         >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Are you sure?</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="py-4">
-            <Hidden name="operationId" />
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Potential Data Loss</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                Syncing updates the operation's steps from the assembly
-                instruction. Steps previously synced from an instruction are
-                updated or removed to match; hand-authored steps are kept.
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              Sync
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          Sync
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -4081,21 +4092,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.openCount > 0 && (
-        <ConfirmDelete
-          key={`delete-tool-${deleteModalDisclosure.openCount}`}
-          action={path.to.deleteJobOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={tool.readableIdWithRevision}
+        text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

@@ -257,57 +257,54 @@ function SsoDomainRow({
           </Button>
         </HStack>
       </HStack>
-      {removeModal.openCount > 0 && (
-        <Modal
-          key={removeModal.openCount}
-          open={removeModal.isOpen}
-          onOpenChange={(open) => {
-            if (!open) removeModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Remove {domain.domain}</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                {isPending ? (
-                  <Trans>
-                    Are you sure you want to remove this domain? Its
-                    verification record will no longer be checked.
-                  </Trans>
-                ) : (
-                  <Trans>
-                    Are you sure you want to remove this domain? Users on it
-                    will no longer sign in through your identity provider, and
-                    adding it again needs a new DNS verification.
-                  </Trans>
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={removeModal.onClose}>
-                <Trans>Cancel</Trans>
+      <Modal
+        open={removeModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) removeModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Remove {domain.domain}</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {isPending ? (
+                <Trans>
+                  Are you sure you want to remove this domain? Its verification
+                  record will no longer be checked.
+                </Trans>
+              ) : (
+                <Trans>
+                  Are you sure you want to remove this domain? Users on it will
+                  no longer sign in through your identity provider, and adding
+                  it again needs a new DNS verification.
+                </Trans>
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={removeModal.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <fetcher.Form method="post" action={path.to.sso}>
+              <input type="hidden" name="intent" value="removeDomain" />
+              <input type="hidden" name="domainId" value={domain.id} />
+              <Button
+                variant="destructive"
+                type="submit"
+                isLoading={isBusy && submitting === "removeDomain"}
+                isDisabled={isBusy}
+              >
+                <Trans>Remove</Trans>
               </Button>
-              <fetcher.Form method="post" action={path.to.sso}>
-                <input type="hidden" name="intent" value="removeDomain" />
-                <input type="hidden" name="domainId" value={domain.id} />
-                <Button
-                  variant="destructive"
-                  type="submit"
-                  isLoading={isBusy && submitting === "removeDomain"}
-                  isDisabled={isBusy}
-                >
-                  <Trans>Remove</Trans>
-                </Button>
-              </fetcher.Form>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+            </fetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       {isPending && (
         <VStack spacing={2} className="mt-4">
           <p className="text-sm text-muted-foreground">

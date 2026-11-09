@@ -85,7 +85,6 @@ const PivotControlBar = ({
 
   // Transient interaction state only (like modal open/close) — all report
   // state lives in the URL per the pivot param contract.
-  // Keyed per open, so the save modal's form and fetcher start fresh.
   const saveModal = useDisclosure();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -520,16 +519,13 @@ const PivotControlBar = ({
         </AppBarAction>
         <AppBarAction>{viewMenu}</AppBarAction>
       </HStack>
-      {saveModal.openCount > 0 && (
-        <SaveViewModal
-          key={saveModal.openCount}
-          open={saveModal.isOpen}
-          reportKey={reportKey}
-          state={state}
-          view={activeView}
-          onClose={saveModal.onClose}
-        />
-      )}
+      <SaveViewModal
+        open={saveModal.isOpen}
+        reportKey={reportKey}
+        state={state}
+        view={activeView}
+        onClose={saveModal.onClose}
+      />
       {activeView && (
         <ConfirmDelete
           isOpen={deleteModalOpen}

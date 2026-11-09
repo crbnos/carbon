@@ -500,34 +500,29 @@ function PurchaseOrderLineItem({
           </DropdownMenu>
         </div>
       </HStack>
-      {receivingDisclosure.openCount > 0 && (
-        <Confirm
-          key={`receivingDisclosure-${receivingDisclosure.openCount}`}
-          isOpen={receivingDisclosure.isOpen}
-          action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}
-          title={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
-          text={
-            canStopReceiving
-              ? t`The remaining ${line.quantityToReceive} ${
-                  line.purchaseUnitOfMeasureCode ?? ""
-                } will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged.`
-              : t`The remaining ${line.quantityToReceive} ${
-                  line.purchaseUnitOfMeasureCode ?? ""
-                } will be expected again and counted as incoming supply.`
-          }
-          confirmText={
-            canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`
-          }
-          onCancel={receivingDisclosure.onClose}
-          onSubmit={receivingDisclosure.onClose}
-        >
-          <input
-            type="hidden"
-            name="intent"
-            value={canStopReceiving ? "close" : "reopen"}
-          />
-        </Confirm>
-      )}
+      <Confirm
+        isOpen={receivingDisclosure.isOpen}
+        action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}
+        title={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
+        text={
+          canStopReceiving
+            ? t`The remaining ${line.quantityToReceive} ${
+                line.purchaseUnitOfMeasureCode ?? ""
+              } will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged.`
+            : t`The remaining ${line.quantityToReceive} ${
+                line.purchaseUnitOfMeasureCode ?? ""
+              } will be expected again and counted as incoming supply.`
+        }
+        confirmText={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
+        onCancel={receivingDisclosure.onClose}
+        onSubmit={receivingDisclosure.onClose}
+      >
+        <input
+          type="hidden"
+          name="intent"
+          value={canStopReceiving ? "close" : "reopen"}
+        />
+      </Confirm>
     </VStack>
   );
 }

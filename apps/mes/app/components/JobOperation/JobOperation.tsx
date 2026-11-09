@@ -746,38 +746,33 @@ export const JobOperation = ({
   // the batch scope's Pick opens the same shared-pick modal.
   const renderIssueModal = (
     resolvedMaterials: Awaited<typeof materials> | undefined
-  ) =>
-    issueModal.openCount > 0 ? (
-      <IssueMaterialModal
-        key={`issue-${issueModal.openCount}`}
-        open={issueModal.isOpen}
-        operationId={operation.id}
-        // The process view issues the whole quantity at
-        // once, so picked lots may pre-fill when the
-        // parent is a single entity. The modal enforces
-        // the full rule: a picking list exists AND (the
-        // parent is not serialized OR the operation
-        // makes exactly one unit).
-        allowPrefill
-        parentUnitCount={operation.operationQuantity ?? undefined}
-        expiredEntityPolicy={expiredEntityPolicy}
-        autoSelectMaterialWithoutPickingList={
-          autoSelectMaterialWithoutPickingList
-        }
-        locationId={locationId}
-        workCenterId={operation.workCenterId ?? undefined}
-        material={selectedMaterial ?? undefined}
-        batchId={batch?.id ?? undefined}
-        batchRemainingQuantity={selectedBatchRemaining}
-        parentId={trackedEntityId ?? ""}
-        parentIdIsSerialized={method?.requiresSerialTracking ?? false}
-        trackedInputs={resolvedMaterials?.trackedInputs ?? []}
-        onClose={() => {
-          setSelectedMaterial(null);
-          issueModal.onClose();
-        }}
-      />
-    ) : null;
+  ) => (
+    <IssueMaterialModal
+      open={issueModal.isOpen}
+      operationId={operation.id}
+      // The process view issues the whole quantity at
+      // once, so picked lots may pre-fill when the
+      // parent is a single entity. The modal enforces
+      // the full rule: a picking list exists AND (the
+      // parent is not serialized OR the operation
+      // makes exactly one unit).
+      allowPrefill
+      parentUnitCount={operation.operationQuantity ?? undefined}
+      expiredEntityPolicy={expiredEntityPolicy}
+      autoSelectMaterialWithoutPickingList={
+        autoSelectMaterialWithoutPickingList
+      }
+      locationId={locationId}
+      workCenterId={operation.workCenterId ?? undefined}
+      material={selectedMaterial ?? undefined}
+      batchId={batch?.id ?? undefined}
+      batchRemainingQuantity={selectedBatchRemaining}
+      parentId={trackedEntityId ?? ""}
+      parentIdIsSerialized={method?.requiresSerialTracking ?? false}
+      trackedInputs={resolvedMaterials?.trackedInputs ?? []}
+      onClose={issueModal.onClose}
+    />
+  );
 
   // Labelled meters: 1 row of up to 4 on a phone, then as many columns as fit.
   // Phones show them in the Details scroll pane, so only 1 bar stays pinned.
@@ -3084,31 +3079,27 @@ export const JobOperation = ({
         />
       )}
 
-      {serialModal.openCount > 0 && (
-        <SerialSelectorModal
-          key={`serial-${serialModal.openCount}`}
-          open={serialModal.isOpen}
-          availableEntities={availableEntities}
-          onClose={serialModal.onClose}
-          onCancel={() => navigate(path.to.operations)}
-          onSelect={(entity) => {
-            const entityIndex = availableEntities.findIndex(
-              (e) => e.id === entity.id
-            );
-            if (entityIndex !== -1) {
-              setActiveStep(entityIndex);
-            }
-            setParams({
-              trackedEntityId: entity.id
-            });
-            serialModal.onClose();
-          }}
-        />
-      )}
+      <SerialSelectorModal
+        open={serialModal.isOpen}
+        availableEntities={availableEntities}
+        onClose={serialModal.onClose}
+        onCancel={() => navigate(path.to.operations)}
+        onSelect={(entity) => {
+          const entityIndex = availableEntities.findIndex(
+            (e) => e.id === entity.id
+          );
+          if (entityIndex !== -1) {
+            setActiveStep(entityIndex);
+          }
+          setParams({
+            trackedEntityId: entity.id
+          });
+          serialModal.onClose();
+        }}
+      />
 
-      {selectedStep && attributeRecordModal.openCount > 0 ? (
+      {selectedStep ? (
         <RecordModal
-          key={`record-${selectedStep.id}-${attributeRecordModal.openCount}`}
           open={attributeRecordModal.isOpen}
           activeStep={activeStep}
           attribute={selectedStep}
@@ -3116,9 +3107,8 @@ export const JobOperation = ({
         />
       ) : null}
 
-      {selectedStep && attributeRecordDeleteModal.openCount > 0 && (
+      {selectedStep && (
         <DeleteStepRecordModal
-          key={`delete-step-${attributeRecordDeleteModal.openCount}`}
           open={attributeRecordDeleteModal.isOpen}
           onClose={attributeRecordDeleteModal.onClose}
           id={

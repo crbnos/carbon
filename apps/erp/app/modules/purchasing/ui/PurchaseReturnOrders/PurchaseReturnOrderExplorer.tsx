@@ -58,7 +58,6 @@ export default function PurchaseReturnOrderExplorer() {
 
   const chooseSourceDisclosure = useDisclosure();
   const newLineDisclosure = useDisclosure();
-  // The receipt-lines modal keeps its search and selection at its top level; a new key per open resets them.
   const fromDocumentDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
 
@@ -216,16 +215,14 @@ export default function PurchaseReturnOrderExplorer() {
           onClose={newLineDisclosure.onClose}
         />
       )}
-      {fromDocumentDisclosure.openCount > 0 &&
-        routeData?.purchaseReturnOrder?.supplierId && (
-          <ReturnableReceiptLinesModal
-            key={`fromDocumentDisclosure-${fromDocumentDisclosure.openCount}`}
-            supplierId={routeData.purchaseReturnOrder.supplierId}
-            purchaseOrderId={routeData.purchaseReturnOrder.purchaseOrderId}
-            open={fromDocumentDisclosure.isOpen}
-            onClose={fromDocumentDisclosure.onClose}
-          />
-        )}
+      {routeData?.purchaseReturnOrder?.supplierId && (
+        <ReturnableReceiptLinesModal
+          supplierId={routeData.purchaseReturnOrder.supplierId}
+          purchaseOrderId={routeData.purchaseReturnOrder.purchaseOrderId}
+          open={fromDocumentDisclosure.isOpen}
+          onClose={fromDocumentDisclosure.onClose}
+        />
+      )}
       {deleteLine && (
         <ConfirmDelete
           isOpen={deleteLineDisclosure.isOpen}

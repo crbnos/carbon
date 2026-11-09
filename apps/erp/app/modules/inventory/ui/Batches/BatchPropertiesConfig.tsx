@@ -464,21 +464,18 @@ function BatchPropertyComponent({
           </div>
         </div>
       )}
-      {deletePropertyDisclosure.openCount > 0 && (
-        <ConfirmDelete
-          key={deletePropertyDisclosure.openCount}
-          action={path.to.deleteBatchProperty(property.itemId, property.id)}
-          isOpen={deletePropertyDisclosure.isOpen}
-          name={property.label}
-          text={`Are you sure you want to delete the ${property.label} property?`}
-          onCancel={() => {
-            deletePropertyDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deletePropertyDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteBatchProperty(property.itemId, property.id)}
+        isOpen={deletePropertyDisclosure.isOpen}
+        name={property.label}
+        text={`Are you sure you want to delete the ${property.label} property?`}
+        onCancel={() => {
+          deletePropertyDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deletePropertyDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

@@ -108,7 +108,6 @@ const SalesReturnOrderHeader = () => {
 
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
-  // The credit modal loads and keeps its quantities: a new key per open.
   const creditDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
@@ -329,14 +328,11 @@ const SalesReturnOrderHeader = () => {
         <input type="hidden" name="status" value="Cancelled" />
       </Confirm>
 
-      {creditDisclosure.openCount > 0 && (
-        <SalesReturnOrderCreditModal
-          key={creditDisclosure.openCount}
-          open={creditDisclosure.isOpen}
-          currencyCode={salesReturnOrder.currencyCode ?? undefined}
-          onClose={creditDisclosure.onClose}
-        />
-      )}
+      <SalesReturnOrderCreditModal
+        open={creditDisclosure.isOpen}
+        currencyCode={salesReturnOrder.currencyCode ?? undefined}
+        onClose={creditDisclosure.onClose}
+      />
 
       <ConfirmDelete
         action={path.to.deleteSalesReturnOrder(id)}

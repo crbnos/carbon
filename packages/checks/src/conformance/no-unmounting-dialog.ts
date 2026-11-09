@@ -27,6 +27,10 @@ const CONDITIONAL_TAG =
 
 const CLOSE_ROUTE = /\buseCloseRoute\s*\(/g;
 
+// `if (!isOpen) return null` in a component that renders a dialog.
+const EARLY_RETURN = /\bif\s*\(\s*!(?:isOpen|open)\s*\)\s*return\s+null\b/g;
+const RENDERS_DIALOG = /<(?:Modal|Drawer|ModalDrawer|ModalCard)[\s>]/;
+
 // Where the hooks are defined.
 const EXCLUDED_PREFIX = "packages/react/src/hooks/";
 
@@ -212,6 +216,18 @@ export const noUnmountingDialog: ConformanceCheck = {
         snippet: tag.replace(/\s+/g, " ").slice(0, 160),
         message: `Render <${name}> always and pass the condition as its open prop: removed in the same render, it cannot animate closed`
       });
+    }
+
+    if (RENDERS_DIALOG.test(contents)) {
+      for (const match of contents.matchAll(EARLY_RETURN)) {
+        violations.push({
+          file,
+          line: lineOf(contents, match.index ?? 0),
+          snippet: match[0],
+          message:
+            "Pass isOpen to the dialog instead of returning null: removed in the same render, it cannot animate closed"
+        });
+      }
     }
 
     for (const match of contents.matchAll(CLOSE_ROUTE)) {

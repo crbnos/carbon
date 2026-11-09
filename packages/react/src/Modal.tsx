@@ -18,6 +18,7 @@ import { createContext, forwardRef, useContext, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
+import { DialogDepthContext, ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
 import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
@@ -32,13 +33,22 @@ export const DialogRoot = ({
   open,
   onOpenChange,
   ...props
-}: DialogPrimitive.DialogProps) => (
-  <DismissableContext.Provider
-    value={open === undefined || onOpenChange !== undefined}
-  >
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />
-  </DismissableContext.Provider>
-);
+}: DialogPrimitive.DialogProps) => {
+  const depth = useContext(DialogDepthContext);
+  return (
+    <DialogDepthContext.Provider value={depth + 1}>
+      <DismissableContext.Provider
+        value={open === undefined || onOpenChange !== undefined}
+      >
+        <DialogPrimitive.Root
+          open={open}
+          onOpenChange={onOpenChange}
+          {...props}
+        />
+      </DismissableContext.Provider>
+    </DialogDepthContext.Provider>
+  );
+};
 
 const Modal = DialogRoot;
 
@@ -202,6 +212,7 @@ const ModalContent = forwardRef<
                     className="absolute left-1/2 top-1.5 h-[5px] w-9 -translate-x-1/2 rounded-full bg-muted-foreground/20"
                   />
                 )}
+                <ReportDialogExit />
                 <ActionPresentationBoundary>
                   {children}
                 </ActionPresentationBoundary>

@@ -870,23 +870,20 @@ const JobForm = ({
         </VStack>
       </Tabs>
 
-      {configurationDisclosure.openCount > 0 &&
-        requiresConfiguration &&
-        configurationParameters && (
-          <ConfiguratorModal
-            key={`configurator-${configurationDisclosure.openCount}`}
-            open={configurationDisclosure.isOpen}
-            initialValues={configurationValues || {}}
-            groups={configurationParameters.groups ?? []}
-            parameters={configurationParameters.parameters ?? []}
-            onClose={configurationDisclosure.onClose}
-            onSubmit={(config: Record<string, any>) => {
-              setConfigurationValues(config);
-              setIsConfigured(true);
-              configurationDisclosure.onClose();
-            }}
-          />
-        )}
+      {requiresConfiguration && configurationParameters && (
+        <ConfiguratorModal
+          open={configurationDisclosure.isOpen}
+          initialValues={configurationValues || {}}
+          groups={configurationParameters.groups ?? []}
+          parameters={configurationParameters.parameters ?? []}
+          onClose={configurationDisclosure.onClose}
+          onSubmit={(config: Record<string, any>) => {
+            setConfigurationValues(config);
+            setIsConfigured(true);
+            configurationDisclosure.onClose();
+          }}
+        />
+      )}
     </>
   );
 };

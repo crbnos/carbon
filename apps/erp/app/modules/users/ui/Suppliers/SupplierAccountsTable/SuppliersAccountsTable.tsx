@@ -352,31 +352,22 @@ const SupplierAccountsTable = memo(
           withSelectableRows={canEdit}
         />
 
-        {deactivateSupplierModal.openCount > 0 && (
-          <DeactivateUsersModal
-            key={`deactivate-${deactivateSupplierModal.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={deactivateSupplierModal.isOpen}
-            redirectTo={path.to.supplierAccounts}
-            onClose={deactivateSupplierModal.onClose}
-          />
-        )}
-        {resendInviteModal.openCount > 0 && (
-          <ResendInviteModal
-            key={`resend-invite-${resendInviteModal.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={resendInviteModal.isOpen}
-            onClose={resendInviteModal.onClose}
-          />
-        )}
-        {revokeInviteModal.openCount > 0 && (
-          <RevokeInviteModal
-            key={`revoke-invite-${revokeInviteModal.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={revokeInviteModal.isOpen}
-            onClose={revokeInviteModal.onClose}
-          />
-        )}
+        <DeactivateUsersModal
+          userIds={selectedUserIds}
+          isOpen={deactivateSupplierModal.isOpen}
+          redirectTo={path.to.supplierAccounts}
+          onClose={deactivateSupplierModal.onClose}
+        />
+        <ResendInviteModal
+          userIds={selectedUserIds}
+          isOpen={resendInviteModal.isOpen}
+          onClose={resendInviteModal.onClose}
+        />
+        <RevokeInviteModal
+          userIds={selectedUserIds}
+          isOpen={revokeInviteModal.isOpen}
+          onClose={revokeInviteModal.onClose}
+        />
       </>
     );
   }

@@ -332,9 +332,8 @@ export function BatchOverview({
                         const step = resolved.steps.find(
                           (s) => s.key === recordingKey
                         );
-                        return step && recordModal.openCount > 0 ? (
+                        return step ? (
                           <BatchRecordModal
-                            key={`record-${recordModal.openCount}`}
                             open={recordModal.isOpen}
                             batchId={batch.id as string}
                             step={step}

@@ -87,7 +87,6 @@ export default function SharedSectionsRoute() {
   const canEdit = permissions.can("update", "settings");
 
   const [editing, setEditing] = useState<Section | null>(null);
-  // Its openCount keys the modal, so the form starts from the section it opens.
   const disclosure = useDisclosure();
   const { t } = useLingui();
   const deleteFetcher = useAction<typeof action>({
@@ -180,14 +179,11 @@ export default function SharedSectionsRoute() {
         </div>
       </VStack>
 
-      {disclosure.openCount > 0 && (
-        <SectionFormModal
-          key={disclosure.openCount}
-          open={disclosure.isOpen}
-          section={editing}
-          onClose={disclosure.onClose}
-        />
-      )}
+      <SectionFormModal
+        open={disclosure.isOpen}
+        section={editing}
+        onClose={disclosure.onClose}
+      />
     </ScrollArea>
   );
 }

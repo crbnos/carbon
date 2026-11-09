@@ -96,7 +96,6 @@ const ContractRevenueGrid = ({
   const { formatDate } = useDateFormatter();
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
-  // The amounts modal seeds its state from props: a new key per open.
   const addMonth = useDisclosure();
   const {
     item: deleting,
@@ -355,27 +354,24 @@ const ContractRevenueGrid = ({
         </p>
       </div>
 
-      {addMonth.openCount > 0 && (
-        <ContractAmountsModal
-          key={addMonth.openCount}
-          open={addMonth.isOpen}
-          intent="addMonth"
-          action={action}
-          title={<Trans>Add Month</Trans>}
-          description={
-            <Trans>
-              Each amount starts at what the line has left to recognize.
-            </Trans>
-          }
-          lines={lines}
-          defaults={revenueResiduals}
-          defaultDate={
-            lastMonth ? nextMonth(lastMonth) : (contract.startDate ?? today)
-          }
-          currencyCode={currencyCode}
-          onClose={addMonth.onClose}
-        />
-      )}
+      <ContractAmountsModal
+        open={addMonth.isOpen}
+        intent="addMonth"
+        action={action}
+        title={<Trans>Add Month</Trans>}
+        description={
+          <Trans>
+            Each amount starts at what the line has left to recognize.
+          </Trans>
+        }
+        lines={lines}
+        defaults={revenueResiduals}
+        defaultDate={
+          lastMonth ? nextMonth(lastMonth) : (contract.startDate ?? today)
+        }
+        currencyCode={currencyCode}
+        onClose={addMonth.onClose}
+      />
 
       {deleting && (
         <ConfirmDelete

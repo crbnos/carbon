@@ -245,7 +245,6 @@ function MaintenanceExplorerItem({
   const [isExpanded, setIsExpanded] = useState(
     node.children.length > 0 && node.children.length < 10
   );
-  // Changes per open: the add-part modal's state starts fresh each time.
   const newModal = useDisclosure();
   const permissions = usePermissions();
 
@@ -315,17 +314,15 @@ function MaintenanceExplorerItem({
         </div>
       )}
 
-      {node.key === "items" && newModal.openCount > 0 && (
+      {node.key === "items" && (
         <MaintenanceAddPartModal
-          key={newModal.openCount}
           open={newModal.isOpen}
           dispatchId={dispatchId}
           onClose={newModal.onClose}
         />
       )}
-      {node.key === "events" && newModal.openCount > 0 && (
+      {node.key === "events" && (
         <NewTimecardModal
-          key={newModal.openCount}
           open={newModal.isOpen}
           onClose={newModal.onClose}
           dispatchId={dispatchId}
@@ -429,6 +426,28 @@ function NewTimecardModal({
   onClose: () => void;
   dispatchId: string;
 }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <NewTimecardBody onClose={onClose} dispatchId={dispatchId} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function NewTimecardBody({
+  onClose,
+  dispatchId
+}: {
+  onClose: () => void;
+  dispatchId: string;
+}) {
   const { t } = useLingui();
   const fetcher = useAction<typeof newEventAction>({
     onSuccess: ({ data }) => {
@@ -438,49 +457,40 @@ function NewTimecardModal({
   });
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
+    <ValidatedForm
+      method="post"
+      action={path.to.newMaintenanceDispatchEvent(dispatchId)}
+      validator={maintenanceDispatchEventValidator}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.newMaintenanceDispatchEvent(dispatchId)}
-          validator={maintenanceDispatchEventValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Timecard</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="maintenanceDispatchId" value={dispatchId} />
-            <VStack spacing={4}>
-              <Employee name="employeeId" label={t`Employee`} />
-              <WorkCenter
-                name="workCenterId"
-                label={t`Work Center`}
-                termId="work-center"
-              />
-              <DateTimePicker name="startTime" label={t`Start Time`} />
-              <DateTimePicker name="endTime" label={t`End Time`} />
-              <TextArea name="notes" label={t`Notes`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add Timecard</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="maintenanceDispatchId" value={dispatchId} />
+        <VStack spacing={4}>
+          <Employee name="employeeId" label={t`Employee`} />
+          <WorkCenter
+            name="workCenterId"
+            label={t`Work Center`}
+            termId="work-center"
+          />
+          <DateTimePicker name="startTime" label={t`Start Time`} />
+          <DateTimePicker name="endTime" label={t`End Time`} />
+          <TextArea name="notes" label={t`Notes`} />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

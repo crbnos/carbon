@@ -607,27 +607,22 @@ const QuoteMakeMethodTools = () => {
           </ValidatedForm>
         </ModalContent>
       </Modal>
-      {configuratorModal.openCount > 0 && (
-        <ConfiguratorModal
-          key={`configurator-${configuratorModal.openCount}`}
-          open={configuratorModal.isOpen}
-          destructive
-          initialValues={
-            line?.configuration
-              ? (line.configuration as Record<string, any>)
-              : {}
-          }
-          groups={configurationParameters.groups}
-          parameters={configurationParameters.parameters}
-          onClose={() => {
-            configuratorModal.onClose();
-            setSelectedConfigureItemId(null);
-          }}
-          onSubmit={(config: Record<string, any>) => {
-            saveConfiguration(config);
-          }}
-        />
-      )}
+      <ConfiguratorModal
+        open={configuratorModal.isOpen}
+        destructive
+        initialValues={
+          line?.configuration ? (line.configuration as Record<string, any>) : {}
+        }
+        groups={configurationParameters.groups}
+        parameters={configurationParameters.parameters}
+        onClose={() => {
+          configuratorModal.onClose();
+          setSelectedConfigureItemId(null);
+        }}
+        onSubmit={(config: Record<string, any>) => {
+          saveConfiguration(config);
+        }}
+      />
     </Fragment>
   );
 };

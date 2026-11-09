@@ -108,6 +108,13 @@ const render = () =>
     ).toEqual([1, 2]);
   });
 
+  it("flags an early return that removes a dialog, not one in a component with no dialog", () => {
+    expect(
+      scan(`if (!isOpen) return null;\nreturn <Modal open={isOpen} />;`)
+    ).toEqual([1]);
+    expect(scan(`if (!open) return null;\nreturn <div />;`)).toEqual([]);
+  });
+
   it("flags a route closed with useCloseRoute", () => {
     expect(scan(`const closeRoute = useCloseRoute();`)).toEqual([1]);
   });

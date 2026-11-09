@@ -598,7 +598,6 @@ const PeopleBoard = ({
 
       {editorItem && (
         <PeopleHoursModal
-          key={`${hoursEditor.key}:${date}`}
           open={hoursEditor.isOpen}
           onOpenChange={(open) => {
             if (!open) hoursEditor.close();

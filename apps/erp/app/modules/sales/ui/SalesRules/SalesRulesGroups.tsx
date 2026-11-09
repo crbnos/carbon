@@ -303,17 +303,14 @@ const SalesRuleCard = memo(({ rule }: { rule: SalesRuleListItem }) => {
           </AccordionItem>
         </Accordion>
       </Card>
-      {deleteDisclosure.openCount > 0 && (
-        <ConfirmDelete
-          key={deleteDisclosure.openCount}
-          action={path.to.deleteSalesRule(rule.id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={t`Sales rule "${rule.name}"`}
-          text={t`Are you sure you want to delete this sales rule? Assignments will also be removed.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteSalesRule(rule.id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={t`Sales rule "${rule.name}"`}
+        text={t`Are you sure you want to delete this sales rule? Assignments will also be removed.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 });

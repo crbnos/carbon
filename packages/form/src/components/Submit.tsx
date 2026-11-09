@@ -13,7 +13,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  SHORTCUTS
+  SHORTCUTS,
+  useReportUnsavedChanges
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
@@ -131,6 +132,8 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     // navigation, which this blocker would otherwise intercept — blocking
     // the save itself behind the Unsaved-changes dialog.
     const hasUnsavedChanges = withBlocker && isTouched && !isSubmitting;
+    // A route dialog with unsaved changes stays open while the blocker asks.
+    useReportUnsavedChanges(hasUnsavedChanges);
     const blocker = useBlocker(
       ({ currentLocation, nextLocation }) =>
         hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
@@ -151,9 +154,6 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
           shortcut={shortcut === false ? undefined : shortcut}
           shortcutGuard={shortcutGuard}
           {...props}
-          // Read by `useRouteDialog` (@carbon/react): a route dialog with
-          // unsaved changes stays open while the blocker asks first.
-          data-unsaved-changes={hasUnsavedChanges ? "" : undefined}
         >
           {children}
         </Button>

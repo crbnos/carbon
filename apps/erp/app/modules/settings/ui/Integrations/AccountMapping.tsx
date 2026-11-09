@@ -170,7 +170,6 @@ export function AccountMapping({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
-  // Its openCount keys the modal, so each open starts without the last suggestions.
   const aiModal = useDisclosure();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<MappingFilter>("all");
@@ -515,16 +514,13 @@ export function AccountMapping({
         onClose={() => setShowMatchDrawer(false)}
       />
 
-      {aiModal.openCount > 0 && (
-        <AiSuggestModal
-          key={aiModal.openCount}
-          open={aiModal.isOpen}
-          unmapped={unmappedRequired}
-          chart={chart}
-          canUpdate={canUpdate}
-          onClose={aiModal.onClose}
-        />
-      )}
+      <AiSuggestModal
+        open={aiModal.isOpen}
+        unmapped={unmappedRequired}
+        chart={chart}
+        canUpdate={canUpdate}
+        onClose={aiModal.onClose}
+      />
     </>
   );
 }
@@ -800,6 +796,37 @@ function AiSuggestModal({
   canUpdate: boolean;
   onClose: () => void;
 }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent size="large">
+        <AiSuggestBody
+          unmapped={unmapped}
+          chart={chart}
+          canUpdate={canUpdate}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function AiSuggestBody({
+  unmapped,
+  chart,
+  canUpdate,
+  onClose
+}: {
+  unmapped: UnmappedAccountRow[];
+  chart: AccountMappingChartAccount[];
+  canUpdate: boolean;
+  onClose: () => void;
+}) {
   const savedToast = useAccountMappingsSavedToast();
   const suggestFetcher = useAction<{
     data: { proposals: AccountMatchProposalRow[] } | null;
@@ -853,121 +880,114 @@ function AiSuggestModal({
   };
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent size="large">
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Suggest mappings with AI</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            {hasSuggested ? (
-              <Trans>
-                Review the suggested matches before applying. These are a best
-                guess — confirm each is correct.
-              </Trans>
-            ) : (
-              <Trans>
-                Carbon will use AI to guess a provider account for each of your{" "}
-                {unmapped.length} unmapped accounts. Suggestions are a starting
-                point — you can review them before anything is saved.
-              </Trans>
-            )}
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          {isSuggesting ? (
-            <div className="flex w-full items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-              <Spinner className="size-4" />
-              <Trans>Generating suggestions…</Trans>
-            </div>
-          ) : !hasSuggested ? (
-            <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
-              <Trans>
-                {unmapped.length} unmapped accounts will be matched against{" "}
-                {chart.length} provider accounts.
-              </Trans>
-            </div>
-          ) : proposals.length === 0 ? (
-            <div className="flex w-full items-center justify-center py-16 text-sm text-muted-foreground">
-              <Trans>AI couldn't confidently match any accounts</Trans>
-            </div>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Suggest mappings with AI</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          {hasSuggested ? (
+            <Trans>
+              Review the suggested matches before applying. These are a best
+              guess — confirm each is correct.
+            </Trans>
           ) : (
-            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
-              <Table>
-                <Thead>
-                  <Tr>
-                    <Th className="px-4">
-                      <Trans>Carbon account</Trans>
-                    </Th>
-                    <Th className="px-4">
-                      <Trans>Provider account</Trans>
-                    </Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {proposals.map((proposal) => (
-                    <Tr key={proposal.accountId}>
-                      <Td className="px-4">
-                        <div className="flex flex-col py-1">
-                          <span className="text-sm font-medium">
-                            {proposal.accountName}
-                          </span>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {proposal.accountNumber}
-                          </span>
-                        </div>
-                      </Td>
-                      <Td className="px-4">
-                        <div className="flex flex-col py-1">
-                          <span className="text-sm font-medium">
-                            {proposal.externalName ?? proposal.externalCode}
-                          </span>
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {proposal.externalCode}
-                          </span>
-                        </div>
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </div>
+            <Trans>
+              Carbon will use AI to guess a provider account for each of your{" "}
+              {unmapped.length} unmapped accounts. Suggestions are a starting
+              point — you can review them before anything is saved.
+            </Trans>
           )}
-        </ModalBody>
-        <ModalFooter>
-          <HStack>
-            {!hasSuggested ? (
-              <Button
-                leftIcon={<LuSparkles />}
-                isDisabled={!canUpdate || isSuggesting}
-                isLoading={isSuggesting}
-                onClick={suggest}
-              >
-                <Trans>Suggest mappings</Trans>
-              </Button>
-            ) : (
-              proposals.length > 0 && (
-                <Button
-                  leftIcon={<LuLink />}
-                  isDisabled={!canUpdate || isApplying}
-                  isLoading={isApplying}
-                  onClick={applyAll}
-                >
-                  <Trans>Apply suggestions</Trans>
-                </Button>
-              )
-            )}
-            <Button variant="solid" onClick={onClose}>
-              <Trans>Cancel</Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        {isSuggesting ? (
+          <div className="flex w-full items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+            <Spinner className="size-4" />
+            <Trans>Generating suggestions…</Trans>
+          </div>
+        ) : !hasSuggested ? (
+          <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
+            <Trans>
+              {unmapped.length} unmapped accounts will be matched against{" "}
+              {chart.length} provider accounts.
+            </Trans>
+          </div>
+        ) : proposals.length === 0 ? (
+          <div className="flex w-full items-center justify-center py-16 text-sm text-muted-foreground">
+            <Trans>AI couldn't confidently match any accounts</Trans>
+          </div>
+        ) : (
+          <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th className="px-4">
+                    <Trans>Carbon account</Trans>
+                  </Th>
+                  <Th className="px-4">
+                    <Trans>Provider account</Trans>
+                  </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {proposals.map((proposal) => (
+                  <Tr key={proposal.accountId}>
+                    <Td className="px-4">
+                      <div className="flex flex-col py-1">
+                        <span className="text-sm font-medium">
+                          {proposal.accountName}
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {proposal.accountNumber}
+                        </span>
+                      </div>
+                    </Td>
+                    <Td className="px-4">
+                      <div className="flex flex-col py-1">
+                        <span className="text-sm font-medium">
+                          {proposal.externalName ?? proposal.externalCode}
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {proposal.externalCode}
+                        </span>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </div>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          {!hasSuggested ? (
+            <Button
+              leftIcon={<LuSparkles />}
+              isDisabled={!canUpdate || isSuggesting}
+              isLoading={isSuggesting}
+              onClick={suggest}
+            >
+              <Trans>Suggest mappings</Trans>
             </Button>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          ) : (
+            proposals.length > 0 && (
+              <Button
+                leftIcon={<LuLink />}
+                isDisabled={!canUpdate || isApplying}
+                isLoading={isApplying}
+                onClick={applyAll}
+              >
+                <Trans>Apply suggestions</Trans>
+              </Button>
+            )
+          )}
+          <Button variant="solid" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+        </HStack>
+      </ModalFooter>
+    </>
   );
 }

@@ -482,7 +482,6 @@ function StockBrowser({
   const [view, setView] = useState<StockView>("inStock");
   const [groupBy, setGroupBy] = useState<GroupBy>("bin");
   const [filterValues, setFilterValues] = useState<StockFilterValues>({});
-  // Keyed per open: the assign-batch modal keeps its tab and number otherwise.
   const assignBatch = useDrawerItem<BinRow>();
   const assignBatchRow = assignBatch.item;
   const { batchesByItem } = useBuilderData();
@@ -869,7 +868,6 @@ function StockBrowser({
       </div>
       {assignBatchRow && (
         <AssignBatchModal
-          key={assignBatch.key}
           open={assignBatch.isOpen}
           itemId={assignBatchRow.itemId}
           itemReadableId={assignBatchRow.itemReadableId}

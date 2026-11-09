@@ -11,7 +11,7 @@ export function hasOpenDialog(): boolean {
   return document.querySelector(OPEN_DIALOG_SELECTOR) !== null;
 }
 
-export function openDialogs(): Element[] {
+function openDialogs(): Element[] {
   return Array.from(document.querySelectorAll(OPEN_DIALOG_SELECTOR));
 }
 
@@ -27,13 +27,9 @@ export function openModalDialogs(): Element[] {
 // are z-50), so DOM order alone can pick a covered dialog. Highest computed
 // z-index wins; later-mounted wins ties (portals append in stacking order).
 export function topmostOpenDialog(): Element | null {
-  return topmostOf(openDialogs());
-}
-
-function topmostOf(dialogs: Element[]): Element | null {
   let topmost: Element | null = null;
   let topmostZ = Number.NEGATIVE_INFINITY;
-  for (const dialog of dialogs) {
+  for (const dialog of openDialogs()) {
     const z = Number.parseInt(getComputedStyle(dialog).zIndex, 10) || 0;
     if (z >= topmostZ) {
       topmost = dialog;
@@ -161,45 +157,22 @@ export function returnFocusOnClose(handler?: (event: Event) => void) {
   };
 }
 
-// A `<Submit>` (@carbon/form) holding unsaved changes carries this attribute:
-// leaving its route is blocked until the user confirms.
-const UNSAVED_CHANGES_SELECTOR = "[data-unsaved-changes]";
-
-/** Is a form on the page (a dialog's or the page's own) holding unsaved changes? */
-export function hasUnsavedChanges(root: ParentNode = document): boolean {
-  return root.querySelector(UNSAVED_CHANGES_SELECTOR) !== null;
-}
-
-/**
- * Resolves when Radix has removed every one of `dialogs` from the page: after
- * their closing animation, or at once when they have none. A dialog that stays
- * on the page (its `open` never turned false) is waited on for `timeoutMs`;
- * `Infinity` waits until it goes, or until `signal` aborts.
- */
-export function whenDialogsRemoved(
-  dialogs: Element[],
-  timeoutMs = 500,
-  signal?: AbortSignal
-): Promise<void> {
+/** Resolves when `dialog` has left the page, or after `timeoutMs`. */
+function whenDialogRemoved(dialog: Element, timeoutMs = 500): Promise<void> {
   return new Promise((resolve) => {
-    const removed = () => dialogs.every((dialog) => !dialog.isConnected);
-    if (removed() || signal?.aborted) {
+    if (!dialog.isConnected) {
       resolve();
       return;
     }
     const observer = new MutationObserver(() => {
-      if (removed()) done();
+      if (!dialog.isConnected) done();
     });
-    const timer = Number.isFinite(timeoutMs)
-      ? setTimeout(done, timeoutMs)
-      : undefined;
+    const timer = setTimeout(done, timeoutMs);
     function done() {
       observer.disconnect();
       clearTimeout(timer);
-      signal?.removeEventListener("abort", done);
       resolve();
     }
-    signal?.addEventListener("abort", done);
     observer.observe(document.body, { childList: true, subtree: true });
   });
 }
@@ -213,5 +186,6 @@ export function afterDialogCloses(callback: () => void) {
   // The one closing is the modal or drawer mounted last: portals append to
   // the page in the order they open, whatever their z-index.
   const dialog = openModalDialogs().at(-1);
-  whenDialogsRemoved(dialog ? [dialog] : []).then(callback);
+  if (dialog) whenDialogRemoved(dialog).then(callback);
+  else callback();
 }

@@ -2735,35 +2735,32 @@ export function AssemblyView({
         </div>
       ) : null}
 
-      {issueModal.openCount > 0 && (
-        <IssueMaterialModal
-          key={`issue-${issueModal.openCount}`}
-          open={issueModal.isOpen}
-          operationId={operationId}
-          // Assembly builds one unit at a time: each scan issues one unit's
-          // worth (issuePerUnit), so the pick order can never be attributed
-          // to the unit on screen — never pre-select tracked entities; the
-          // operator scans what goes into THIS unit.
-          allowPrefill={false}
-          issuePerUnit
-          expiredEntityPolicy={expiredEntityPolicy}
-          locationId={locationId}
-          workCenterId={operation?.workCenterId ?? undefined}
-          material={selectedMaterial ?? undefined}
-          // Untracked parents have no unit-axis entity, but tracked child
-          // consumes still need a genealogy parent — fall back to the make
-          // method's seed entity, same as the operation view.
-          parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
-          parentIdIsSerialized={requiresSerialTracking}
-          // Stamp the current step + 1-based unit onto the consume so issued
-          // quantities can be attributed per-unit even for a batch parent (where
-          // all units share one lot). See the loader's batch attribution.
-          jobOperationStepId={step?.id}
-          unitNumber={currentUnitIndex + 1}
-          trackedInputs={materials?.trackedInputs ?? []}
-          onClose={issueModal.onClose}
-        />
-      )}
+      <IssueMaterialModal
+        open={issueModal.isOpen}
+        operationId={operationId}
+        // Assembly builds one unit at a time: each scan issues one unit's
+        // worth (issuePerUnit), so the pick order can never be attributed
+        // to the unit on screen — never pre-select tracked entities; the
+        // operator scans what goes into THIS unit.
+        allowPrefill={false}
+        issuePerUnit
+        expiredEntityPolicy={expiredEntityPolicy}
+        locationId={locationId}
+        workCenterId={operation?.workCenterId ?? undefined}
+        material={selectedMaterial ?? undefined}
+        // Untracked parents have no unit-axis entity, but tracked child
+        // consumes still need a genealogy parent — fall back to the make
+        // method's seed entity, same as the operation view.
+        parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
+        parentIdIsSerialized={requiresSerialTracking}
+        // Stamp the current step + 1-based unit onto the consume so issued
+        // quantities can be attributed per-unit even for a batch parent (where
+        // all units share one lot). See the loader's batch attribution.
+        jobOperationStepId={step?.id}
+        unitNumber={currentUnitIndex + 1}
+        trackedInputs={materials?.trackedInputs ?? []}
+        onClose={issueModal.onClose}
+      />
 
       <QualityIssueModal
         operationId={operationId}
@@ -2845,23 +2842,20 @@ export function AssemblyView({
         />
       )}
 
-      {serialModal.openCount > 0 && (
-        <SerialSelectorModal
-          key={`serial-${serialModal.openCount}`}
-          open={serialModal.isOpen}
-          availableEntities={
-            unitEntities.filter((entity) =>
-              isUnitIncompleteForOperation(entity, operationId)
-            ) as never
-          }
-          onClose={serialModal.onClose}
-          onCancel={serialModal.onClose}
-          onSelect={(entity) => {
-            navigateEntity(entity);
-            serialModal.onClose();
-          }}
-        />
-      )}
+      <SerialSelectorModal
+        open={serialModal.isOpen}
+        availableEntities={
+          unitEntities.filter((entity) =>
+            isUnitIncompleteForOperation(entity, operationId)
+          ) as never
+        }
+        onClose={serialModal.onClose}
+        onCancel={serialModal.onClose}
+        onSelect={(entity) => {
+          navigateEntity(entity);
+          serialModal.onClose();
+        }}
+      />
 
       <BottomSheet
         open={actionsSheet.isOpen}
@@ -3595,15 +3589,12 @@ function StepCompleteAction({
           className="hidden md:flex"
         />
       </Button>
-      {recordModal.openCount > 0 && (
-        <RecordModal
-          key={recordModal.openCount}
-          open={recordModal.isOpen}
-          attribute={step as unknown as JobOperationStep}
-          activeStep={activeIndex}
-          onClose={recordModal.onClose}
-        />
-      )}
+      <RecordModal
+        open={recordModal.isOpen}
+        attribute={step as unknown as JobOperationStep}
+        activeStep={activeIndex}
+        onClose={recordModal.onClose}
+      />
     </>
   );
 }

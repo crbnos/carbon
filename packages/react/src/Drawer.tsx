@@ -22,6 +22,7 @@ import {
   DialogRoot,
   useDialogDismissable
 } from "./Modal";
+import { ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
 import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
@@ -233,6 +234,7 @@ const DrawerContent = forwardRef<
               {isPhone && (
                 <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />
               )}
+              <ReportDialogExit />
               <ActionPresentationBoundary>
                 {children}
               </ActionPresentationBoundary>

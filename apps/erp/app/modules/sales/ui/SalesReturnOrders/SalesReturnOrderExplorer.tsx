@@ -89,8 +89,6 @@ export default function SalesReturnOrderExplorer() {
 
   const chooseSourceDisclosure = useDisclosure();
   const newLineDisclosure = useDisclosure();
-  // Both pickers keep their search, paging and selection in local state: a
-  // new key per open starts each one fresh, as unmounting on close did.
   const fromDocumentDisclosure = useDisclosure();
   const fromAssetsDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
@@ -278,23 +276,18 @@ export default function SalesReturnOrderExplorer() {
           onClose={newLineDisclosure.onClose}
         />
       )}
-      {fromDocumentDisclosure.openCount > 0 &&
-        routeData?.salesReturnOrder?.customerId && (
-          <ReturnableLinesModal
-            key={`fromDocumentDisclosure-${fromDocumentDisclosure.openCount}`}
-            open={fromDocumentDisclosure.isOpen}
-            customerId={routeData.salesReturnOrder.customerId}
-            salesOrderId={routeData.salesReturnOrder.salesOrderId}
-            onClose={fromDocumentDisclosure.onClose}
-          />
-        )}
-      {fromAssetsDisclosure.openCount > 0 && (
-        <AddFromAssetsModal
-          key={`fromAssetsDisclosure-${fromAssetsDisclosure.openCount}`}
-          open={fromAssetsDisclosure.isOpen}
-          onClose={fromAssetsDisclosure.onClose}
+      {routeData?.salesReturnOrder?.customerId && (
+        <ReturnableLinesModal
+          open={fromDocumentDisclosure.isOpen}
+          customerId={routeData.salesReturnOrder.customerId}
+          salesOrderId={routeData.salesReturnOrder.salesOrderId}
+          onClose={fromDocumentDisclosure.onClose}
         />
       )}
+      <AddFromAssetsModal
+        open={fromAssetsDisclosure.isOpen}
+        onClose={fromAssetsDisclosure.onClose}
+      />
       {deleteLine && (
         <ConfirmDelete
           action={path.to.deleteSalesReturnOrderLine(orderId, deleteLine.id!)}

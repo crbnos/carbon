@@ -998,15 +998,12 @@ export default function ServiceJobRoute() {
         </WorkRecordPane>
       </WorkRecordShell>
 
-      {addPart.openCount > 0 && (
-        <ServiceJobAddPartModal
-          key={addPart.openCount}
-          open={addPart.isOpen}
-          serviceJobId={job.id}
-          itemOptions={itemOptions}
-          onClose={addPart.onClose}
-        />
-      )}
+      <ServiceJobAddPartModal
+        open={addPart.isOpen}
+        serviceJobId={job.id}
+        itemOptions={itemOptions}
+        onClose={addPart.onClose}
+      />
       <Modal
         open={confirmComplete}
         onOpenChange={(open) => {

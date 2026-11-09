@@ -24972,7 +24972,7 @@ msgstr "frais de reconstitution de stock"
 msgid "Restock Fee Percent"
 msgstr "Pourcentage des frais de reconstitution de stock"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Frais de restockage {0}"
 

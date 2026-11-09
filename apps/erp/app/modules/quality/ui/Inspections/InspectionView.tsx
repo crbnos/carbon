@@ -236,8 +236,6 @@ const InspectionView = ({
   const [gridBusy, setGridBusy] = useState(false);
   const hasFeatures = liveFeatures.length > 0;
 
-  // Remounted per open: the scanner, reject and plan modals keep their fields
-  // from the last open, and the plan modal loads its options when it mounts.
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
@@ -890,20 +888,17 @@ const InspectionView = ({
         </div>
       )}
 
-      {scannerDisclosure.openCount > 0 && (
-        <ScanInspectionSample
-          key={`scannerDisclosure-${scannerDisclosure.openCount}`}
-          open={scannerDisclosure.isOpen}
-          inspectionId={inspection.id}
-          isSerial={isSerial}
-          remaining={remaining}
-          inspected={inspected}
-          sampleSize={inspection.sampleSize}
-          fails={fails}
-          acceptanceNumber={inspection.acceptanceNumber}
-          onClose={scannerDisclosure.onClose}
-        />
-      )}
+      <ScanInspectionSample
+        open={scannerDisclosure.isOpen}
+        inspectionId={inspection.id}
+        isSerial={isSerial}
+        remaining={remaining}
+        inspected={inspected}
+        sampleSize={inspection.sampleSize}
+        fails={fails}
+        acceptanceNumber={inspection.acceptanceNumber}
+        onClose={scannerDisclosure.onClose}
+      />
 
       <Confirm
         isOpen={acceptConfirmDisclosure.isOpen}
@@ -919,60 +914,82 @@ const InspectionView = ({
         onSubmit={acceptConfirmDisclosure.onClose}
       />
 
-      {rejectConfirmDisclosure.openCount > 0 && (
-        <RejectLotModal
-          key={`rejectConfirmDisclosure-${rejectConfirmDisclosure.openCount}`}
-          open={rejectConfirmDisclosure.isOpen}
-          action={path.to.inspectionReject(inspection.id)}
-          issueTypes={issueTypes}
-          requiresReason={!failedStatistically}
-          summary={
-            failedStatistically
-              ? isSerial
-                ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
-                : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
-              : isSerial
-                ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
-                : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
-          }
-          failedFeatureSummary={failedFeatureSummary}
-          onCancel={rejectConfirmDisclosure.onClose}
-          onSubmit={rejectConfirmDisclosure.onClose}
-        />
-      )}
+      <RejectLotModal
+        open={rejectConfirmDisclosure.isOpen}
+        action={path.to.inspectionReject(inspection.id)}
+        issueTypes={issueTypes}
+        requiresReason={!failedStatistically}
+        summary={
+          failedStatistically
+            ? isSerial
+              ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
+              : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+            : isSerial
+              ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
+              : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
+        }
+        failedFeatureSummary={failedFeatureSummary}
+        onCancel={rejectConfirmDisclosure.onClose}
+        onSubmit={rejectConfirmDisclosure.onClose}
+      />
 
-      {documentSwitchDisclosure.openCount > 0 && (
-        <DocumentSwitchModal
-          key={`documentSwitchDisclosure-${documentSwitchDisclosure.openCount}`}
-          open={documentSwitchDisclosure.isOpen}
-          inspectionId={inspection.id}
-          itemId={inspection.itemId}
-          currentDocumentId={inspection.inspectionDocumentId ?? null}
-          onClose={documentSwitchDisclosure.onClose}
-        />
-      )}
+      <DocumentSwitchModal
+        open={documentSwitchDisclosure.isOpen}
+        inspectionId={inspection.id}
+        itemId={inspection.itemId}
+        currentDocumentId={inspection.inspectionDocumentId ?? null}
+        onClose={documentSwitchDisclosure.onClose}
+      />
     </div>
   );
+};
+
+type DocumentSwitchModalProps = {
+  inspectionId: string;
+  itemId: string;
+  currentDocumentId: string | null;
+  open: boolean;
+  onClose: () => void;
 };
 
 // Swap the assigned inspection document on an open, unmeasured lot. Options
 // are the item's documents (same source as the Form/InspectionDocument
 // combobox's api route).
 function DocumentSwitchModal({
+  open,
+  onClose,
+  ...props
+}: DocumentSwitchModalProps) {
+  // Not in the body: the modal closes on submit, and React Router drops the
+  // redirect this action answers with once its fetcher has unmounted.
+  const fetcher = useFetcher<{}>();
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <DocumentSwitchBody fetcher={fetcher} onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function DocumentSwitchBody({
   inspectionId,
   itemId,
   currentDocumentId,
-  open,
+  fetcher,
   onClose
-}: {
-  inspectionId: string;
-  itemId: string;
-  currentDocumentId: string | null;
-  open: boolean;
-  onClose: () => void;
+}: Omit<DocumentSwitchModalProps, "open"> & {
+  fetcher: ReturnType<typeof useFetcher<{}>>;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
   const optionsFetcher = useLoaderQuery<{
     data:
       | {
@@ -988,64 +1005,56 @@ function DocumentSwitchModal({
   const options = optionsFetcher.data?.data ?? [];
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Change Inspection Plan</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={2}>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                The lot's per-characteristic sampling plan will be re-resolved
-                from the selected document.
-              </Trans>
-            </p>
-            <Select value={documentId} onValueChange={setDocumentId}>
-              <SelectTrigger aria-label={t`Inspection document`}>
-                <SelectValue placeholder={t`Select a document`} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t`None`}</SelectItem>
-                {options.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {(option.drawingNumber ?? option.fileName ?? option.id) +
-                      ` v${option.version}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Change Inspection Plan</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={2}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The lot's per-characteristic sampling plan will be re-resolved
+              from the selected document.
+            </Trans>
+          </p>
+          <Select value={documentId} onValueChange={setDocumentId}>
+            <SelectTrigger aria-label={t`Inspection document`}>
+              <SelectValue placeholder={t`Select a document`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t`None`}</SelectItem>
+              {options.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {(option.drawingNumber ?? option.fileName ?? option.id) +
+                    ` v${option.version}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.inspectionAssignedDocument(inspectionId)}
+          onSubmit={onClose}
+        >
+          <input
+            type="hidden"
+            name="inspectionDocumentId"
+            value={documentId === "none" ? "" : documentId}
+          />
+          <Button type="submit" isLoading={fetcher.state !== "idle"}>
+            <Trans>Save</Trans>
           </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.inspectionAssignedDocument(inspectionId)}
-            onSubmit={onClose}
-          >
-            <input
-              type="hidden"
-              name="inspectionDocumentId"
-              value={documentId === "none" ? "" : documentId}
-            />
-            <Button type="submit" isLoading={fetcher.state !== "idle"}>
-              <Trans>Save</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 

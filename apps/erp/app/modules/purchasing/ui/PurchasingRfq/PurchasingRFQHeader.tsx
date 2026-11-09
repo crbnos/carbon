@@ -55,7 +55,6 @@ const PurchasingRFQHeader = () => {
   const documentEdit = useDocumentEditModal("purchasingRfq", rfqId);
 
   const { t } = useLingui();
-  // The finalize modal seeds its state at its top level; a new key per open resets it.
   const finalizeModal = useDisclosure();
   const requiresSuppliersAlert = useDisclosure();
   const cancelReasonModal = useDisclosure();
@@ -287,16 +286,13 @@ const PurchasingRFQHeader = () => {
           </>
         }
       />
-      {finalizeModal.openCount > 0 && (
-        <FinalizeRFQModal
-          key={finalizeModal.openCount}
-          lines={routeData?.lines ?? []}
-          suppliers={routeData?.suppliers ?? []}
-          rfqId={rfqId}
-          open={finalizeModal.isOpen}
-          onClose={finalizeModal.onClose}
-        />
-      )}
+      <FinalizeRFQModal
+        lines={routeData?.lines ?? []}
+        suppliers={routeData?.suppliers ?? []}
+        rfqId={rfqId}
+        open={finalizeModal.isOpen}
+        onClose={finalizeModal.onClose}
+      />
       <RequiresSuppliersAlert
         open={requiresSuppliersAlert.isOpen}
         onClose={requiresSuppliersAlert.onClose}
@@ -328,14 +324,11 @@ const PurchasingRFQHeader = () => {
           deleteRFQModal.onClose();
         }}
       />
-      {compareQuotesModal.openCount > 0 && (
-        <SupplierQuoteCompareDrawer
-          key={`compare-${compareQuotesModal.openCount}`}
-          isOpen={compareQuotesModal.isOpen}
-          onClose={compareQuotesModal.onClose}
-          purchasingRfqId={rfqId}
-        />
-      )}
+      <SupplierQuoteCompareDrawer
+        isOpen={compareQuotesModal.isOpen}
+        onClose={compareQuotesModal.onClose}
+        purchasingRfqId={rfqId}
+      />
       {documentEdit.modal}
     </>
   );

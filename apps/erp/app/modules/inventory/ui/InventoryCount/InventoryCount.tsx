@@ -96,7 +96,6 @@ const InventoryCountDetails = ({
   const confirmModal = useDisclosure();
   const notesModal = useDisclosure();
   const historyModal = useDisclosure();
-  // Remounted per open: the import modal shows the last upload's errors.
   const importModal = useDisclosure();
   const revalidator = useRevalidator();
   const reopenFetcher = useFetcher();
@@ -264,14 +263,11 @@ const InventoryCountDetails = ({
         />
       </div>
 
-      {importModal.openCount > 0 && (
-        <InventoryCountImport
-          key={importModal.openCount}
-          open={importModal.isOpen}
-          inventoryCountId={inventoryCount.id!}
-          onClose={importModal.onClose}
-        />
-      )}
+      <InventoryCountImport
+        open={importModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        onClose={importModal.onClose}
+      />
       <InventoryCountConfirmModal
         open={confirmModal.isOpen}
         inventoryCountId={inventoryCount.id!}

@@ -493,44 +493,32 @@ const EmployeesTable = memo(
           title={t`Employee Accounts`}
           withSelectableRows={canEdit}
         />
-        {bulkEditDrawer.openCount > 0 && (
-          <BulkEditPermissionsForm
-            key={`bulk-edit-${bulkEditDrawer.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={bulkEditDrawer.isOpen}
-            allMatching={bulkAllMatching}
-            allMatchingFetcher={allMatchingFetcher}
-            onClose={bulkEditDrawer.onClose}
-          />
-        )}
-        {deactivateEmployeeModal.openCount > 0 && (
-          <DeactivateUsersModal
-            key={`deactivate-${deactivateEmployeeModal.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={deactivateEmployeeModal.isOpen}
-            allMatching={bulkAllMatching}
-            allMatchingFetcher={allMatchingFetcher}
-            onClose={deactivateEmployeeModal.onClose}
-          />
-        )}
-        {resendInviteModal.openCount > 0 && (
-          <ResendInviteModal
-            key={`resend-invite-${resendInviteModal.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={resendInviteModal.isOpen}
-            allMatching={bulkAllMatching}
-            allMatchingFetcher={allMatchingFetcher}
-            onClose={resendInviteModal.onClose}
-          />
-        )}
-        {revokeInviteModal.openCount > 0 && (
-          <RevokeInviteModal
-            key={`revoke-invite-${revokeInviteModal.openCount}`}
-            userIds={selectedUserIds}
-            isOpen={revokeInviteModal.isOpen}
-            onClose={revokeInviteModal.onClose}
-          />
-        )}
+        <BulkEditPermissionsForm
+          userIds={selectedUserIds}
+          isOpen={bulkEditDrawer.isOpen}
+          allMatching={bulkAllMatching}
+          allMatchingFetcher={allMatchingFetcher}
+          onClose={bulkEditDrawer.onClose}
+        />
+        <DeactivateUsersModal
+          userIds={selectedUserIds}
+          isOpen={deactivateEmployeeModal.isOpen}
+          allMatching={bulkAllMatching}
+          allMatchingFetcher={allMatchingFetcher}
+          onClose={deactivateEmployeeModal.onClose}
+        />
+        <ResendInviteModal
+          userIds={selectedUserIds}
+          isOpen={resendInviteModal.isOpen}
+          allMatching={bulkAllMatching}
+          allMatchingFetcher={allMatchingFetcher}
+          onClose={resendInviteModal.onClose}
+        />
+        <RevokeInviteModal
+          userIds={selectedUserIds}
+          isOpen={revokeInviteModal.isOpen}
+          onClose={revokeInviteModal.onClose}
+        />
       </>
     );
   }

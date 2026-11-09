@@ -689,7 +689,6 @@ export default function SchedulePeopleRoute() {
     attendedByWorkCenter
   } = useLoaderData<typeof loader>();
   const { locale } = useLocale();
-  // Their openCounts key the dialogs, so each starts from the board's current day.
   const overtimeDialog = useDisclosure();
   const timeOffDialog = useDisclosure();
 
@@ -967,34 +966,28 @@ export default function SchedulePeopleRoute() {
         )}
       </div>
 
-      {overtimeDialog.openCount > 0 && (
-        <OvertimeDialog
-          key={`overtimeDialog-${overtimeDialog.openCount}`}
-          open={overtimeDialog.isOpen}
-          onClose={overtimeDialog.onClose}
-          range={range}
-          date={date}
-          weekDates={weekDates}
-          weekOptions={weekOptions}
-          locationId={locationId}
-          locationTimeZone={locationTimeZone}
-          departmentId={departmentId}
-          shiftId={shiftId}
-          employeeShiftId={employeeShiftId}
-          dayAssignments={boardAssignments}
-          weekAssignments={matrixAssignments}
-        />
-      )}
-      {timeOffDialog.openCount > 0 && (
-        <TimeOffDialog
-          key={`timeOffDialog-${timeOffDialog.openCount}`}
-          open={timeOffDialog.isOpen}
-          onClose={timeOffDialog.onClose}
-          date={date}
-          locationId={locationId}
-          shiftId={shiftId}
-        />
-      )}
+      <OvertimeDialog
+        open={overtimeDialog.isOpen}
+        onClose={overtimeDialog.onClose}
+        range={range}
+        date={date}
+        weekDates={weekDates}
+        weekOptions={weekOptions}
+        locationId={locationId}
+        locationTimeZone={locationTimeZone}
+        departmentId={departmentId}
+        shiftId={shiftId}
+        employeeShiftId={employeeShiftId}
+        dayAssignments={boardAssignments}
+        weekAssignments={matrixAssignments}
+      />
+      <TimeOffDialog
+        open={timeOffDialog.isOpen}
+        onClose={timeOffDialog.onClose}
+        date={date}
+        locationId={locationId}
+        shiftId={shiftId}
+      />
     </div>
   );
 }

@@ -93,8 +93,6 @@ const QuoteHeader = () => {
     (line) => line.status !== "No Quote"
   );
 
-  // Finalize and Copy/Revise keep fetched and submitted state: a new key per
-  // open starts each one fresh, as unmounting on close did.
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
   const shareModal = useDisclosure();
@@ -369,26 +367,20 @@ const QuoteHeader = () => {
           </>
         }
       />
-      {finalizeModal.openCount > 0 && (
-        <QuoteFinalizeModal
-          key={`finalizeModal-${finalizeModal.openCount}`}
-          open={finalizeModal.isOpen}
-          quote={routeData?.quote}
-          shipment={routeData?.shipment ?? null}
-          onClose={finalizeModal.onClose}
-          // @ts-expect-error TS2339 - TODO: fix type
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
-      {createRevisionModal.openCount > 0 && (
-        <CreateRevisionModal
-          key={`createRevisionModal-${createRevisionModal.openCount}`}
-          open={createRevisionModal.isOpen}
-          quote={routeData?.quote}
-          asRevision={asRevision}
-          onClose={createRevisionModal.onClose}
-        />
-      )}
+      <QuoteFinalizeModal
+        open={finalizeModal.isOpen}
+        quote={routeData?.quote}
+        shipment={routeData?.shipment ?? null}
+        onClose={finalizeModal.onClose}
+        // @ts-expect-error TS2339 - TODO: fix type
+        defaultCc={routeData?.defaultCc ?? []}
+      />
+      <CreateRevisionModal
+        open={createRevisionModal.isOpen}
+        quote={routeData?.quote}
+        asRevision={asRevision}
+        onClose={createRevisionModal.onClose}
+      />
       <ShareQuoteModal
         open={shareModal.isOpen}
         id={quoteId}
@@ -436,6 +428,30 @@ function CreateRevisionModal({
   asRevision: boolean;
   onClose: () => void;
 }) {
+  if (!quote) return null;
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <CreateRevisionBody
+          quote={quote}
+          asRevision={asRevision}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function CreateRevisionBody({
+  quote,
+  asRevision,
+  onClose
+}: {
+  quote: Quotation;
+  asRevision: boolean;
+  onClose: () => void;
+}) {
   const { t } = useLingui();
   const [newQuoteId, setNewQuoteId] = useState<string | null>(null);
   const fetcher = useFetcher<
@@ -459,81 +475,78 @@ function CreateRevisionModal({
     }
   }, [fetcher.data?.success, t]);
 
-  if (!quote) return null;
   return (
-    <Modal open={open} onOpenChange={onClose}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            {asRevision ? (
-              <Trans>Create Quote Revision</Trans>
-            ) : (
-              <Trans>Copy Quote</Trans>
-            )}
-          </ModalTitle>
-          <ModalDescription>
-            {asRevision ? (
-              <Trans>The quote will be copied with a revision suffix</Trans>
-            ) : (
-              <Trans>Create a quote with a new quote ID</Trans>
-            )}
-          </ModalDescription>
-        </ModalHeader>
-        {newQuoteId ? (
-          <>
-            <ModalBody>
-              <div className="flex flex-col items-center justify-center py-8">
-                <div>
-                  <LuCheck className="w-16 h-16 text-green-500" />
-                </div>
-                <h2 className="animate-fade-in">
-                  <Trans>The quote has been created</Trans>
-                </h2>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {asRevision ? (
+            <Trans>Create Quote Revision</Trans>
+          ) : (
+            <Trans>Copy Quote</Trans>
+          )}
+        </ModalTitle>
+        <ModalDescription>
+          {asRevision ? (
+            <Trans>The quote will be copied with a revision suffix</Trans>
+          ) : (
+            <Trans>Create a quote with a new quote ID</Trans>
+          )}
+        </ModalDescription>
+      </ModalHeader>
+      {newQuoteId ? (
+        <>
+          <ModalBody>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div>
+                <LuCheck className="w-16 h-16 text-green-500" />
               </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button asChild>
-                <Link to={path.to.quoteDetails(newQuoteId)}>
-                  <Trans>Open</Trans>
-                </Link>
-              </Button>
-            </ModalFooter>
-          </>
-        ) : (
+              <h2 className="animate-fade-in">
+                <Trans>The quote has been created</Trans>
+              </h2>
+            </div>
+          </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <fetcher.Form
-              method="post"
-              action={path.to.quoteDuplicate(quote.id!)}
-            >
-              <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
-              <input
-                type="hidden"
-                name="asRevision"
-                value={asRevision ? "true" : "false"}
-              />
-              <Button
-                isLoading={fetcher.state !== "idle"}
-                isDisabled={fetcher.state !== "idle"}
-                variant="primary"
-                type="submit"
-              >
-                {asRevision ? (
-                  <Trans>Create Revision</Trans>
-                ) : (
-                  <Trans>Copy Quote</Trans>
-                )}
-              </Button>
-            </fetcher.Form>
+            <Button asChild>
+              <Link to={path.to.quoteDetails(newQuoteId)}>
+                <Trans>Open</Trans>
+              </Link>
+            </Button>
           </ModalFooter>
-        )}
-      </ModalContent>
-    </Modal>
+        </>
+      ) : (
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <fetcher.Form
+            method="post"
+            action={path.to.quoteDuplicate(quote.id!)}
+          >
+            <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
+            <input
+              type="hidden"
+              name="asRevision"
+              value={asRevision ? "true" : "false"}
+            />
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              variant="primary"
+              type="submit"
+            >
+              {asRevision ? (
+                <Trans>Create Revision</Trans>
+              ) : (
+                <Trans>Copy Quote</Trans>
+              )}
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      )}
+    </>
   );
 }
 

@@ -314,9 +314,7 @@ function PickingListLineItem({
   // A refused pick is toasted by useAction.
   const fetcher = useAction();
   const isPending = fetcher.state !== "idle";
-  // Keyed per open: the short-pick modal seeds its quantity on mount.
   const shortModal = useDisclosure();
-  // Keyed per open: the picker keeps its tab, order and scan at its top level.
   const picker = useDisclosure();
   const trackedFetcher = useFetcher<{
     entities: TrackedEntityOption[];
@@ -663,46 +661,34 @@ function PickingListLineItem({
         {actions}
       </div>
 
-      {shortModal.openCount > 0 && (
-        <ShortPickModal
-          key={`shortModal-${shortModal.openCount}`}
-          open={shortModal.isOpen}
-          pickingListId={pickingListId}
-          lineId={line.id}
-          itemName={itemName}
-          quantityToPick={quantityToPick}
-          quantityPicked={quantityPicked}
-          unitOfMeasureCode={unitOfMeasureCode}
-          onClose={shortModal.onClose}
-        />
-      )}
+      <ShortPickModal
+        open={shortModal.isOpen}
+        pickingListId={pickingListId}
+        lineId={line.id}
+        itemName={itemName}
+        quantityToPick={quantityToPick}
+        quantityPicked={quantityPicked}
+        unitOfMeasureCode={unitOfMeasureCode}
+        onClose={shortModal.onClose}
+      />
 
-      {picker.openCount > 0 && (
-        <TrackedEntityPicker
-          key={`picker-${picker.openCount}`}
-          open={picker.isOpen}
-          trackingType={
-            item?.itemTrackingType === "Serial" ? "Serial" : "Batch"
-          }
-          entities={trackedFetcher.data?.entities ?? []}
-          quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
-          title={`Pick ${itemName}`}
-          description={
-            item?.itemTrackingType === "Serial"
-              ? t`Choose a serial number`
-              : t`Choose a batch number`
-          }
-          nearExpiryWarningDays={
-            trackedFetcher.data?.nearExpiryWarningDays ?? 0
-          }
-          expiredEntityPolicy={
-            trackedFetcher.data?.expiredEntityPolicy ?? "Warn"
-          }
-          defaultOrder={trackedFetcher.data?.defaultOrder}
-          onSelect={pickTracked}
-          onClose={picker.onClose}
-        />
-      )}
+      <TrackedEntityPicker
+        open={picker.isOpen}
+        trackingType={item?.itemTrackingType === "Serial" ? "Serial" : "Batch"}
+        entities={trackedFetcher.data?.entities ?? []}
+        quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
+        title={`Pick ${itemName}`}
+        description={
+          item?.itemTrackingType === "Serial"
+            ? t`Choose a serial number`
+            : t`Choose a batch number`
+        }
+        nearExpiryWarningDays={trackedFetcher.data?.nearExpiryWarningDays ?? 0}
+        expiredEntityPolicy={trackedFetcher.data?.expiredEntityPolicy ?? "Warn"}
+        defaultOrder={trackedFetcher.data?.defaultOrder}
+        onSelect={pickTracked}
+        onClose={picker.onClose}
+      />
     </div>
   );
 }

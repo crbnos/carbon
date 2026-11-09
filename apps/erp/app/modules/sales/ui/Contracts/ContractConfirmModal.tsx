@@ -46,10 +46,27 @@ type ContractConfirmModalProps = {
  *  invoice post modal does (use a match, or create one) and the confirm
  *  action links the answer before confirming. */
 const ContractConfirmModal = ({
-  contract,
   open = true,
+  onClose,
+  ...props
+}: ContractConfirmModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="medium">
+      <ContractConfirmBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+const ContractConfirmBody = ({
+  contract,
   onClose
-}: ContractConfirmModalProps) => {
+}: Omit<ContractConfirmModalProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const labels = useContractLabels();
@@ -69,8 +86,8 @@ const ContractConfirmModal = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeLink` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
-    if (open && isStripe) stripeLink.load(path.to.contractConfirm(id));
-  }, [open, isStripe, id]);
+    if (isStripe) stripeLink.load(path.to.contractConfirm(id));
+  }, [isStripe, id]);
 
   // The action redirects with a flash; close once it has settled.
   useEffect(() => {
@@ -94,12 +111,6 @@ const ContractConfirmModal = ({
   const billingCustomerId = contract.invoiceCustomerId ?? contract.customerId;
   const [stripeEmail, setStripeEmail] = useState("");
   const [committedEmail, setCommittedEmail] = useState<string | undefined>();
-  // Stays mounted while closed: each open starts without a typed email.
-  useEffect(() => {
-    if (!open) return;
-    setStripeEmail("");
-    setCommittedEmail(undefined);
-  }, [open]);
   const { resolution, isLoading: isResolving } = useStripeCustomerResolution(
     isStripeUnlinked && !needsInvoicing && billingCustomerId
       ? {
@@ -128,147 +139,135 @@ const ContractConfirmModal = ({
   };
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={stripeCustomerChoiceValidator}
+      method="post"
+      action={path.to.contractConfirm(id)}
+      fetcher={fetcher}
+      onSubmit={() => {
+        submitted.current = true;
       }}
     >
-      <ModalContent size="medium">
-        <ValidatedForm
-          validator={stripeCustomerChoiceValidator}
-          method="post"
-          action={path.to.contractConfirm(id)}
-          fetcher={fetcher}
-          onSubmit={() => {
-            submitted.current = true;
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Confirm {contract.customerContractId}</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Confirming fixes the invoice schedule and starts invoicing. The
-                terms and lines are then changed with Amend.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <VStack spacing={2} className="w-full">
-                <HStack className="justify-between text-sm w-full">
-                  <span className="text-muted-foreground">
-                    <Trans>First invoice</Trans>
-                  </span>
-                  {first ? (
-                    <span className="flex items-center gap-2">
-                      <DateTime value={first.invoiceDate} variant="date" />
-                      <span aria-hidden>·</span>
-                      <MotionMoney
-                        value={first.total}
-                        currency={currencyCode}
-                        decimalPlaces={currencyDecimals}
-                      />
-                    </span>
-                  ) : (
-                    <span>—</span>
-                  )}
-                </HStack>
-                <HStack className="justify-between text-sm w-full">
-                  <span className="text-muted-foreground">
-                    {contract.endDate ? (
-                      <Trans>Planned invoices</Trans>
-                    ) : (
-                      <Trans>Planned invoices so far</Trans>
-                    )}
-                  </span>
-                  <span>{planned.length}</span>
-                </HStack>
-                <HStack className="justify-between text-sm w-full">
-                  <span className="text-muted-foreground">
-                    <Trans>Invoicing</Trans>
-                  </span>
-                  <span>{labels.invoiceAutomation[mode]}</span>
-                </HStack>
-                <p className="text-xs text-muted-foreground w-full">
-                  {automation[mode]} <Trans>Amounts are before tax.</Trans>
-                </p>
-              </VStack>
-
-              {isStripe &&
-                (isCheckingStripe ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Spinner className="size-4" />
-                    <Trans>Checking the Stripe customer link…</Trans>
-                  </div>
-                ) : isStripeUnlinked ? (
-                  needsInvoicing ? null : (
-                    <VStack spacing={2} className="w-full">
-                      <StripeCustomerPanel
-                        subject="contract"
-                        resolution={resolution}
-                        isLoading={isResolving}
-                        email={stripeEmail}
-                        onEmailChange={setStripeEmail}
-                        onEmailCommit={(email) => {
-                          // Re-resolve once an address exists: Stripe may
-                          // already have a customer under it, and linking beats
-                          // duplicating.
-                          if (email.includes("@")) setCommittedEmail(email);
-                        }}
-                      />
-                      {committedEmail && (
-                        <Hidden
-                          name="stripeContactEmail"
-                          value={committedEmail}
-                        />
-                      )}
-                    </VStack>
-                  )
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      Invoices are sent to the Stripe customer already linked to
-                      the billing customer.
-                    </Trans>
-                  </p>
-                ))}
-
-              {needsInvoicing && (
-                <p className="text-sm text-muted-foreground">
-                  <Trans>
-                    This contract's invoices post automatically, so confirming
-                    it needs permission to create invoices.
-                  </Trans>
-                </p>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Confirm {contract.customerContractId}</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Confirming fixes the invoice schedule and starts invoicing. The
+            terms and lines are then changed with Amend.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <VStack spacing={2} className="w-full">
+            <HStack className="justify-between text-sm w-full">
+              <span className="text-muted-foreground">
+                <Trans>First invoice</Trans>
+              </span>
+              {first ? (
+                <span className="flex items-center gap-2">
+                  <DateTime value={first.invoiceDate} variant="date" />
+                  <span aria-hidden>·</span>
+                  <MotionMoney
+                    value={first.total}
+                    currency={currencyCode}
+                    decimalPlaces={currencyDecimals}
+                  />
+                </span>
+              ) : (
+                <span>—</span>
               )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="secondary"
-              isDisabled={fetcher.state !== "idle"}
-              onClick={onClose}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit
-              withBlocker={false}
-              shortcut={SHORTCUTS.confirm}
-              isDisabled={
-                isStripeBlocked ||
-                needsInvoicing ||
-                !permissions.can("update", "sales")
-              }
-            >
-              <Trans>Confirm</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+            </HStack>
+            <HStack className="justify-between text-sm w-full">
+              <span className="text-muted-foreground">
+                {contract.endDate ? (
+                  <Trans>Planned invoices</Trans>
+                ) : (
+                  <Trans>Planned invoices so far</Trans>
+                )}
+              </span>
+              <span>{planned.length}</span>
+            </HStack>
+            <HStack className="justify-between text-sm w-full">
+              <span className="text-muted-foreground">
+                <Trans>Invoicing</Trans>
+              </span>
+              <span>{labels.invoiceAutomation[mode]}</span>
+            </HStack>
+            <p className="text-xs text-muted-foreground w-full">
+              {automation[mode]} <Trans>Amounts are before tax.</Trans>
+            </p>
+          </VStack>
+
+          {isStripe &&
+            (isCheckingStripe ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner className="size-4" />
+                <Trans>Checking the Stripe customer link…</Trans>
+              </div>
+            ) : isStripeUnlinked ? (
+              needsInvoicing ? null : (
+                <VStack spacing={2} className="w-full">
+                  <StripeCustomerPanel
+                    subject="contract"
+                    resolution={resolution}
+                    isLoading={isResolving}
+                    email={stripeEmail}
+                    onEmailChange={setStripeEmail}
+                    onEmailCommit={(email) => {
+                      // Re-resolve once an address exists: Stripe may
+                      // already have a customer under it, and linking beats
+                      // duplicating.
+                      if (email.includes("@")) setCommittedEmail(email);
+                    }}
+                  />
+                  {committedEmail && (
+                    <Hidden name="stripeContactEmail" value={committedEmail} />
+                  )}
+                </VStack>
+              )
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  Invoices are sent to the Stripe customer already linked to the
+                  billing customer.
+                </Trans>
+              </p>
+            ))}
+
+          {needsInvoicing && (
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This contract's invoices post automatically, so confirming it
+                needs permission to create invoices.
+              </Trans>
+            </p>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          variant="secondary"
+          isDisabled={fetcher.state !== "idle"}
+          onClick={onClose}
+        >
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit
+          withBlocker={false}
+          shortcut={SHORTCUTS.confirm}
+          isDisabled={
+            isStripeBlocked ||
+            needsInvoicing ||
+            !permissions.can("update", "sales")
+          }
+        >
+          <Trans>Confirm</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

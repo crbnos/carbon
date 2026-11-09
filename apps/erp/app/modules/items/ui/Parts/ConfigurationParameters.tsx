@@ -1076,24 +1076,21 @@ function ConfigurableParameter({
           )}
         </div>
       )}
-      {deleteParameterDisclosure.openCount > 0 && (
-        <ConfirmDelete
-          key={deleteParameterDisclosure.openCount}
-          action={path.to.deleteConfigurationParameter(
-            parameter.itemId,
-            parameter.id
-          )}
-          isOpen={deleteParameterDisclosure.isOpen}
-          name={parameter.label}
-          text={t`Are you sure you want to delete the ${parameter.label} parameter? This will not update any formulas that are using this parameter.`}
-          onCancel={() => {
-            deleteParameterDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteParameterDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteConfigurationParameter(
+          parameter.itemId,
+          parameter.id
+        )}
+        isOpen={deleteParameterDisclosure.isOpen}
+        name={parameter.label}
+        text={t`Are you sure you want to delete the ${parameter.label} parameter? This will not update any formulas that are using this parameter.`}
+        onCancel={() => {
+          deleteParameterDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteParameterDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

@@ -328,9 +328,8 @@ function ServiceJobExplorerItem({
         </div>
       )}
 
-      {node.key === "items" && issuePartModal.openCount > 0 && (
+      {node.key === "items" && (
         <ServiceJobAddPartModal
-          key={issuePartModal.openCount}
           open={issuePartModal.isOpen}
           jobId={jobId}
           onClose={issuePartModal.onClose}

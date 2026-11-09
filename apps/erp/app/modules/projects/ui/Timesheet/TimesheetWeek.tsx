@@ -162,7 +162,6 @@ export default function TimesheetWeek({
   }>();
   const pendingChange = useDrawerItem<PendingChange>();
   const { open: openPendingChange } = pendingChange;
-  // Keyed per open of Submit week, so the certification opens fresh.
   const certifyModal = useDisclosure();
   // The hours the user just set, shown until the saved value comes back.
   const [overrides, setOverrides] = useState<Record<string, number>>({});
@@ -699,7 +698,6 @@ export default function TimesheetWeek({
 
       {adding.item && (
         <AddRowModal
-          key={`adding-${adding.key}`}
           open={adding.isOpen}
           pto={adding.item === "pto"}
           laborCategories={laborCategories}
@@ -758,7 +756,6 @@ export default function TimesheetWeek({
 
       {correcting.item && (
         <CorrectionModal
-          key={`correcting-${correcting.key}`}
           open={correcting.isOpen}
           entryId={correcting.item.entryId}
           hours={correcting.item.hours}
@@ -771,7 +768,6 @@ export default function TimesheetWeek({
 
       {change && (
         <TimesheetChangeModal
-          key={`pendingChange-${pendingChange.key}`}
           open={pendingChange.isOpen}
           label={change.label}
           previousHours={change.previousHours}
@@ -800,9 +796,8 @@ export default function TimesheetWeek({
         />
       )}
 
-      {certifyModal.openCount > 0 && controls && (
+      {controls && (
         <CertificationModal
-          key={`certifyModal-${certifyModal.openCount}`}
           open={certifyModal.isOpen}
           certificationText={controls.certificationText}
           weekStart={weekStart}

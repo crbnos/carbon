@@ -75,7 +75,6 @@ const ContractInvoiceGrid = ({
   const { formatDate } = useDateFormatter();
   const today = useCompanyToday();
   const resetFetcher = useFetcher<{}>();
-  // The amounts modal seeds its state from props: a new key per open.
   const addInvoice = useDisclosure();
   const {
     item: deleting,
@@ -395,25 +394,22 @@ const ContractInvoiceGrid = ({
         </p>
       </div>
 
-      {addInvoice.openCount > 0 && (
-        <ContractAmountsModal
-          key={addInvoice.openCount}
-          open={addInvoice.isOpen}
-          intent="addInvoice"
-          action={action}
-          title={<Trans>Add Invoice</Trans>}
-          description={
-            <Trans>
-              Each amount starts at what the line has left to invoice.
-            </Trans>
-          }
-          lines={lines}
-          defaults={remaining}
-          defaultDate={lastDate ?? contract.startDate ?? today}
-          currencyCode={currencyCode}
-          onClose={addInvoice.onClose}
-        />
-      )}
+      <ContractAmountsModal
+        open={addInvoice.isOpen}
+        intent="addInvoice"
+        action={action}
+        title={<Trans>Add Invoice</Trans>}
+        description={
+          <Trans>
+            Each amount starts at what the line has left to invoice.
+          </Trans>
+        }
+        lines={lines}
+        defaults={remaining}
+        defaultDate={lastDate ?? contract.startDate ?? today}
+        currencyCode={currencyCode}
+        onClose={addInvoice.onClose}
+      />
 
       {deleting && (
         <ConfirmDelete

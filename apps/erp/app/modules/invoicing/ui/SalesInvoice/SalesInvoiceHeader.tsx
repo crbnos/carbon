@@ -511,20 +511,17 @@ const SalesInvoiceHeader = () => {
         }
       />
 
-      {postingModal.openCount > 0 && (
-        <SalesInvoicePostModal
-          key={`post-${postingModal.openCount}`}
-          invoiceId={invoiceId}
-          customerId={salesInvoice.invoiceCustomerId}
-          customerContactId={salesInvoice.invoiceCustomerContactId}
-          dateDue={salesInvoice.dateDue}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToShip={linesNotAssociatedWithSO}
-          fetcher={postFetcher}
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SalesInvoicePostModal
+        invoiceId={invoiceId}
+        customerId={salesInvoice.invoiceCustomerId}
+        customerContactId={salesInvoice.invoiceCustomerContactId}
+        dateDue={salesInvoice.dateDue}
+        isOpen={postingModal.isOpen}
+        onClose={postingModal.onClose}
+        linesToShip={linesNotAssociatedWithSO}
+        fetcher={postFetcher}
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <postRules.ViolationModal />
       <SalesInvoiceVoidModal
         open={voidModal.isOpen}

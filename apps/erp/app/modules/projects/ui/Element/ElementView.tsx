@@ -659,7 +659,6 @@ export function ElementView({
 
       {loggingTime.item && (
         <LogTimeModal
-          key={`loggingTime-${loggingTime.key}`}
           open={loggingTime.isOpen}
           projectId={projectId}
           element={element}
@@ -672,7 +671,6 @@ export function ElementView({
       )}
       {issuing.item && (
         <IssueMaterialModal
-          key={`issuing-${issuing.key}`}
           open={issuing.isOpen}
           projectId={projectId}
           element={element}
@@ -682,16 +680,13 @@ export function ElementView({
           onClose={issuing.close}
         />
       )}
-      {purchaseOrderModal.openCount > 0 && (
-        <AddPurchaseOrderModal
-          key={`purchaseOrderModal-${purchaseOrderModal.openCount}`}
-          open={purchaseOrderModal.isOpen}
-          projectId={projectId}
-          elementId={element.id}
-          defaultRequiredDate={element.targetDate ?? undefined}
-          onClose={purchaseOrderModal.onClose}
-        />
-      )}
+      <AddPurchaseOrderModal
+        open={purchaseOrderModal.isOpen}
+        projectId={projectId}
+        elementId={element.id}
+        defaultRequiredDate={element.targetDate ?? undefined}
+        onClose={purchaseOrderModal.onClose}
+      />
       {jobModal.openCount > 0 && (
         <JobForm
           key={`jobModal-${jobModal.openCount}`}
@@ -726,7 +721,6 @@ export function ElementView({
       )}
       {charging.item && (
         <ChargeCostModal
-          key={`charging-${charging.key}`}
           open={charging.isOpen}
           projectId={projectId}
           element={element}

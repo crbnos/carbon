@@ -425,6 +425,7 @@ export * from "./hooks";
 export * from "./ImageZoomViewer";
 export * from "./InlineTrigger";
 export * from "./RecordOutlet";
+export { useReportUnsavedChanges } from "./RouteDialogScope";
 export type {
   ActionPresentation,
   AvatarProps,

@@ -62,7 +62,6 @@ const StockMovementsTable = memo(
   ({ data, count, infinite }: StockMovementsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
-    // Keyed per open: the correction modal loads the movement when it mounts.
     const correction = useDrawerItem<StockMovement>();
     const [people] = usePeople();
     const locations = useLocations();
@@ -316,7 +315,6 @@ const StockMovementsTable = memo(
         />
         {correction.item && (
           <StockMovementCorrectionModal
-            key={correction.key}
             open={correction.isOpen}
             movement={correction.item}
             onClose={correction.close}

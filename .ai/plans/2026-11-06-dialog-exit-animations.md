@@ -24,22 +24,23 @@ removes both when the backdrop ends, so the box animation was cut short.
 ## Design
 
 - `useRouteDialog(to?, options?)` (`@carbon/react`) returns `{ open, close }`.
-  `close` sets `open` to false. When React commits that, an effect waits for
-  Radix to remove the dialog. Then the hook navigates: to `to`, or back/parent
-  as `useCloseRoute` does.
-- If a navigation is already loading (a save's redirect), the hook waits for it
-  and does not navigate over it.
-- If a form in the route's own dialogs has unsaved changes, `close` navigates
-  at once. The `Submit` blocker then asks over the open dialog. `<Submit>`
-  marks its button `data-unsaved-changes` for this.
-- If a blocker keeps the route, the hook shows the dialog again after the
-  prompt is answered with "stay". It never shows it on top of the prompt.
-- If going back lands on the same route, the hook keeps going back.
-- A conditional dialog stays mounted, and the condition goes to `open` /
-  `isOpen`. A dialog that must start fresh on each open uses
-  `{d.openCount > 0 && <D key={d.openCount} open={d.isOpen} />}`
-  (`useDisclosure().openCount`). A dialog that shows a record keeps it with
-  `useDrawerItem` until the next open.
+  `close` sets `open` to false. The hook navigates when the dialog has gone:
+  to `to`, or back/parent as `useCloseRoute` does.
+- `RecordOutlet` provides a React context, `RouteDialogScopeContext`. The dialog
+  content reports its exit to the scope from an effect cleanup. Radix unmounts
+  the content when the closing animation ends.
+- If a navigation is already loading (a save's redirect), the hook waits for it.
+  It does not navigate over that navigation.
+- If a `Submit` in the route has unsaved changes, `close` navigates at once. The
+  `Submit` blocker then asks over the open dialog. `Submit` reports its state
+  with `useReportUnsavedChanges`.
+- A conditional dialog stays mounted. The condition goes to `open` / `isOpen`.
+- State that must start fresh on each open goes in a body component inside
+  `ModalContent` / `DrawerContent`. Radix unmounts the content on close.
+- A `key` that counts opens is the fallback for state that cannot move into the
+  content. `.claude/rules/conventions-ui.md` names the two cases.
+- A dialog that shows a record keeps the record until the next open
+  (`useDrawerItem`).
 - The `no-unmounting-dialog` check (`@carbon/checks`) flags the old patterns.
 
 ## Progress
@@ -69,14 +70,15 @@ running dev stack (`crbn up`).
 **Files:**
 - Create: `packages/react/src/hooks/useRouteDialog.ts`
 - Create: `packages/react/src/__tests__/useRouteDialog.test.tsx`
-- Modify: `packages/react/src/utils/dialog.ts` — add `hasUnsavedChanges` and `whenDialogRemoved`.
+- Create: `packages/react/src/RouteDialogScope.tsx` — the scope context and `useReportUnsavedChanges`.
+- Modify: `packages/react/src/utils/dialog.ts` — add `afterDialogCloses`.
 - Modify: `packages/react/src/hooks/index.ts` — export `useRouteDialog`.
 - Copy from (precedent): `packages/react/src/hooks/useCloseRoute.ts`
 
 **Verify:**
 ```bash
 pnpm --filter @carbon/react exec vitest run src/__tests__/useRouteDialog.test.tsx
-# Expected: Tests 3 passed (3)
+# Expected: Tests 4 passed (4)
 ```
 
 ## Task 2: Match the backdrop and box closing durations
@@ -91,7 +93,7 @@ pnpm --filter @carbon/react exec vitest run src/__tests__/useRouteDialog.test.ts
 
 **Depends on:** none
 **Files:**
-- Modify: `packages/form/src/components/Submit.tsx` — set `data-unsaved-changes` when `withBlocker && isTouched && !isSubmitting`.
+- Modify: `packages/form/src/components/Submit.tsx` — call `useReportUnsavedChanges(withBlocker && isTouched && !isSubmitting)`.
 
 **Verify:** the third test of Task 1 covers the hook side.
 
@@ -150,7 +152,7 @@ A worklist line is `file:line<TAB>snippet`. The snippet is one of:
 4. When the dialog shows a record, keep `{record && <D isOpen={x.isOpen} />}`.
 5. Then remove the code that clears the record on close. The next open sets it.
 6. Check the top level of the dialog component for state or effects that must reset per open.
-7. If they must reset, make them react to `open`, or key the dialog per open.
+7. If they must reset, move them to a body component inside the content.
 8. If a dialog is not a Radix dialog, leave it and report it.
 
 **Verify:**

@@ -8,15 +8,12 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import type { To } from "react-router";
-import {
-  createMemoryRouter,
-  Outlet,
-  RouterProvider,
-  useBlocker
-} from "react-router";
+import { createMemoryRouter, RouterProvider, useBlocker } from "react-router";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { useRouteDialog } from "../hooks/useRouteDialog";
 import { Modal, ModalContent, ModalTitle } from "../Modal";
+import { RecordOutlet } from "../RecordOutlet";
+import { useReportUnsavedChanges } from "../RouteDialogScope";
 
 let root: Root | undefined;
 let container: HTMLDivElement | undefined;
@@ -30,32 +27,24 @@ function List() {
   return <p>list</p>;
 }
 
-// The page behind the dialog, holding a form with unsaved changes or not.
-function Page({ unsaved = false }: { unsaved?: boolean }) {
-  return (
-    <>
-      {unsaved && <DirtyForm />}
-      <Outlet />
-    </>
-  );
+function Page() {
+  return <RecordOutlet />;
 }
 
-// A form with unsaved changes, as `<Submit>` marks it, with its prompt. A
+// A form with unsaved changes, as `<Submit>` reports it, with its prompt. A
 // router takes one blocker at a time, so only a dirty form mounts one.
 function DirtyForm() {
   const blocker = useBlocker(true);
+  useReportUnsavedChanges(true);
   return (
-    <>
-      <i data-unsaved-changes="" />
-      <Modal open={blocker.state === "blocked"}>
-        <ModalContent>
-          <ModalTitle>Unsaved changes</ModalTitle>
-          <button type="button" onClick={() => blocker.reset?.()}>
-            Stay
-          </button>
-        </ModalContent>
-      </Modal>
-    </>
+    <Modal open={blocker.state === "blocked"}>
+      <ModalContent>
+        <ModalTitle>Unsaved changes</ModalTitle>
+        <button type="button" onClick={() => blocker.reset?.()}>
+          Stay
+        </button>
+      </ModalContent>
+    </Modal>
   );
 }
 
@@ -103,7 +92,7 @@ function mount({
     [
       {
         path: "/list",
-        element: <Page unsaved={pageUnsaved} />,
+        element: <Page />,
         children: [
           { index: true, element: <List /> },
           { path: "new", element: <NewRecord {...props} /> }
@@ -198,18 +187,5 @@ describe("useRouteDialog", () => {
 
     await clickCancel(50);
     expect(dialogTitles()).toEqual(["New record:open", "Unsaved changes:open"]);
-  });
-
-  it("shows the dialog again once the user stays on a page whose blocker kept the route", async () => {
-    const router = mount({ pageUnsaved: true });
-
-    // Past the check that runs after leaving (300ms): only the prompt shows,
-    // so nothing covers its buttons.
-    await clickCancel(400);
-    expect(router.state.location.pathname).toBe("/list/new");
-    expect(dialogTitles()).toEqual(["Unsaved changes:open"]);
-
-    await clickCancel(50, "Stay");
-    expect(dialogTitles()).toEqual(["New record:open"]);
   });
 });

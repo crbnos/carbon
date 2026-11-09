@@ -62,7 +62,6 @@ export function TemplateReviewRow({
   const scopeViolations =
     run.status === "failed" && run.reason === "scope-violations";
   const [confirmPurge, setConfirmPurge] = useState(false);
-  // Its openCount keys the modal, so the typed confirmation starts empty each time.
   const keepModal = useDisclosure();
   useEffect(() => {
     // Any status but `ready` means the server has taken over the story —
@@ -246,17 +245,14 @@ export function TemplateReviewRow({
             </HStack>
           </HStack>
 
-          {keepModal.openCount > 0 && (
-            <KeepDemoDataModal
-              key={keepModal.openCount}
-              open={keepModal.isOpen}
-              onCancel={keepModal.onClose}
-              onConfirm={() => {
-                keepModal.onClose();
-                submit("keep");
-              }}
-            />
-          )}
+          <KeepDemoDataModal
+            open={keepModal.isOpen}
+            onCancel={keepModal.onClose}
+            onConfirm={() => {
+              keepModal.onClose();
+              submit("keep");
+            }}
+          />
 
           <PurgeCorruptedRowsModal
             open={confirmPurge}

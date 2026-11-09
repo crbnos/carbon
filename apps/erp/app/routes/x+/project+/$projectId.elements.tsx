@@ -305,7 +305,6 @@ export default function ProjectElementsRoute() {
   const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
-  // Its openCount keys the drawer, so Build from part starts fresh.
   const buildFromPart = useDisclosure();
 
   const {
@@ -558,16 +557,13 @@ export default function ProjectElementsRoute() {
           onClose={creating.close}
         />
       )}
-      {buildFromPart.openCount > 0 && (
-        <BuildFromPartDrawer
-          key={`buildFromPart-${buildFromPart.openCount}`}
-          open={buildFromPart.isOpen}
-          projectId={projectId}
-          elements={elements}
-          defaultParentId={null}
-          onClose={buildFromPart.onClose}
-        />
-      )}
+      <BuildFromPartDrawer
+        open={buildFromPart.isOpen}
+        projectId={projectId}
+        elements={elements}
+        defaultParentId={null}
+        onClose={buildFromPart.onClose}
+      />
     </div>
   );
 }

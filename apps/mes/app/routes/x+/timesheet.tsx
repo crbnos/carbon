@@ -1038,9 +1038,8 @@ export default function MESTimesheetPage() {
         />
       )}
 
-      {controls && certifyModal.openCount > 0 && (
+      {controls && (
         <WeekCertificationModal
-          key={`certify-${certifyModal.openCount}`}
           open={certifyModal.isOpen}
           certificationText={controls.certificationText}
           weekLabel={weekLabel}

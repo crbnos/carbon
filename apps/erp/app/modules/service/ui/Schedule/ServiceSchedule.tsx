@@ -448,7 +448,6 @@ export function ServiceSchedule({
       />
       {openAssignment && (
         <AssignmentModal
-          key={assignmentDialog.key}
           open={assignmentDialog.isOpen}
           assignment={openAssignment}
           employeeName={employeeNameById.get(openAssignment.employeeId) ?? null}

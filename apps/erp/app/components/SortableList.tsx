@@ -343,45 +343,42 @@ function SortableListItem<T>({
         >
           {renderExtra?.(item)}
         </PhoneRowContext.Provider>
-        {deleteModal.openCount > 0 && (
-          <Modal
-            key={deleteModal.openCount}
-            open={deleteModal.isOpen}
-            onOpenChange={(open) => {
-              if (!open) deleteModal.onClose();
-            }}
-          >
-            <ModalOverlay />
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Delete this line?</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>This cannot be undone.</Trans>
-                </p>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={deleteModal.onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    deleteModal.onClose();
-                    // Removing the row unmounts this modal: wait until it has
-                    // animated closed.
-                    afterDialogCloses(() => onRemoveItem(item.id));
-                  }}
-                >
-                  <Trans>Delete</Trans>
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
+        <Modal
+          open={deleteModal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) deleteModal.onClose();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Delete this line?</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                <Trans>This cannot be undone.</Trans>
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={deleteModal.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  deleteModal.onClose();
+                  // Removing the row unmounts this modal: wait until it has
+                  // animated closed.
+                  afterDialogCloses(() => onRemoveItem(item.id));
+                }}
+              >
+                <Trans>Delete</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Reorder.Item>
     );
   }

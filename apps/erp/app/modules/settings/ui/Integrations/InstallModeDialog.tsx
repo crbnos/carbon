@@ -52,9 +52,6 @@ export function InstallModeDialog({
   onClose: () => void;
   onChoose: (modeId: string) => void;
 }) {
-  const { t } = useLingui();
-  const [selected, setSelected] = useState<string | null>(modes[0]?.id ?? null);
-
   return (
     <Modal
       open={open}
@@ -63,78 +60,105 @@ export function InstallModeDialog({
       }}
     >
       <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>How will you use {integrationName}?</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              This cannot be changed later — {integrationName} allows only one
-              connected accounting system, so the choice decides what Carbon is
-              permitted to do. To switch, you would uninstall and reconnect.
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          {/* A real radio group, not N `aria-pressed` buttons: one tab stop,
+        <InstallModeDialogBody
+          integrationName={integrationName}
+          modes={modes}
+          onClose={onClose}
+          onChoose={onChoose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function InstallModeDialogBody({
+  integrationName,
+  modes,
+  onClose,
+  onChoose
+}: {
+  integrationName: string;
+  modes: InstallMode[];
+  onClose: () => void;
+  onChoose: (modeId: string) => void;
+}) {
+  const { t } = useLingui();
+  const [selected, setSelected] = useState<string | null>(modes[0]?.id ?? null);
+
+  return (
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>How will you use {integrationName}?</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            This cannot be changed later — {integrationName} allows only one
+            connected accounting system, so the choice decides what Carbon is
+            permitted to do. To switch, you would uninstall and reconnect.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        {/* A real radio group, not N `aria-pressed` buttons: one tab stop,
               arrow keys move between the options, and a screen reader is told
               they are mutually exclusive. `RadioGroupButton` leaves Enter free
               for Continue below, which is exactly this screen's shape. */}
-          <RadioGroup
-            value={selected ?? undefined}
-            onValueChange={setSelected}
-            aria-label={t`Install mode`}
-            className="flex flex-col gap-3"
-          >
-            {modes.map((mode) => {
-              const isSelected = selected === mode.id;
-              return (
-                <RadioGroupButton
-                  key={mode.id}
-                  value={mode.id}
-                  autoFocus={isSelected}
+        <RadioGroup
+          value={selected ?? undefined}
+          onValueChange={setSelected}
+          aria-label={t`Install mode`}
+          className="flex flex-col gap-3"
+        >
+          {modes.map((mode) => {
+            const isSelected = selected === mode.id;
+            return (
+              <RadioGroupButton
+                key={mode.id}
+                value={mode.id}
+                autoFocus={isSelected}
+                className={cn(
+                  // The options read as cards, so drop the button size's fixed
+                  // height and single-line clamp.
+                  "h-auto w-full items-start justify-start whitespace-normal rounded-lg border p-4 text-left",
+                  isSelected
+                    ? "border-primary bg-accent"
+                    : "border-border hover:bg-accent/50"
+                )}
+              >
+                <span
                   className={cn(
-                    // The options read as cards, so drop the button size's fixed
-                    // height and single-line clamp.
-                    "h-auto w-full items-start justify-start whitespace-normal rounded-lg border p-4 text-left",
+                    "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border",
                     isSelected
-                      ? "border-primary bg-accent"
-                      : "border-border hover:bg-accent/50"
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border",
-                      isSelected
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-muted-foreground"
-                    )}
-                  >
-                    {isSelected && <LuCheck className="size-3" />}
+                  {isSelected && <LuCheck className="size-3" />}
+                </span>
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">{mode.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {mode.description}
                   </span>
-                  <span className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">{mode.label}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {mode.description}
-                    </span>
-                  </span>
-                </RadioGroupButton>
-              );
-            })}
-          </RadioGroup>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isDisabled={!selected}
-            onClick={() => selected && onChoose(selected)}
-          >
-            <Trans>Continue</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+                </span>
+              </RadioGroupButton>
+            );
+          })}
+        </RadioGroup>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isDisabled={!selected}
+          onClick={() => selected && onChoose(selected)}
+        >
+          <Trans>Continue</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }

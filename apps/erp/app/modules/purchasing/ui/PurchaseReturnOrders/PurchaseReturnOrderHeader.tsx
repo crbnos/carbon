@@ -84,7 +84,6 @@ const PurchaseReturnOrderHeader = () => {
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
-  // The credit modal keeps its selection at its top level; a new key per open resets it.
   const creditDisclosure = useDisclosure();
 
   const canUpdate = permissions.can("update", "purchasing");
@@ -299,14 +298,11 @@ const PurchaseReturnOrderHeader = () => {
         }}
       />
 
-      {creditDisclosure.openCount > 0 && (
-        <PurchaseReturnOrderCreditModal
-          key={creditDisclosure.openCount}
-          currencyCode={purchaseReturnOrder.currencyCode}
-          open={creditDisclosure.isOpen}
-          onClose={creditDisclosure.onClose}
-        />
-      )}
+      <PurchaseReturnOrderCreditModal
+        currencyCode={purchaseReturnOrder.currencyCode}
+        open={creditDisclosure.isOpen}
+        onClose={creditDisclosure.onClose}
+      />
       {documentEdit.modal}
     </>
   );

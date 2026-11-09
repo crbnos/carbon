@@ -613,23 +613,19 @@ export default function TimesheetGrid({
         </div>
       )}
 
-      {addRowModal.openCount > 0 && (
-        <AddRowModal
-          key={`addRowModal-${addRowModal.openCount}`}
-          open={addRowModal.isOpen}
-          laborCategories={laborCategories}
-          jobLocationId={jobLocationId}
-          onAdd={(row) => {
-            setAddedRows((previous) => [...previous, row]);
-            addRowModal.onClose();
-          }}
-          onClose={addRowModal.onClose}
-        />
-      )}
+      <AddRowModal
+        open={addRowModal.isOpen}
+        laborCategories={laborCategories}
+        jobLocationId={jobLocationId}
+        onAdd={(row) => {
+          setAddedRows((previous) => [...previous, row]);
+          addRowModal.onClose();
+        }}
+        onClose={addRowModal.onClose}
+      />
 
       {correcting.item && (
         <CorrectionModal
-          key={`correcting-${correcting.key}`}
           open={correcting.isOpen}
           entryId={correcting.item.entryId}
           hours={correcting.item.hours}
@@ -642,7 +638,6 @@ export default function TimesheetGrid({
 
       {change && (
         <TimesheetChangeModal
-          key={`pendingChange-${pendingChange.key}`}
           open={pendingChange.isOpen}
           label={change.label}
           previousHours={change.previousHours}
@@ -672,9 +667,8 @@ export default function TimesheetGrid({
         />
       )}
 
-      {certifyModal.openCount > 0 && controls && (
+      {controls && (
         <CertificationModal
-          key={`certifyModal-${certifyModal.openCount}`}
           open={certifyModal.isOpen}
           certificationText={controls.certificationText}
           weekStart={weekStart}

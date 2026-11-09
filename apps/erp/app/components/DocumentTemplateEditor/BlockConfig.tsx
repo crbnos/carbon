@@ -407,7 +407,6 @@ function TypeBadge({ category }: { category: BlockCategory }) {
  */
 function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
   const { sections } = useDocumentTemplate();
-  // Keyed per open: the modal seeds its state from `section` on mount.
   const editModal = useDisclosure();
   const targetId =
     kind === "header"
@@ -441,9 +440,8 @@ function ChromeConfig({ kind }: { kind: "header" | "footer" }) {
         Open section library
       </Link>
 
-      {section && editModal.openCount > 0 && (
+      {section && (
         <SectionFormModal
-          key={editModal.openCount}
           open={editModal.isOpen}
           action={path.to.documentSections}
           onClose={editModal.onClose}

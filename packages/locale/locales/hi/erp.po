@@ -24972,7 +24972,7 @@ msgstr "पुनः स्टॉक शुल्क"
 msgid "Restock Fee Percent"
 msgstr "पुनः स्टॉक शुल्क प्रतिशत"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "पुनर्भंडारण शुल्क {0}"
 

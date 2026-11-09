@@ -232,40 +232,59 @@ function WarehouseTransferLineListItem({
         </div>
       </div>
 
-      {deleteModalDisclosure.openCount > 0 && (
-        <DeleteWarehouseTransferLine
-          key={`deleteModalDisclosure-${deleteModalDisclosure.openCount}`}
-          isOpen={deleteModalDisclosure.isOpen}
-          lineId={line.id}
-          warehouseTransferId={warehouseTransfer.id}
-          itemName={item.readableIdWithRevision}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <DeleteWarehouseTransferLine
+        isOpen={deleteModalDisclosure.isOpen}
+        lineId={line.id}
+        warehouseTransferId={warehouseTransfer.id}
+        itemName={item.readableIdWithRevision}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
 
-function DeleteWarehouseTransferLine({
-  lineId,
-  warehouseTransferId,
-  itemName,
-  isOpen = true,
-  onCancel,
-  onSubmit
-}: {
+type DeleteWarehouseTransferLineProps = {
   lineId: string;
   warehouseTransferId: string;
   itemName: string;
   isOpen?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
-}) {
+};
+
+function DeleteWarehouseTransferLine({
+  isOpen = true,
+  onCancel,
+  ...props
+}: DeleteWarehouseTransferLineProps) {
+  return (
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <DeleteWarehouseTransferLineBody onCancel={onCancel} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function DeleteWarehouseTransferLineBody({
+  lineId,
+  warehouseTransferId,
+  itemName,
+  onCancel,
+  onSubmit
+}: Omit<DeleteWarehouseTransferLineProps, "isOpen">) {
   const fetcher = useAction<{ success: boolean }>({
     onSettled: () => {
       if (submitted.current) {
@@ -277,46 +296,38 @@ function DeleteWarehouseTransferLine({
   const submitted = useRef(false);
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Delete Transfer Line</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          Are you sure you want to delete this transfer line for {itemName}?
-          This cannot be undone.
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.warehouseTransferLine(warehouseTransferId, lineId)}
-            onSubmit={() => (submitted.current = true)}
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Delete Transfer Line</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        Are you sure you want to delete this transfer line for {itemName}? This
+        cannot be undone.
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.warehouseTransferLine(warehouseTransferId, lineId)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <input type="hidden" name="type" value="delete" />
+          <input type="hidden" name="id" value={lineId} />
+          <Button
+            variant="destructive"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+            type="submit"
           >
-            <input type="hidden" name="type" value="delete" />
-            <input type="hidden" name="id" value={lineId} />
-            <Button
-              variant="destructive"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-            >
-              Delete
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            Delete
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 

@@ -456,9 +456,8 @@ const ServiceJobHeader = () => {
           </>
         }
       />
-      {job && sendModal.openCount > 0 && (
+      {job && (
         <EstimateSendModal
-          key={sendModal.openCount}
           open={sendModal.isOpen}
           jobId={jobId}
           serviceJobId={job.serviceJobId}

@@ -693,7 +693,6 @@ export default function InspectionDocumentEditor({
   const [docSampling, setDocSampling] = useState<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
   );
-  // Keyed per open: the sampling modal seeds its fields from the target.
   const samplingModal = useDrawerItem<"document" | string>();
   const { item: samplingTarget, open: openSamplingModal } = samplingModal;
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -3842,7 +3841,6 @@ export default function InspectionDocumentEditor({
 
       {samplingTarget !== null && (
         <SamplingRuleModal
-          key={samplingModal.key}
           open={samplingModal.isOpen}
           context={samplingTarget === "document" ? "document" : "feature"}
           featureLabel={

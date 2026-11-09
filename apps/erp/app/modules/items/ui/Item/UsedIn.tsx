@@ -452,9 +452,8 @@ export function RevisionsItem({
         </div>
       )}
 
-      {revisionDisclosure.openCount > 0 && selectedRevision && (
+      {selectedRevision && (
         <RevisionForm
-          key={`revision-${revisionDisclosure.openCount}`}
           initialValues={selectedRevision}
           open={revisionDisclosure.isOpen}
           onClose={revisionDisclosure.onClose}

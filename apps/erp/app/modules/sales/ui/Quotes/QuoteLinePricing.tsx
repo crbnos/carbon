@@ -703,7 +703,6 @@ const QuoteLinePricing = ({
     ]
   );
 
-  // The lead time modal keeps its forecast and choices: a new key per open.
   const leadTimeModal = useDisclosure();
 
   // How each quantity's price was resolved. The stored traces arrive with the
@@ -1627,18 +1626,15 @@ const QuoteLinePricing = ({
           </Tbody>
         </Table>
       </CardContent>
-      {leadTimeModal.openCount > 0 && (
-        <QuoteLeadTimeModal
-          key={leadTimeModal.openCount}
-          open={leadTimeModal.isOpen}
-          quoteId={quoteId}
-          lineId={lineId}
-          quantities={quantities}
-          isEditable={isEditable}
-          onApply={onUpdateLeadTimes}
-          onClose={leadTimeModal.onClose}
-        />
-      )}
+      <QuoteLeadTimeModal
+        open={leadTimeModal.isOpen}
+        quoteId={quoteId}
+        lineId={lineId}
+        quantities={quantities}
+        isEditable={isEditable}
+        onApply={onUpdateLeadTimes}
+        onClose={leadTimeModal.onClose}
+      />
       <QuoteLinePriceTraceModal
         open={priceTraceModalOpen}
         traces={priceTraces}

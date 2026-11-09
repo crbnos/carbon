@@ -462,7 +462,6 @@ const PriceListTable = memo(
         />
         {duplicate.item && (
           <DuplicatePriceListModal
-            key={duplicate.key}
             open={duplicate.isOpen}
             sourceScope={sourceScope}
             overrideIds={duplicate.item.overrideIds}

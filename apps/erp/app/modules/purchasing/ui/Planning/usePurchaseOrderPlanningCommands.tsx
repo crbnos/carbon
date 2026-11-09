@@ -157,7 +157,6 @@ export function usePurchaseOrderPlanningCommands(): {
       )}
       {finalize.item && (
         <PlanningFinalizeModal
-          key={finalize.key}
           purchaseOrderId={finalize.item}
           fetcher={finalizeFetcher}
           open={finalize.isOpen}

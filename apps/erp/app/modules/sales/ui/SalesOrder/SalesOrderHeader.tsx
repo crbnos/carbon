@@ -73,17 +73,38 @@ import SalesOrderToContractModal from "./SalesOrderToContractModal";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
-const SalesOrderConfirmModal = ({
-  open,
-  salesOrder,
-  onClose,
-  defaultCc = []
-}: {
+type SalesOrderConfirmModalProps = {
   open: boolean;
   salesOrder?: SalesOrder;
   onClose: () => void;
   defaultCc?: string[];
-}) => {
+};
+
+const SalesOrderConfirmModal = ({
+  open,
+  onClose,
+  ...props
+}: SalesOrderConfirmModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    <ModalContent>
+      <SalesOrderConfirmBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+const SalesOrderConfirmBody = ({
+  salesOrder,
+  onClose,
+  defaultCc = []
+}: Omit<SalesOrderConfirmModalProps, "open">) => {
   const { t } = useLingui();
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
@@ -108,87 +129,78 @@ const SalesOrderConfirmModal = ({
   const { fetcher } = ruleViolations;
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.salesOrderConfirm(orderId)}
-          validator={salesConfirmValidator}
-          defaultValues={{
-            notification: notificationType,
-            customerContact: salesOrder?.customerContactId ?? undefined,
-            cc: defaultCc
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>{t`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  Are you sure you want to confirm this sales order? Confirming
-                  the order will affect on order quantities used to calculate
-                  supply and demand.
-                </Trans>
-              </p>
-              {canEmail && (
-                <SelectControlled
-                  label={t`Send Via`}
-                  name="notification"
-                  options={[
-                    {
-                      label: t`None`,
-                      value: "None"
-                    },
-                    {
-                      label: t`Email`,
-                      value: "Email"
-                    }
-                  ]}
-                  value={notificationType}
-                  onChange={(t) => {
-                    if (t) setNotificationType(t.value as "Email" | "None");
-                  }}
+    <>
+      <ValidatedForm
+        method="post"
+        action={path.to.salesOrderConfirm(orderId)}
+        validator={salesConfirmValidator}
+        defaultValues={{
+          notification: notificationType,
+          customerContact: salesOrder?.customerContactId ?? undefined,
+          cc: defaultCc
+        }}
+        fetcher={fetcher}
+      >
+        <ModalHeader>
+          <ModalTitle>{t`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4}>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                Are you sure you want to confirm this sales order? Confirming
+                the order will affect on order quantities used to calculate
+                supply and demand.
+              </Trans>
+            </p>
+            {canEmail && (
+              <SelectControlled
+                label={t`Send Via`}
+                name="notification"
+                options={[
+                  {
+                    label: t`None`,
+                    value: "None"
+                  },
+                  {
+                    label: t`Email`,
+                    value: "Email"
+                  }
+                ]}
+                value={notificationType}
+                onChange={(t) => {
+                  if (t) setNotificationType(t.value as "Email" | "None");
+                }}
+              />
+            )}
+            {notificationType === "Email" && (
+              <>
+                <CustomerContact
+                  name="customerContact"
+                  customer={salesOrder?.customerId ?? undefined}
+                  warnIfNoEmail
+                  onMissingEmailChange={setContactMissingEmail}
                 />
-              )}
-              {notificationType === "Email" && (
-                <>
-                  <CustomerContact
-                    name="customerContact"
-                    customer={salesOrder?.customerId ?? undefined}
-                    warnIfNoEmail
-                    onMissingEmailChange={setContactMissingEmail}
-                  />
-                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={notificationType === "Email" && contactMissingEmail}
-            >
-              <Trans>Confirm</Trans>
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
+                <EmailRecipients name="cc" label={t`CC`} type="employee" />
+              </>
+            )}
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            type="submit"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={notificationType === "Email" && contactMissingEmail}
+          >
+            <Trans>Confirm</Trans>
+          </Button>
+        </ModalFooter>
+      </ValidatedForm>
       <ruleViolations.ViolationModal />
-    </Modal>
+    </>
   );
 };
 
@@ -233,8 +245,6 @@ const SalesOrderHeader = () => {
   });
 
   const salesOrderToJobsModal = useDisclosure();
-  // Create Contract and Confirm keep their choices in local state: a new key
-  // per open starts each one fresh, as unmounting on close did.
   const salesOrderToContractModal = useDisclosure();
   const confirmDisclosure = useDisclosure();
   const deleteSalesOrderModal = useDisclosure();
@@ -691,29 +701,23 @@ const SalesOrderHeader = () => {
         onSubmit={salesOrderToJobsModal.onClose}
         action={path.to.salesOrderLinesToJobs(orderId)}
       />
-      {salesOrderToContractModal.openCount > 0 && (
-        <SalesOrderToContractModal
-          key={`salesOrderToContractModal-${salesOrderToContractModal.openCount}`}
-          open={salesOrderToContractModal.isOpen}
-          orderId={orderId}
-          salesOrderId={routeData?.salesOrder?.salesOrderId ?? ""}
-          customerName={
-            customers.find((c) => c.id === routeData?.salesOrder?.customerId)
-              ?.name
-          }
-          lines={contractEligibleLines}
-          onClose={salesOrderToContractModal.onClose}
-        />
-      )}
-      {confirmDisclosure.openCount > 0 && (
-        <SalesOrderConfirmModal
-          key={`confirmDisclosure-${confirmDisclosure.openCount}`}
-          open={confirmDisclosure.isOpen}
-          salesOrder={routeData?.salesOrder}
-          onClose={confirmDisclosure.onClose}
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SalesOrderToContractModal
+        open={salesOrderToContractModal.isOpen}
+        orderId={orderId}
+        salesOrderId={routeData?.salesOrder?.salesOrderId ?? ""}
+        customerName={
+          customers.find((c) => c.id === routeData?.salesOrder?.customerId)
+            ?.name
+        }
+        lines={contractEligibleLines}
+        onClose={salesOrderToContractModal.onClose}
+      />
+      <SalesOrderConfirmModal
+        open={confirmDisclosure.isOpen}
+        salesOrder={routeData?.salesOrder}
+        onClose={confirmDisclosure.onClose}
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <CancelSalesOrderModal
         orderId={orderId}
         isOpen={cancelDisclosure.isOpen}

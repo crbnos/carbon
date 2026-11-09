@@ -83,7 +83,6 @@ export default function TimesheetApprovals({
       )}
       {rejecting.item && (
         <RejectModal
-          key={rejecting.key}
           open={rejecting.isOpen}
           ids={rejecting.item.ids}
           label={rejecting.item.label}
@@ -293,62 +292,66 @@ function ApprovalCard({
   );
 }
 
-function RejectModal({
-  open = true,
-  ids,
-  label,
-  onClose
-}: {
+type RejectModalProps = {
   open?: boolean;
   ids: string[];
   label: string;
   onClose: () => void;
-}) {
+};
+
+function RejectModal({ open = true, onClose, ...props }: RejectModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <RejectBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function RejectBody({ ids, label, onClose }: Omit<RejectModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<{ success: boolean }>({ onSuccess: onClose });
   const [note, setNote] = useState("");
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <fetcher.Form method="post" action={path.to.projectTimesheetApprovals}>
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Reject Time</Trans>
-            </ModalTitle>
-            <ModalDescription>{label}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <input type="hidden" name="intent" value="reject" />
-            {ids.map((id) => (
-              <input key={id} type="hidden" name="ids" value={id} />
-            ))}
-            <Textarea
-              name="note"
-              aria-label={t`Note`}
-              placeholder={t`Tell the employee what to fix`}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              autoFocus
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              variant="destructive"
-              isDisabled={!note.trim() || isSubmitting}
-              isLoading={isSubmitting}
-            >
-              <Trans>Reject</Trans>
-            </Button>
-          </ModalFooter>
-        </fetcher.Form>
-      </ModalContent>
-    </Modal>
+    <fetcher.Form method="post" action={path.to.projectTimesheetApprovals}>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Reject Time</Trans>
+        </ModalTitle>
+        <ModalDescription>{label}</ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <input type="hidden" name="intent" value="reject" />
+        {ids.map((id) => (
+          <input key={id} type="hidden" name="ids" value={id} />
+        ))}
+        <Textarea
+          name="note"
+          aria-label={t`Note`}
+          placeholder={t`Tell the employee what to fix`}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          autoFocus
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          variant="destructive"
+          isDisabled={!note.trim() || isSubmitting}
+          isLoading={isSubmitting}
+        >
+          <Trans>Reject</Trans>
+        </Button>
+      </ModalFooter>
+    </fetcher.Form>
   );
 }

@@ -12,8 +12,7 @@ import {
   ModalOverlay,
   ModalTitle,
   SHORTCUTS,
-  toast,
-  useDisclosure
+  toast
 } from "@carbon/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useEffect, useRef } from "react";
@@ -36,9 +35,24 @@ type ConfirmProps = {
   details?: ReactNode;
 };
 
-const Confirm = ({
+const Confirm = ({ isOpen = true, onCancel, ...props }: ConfirmProps) => (
+  <Modal
+    open={isOpen}
+    onOpenChange={(open) => {
+      if (!open) onCancel();
+    }}
+  >
+    <ModalOverlay />
+    <ModalContent>
+      <ConfirmBody onCancel={onCancel} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+// Inside the content, which Radix unmounts on close: each open gets a fresh
+// fetcher, so nothing from an earlier open carries over.
+const ConfirmBody = ({
   action,
-  isOpen = true,
   title,
   text,
   confirmText = "Confirm",
@@ -48,27 +62,17 @@ const Confirm = ({
   onSubmit,
   children,
   details
-}: ConfirmProps) => {
+}: Omit<ConfirmProps, "isOpen">) => {
   const fetcher = useFetcher<{ success: boolean; message: string }>();
-  // The dialog stays mounted between opens, and so does its fetcher: the
-  // request outlives a close, as it did before. Each open has an id, so a
-  // request from an earlier open does not close a later one on settling.
-  const { openCount: opens } = useDisclosure({ isOpen });
-  const submittedIn = useRef<number | null>(null);
+  const submitted = useRef(false);
 
   useEffect(() => {
-    if (fetcher.state !== "idle" || submittedIn.current === null) return;
-    const from = submittedIn.current;
-    submittedIn.current = null;
-    // A later open is on screen: this request was for an earlier one.
-    if (isOpen && from !== opens) return;
-    // Cancelled while the request ran: act on it only if it went through.
-    if (!isOpen && fetcher.data?.success === false) return;
-    onSubmit?.();
-  }, [fetcher.state, fetcher.data, onSubmit, isOpen, opens]);
+    if (fetcher.state === "idle" && submitted.current) {
+      onSubmit?.();
+      submitted.current = false;
+    }
+  }, [fetcher.state, onSubmit]);
 
-  // Keyed on the response, not its message: the fetcher outlives a close, so
-  // a later submit with the same message must toast again.
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
       toast.success(fetcher.data.message);
@@ -77,49 +81,41 @@ const Confirm = ({
     if (fetcher.data?.success === false && fetcher?.data?.message) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data?.message, fetcher.data?.success]);
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{title}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <p className="text-sm text-muted-foreground">{text}</p>
-          {details}
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            {cancelText}
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={action}
-            onSubmit={() => (submittedIn.current = opens)}
+    <>
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p className="text-sm text-muted-foreground">{text}</p>
+        {details}
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          {cancelText}
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={action}
+          onSubmit={() => (submitted.current = true)}
+        >
+          {children}
+          {/* Same z-50 tie-break dependency as ConfirmDelete: this modal
+              wins over an open drawer only because it mounts later. */}
+          <Button
+            variant={confirmVariant}
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+            type="submit"
+            shortcut={SHORTCUTS.confirm}
           >
-            {children}
-            {/* Same z-50 tie-break dependency as ConfirmDelete: this modal
-                wins over an open drawer only because it mounts later. */}
-            <Button
-              variant={confirmVariant}
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              shortcut={SHORTCUTS.confirm}
-            >
-              {confirmText}
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            {confirmText}
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 };
 

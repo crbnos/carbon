@@ -295,14 +295,11 @@ const ProjectHeader = () => {
         projectId={projectId}
         onClose={() => setStoppingWork(false)}
       />
-      {placeModal.openCount > 0 && (
-        <PlaceInServiceModal
-          key={placeModal.openCount}
-          open={placeModal.isOpen}
-          projectId={projectId}
-          onClose={placeModal.onClose}
-        />
-      )}
+      <PlaceInServiceModal
+        open={placeModal.isOpen}
+        projectId={projectId}
+        onClose={placeModal.onClose}
+      />
       <Confirm
         action={path.to.projectStatus(projectId)}
         isOpen={closeDisclosure.isOpen}

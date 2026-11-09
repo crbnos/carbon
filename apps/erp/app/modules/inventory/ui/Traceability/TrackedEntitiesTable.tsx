@@ -289,7 +289,6 @@ const TrackedEntitiesTable = memo(
         />
         {editingExpiry && editingExpiry.status !== "Consumed" && (
           <EditExpiryModal
-            key={editExpiry.key}
             open={editExpiry.isOpen}
             onClose={editExpiry.close}
             trackedEntityId={editingExpiry.id}
@@ -302,7 +301,6 @@ const TrackedEntitiesTable = memo(
           Number.isFinite(Number(unscrapping.quantity)) &&
           Number(unscrapping.quantity) > 0 && (
             <UnscrapModal
-              key={unscrap.key}
               open={unscrap.isOpen}
               onClose={unscrap.close}
               itemId={unscrapping.itemId}

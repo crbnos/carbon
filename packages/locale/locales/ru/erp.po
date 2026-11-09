@@ -24972,7 +24972,7 @@ msgstr "комиссия за пополнение запасов"
 msgid "Restock Fee Percent"
 msgstr "Процент комиссии за пополнение запасов"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Комиссия за пополнение запасов: {0}"
 

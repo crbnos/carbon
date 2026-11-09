@@ -242,7 +242,6 @@ export default function MaintenanceDetailRoute() {
   const { t } = useLingui();
   const fetcher = useFetcher();
   const deleteFetcher = useFetcher();
-  // Keyed by its open count: the add-part modal seeds its state on mount.
   const addPartModal = useDisclosure();
   const [tab, setTab] = useState("details");
   const [confirmComplete, setConfirmComplete] = useState(false);
@@ -705,15 +704,12 @@ export default function MaintenanceDetailRoute() {
       </WorkRecordShell>
 
       {/* Add Part Modal */}
-      {addPartModal.openCount > 0 && (
-        <MaintenanceAddPartModal
-          key={addPartModal.openCount}
-          open={addPartModal.isOpen}
-          dispatchId={dispatch.id}
-          itemOptions={itemOptions}
-          onClose={addPartModal.onClose}
-        />
-      )}
+      <MaintenanceAddPartModal
+        open={addPartModal.isOpen}
+        dispatchId={dispatch.id}
+        itemOptions={itemOptions}
+        onClose={addPartModal.onClose}
+      />
       <Modal
         open={confirmComplete}
         onOpenChange={(open) => {

@@ -44,7 +44,6 @@ export default function IndirectRatesRatesRoute() {
     `${path.to.indirectRates}?fiscalYear=${routeData?.fiscalYear}`
   );
   const permissions = usePermissions();
-  // Its openCount keys the modal, so its state and fetcher start fresh each time.
   const settingRate = useDisclosure();
 
   if (!routeData) return null;
@@ -93,16 +92,13 @@ export default function IndirectRatesRatesRoute() {
           />
         </DrawerBody>
       </DrawerContent>
-      {settingRate.openCount > 0 && (
-        <SetIndirectRateModal
-          key={settingRate.openCount}
-          open={settingRate.isOpen}
-          pools={activePools}
-          fiscalYear={fiscalYear}
-          action={path.to.indirectRates}
-          onClose={settingRate.onClose}
-        />
-      )}
+      <SetIndirectRateModal
+        open={settingRate.isOpen}
+        pools={activePools}
+        fiscalYear={fiscalYear}
+        action={path.to.indirectRates}
+        onClose={settingRate.onClose}
+      />
     </Drawer>
   );
 }

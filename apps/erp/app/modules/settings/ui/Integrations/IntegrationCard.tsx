@@ -79,7 +79,6 @@ export function IntegrationCard({
         }
       ).modes?.find((m) => m.id === installed.installMode)
     : undefined;
-  // Its openCount keys the dialog, so it starts on the first mode each time.
   const modeDialog = useDisclosure();
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
@@ -221,16 +220,13 @@ export function IntegrationCard({
           />
         )}
       </CardFooter>
-      {modeDialog.openCount > 0 && (
-        <InstallModeDialog
-          key={modeDialog.openCount}
-          open={modeDialog.isOpen}
-          integrationName={integration.name}
-          modes={modes}
-          onClose={modeDialog.onClose}
-          onChoose={(mode) => startOAuthConnect(integration.id, mode)}
-        />
-      )}
+      <InstallModeDialog
+        open={modeDialog.isOpen}
+        integrationName={integration.name}
+        modes={modes}
+        onClose={modeDialog.onClose}
+        onChoose={(mode) => startOAuthConnect(integration.id, mode)}
+      />
     </Card>
   );
 }

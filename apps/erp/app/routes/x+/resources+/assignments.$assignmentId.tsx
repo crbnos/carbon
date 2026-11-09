@@ -170,6 +170,29 @@ function CertificateCompleteModal({
   open?: boolean;
   onClose: () => void;
 }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <CertificateCompleteBody assignment={assignment} onClose={onClose} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function CertificateCompleteBody({
+  assignment,
+  onClose
+}: {
+  assignment: TrainingAssignmentStatusItem;
+  onClose: () => void;
+}) {
   const { t } = useLingui();
   const fetcher = useAction<typeof completeAction>({
     onSuccess: () => {
@@ -193,58 +216,50 @@ function CertificateCompleteModal({
   };
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{t`Mark Complete`}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                Mark {assignment.employeeName?.trim()} complete. Attach their
-                certificate if you have one.
-              </Trans>
-            </p>
-            <FileDropzone
-              onDrop={(files) => setFile(files[0] ?? null)}
-              accept={{
-                ...trainingCertificateAccept,
-                "image/heic": [".heic", ".heif"]
-              }}
-              multiple={false}
-              disabled={isSubmitting}
-              className="mt-0 w-full"
-            />
-            {file && (
-              <HStack spacing={2} className="text-sm">
-                <LuFileCheck className="text-emerald-500" />
-                <span className="break-all">{file.name}</span>
-              </HStack>
-            )}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            onClick={onSubmit}
-            isDisabled={isSubmitting}
-            isLoading={isSubmitting}
-            leftIcon={<LuCircleCheck />}
-          >
-            <Trans>Mark Complete</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <>
+      <ModalHeader>
+        <ModalTitle>{t`Mark Complete`}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Mark {assignment.employeeName?.trim()} complete. Attach their
+              certificate if you have one.
+            </Trans>
+          </p>
+          <FileDropzone
+            onDrop={(files) => setFile(files[0] ?? null)}
+            accept={{
+              ...trainingCertificateAccept,
+              "image/heic": [".heic", ".heif"]
+            }}
+            multiple={false}
+            disabled={isSubmitting}
+            className="mt-0 w-full"
+          />
+          {file && (
+            <HStack spacing={2} className="text-sm">
+              <LuFileCheck className="text-emerald-500" />
+              <span className="break-all">{file.name}</span>
+            </HStack>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          onClick={onSubmit}
+          isDisabled={isSubmitting}
+          isLoading={isSubmitting}
+          leftIcon={<LuCircleCheck />}
+        >
+          <Trans>Mark Complete</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }
 
@@ -269,7 +284,6 @@ function AssignmentListItem({
   const employeeName = assignment.employeeName?.trim() ?? "";
   const canMarkComplete =
     assignment.status !== "Completed" && assignment.status !== "Not Required";
-  // Its openCount keys the modal, so the certificate file starts empty each time.
   const certificateModal = useDisclosure();
   // Hold the completion id from when the dialog opened: the row loses its
   // completionId as soon as the removal revalidates, and the dialog must stay
@@ -375,14 +389,11 @@ function AssignmentListItem({
           )}
         </HStack>
       </div>
-      {certificateModal.openCount > 0 && (
-        <CertificateCompleteModal
-          key={certificateModal.openCount}
-          open={certificateModal.isOpen}
-          assignment={assignment}
-          onClose={certificateModal.onClose}
-        />
-      )}
+      <CertificateCompleteModal
+        open={certificateModal.isOpen}
+        assignment={assignment}
+        onClose={certificateModal.onClose}
+      />
       {removeCompletionId !== null && (
         <Confirm
           action={path.to.markTrainingIncomplete}

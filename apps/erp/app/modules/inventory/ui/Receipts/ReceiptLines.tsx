@@ -1006,25 +1006,19 @@ function ReceiptLineItem({
             </Await>
           </Suspense>
           <FileDropzone onDrop={upload} />
-          {splitDisclosure.openCount > 0 && (
-            <SplitReceiptLineModal
-              key={`splitDisclosure-${splitDisclosure.openCount}`}
-              open={splitDisclosure.isOpen}
-              line={line}
-              onClose={splitDisclosure.onClose}
-            />
-          )}
-          {deleteDisclosure.openCount > 0 && (
-            <ConfirmDelete
-              key={`deleteDisclosure-${deleteDisclosure.openCount}`}
-              isOpen={deleteDisclosure.isOpen}
-              name="Receipt Line"
-              text="Are you sure you want to delete this receipt line?"
-              action={path.to.receiptLineDelete(line.id!)}
-              onCancel={deleteDisclosure.onClose}
-              onSubmit={deleteDisclosure.onClose}
-            />
-          )}
+          <SplitReceiptLineModal
+            open={splitDisclosure.isOpen}
+            line={line}
+            onClose={splitDisclosure.onClose}
+          />
+          <ConfirmDelete
+            isOpen={deleteDisclosure.isOpen}
+            name="Receipt Line"
+            text="Are you sure you want to delete this receipt line?"
+            action={path.to.receiptLineDelete(line.id!)}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
+          />
         </>
       )}
     </div>
@@ -1537,61 +1531,65 @@ function SerialForm({
   );
 }
 
-function SplitReceiptLineModal({
-  line,
-  open,
-  onClose
-}: {
+type SplitReceiptLineModalProps = {
   line: ReceiptLine;
   open: boolean;
   onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const fetcher = useAction<typeof splitAction>({ onSuccess: onClose });
+};
+
+function SplitReceiptLineModal({
+  open,
+  onClose,
+  ...props
+}: SplitReceiptLineModalProps) {
   return (
     <Modal open={open} onOpenChange={onClose}>
       <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.receiptLineSplit}
-          validator={splitValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>Split Receipt Line</ModalTitle>
-            <ModalDescription>
-              Select the quantity that you'd like to split into a new line.
-            </ModalDescription>
-          </ModalHeader>
-
-          <ModalBody>
-            <input
-              type="hidden"
-              name="documentId"
-              value={line.receiptId ?? ""}
-            />
-            <input type="hidden" name="documentLineId" value={line.id!} />
-            <input
-              type="hidden"
-              name="locationId"
-              value={line.locationId ?? ""}
-            />
-            <Number
-              name="quantity"
-              label={t`Quantity`}
-              maxValue={line.orderQuantity ?? 0 - 0.0001}
-              minValue={0.0001}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit>Split Line</Submit>
-          </ModalFooter>
-        </ValidatedForm>
+        <SplitReceiptLineBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function SplitReceiptLineBody({
+  line,
+  onClose
+}: Omit<SplitReceiptLineModalProps, "open">) {
+  const { t } = useLingui();
+  const fetcher = useAction<typeof splitAction>({ onSuccess: onClose });
+  return (
+    <ValidatedForm
+      method="post"
+      action={path.to.receiptLineSplit}
+      validator={splitValidator}
+      fetcher={fetcher}
+    >
+      <ModalHeader>
+        <ModalTitle>Split Receipt Line</ModalTitle>
+        <ModalDescription>
+          Select the quantity that you'd like to split into a new line.
+        </ModalDescription>
+      </ModalHeader>
+
+      <ModalBody>
+        <input type="hidden" name="documentId" value={line.receiptId ?? ""} />
+        <input type="hidden" name="documentLineId" value={line.id!} />
+        <input type="hidden" name="locationId" value={line.locationId ?? ""} />
+        <Number
+          name="quantity"
+          label={t`Quantity`}
+          maxValue={line.orderQuantity ?? 0 - 0.0001}
+          minValue={0.0001}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit>Split Line</Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

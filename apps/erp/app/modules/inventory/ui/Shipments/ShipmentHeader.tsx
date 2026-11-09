@@ -44,8 +44,6 @@ const ShipmentHeader = () => {
   }>(path.to.shipment(shipmentId));
 
   const permissions = usePermissions();
-  // Remounted per open: both modals keep state from their last open, and the
-  // post modal checks tracking when it mounts.
   const postModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -158,20 +156,8 @@ const ShipmentHeader = () => {
         }
       />
 
-      {postModal.openCount > 0 && (
-        <ShipmentPostModal
-          key={`postModal-${postModal.openCount}`}
-          open={postModal.isOpen}
-          onClose={postModal.onClose}
-        />
-      )}
-      {voidModal.openCount > 0 && (
-        <ShipmentVoidModal
-          key={`voidModal-${voidModal.openCount}`}
-          open={voidModal.isOpen}
-          onClose={voidModal.onClose}
-        />
-      )}
+      <ShipmentPostModal open={postModal.isOpen} onClose={postModal.onClose} />
+      <ShipmentVoidModal open={voidModal.isOpen} onClose={voidModal.onClose} />
       <ConfirmDelete
         action={path.to.deleteShipment(shipmentId)}
         isOpen={deleteDisclosure.isOpen}

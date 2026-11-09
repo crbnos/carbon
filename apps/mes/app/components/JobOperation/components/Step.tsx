@@ -538,6 +538,36 @@ export function RecordModal({
   open?: boolean;
   onClose: () => void;
 }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <RecordBody
+          attribute={attribute}
+          activeStep={activeStep}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function RecordBody({
+  attribute,
+  activeStep,
+  onClose
+}: {
+  attribute: JobOperationStep;
+  activeStep: number;
+  onClose: () => void;
+}) {
   const [employees] = usePeople();
   const employeeOptions = useMemo(() => {
     return employees.map((employee) => ({
@@ -617,208 +647,188 @@ export function RecordModal({
   };
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      method="post"
+      validator={
+        attribute.type === "Measurement"
+          ? measurementStepRecordValidator
+          : stepRecordValidator
+      }
+      action={path.to.record}
+      defaultValues={{
+        index: activeStep,
+        jobOperationStepId: attribute.id,
+        value:
+          record?.value ??
+          (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
+        // Empty until recorded: a prefilled 0 could be recorded as a
+        // real measurement.
+        numericValue: record?.numericValue ?? undefined,
+        userValue: record?.userValue ?? ""
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={
-            attribute.type === "Measurement"
-              ? measurementStepRecordValidator
-              : stepRecordValidator
-          }
-          action={path.to.record}
-          defaultValues={{
-            index: activeStep,
-            jobOperationStepId: attribute.id,
-            value:
-              record?.value ??
-              (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
-            // Empty until recorded: a prefilled 0 could be recorded as a
-            // real measurement.
-            numericValue: record?.numericValue ?? undefined,
-            userValue: record?.userValue ?? ""
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>
-                {attribute.name} - Set {activeStep + 1}
-              </Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            <Hidden name="jobOperationStepId" />
-            <Hidden name="index" />
-            {attribute.type === "Checkbox" && (
-              <Hidden
-                name="booleanValue"
-                value={booleanControlled ? "true" : "false"}
-              />
-            )}
-            {attribute.type === "File" && (
-              <Hidden name="value" value={filePath ?? ""} />
-            )}
-            {attribute.type === "Inspection" && (
-              <>
-                <Hidden name="value" value={filePath ?? ""} />
-                <Hidden
-                  name="booleanValue"
-                  value={booleanControlled ? "true" : "false"}
-                />
-              </>
-            )}
-            <VStack spacing={4}>
-              {hasStepDescription(attribute.description) && (
-                <div
-                  className="flex flex-col gap-2"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(attribute.description as JSONContent)
-                  }}
-                />
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>
+            {attribute.name} - Set {activeStep + 1}
+          </Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="id" />
+        <Hidden name="jobOperationStepId" />
+        <Hidden name="index" />
+        {attribute.type === "Checkbox" && (
+          <Hidden
+            name="booleanValue"
+            value={booleanControlled ? "true" : "false"}
+          />
+        )}
+        {attribute.type === "File" && (
+          <Hidden name="value" value={filePath ?? ""} />
+        )}
+        {attribute.type === "Inspection" && (
+          <>
+            <Hidden name="value" value={filePath ?? ""} />
+            <Hidden
+              name="booleanValue"
+              value={booleanControlled ? "true" : "false"}
+            />
+          </>
+        )}
+        <VStack spacing={4}>
+          {hasStepDescription(attribute.description) && (
+            <div
+              className="flex flex-col gap-2"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(attribute.description as JSONContent)
+              }}
+            />
+          )}
+          {attribute.type === "Value" && (
+            <InputField
+              name="value"
+              label=""
+              aria-label={attribute.name}
+              size="lg"
+            />
+          )}
+          {attribute.type === "Measurement" && (
+            <Number
+              name="numericValue"
+              label={attribute.unitOfMeasureCode ?? ""}
+              // The visible label is only the unit; name the measure too.
+              aria-label={
+                attribute.unitOfMeasureCode
+                  ? `${attribute.name} (${attribute.unitOfMeasureCode})`
+                  : attribute.name
+              }
+              helperText={limits ?? undefined}
+              size="lg"
+            />
+          )}
+          {attribute.type === "Timestamp" && (
+            <DateTimePicker
+              name="value"
+              label=""
+              aria-label={attribute.name}
+              size="lg"
+            />
+          )}
+          {attribute.type === "Checkbox" && (
+            <Switch
+              aria-label={attribute.name}
+              checked={booleanControlled}
+              onCheckedChange={(checked) => setBooleanControlled(!!checked)}
+              onKeyDown={recordOnEnter}
+            />
+          )}
+          {attribute.type === "Person" && (
+            <Combobox
+              name="userValue"
+              label=""
+              aria-label={attribute.name}
+              options={employeeOptions}
+              size="lg"
+            />
+          )}
+          {attribute.type === "List" && (
+            <Select
+              name="value"
+              label=""
+              aria-label={attribute.name}
+              size="lg"
+              options={(attribute.listValues ?? []).map((value) => ({
+                label: value,
+                value
+              }))}
+            />
+          )}
+          {attribute.type === "File" &&
+            (file ? (
+              <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
+                <LuFile className="size-10 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{file.name}</p>
+                <Button variant="secondary" size="sm" onClick={removeFile}>
+                  <Trans>Remove</Trans>
+                </Button>
+              </div>
+            ) : (
+              <FileDropzone onDrop={onDrop} />
+            ))}
+          {attribute.type === "Inspection" && (
+            <>
+              {file ? (
+                <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
+                  <LuFile className="size-10 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">{file.name}</p>
+                  <Button variant="secondary" size="sm" onClick={removeFile}>
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <FileDropzone onDrop={onDrop} />
               )}
-              {attribute.type === "Value" && (
-                <InputField
-                  name="value"
-                  label=""
-                  aria-label={attribute.name}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "Measurement" && (
-                <Number
-                  name="numericValue"
-                  label={attribute.unitOfMeasureCode ?? ""}
-                  // The visible label is only the unit; name the measure too.
-                  aria-label={
-                    attribute.unitOfMeasureCode
-                      ? `${attribute.name} (${attribute.unitOfMeasureCode})`
-                      : attribute.name
-                  }
-                  helperText={limits ?? undefined}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "Timestamp" && (
-                <DateTimePicker
-                  name="value"
-                  label=""
-                  aria-label={attribute.name}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "Checkbox" && (
+              <div className="flex items-center justify-between py-4 w-full">
+                <span className="text-sm font-medium">
+                  <Trans>Passed Inspection</Trans>
+                </span>
                 <Switch
-                  aria-label={attribute.name}
+                  aria-label={t`Passed Inspection`}
                   checked={booleanControlled}
                   onCheckedChange={(checked) => setBooleanControlled(!!checked)}
                   onKeyDown={recordOnEnter}
                 />
-              )}
-              {attribute.type === "Person" && (
-                <Combobox
-                  name="userValue"
-                  label=""
-                  aria-label={attribute.name}
-                  options={employeeOptions}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "List" && (
-                <Select
-                  name="value"
-                  label=""
-                  aria-label={attribute.name}
-                  size="lg"
-                  options={(attribute.listValues ?? []).map((value) => ({
-                    label: value,
-                    value
-                  }))}
-                />
-              )}
-              {attribute.type === "File" &&
-                (file ? (
-                  <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
-                    <LuFile className="size-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{file.name}</p>
-                    <Button variant="secondary" size="sm" onClick={removeFile}>
-                      <Trans>Remove</Trans>
-                    </Button>
-                  </div>
-                ) : (
-                  <FileDropzone onDrop={onDrop} />
-                ))}
-              {attribute.type === "Inspection" && (
-                <>
-                  {file ? (
-                    <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
-                      <LuFile className="size-10 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        {file.name}
-                      </p>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={removeFile}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ) : (
-                    <FileDropzone onDrop={onDrop} />
-                  )}
-                  <div className="flex items-center justify-between py-4 w-full">
-                    <span className="text-sm font-medium">
-                      <Trans>Passed Inspection</Trans>
-                    </span>
-                    <Switch
-                      aria-label={t`Passed Inspection`}
-                      checked={booleanControlled}
-                      onCheckedChange={(checked) =>
-                        setBooleanControlled(!!checked)
-                      }
-                      onKeyDown={recordOnEnter}
-                    />
-                  </div>
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit
-              ref={submitRef}
-              size="lg"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={
-                fetcher.state !== "idle" ||
-                (attribute.type === "File" && !filePath)
-              }
-              rightIcon={<LuCircleCheck />}
-              // Focus in a field submits natively on Enter; this covers focus
-              // elsewhere in the modal and renders the ↵ badge.
-              shortcut="enter"
-              // Enter on a focused control (Cancel, Remove, the dropzone, a
-              // combobox) stays that control's: Button's own guard stands
-              // down. The switches record through `recordOnEnter`.
-              type="submit"
-            >
-              <Trans>Record</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+              </div>
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit
+          ref={submitRef}
+          size="lg"
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={
+            fetcher.state !== "idle" || (attribute.type === "File" && !filePath)
+          }
+          rightIcon={<LuCircleCheck />}
+          // Focus in a field submits natively on Enter; this covers focus
+          // elsewhere in the modal and renders the ↵ badge.
+          shortcut="enter"
+          // Enter on a focused control (Cancel, Remove, the dropzone, a
+          // combobox) stays that control's: Button's own guard stands
+          // down. The switches record through `recordOnEnter`.
+          type="submit"
+        >
+          <Trans>Record</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -835,6 +845,31 @@ export function DeleteStepRecordModal({
   title: string;
   description: string;
 }) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <DeleteStepRecordBody
+          onClose={onClose}
+          id={id}
+          title={title}
+          description={description}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function DeleteStepRecordBody({
+  onClose,
+  id,
+  title,
+  description
+}: {
+  onClose: () => void;
+  id: string;
+  title: string;
+  description: string;
+}) {
   const fetcher = useAction<{ success: boolean }>({
     onSuccess: (data) => {
       if (data?.success) {
@@ -844,29 +879,27 @@ export function DeleteStepRecordModal({
   });
 
   return (
-    <Modal open={open} onOpenChange={onClose}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{title}</ModalTitle>
-          <ModalDescription>{description}</ModalDescription>
-        </ModalHeader>
-        <ModalFooter>
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            <Trans>Cancel</Trans>
+    <>
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+        <ModalDescription>{description}</ModalDescription>
+      </ModalHeader>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form method="post" action={path.to.recordDelete(id)}>
+          <Button
+            size="lg"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+            type="submit"
+            variant="destructive"
+          >
+            <Trans>Delete</Trans>
           </Button>
-          <fetcher.Form method="post" action={path.to.recordDelete(id)}>
-            <Button
-              size="lg"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              variant="destructive"
-            >
-              <Trans>Delete</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }

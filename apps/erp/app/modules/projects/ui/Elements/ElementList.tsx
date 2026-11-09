@@ -276,7 +276,6 @@ export function ElementList({
       })}
       {moving.item && (
         <MoveElementModal
-          key={moving.key}
           open={moving.isOpen}
           projectId={projectId}
           element={moving.item}

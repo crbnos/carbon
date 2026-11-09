@@ -593,25 +593,22 @@ const PurchaseReturnOrderLineForm = ({
           {serialsCard}
         </ValidatedForm>
       )}
-      {pickerDisclosure.openCount > 0 && (
-        <TrackedEntityPicker
-          key={pickerDisclosure.openCount}
-          open={pickerDisclosure.isOpen}
-          trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
-          entities={pickerEntities}
-          title={t`Pick serials/batches to return`}
-          description={t`Serials and batches on hand that were received from this supplier`}
-          onSelect={(selection) => {
-            setSelectedEntityIds((ids) =>
-              ids.includes(selection.trackedEntityId)
-                ? ids
-                : [...ids, selection.trackedEntityId]
-            );
-            pickerDisclosure.onClose();
-          }}
-          onClose={pickerDisclosure.onClose}
-        />
-      )}
+      <TrackedEntityPicker
+        open={pickerDisclosure.isOpen}
+        trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
+        entities={pickerEntities}
+        title={t`Pick serials/batches to return`}
+        description={t`Serials and batches on hand that were received from this supplier`}
+        onSelect={(selection) => {
+          setSelectedEntityIds((ids) =>
+            ids.includes(selection.trackedEntityId)
+              ? ids
+              : [...ids, selection.trackedEntityId]
+          );
+          pickerDisclosure.onClose();
+        }}
+        onClose={pickerDisclosure.onClose}
+      />
     </ModalCardProvider>
   );
 };

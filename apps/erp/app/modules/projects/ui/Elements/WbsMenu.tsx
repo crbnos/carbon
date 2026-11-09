@@ -69,7 +69,6 @@ export function WbsMenu({
 }) {
   const { t } = useLingui();
   const exportBlocked = repeatedCodes.length > 0;
-  // Keyed per open: the import starts with no file and no result.
   const importModal = useDisclosure();
   const [pinning, setPinning] = useState(false);
 
@@ -131,14 +130,11 @@ export function WbsMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {importModal.openCount > 0 && (
-        <ImportWbsModal
-          key={importModal.openCount}
-          open={importModal.isOpen}
-          projectId={projectId}
-          onClose={importModal.onClose}
-        />
-      )}
+      <ImportWbsModal
+        open={importModal.isOpen}
+        projectId={projectId}
+        onClose={importModal.onClose}
+      />
       <Confirm
         action={path.to.projectWbsPin(projectId)}
         isOpen={pinning}
@@ -152,6 +148,12 @@ export function WbsMenu({
   );
 }
 
+type ImportWbsModalProps = {
+  open?: boolean;
+  projectId: string;
+  onClose: () => void;
+};
+
 /**
  * Upload a WBS CSV, see what it will do, then apply it. The file is parsed
  * in the browser and posted as rows; the action reads them with
@@ -159,13 +161,23 @@ export function WbsMenu({
  */
 function ImportWbsModal({
   open = true,
+  onClose,
+  ...props
+}: ImportWbsModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalContent size="xlarge">
+        <ImportWbsBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// Inside the content, which Radix unmounts on close: each open starts fresh.
+function ImportWbsBody({
   projectId,
   onClose
-}: {
-  open?: boolean;
-  projectId: string;
-  onClose: () => void;
-}) {
+}: Omit<ImportWbsModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useFetcher<ImportResponse>();
   const [rows, setRows] = useState<Record<string, string>[] | null>(null);
@@ -233,85 +245,83 @@ function ImportWbsModal({
       : (response?.message ?? response?.error?.message));
 
   return (
-    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
-      <ModalContent size="xlarge">
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Import WBS</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start,
-              Target, Budget, Predecessors. A row with an Element ID updates
-              that element; a blank cell keeps its value. Nothing is deleted.
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody className="flex flex-col gap-4">
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            aria-label={t`CSV file`}
-            className="text-sm"
-            onChange={(event) => onFile(event.target.files?.[0])}
-          />
-          {message && <p className="text-sm text-destructive">{message}</p>}
-          {result && (
-            <div className="max-h-96 overflow-y-auto rounded-md border border-border">
-              <Table>
-                <Thead>
-                  <Tr>
-                    <Th>
-                      <Trans>Row</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Action</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>WBS code</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Name</Trans>
-                    </Th>
-                    <Th>
-                      <Trans>Error</Trans>
-                    </Th>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Import WBS</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start,
+            Target, Budget, Predecessors. A row with an Element ID updates that
+            element; a blank cell keeps its value. Nothing is deleted.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody className="flex flex-col gap-4">
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          aria-label={t`CSV file`}
+          className="text-sm"
+          onChange={(event) => onFile(event.target.files?.[0])}
+        />
+        {message && <p className="text-sm text-destructive">{message}</p>}
+        {result && (
+          <div className="max-h-96 overflow-y-auto rounded-md border border-border">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>
+                    <Trans>Row</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Action</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>WBS code</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Name</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Error</Trans>
+                  </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {previewRows.map((row) => (
+                  <Tr key={row.row}>
+                    <Td className="tabular-nums">{row.row}</Td>
+                    <Td>{row.action}</Td>
+                    <Td className="tabular-nums">{row.code}</Td>
+                    <Td>{row.name}</Td>
+                    <Td className="text-destructive">
+                      {errorsByRow.get(row.row)}
+                    </Td>
                   </Tr>
-                </Thead>
-                <Tbody>
-                  {previewRows.map((row) => (
-                    <Tr key={row.row}>
-                      <Td className="tabular-nums">{row.row}</Td>
-                      <Td>{row.action}</Td>
-                      <Td className="tabular-nums">{row.code}</Td>
-                      <Td>{row.name}</Td>
-                      <Td className="text-destructive">
-                        {errorsByRow.get(row.row)}
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </div>
+                ))}
+              </Tbody>
+            </Table>
+          </div>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isDisabled={!result || errorCount > 0 || fetcher.state !== "idle"}
+          isLoading={fetcher.state !== "idle"}
+          onClick={() => submit("apply")}
+        >
+          {errorCount > 0 ? (
+            <Trans>Fix {errorCount} errors to apply</Trans>
+          ) : (
+            <Trans>Apply</Trans>
           )}
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isDisabled={!result || errorCount > 0 || fetcher.state !== "idle"}
-            isLoading={fetcher.state !== "idle"}
-            onClick={() => submit("apply")}
-          >
-            {errorCount > 0 ? (
-              <Trans>Fix {errorCount} errors to apply</Trans>
-            ) : (
-              <Trans>Apply</Trans>
-            )}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }

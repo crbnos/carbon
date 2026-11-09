@@ -58,8 +58,6 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const confirm = useDisclosure();
   const confirmContract = useDisclosure();
   const deleteDisclosure = useDisclosure();
-  // Amend and Cancel keep their edits in local state: a new key per open
-  // starts each one fresh, as unmounting on close did.
   const amendDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
@@ -252,35 +250,26 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
         />
       )}
 
-      {confirmContract.openCount > 0 && (
-        <ContractConfirmModal
-          key={`confirmContract-${confirmContract.openCount}`}
-          contract={contract}
-          open={confirmContract.isOpen}
-          onClose={confirmContract.onClose}
-        />
-      )}
+      <ContractConfirmModal
+        contract={contract}
+        open={confirmContract.isOpen}
+        onClose={confirmContract.onClose}
+      />
 
-      {amendDisclosure.openCount > 0 && (
-        <ContractAmendModal
-          key={`amendDisclosure-${amendDisclosure.openCount}`}
-          contract={contract}
-          lines={lines}
-          action={path.to.contractAmend(id)}
-          open={amendDisclosure.isOpen}
-          onClose={amendDisclosure.onClose}
-        />
-      )}
+      <ContractAmendModal
+        contract={contract}
+        lines={lines}
+        action={path.to.contractAmend(id)}
+        open={amendDisclosure.isOpen}
+        onClose={amendDisclosure.onClose}
+      />
 
-      {cancelDisclosure.openCount > 0 && (
-        <ContractCancelModal
-          key={`cancelDisclosure-${cancelDisclosure.openCount}`}
-          contract={contract}
-          action={path.to.contractCancel(id)}
-          open={cancelDisclosure.isOpen}
-          onClose={cancelDisclosure.onClose}
-        />
-      )}
+      <ContractCancelModal
+        contract={contract}
+        action={path.to.contractCancel(id)}
+        open={cancelDisclosure.isOpen}
+        onClose={cancelDisclosure.onClose}
+      />
 
       <ConfirmDelete
         action={path.to.deleteContract(id)}
