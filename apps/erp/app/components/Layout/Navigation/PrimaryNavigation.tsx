@@ -46,16 +46,13 @@ import {
 } from "~/shortcuts";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { SearchModal } from "../Topbar/Search";
 import CompanySwitcher from "./CompanySwitcher";
 import { HiddenModulesPopover } from "./HiddenModulesPopover";
 import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
 import { useNavigationEditMode } from "./useNavigationEditMode";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 // Search and Customize are actions, not destinations — they keep the neutral
 // accent hover instead of the active-tinted one module links use.

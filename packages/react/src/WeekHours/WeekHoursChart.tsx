@@ -190,7 +190,7 @@ export function WeekHoursChart({
             isEditable={isEditable}
             formatHours={formatHours}
             renderBarAccessory={renderBarAccessory}
-            pointerHours={hover?.day === day ? hover.hours : null}
+            pointerHours={!dragging && hover?.day === day ? hover.hours : null}
             onHover={(hours) =>
               setHover(hours === null ? null : { day, hours })
             }
@@ -366,10 +366,12 @@ function WeekBar({
   };
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
+    event.stopPropagation();
     const next = snapHours(
       drag.current.base + (event.clientY - drag.current.startY) / hourPx,
       maxHours
     );
+    if (equals(next, drag.current.last)) return;
     drag.current.last = next;
     onDrag(next);
   };
@@ -454,7 +456,11 @@ function WeekBar({
           aria-hidden
           className={cn(
             "absolute inset-x-0 bottom-0 cursor-ns-resize touch-none",
-            size === "lg" ? "h-5" : "h-2"
+            size === "lg" ? "h-5" : "h-2",
+            // Grows inward because the bar clips its overflow; a short bar
+            // needs its body left free to tap.
+            height >= 88 &&
+              "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:bottom-0 pointer-coarse:after:h-11"
           )}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

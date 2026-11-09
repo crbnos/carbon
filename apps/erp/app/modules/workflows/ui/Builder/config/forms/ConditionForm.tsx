@@ -38,6 +38,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { LuGripVertical, LuPlus, LuX } from "react-icons/lu";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { useBuilderStore } from "../../context";
 import { OutputHandle } from "../../OutputHandle";
 import { conditionPathLabel } from "../../ports";
@@ -45,10 +46,6 @@ import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
 import type { NodeFormProps } from "./index";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 const newClause = (): Clause => ({
   left: {
@@ -116,7 +113,7 @@ function SortableClauseItem({
       type="button"
       aria-label={t`Drag to reorder`}
       disabled={isReadOnly}
-      className="nodrag nopan flex h-8 w-5 shrink-0 cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing"
+      className="nodrag nopan flex h-8 w-5 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
       {...attributes}
       {...listeners}
     >

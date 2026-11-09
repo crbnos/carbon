@@ -21,6 +21,18 @@ type Crop = NonNullable<LabelLogoBlock["crop"]>;
 const FULL: Crop = { x: 0, y: 0, width: 1, height: 1, aspect: 1 };
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
+const areaPosition = (c: Crop) => ({
+  left: `${c.x * 100}%`,
+  top: `${c.y * 100}%`,
+  width: `${c.width * 100}%`,
+  height: `${c.height * 100}%`
+});
+
+const handlePosition = (c: Crop) => ({
+  left: `calc(${(c.x + c.width) * 100}% - 0.375rem)`,
+  top: `calc(${(c.y + c.height) * 100}% - 0.375rem)`
+});
+
 /**
  * Logo crop field: a compact preview + buttons. The actual drag-to-crop canvas
  * lives in a dialog (kept out of the cramped config panels) so the source logo
@@ -82,7 +94,7 @@ export function LogoCropper({
   );
 }
 
-/** The drag-to-crop canvas, in a dialog. Live-updates the crop as you drag. */
+/** The drag-to-crop canvas, in a dialog. Saves the crop when a drag ends. */
 function CropDialog({
   src,
   crop,
@@ -95,12 +107,15 @@ function CropDialog({
   onClose: () => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
   const natural = useRef<{ w: number; h: number }>({ w: 1, h: 1 });
   const drag = useRef<{
     mode: "move" | "resize";
     startX: number;
     startY: number;
     start: Crop;
+    current?: Crop;
   } | null>(null);
   const [active, setActive] = useState(false);
 
@@ -141,9 +156,15 @@ function CropDialog({
       if (!d || !rect) return;
       const dx = (e.clientX - d.startX) / rect.width;
       const dy = (e.clientY - d.startY) / rect.height;
-      onChange(shift(d.start, d.mode, dx, dy));
+      d.current = shift(d.start, d.mode, dx, dy);
+      if (areaRef.current) {
+        Object.assign(areaRef.current.style, areaPosition(d.current));
+      }
+      if (handleRef.current) {
+        Object.assign(handleRef.current.style, handlePosition(d.current));
+      }
     },
-    [onChange, shift]
+    [shift]
   );
 
   // Keyboard path: arrow keys nudge 1% (Shift: 10%).
@@ -170,11 +191,14 @@ function CropDialog({
     };
 
   const endDrag = useCallback(() => {
+    const moved = drag.current?.current;
     drag.current = null;
     setActive(false);
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", endDrag);
-  }, [onPointerMove]);
+    window.removeEventListener("pointercancel", endDrag);
+    if (moved) onChange(moved);
+  }, [onChange, onPointerMove]);
 
   const startDrag = useCallback(
     (mode: "move" | "resize") => (e: React.PointerEvent) => {
@@ -189,6 +213,7 @@ function CropDialog({
       setActive(true);
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
     },
     [aspectOf, crop, endDrag, onPointerMove]
   );
@@ -223,6 +248,7 @@ function CropDialog({
                 }}
               />
               <div
+                ref={areaRef}
                 role="button"
                 tabIndex={0}
                 aria-label={t`Crop area: ${round(c.x * 100, 0)}% from left, ${round(c.y * 100, 0)}% from top. Arrow keys move it.`}
@@ -230,26 +256,21 @@ function CropDialog({
                 onKeyDown={onNudge("move")}
                 className="absolute cursor-move border-2 border-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 style={{
-                  left: `${c.x * 100}%`,
-                  top: `${c.y * 100}%`,
-                  width: `${c.width * 100}%`,
-                  height: `${c.height * 100}%`,
+                  ...areaPosition(c),
                   boxShadow: "0 0 0 9999px rgba(0,0,0,0.4)",
                   outline: active ? "1px solid #fff" : undefined
                 }}
               />
               {/* A sibling of the crop area, not a child, so neither control nests inside the other. */}
               <div
+                ref={handleRef}
                 role="button"
                 tabIndex={0}
                 aria-label={t`Crop size: ${round(c.width * 100, 0)}% wide, ${round(c.height * 100, 0)}% tall. Arrow keys resize it.`}
                 onPointerDown={startDrag("resize")}
                 onKeyDown={onNudge("resize")}
-                className="absolute h-3 w-3 cursor-se-resize rounded-sm border-2 border-white bg-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                style={{
-                  left: `calc(${(c.x + c.width) * 100}% - 0.375rem)`,
-                  top: `calc(${(c.y + c.height) * 100}% - 0.375rem)`
-                }}
+                className="absolute h-3 w-3 cursor-se-resize rounded-sm border-2 border-white bg-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-coarse:after:absolute pointer-coarse:after:-inset-4"
+                style={handlePosition(c)}
               />
             </div>
           </div>

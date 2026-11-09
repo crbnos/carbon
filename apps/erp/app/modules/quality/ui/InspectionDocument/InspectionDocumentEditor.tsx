@@ -27,6 +27,7 @@ import {
   toastError,
   useDebounce,
   useDisclosure,
+  usePaneResize,
   VStack
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -741,7 +742,6 @@ export default function InspectionDocumentEditor({
   /** Height of PDF block when table is expanded (px); drag the splitter to adjust. */
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [editorStackHeightPx, setEditorStackHeightPx] = useState(0);
-  const [isResizingPdfFeatures, setIsResizingPdfFeatures] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [pdfPageRendered, setPdfPageRendered] = useState(false);
   const prevPdfViewPageRef = useRef(pdfViewPage);
@@ -771,9 +771,6 @@ export default function InspectionDocumentEditor({
       "x" | "y" | "width" | "height" | "pageNumber"
     >;
   } | null>(null);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfReplaceToastRef = useRef(false);
   /** A replaced drawing's page metrics still need saving once it renders. */
@@ -884,44 +881,13 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [featuresTableExpanded]);
 
-  useEffect(() => {
-    if (!isResizingPdfFeatures) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(
-          start.startPdfPx + dy,
-          editorStackHeightPx,
-          featuresTableExpanded
-        )
-      );
-    };
-    const onUp = () => {
-      setIsResizingPdfFeatures(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingPdfFeatures, editorStackHeightPx, featuresTableExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!featuresTableExpanded) return;
-      e.preventDefault();
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingPdfFeatures(true);
-    },
-    [featuresTableExpanded, pdfPaneHeightPx]
-  );
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) =>
+      clampPdfPaneHeight(height, editorStackHeightPx, featuresTableExpanded),
+    enabled: featuresTableExpanded,
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Measure container width and keep it up to date on resize
   useEffect(() => {
@@ -3139,6 +3105,7 @@ export default function InspectionDocumentEditor({
         >
           {/* PDF viewer — outer measures width, inner fills container */}
           <div
+            ref={splitResize.paneRef}
             className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
               featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1"
             }`}
@@ -3765,10 +3732,10 @@ export default function InspectionDocumentEditor({
               aria-orientation="horizontal"
               aria-label={t`Drag to resize diagram and characteristics`}
               aria-valuenow={Math.round(pdfPaneHeightPx)}
-              className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
-                isResizingPdfFeatures ? "bg-muted" : ""
+              className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area ${
+                splitResize.isResizing ? "bg-muted" : ""
               }`}
-              onMouseDown={onSplitResizeMouseDown}
+              {...splitResize.handleProps}
             >
               <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
             </div>
