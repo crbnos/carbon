@@ -53,7 +53,12 @@ import { EndShift } from "./EndShift";
 import { MoreSheet } from "./MoreSheet";
 import Suggestion from "./Suggestion";
 import { TimeCardButton } from "./TimeCardButton";
-import { UserNav, useLocationSwitch, useSwitchCompany } from "./UserNav";
+import {
+  UserNav,
+  useLocationSwitch,
+  useSwitchCompany,
+  useUserNav
+} from "./UserNav";
 
 export function AppSidebar({
   activeEvents,
@@ -91,6 +96,7 @@ export function AppSidebar({
 }) {
   const { t } = useLingui();
   const { isMobile } = useSidebar();
+  const { optimisticLocation } = useLocationSwitch(location);
 
   const queues = (
     <QueueLinks
@@ -144,7 +150,9 @@ export function AppSidebar({
           header={
             <CompanyLink
               company={company}
-              locationName={locations.find((l) => l.id === location)?.name}
+              locationName={
+                locations.find((l) => l.id === optimisticLocation)?.name
+              }
             />
           }
           company={company}
@@ -168,6 +176,8 @@ export function AppSidebar({
         <CompanySwitcher
           company={company}
           companies={companies}
+          consoleMode={consoleMode}
+          pinnedInUser={pinnedInUser}
           location={location}
           locations={locations}
           // An operator pinned in at a console station cannot switch company.
@@ -199,12 +209,16 @@ export function AppSidebar({
 function CompanySwitcher({
   company,
   companies,
+  consoleMode,
+  pinnedInUser,
   location,
   locations,
   canSwitch
 }: {
   company: Company;
   companies: Company[];
+  consoleMode: boolean;
+  pinnedInUser: PinnedInUser | null;
   location: string;
   locations: Location[];
   canSwitch: boolean;
@@ -212,11 +226,19 @@ function CompanySwitcher({
   const { t } = useLingui();
   const mode = useMode();
   const switchCompany = useSwitchCompany();
-  const { updateLocation, optimisticLocation } = useLocationSwitch(location);
+  // Location follows the phone sheet and the account menu: only another
+  // operator pinned in at the station blocks it, not the station user.
+  const { updateLocation, optimisticLocation, isOperatorPinnedIn } = useUserNav(
+    {
+      consoleMode,
+      location,
+      pinnedInUser
+    }
+  );
   const locationName = locations.find((l) => l.id === optimisticLocation)?.name;
 
   const canSwitchCompany = canSwitch && companies.length > 1;
-  const canSwitchLocation = canSwitch && locations.length > 1;
+  const canSwitchLocation = !isOperatorPinnedIn && locations.length > 1;
 
   // Nothing to switch to: the row is the link back to the ERP, as it was.
   if (!canSwitchCompany && !canSwitchLocation) {

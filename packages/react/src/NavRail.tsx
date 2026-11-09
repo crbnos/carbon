@@ -573,8 +573,8 @@ export const NavRailSwitcher = forwardRef<
         ref={ref}
         type={asChild ? undefined : "button"}
         aria-label={sublabel ? `${label}, ${sublabel}` : label}
-        // Both lines truncate in the rail: the full text is one hover away.
-        title={sublabel ? `${label}\n${sublabel}` : undefined}
+        // The text truncates in the rail: the full text is one hover away.
+        title={sublabel ? `${label}\n${sublabel}` : label}
         {...props}
         className={cn(
           "relative flex h-10 shrink-0 items-center rounded-md select-none",
