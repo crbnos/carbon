@@ -38,6 +38,7 @@ import {
   LuClipboardList,
   LuHeadphones,
   LuHistory,
+  LuMapPin,
   LuMonitorPlay,
   LuPackageCheck,
   LuWrench
@@ -52,7 +53,7 @@ import { EndShift } from "./EndShift";
 import { MoreSheet } from "./MoreSheet";
 import Suggestion from "./Suggestion";
 import { TimeCardButton } from "./TimeCardButton";
-import { UserNav, useSwitchCompany } from "./UserNav";
+import { UserNav, useLocationSwitch, useSwitchCompany } from "./UserNav";
 
 export function AppSidebar({
   activeEvents,
@@ -140,7 +141,12 @@ export function AppSidebar({
         <MoreSheet
           open={moreOpen}
           onOpenChange={onMoreOpenChange}
-          header={<CompanyLink company={company} />}
+          header={
+            <CompanyLink
+              company={company}
+              locationName={locations.find((l) => l.id === location)?.name}
+            />
+          }
           company={company}
           companies={companies}
           consoleEnabled={consoleEnabled}
@@ -162,6 +168,8 @@ export function AppSidebar({
         <CompanySwitcher
           company={company}
           companies={companies}
+          location={location}
+          locations={locations}
           // An operator pinned in at a console station cannot switch company.
           canSwitch={!(consoleMode && pinnedInUser)}
         />
@@ -173,8 +181,6 @@ export function AppSidebar({
           <UserNav
             consoleEnabled={consoleEnabled}
             consoleMode={consoleMode}
-            location={location}
-            locations={locations}
             pinnedInUser={pinnedInUser}
           />
         </>
@@ -193,19 +199,28 @@ export function AppSidebar({
 function CompanySwitcher({
   company,
   companies,
+  location,
+  locations,
   canSwitch
 }: {
   company: Company;
   companies: Company[];
+  location: string;
+  locations: Location[];
   canSwitch: boolean;
 }) {
   const { t } = useLingui();
   const mode = useMode();
   const switchCompany = useSwitchCompany();
+  const { updateLocation, optimisticLocation } = useLocationSwitch(location);
+  const locationName = locations.find((l) => l.id === optimisticLocation)?.name;
+
+  const canSwitchCompany = canSwitch && companies.length > 1;
+  const canSwitchLocation = canSwitch && locations.length > 1;
 
   // Nothing to switch to: the row is the link back to the ERP, as it was.
-  if (!canSwitch || companies.length < 2) {
-    return <CompanyLink company={company} />;
+  if (!canSwitchCompany && !canSwitchLocation) {
+    return <CompanyLink company={company} locationName={locationName} />;
   }
 
   return (
@@ -213,40 +228,67 @@ function CompanySwitcher({
       <DropdownMenuTrigger asChild>
         <NavRailSwitcher
           label={company.name ?? ""}
+          sublabel={locationName}
           logoLight={company.logoLightIcon}
           logoDark={company.logoDarkIcon}
           trailing={<LuChevronsUpDown />}
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[240px]">
-        <DropdownMenuLabel>{t`Companies`}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={company.companyId!}>
-          {companies.map((c) => {
-            const companyLogo =
-              mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-            return (
-              <DropdownMenuRadioItem
-                key={c.companyId}
-                value={c.companyId!}
-                onSelect={() => {
-                  if (c.companyId !== company.companyId) {
-                    switchCompany(c.companyId!);
-                  }
-                }}
-              >
-                <HStack>
-                  <Avatar
-                    size="xs"
-                    name={c.name ?? undefined}
-                    src={companyLogo ?? undefined}
-                  />
-                  <span>{c.name}</span>
-                </HStack>
-              </DropdownMenuRadioItem>
-            );
-          })}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
+        {canSwitchCompany ? (
+          <>
+            <DropdownMenuLabel>{t`Companies`}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={company.companyId!}>
+              {companies.map((c) => {
+                const companyLogo =
+                  mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                return (
+                  <DropdownMenuRadioItem
+                    key={c.companyId}
+                    value={c.companyId!}
+                    onSelect={() => {
+                      if (c.companyId !== company.companyId) {
+                        switchCompany(c.companyId!);
+                      }
+                    }}
+                  >
+                    <HStack>
+                      <Avatar
+                        size="xs"
+                        name={c.name ?? undefined}
+                        src={companyLogo ?? undefined}
+                      />
+                      <span>{c.name}</span>
+                    </HStack>
+                  </DropdownMenuRadioItem>
+                );
+              })}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
+        {canSwitchLocation ? (
+          <>
+            <DropdownMenuLabel>{t`Locations`}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={optimisticLocation}>
+              {locations.map((loc) => (
+                <DropdownMenuRadioItem
+                  key={loc.id}
+                  value={loc.id}
+                  onSelect={() => {
+                    if (loc.id !== optimisticLocation) updateLocation(loc.id);
+                  }}
+                >
+                  <HStack>
+                    <LuMapPin className="size-4 text-muted-foreground" />
+                    <span>{loc.name}</span>
+                  </HStack>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link to={ERP_URL}>
             <DropdownMenuIcon icon={<LuArrowUpRight />} />
@@ -259,11 +301,18 @@ function CompanySwitcher({
 }
 
 /** Leads back to the ERP; on phones, the More sheet's first row. */
-function CompanyLink({ company }: { company: Company }) {
+function CompanyLink({
+  company,
+  locationName
+}: {
+  company: Company;
+  locationName?: string;
+}) {
   return (
     <NavRailSwitcher
       asChild
       label={company.name ?? ""}
+      sublabel={locationName}
       logoLight={company.logoLightIcon}
       logoDark={company.logoDarkIcon}
       trailing={<LuArrowUpRight className="md:hidden" />}

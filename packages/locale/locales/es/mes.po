@@ -1460,6 +1460,9 @@ msgstr "Local"
 msgid "Location"
 msgstr "Ubicación"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "Completado registrado"
 

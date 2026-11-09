@@ -526,6 +526,8 @@ type NavRailSwitcherProps = Omit<
   logoDark?: string | null;
   /** Also the accessible name unless `aria-label` is given. */
   label: string;
+  /** A second line under the name, e.g. the current location. */
+  sublabel?: string | null;
   /** After the name, e.g. chevrons for a menu or an arrow for a link out. */
   trailing?: ReactNode;
   asChild?: boolean;
@@ -546,6 +548,7 @@ export const NavRailSwitcher = forwardRef<
       logoLight,
       logoDark,
       label,
+      sublabel,
       trailing,
       asChild = false,
       className,
@@ -569,7 +572,7 @@ export const NavRailSwitcher = forwardRef<
       <Comp
         ref={ref}
         type={asChild ? undefined : "button"}
-        aria-label={label}
+        aria-label={sublabel ? `${label}, ${sublabel}` : label}
         {...props}
         className={cn(
           "relative flex h-10 shrink-0 items-center rounded-md select-none",
@@ -596,7 +599,14 @@ export const NavRailSwitcher = forwardRef<
             "md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
           )}
         >
-          <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+          <span className="flex min-w-0 flex-1 flex-col text-left">
+            <span className="truncate leading-tight">{label}</span>
+            {sublabel ? (
+              <span className="truncate text-xs font-normal leading-tight text-muted-foreground">
+                {sublabel}
+              </span>
+            ) : null}
+          </span>
           {trailing ? (
             <span className="flex shrink-0 text-muted-foreground [&>svg]:size-3.5">
               {trailing}
