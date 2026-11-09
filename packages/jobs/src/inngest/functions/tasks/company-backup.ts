@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { randomUUID } from "node:crypto";
-import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
+import { StringDecoder } from "node:string_decoder";
 import { createGunzip, createGzip } from "node:zlib";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getCompanyPrivateBucket } from "@carbon/files";
@@ -288,10 +288,13 @@ export async function serializeTable(
     gzip.on("error", reject);
   });
   for (const row of rows) {
+    // JSON.stringify leaves U+2028/U+2029 raw; escaped, every line-based
+    // reader sees one row per line.
+    const line = JSON.stringify(row)
+      .replaceAll("\u2028", "\\u2028")
+      .replaceAll("\u2029", "\\u2029");
     await new Promise<void>((resolve, reject) => {
-      gzip.write(`${JSON.stringify(row)}\n`, (err) =>
-        err ? reject(err) : resolve()
-      );
+      gzip.write(`${line}\n`, (err) => (err ? reject(err) : resolve()));
     });
   }
   gzip.end();
@@ -302,20 +305,26 @@ export async function serializeTable(
 /**
  * Parse a `tables/<table>.ndjson.gz` into rows. Streams the gunzip line by line,
  * so a huge table is never one giant string nor a single JSON.parse.
+ *
+ * Splits on "\n" only, the one separator `serializeTable` writes. Not readline:
+ * from Node 24 it also ends a line at U+2028/U+2029, which JSON.stringify
+ * leaves unescaped, so a row with pasted text was cut mid-string.
  */
 export async function deserializeTable(
   bytes: ArrayBuffer
 ): Promise<Record<string, unknown>[]> {
   const gunzip = createGunzip();
   Readable.from(Buffer.from(bytes)).pipe(gunzip);
-  const rl = createInterface({
-    input: gunzip,
-    crlfDelay: Number.POSITIVE_INFINITY
-  });
+  const decoder = new StringDecoder("utf8");
   const rows: Record<string, unknown>[] = [];
-  for await (const line of rl) {
-    if (line) rows.push(JSON.parse(line));
+  let rest = "";
+  for await (const chunk of gunzip) {
+    const lines = (rest + decoder.write(chunk as Buffer)).split("\n");
+    rest = lines.pop() ?? "";
+    for (const line of lines) if (line) rows.push(JSON.parse(line));
   }
+  rest += decoder.end();
+  if (rest) rows.push(JSON.parse(rest));
   return rows;
 }
 
