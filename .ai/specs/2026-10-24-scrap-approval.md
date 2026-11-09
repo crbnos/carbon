@@ -94,6 +94,12 @@ The approver is on the floor, so the sign-off happens in the same request as the
    authority, with the approval written in their name. An API key is always refused.
 10. Production → Scrap Approvals lists every approved scrap: job, item, quantity, reason,
     estimated value, posted or not confirmed, recorded by, approved by, and when.
+11. A Scrap inventory adjustment meets the same rules as item 9, after the storage rules.
+12. An inspection disposition that scraps asks for the approver before it closes the lot.
+    A closed lot cannot ask again.
+13. While a company has an enabled `scrap` rule, the `prevent_direct_scrap_write`
+    interceptor refuses a Scrap `productionQuantity` row and a change to
+    `jobOperation.quantityScrapped` from `anon` and `authenticated`.
 
 ### Design Decisions
 
@@ -105,10 +111,12 @@ The approver is on the floor, so the sign-off happens in the same request as the
 | Self-approval at the tablet | Refused | The PIN step means nothing if the operator signs their own scrap. |
 | ERP and API scrap | An approver records it on their own authority; everyone else is refused; an API key is refused | No tablet and no second person at a desk. This is asymmetric with the tablet, where an approver who scraps needs a second approver. |
 | Gate placement | MES routes and ERP service functions; the decisions live in `@carbon/ee` | Matches the purchase order finalize gate. A PIN never enters a posting payload: the `issue` posting logs its payload. |
+| Direct writes | An interceptor refuses them from API roles while any `scrap` rule is enabled | The database does not value scrap, so the guard ignores tiers. Server paths write as the service role after the approval. With no rule, direct writes behave as before. |
+| Qty. Scrapped on the job Operations table | Read-only for every company | A typed total has no reason, no sign-off and no `productionQuantity` row. The job's Quantities tab stays the correction path. |
 | Order of writes | Record, then post, then mark posted | Every posted scrap that needed approval has a record. A crash leaves a record with `postedAt` null, never an unrecorded scrap. |
 | Approver PIN | The console PIN (`employeePin`) | Reuses the bcrypt table. Set Console PIN on Users → Employees now also shows when a scrap rule is enabled, with console mode off. |
 | PIN guessing | The console pin-in budgets, shared | A guess at either surface counts at both: 5 per person and 30 per terminal in 15 minutes. |
-| Paths in scope | MES operation scrap, component scrap and batch completion with scrap; ERP job quantities | Inventory adjustment Scrap and issue close Scrap belong to inventory and quality. |
+| Paths in scope | MES operation scrap, component scrap, batch completion with scrap and inspection disposition; ERP job quantities and Scrap inventory adjustments | Issue close Scrap and the sales return scrap belong to quality and sales. |
 | Entitlement | `APPROVAL_RULES` (Business and Partner plans) | `getApprovalRuleByAmount` reads no rule without it. |
 | What the approver signs | The value they were shown (`approvedValue`), checked again on the server | Without it an operator could raise the quantity after the PIN went in, and a top-tier approver's authority would cover any value. |
 | Ambiguous posting failures | Keep the record, unconfirmed | A timeout after the commit must not leave a posted scrap with no approval. The list shows the row as Not confirmed. |
@@ -159,7 +167,9 @@ CREATE TABLE "scrapRequest" (
   `x+/scrap.tsx`, `x+/entity+/$materialId.$trackedEntityId.scrap.tsx`,
   `x+/batch.$batchId.complete.tsx`.
 - ERP: `approveErpScrap` and `settleErpScrapApproval` in `production.service.ts`, called by
-  `createProductionQuantity` and `updateProductionQuantity`.
+  `createProductionQuantity`, `updateProductionQuantity` and `adjustInventory`.
+- Database: the interceptor `prevent_direct_scrap_write`, attached before the other
+  `productionQuantity` and `jobOperation` interceptors.
 
 ## Closest Sibling
 
@@ -171,8 +181,9 @@ CREATE TABLE "scrapRequest" (
 ## UI Changes
 
 - MES scrap dialogs: an "Approval needed" step with the estimated value, the approvers and a
-  four-digit PIN pad. The submit button reads "Approve and Log Scrap", "Approve and Scrap"
-  or "Approve and Complete".
+  four-digit PIN pad. The submit button reads "Approve and Log Scrap", "Approve and Scrap",
+  "Approve and Complete", "Approve and Reject Lot" or "Approve and Record Partial".
+- ERP job Operations table: Qty. Scrapped is read-only.
 - ERP Settings → Approval Rules: a Scrap card with tiers ("Minimum Scrap Value").
 - ERP Production → Scrap Approvals: a table page, the Unattributed Time archetype.
 - ERP Users → Employees: Set Console PIN also when a scrap rule is enabled.
@@ -189,13 +200,22 @@ CREATE TABLE "scrapRequest" (
       `approvalRequest`. A refused posting leaves neither.
 - [ ] ERP job quantities: a non-approver is refused; an approver records it with an approval.
 - [ ] Production → Scrap Approvals lists the approved scraps.
+- [ ] A Scrap inventory adjustment: a non-approver and an API key are refused; an approver
+      records it with an approval.
+- [ ] An inspection disposition that scraps asks for the PIN before the lot closes.
+- [ ] A rule on: an API client that writes a Scrap row or changes Qty. Scrapped directly is
+      refused. No rule: the write works.
 
 ## Known gaps
 
-- `productionQuantity` takes API-role writes (RLS `company("production")`), so a client
-  with production create can insert a Scrap row through PostgREST with no approval. Such
-  a row does no backflush and posts no journal, like the ERP form. A guard there would
-  also stop the MES inspection disposition, which writes the row with the user's client.
+- A direct delete of a Scrap row, and a change of its type, take no approval. The
+  `scrapRequest` record stays.
+- The estimate reads the item's cost. A FIFO or LIFO posting relieves cost layers, and a
+  serial unit its own layer, so the journal can write off more or less than the estimate.
+- `prevent_direct_scrap_write` has no plan check. A company whose plan lapsed with a rule
+  still enabled keeps refusing direct API scrap, while the app treats the rule as off.
+- While a rule is on, a Scrap row from `createProductionQuantity` is written as the system
+  and carries no workflow run tag.
 - On Carbon Cloud a failed plan read makes `companyHasFeature` answer false, so the rule
   reads as off. Every approval type shares this.
 - Rules apply per scrap event. An operator can split scrap into pieces under the lowest
@@ -204,8 +224,8 @@ CREATE TABLE "scrapRequest" (
 ## Not in scope
 
 - Queue-based approval, for an approver who is not at the tablet.
-- Scrap from an inspection disposition in the MES, inventory adjustment Scrap and issue close
-  Scrap. Each is a quality or inventory decision with its own owner.
+- Issue close Scrap and the sales return scrap (`sales_scrapReturnedUnit`). Each is a quality
+  or sales decision with its own owner.
 - Holding the job while scrap waits.
 - Per-reason, per-item or percentage rules: the engine matches on one amount.
 - Demo dataset rows for scrap approvals (the dataset validator exempts `scrap`).

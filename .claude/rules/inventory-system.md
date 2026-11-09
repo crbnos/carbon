@@ -88,7 +88,8 @@ Key service functions (verified):
   LIFO layer average moves by exactly the difference, so the tie-out holds. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
-  **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
+  **Scrap** (through `adjustInventory`, which applies the scrap approval rules
+  first) = a `Negative Adjmt.` movement with `documentType='Scrap'` +
   `itemLedger.scrapReasonId`, offset to `accountDefault.scrapAccount` (fallback
   `inventoryAdjustmentVarianceAccount`), tracked entity → `Scrapped` (keeps its
   quantity; partial batch scrap splits per the identity-flip convention).

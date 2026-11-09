@@ -112467,6 +112467,10 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      prevent_direct_scrap_write: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       prevent_invalid_deposit_refund: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined

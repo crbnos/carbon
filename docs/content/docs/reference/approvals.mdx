@@ -76,15 +76,20 @@ as usual and the approval is recorded with it.
 
 - **Value**: the material in the scrapped units: the materials the operation consumes (kitted sub-assemblies
   included) and those of the operations before it, times the quantity scrapped. For a scrapped component it is
-  that component's cost. A standard-cost item counts at its standard cost, any other at its unit cost (its
-  standard cost when the unit cost is 0). Labor and overhead are not counted. The scrap journal can write off
-  less: it stops at the job's planned material, and a batch completion posts no scrap journal.
+  that component's cost, and for stock scrapped by an inventory adjustment the item's cost times the quantity. A
+  standard-cost item counts at its standard cost, any other at its unit cost (its standard cost when the unit
+  cost is 0). Labor and overhead are not counted. The scrap journal can write off less: it stops at the job's
+  planned material, and a batch completion posts no scrap journal.
 - **What the approver signs**: the value on the screen. Changing the quantity after the approver enters their
   PIN clears the PIN, and the new value is shown again.
 - **Who may approve**: the approvers of the matched tier and every higher tier who have a console PIN. The person
   logging the scrap cannot approve it. Set a PIN from **Users → Employees → Set Console PIN**.
-- **Paths**: scrapping a unit on an operation, scrapping a component, and completing a batch with scrap. Scrap
-  typed in on a job's **Quantities** in the ERP can be recorded only by an approver at that tier.
+- **Paths**: scrapping a unit on an operation, scrapping a component, completing a batch with scrap, and
+  scrapping units when rejecting or partly accepting an inspection lot. Scrap typed in on a job's **Quantities**
+  and a **Scrap** inventory adjustment can be recorded in the ERP only by an approver at that tier. An API key
+  is refused when a rule applies.
+- **Direct writes**: while a scrap rule is on, scrap written straight to a job's quantities or an operation's
+  scrapped count through the database API is refused. Use the published operations.
 - **Records**: every approved scrap is listed under **Production → Scrap Approvals** with its value, who logged
   it and who approved it. A row marked **Not confirmed** was approved but its posting never answered; check the
   job's scrap.
