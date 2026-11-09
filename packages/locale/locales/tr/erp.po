@@ -15437,6 +15437,9 @@ msgstr "Envanter, mamul olarak"
 msgid "Invite"
 msgstr "Davet et"
 
+msgid "Invite Employees"
+msgstr "Çalışanları davet et"
+
 msgid "Invite Expired"
 msgstr "Davet Süresi Doldu"
 
@@ -24368,6 +24371,9 @@ msgstr "Bozulmuş veriyi kaldır ve uygula"
 
 msgid "Remove corrupted data and restore"
 msgstr "Bozuk verileri kaldır ve geri yükle"
+
+msgid "Remove employee"
+msgstr "Çalışanı Kaldır"
 
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
