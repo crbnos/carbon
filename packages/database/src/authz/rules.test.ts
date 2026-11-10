@@ -3,82 +3,109 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, test } from "vitest";
-import { pagesOf, readersOf } from "../access/registry";
 import { manifest } from "./manifest";
 import {
   type AnyRule,
+  always,
   anyOf,
+  anyPageOf,
   company,
   custom,
+  exists,
   group,
+  inCompany,
   type Manifest,
   parent,
+  policies,
   projectModule,
   render,
   serviceOnly
 } from "./rules";
 
-// "widget" is on no page, so its module keys render as written: these tests are
-// about the pieces. The page tests below use tables the registry places.
+const key = (permission: string) =>
+  `get_companies_with_employee_permission('${permission}')`;
+const policy = (sql: string, command: string) =>
+  sql.split("\n").find((line) => line.includes(`FOR ${command}`)) ?? "";
+
+// "storageUnit" is owned by one page, Storage Units.
 describe("render", () => {
-  test("company: the canonical four", () => {
-    expect(render(company("parts"), "widget")).toBe(
+  test("company: the owning page's keys, and a read of its module", () => {
+    expect(render(company(), "storageUnit")).toBe(
       [
-        `CREATE POLICY "SELECT" ON "public"."widget" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));`,
-        `CREATE POLICY "INSERT" ON "public"."widget" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_create'))::text[]));`,
-        `CREATE POLICY "UPDATE" ON "public"."widget" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_update'))::text[]));`,
-        `CREATE POLICY "DELETE" ON "public"."widget" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts_delete'))::text[]));`
+        `CREATE POLICY "SELECT" ON "public"."storageUnit" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));`,
+        `CREATE POLICY "INSERT" ON "public"."storageUnit" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_create")})::text[]));`,
+        `CREATE POLICY "UPDATE" ON "public"."storageUnit" FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_update")})::text[]));`,
+        `CREATE POLICY "DELETE" ON "public"."storageUnit" FOR DELETE USING ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_delete")})::text[]));`
       ].join("\n")
     );
   });
 
   test("company: an update row predicate keeps the new row in the company", () => {
     const sql = render(
-      company<"journal">("accounting", {
+      company<"journal">({
         where: { update: (eb) => eb("status", "=", "Draft") }
       }),
-      "widget"
+      "storageUnit"
     );
     expect(sql).toContain(
-      `FOR UPDATE USING (("status" = 'Draft' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[]))) WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[]));`
+      `FOR UPDATE USING (("status" = 'Draft' AND "companyId" = ANY ((SELECT ${key("inventory.storageUnits_update")})::text[]))) WITH CHECK ("companyId" = ANY ((SELECT ${key("inventory.storageUnits_update")})::text[]));`
     );
   });
 
-  test("company: a read permission replaces the employee read", () => {
-    expect(
-      render(company("inventory", { read: "inventory_view" }), "widget")
-    ).toContain(
-      `FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_view'))::text[]));`
+  test("company: an employee read and a page key render as written", () => {
+    const sql = render(
+      company({
+        read: "employee",
+        create: "purchasing.purchaseOrders_create"
+      }),
+      "storageUnit"
+    );
+    expect(policy(sql, "SELECT")).toContain(
+      "get_companies_with_employee_role()"
+    );
+    expect(policy(sql, "INSERT")).toContain(
+      key("purchasing.purchaseOrders_create")
     );
   });
 
-  test("group: scoped by companyGroupId through the group helpers", () => {
-    const sql = render(group("accounting"), "widget");
+  test("group: scoped by companyGroupId through the group helpers, with the owner's key", () => {
+    const sql = render(group({ read: "employee" }), "dimension");
     expect(sql).toContain(
       `FOR SELECT USING ("companyGroupId" = ANY ((SELECT get_company_groups_for_employee())::text[]));`
     );
     expect(sql).toContain(
-      `FOR DELETE USING ("companyGroupId" = ANY ((SELECT get_company_groups_for_root_permission('accounting_delete'))::text[]));`
+      `FOR DELETE USING ("companyGroupId" = ANY ((SELECT get_company_groups_for_root_permission('accounting.dimensions_delete'))::text[]));`
     );
   });
 
-  test("parent: reached through the FK, writes gated on the write permission", () => {
+  test("parent: an action is the parent table's, through the FK", () => {
     const sql = render(
-      parent("pickingListLine", "pickingListLineId", "inventory", {
-        read: "inventory_view"
-      }),
-      "widgetLine"
+      parent("pickingListLine", "pickingListLineId"),
+      "pickingListLineTrackedEntity"
     );
     expect(sql).toContain(
-      `CREATE POLICY "INSERT" ON "public"."widgetLine" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "widgetLine"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_create'))::text[])));`
+      `CREATE POLICY "INSERT" ON "public"."pickingListLineTrackedEntity" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT ${key("inventory.pickingLists_create")})::text[])));`
     );
-    expect(sql).toContain(
-      `get_companies_with_employee_permission('inventory_view')`
+  });
+
+  test("exists resolves an action against its parent, and starts the parent's path at the parent row", () => {
+    const insert = policy(
+      render(
+        policies({
+          insert: exists("methodMaterial", "methodMaterialId", "create")
+        }),
+        "methodMaterialStep"
+      ),
+      "INSERT"
     );
+    expect(insert).toContain(
+      `EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "p"."makeMethodId" AND "makeMethod"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."item"`
+    );
+    expect(insert).not.toContain(`"methodMaterialStep"."companyId"`);
   });
 
   test("projectModule: the project's company and the page that owns the table decide", () => {
-    const rule = company("projects", {
+    const rule = company({
       read: projectModule("projectId", "view", { standard: "employee" }),
       update: projectModule("projectId", "update")
     });
@@ -87,18 +114,17 @@ describe("render", () => {
       `FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));`
     );
     expect(child).toContain(`'projects.projects_update'`);
-    expect(child).not.toContain(`projectType`);
     // On project itself the row's own columns decide: no policy queries its own table.
     const own = render(rule, "project");
     expect(own).not.toContain(`FROM "public"."project"`);
     expect(own).toContain(
-      `FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[]));`
+      `FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("projects.projects_update")})::text[]));`
     );
   });
 
   test("projectModule via the element reaches the element's project", () => {
     const sql = render(
-      company("projects", {
+      company({
         read: projectModule("projectElementId", "view", {
           via: "projectElement"
         })
@@ -108,7 +134,7 @@ describe("render", () => {
     expect(sql).toContain(
       `JOIN "public"."project" p ON "p"."id" = "e"."projectId" AND "p"."companyId" = "e"."companyId" WHERE "e"."id" = "projectElementLabel"."projectElementId" AND "e"."companyId" = "projectElementLabel"."companyId"`
     );
-    expect(sql).toContain(`'projects.projects_view'`);
+    expect(sql).toContain(`get_companies_with_module_view(ARRAY['projects']`);
   });
 
   test("serviceOnly renders no policies", () => {
@@ -127,128 +153,71 @@ describe("render", () => {
   });
 
   test("the schema parameter only moves the target, never the parent", () => {
-    const sql = render(
-      parent("item", "itemId", "parts"),
-      "itemCost",
-      "scratch"
-    );
+    const sql = render(parent("item", "itemId"), "itemCost", "scratch");
     expect(sql).toContain(`ON "scratch"."itemCost"`);
     expect(sql).toContain(`FROM "public"."item" p`);
     expect(sql).not.toContain(`"public"."itemCost"`);
   });
 
   test("identifiers are quoted", () => {
-    expect(render(company("parts"), 'we"ird')).toContain(
+    expect(render(policies({ select: always }), 'we"ird')).toContain(
       `ON "public"."we""ird"`
     );
   });
 
   test("predicate values are inlined as literals, never bind parameters", () => {
     const sql = render(
-      company<"journal">("accounting", {
+      company<"journal">({
         where: {
           update: (eb) => eb("status", "in", ["Draft", "O'Brien"] as never)
         }
       }),
-      "widget"
+      "storageUnit"
     );
     expect(sql).toContain(`"status" in ('Draft', 'O''Brien')`);
     expect(sql).not.toMatch(/\$\d/);
   });
 
-  test("deterministic", () => {
-    const rule = company<"journal">("accounting", {
-      read: "accounting_view",
-      where: {
-        update: (eb) => eb("status", "in", ["Draft", "Posted"]),
-        delete: (eb) => eb("status", "=", "Draft")
-      }
-    });
-    expect(render(rule, "journal")).toBe(render(rule, "journal"));
+  test("an action on a table no page owns throws: there is no owner to name", () => {
+    expect(() => render(company(), "widget")).toThrow(/no page owns widget/);
   });
 });
 
-const key = (permission: string) =>
-  `get_companies_with_employee_permission('${permission}')`;
-const policy = (sql: string, command: string) =>
-  sql.split("\n").find((line) => line.includes(`FOR ${command}`)) ?? "";
+describe("render: actions become page keys", () => {
+  const moduleView = (modules: string[], keys: string[] = []) =>
+    `get_companies_with_module_view(ARRAY[${modules.map((m) => `'${m}'`).join(", ")}]::text[], ${
+      keys.length
+        ? `ARRAY[${keys.map((k) => `'${k}'`).join(", ")}]::text[]`
+        : "'{}'::text[]"
+    })`;
 
-describe("render: module keys become page keys", () => {
-  test("a module key renders as the key of the page that owns the table", () => {
-    const sql = render(company("inventory"), "storageUnit");
-    expect(policy(sql, "INSERT")).toContain(
-      key("inventory.storageUnits_create")
-    );
-    expect(sql).not.toContain("inventory_");
-    expect(policy(sql, "SELECT")).toContain(
-      "get_companies_with_employee_role()"
-    );
-  });
-
-  // Rendering it as the owner's key made a rule read as one module while it
-  // checked another, so grants on the module it names silently stopped applying.
-  test("a module key of another module than the owning page's throws", () => {
-    expect(() => render(company("parts"), "storageUnit")).toThrow(
-      /storageUnit names parts_create, but inventory\.storageUnits owns it/
-    );
-    expect(() =>
-      render(
-        company("sales", { read: anyOf("sales_view", "purchasing_view") }),
-        "address"
-      )
-    ).toThrow(/purchasing_view/);
-    expect(() =>
-      render(
-        company("parts", { read: anyOf("parts_view", "purchasing_view") }),
-        "supplierPart"
-      )
-    ).toThrow(/purchasing_view/);
-    // A page key of another module renders as written.
-    expect(
-      policy(
-        render(
-          company("inventory", { create: "purchasing.purchaseOrders_create" }),
-          "storageUnit"
-        ),
-        "INSERT"
-      )
-    ).toContain(key("purchasing.purchaseOrders_create"));
-  });
-
-  // A read admits View on any page of the owner's module, then its readers.
-  const readKeys = (module: string, table: string) =>
-    `"companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY[${[
-      ...new Set([...pagesOf(module), ...readersOf(table)])
-    ]
-      .map((page) => `'${page}_view'`)
-      .join(", ")}]::text[]))::text[])`;
-
-  test("a restricted read admits any page of the owner's module and every reader", () => {
-    const select = policy(
-      render(
-        company("purchasing", { read: "purchasing_view" }),
-        "purchaseOrder"
-      ),
-      "SELECT"
-    );
-    expect(select).toBe(
-      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING (${readKeys("purchasing", "purchaseOrder")});`
-    );
-    expect(select).toContain("'purchasing.types_view'");
+  test("a read names the owner's module, never its pages, plus the readers", () => {
+    const select = policy(render(company(), "purchaseOrder"), "SELECT");
+    expect(select).toContain(moduleView(["purchasing"]).slice(0, 60));
     expect(select).toContain("'inventory.receipts_view'");
+    expect(select).not.toContain("'purchasing.purchaseOrders_view'");
     // Writes stay per page.
-    expect(
-      policy(render(company("purchasing"), "purchaseOrder"), "UPDATE")
-    ).toBe(
+    expect(policy(render(company(), "purchaseOrder"), "UPDATE")).toBe(
       `CREATE POLICY "UPDATE" ON "public"."purchaseOrder" FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("purchasing.purchaseOrders_update")})::text[]));`
     );
   });
 
-  test("module keys that resolve to one page render once", () => {
+  test("anyPageOf names modules; repeated keys render once", () => {
+    expect(
+      policy(
+        render(
+          policies({
+            select: inCompany("companyId", anyPageOf("sales", "inventory"))
+          }),
+          "storageUnit"
+        ),
+        "SELECT"
+      )
+    ).toContain(moduleView(["sales", "inventory"]));
     const select = policy(
       render(
-        company("sales", {
-          read: anyOf("sales_view", "sales_view", "sales.customers_view")
+        company({
+          read: anyOf("sales.customers_view", "sales.customers_view")
         }),
         "address"
       ),
@@ -257,52 +226,39 @@ describe("render: module keys become page keys", () => {
     expect(select.split("'sales.customers_view'").length).toBe(2);
   });
 
+  test("alsoWrittenBy: a write admits the owner or the pages the registry lists", () => {
+    const sql = render(company(), "shipmentLine");
+    expect(policy(sql, "INSERT")).toContain(
+      `get_companies_with_any_employee_permission(ARRAY['inventory.shipments_create', 'sales.salesOrders_create']::text[])`
+    );
+    expect(policy(sql, "SELECT")).not.toContain("sales.salesOrders_create");
+  });
+
   test("a shared table checks the page whose rows it is: by value, or by a column that is set", () => {
-    expect(policy(render(company("parts"), "item"), "UPDATE")).toContain(
+    expect(policy(render(company(), "item"), "UPDATE")).toContain(
       `("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT ${key("parts.tools_update")})::text[]))`
     );
-    expect(policy(render(company("invoicing"), "memo"), "UPDATE")).toBe(
+    expect(policy(render(company(), "memo"), "UPDATE")).toBe(
       `CREATE POLICY "UPDATE" ON "public"."memo" FOR UPDATE USING ((("memo"."supplierId" IS NOT NULL AND "companyId" = ANY ((SELECT ${key("invoicing.supplierCredits_update")})::text[])) OR ("memo"."customerId" IS NOT NULL AND "companyId" = ANY ((SELECT ${key("invoicing.creditMemos_update")})::text[]))));`
     );
   });
 
   test("a child table checks its parent row's page, in the row's own company", () => {
-    expect(policy(render(company("parts"), "itemCost"), "INSERT")).toContain(
+    expect(policy(render(company(), "itemCost"), "INSERT")).toContain(
       `WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT ${key("parts.parts_create")})::text[]))`
     );
   });
 
   test("a child two hops away checks its item's page through each hop, every hop in the company of the last", () => {
-    expect(
-      policy(render(company("parts"), "methodMaterial"), "UPDATE")
-    ).toContain(
+    expect(policy(render(company(), "methodMaterial"), "UPDATE")).toContain(
       `USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodMaterial"."makeMethodId" AND "makeMethod"."companyId" = "methodMaterial"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT ${key("parts.parts_update")})::text[])) OR ("item"."type" = 'Material'`
     );
   });
 
-  test("a link row with no company starts its path in its parent's company", () => {
-    const insert = policy(
-      render(
-        parent("methodMaterial", "methodMaterialId", "parts"),
-        "methodMaterialStep"
-      ),
-      "INSERT"
-    );
-    expect(insert).toContain(
-      `EXISTS (SELECT 1 FROM "public"."methodMaterial" WHERE "methodMaterial"."id" = "methodMaterialStep"."methodMaterialId" AND "methodMaterial"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod"`
-    );
-    expect(insert).not.toContain(`"methodMaterialStep"."companyId"`);
-  });
-
-  test("a child read names no parent table: any page of its parent's module, plus readers", () => {
-    const select = policy(
-      render(company("parts", { read: "parts_view" }), "supplierPart"),
-      "SELECT"
-    );
+  test("a child read names no parent table: its parent's module, plus readers", () => {
+    const select = policy(render(company(), "supplierPart"), "SELECT");
     expect(select).not.toContain(`"public"."item"`);
-    expect(select).toBe(
-      `CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING (${readKeys("parts", "supplierPart")});`
-    );
+    expect(select).toContain(`get_companies_with_module_view(ARRAY['parts']`);
   });
 
   test("no table's SELECT policy reaches back to itself", () => {
@@ -326,59 +282,33 @@ describe("render: module keys become page keys", () => {
     for (const table of reads.keys()) walk(table, [table]);
     expect(cycles).toEqual([]);
   });
-
-  test("a page key renders as written", () => {
-    expect(
-      policy(
-        render(
-          company("sales", { create: "purchasing.suppliers_create" }),
-          "address"
-        ),
-        "INSERT"
-      )
-    ).toBe(
-      `CREATE POLICY "INSERT" ON "public"."address" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT ${key("purchasing.suppliers_create")})::text[]));`
-    );
-  });
-
-  test("a group table takes its owner's key", () => {
-    expect(
-      policy(render(group("accounting"), "dimension"), "DELETE")
-    ).toContain(
-      `get_company_groups_for_root_permission('accounting.dimensions_delete')`
-    );
-  });
 });
 
 // Type-level: these must not compile.
-// @ts-expect-error not a module
-company("partz");
+// @ts-expect-error a module key: name an action or a page key
+company({ read: "parts_view" });
 // @ts-expect-error not a permission
-company("parts", { read: "parts_edit" });
+company({ read: "parts.parts_edit" });
 // @ts-expect-error not a table
-parent("itm", "itemId", "parts");
+parent("itm", "itemId");
 // Typed from the manifest key alone — no table named twice.
 const typed: Manifest = {
-  itemCost: parent("item", "itemId", "parts"),
-  journal: company("accounting", {
+  itemCost: parent("item", "itemId"),
+  journal: company({
     where: { update: (eb) => eb("status", "in", ["Draft", "Posted"]) }
   })
 };
 const untyped: Manifest = {
   // @ts-expect-error not a column of itemCost
-  itemCost: parent("item", "itmId", "parts"),
-  journal: company("accounting", {
+  itemCost: parent("item", "itmId"),
+  journal: company({
     // @ts-expect-error not a column of journal
     where: { update: (eb) => eb("staus", "=", "Draft") }
   })
 };
 void typed;
 void untyped;
-company<"journal">("accounting", {
-  // @ts-expect-error not a column of journal
-  where: { update: (eb) => eb("staus", "=", "Draft") }
-});
-company<"journal">("accounting", {
+company<"journal">({
   // @ts-expect-error not a journalEntryStatus value
   where: { update: (eb) => eb("status", "=", "Drafted") }
 });

@@ -174,8 +174,7 @@ async function resolveAuth(request: Request): Promise<{
   }
 
   // `request` here carries the carbon-key header for both entry forms
-  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport,
-  // so the requirePermissions-then-read-scopes dance exists once.
+  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport.
   const rawKey = request.headers.get("carbon-key") ?? "";
   return {
     ctx: await authenticateApiKey(request.url, rawKey),

@@ -12,32 +12,39 @@ import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  apiKeyFields,
-  apiKeyValidator
-} from "~/modules/settings/settings.models";
+import { apiKeyValidator } from "~/modules/settings/settings.models";
 import { getApiKey } from "~/modules/settings/settings.service";
 import { ApiKeyForm } from "~/modules/settings/ui";
 import { getParams, path } from "~/utils/path";
 
 // The list holds only the rows scrolled so far, so the drawer reads its own key.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
+  const { client, companyId, api } = await authorize(request, {
     "settings.apiKeys": "Edit"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const apiKey = await getApiKey(client, id, companyId);
-  if (apiKey.error) {
+  const [apiKey, grants] = await Promise.all([
+    getApiKey(client, id, companyId),
+    api.users.getAccessGrants({ subjectType: "key", subjectId: id })
+  ]);
+  if (apiKey.error || grants.error) {
     throw redirect(
       `${path.to.apiKeys}?${getParams(request)}`,
-      await flash(request, error(apiKey.error, "Failed to load API key"))
+      await flash(
+        request,
+        error(apiKey.error ?? grants.error, "Failed to load API key")
+      )
     );
   }
 
-  return { apiKey: apiKey.data, canSetRateLimit: SINGLE_TENANT };
+  return {
+    apiKey: apiKey.data,
+    grants: grants.data,
+    canSetRateLimit: SINGLE_TENANT
+  };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -47,7 +54,7 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { api } = await authorize(args.request);
   const result = await api.settings.updateApiKey({
-    ...apiKeyFields(input.data),
+    ...input.data,
     id: input.params.id
   });
   return respond(args.request, result).redirect(
@@ -58,7 +65,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditApiKeyRoute() {
   const dialog = useRouteDialog();
-  const { apiKey, canSetRateLimit } = useLoaderData<typeof loader>();
+  const { apiKey, grants, canSetRateLimit } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: apiKey.id,
@@ -71,7 +78,7 @@ export default function EditApiKeyRoute() {
     <ApiKeyForm
       key={initialValues.id}
       initialValues={initialValues}
-      existingGrants={apiKey.permission ?? []}
+      existingGrants={grants}
       canSetRateLimit={canSetRateLimit}
       open={dialog.open}
       onClose={dialog.close}

@@ -15,11 +15,9 @@ import { deleteFailureMode } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.failureModes": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "resources.failureModes": "View"
+  });
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 

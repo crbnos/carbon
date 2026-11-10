@@ -27,11 +27,9 @@ export const handle: Handle = {
 /** The incurred cost submission schedules of one fiscal year (`?fiscalYear`,
  *  else the current one). */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "accounting.indirectRates": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectRates": "View"
+  });
 
   // A missing or bad `?fiscalYear` opens the current fiscal year, as the
   // Indirect Rates page does.

@@ -104,7 +104,7 @@ export const rentalAgreementsList = searchList({
 // the list resolves that scope's prices; without one, it shows the base catalog.
 export const priceListList = {
   key: "price-list",
-  permission: { gate: { "sales.priceLists": "View" }, role: "employee" },
+  permission: { gate: { "sales.priceLists": "View" } },
   ...PRICE_LIST_PAGING,
   query: async (
     client,
@@ -148,7 +148,7 @@ export const priceListList = {
 
 export const pricingRulesList = searchList({
   key: "pricing-rules",
-  permission: { gate: { "sales.pricingRules": "View" }, role: "employee" },
+  permission: { gate: { "sales.pricingRules": "View" } },
   paging: PRICING_RULES_PAGING,
   service: getPricingRules,
   params: { search: (params) => params.get("search") ?? undefined }
@@ -156,35 +156,35 @@ export const pricingRulesList = searchList({
 
 export const customerPortalsList = searchList({
   key: "customer-portals",
-  permission: { gate: { "sales.portals": "View" }, role: "employee" },
+  permission: { gate: { "sales.portals": "View" } },
   paging: CUSTOMER_PORTALS_PAGING,
   service: getCustomerPortals
 });
 
 export const customerStatusesList = searchList({
   key: "customer-statuses",
-  permission: { gate: { "sales.statuses": "View" }, role: "employee" },
+  permission: { gate: { "sales.statuses": "View" } },
   paging: CUSTOMER_STATUSES_PAGING,
   service: getCustomerStatuses
 });
 
 export const customerTypesList = searchList({
   key: "customer-types",
-  permission: { gate: { "sales.types": "View" }, role: "employee" },
+  permission: { gate: { "sales.types": "View" } },
   paging: CUSTOMER_TYPES_PAGING,
   service: getCustomerTypes
 });
 
 export const noQuoteReasonsList = searchList({
   key: "no-quote-reasons",
-  permission: { gate: { "sales.noQuoteReasons": "View" }, role: "employee" },
+  permission: { gate: { "sales.noQuoteReasons": "View" } },
   paging: NO_QUOTE_REASONS_PAGING,
   service: getNoQuoteReasons
 });
 
 export const returnReasonsList = searchList({
   key: "return-reasons",
-  permission: { gate: { "sales.returnReasons": "View" }, role: "employee" },
+  permission: { gate: { "sales.returnReasons": "View" } },
   paging: RETURN_REASONS_PAGING,
   service: getReturnReasons
 });

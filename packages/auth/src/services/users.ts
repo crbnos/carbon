@@ -3,17 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import {
-  claimsFromJson,
-  expandClaims,
-  type Gate,
-  holdsGate,
-  REGISTRY_HASH
-} from "@carbon/database/access";
+import { claimsFor, REGISTRY_HASH } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "../config/env";
-import type { Permission } from "../types";
 
 const log = getLogger("auth");
 
@@ -31,19 +24,6 @@ export async function getClaims(
  */
 export function getPermissionCacheKey(userId: string) {
   return `permissions:${REGISTRY_HASH}:${userId}`;
-}
-
-/**
- * Do resolved claims pass a page gate (`{ "sales.quotes": "Edit" }`) in the
- * company? `permissions` is the `permissions` field from
- * `makePermissionsFromClaims` / `getUserClaims`.
- */
-export function hasPermission(
-  permissions: Record<string, Permission> | null | undefined,
-  gate: Gate,
-  companyId: string
-): boolean {
-  return permissions ? holdsGate(permissions, gate, companyId) : false;
 }
 
 export async function getCompanies(
@@ -113,6 +93,6 @@ export function makePermissionsFromClaims(
 ) {
   if (typeof claims !== "object" || claims === null || Array.isArray(claims))
     return null;
-  const raw = claimsFromJson(claims, companyId);
-  return { permissions: expandClaims(raw, companyId), role: raw.role };
+  const { permissions, role } = claimsFor(claims, companyId);
+  return { permissions, role };
 }

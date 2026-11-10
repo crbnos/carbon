@@ -4,15 +4,17 @@
 
 import type { Page } from "../registry";
 
+/** The module's name in the sidebar. */
+export const LABEL = "Invoicing";
+
 // A memo carries exactly one of customerId and supplierId: that, not its
 // direction (Credit or Debit, on both pages), picks its page.
-export const INVOICING_PAGES = [
+export const PAGES = [
   {
     id: "invoicing.payables",
     label: "Payables",
     maxLevel: "Create",
     tables: [],
-    readers: ["purchaseInvoice"],
     paths: ["/x/invoicing/payables"]
   },
   {
@@ -61,7 +63,6 @@ export const INVOICING_PAGES = [
     label: "Receivables",
     maxLevel: "Create",
     tables: [],
-    readers: ["salesInvoice"],
     paths: ["/x/invoicing/receivables"]
   },
   {

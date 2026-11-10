@@ -5,7 +5,13 @@
 import type { Level } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 
-import { bulkEditGrants, claimsMayEditAccounts } from "./permission-grants";
+import {
+  bulkEditGrants,
+  claimsMayEditAccounts,
+  refusedModules,
+  rowLevel,
+  toModule
+} from "./permission-grants";
 
 const g = (module: string, page: string | null, level: Level) => ({
   module,
@@ -103,6 +109,82 @@ describe("bulkEditGrants", () => {
       addOnly: false
     });
     expect(result).toEqual([{ module: "Sales", page: null, level: null }]);
+  });
+});
+
+describe("rowLevel", () => {
+  const role = (module: string, page: string | null, level: Level) => ({
+    subject: "role" as const,
+    module,
+    page,
+    level
+  });
+  const person = (module: string, page: string | null, level: Level) => ({
+    ...role(module, page, level),
+    subject: "person" as const
+  });
+
+  it("shows a role's Full on a View-only page as View, as the resolver does", () => {
+    const subject = { grants: [role("Accounting", null, "Full")] };
+    expect(
+      rowLevel(subject, { module: "Accounting", page: "accounting.syncTieOut" })
+    ).toBe("View");
+  });
+
+  it("reads a module row from module grants only", () => {
+    const subject = {
+      grants: [
+        role("Inventory", null, "View"),
+        role("Inventory", "inventory.receipts", "Full")
+      ]
+    };
+    expect(rowLevel(subject, { module: "Inventory", page: null })).toBe("View");
+  });
+
+  it("without the person's grant, is what the row inherits", () => {
+    const subject = {
+      grants: [
+        person("Inventory", "inventory.receipts", "None"),
+        person("Inventory", null, "Create"),
+        role("Inventory", null, "View")
+      ]
+    };
+    const row = { module: "Inventory" as const, page: "inventory.receipts" };
+    expect(rowLevel(subject, row)).toBe("None");
+    expect(rowLevel(subject, row, "person")).toBe("Create");
+  });
+
+  it("is Full on every row for Admin", () => {
+    expect(
+      rowLevel({ admin: true, grants: [] }, { module: "Sales", page: null })
+    ).toBe("Full");
+  });
+});
+
+describe("toModule", () => {
+  it("reads a module id or label, and refuses a module with no pages", () => {
+    expect(toModule("parts")).toBe("Parts");
+    expect(toModule("Inventory")).toBe("Inventory");
+    expect(toModule("Items")).toBeNull();
+  });
+});
+
+describe("refusedModules", () => {
+  it("refuses Workflows on an API key and accepts Full on Accounting", () => {
+    expect(
+      refusedModules("key", [
+        { module: "Accounting", page: null, level: "Full" },
+        { module: "Workflows", page: null, level: "View" }
+      ])
+    ).toEqual(["Workflows"]);
+  });
+
+  it("refuses nothing on a role", () => {
+    expect(
+      refusedModules("role", [
+        { module: "Workflows", page: null, level: "Edit" }
+      ])
+    ).toEqual([]);
   });
 });
 

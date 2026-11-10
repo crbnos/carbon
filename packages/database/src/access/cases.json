@@ -455,5 +455,93 @@
     "askCompany": "B",
     "pageId": "inventory.receipts",
     "expected": "None"
+  },
+  {
+    "name": "maxLevel lowers a role module grant",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": null,
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.traceability",
+    "expected": "View",
+    "granted": "Full"
+  },
+  {
+    "name": "maxLevel lowers a role page grant",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Inventory",
+        "page": "inventory.traceability",
+        "level": "Edit"
+      }
+    ],
+    "admin": false,
+    "pageId": "inventory.traceability",
+    "expected": "View",
+    "granted": "Edit"
+  },
+  {
+    "name": "maxLevel lowers a person page grant",
+    "grants": [
+      {
+        "subject": "person",
+        "module": "Quality",
+        "page": "quality.actions",
+        "level": "Full"
+      },
+      {
+        "subject": "role",
+        "module": "Quality",
+        "page": null,
+        "level": "View"
+      }
+    ],
+    "admin": false,
+    "pageId": "quality.actions",
+    "expected": "View",
+    "granted": "Full"
+  },
+  {
+    "name": "maxLevel lowers a key module grant",
+    "grants": [
+      {
+        "subject": "key",
+        "module": "Invoicing",
+        "page": null,
+        "level": "Full"
+      }
+    ],
+    "admin": false,
+    "pageId": "invoicing.payables",
+    "expected": "Create",
+    "granted": "Full"
+  },
+  {
+    "name": "maxLevel lowers Admin",
+    "grants": [],
+    "admin": true,
+    "pageId": "invoicing.receivables",
+    "expected": "Create",
+    "granted": "Full"
+  },
+  {
+    "name": "maxLevel leaves a level below it",
+    "grants": [
+      {
+        "subject": "role",
+        "module": "Invoicing",
+        "page": null,
+        "level": "View"
+      }
+    ],
+    "admin": false,
+    "pageId": "invoicing.payables",
+    "expected": "View"
   }
 ]

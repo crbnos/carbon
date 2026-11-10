@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { PageId } from "@carbon/database/access";
+import { type PageId, pageOfRow } from "@carbon/database/access";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -2084,45 +2084,59 @@ export const fieldMappings = {
   }
 } as const;
 
-// The page whose Edit level an import of the table needs: the page that owns
-// the table in the access registry. Its RLS insert policy names the same page.
-export const importPermissions: Record<keyof typeof fieldMappings, PageId> = {
-  customer: "sales.customers",
-  customerContact: "sales.customers",
-  supplier: "purchasing.suppliers",
-  supplierContact: "purchasing.suppliers",
-  part: "parts.parts",
-  material: "parts.materials",
-  bom: "parts.parts",
-  operations: "parts.parts",
-  partWithMethod: "parts.parts",
-  tool: "parts.tools",
-  fixture: "parts.tools",
-  consumable: "parts.consumables",
-  workCenter: "resources.workCenters",
-  process: "resources.processes",
-  storageUnit: "inventory.storageUnits",
-  service: "parts.services",
-  unitOfMeasure: "parts.units",
-  itemPostingGroup: "parts.itemGroups",
-  storageType: "inventory.storageTypes",
-  scrapReason: "production.scrapReasons",
-  department: "people.departments",
-  payrollPeriodTotal: "people.payrollTotals",
-  fixedAsset: "accounting.assets",
-  materialSubstance: "parts.substances",
-  materialForm: "parts.shapes",
-  materialFinish: "parts.finishes",
-  materialGrade: "parts.grades",
-  materialType: "parts.types",
-  materialDimension: "parts.dimensions",
-  quote: "sales.quotes",
-  quoteLine: "sales.quotes",
-  quoteWithLines: "sales.quotes",
-  inventoryQuantity: "inventory.quantities",
-  batchQuantity: "inventory.quantities",
-  serialQuantity: "inventory.quantities"
+type ImportTarget = readonly [table: string, row?: Record<string, string>];
+
+const item = (type: string): ImportTarget => ["item", { type }];
+
+// The table (and for a shared table, the row) each import writes.
+const importTargets: Record<keyof typeof fieldMappings, ImportTarget> = {
+  customer: ["customer"],
+  customerContact: ["customerContact"],
+  supplier: ["supplier"],
+  supplierContact: ["supplierContact"],
+  part: item("Part"),
+  material: item("Material"),
+  bom: item("Part"),
+  operations: item("Part"),
+  partWithMethod: item("Part"),
+  tool: item("Tool"),
+  // Fixtures sit on the Tools page.
+  fixture: item("Tool"),
+  consumable: item("Consumable"),
+  workCenter: ["workCenter"],
+  process: ["process"],
+  storageUnit: ["storageUnit"],
+  service: item("Service"),
+  unitOfMeasure: ["unitOfMeasure"],
+  itemPostingGroup: ["itemPostingGroup"],
+  storageType: ["storageType"],
+  scrapReason: ["scrapReason"],
+  department: ["department"],
+  payrollPeriodTotal: ["payrollPeriodTotal"],
+  fixedAsset: ["fixedAsset"],
+  materialSubstance: ["materialSubstance"],
+  materialForm: ["materialForm"],
+  materialFinish: ["materialFinish"],
+  materialGrade: ["materialGrade"],
+  materialType: ["materialType"],
+  materialDimension: ["materialDimension"],
+  quote: ["quote"],
+  quoteLine: ["quoteLine"],
+  quoteWithLines: ["quote"],
+  inventoryQuantity: ["itemLedger"],
+  batchQuantity: ["itemLedger"],
+  serialQuantity: ["itemLedger"]
 };
+
+// The page whose Edit level an import needs: the registry's owner of what it
+// writes (`pageOfRow`). Its RLS insert policy names the same page.
+export const importPermissions = Object.fromEntries(
+  Object.entries(importTargets).map(([key, [table, row]]) => {
+    const page = pageOfRow(table, row ?? {});
+    if (!page) throw new Error(`No page owns ${table}`);
+    return [key, page];
+  })
+) as Record<keyof typeof fieldMappings, PageId>;
 
 // Quote import validation is intentionally permissive at the mapping layer (every
 // cell an optional string); the app-side importer (`sales.import.server.ts`) does

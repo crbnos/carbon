@@ -4,11 +4,16 @@
 
 import type { Kysely } from "kysely";
 import type { KyselyDatabase, KyselyTx } from "../client";
-import type { Database } from "../types";
 import type { Level } from "./levels";
-import { clampLevel } from "./registry";
+import {
+  clampLevel,
+  isPageModule,
+  type ModuleEnum,
+  moduleId
+} from "./registry";
 
-export type GrantModule = Database["public"]["Enums"]["module"];
+/** The `module` enum label of a module with pages: the only modules a grant can hold. */
+export type GrantModule = ModuleEnum;
 
 export type GrantSubject =
   | { employeeTypeId: string }
@@ -22,26 +27,29 @@ export type GrantInput = {
   level: Level | null;
 };
 
-function subjectColumn(subject: GrantSubject) {
+export function subjectColumn(subject: GrantSubject) {
   if ("employeeTypeId" in subject)
     return ["employeeTypeId", subject.employeeTypeId] as const;
   if ("userId" in subject) return ["userId", subject.userId] as const;
   return ["apiKeyId", subject.apiKeyId] as const;
 }
 
-/** The subject's grants in the company. */
-export function readGrants(
+/** The subject's grants in the company. One on a module with no pages grants nothing, so it is left out. */
+export async function readGrants(
   db: Kysely<KyselyDatabase> | KyselyTx,
   companyId: string,
   subject: GrantSubject
 ) {
   const [column, id] = subjectColumn(subject);
-  return db
+  const rows = await db
     .selectFrom("permission")
     .select(["module", "page", "level", "convertedFrom"])
     .where("companyId", "=", companyId)
     .where(column, "=", id)
     .execute();
+  return rows.flatMap((row) =>
+    isPageModule(row.module) ? [{ ...row, module: row.module }] : []
+  );
 }
 
 /**
@@ -75,7 +83,7 @@ export async function replaceGrants(
       module: grant.module,
       page: grant.page,
       level: clampLevel(
-        grant.page ?? grant.module.toLowerCase(),
+        grant.page ?? (moduleId(grant.module) as string),
         grant.level as Level
       ),
       createdBy: userId
@@ -91,4 +99,36 @@ export async function replaceGrants(
   };
   if (db.isTransaction) return write(db as KyselyTx);
   return db.transaction().execute(write);
+}
+
+/**
+ * Remove one grant of one subject in one company, so the subject inherits that
+ * module or page again. The subject's other grants, and their `convertedFrom`,
+ * stay as they are.
+ */
+export async function removeGrant(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    subject,
+    module,
+    page
+  }: {
+    companyId: string;
+    subject: GrantSubject;
+    module: GrantModule;
+    page: string | null;
+  }
+) {
+  const [column, id] = subjectColumn(subject);
+  let query = db
+    .deleteFrom("permission")
+    .where("companyId", "=", companyId)
+    .where(column, "=", id)
+    .where("module", "=", module);
+  query =
+    page === null
+      ? query.where("page", "is", null)
+      : query.where("page", "=", page);
+  await query.execute();
 }

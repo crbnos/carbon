@@ -42,11 +42,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "accounting.accountingPeriods": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "accounting.accountingPeriods": "View"
+  });
 
   const settings = await api.accounting.getFiscalYearSettings({});
   const startMonth = settings.data?.startMonth

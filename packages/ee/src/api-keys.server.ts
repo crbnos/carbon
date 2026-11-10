@@ -3,8 +3,6 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import { type GrantInput, replaceGrants } from "@carbon/database/access-write";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { SINGLE_TENANT } from "@carbon/env";
 import { sanitize } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -29,7 +27,7 @@ import { requireEntitlement } from "./entitlements.server";
 
 // Minimal input shape — the validator's `Omit<…, "id" | "grants" | "expiresAt">`
 // leaves `name` and `rateLimit` (redefined here so `@carbon/ee` never imports `~/`).
-// A key's access is its grants (`replaceApiKeyGrants`).
+// A key's access is its grants (`writeAccessGrants`, `./permissions.server`).
 type ApiKeyInput = { name: string; rateLimit?: number };
 
 /**
@@ -126,42 +124,6 @@ export async function upsertApiKey(
       }) as any
     )
     .eq("id", apiKey.id);
-}
-
-/**
- * Replace an API key's grants, in one transaction. The key must be the
- * company's. The caller clears the key's cached record afterwards.
- */
-export async function replaceApiKeyGrants(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  {
-    companyId,
-    apiKeyId,
-    grants,
-    actorId
-  }: {
-    companyId: string;
-    apiKeyId: string;
-    grants: readonly GrantInput[];
-    actorId: string;
-  }
-): Promise<{ error: { message: string } | null }> {
-  await requireEntitlement(client, companyId, "API_KEYS");
-  const key = await db
-    .selectFrom("apiKey")
-    .select("id")
-    .where("id", "=", apiKeyId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!key) return { error: { message: "API key not found" } };
-  await replaceGrants(db, {
-    companyId,
-    subject: { apiKeyId },
-    grants,
-    userId: actorId
-  });
-  return { error: null };
 }
 
 export async function deleteApiKey(

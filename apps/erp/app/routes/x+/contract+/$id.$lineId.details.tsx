@@ -5,13 +5,13 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { anyOf } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
+  CONTRACT_READ_GATE,
   contractLineBillingFormValues,
   customerContractLineValidator
 } from "~/modules/sales/sales.models";
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(
     request,
     // Both contract lists open the same contract page.
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+    CONTRACT_READ_GATE
   );
 
   const { id, lineId } = params;

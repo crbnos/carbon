@@ -17,11 +17,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.itemGroups": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "parts.itemGroups": "View" });
 
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");

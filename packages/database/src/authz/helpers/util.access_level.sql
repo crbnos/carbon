@@ -4,11 +4,12 @@ CREATE OR REPLACE FUNCTION util.access_level(p_user text, p_api_key text, p_comp
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
-  -- The level of one user or one API key on one page in one company. In util, not
-  -- public, so the API cannot ask about anyone else; the TS twin is resolveLevel
-  -- (packages/database/src/access/resolve.ts), and both pass access/cases.json.
-  -- Callers check that the user is an employee of the company.
-  SELECT CASE
+  -- The level of one user or one API key on one page in one company, at most the
+  -- page's maxLevel. In util, not public, so the API cannot ask about anyone else;
+  -- the TS twin is levelOf (packages/database/src/access/resolve.ts), and both pass
+  -- access/cases.json. Callers check that the user is an employee of the company.
+  -- With no page (p_page NULL) no grant applies, so only the Admin type has a level.
+  SELECT LEAST(CASE
     WHEN p_user IS NOT NULL AND EXISTS (
       SELECT 1
       FROM employee e
@@ -37,5 +38,5 @@ AS $function$
         p.page IS NULL
       LIMIT 1
     ), 'None'::"permissionLevel")
-  END
+  END, util.page_max_level(p_page))
 $function$;

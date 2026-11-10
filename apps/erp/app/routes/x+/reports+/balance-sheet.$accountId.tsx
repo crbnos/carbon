@@ -13,11 +13,9 @@ import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, api } = await authorize(
-    request,
-    { "accounting.reporting": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");

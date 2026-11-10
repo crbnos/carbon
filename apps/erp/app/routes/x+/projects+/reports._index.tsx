@@ -65,11 +65,9 @@ const logger = getLogger("erp", "projects-reports");
 const PIN_PREFIX = "projects:";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(
-    request,
-    { "projects.reports": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, userId } = await authorize(request, {
+    "projects.reports": "View"
+  });
 
   const pins = await getReportPins(client, userId, companyId);
   if (pins.error) {
@@ -92,11 +90,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   // The role gate the loader has; the pin itself is the operation's.
-  const { api } = await authorize(
-    request,
-    { "projects.reports": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "projects.reports": "View" });
 
   const validation = await validator(reportPinValidator).validate(
     await request.formData()

@@ -30,11 +30,7 @@ function filterValues(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.syncTieOut": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "accounting.syncTieOut": "View" });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);

@@ -28,12 +28,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(employeeTypeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { name, data: grants } = input.data;
+  const { name, grants } = input.data;
   const { api } = await authorize(args.request);
-  const result = await api.users.createEmployeeType({
-    name,
-    grants: JSON.parse(grants)
-  });
+  const result = await api.users.createEmployeeType({ name, grants });
   return respond(args.request, result).redirect(path.to.employeeTypes, {
     message: "Employee type created",
     onError: path.to.newEmployeeType

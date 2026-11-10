@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getBrowserEnv } from "@carbon/auth";
-import { moduleOf, PAGES } from "@carbon/database/access";
+import { MODULES, moduleOf, PAGES } from "@carbon/database/access";
+import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import { DateTimePicker, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -35,28 +36,28 @@ import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import {
-  apiKeyModules,
-  apiKeyValidator
-} from "~/modules/settings/settings.models";
+import { apiKeyValidator } from "~/modules/settings/settings.models";
 import AccessGrid, {
   type AccessGrant
 } from "~/modules/users/ui/components/AccessGrid.ee";
 import { path } from "~/utils/path";
-import { capitalize, copyToClipboard } from "~/utils/string";
+import { copyToClipboard } from "~/utils/string";
+
+const keyRules = SUBJECT_RULES.key;
 
 const keyPages = PAGES.filter((page) =>
-  (apiKeyModules as readonly string[]).includes(moduleOf(page.id))
+  (keyRules.modules as readonly string[]).includes(moduleOf(page.id))
 );
 
-/** Full on every module, Edit on Accounting: deleting accounting data through
- *  the API stays a choice made on its own row. */
+/** Every module a key may hold, each where "select all" stops. */
 const selectAllGrants = (): AccessGrant[] =>
-  apiKeyModules.map((module) => ({
-    module: capitalize(module),
-    page: null,
-    level: module === "accounting" ? "Edit" : "Full"
-  }));
+  MODULES.filter((module) => keyRules.modules.includes(module.id)).map(
+    (module) => ({
+      module: module.enum,
+      page: null,
+      level: keyRules.selectAllCaps[module.id] ?? "Full"
+    })
+  );
 
 type ApiKeyFormProps = {
   initialValues: Omit<z.infer<typeof apiKeyValidator>, "grants">;
@@ -154,7 +155,7 @@ const ApiKeyForm = ({
                   onChange={setGrants}
                   label={t`Access`}
                   isDisabled={isDisabled}
-                  columnCaps={{ accounting: "Edit" }}
+                  selectAllCaps={keyRules.selectAllCaps}
                 />
               </VStack>
             </ModalBody>

@@ -27,11 +27,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "settings.documentTemplates": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "settings.documentTemplates": "View"
+  });
 
   const documentType = documentTemplateTypeSchema.parse(params.type);
 

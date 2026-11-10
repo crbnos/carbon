@@ -17,11 +17,9 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "production.scrapReasons": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "production.scrapReasons": "View"
+  });
 
   const { scrapReasonId } = params;
   if (!scrapReasonId) throw notFound("scrapReasonId not found");

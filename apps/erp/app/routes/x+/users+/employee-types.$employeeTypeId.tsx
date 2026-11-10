@@ -5,7 +5,7 @@
 import { respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
-import { actionsGained } from "@carbon/database/access";
+import { actionsGained, isAdminType, moduleId } from "@carbon/database/access";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,11 +15,9 @@ import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "users.employeeTypes": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "users.employeeTypes": "View"
+  });
 
   await requireFeature({
     request,
@@ -43,11 +41,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const rows = grants.data ?? [];
   return {
     employeeType: employeeType?.data,
+    isAdmin: employeeType?.data
+      ? isAdminType(employeeType.data, companyId)
+      : false,
     grants: rows,
     convertedGrowth: rows.flatMap((row) => {
       const gained = actionsGained(row.level, row.convertedFrom);
-      if (gained.length === 0) return [];
-      return [{ id: row.page ?? row.module.toLowerCase(), gained }];
+      const id = row.page ?? moduleId(row.module);
+      return id && gained.length > 0 ? [{ id, gained }] : [];
     })
   };
 }
@@ -55,14 +56,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(employeeTypeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { id, name, data: grants } = input.data;
+  const { id, name, grants } = input.data;
   if (!id) throw notFound("id not found");
   const { api } = await authorize(args.request);
-  const result = await api.users.updateEmployeeType({
-    id,
-    name,
-    grants: JSON.parse(grants)
-  });
+  const result = await api.users.updateEmployeeType({ id, name, grants });
   return respond(args.request, result).redirect(path.to.employeeTypes, {
     message: "Updated employee type",
     onError: path.to.employeeType(id)
@@ -70,7 +67,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditEmployeeTypesRoute() {
-  const { employeeType, grants, convertedGrowth } =
+  const { employeeType, isAdmin, grants, convertedGrowth } =
     useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -83,7 +80,7 @@ export default function EditEmployeeTypesRoute() {
     <EmployeeTypeForm
       key={initialValues.id}
       initialValues={initialValues}
-      isAdmin={employeeType?.systemType === "Admin"}
+      isAdmin={isAdmin}
       convertedGrowth={convertedGrowth}
     />
   );

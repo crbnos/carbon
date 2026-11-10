@@ -4,13 +4,13 @@
 
 import { randomInt } from "node:crypto";
 import type { Database } from "@carbon/database";
-import { replaceGrants } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { CONSOLE_OPERATOR_GRANTS } from "./console-grants";
 import { requireEntitlement } from "./entitlements.server";
+import { writeAccessGrants } from "./permissions.server";
 import { companyHasFeature } from "./plan.server";
 
 const logger = getLogger("ee", "console");
@@ -204,18 +204,18 @@ export async function updateConsoleSetting(
     }
 
     if (employeeTypeId) {
-      try {
-        await replaceGrants(db, {
-          companyId,
-          subject: { employeeTypeId },
-          grants: CONSOLE_OPERATOR_GRANTS,
-          userId: userId ?? "system"
-        });
-      } catch (err) {
+      const granted = await writeAccessGrants(client, db, {
+        companyId,
+        subject: { employeeTypeId },
+        change: { set: CONSOLE_OPERATOR_GRANTS },
+        actorId: userId ?? "system",
+        reason: "console-operator-created"
+      }).catch((err: unknown) => ({ error: err }));
+      if (granted.error) {
         logger.error("Failed to grant the Console Operator type access", {
           companyId,
           employeeTypeId,
-          error: err
+          error: granted.error
         });
       }
     }

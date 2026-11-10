@@ -139,7 +139,7 @@ const BulkEditPermissionsBody = ({
             label={t`Access`}
             isDisabled={!canEditPermissions}
           />
-          <Hidden name="data" value={JSON.stringify(grants)} />
+          <Hidden name="grants" value={JSON.stringify(grants)} />
         </VStack>
       </DrawerBody>
       <DrawerFooter>

@@ -2,6 +2,650 @@
 
 -- Ships these rules to databases where `authz sync` does not run after migrations yet.
 
+CREATE OR REPLACE FUNCTION util.page_max_level(p_page text)
+ RETURNS "permissionLevel"
+ LANGUAGE sql
+ IMMUTABLE
+AS $function$
+  -- Generated from packages/database/src/access/pages (authz/registry-sql.ts). Do not edit.
+  -- A page's maxLevel below Full; NULL for a Full page and for anything else, which
+  -- LEAST ignores. Constant arms and no SET search_path, so it inlines into
+  -- util.access_level: a runtime cast or a SET would make it a call per level.
+  SELECT CASE p_page
+    WHEN 'accounting.syncTieOut' THEN 'View'::public."permissionLevel"
+    WHEN 'accounting.fleet' THEN 'View'::public."permissionLevel"
+    WHEN 'inventory.traceability' THEN 'View'::public."permissionLevel"
+    WHEN 'invoicing.payables' THEN 'Create'::public."permissionLevel"
+    WHEN 'invoicing.receivables' THEN 'Create'::public."permissionLevel"
+    WHEN 'production.forecast' THEN 'View'::public."permissionLevel"
+    WHEN 'production.outbound' THEN 'View'::public."permissionLevel"
+    WHEN 'projects.reports' THEN 'View'::public."permissionLevel"
+    WHEN 'quality.actions' THEN 'View'::public."permissionLevel"
+    WHEN 'sales.projectContracts' THEN 'View'::public."permissionLevel"
+    WHEN 'settings.auditLogs' THEN 'Edit'::public."permissionLevel"
+    WHEN 'settings.itarCertifications' THEN 'View'::public."permissionLevel"
+    WHEN 'workflows.runs' THEN 'View'::public."permissionLevel"
+  END
+$function$;
+
+CREATE OR REPLACE FUNCTION util.access_level(p_user text, p_api_key text, p_company text, p_page text)
+ RETURNS "permissionLevel"
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  -- The level of one user or one API key on one page in one company, at most the
+  -- page's maxLevel. In util, not public, so the API cannot ask about anyone else;
+  -- the TS twin is levelOf (packages/database/src/access/resolve.ts), and both pass
+  -- access/cases.json. Callers check that the user is an employee of the company.
+  -- With no page (p_page NULL) no grant applies, so only the Admin type has a level.
+  SELECT LEAST(CASE
+    WHEN p_user IS NOT NULL AND EXISTS (
+      SELECT 1
+      FROM employee e
+      -- The type must be the company's own: an id pointing at another
+      -- company's Admin type grants nothing here.
+      JOIN "employeeType" et ON et.id = e."employeeTypeId" AND et."companyId" = e."companyId"
+      WHERE e.id = p_user AND e."companyId" = p_company AND et."systemType" = 'Admin'
+    ) THEN 'Full'::"permissionLevel"
+    ELSE COALESCE((
+      SELECT p.level
+      FROM permission p
+      WHERE p."companyId" = p_company
+        AND lower(p.module::text) = split_part(p_page, '.', 1)
+        AND (p.page IS NULL OR p.page = p_page)
+        AND (
+          (p_user IS NOT NULL AND p."userId" = p_user)
+          OR (p_user IS NOT NULL AND p."employeeTypeId" = (
+            SELECT e."employeeTypeId" FROM employee e
+            WHERE e.id = p_user AND e."companyId" = p_company
+          ))
+          OR (p_api_key IS NOT NULL AND p."apiKeyId" = p_api_key)
+        )
+      -- person page, person module, role page, role module, key page, key module
+      ORDER BY
+        CASE WHEN p."userId" IS NOT NULL THEN 0 WHEN p."employeeTypeId" IS NOT NULL THEN 1 ELSE 2 END,
+        p.page IS NULL
+      LIMIT 1
+    ), 'None'::"permissionLevel")
+  END, util.page_max_level(p_page))
+$function$;
+
+CREATE OR REPLACE FUNCTION util.request_api_key()
+ RETURNS TABLE(id text, company_id text)
+ LANGUAGE sql
+ STABLE
+AS $function$
+  -- The API key the request carries in its carbon-key header, when it is valid and
+  -- unexpired: the one place that reads the header, hashes it and checks expiry.
+  -- Not SECURITY DEFINER and no SET search_path (names are qualified), so Postgres
+  -- inlines it into its callers, which are SECURITY DEFINER.
+  SELECT k.id, k."companyId"
+  FROM public."apiKey" k
+  WHERE k."keyHash" = encode(extensions.digest((((current_setting('request.headers'::text, true))::json ->> 'carbon-key'))::bytea, 'sha256'::text), 'hex')
+    AND (k."expiresAt" IS NULL OR k."expiresAt" > now())
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_companies_with_any_employee_permission(permissions text[])
+ RETURNS text[]
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  api_key_id text;
+  api_key_company text;
+  companies text[];
+BEGIN
+  -- The companies where the caller holds at least one of the '<page>_<action>'
+  -- keys: an API key in its own company, by the key's grants; a user in each
+  -- company where they are an employee, by theirs.
+  SELECT k.id, k.company_id INTO api_key_id, api_key_company FROM util.request_api_key() k;
+
+  WITH wanted AS (
+    SELECT
+      m[1] AS page,
+      (CASE m[2]
+        WHEN 'view' THEN 'View'
+        WHEN 'create' THEN 'Create'
+        WHEN 'update' THEN 'Edit'
+        ELSE 'Full'
+      END)::"permissionLevel" AS needed
+    FROM unnest(permissions) AS k(key),
+      LATERAL regexp_match(k.key, '^(.*)_(view|create|update|delete)$') AS m
+    WHERE m IS NOT NULL
+  )
+  SELECT array_agg(c.id)
+  INTO companies
+  FROM (
+    SELECT api_key_company AS id, NULL::text AS "user"
+    WHERE api_key_company IS NOT NULL
+    UNION ALL
+    SELECT utc."companyId", utc."userId"
+    FROM "userToCompany" utc
+    WHERE api_key_company IS NULL
+      AND utc."userId" = auth.uid()::text
+      AND utc."role" = 'employee'
+  ) c
+  WHERE EXISTS (
+    SELECT 1 FROM wanted w
+    WHERE util.access_level(
+      c."user",
+      CASE WHEN c."user" IS NULL THEN api_key_id END,
+      c.id,
+      w.page
+    ) >= w.needed
+  );
+
+  RETURN COALESCE(companies, '{}');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_companies_with_employee_permission(permission text)
+ RETURNS text[]
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  -- '<page>_<action>': the companies where the caller's level on the page reaches the
+  -- action's. The one-key form of get_companies_with_any_employee_permission.
+  SELECT get_companies_with_any_employee_permission(ARRAY[permission])
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_company_id_from_api_key()
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+  BEGIN
+    RETURN (SELECT k.company_id FROM util.request_api_key() k);
+  END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_api_key_scopes()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+  DECLARE
+    key_id TEXT;
+    key_company TEXT;
+    grant_rows JSONB;
+  BEGIN
+    SELECT k.id, k.company_id INTO key_id, key_company FROM util.request_api_key() k;
+    IF key_id IS NULL THEN
+      RETURN NULL;
+    END IF;
+
+    SELECT COALESCE(jsonb_agg(jsonb_build_object(
+        'subject', 'key',
+        'module', p.module,
+        'page', p.page,
+        'level', p.level
+      ) ORDER BY p.module, p.page NULLS FIRST), '[]'::jsonb)
+    INTO grant_rows
+    FROM permission p
+    WHERE p."apiKeyId" = key_id AND p."companyId" = key_company;
+
+    RETURN jsonb_build_object('grants', grant_rows);
+  END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_claims(uid text, company text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  DECLARE company_role text;
+  DECLARE employee_type text;
+  DECLARE is_admin boolean := false;
+  DECLARE grant_rows jsonb := '[]'::jsonb;
+  DECLARE portal_keys jsonb := '{}'::jsonb;
+  DECLARE legacy_keys jsonb := '{}'::jsonb;
+  BEGIN
+    -- Your own claims, or those of someone in a company where you may view or
+    -- edit Accounts (the permission editor reads them with Accounts Edit).
+    IF current_setting('role', true) IN ('anon', 'authenticated')
+       AND uid IS DISTINCT FROM auth.uid()::text
+       AND NOT EXISTS (
+         SELECT 1 FROM "userToCompany" utc
+         WHERE utc."userId" = uid
+           AND utc."companyId" = ANY (get_companies_with_any_employee_permission(
+             ARRAY['users.accounts_view', 'users.accounts_update']
+           ))
+       ) THEN
+      RAISE EXCEPTION 'Not authorized to read claims for this user'
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+
+    SELECT role INTO company_role FROM "userToCompany" WHERE "userId" = uid AND "companyId" = company;
+
+    IF company_role = 'employee' THEN
+      SELECT e."employeeTypeId" INTO employee_type
+      FROM employee e
+      WHERE e.id = uid AND e."companyId" = company;
+      -- The Admin type: the only level on no page (util.access_level).
+      is_admin := util.access_level(uid, NULL, company, NULL) = 'Full';
+
+      SELECT COALESCE(jsonb_agg(jsonb_build_object(
+          'subject', CASE WHEN p."userId" IS NOT NULL THEN 'person' ELSE 'role' END,
+          'module', p.module,
+          'page', p.page,
+          'level', p.level
+        ) ORDER BY p."userId" IS NULL, p.module, p.page NULLS FIRST), '[]'::jsonb)
+      INTO grant_rows
+      FROM permission p
+      WHERE p."companyId" = company
+        AND (p."userId" = uid OR (employee_type IS NOT NULL AND p."employeeTypeId" = employee_type));
+
+      -- TRANSITIONAL(#1958): the old claims keys, "<module>_<action>": [company],
+      -- from the level on the module id as a page (its module grants; Admin is
+      -- Full), so app pods from before page permissions keep working on a
+      -- migrated database during a rolling deploy. Current code ignores them.
+      -- Removal: packages/database/AGENTS.md, "Page permissions transition".
+      SELECT COALESCE(jsonb_object_agg(lower(m.module::text) || '_' || a.action, jsonb_build_array(company)), '{}'::jsonb)
+      INTO legacy_keys
+      FROM unnest(enum_range(NULL::"module")) AS m(module)
+      JOIN (VALUES ('view', 'View'::"permissionLevel"), ('create', 'Create'), ('update', 'Edit'), ('delete', 'Full'))
+        AS a(action, needs) ON util.access_level(uid, NULL, company, lower(m.module::text)) >= a.needs;
+    END IF;
+
+    -- A portal account still holds its keys in userPermission. An employee's old
+    -- keys are left out, so a None override is never undone by them.
+    IF company_role IN ('customer', 'supplier') THEN
+      SELECT COALESCE(jsonb_object_agg(kv.key, jsonb_build_array(company)), '{}'::jsonb)
+      INTO portal_keys
+      FROM "userPermission" up, jsonb_each(up.permissions) kv
+      WHERE up.id = uid AND jsonb_typeof(kv.value) = 'array' AND kv.value ? company;
+      legacy_keys := portal_keys; -- TRANSITIONAL(#1958), as above
+    END IF;
+
+    RETURN legacy_keys || jsonb_build_object(
+      'role', company_role,
+      'admin', COALESCE(is_admin, false),
+      'grants', grant_rows,
+      'portal', portal_keys
+    );
+  END;
+$function$;
+
+CREATE OR REPLACE FUNCTION util.module_pages(p_module text)
+ RETURNS text[]
+ LANGUAGE sql
+ IMMUTABLE
+AS $function$
+  -- Generated from packages/database/src/access/pages (authz/registry-sql.ts). Do not edit.
+  -- The pages of a module, in sidebar order; empty for anything else.
+  SELECT CASE p_module
+    WHEN 'accounting' THEN ARRAY['accounting.reporting', 'accounting.syncTieOut', 'accounting.journalEntries', 'accounting.intercompany', 'accounting.accountingPeriods', 'accounting.depreciation', 'accounting.indirectRates', 'accounting.leases', 'accounting.revenueRecognition', 'accounting.assets', 'accounting.fleet', 'accounting.assetClasses', 'accounting.chartOfAccounts', 'accounting.costCenters', 'accounting.defaultAccounts', 'accounting.dimensions', 'accounting.exchangeRates', 'accounting.fiscalYear', 'accounting.indirectPools', 'accounting.paymentTerms', 'accounting.bankAccounts']
+    WHEN 'documents' THEN ARRAY['documents']
+    WHEN 'inventory' THEN ARRAY['inventory.quantities', 'inventory.movements', 'inventory.inventoryCount', 'inventory.kanbans', 'inventory.receipts', 'inventory.shipments', 'inventory.pickingLists', 'inventory.stockTransfers', 'inventory.warehouseTransfers', 'inventory.trackedEntities', 'inventory.traceability', 'inventory.storageUnits', 'inventory.storageTypes', 'inventory.storageRules', 'inventory.shippingMethods']
+    WHEN 'invoicing' THEN ARRAY['invoicing.payables', 'invoicing.purchaseInvoices', 'invoicing.supplierCredits', 'invoicing.charges', 'invoicing.reimbursements', 'invoicing.receivables', 'invoicing.salesInvoices', 'invoicing.creditMemos', 'invoicing.payments']
+    WHEN 'parts' THEN ARRAY['parts.parts', 'parts.materials', 'parts.tools', 'parts.consumables', 'parts.services', 'parts.changeNotices', 'parts.changeNoticeTypes', 'parts.changeNoticeActions', 'parts.dimensions', 'parts.finishes', 'parts.grades', 'parts.shapes', 'parts.substances', 'parts.types', 'parts.itemGroups', 'parts.units']
+    WHEN 'people' THEN ARRAY['people.employees', 'people.timecards', 'people.attributes', 'people.departments', 'people.holidays', 'people.shifts', 'people.payrollTotals']
+    WHEN 'production' THEN ARRAY['production.jobs', 'production.batches', 'production.unattributedTime', 'production.demandForecasts', 'production.materialPlanning', 'production.resourcePlanning', 'production.forecast', 'production.priorities', 'production.outbound', 'production.assemblies', 'production.procedures', 'production.scrapReasons']
+    WHEN 'projects' THEN ARRAY['projects.projects', 'projects.approvals', 'projects.reports', 'projects.laborCategories', 'projects.planningGroups']
+    WHEN 'purchasing' THEN ARRAY['purchasing.suppliers', 'purchasing.purchaseOrders', 'purchasing.returns', 'purchasing.leases', 'purchasing.materialPlanning', 'purchasing.rfqs', 'purchasing.supplierQuotes', 'purchasing.types']
+    WHEN 'quality' THEN ARRAY['quality.actions', 'quality.issues', 'quality.risks', 'quality.gauges', 'quality.records', 'quality.inspections', 'quality.inspectionPlans', 'quality.qualityDocuments', 'quality.actionTypes', 'quality.gaugeTypes', 'quality.issueTypes', 'quality.issueWorkflows']
+    WHEN 'resources' THEN ARRAY['resources.dispatches', 'resources.schedules', 'resources.failureModes', 'resources.locations', 'resources.processes', 'resources.workCenters', 'resources.abilities', 'resources.training', 'resources.assignments', 'resources.suggestions']
+    WHEN 'sales' THEN ARRAY['sales.customers', 'sales.portals', 'sales.rfqs', 'sales.quotes', 'sales.salesOrders', 'sales.returns', 'sales.serviceContracts', 'sales.projectContracts', 'sales.rentalAgreements', 'sales.priceLists', 'sales.pricingRules', 'sales.salesRules', 'sales.noQuoteReasons', 'sales.returnReasons', 'sales.statuses', 'sales.types']
+    WHEN 'service' THEN ARRAY['service.jobs', 'service.schedule', 'service.customerAssets']
+    WHEN 'settings' THEN ARRAY['settings.billing', 'settings.company', 'settings.companies', 'settings.documentTemplates', 'settings.logos', 'settings.printing', 'settings.accounting', 'settings.inventory', 'settings.invoicing', 'settings.items', 'settings.people', 'settings.planning', 'settings.purchasing', 'settings.production', 'settings.projects', 'settings.time', 'settings.service', 'settings.quality', 'settings.sales', 'settings.resources', 'settings.apiKeys', 'settings.approvalRules', 'settings.auditLogs', 'settings.backups', 'settings.customFields', 'settings.demoData', 'settings.integrations', 'settings.itarCertifications', 'settings.security', 'settings.sequences', 'settings.serialNumbers', 'settings.webhooks']
+    WHEN 'users' THEN ARRAY['users.accounts', 'users.operators', 'users.groups', 'users.employeeTypes']
+    WHEN 'workflows' THEN ARRAY['workflows.workflows', 'workflows.runs']
+    ELSE '{}'::text[]
+  END
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_companies_with_module_view(modules text[], permissions text[])
+ RETURNS text[]
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  -- get_companies_with_any_employee_permission over `permissions` and View on every
+  -- page of `modules` (util.module_pages). A read admits any page of the module that
+  -- owns the table, so a policy names the module and a new page changes no policy.
+  SELECT get_companies_with_any_employee_permission(
+    permissions || ARRAY(
+      SELECT page || '_view'
+      FROM unnest(modules) AS m(module), unnest(util.module_pages(m.module)) AS p(page)
+    )
+  )
+$function$;
+
+CREATE OR REPLACE FUNCTION public.has_valid_api_key_for_company(company text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+  BEGIN
+    RETURN EXISTS (SELECT 1 FROM util.request_api_key() k WHERE k.company_id = company);
+  END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.secure_audit_log_table(p_company_id text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  tbl_name TEXT := 'auditLog_' || p_company_id;
+BEGIN
+  EXECUTE format('DROP POLICY IF EXISTS "audit_log_access" ON %I', tbl_name);
+  EXECUTE format('DROP POLICY IF EXISTS "SELECT" ON %I', tbl_name);
+  EXECUTE format(
+    'CREATE POLICY "SELECT" ON %I FOR SELECT USING (
+       %L = ANY ((SELECT get_companies_with_employee_permission(''settings.auditLogs_view''))::text[])
+     )',
+    tbl_name, p_company_id
+  );
+  EXECUTE format(
+    'REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON %I FROM anon, authenticated',
+    tbl_name
+  );
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_audit_log_table(p_company_id text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  tbl_name TEXT;
+  tbl REGCLASS;
+BEGIN
+  PERFORM assert_audit_log_access(p_company_id, 'settings.auditLogs_update');
+
+  tbl_name := 'auditLog_' || p_company_id;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND information_schema.tables.table_name = tbl_name
+  ) THEN
+    -- Table exists; ensure recordId column is present (for tables created before this migration)
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND information_schema.columns.table_name = tbl_name
+        AND column_name = 'recordId'
+    ) THEN
+      EXECUTE format('ALTER TABLE %I ADD COLUMN "recordId" TEXT', tbl_name);
+      EXECUTE format('UPDATE %I SET "recordId" = "entityId" WHERE "recordId" IS NULL', tbl_name);
+      EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I ("recordId")',
+        'idx_' || tbl_name || '_record', tbl_name);
+    END IF;
+
+    tbl := format('public.%I', tbl_name)::regclass;
+
+    -- Without row level security the company-scoped read policy below is not
+    -- enforced, and the API roles keep SELECT.
+    IF NOT (SELECT c.relrowsecurity FROM pg_class c WHERE c.oid = tbl) THEN
+      EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl_name);
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_trigger t
+      WHERE t.tgrelid = tbl
+        AND t.tgname = 'append_only'
+        AND NOT t.tgisinternal
+        AND t.tgenabled <> 'D'
+        AND t.tgfoid = 'public.prevent_audit_log_mutation'::regproc
+    ) THEN
+      PERFORM attach_audit_log_append_only(tbl_name);
+    END IF;
+
+    -- Secured means: the company-scoped read policy is there, the old
+    -- open policy is not, and the API roles cannot write.
+    IF EXISTS (
+         SELECT 1 FROM pg_policies p
+         WHERE p.schemaname = 'public' AND p.tablename = tbl_name
+           AND p.policyname = 'audit_log_access'
+       )
+       OR NOT EXISTS (
+         SELECT 1 FROM pg_policies p
+         WHERE p.schemaname = 'public' AND p.tablename = tbl_name
+           AND p.policyname = 'SELECT' AND p.cmd = 'SELECT'
+           AND p.qual LIKE '%' || quote_literal(p_company_id) || '%'
+           AND p.qual LIKE '%settings.auditLogs_view%'
+       )
+       OR has_table_privilege('anon', tbl, 'INSERT, UPDATE, DELETE, TRUNCATE')
+       OR has_table_privilege('authenticated', tbl, 'INSERT, UPDATE, DELETE, TRUNCATE')
+    THEN
+      PERFORM secure_audit_log_table(p_company_id);
+    END IF;
+
+    RETURN;
+  END IF;
+
+  EXECUTE format('
+    CREATE TABLE IF NOT EXISTS %I (
+      "id" TEXT PRIMARY KEY DEFAULT id(''aud''),
+      "tableName" TEXT NOT NULL,
+      "entityType" TEXT NOT NULL,
+      "entityId" TEXT NOT NULL,
+      "recordId" TEXT,
+      "operation" TEXT NOT NULL CHECK ("operation" IN (''INSERT'', ''UPDATE'', ''DELETE'')),
+      "actorId" TEXT,
+      "diff" JSONB,
+      "metadata" JSONB,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  ', tbl_name);
+
+  EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I ("entityType", "entityId")',
+    'idx_' || tbl_name || '_entity', tbl_name);
+  EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I ("tableName")',
+    'idx_' || tbl_name || '_table', tbl_name);
+  EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I ("recordId")',
+    'idx_' || tbl_name || '_record', tbl_name);
+  EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I ("actorId")',
+    'idx_' || tbl_name || '_actor', tbl_name);
+  EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I ("createdAt" DESC)',
+    'idx_' || tbl_name || '_created', tbl_name);
+
+  EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl_name);
+
+  PERFORM attach_audit_log_append_only(tbl_name);
+  PERFORM secure_audit_log_table(p_company_id);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION util.can_manage_event_subscription(p_company_id text, p_handler_type text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+BEGIN
+  IF (SELECT auth.role()) = 'service_role' THEN
+    RETURN TRUE;
+  END IF;
+
+  IF p_handler_type = 'WEBHOOK' THEN
+    RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings.webhooks_create'))::text[], ARRAY[]::text[]))
+        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings.webhooks_update'))::text[], ARRAY[]::text[]))
+        OR p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_permission('settings.webhooks_delete'))::text[], ARRAY[]::text[]));
+  END IF;
+
+  RETURN p_company_id = ANY (COALESCE((SELECT get_companies_with_employee_role())::text[], ARRAY[]::text[]));
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_audit_log(p_company_id text, p_entity_type text DEFAULT NULL::text, p_entity_id text DEFAULT NULL::text, p_actor_id text DEFAULT NULL::text, p_operation text DEFAULT NULL::text, p_start_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0, p_search text DEFAULT NULL::text)
+ RETURNS TABLE(id text, "tableName" text, "entityType" text, "entityId" text, operation text, "actorId" text, diff jsonb, metadata jsonb, "createdAt" timestamp with time zone, "totalCount" bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  tbl_name TEXT;
+  where_clauses TEXT[] := ARRAY[]::TEXT[];
+  where_clause TEXT := '';
+  query_text TEXT;
+  count_query TEXT;
+  total BIGINT;
+BEGIN
+  PERFORM assert_audit_log_access(p_company_id, 'settings.auditLogs_view');
+
+  tbl_name := 'auditLog_' || p_company_id;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND information_schema.tables.table_name = tbl_name
+  ) THEN
+    RETURN;
+  END IF;
+
+  IF p_entity_type IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"entityType" = %L', p_entity_type));
+  END IF;
+
+  IF p_entity_id IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"entityId" = %L', p_entity_id));
+  END IF;
+
+  IF p_actor_id IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"actorId" = %L', p_actor_id));
+  END IF;
+
+  IF p_operation IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"operation" = %L', p_operation));
+  END IF;
+
+  IF p_start_date IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"createdAt" >= %L', p_start_date));
+  END IF;
+
+  IF p_end_date IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"createdAt" <= %L', p_end_date));
+  END IF;
+
+  IF p_search IS NOT NULL AND p_search != '' THEN
+    where_clauses := array_append(where_clauses,
+      format('"entityId" ILIKE %L', '%' || p_search || '%'));
+  END IF;
+
+  IF array_length(where_clauses, 1) > 0 THEN
+    where_clause := 'WHERE ' || array_to_string(where_clauses, ' AND ');
+  END IF;
+
+  count_query := format('SELECT COUNT(*) FROM %I %s', tbl_name, where_clause);
+  EXECUTE count_query INTO total;
+
+  query_text := format('
+    SELECT "id", "tableName", "entityType", "entityId", "operation", "actorId", "diff", "metadata", "createdAt", %s::BIGINT as "totalCount"
+    FROM %I
+    %s
+    ORDER BY "createdAt" DESC
+    LIMIT %s OFFSET %s
+  ', total, tbl_name, where_clause, p_limit, p_offset);
+
+  RETURN QUERY EXECUTE query_text;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_audit_log_count(p_company_id text, p_entity_type text DEFAULT NULL::text, p_actor_id text DEFAULT NULL::text, p_operation text DEFAULT NULL::text, p_start_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_search text DEFAULT NULL::text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  tbl_name TEXT;
+  where_clauses TEXT[] := ARRAY[]::TEXT[];
+  where_clause TEXT := '';
+  count_val INTEGER;
+BEGIN
+  PERFORM assert_audit_log_access(p_company_id, 'settings.auditLogs_view');
+
+  tbl_name := 'auditLog_' || p_company_id;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND information_schema.tables.table_name = tbl_name
+  ) THEN
+    RETURN 0;
+  END IF;
+
+  IF p_entity_type IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"entityType" = %L', p_entity_type));
+  END IF;
+
+  IF p_actor_id IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"actorId" = %L', p_actor_id));
+  END IF;
+
+  IF p_operation IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"operation" = %L', p_operation));
+  END IF;
+
+  IF p_start_date IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"createdAt" >= %L', p_start_date));
+  END IF;
+
+  IF p_end_date IS NOT NULL THEN
+    where_clauses := array_append(where_clauses, format('"createdAt" <= %L', p_end_date));
+  END IF;
+
+  IF p_search IS NOT NULL AND p_search != '' THEN
+    where_clauses := array_append(where_clauses,
+      format('"entityId" ILIKE %L', '%' || p_search || '%'));
+  END IF;
+
+  IF array_length(where_clauses, 1) > 0 THEN
+    where_clause := 'WHERE ' || array_to_string(where_clauses, ' AND ');
+  END IF;
+
+  EXECUTE format('SELECT COUNT(*)::INTEGER FROM %I %s', tbl_name, where_clause) INTO count_val;
+  RETURN count_val;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_entity_audit_log(p_company_id text, p_entity_type text, p_entity_id text, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0, p_record_id text DEFAULT NULL::text)
+ RETURNS TABLE(id text, "tableName" text, "entityType" text, "entityId" text, "recordId" text, operation text, "actorId" text, diff jsonb, metadata jsonb, "createdAt" timestamp with time zone)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  tbl_name TEXT;
+BEGIN
+  PERFORM assert_audit_log_access(p_company_id, 'settings.auditLogs_view');
+
+  tbl_name := 'auditLog_' || p_company_id;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND information_schema.tables.table_name = tbl_name
+  ) THEN
+    RETURN;
+  END IF;
+
+  IF p_record_id IS NULL THEN
+    RETURN QUERY EXECUTE format('
+      SELECT "id", "tableName", "entityType", "entityId", "recordId", "operation", "actorId", "diff", "metadata", "createdAt"
+      FROM %I
+      WHERE "entityType" = $1 AND "entityId" = $2
+      ORDER BY "createdAt" DESC
+      LIMIT $3 OFFSET $4
+    ', tbl_name)
+    USING p_entity_type, p_entity_id, p_limit, p_offset;
+  ELSE
+    RETURN QUERY EXECUTE format('
+      SELECT "id", "tableName", "entityType", "entityId", "recordId", "operation", "actorId", "diff", "metadata", "createdAt"
+      FROM %I
+      WHERE "entityType" = $1 AND "entityId" = $2 AND "recordId" = $3
+      ORDER BY "createdAt" DESC
+      LIMIT $4 OFFSET $5
+    ', tbl_name)
+    USING p_entity_type, p_entity_id, p_record_id, p_limit, p_offset;
+  END IF;
+END;
+$function$;
+
 -- ability
 DO $authz$
 DECLARE p record;
@@ -12,7 +656,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."ability" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."ability" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."ability" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], ARRAY['production.jobs_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."ability" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."ability" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."ability" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_delete'))::text[]));
@@ -42,7 +686,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."accountDefault" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."accountDefault" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.defaultAccounts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."accountDefault" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."accountDefault" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.defaultAccounts_update'))::text[]));
 
 -- accountingCutoverIgnoredInvoice
@@ -55,7 +699,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."accountingCutoverIgnoredInvoice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."accountingCutoverIgnoredInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.accounting_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."accountingCutoverIgnoredInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."accountingCutoverIgnoredInvoice" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.accounting_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."accountingCutoverIgnoredInvoice" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.accounting_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."accountingCutoverIgnoredInvoice" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.accounting_delete'))::text[]));
@@ -70,7 +714,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."accountingPeriod" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."accountingPeriod" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.reporting_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."accountingPeriod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."accountingPeriod" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."accountingPeriod" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."accountingPeriod" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_delete'))::text[]));
@@ -85,7 +729,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."accountingPeriodBalance" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."accountingPeriodBalance" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."accountingPeriodBalance" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."accountingPeriodBalance" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."accountingPeriodBalance" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."accountingPeriodBalance" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.accountingPeriods_update'))::text[]));
@@ -113,7 +757,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."accountingSyncTieOut" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."accountingSyncTieOut" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.syncTieOut_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."accountingSyncTieOut" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 
 -- address
 DO $authz$
@@ -125,10 +769,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."address" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."address" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."address" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[])));
-CREATE POLICY "UPDATE" ON "public"."address" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[])));
-CREATE POLICY "DELETE" ON "public"."address" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[])));
+CREATE POLICY "SELECT" ON "public"."address" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], ARRAY['purchasing.suppliers_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."address" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.customers_create', 'purchasing.suppliers_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."address" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.customers_update', 'purchasing.suppliers_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."address" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.customers_delete', 'purchasing.suppliers_delete']::text[]))::text[]));
 
 -- apiKey
 DO $authz$
@@ -140,7 +784,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."apiKey" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."apiKey" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."apiKey" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."apiKey" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."apiKey" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."apiKey" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_delete'))::text[]));
@@ -155,7 +799,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."apiKeyRateLimit" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."apiKeyRateLimit" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."apiKey" p WHERE "p"."id" = "apiKeyRateLimit"."apiKeyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."apiKeyRateLimit" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."apiKey" p WHERE "p"."id" = "apiKeyRateLimit"."apiKeyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[])));
 
 -- approvalRule
 DO $authz$
@@ -167,7 +811,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."approvalRule" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."approvalRule" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.approvalRules_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."approvalRule" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."approvalRule" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.approvalRules_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."approvalRule" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.approvalRules_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."approvalRule" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.approvalRules_delete'))::text[]));
@@ -242,7 +886,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."assemblyInstructionStepSlide" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."assemblyInstructionStepSlide" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."assemblyInstructionStepSlide" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."assemblyInstructionStepSlide" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."assemblyInstructionStepSlide" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."assemblyInstructionStepSlide" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_delete'))::text[]));
@@ -257,7 +901,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."assemblyInstructionStepTool" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."assemblyInstructionStepTool" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."assemblyInstructionStepTool" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."assemblyInstructionStepTool" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."assemblyInstructionStepTool" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."assemblyInstructionStepTool" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.assemblies_delete'))::text[]));
@@ -317,10 +961,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."batchProperty" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."batchProperty" FOR SELECT USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.trackedEntities_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."batchProperty" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
-CREATE POLICY "UPDATE" ON "public"."batchProperty" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
-CREATE POLICY "DELETE" ON "public"."batchProperty" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."batchProperty" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['inventory.receipts_view', 'inventory.trackedEntities_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."batchProperty" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.trackedEntities_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))));
+CREATE POLICY "UPDATE" ON "public"."batchProperty" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.trackedEntities_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))));
+CREATE POLICY "DELETE" ON "public"."batchProperty" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.trackedEntities_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "batchProperty"."itemId" AND "item"."companyId" = "batchProperty"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))));
 
 -- capacityReservation
 DO $authz$
@@ -377,7 +1021,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."changeOrder" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."changeOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."changeOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."changeOrder" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."changeOrder" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."changeOrder" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_delete'))::text[]));
@@ -392,7 +1036,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."changeOrderActionTask" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."changeOrderActionTask" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."changeOrderActionTask" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."changeOrderActionTask" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."changeOrderActionTask" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."changeOrderActionTask" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_delete'))::text[]));
@@ -407,7 +1051,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."changeOrderAffectedItem" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."changeOrderAffectedItem" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."changeOrderAffectedItem" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."changeOrderAffectedItem" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."changeOrderAffectedItem" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."changeOrderAffectedItem" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_delete'))::text[]));
@@ -437,7 +1081,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."changeOrderSupersession" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."changeOrderSupersession" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."changeOrderSupersession" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."changeOrderSupersession" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."changeOrderSupersession" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."changeOrderSupersession" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.changeNotices_delete'))::text[]));
@@ -510,7 +1154,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."companyIntegration" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."companyIntegration" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.integrations_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."companyIntegration" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."companyIntegration" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.integrations_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."companyIntegration" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.integrations_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."companyIntegration" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.integrations_delete'))::text[]));
@@ -568,7 +1212,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."configurationRule" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."configurationRule" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "configurationRule"."itemId" AND "item"."companyId" = "configurationRule"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."configurationRule" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."configurationRule" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "configurationRule"."itemId" AND "item"."companyId" = "configurationRule"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."configurationRule" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "configurationRule"."itemId" AND "item"."companyId" = "configurationRule"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."configurationRule" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "configurationRule"."itemId" AND "item"."companyId" = "configurationRule"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
@@ -598,10 +1242,40 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."contact" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."contact" FOR SELECT USING ((("contact"."isCustomer" = 'false' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[])) OR ("contact"."isCustomer" = 'true' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]))));
-CREATE POLICY "INSERT" ON "public"."contact" FOR INSERT WITH CHECK ((("contact"."isCustomer" = 'false' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[])) OR ("contact"."isCustomer" = 'true' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]))));
-CREATE POLICY "UPDATE" ON "public"."contact" FOR UPDATE USING ((("contact"."isCustomer" = 'false' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[])) OR ("contact"."isCustomer" = 'true' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]))));
-CREATE POLICY "DELETE" ON "public"."contact" FOR DELETE USING ((("contact"."isCustomer" = 'false' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[])) OR ("contact"."isCustomer" = 'true' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."contact" FOR SELECT USING ((("contact"."isCustomer" = false AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[])) OR ("contact"."isCustomer" = true AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]))));
+CREATE POLICY "INSERT" ON "public"."contact" FOR INSERT WITH CHECK ((("contact"."isCustomer" = false AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[])) OR ("contact"."isCustomer" = true AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]))));
+CREATE POLICY "UPDATE" ON "public"."contact" FOR UPDATE USING ((("contact"."isCustomer" = false AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[])) OR ("contact"."isCustomer" = true AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]))));
+CREATE POLICY "DELETE" ON "public"."contact" FOR DELETE USING ((("contact"."isCustomer" = false AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[])) OR ("contact"."isCustomer" = true AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]))));
+
+-- contractFinancingRequest
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'contractFinancingRequest' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'contractFinancingRequest');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."contractFinancingRequest" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."contractFinancingRequest" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."contractFinancingRequest" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."contractFinancingRequest" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."contractFinancingRequest" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
+
+-- contractFinancingRequestEvent
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'contractFinancingRequestEvent' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'contractFinancingRequestEvent');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."contractFinancingRequestEvent" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."contractFinancingRequestEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."contractFinancingRequestEvent" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."contractFinancingRequestEvent" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."contractFinancingRequestEvent" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
 
 -- contractor
 DO $authz$
@@ -613,7 +1287,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."contractor" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."contractor" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."contractor" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."contractor" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."contractor" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."contractor" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_delete'))::text[]));
@@ -628,7 +1302,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."contractorAbility" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."contractorAbility" FOR SELECT USING (get_company_id_from_foreign_key("contractorId", 'contractor') = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."contractorAbility" FOR SELECT USING (get_company_id_from_foreign_key("contractorId", 'contractor') = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."contractorAbility" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("contractorId", 'contractor') = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."contractorAbility" FOR UPDATE USING (get_company_id_from_foreign_key("contractorId", 'contractor') = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."contractorAbility" FOR DELETE USING (get_company_id_from_foreign_key("contractorId", 'contractor') = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_delete'))::text[]));
@@ -658,7 +1332,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."costLedger" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."costLedger" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.reporting_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."costLedger" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], ARRAY['parts.parts_view', 'parts.materials_view', 'parts.tools_view', 'parts.consumables_view', 'parts.services_view']::text[]))::text[]));
 
 -- currency
 DO $authz$
@@ -685,7 +1359,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customer" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customer" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]) OR "id" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."customer" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR "id" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
 CREATE POLICY "INSERT" ON "public"."customer" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customer" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customer" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]));
@@ -700,10 +1374,25 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerAccount" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerAccount" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."customerAccount" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
 CREATE POLICY "INSERT" ON "public"."customerAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]));
+
+-- customerAsset
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerAsset' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerAsset');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerAsset" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerAsset" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."customerAsset" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.customerAssets_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerAsset" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.customerAssets_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerAsset" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.customerAssets_delete'))::text[]));
 
 -- customerBankAccount
 DO $authz$
@@ -715,10 +1404,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerBankAccount" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerBankAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."customerBankAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."customerBankAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."customerBankAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerBankAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerBankAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.bankAccounts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerBankAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.bankAccounts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerBankAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.bankAccounts_delete'))::text[]));
 
 -- customerContact
 DO $authz$
@@ -730,7 +1419,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContact" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContact" FOR SELECT USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."customerContact" FOR SELECT USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
 CREATE POLICY "INSERT" ON "public"."customerContact" FOR INSERT WITH CHECK ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[])));
 CREATE POLICY "UPDATE" ON "public"."customerContact" FOR UPDATE USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[])));
 CREATE POLICY "DELETE" ON "public"."customerContact" FOR DELETE USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[])));
@@ -745,7 +1434,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContract" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContract" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContract" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContract" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContract" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContract" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
@@ -760,10 +1449,55 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContractAmendment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContractAmendment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContractAmendment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContractAmendment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContractAmendment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContractAmendment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
+
+-- customerContractFinancing
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractFinancing' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractFinancing');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractFinancing" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractFinancing" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractFinancing" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractFinancing" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractFinancing" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
+
+-- customerContractFinancingRate
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractFinancingRate' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractFinancingRate');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractFinancingRate" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractFinancingRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractFinancingRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractFinancingRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractFinancingRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
+
+-- customerContractFunding
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractFunding' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractFunding');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractFunding" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractFunding" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractFunding" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractFunding" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractFunding" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
 
 -- customerContractInvoice
 DO $authz$
@@ -775,7 +1509,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContractInvoice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContractInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContractInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContractInvoice" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContractInvoice" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContractInvoice" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
@@ -790,10 +1524,25 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContractInvoiceLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContractInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContractInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContractInvoiceLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContractInvoiceLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContractInvoiceLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
+
+-- customerContractLaborRate
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractLaborRate' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractLaborRate');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractLaborRate" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractLaborRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractLaborRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractLaborRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractLaborRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
 
 -- customerContractLedgerEntry
 DO $authz$
@@ -805,7 +1554,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContractLedgerEntry" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContractLedgerEntry" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContractLedgerEntry" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContractLedgerEntry" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContractLedgerEntry" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContractLedgerEntry" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
@@ -820,10 +1569,25 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContractLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContractLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContractLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContractLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContractLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContractLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
+
+-- customerContractRateCeiling
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'customerContractRateCeiling' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'customerContractRateCeiling');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."customerContractRateCeiling" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."customerContractRateCeiling" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."customerContractRateCeiling" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."customerContractRateCeiling" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."customerContractRateCeiling" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
 
 -- customerContractRevenue
 DO $authz$
@@ -835,7 +1599,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerContractRevenue" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerContractRevenue" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerContractRevenue" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerContractRevenue" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerContractRevenue" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerContractRevenue" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
@@ -880,7 +1644,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerItemRentalRate" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerItemRentalRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerItemRentalRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."customerItemRentalRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerItemRentalRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."customerItemRentalRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
@@ -895,7 +1659,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerLocation" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerLocation" FOR SELECT USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."customerLocation" FOR SELECT USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[])));
 CREATE POLICY "INSERT" ON "public"."customerLocation" FOR INSERT WITH CHECK ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[])));
 CREATE POLICY "UPDATE" ON "public"."customerLocation" FOR UPDATE USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[])));
 CREATE POLICY "DELETE" ON "public"."customerLocation" FOR DELETE USING ((get_company_id_from_foreign_key("customerId", 'customer') = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[])));
@@ -910,10 +1674,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerPartToItem" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerPartToItem" FOR SELECT USING (((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[])) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_view'))::text[]))));
-CREATE POLICY "INSERT" ON "public"."customerPartToItem" FOR INSERT WITH CHECK ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_create'))::text[]))));
-CREATE POLICY "UPDATE" ON "public"."customerPartToItem" FOR UPDATE USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_update'))::text[]))));
-CREATE POLICY "DELETE" ON "public"."customerPartToItem" FOR DELETE USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_delete'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."customerPartToItem" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['sales.quotes_view', 'sales.salesOrders_view']::text[]))::text[]) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_view'))::text[]))));
+CREATE POLICY "INSERT" ON "public"."customerPartToItem" FOR INSERT WITH CHECK ((("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_create'))::text[]))));
+CREATE POLICY "UPDATE" ON "public"."customerPartToItem" FOR UPDATE USING ((("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_update'))::text[]))));
+CREATE POLICY "DELETE" ON "public"."customerPartToItem" FOR DELETE USING ((("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "customerPartToItem"."itemId" AND "item"."companyId" = "customerPartToItem"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))) OR ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[]) OR "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_delete'))::text[]))));
 
 -- customerPayment
 DO $authz$
@@ -925,7 +1689,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerPayment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerPayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerPayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerPayment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]));
 
 -- customerShipping
@@ -938,7 +1702,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerShipping" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerShipping" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerShipping" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerShipping" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]));
 
 -- customerStatus
@@ -966,7 +1730,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."customerTax" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."customerTax" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."customerTax" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."customerTax" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_update'))::text[]));
 
 -- customerType
@@ -1009,7 +1773,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."demandActual" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."demandActual" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.materialPlanning_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."demandActual" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], ARRAY['parts.parts_view', 'parts.materials_view', 'parts.tools_view', 'parts.consumables_view', 'parts.services_view', 'purchasing.materialPlanning_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."demandActual" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."demandActual" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."demandActual" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_delete'))::text[]));
@@ -1024,7 +1788,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."demandForecast" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."demandForecast" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.materialPlanning_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."demandForecast" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], ARRAY['purchasing.materialPlanning_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."demandForecast" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."demandForecast" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."demandForecast" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_delete'))::text[]));
@@ -1039,7 +1803,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."demandForecastSource" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."demandForecastSource" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.materialPlanning_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."demandForecastSource" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], ARRAY['purchasing.materialPlanning_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."demandForecastSource" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."demandForecastSource" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."demandForecastSource" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_delete'))::text[]));
@@ -1054,7 +1818,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."demandProjection" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."demandProjection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.demandForecasts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."demandProjection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."demandProjection" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.demandForecasts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."demandProjection" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.demandForecasts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."demandProjection" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.demandForecasts_delete'))::text[]));
@@ -1084,7 +1848,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."depreciationRun" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."depreciationRun" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."depreciationRun" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."depreciationRun" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."depreciationRun" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."depreciationRun" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_delete'))::text[]));
@@ -1099,7 +1863,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."depreciationRunLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."depreciationRunLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."depreciationRunLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."depreciationRunLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."depreciationRunLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."depreciationRunLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.depreciation_delete'))::text[]));
@@ -1134,6 +1898,18 @@ CREATE POLICY "INSERT" ON "public"."dimensionValue" FOR INSERT WITH CHECK ("comp
 CREATE POLICY "UPDATE" ON "public"."dimensionValue" FOR UPDATE USING ("companyGroupId" = ANY ((SELECT get_company_groups_for_root_permission('accounting.dimensions_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."dimensionValue" FOR DELETE USING ("companyGroupId" = ANY ((SELECT get_company_groups_for_root_permission('accounting.dimensions_delete'))::text[]));
 
+-- documentEdit
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'documentEdit' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'documentEdit');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."documentEdit" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."documentEdit" FOR SELECT USING ((("documentType" in ('purchaseReturnOrder', 'salesReturnOrder', 'stockTransfer', 'jobTraveler') AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR ("documentType" = 'purchaseOrder' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing', 'inventory', 'invoicing']::text[], '{}'::text[]))::text[])) OR ("documentType" = 'purchasingRfq' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[])) OR ("documentType" = 'quote' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[])) OR ("documentType" = 'salesOrder' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales', 'inventory', 'invoicing']::text[], '{}'::text[]))::text[])) OR ("documentType" = 'salesInvoice' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[])) OR ("documentType" = 'packingSlip' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory', 'sales']::text[], '{}'::text[]))::text[])) OR ("documentType" = 'issue' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]))));
+
 -- documentSection
 DO $authz$
 DECLARE p record;
@@ -1148,21 +1924,6 @@ CREATE POLICY "SELECT" ON "public"."documentSection" FOR SELECT USING ("companyI
 CREATE POLICY "INSERT" ON "public"."documentSection" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."documentSection" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."documentSection" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_delete'))::text[]));
-
--- documentTemplate
-DO $authz$
-DECLARE p record;
-BEGIN
-  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'documentTemplate' LOOP
-    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'documentTemplate');
-  END LOOP;
-END
-$authz$;
-ALTER TABLE public."documentTemplate" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."documentTemplate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."documentTemplate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."documentTemplate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."documentTemplate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_delete'))::text[]));
 
 -- employee
 DO $authz$
@@ -1189,7 +1950,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."employeeAbility" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."employeeAbility" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."employeeAbility" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."employeeAbility" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."employeeAbility" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."employeeAbility" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.abilities_delete'))::text[]));
@@ -1219,7 +1980,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."employeeShift" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."employeeShift" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.employees_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."employeeShift" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['people']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."employeeShift" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.employees_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."employeeShift" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.employees_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."employeeShift" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.employees_delete'))::text[]));
@@ -1234,7 +1995,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."employeeType" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."employeeType" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[]));
+CREATE POLICY "SELECT" ON "public"."employeeType" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['users']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."employeeType" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."employeeType" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."employeeType" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[]));
@@ -1293,9 +2054,9 @@ END
 $authz$;
 ALTER TABLE public."enforcementRuleItemAssignment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."enforcementRuleItemAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."enforcementRuleItemAssignment" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleItemAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleItemAssignment"."companyId" AND (("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_create'))::text[])) OR ("enforcementRule"."family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesRules_create'))::text[])))));
-CREATE POLICY "UPDATE" ON "public"."enforcementRuleItemAssignment" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleItemAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleItemAssignment"."companyId" AND (("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_update'))::text[])) OR ("enforcementRule"."family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesRules_update'))::text[])))));
-CREATE POLICY "DELETE" ON "public"."enforcementRuleItemAssignment" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleItemAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleItemAssignment"."companyId" AND (("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_delete'))::text[])) OR ("enforcementRule"."family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesRules_delete'))::text[])))));
+CREATE POLICY "INSERT" ON "public"."enforcementRuleItemAssignment" FOR INSERT WITH CHECK ((EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleItemAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleItemAssignment"."companyId" AND (("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_create'))::text[])) OR ("enforcementRule"."family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesRules_create'))::text[])))) OR EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleItemAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleItemAssignment"."companyId" AND ("family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['parts.parts_create', 'parts.materials_create', 'parts.tools_create', 'parts.consumables_create', 'parts.services_create']::text[]))::text[])))));
+CREATE POLICY "UPDATE" ON "public"."enforcementRuleItemAssignment" FOR UPDATE USING ((EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleItemAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleItemAssignment"."companyId" AND (("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_update'))::text[])) OR ("enforcementRule"."family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesRules_update'))::text[])))) OR EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleItemAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleItemAssignment"."companyId" AND ("family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['parts.parts_update', 'parts.materials_update', 'parts.tools_update', 'parts.consumables_update', 'parts.services_update']::text[]))::text[])))));
+CREATE POLICY "DELETE" ON "public"."enforcementRuleItemAssignment" FOR DELETE USING ((EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleItemAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleItemAssignment"."companyId" AND (("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_delete'))::text[])) OR ("enforcementRule"."family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesRules_delete'))::text[])))) OR EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleItemAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleItemAssignment"."companyId" AND ("family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['parts.parts_delete', 'parts.materials_delete', 'parts.tools_delete', 'parts.consumables_delete', 'parts.services_delete']::text[]))::text[])))));
 
 -- enforcementRuleWorkCenterAssignment
 DO $authz$
@@ -1308,9 +2069,9 @@ END
 $authz$;
 ALTER TABLE public."enforcementRuleWorkCenterAssignment" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."enforcementRuleWorkCenterAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."enforcementRuleWorkCenterAssignment" FOR INSERT WITH CHECK ((EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND "targetType" = 'workCenter') AND EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND ("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_create'))::text[])))));
-CREATE POLICY "UPDATE" ON "public"."enforcementRuleWorkCenterAssignment" FOR UPDATE USING ((EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND "targetType" = 'workCenter') AND EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND ("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_update'))::text[])))));
-CREATE POLICY "DELETE" ON "public"."enforcementRuleWorkCenterAssignment" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND ("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_delete'))::text[]))));
+CREATE POLICY "INSERT" ON "public"."enforcementRuleWorkCenterAssignment" FOR INSERT WITH CHECK ((EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND "targetType" = 'workCenter') AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND ("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_create'))::text[]))))));
+CREATE POLICY "UPDATE" ON "public"."enforcementRuleWorkCenterAssignment" FOR UPDATE USING ((EXISTS (SELECT 1 FROM "public"."enforcementRule" p WHERE "p"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "p"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND "targetType" = 'workCenter') AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND ("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_update'))::text[]))))));
+CREATE POLICY "DELETE" ON "public"."enforcementRuleWorkCenterAssignment" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."enforcementRule" WHERE "enforcementRule"."id" = "enforcementRuleWorkCenterAssignment"."ruleId" AND "enforcementRule"."companyId" = "enforcementRuleWorkCenterAssignment"."companyId" AND ("enforcementRule"."family" = 'storage' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.storageRules_delete'))::text[])))));
 
 -- eventSystemSubscription
 DO $authz$
@@ -1323,9 +2084,9 @@ END
 $authz$;
 ALTER TABLE public."eventSystemSubscription" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."eventSystemSubscription" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."eventSystemSubscription" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."eventSystemSubscription" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."eventSystemSubscription" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."eventSystemSubscription" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['workflows.workflows_create', 'settings.integrations_create', 'settings.auditLogs_update']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."eventSystemSubscription" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['workflows.workflows_update', 'settings.integrations_update', 'settings.auditLogs_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."eventSystemSubscription" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['workflows.workflows_delete', 'settings.integrations_delete', 'settings.auditLogs_update']::text[]))::text[]));
 
 -- exchangeRateOverride
 DO $authz$
@@ -1353,9 +2114,9 @@ END
 $authz$;
 ALTER TABLE public."externalLink" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."externalLink" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."externalLink" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.portals_create'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_create'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[])));
-CREATE POLICY "UPDATE" ON "public"."externalLink" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.portals_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[])));
-CREATE POLICY "DELETE" ON "public"."externalLink" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.portals_delete'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_delete'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[])));
+CREATE POLICY "INSERT" ON "public"."externalLink" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.portals_create', 'sales.quotes_create', 'purchasing.supplierQuotes_create', 'quality.issues_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."externalLink" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.portals_update', 'sales.quotes_update', 'purchasing.supplierQuotes_update', 'quality.issues_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."externalLink" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.portals_delete', 'sales.quotes_delete', 'purchasing.supplierQuotes_delete', 'quality.issues_delete']::text[]))::text[]));
 
 -- fiscalYearSettings
 DO $authz$
@@ -1367,7 +2128,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fiscalYearSettings" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fiscalYearSettings" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.fiscalYear_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."fiscalYearSettings" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fiscalYearSettings" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.fiscalYear_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fiscalYearSettings" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.fiscalYear_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fiscalYearSettings" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.fiscalYear_delete'))::text[]));
@@ -1382,7 +2143,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fixedAsset" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fixedAsset" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.fleet_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."fixedAsset" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fixedAsset" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fixedAsset" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fixedAsset" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_delete'))::text[]));
@@ -1397,7 +2158,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fixedAssetCipCost" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fixedAssetCipCost" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."fixedAssetCipCost" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fixedAssetCipCost" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fixedAssetCipCost" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fixedAssetCipCost" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_delete'))::text[]));
@@ -1412,7 +2173,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fixedAssetClass" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fixedAssetClass" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assetClasses_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."fixedAssetClass" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fixedAssetClass" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assetClasses_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fixedAssetClass" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assetClasses_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fixedAssetClass" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assetClasses_delete'))::text[]));
@@ -1427,7 +2188,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fixedAssetDisposal" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fixedAssetDisposal" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."fixedAssetDisposal" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fixedAssetDisposal" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_create'))::text[]));
 
 -- fixedAssetTransfer
@@ -1440,7 +2201,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fixedAssetTransfer" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fixedAssetTransfer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."fixedAssetTransfer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fixedAssetTransfer" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fixedAssetTransfer" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fixedAssetTransfer" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_delete'))::text[]));
@@ -1455,7 +2216,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fixedAssetUsageLog" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fixedAssetUsageLog" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.fleet_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."fixedAssetUsageLog" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."fixedAssetUsageLog" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fixedAssetUsageLog" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fixedAssetUsageLog" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.assets_delete'))::text[]));
@@ -1470,8 +2231,8 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."fulfillment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."fulfillment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."fulfillment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_create'))::text[]));
+CREATE POLICY "SELECT" ON "public"."fulfillment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], ARRAY['inventory.shipments_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."fulfillment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.salesOrders_create', 'inventory.shipments_create']::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."fulfillment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."fulfillment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_delete'))::text[]));
 
@@ -1500,7 +2261,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."gaugeCalibrationRecord" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."gaugeCalibrationRecord" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.records_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."gaugeCalibrationRecord" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."gaugeCalibrationRecord" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.records_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."gaugeCalibrationRecord" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.records_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."gaugeCalibrationRecord" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.records_delete'))::text[]));
@@ -1595,6 +2356,51 @@ CREATE POLICY "INSERT" ON "public"."implementationHub" FOR INSERT WITH CHECK ("i
 CREATE POLICY "UPDATE" ON "public"."implementationHub" FOR UPDATE USING ("id" = ANY ((SELECT get_companies_with_employee_role())::text[]));
 CREATE POLICY "DELETE" ON "public"."implementationHub" FOR DELETE USING ("id" = ANY ((SELECT get_companies_with_employee_permission('settings.company_delete'))::text[]));
 
+-- indirectPool
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'indirectPool' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'indirectPool');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."indirectPool" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."indirectPool" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."indirectPool" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectPools_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."indirectPool" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectPools_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."indirectPool" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectPools_delete'))::text[]));
+
+-- indirectPoolAccount
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'indirectPoolAccount' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'indirectPoolAccount');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."indirectPoolAccount" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."indirectPoolAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."indirectPoolAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectPools_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."indirectPoolAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectPools_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."indirectPoolAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectPools_delete'))::text[]));
+
+-- indirectRate
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'indirectRate' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'indirectRate');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."indirectRate" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."indirectRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."indirectRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectRates_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."indirectRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectRates_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."indirectRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.indirectRates_delete'))::text[]));
+
 -- inspection
 DO $authz$
 DECLARE p record;
@@ -1605,7 +2411,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inspection" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inspection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inspection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inspection" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inspection" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inspection" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_delete'))::text[]));
@@ -1650,7 +2456,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inspectionHistory" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inspectionHistory" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inspectionHistory" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inspectionHistory" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_create'))::text[]));
 
 -- inspectionMeasurement
@@ -1663,7 +2469,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inspectionMeasurement" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inspectionMeasurement" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inspectionMeasurement" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inspectionMeasurement" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inspectionMeasurement" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inspectionMeasurement" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_delete'))::text[]));
@@ -1678,7 +2484,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inspectionSample" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inspectionSample" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inspectionSample" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inspectionSample" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inspectionSample" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inspectionSample" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_delete'))::text[]));
@@ -1693,10 +2499,22 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inspectionSamplingPlan" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inspectionSamplingPlan" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inspectionSamplingPlan" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inspectionSamplingPlan" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inspectionSamplingPlan" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inspectionSamplingPlan" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_delete'))::text[]));
+
+-- integrationConnection
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'integrationConnection' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'integrationConnection');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."integrationConnection" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."integrationConnection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 
 -- intercompanyEliminationLine
 DO $authz$
@@ -1738,7 +2556,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inventoryCount" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inventoryCount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inventoryCount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inventoryCount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inventoryCount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inventoryCount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_delete'))::text[]));
@@ -1753,7 +2571,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."inventoryCountLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."inventoryCountLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."inventoryCountLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."inventoryCountLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inventoryCountLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inventoryCountLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.inventoryCount_delete'))::text[]));
@@ -1783,10 +2601,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."item" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."item" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]) OR "id" IN (SELECT "supplierPart"."itemId" FROM "public"."supplierPart" WHERE ("supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_view'))::text[]) AND "itemId" IS NOT NULL)) OR "id" IN (SELECT "customerPartToItem"."itemId" FROM "public"."customerPartToItem" WHERE ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_view'))::text[]) AND "itemId" IS NOT NULL))));
+CREATE POLICY "SELECT" ON "public"."item" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]) OR "id" = ANY (COALESCE((SELECT array_agg("supplierPart"."itemId") FROM "public"."supplierPart" WHERE ("supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_view'))::text[]) AND "itemId" IS NOT NULL)), '{}')) OR "id" = ANY (COALESCE((SELECT array_agg("customerPartToItem"."itemId") FROM "public"."customerPartToItem" WHERE ("customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_view'))::text[]) AND "itemId" IS NOT NULL)), '{}'))));
 CREATE POLICY "INSERT" ON "public"."item" FOR INSERT WITH CHECK ((("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))));
-CREATE POLICY "UPDATE" ON "public"."item" FOR UPDATE USING (((("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))) OR "id" IN (SELECT "supplierPart"."itemId" FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_update'))::text[])) OR "id" IN (SELECT "customerPartToItem"."itemId" FROM "public"."customerPartToItem" WHERE "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_update'))::text[]))));
-CREATE POLICY "DELETE" ON "public"."item" FOR DELETE USING (((("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))) OR "id" IN (SELECT "supplierPart"."itemId" FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_delete'))::text[])) OR "id" IN (SELECT "customerPartToItem"."itemId" FROM "public"."customerPartToItem" WHERE "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_delete'))::text[]))));
+CREATE POLICY "UPDATE" ON "public"."item" FOR UPDATE USING (((("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))) OR "id" = ANY (COALESCE((SELECT array_agg("supplierPart"."itemId") FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_update'))::text[])), '{}')) OR "id" = ANY (COALESCE((SELECT array_agg("customerPartToItem"."itemId") FROM "public"."customerPartToItem" WHERE "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_update'))::text[])), '{}'))));
+CREATE POLICY "DELETE" ON "public"."item" FOR DELETE USING (((("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))) OR "id" = ANY (COALESCE((SELECT array_agg("supplierPart"."itemId") FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_delete'))::text[])), '{}')) OR "id" = ANY (COALESCE((SELECT array_agg("customerPartToItem"."itemId") FROM "public"."customerPartToItem" WHERE "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_delete'))::text[])), '{}'))));
 
 -- itemCost
 DO $authz$
@@ -1798,9 +2616,9 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemCost" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemCost" FOR SELECT USING (((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[])) OR "itemId" IN (SELECT "supplierPart"."itemId" FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."itemCost" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['sales.quotes_view', 'sales.salesOrders_view']::text[]))::text[]) OR "itemId" = ANY (COALESCE((SELECT array_agg("supplierPart"."itemId") FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_view'))::text[])), '{}'))));
 CREATE POLICY "INSERT" ON "public"."itemCost" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
-CREATE POLICY "UPDATE" ON "public"."itemCost" FOR UPDATE USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))) OR "itemId" IN (SELECT "supplierPart"."itemId" FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_update'))::text[])) OR "itemId" IN (SELECT "customerPartToItem"."itemId" FROM "public"."customerPartToItem" WHERE "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_update'))::text[]))));
+CREATE POLICY "UPDATE" ON "public"."itemCost" FOR UPDATE USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemCost"."itemId" AND "item"."companyId" = "itemCost"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))) OR "itemId" = ANY (COALESCE((SELECT array_agg("supplierPart"."itemId") FROM "public"."supplierPart" WHERE "supplierId" = ANY ((SELECT get_supplier_ids_with_supplier_permission('parts_update'))::text[])), '{}')) OR "itemId" = ANY (COALESCE((SELECT array_agg("customerPartToItem"."itemId") FROM "public"."customerPartToItem" WHERE "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('parts_update'))::text[])), '{}'))));
 
 -- itemInspectionDocumentAssignment
 DO $authz$
@@ -1812,7 +2630,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemInspectionDocumentAssignment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemInspectionDocumentAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."itemInspectionDocumentAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemInspectionDocumentAssignment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."itemInspectionDocumentAssignment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."itemInspectionDocumentAssignment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_delete'))::text[]));
@@ -1827,8 +2645,8 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemLedger" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemLedger" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.quantities_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.reporting_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.movements_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."itemLedger" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.quantities_create'))::text[]));
+CREATE POLICY "SELECT" ON "public"."itemLedger" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], ARRAY['accounting.reporting_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."itemLedger" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['inventory.quantities_create', 'accounting.journalEntries_create']::text[]))::text[]));
 
 -- itemPlanning
 DO $authz$
@@ -1840,7 +2658,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemPlanning" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemPlanning" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemPlanning"."itemId" AND "item"."companyId" = "itemPlanning"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."itemPlanning" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemPlanning" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemPlanning"."itemId" AND "item"."companyId" = "itemPlanning"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."itemPlanning" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemPlanning"."itemId" AND "item"."companyId" = "itemPlanning"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 
@@ -1854,7 +2672,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemPostingGroup" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemPostingGroup" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.itemGroups_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.defaultAccounts_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."itemPostingGroup" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['accounting.defaultAccounts_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemPostingGroup" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.itemGroups_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."itemPostingGroup" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.itemGroups_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."itemPostingGroup" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.itemGroups_delete'))::text[]));
@@ -1884,7 +2702,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemRentalRate" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemRentalRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."itemRentalRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemRentalRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."itemRentalRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."itemRentalRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
@@ -1899,7 +2717,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemReplenishment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemReplenishment" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemReplenishment"."itemId" AND "item"."companyId" = "itemReplenishment"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."itemReplenishment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemReplenishment" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemReplenishment"."itemId" AND "item"."companyId" = "itemReplenishment"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."itemReplenishment" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemReplenishment"."itemId" AND "item"."companyId" = "itemReplenishment"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."itemReplenishment" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemReplenishment"."itemId" AND "item"."companyId" = "itemReplenishment"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
@@ -1929,7 +2747,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemShelfLife" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemShelfLife" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemShelfLife"."itemId" AND "item"."companyId" = "itemShelfLife"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."itemShelfLife" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemShelfLife" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemShelfLife"."itemId" AND "item"."companyId" = "itemShelfLife"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."itemShelfLife" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemShelfLife"."itemId" AND "item"."companyId" = "itemShelfLife"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."itemShelfLife" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemShelfLife"."itemId" AND "item"."companyId" = "itemShelfLife"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
@@ -1959,7 +2777,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."itemUnitSalePrice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."itemUnitSalePrice" FOR SELECT USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemUnitSalePrice"."itemId" AND "item"."companyId" = "itemUnitSalePrice"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.priceLists_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."itemUnitSalePrice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['sales.quotes_view', 'sales.salesOrders_view', 'sales.priceLists_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."itemUnitSalePrice" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemUnitSalePrice"."itemId" AND "item"."companyId" = "itemUnitSalePrice"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."itemUnitSalePrice" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemUnitSalePrice"."itemId" AND "item"."companyId" = "itemUnitSalePrice"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."itemUnitSalePrice" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "itemUnitSalePrice"."itemId" AND "item"."companyId" = "itemUnitSalePrice"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
@@ -2169,7 +2987,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."journal" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."journal" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.reporting_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."journal" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."journal" FOR INSERT WITH CHECK (("status" in ('Draft', 'Posted') AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_create'))::text[])));
 CREATE POLICY "UPDATE" ON "public"."journal" FOR UPDATE USING (("status" in ('Draft', 'Posted') AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_update'))::text[]))) WITH CHECK (("status" in ('Draft', 'Posted', 'Reversed') AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_update'))::text[])));
 CREATE POLICY "DELETE" ON "public"."journal" FOR DELETE USING (("status" = 'Draft' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_delete'))::text[])));
@@ -2184,7 +3002,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."journalLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."journalLine" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.reporting_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."journalLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."journalLine" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_create'))::text[]) AND EXISTS (SELECT 1 FROM "public"."journal" p WHERE "p"."id" = "journalLine"."journalId" AND "status" in ('Draft', 'Posted'))));
 CREATE POLICY "UPDATE" ON "public"."journalLine" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_update'))::text[]) AND EXISTS (SELECT 1 FROM "public"."journal" p WHERE "p"."id" = "journalLine"."journalId" AND "status" = 'Draft')));
 CREATE POLICY "DELETE" ON "public"."journalLine" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_delete'))::text[]) AND EXISTS (SELECT 1 FROM "public"."journal" p WHERE "p"."id" = "journalLine"."journalId" AND "status" = 'Draft')));
@@ -2199,7 +3017,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."journalLineDimension" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."journalLineDimension" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."journalLineDimension" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."journalLineDimension" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_create'))::text[]));
 CREATE POLICY "DELETE" ON "public"."journalLineDimension" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.journalEntries_delete'))::text[]));
 
@@ -2218,6 +3036,36 @@ CREATE POLICY "INSERT" ON "public"."kanban" FOR INSERT WITH CHECK ("companyId" =
 CREATE POLICY "UPDATE" ON "public"."kanban" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.kanbans_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."kanban" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.kanbans_delete'))::text[]));
 
+-- laborCategory
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'laborCategory' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'laborCategory');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."laborCategory" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."laborCategory" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."laborCategory" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.laborCategories_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."laborCategory" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.laborCategories_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."laborCategory" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.laborCategories_delete'))::text[]));
+
+-- laborCategoryRate
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'laborCategoryRate' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'laborCategoryRate');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."laborCategoryRate" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."laborCategoryRate" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."laborCategoryRate" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.laborCategories_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."laborCategoryRate" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.laborCategories_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."laborCategoryRate" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.laborCategories_delete'))::text[]));
+
 -- lease
 DO $authz$
 DECLARE p record;
@@ -2228,7 +3076,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."lease" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."lease" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."lease" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."lease" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."lease" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."lease" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_delete'))::text[]));
@@ -2243,7 +3091,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."leaseEvent" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."leaseEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."leaseEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 
 -- leaseLine
 DO $authz$
@@ -2255,7 +3103,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."leaseLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."leaseLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."leaseLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."leaseLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."leaseLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."leaseLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_delete'))::text[]));
@@ -2270,7 +3118,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."leasePayment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."leasePayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."leasePayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."leasePayment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."leasePayment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."leasePayment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_delete'))::text[]));
@@ -2285,7 +3133,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."leaseScheduleLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."leaseScheduleLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.leases_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."leaseScheduleLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 
 -- location
 DO $authz$
@@ -2402,7 +3250,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."maintenanceSchedule" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."maintenanceSchedule" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.schedules_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."maintenanceSchedule" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."maintenanceSchedule" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.schedules_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."maintenanceSchedule" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.schedules_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."maintenanceSchedule" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.schedules_delete'))::text[]));
@@ -2432,7 +3280,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."makeMethod" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."makeMethod" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."makeMethod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."makeMethod" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."makeMethod" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."makeMethod" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
@@ -2462,7 +3310,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."materialDimension" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."materialDimension" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.dimensions_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."materialDimension" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."materialDimension" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.dimensions_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."materialDimension" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.dimensions_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."materialDimension" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.dimensions_delete'))::text[]));
@@ -2477,7 +3325,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."materialFinish" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."materialFinish" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.finishes_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."materialFinish" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."materialFinish" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.finishes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."materialFinish" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.finishes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."materialFinish" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.finishes_delete'))::text[]));
@@ -2492,7 +3340,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."materialForm" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."materialForm" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.shapes_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."materialForm" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."materialForm" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.shapes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."materialForm" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.shapes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."materialForm" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.shapes_delete'))::text[]));
@@ -2507,7 +3355,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."materialGrade" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."materialGrade" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.grades_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."materialGrade" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."materialGrade" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.grades_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."materialGrade" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.grades_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."materialGrade" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.grades_delete'))::text[]));
@@ -2522,7 +3370,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."materialSubstance" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."materialSubstance" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.substances_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."materialSubstance" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."materialSubstance" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.substances_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."materialSubstance" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.substances_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."materialSubstance" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.substances_delete'))::text[]));
@@ -2537,7 +3385,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."materialType" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."materialType" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.types_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."materialType" FOR SELECT USING (("companyId" IS NULL OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."materialType" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.types_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."materialType" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.types_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."materialType" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.types_delete'))::text[]));
@@ -2582,10 +3430,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."methodMaterial" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."methodMaterial" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."methodMaterial" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."methodMaterial" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."methodMaterial" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."methodMaterial" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodMaterial" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodMaterial"."makeMethodId" AND "makeMethod"."companyId" = "methodMaterial"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))));
+CREATE POLICY "UPDATE" ON "public"."methodMaterial" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodMaterial"."makeMethodId" AND "makeMethod"."companyId" = "methodMaterial"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))));
+CREATE POLICY "DELETE" ON "public"."methodMaterial" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodMaterial"."makeMethodId" AND "makeMethod"."companyId" = "methodMaterial"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))));
 
 -- methodMaterialStep
 DO $authz$
@@ -2598,9 +3446,9 @@ END
 $authz$;
 ALTER TABLE public."methodMaterialStep" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."methodMaterialStep" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
-CREATE POLICY "INSERT" ON "public"."methodMaterialStep" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])));
-CREATE POLICY "UPDATE" ON "public"."methodMaterialStep" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])));
-CREATE POLICY "DELETE" ON "public"."methodMaterialStep" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])));
+CREATE POLICY "INSERT" ON "public"."methodMaterialStep" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "p"."makeMethodId" AND "makeMethod"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))))));
+CREATE POLICY "UPDATE" ON "public"."methodMaterialStep" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "p"."makeMethodId" AND "makeMethod"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))))));
+CREATE POLICY "DELETE" ON "public"."methodMaterialStep" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodMaterial" p WHERE "p"."id" = "methodMaterialStep"."methodMaterialId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "p"."makeMethodId" AND "makeMethod"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))))));
 
 -- methodOperation
 DO $authz$
@@ -2612,10 +3460,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."methodOperation" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."methodOperation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."methodOperation" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."methodOperation" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."methodOperation" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."methodOperation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodOperation" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))));
+CREATE POLICY "UPDATE" ON "public"."methodOperation" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))));
+CREATE POLICY "DELETE" ON "public"."methodOperation" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))));
 
 -- methodOperationParameter
 DO $authz$
@@ -2628,9 +3476,9 @@ END
 $authz$;
 ALTER TABLE public."methodOperationParameter" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."methodOperationParameter" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."methodOperationParameter" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."methodOperationParameter" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."methodOperationParameter" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodOperationParameter" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationParameter"."operationId" AND "methodOperation"."companyId" = "methodOperationParameter"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))))));
+CREATE POLICY "UPDATE" ON "public"."methodOperationParameter" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationParameter"."operationId" AND "methodOperation"."companyId" = "methodOperationParameter"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))))));
+CREATE POLICY "DELETE" ON "public"."methodOperationParameter" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationParameter"."operationId" AND "methodOperation"."companyId" = "methodOperationParameter"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))))));
 
 -- methodOperationStep
 DO $authz$
@@ -2643,9 +3491,9 @@ END
 $authz$;
 ALTER TABLE public."methodOperationStep" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."methodOperationStep" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."methodOperationStep" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."methodOperationStep" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."methodOperationStep" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodOperationStep" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationStep"."operationId" AND "methodOperation"."companyId" = "methodOperationStep"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))))));
+CREATE POLICY "UPDATE" ON "public"."methodOperationStep" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationStep"."operationId" AND "methodOperation"."companyId" = "methodOperationStep"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))))));
+CREATE POLICY "DELETE" ON "public"."methodOperationStep" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationStep"."operationId" AND "methodOperation"."companyId" = "methodOperationStep"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))))));
 
 -- methodOperationStepSlide
 DO $authz$
@@ -2658,9 +3506,9 @@ END
 $authz$;
 ALTER TABLE public."methodOperationStepSlide" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."methodOperationStepSlide" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."methodOperationStepSlide" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."methodOperationStepSlide" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."methodOperationStepSlide" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodOperationStepSlide" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."methodOperationStep" WHERE "methodOperationStep"."id" = "methodOperationStepSlide"."stepId" AND "methodOperationStep"."companyId" = "methodOperationStepSlide"."companyId" AND EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationStep"."operationId" AND "methodOperation"."companyId" = "methodOperationStep"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))))))));
+CREATE POLICY "UPDATE" ON "public"."methodOperationStepSlide" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."methodOperationStep" WHERE "methodOperationStep"."id" = "methodOperationStepSlide"."stepId" AND "methodOperationStep"."companyId" = "methodOperationStepSlide"."companyId" AND EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationStep"."operationId" AND "methodOperation"."companyId" = "methodOperationStep"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))))))));
+CREATE POLICY "DELETE" ON "public"."methodOperationStepSlide" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."methodOperationStep" WHERE "methodOperationStep"."id" = "methodOperationStepSlide"."stepId" AND "methodOperationStep"."companyId" = "methodOperationStepSlide"."companyId" AND EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationStep"."operationId" AND "methodOperation"."companyId" = "methodOperationStep"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))))))));
 
 -- methodOperationTool
 DO $authz$
@@ -2672,10 +3520,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."methodOperationTool" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."methodOperationTool" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."methodOperationTool" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."methodOperationTool" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."methodOperationTool" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."methodOperationTool" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodOperationTool" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationTool"."operationId" AND "methodOperation"."companyId" = "methodOperationTool"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))))));
+CREATE POLICY "UPDATE" ON "public"."methodOperationTool" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationTool"."operationId" AND "methodOperation"."companyId" = "methodOperationTool"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))))));
+CREATE POLICY "DELETE" ON "public"."methodOperationTool" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "methodOperationTool"."operationId" AND "methodOperation"."companyId" = "methodOperationTool"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))))));
 
 -- methodOperationToolStep
 DO $authz$
@@ -2688,9 +3536,9 @@ END
 $authz$;
 ALTER TABLE public."methodOperationToolStep" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."methodOperationToolStep" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
-CREATE POLICY "INSERT" ON "public"."methodOperationToolStep" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])));
-CREATE POLICY "UPDATE" ON "public"."methodOperationToolStep" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])));
-CREATE POLICY "DELETE" ON "public"."methodOperationToolStep" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])));
+CREATE POLICY "INSERT" ON "public"."methodOperationToolStep" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "p"."operationId" AND "methodOperation"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))))));
+CREATE POLICY "UPDATE" ON "public"."methodOperationToolStep" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "p"."operationId" AND "methodOperation"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))))));
+CREATE POLICY "DELETE" ON "public"."methodOperationToolStep" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodOperationTool" p WHERE "p"."id" = "methodOperationToolStep"."methodOperationToolId" AND EXISTS (SELECT 1 FROM "public"."methodOperation" WHERE "methodOperation"."id" = "p"."operationId" AND "methodOperation"."companyId" = "p"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodOperation"."makeMethodId" AND "makeMethod"."companyId" = "methodOperation"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))))));
 
 -- modelUpload
 DO $authz$
@@ -2703,9 +3551,9 @@ END
 $authz$;
 ALTER TABLE public."modelUpload" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."modelUpload" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."modelUpload" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."modelUpload" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."modelUpload" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."modelUpload" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['parts.parts_create', 'parts.materials_create', 'parts.tools_create', 'parts.consumables_create', 'parts.services_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."modelUpload" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['parts.parts_update', 'parts.materials_update', 'parts.tools_update', 'parts.consumables_update', 'parts.services_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."modelUpload" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['parts.parts_delete', 'parts.materials_delete', 'parts.tools_delete', 'parts.consumables_delete', 'parts.services_delete']::text[]))::text[]));
 
 -- nonConformance
 DO $authz$
@@ -2717,7 +3565,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformance" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformance" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.actions_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."nonConformance" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformance" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformance" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformance" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2732,7 +3580,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceActionProcess" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceActionProcess" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceActionProcess" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceActionProcess" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceActionProcess" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceActionProcess" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2747,7 +3595,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceActionTask" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceActionTask" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.actions_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."nonConformanceActionTask" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceActionTask" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceActionTask" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceActionTask" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2762,7 +3610,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceApprovalTask" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceApprovalTask" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceApprovalTask" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceApprovalTask" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceApprovalTask" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceApprovalTask" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2777,7 +3625,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceCustomer" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceCustomer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceCustomer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceCustomer" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceCustomer" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceCustomer" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2792,7 +3640,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceInspection" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceInspection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceInspection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceInspection" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceInspection" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceInspection" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2807,7 +3655,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceItem" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceItem" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceItem" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceItem" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceItem" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceItem" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2822,7 +3670,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceItemTrackedEntity" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceItemTrackedEntity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceItemTrackedEntity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceItemTrackedEntity" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceItemTrackedEntity" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceItemTrackedEntity" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2837,7 +3685,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceJobOperation" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceJobOperation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceJobOperation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceJobOperation" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceJobOperation" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceJobOperation" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2852,7 +3700,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformancePurchaseOrderLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformancePurchaseOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformancePurchaseOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformancePurchaseOrderLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformancePurchaseOrderLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformancePurchaseOrderLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2867,7 +3715,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformancePurchaseReturnOrderLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformancePurchaseReturnOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformancePurchaseReturnOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformancePurchaseReturnOrderLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformancePurchaseReturnOrderLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformancePurchaseReturnOrderLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2882,7 +3730,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceReceiptLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceReceiptLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceReceiptLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceReceiptLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceReceiptLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceReceiptLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2897,7 +3745,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceRequiredAction" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceRequiredAction" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.actionTypes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceRequiredAction" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceRequiredAction" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.actionTypes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceRequiredAction" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.actionTypes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceRequiredAction" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.actionTypes_delete'))::text[]));
@@ -2912,7 +3760,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceReviewer" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceReviewer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceReviewer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceReviewer" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceReviewer" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceReviewer" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2927,7 +3775,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceSalesOrderLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceSalesOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceSalesOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceSalesOrderLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceSalesOrderLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceSalesOrderLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2942,7 +3790,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceSalesReturnOrderLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceSalesReturnOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceSalesReturnOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceSalesReturnOrderLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceSalesReturnOrderLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceSalesReturnOrderLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2957,7 +3805,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceShipmentLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceShipmentLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceShipmentLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceShipmentLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceShipmentLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceShipmentLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2972,7 +3820,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceSupplier" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceSupplier" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceSupplier" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceSupplier" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceSupplier" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceSupplier" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -2987,7 +3835,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceTrackedEntity" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceTrackedEntity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceTrackedEntity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceTrackedEntity" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceTrackedEntity" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceTrackedEntity" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issues_delete'))::text[]));
@@ -3017,7 +3865,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."nonConformanceWorkflow" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."nonConformanceWorkflow" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issueWorkflows_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."nonConformanceWorkflow" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."nonConformanceWorkflow" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issueWorkflows_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."nonConformanceWorkflow" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issueWorkflows_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."nonConformanceWorkflow" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.issueWorkflows_delete'))::text[]));
@@ -3032,7 +3880,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."noQuoteReason" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."noQuoteReason" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.noQuoteReasons_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."noQuoteReason" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."noQuoteReason" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.noQuoteReasons_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."noQuoteReason" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.noQuoteReasons_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."noQuoteReason" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.noQuoteReasons_delete'))::text[]));
@@ -3047,8 +3895,8 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."opportunity" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."opportunity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."opportunity" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
+CREATE POLICY "SELECT" ON "public"."opportunity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."opportunity" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.rfqs_create', 'sales.quotes_create', 'sales.salesOrders_create']::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."opportunity" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 
 -- part
@@ -3106,10 +3954,25 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."paymentTerm" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."paymentTerm" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.paymentTerms_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.customers_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."paymentTerm" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], ARRAY['purchasing.suppliers_view', 'purchasing.purchaseOrders_view', 'sales.customers_view', 'sales.quotes_view', 'sales.salesOrders_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."paymentTerm" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.paymentTerms_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."paymentTerm" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.paymentTerms_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."paymentTerm" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.paymentTerms_delete'))::text[]));
+
+-- payrollPeriodTotal
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'payrollPeriodTotal' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'payrollPeriodTotal');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."payrollPeriodTotal" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."payrollPeriodTotal" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['people']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."payrollPeriodTotal" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.payrollTotals_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."payrollPeriodTotal" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.payrollTotals_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."payrollPeriodTotal" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.payrollTotals_delete'))::text[]));
 
 -- peopleAbsence
 DO $authz$
@@ -3125,6 +3988,21 @@ CREATE POLICY "SELECT" ON "public"."peopleAbsence" FOR SELECT USING ("companyId"
 CREATE POLICY "INSERT" ON "public"."peopleAbsence" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.resourcePlanning_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."peopleAbsence" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.resourcePlanning_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."peopleAbsence" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.resourcePlanning_delete'))::text[]));
+
+-- performanceBasedPaymentEvent
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'performanceBasedPaymentEvent' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'performanceBasedPaymentEvent');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."performanceBasedPaymentEvent" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."performanceBasedPaymentEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."performanceBasedPaymentEvent" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."performanceBasedPaymentEvent" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."performanceBasedPaymentEvent" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.serviceContracts_delete'))::text[]));
 
 -- peopleAssignment
 DO $authz$
@@ -3151,7 +4029,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."permission" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."permission" FOR SELECT USING ((("userId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.accounts_update'))::text[])) OR ("employeeTypeId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[])) OR ("apiKeyId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."permission" FOR SELECT USING ((("userId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.accounts_update'))::text[])) OR ("employeeTypeId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['users']::text[], '{}'::text[]))::text[])) OR ("apiKeyId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_view'))::text[]))));
 CREATE POLICY "INSERT" ON "public"."permission" FOR INSERT WITH CHECK ((("userId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.accounts_update'))::text[])) OR ("employeeTypeId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[])) OR ("apiKeyId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."permission" FOR UPDATE USING ((("userId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.accounts_update'))::text[])) OR ("employeeTypeId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[])) OR ("apiKeyId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_update'))::text[])))) WITH CHECK ((("userId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.accounts_update'))::text[])) OR ("employeeTypeId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[])) OR ("apiKeyId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."permission" FOR DELETE USING ((("userId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.accounts_update'))::text[])) OR ("employeeTypeId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('users.employeeTypes_update'))::text[])) OR ("apiKeyId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.apiKeys_delete'))::text[]))));
@@ -3196,7 +4074,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."pickingList" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."pickingList" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."pickingList" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."pickingList" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."pickingList" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."pickingList" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_delete'))::text[]));
@@ -3211,7 +4089,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."pickingListLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."pickingListLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."pickingListLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."pickingListLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."pickingListLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."pickingListLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_delete'))::text[]));
@@ -3226,7 +4104,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."pickingListLineTrackedEntity" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."pickingListLineTrackedEntity" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."pickingListLineTrackedEntity" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."pickingListLineTrackedEntity" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_create'))::text[])));
 CREATE POLICY "UPDATE" ON "public"."pickingListLineTrackedEntity" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_update'))::text[])));
 CREATE POLICY "DELETE" ON "public"."pickingListLineTrackedEntity" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."pickingListLine" p WHERE "p"."id" = "pickingListLineTrackedEntity"."pickingListLineId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.pickingLists_delete'))::text[])));
@@ -3241,7 +4119,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."pickMethod" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."pickMethod" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "pickMethod"."itemId" AND "item"."companyId" = "pickMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."pickMethod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."pickMethod" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "pickMethod"."itemId" AND "item"."companyId" = "pickMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."pickMethod" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "pickMethod"."itemId" AND "item"."companyId" = "pickMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 
@@ -3255,7 +4133,22 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."planningAction" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."planningAction" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.materialPlanning_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."planningAction" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], ARRAY['purchasing.materialPlanning_view']::text[]))::text[]));
+
+-- planningGroup
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'planningGroup' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'planningGroup');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."planningGroup" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."planningGroup" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."planningGroup" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.planningGroups_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."planningGroup" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.planningGroups_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."planningGroup" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.planningGroups_delete'))::text[]));
 
 -- pricingRule
 DO $authz$
@@ -3282,7 +4175,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."printerRoute" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."printerRoute" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."printerRoute" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."printerRoute" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."printerRoute" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."printerRoute" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_delete'))::text[]));
@@ -3297,7 +4190,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."printJob" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."printJob" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."printJob" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."printJob" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."printJob" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."printJob" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.printing_delete'))::text[]));
@@ -3372,7 +4265,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."productionEvent" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."productionEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."productionEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."productionEvent" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."productionEvent" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."productionEvent" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]));
@@ -3403,9 +4296,277 @@ END
 $authz$;
 ALTER TABLE public."project" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."project" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."project" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.projects_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."project" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.projects_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."project" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.projects_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."project" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."project" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."project" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[]));
+
+-- projectBaseline
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectBaseline' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectBaseline');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectBaseline" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectBaseline" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectBaseline" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[]));
+
+-- projectChangeRequest
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectChangeRequest' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectChangeRequest');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectChangeRequest" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectChangeRequest" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectChangeRequest" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."projectChangeRequest" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."projectChangeRequest" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[]));
+
+-- projectChangeRequestItem
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectChangeRequestItem' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectChangeRequestItem');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectChangeRequestItem" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectChangeRequestItem" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectChangeRequestItem" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."projectChangeRequestItem" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."projectChangeRequestItem" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[]));
+
+-- projectBillableItem
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectBillableItem' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectBillableItem');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectBillableItem" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectBillableItem" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectBillableItem"."projectId" AND "p"."companyId" = "projectBillableItem"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectBillableItem" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectBillableItem"."projectId" AND "p"."companyId" = "projectBillableItem"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.approvals_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectBillableItem" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectBillableItem"."projectId" AND "p"."companyId" = "projectBillableItem"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.approvals_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectBillableItem" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectBillableItem"."projectId" AND "p"."companyId" = "projectBillableItem"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.approvals_delete'))::text[])));
+
+-- projectElement
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectElement' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectElement');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectElement" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectElement" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectElement" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectElement" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectElement" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectElementCost
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectElementCost' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectElementCost');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectElementCost" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectElementCost" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementCost"."projectId" AND "p"."companyId" = "projectElementCost"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectElementCost" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementCost"."projectId" AND "p"."companyId" = "projectElementCost"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectElementCost" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementCost"."projectId" AND "p"."companyId" = "projectElementCost"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectElementCost" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementCost"."projectId" AND "p"."companyId" = "projectElementCost"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectElementLabel
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectElementLabel' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectElementLabel');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectElementLabel" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectElementLabel" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."projectElement" e JOIN "public"."project" p ON "p"."id" = "e"."projectId" AND "p"."companyId" = "e"."companyId" WHERE "e"."id" = "projectElementLabel"."projectElementId" AND "e"."companyId" = "projectElementLabel"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectElementLabel" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."projectElement" e JOIN "public"."project" p ON "p"."id" = "e"."projectId" AND "p"."companyId" = "e"."companyId" WHERE "e"."id" = "projectElementLabel"."projectElementId" AND "e"."companyId" = "projectElementLabel"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectElementLabel" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."projectElement" e JOIN "public"."project" p ON "p"."id" = "e"."projectId" AND "p"."companyId" = "e"."companyId" WHERE "e"."id" = "projectElementLabel"."projectElementId" AND "e"."companyId" = "projectElementLabel"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectElementLabel" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."projectElement" e JOIN "public"."project" p ON "p"."id" = "e"."projectId" AND "p"."companyId" = "e"."companyId" WHERE "e"."id" = "projectElementLabel"."projectElementId" AND "e"."companyId" = "projectElementLabel"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectElementLabor
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectElementLabor' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectElementLabor');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectElementLabor" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectElementLabor" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLabor"."projectId" AND "p"."companyId" = "projectElementLabor"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectElementLabor" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLabor"."projectId" AND "p"."companyId" = "projectElementLabor"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectElementLabor" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLabor"."projectId" AND "p"."companyId" = "projectElementLabor"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectElementLabor" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLabor"."projectId" AND "p"."companyId" = "projectElementLabor"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectElementLink
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectElementLink' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectElementLink');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectElementLink" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectElementLink" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLink"."projectId" AND "p"."companyId" = "projectElementLink"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectElementLink" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLink"."projectId" AND "p"."companyId" = "projectElementLink"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectElementLink" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLink"."projectId" AND "p"."companyId" = "projectElementLink"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectElementLink" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementLink"."projectId" AND "p"."companyId" = "projectElementLink"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectElementMaterial
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectElementMaterial' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectElementMaterial');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectElementMaterial" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectElementMaterial" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementMaterial"."projectId" AND "p"."companyId" = "projectElementMaterial"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectElementMaterial" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementMaterial"."projectId" AND "p"."companyId" = "projectElementMaterial"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectElementMaterial" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementMaterial"."projectId" AND "p"."companyId" = "projectElementMaterial"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectElementMaterial" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElementMaterial"."projectId" AND "p"."companyId" = "projectElementMaterial"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectExpenseEntry
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectExpenseEntry' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectExpenseEntry');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectExpenseEntry" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectExpenseEntry" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectExpenseEntry"."projectId" AND "p"."companyId" = "projectExpenseEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectExpenseEntry" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectExpenseEntry"."projectId" AND "p"."companyId" = "projectExpenseEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectExpenseEntry" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectExpenseEntry"."projectId" AND "p"."companyId" = "projectExpenseEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectExpenseEntry" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectExpenseEntry"."projectId" AND "p"."companyId" = "projectExpenseEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectLabel
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectLabel' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectLabel');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectLabel" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectLabel" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectLabel" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['projects.projects_create', 'settings.projects_update']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."projectLabel" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['projects.projects_update', 'settings.projects_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."projectLabel" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['projects.projects_delete', 'settings.projects_update']::text[]))::text[]));
+
+-- projectMember
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectMember' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectMember');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectMember" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectMember" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMember"."projectId" AND "p"."companyId" = "projectMember"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectMember" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMember"."projectId" AND "p"."companyId" = "projectMember"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectMember" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMember"."projectId" AND "p"."companyId" = "projectMember"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectMember" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMember"."projectId" AND "p"."companyId" = "projectMember"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectMilestone
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectMilestone' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectMilestone');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectMilestone" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectMilestone" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMilestone"."projectId" AND "p"."companyId" = "projectMilestone"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+CREATE POLICY "INSERT" ON "public"."projectMilestone" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMilestone"."projectId" AND "p"."companyId" = "projectMilestone"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectMilestone" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMilestone"."projectId" AND "p"."companyId" = "projectMilestone"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectMilestone" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectMilestone"."projectId" AND "p"."companyId" = "projectMilestone"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[])));
+
+-- projectState
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectState' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectState');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectState" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectState" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectState" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['projects.projects_create', 'settings.projects_update']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."projectState" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['projects.projects_update', 'settings.projects_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."projectState" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['projects.projects_delete', 'settings.projects_update']::text[]))::text[]));
+
+-- projectStockTransfer
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectStockTransfer' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectStockTransfer');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectStockTransfer" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectStockTransfer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectStockTransfer" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."projectStockTransfer" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."projectStockTransfer" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[]));
+
+-- projectStockTransferLine
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectStockTransferLine' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectStockTransferLine');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectStockTransferLine" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectStockTransferLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."projectStockTransferLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."projectStockTransferLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."projectStockTransferLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.projects_delete'))::text[]));
+
+-- projectView
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'projectView' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'projectView');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."projectView" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."projectView" FOR SELECT USING (("createdBy" = ((SELECT auth.uid()))::text OR ("isShared" = true AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['projects']::text[], '{}'::text[]))::text[]))));
+CREATE POLICY "INSERT" ON "public"."projectView" FOR INSERT WITH CHECK (("createdBy" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['projects']::text[], '{}'::text[]))::text[])));
+CREATE POLICY "UPDATE" ON "public"."projectView" FOR UPDATE USING ("createdBy" = ((SELECT auth.uid()))::text) WITH CHECK (("createdBy" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['projects']::text[], '{}'::text[]))::text[])));
+CREATE POLICY "DELETE" ON "public"."projectView" FOR DELETE USING ("createdBy" = ((SELECT auth.uid()))::text);
 
 -- purchaseInvoice
 DO $authz$
@@ -3417,7 +4578,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseInvoice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseInvoice" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.payables_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."purchaseInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseInvoice" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseInvoice" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseInvoice" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_delete'))::text[]));
@@ -3432,7 +4593,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseInvoiceDelivery" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseInvoiceDelivery" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseInvoiceDelivery" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseInvoiceDelivery" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseInvoiceDelivery" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseInvoiceDelivery" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_delete'))::text[]));
@@ -3447,7 +4608,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseInvoiceLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseInvoiceLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseInvoiceLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseInvoiceLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_delete'))::text[]));
@@ -3462,7 +4623,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseInvoicePriceChange" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseInvoicePriceChange" FOR SELECT USING (get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice') = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseInvoicePriceChange" FOR SELECT USING (get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice') = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 
 -- purchaseInvoiceStatusHistory
 DO $authz$
@@ -3474,7 +4635,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseInvoiceStatusHistory" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseInvoiceStatusHistory" FOR SELECT USING (get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice') = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseInvoiceStatusHistory" FOR SELECT USING (get_company_id_from_foreign_key("invoiceId", 'purchaseInvoice') = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 
 -- purchaseOrder
 DO $authz$
@@ -3486,7 +4647,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseOrder" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.purchaseInvoices_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], ARRAY['inventory.receipts_view', 'invoicing.purchaseInvoices_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseOrder" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseOrder" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseOrder" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_delete'))::text[]));
@@ -3501,7 +4662,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseOrderDelivery" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseOrderDelivery" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseOrderDelivery" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseOrderDelivery" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseOrderDelivery" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseOrderDelivery" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_delete'))::text[]));
@@ -3516,7 +4677,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseOrderLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseOrderLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseOrderLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseOrderLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_delete'))::text[]));
@@ -3531,7 +4692,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseOrderPayment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseOrderPayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseOrderPayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseOrderPayment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchaseOrderPayment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchaseOrderPayment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_delete'))::text[]));
@@ -3546,7 +4707,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseOrderStatusHistory" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseOrderStatusHistory" FOR SELECT USING (get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder') = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseOrderStatusHistory" FOR SELECT USING (get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder') = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 
 -- purchaseOrderTransaction
 DO $authz$
@@ -3558,7 +4719,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchaseOrderTransaction" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchaseOrderTransaction" FOR SELECT USING (get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder') = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchaseOrderTransaction" FOR SELECT USING (get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder') = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchaseOrderTransaction" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("purchaseOrderId", 'purchaseOrder') = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_update'))::text[]));
 
 -- purchaseReturnOrder
@@ -3631,7 +4792,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchasingRfq" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchasingRfq" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchasingRfq" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchasingRfq" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchasingRfq" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchasingRfq" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_delete'))::text[]));
@@ -3646,7 +4807,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchasingRfqLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchasingRfqLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchasingRfqLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchasingRfqLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchasingRfqLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchasingRfqLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_delete'))::text[]));
@@ -3661,7 +4822,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchasingRfqSupplier" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchasingRfqSupplier" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchasingRfqSupplier" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchasingRfqSupplier" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."purchasingRfqSupplier" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."purchasingRfqSupplier" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_delete'))::text[]));
@@ -3676,7 +4837,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchasingRfqToPurchaseOrder" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchasingRfqToPurchaseOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchasingRfqToPurchaseOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchasingRfqToPurchaseOrder" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_create'))::text[]));
 
 -- purchasingRfqToSupplierQuote
@@ -3689,7 +4850,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."purchasingRfqToSupplierQuote" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."purchasingRfqToSupplierQuote" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."purchasingRfqToSupplierQuote" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."purchasingRfqToSupplierQuote" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.rfqs_create'))::text[]));
 
 -- qualityDocument
@@ -3718,9 +4879,9 @@ END
 $authz$;
 ALTER TABLE public."qualityDocumentStep" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."qualityDocumentStep" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."qualityDocumentStep" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.qualityDocuments_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."qualityDocumentStep" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.qualityDocuments_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."qualityDocumentStep" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.qualityDocuments_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."qualityDocumentStep" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['quality.qualityDocuments_create', 'production.procedures_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."qualityDocumentStep" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['quality.qualityDocuments_update', 'production.procedures_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."qualityDocumentStep" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['quality.qualityDocuments_delete', 'production.procedures_delete']::text[]))::text[]));
 
 -- quote
 DO $authz$
@@ -3732,7 +4893,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quote" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quote" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."quote" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."quote" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."quote" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."quote" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
@@ -3747,7 +4908,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quoteLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quoteLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."quoteLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."quoteLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."quoteLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."quoteLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
@@ -3762,7 +4923,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quoteLinePrice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quoteLinePrice" FOR SELECT USING (get_company_id_from_foreign_key("quoteLineId", 'quoteLine') = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."quoteLinePrice" FOR SELECT USING (get_company_id_from_foreign_key("quoteLineId", 'quoteLine') = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."quoteLinePrice" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("quoteLineId", 'quoteLine') = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."quoteLinePrice" FOR UPDATE USING (get_company_id_from_foreign_key("quoteLineId", 'quoteLine') = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."quoteLinePrice" FOR DELETE USING (get_company_id_from_foreign_key("quoteLineId", 'quoteLine') = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
@@ -3777,7 +4938,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quoteMakeMethod" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quoteMakeMethod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."quoteMakeMethod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."quoteMakeMethod" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."quoteMakeMethod" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."quoteMakeMethod" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
@@ -3792,7 +4953,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quoteMaterial" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quoteMaterial" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."quoteMaterial" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."quoteMaterial" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."quoteMaterial" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."quoteMaterial" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
@@ -3822,7 +4983,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quoteOperation" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quoteOperation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."quoteOperation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."quoteOperation" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."quoteOperation" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."quoteOperation" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
@@ -3838,9 +4999,9 @@ END
 $authz$;
 ALTER TABLE public."quoteOperationParameter" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."quoteOperationParameter" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."quoteOperationParameter" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."quoteOperationParameter" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."quoteOperationParameter" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."quoteOperationParameter" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_create', 'parts.parts_create', 'parts.materials_create', 'parts.tools_create', 'parts.consumables_create', 'parts.services_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."quoteOperationParameter" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_update', 'parts.parts_update', 'parts.materials_update', 'parts.tools_update', 'parts.consumables_update', 'parts.services_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."quoteOperationParameter" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_delete', 'parts.parts_delete', 'parts.materials_delete', 'parts.tools_delete', 'parts.consumables_delete', 'parts.services_delete']::text[]))::text[]));
 
 -- quoteOperationStep
 DO $authz$
@@ -3853,9 +5014,9 @@ END
 $authz$;
 ALTER TABLE public."quoteOperationStep" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."quoteOperationStep" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."quoteOperationStep" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."quoteOperationStep" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."quoteOperationStep" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."quoteOperationStep" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_create', 'production.jobs_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."quoteOperationStep" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_update', 'production.jobs_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."quoteOperationStep" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_delete', 'production.jobs_delete']::text[]))::text[]));
 
 -- quoteOperationStepSlide
 DO $authz$
@@ -3868,9 +5029,9 @@ END
 $authz$;
 ALTER TABLE public."quoteOperationStepSlide" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "SELECT" ON "public"."quoteOperationStepSlide" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."quoteOperationStepSlide" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."quoteOperationStepSlide" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."quoteOperationStepSlide" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]));
+CREATE POLICY "INSERT" ON "public"."quoteOperationStepSlide" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_create', 'production.jobs_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."quoteOperationStepSlide" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_update', 'production.jobs_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."quoteOperationStepSlide" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['sales.quotes_delete', 'production.jobs_delete']::text[]))::text[]));
 
 -- quoteOperationTool
 DO $authz$
@@ -3912,7 +5073,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quotePayment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quotePayment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quotePayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."quotePayment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quotePayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
 CREATE POLICY "INSERT" ON "public"."quotePayment" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quotePayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."quotePayment" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quotePayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."quotePayment" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quotePayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[]))));
@@ -3927,7 +5088,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."quoteShipment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."quoteShipment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quoteShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."quoteShipment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quoteShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
 CREATE POLICY "INSERT" ON "public"."quoteShipment" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quoteShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."quoteShipment" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quoteShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."quoteShipment" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."quote" p WHERE "p"."id" = "quoteShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[]))));
@@ -3942,7 +5103,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."receipt" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."receipt" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."receipt" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."receipt" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."receipt" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."receipt" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_delete'))::text[]));
@@ -3957,7 +5118,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."receiptFixedAssetLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."receiptFixedAssetLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."receiptFixedAssetLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."receiptFixedAssetLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."receiptFixedAssetLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."receiptFixedAssetLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_delete'))::text[]));
@@ -3972,7 +5133,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."receiptLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."receiptLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."receiptLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."receiptLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."receiptLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."receiptLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.receipts_delete'))::text[]));
@@ -4033,7 +5194,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."rentalAgreement" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."rentalAgreement" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."rentalAgreement" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."rentalAgreement" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."rentalAgreement" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."rentalAgreement" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
@@ -4048,10 +5209,22 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."rentalAgreementCharge" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."rentalAgreementCharge" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."rentalAgreementCharge" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."rentalAgreementCharge" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."rentalAgreementCharge" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."rentalAgreementCharge" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
+
+-- rentalAgreementContact
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'rentalAgreementContact' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'rentalAgreementContact');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."rentalAgreementContact" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."rentalAgreementContact" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 
 -- rentalAgreementLine
 DO $authz$
@@ -4063,7 +5236,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."rentalAgreementLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."rentalAgreementLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."rentalAgreementLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."rentalAgreementLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."rentalAgreementLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."rentalAgreementLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
@@ -4078,7 +5251,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."rentalBillingPeriod" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."rentalBillingPeriod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."rentalBillingPeriod" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."rentalBillingPeriod" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."rentalBillingPeriod" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."rentalBillingPeriod" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
@@ -4093,7 +5266,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."rentalLeaseScheduleLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."rentalLeaseScheduleLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."rentalLeaseScheduleLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."rentalLeaseScheduleLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."rentalLeaseScheduleLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."rentalLeaseScheduleLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rentalAgreements_delete'))::text[]));
@@ -4123,7 +5296,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."revenueRecognitionRun" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."revenueRecognitionRun" FOR SELECT USING ((("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_view'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."revenueRecognitionRun" FOR SELECT USING ((("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]))));
 CREATE POLICY "INSERT" ON "public"."revenueRecognitionRun" FOR INSERT WITH CHECK ((("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_create'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."revenueRecognitionRun" FOR UPDATE USING ((("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_update'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."revenueRecognitionRun" FOR DELETE USING ((("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_delete'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_delete'))::text[]))));
@@ -4138,7 +5311,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."revenueRecognitionRunLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."revenueRecognitionRunLine" FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."revenueRecognitionRun" WHERE "revenueRecognitionRun"."id" = "revenueRecognitionRunLine"."runId" AND "revenueRecognitionRun"."companyId" = "revenueRecognitionRunLine"."companyId" AND (("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_view'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_view'))::text[])))));
+CREATE POLICY "SELECT" ON "public"."revenueRecognitionRunLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."revenueRecognitionRunLine" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."revenueRecognitionRun" WHERE "revenueRecognitionRun"."id" = "revenueRecognitionRunLine"."runId" AND "revenueRecognitionRun"."companyId" = "revenueRecognitionRunLine"."companyId" AND (("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_create'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."revenueRecognitionRunLine" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."revenueRecognitionRun" WHERE "revenueRecognitionRun"."id" = "revenueRecognitionRunLine"."runId" AND "revenueRecognitionRun"."companyId" = "revenueRecognitionRunLine"."companyId" AND (("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_update'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."revenueRecognitionRunLine" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."revenueRecognitionRun" WHERE "revenueRecognitionRun"."id" = "revenueRecognitionRunLine"."runId" AND "revenueRecognitionRun"."companyId" = "revenueRecognitionRunLine"."companyId" AND (("revenueRecognitionRun"."type" = 'Lease' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_delete'))::text[])) OR ("revenueRecognitionRun"."type" = 'Revenue Recognition' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_delete'))::text[])))));
@@ -4153,7 +5326,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."revenueRecognitionSchedule" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."revenueRecognitionSchedule" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.leases_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."revenueRecognitionSchedule" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."revenueRecognitionSchedule" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."revenueRecognitionSchedule" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."revenueRecognitionSchedule" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.revenueRecognition_delete'))::text[]));
@@ -4168,7 +5341,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."rework" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."rework" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."rework" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."rework" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."rework" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."rework" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]));
@@ -4198,7 +5371,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesInvoice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesInvoice" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.receivables_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."salesInvoice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesInvoice" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesInvoice" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesInvoice" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_delete'))::text[]));
@@ -4213,10 +5386,22 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesInvoiceLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesInvoiceLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesInvoiceLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesInvoiceLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesInvoiceLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_delete'))::text[]));
+
+-- salesInvoiceFundingAllocation
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'salesInvoiceFundingAllocation' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'salesInvoiceFundingAllocation');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."salesInvoiceFundingAllocation" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."salesInvoiceFundingAllocation" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 
 -- salesInvoiceShipment
 DO $authz$
@@ -4228,7 +5413,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesInvoiceShipment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesInvoiceShipment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesInvoiceShipment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['invoicing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesInvoiceShipment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesInvoiceShipment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesInvoiceShipment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_delete'))::text[]));
@@ -4243,7 +5428,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesOrder" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesOrder" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.salesInvoices_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."salesOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], ARRAY['inventory.shipments_view', 'invoicing.salesInvoices_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesOrder" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesOrder" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesOrder" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_delete'))::text[]));
@@ -4258,7 +5443,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesOrderLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesOrderLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesOrderLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesOrderLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesOrderLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_delete'))::text[]));
@@ -4273,7 +5458,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesOrderPayment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesOrderPayment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderPayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."salesOrderPayment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderPayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
 CREATE POLICY "INSERT" ON "public"."salesOrderPayment" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderPayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."salesOrderPayment" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderPayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."salesOrderPayment" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderPayment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[]))));
@@ -4288,7 +5473,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesOrderShipment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesOrderShipment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
+CREATE POLICY "SELECT" ON "public"."salesOrderShipment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_view'))::text[]))));
 CREATE POLICY "INSERT" ON "public"."salesOrderShipment" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_create'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."salesOrderShipment" FOR UPDATE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_update'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."salesOrderShipment" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_delete'))::text[]) OR EXISTS (SELECT 1 FROM "public"."salesOrder" p WHERE "p"."id" = "salesOrderShipment"."id" AND "customerId" = ANY ((SELECT get_customer_ids_with_customer_permission('sales_delete'))::text[]))));
@@ -4303,7 +5488,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesOrderStatusHistory" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesOrderStatusHistory" FOR SELECT USING (get_company_id_from_foreign_key("salesOrderId", 'salesOrder') = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesOrderStatusHistory" FOR SELECT USING (get_company_id_from_foreign_key("salesOrderId", 'salesOrder') = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 
 -- salesOrderTransaction
 DO $authz$
@@ -4315,7 +5500,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesOrderTransaction" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesOrderTransaction" FOR SELECT USING (get_company_id_from_foreign_key("salesOrderId", 'salesOrder') = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesOrderTransaction" FOR SELECT USING (get_company_id_from_foreign_key("salesOrderId", 'salesOrder') = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesOrderTransaction" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("salesOrderId", 'salesOrder') = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_update'))::text[]));
 
 -- salesReturnOrder
@@ -4388,7 +5573,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesRfq" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesRfq" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesRfq" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesRfq" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesRfq" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesRfq" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_delete'))::text[]));
@@ -4403,7 +5588,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."salesRfqLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."salesRfqLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."salesRfqLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['sales']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."salesRfqLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."salesRfqLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."salesRfqLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.rfqs_delete'))::text[]));
@@ -4433,7 +5618,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."sequence" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."sequence" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.sequences_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."sequence" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."sequence" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.sequences_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."sequence" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.sequences_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."sequence" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.sequences_delete'))::text[]));
@@ -4452,6 +5637,81 @@ CREATE POLICY "SELECT" ON "public"."service" FOR SELECT USING ("companyId" = ANY
 CREATE POLICY "INSERT" ON "public"."service" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."service" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."service" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]));
+
+-- serviceJob
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'serviceJob' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'serviceJob');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."serviceJob" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."serviceJob" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."serviceJob" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."serviceJob" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."serviceJob" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_delete'))::text[]));
+
+-- serviceJobAssignment
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'serviceJobAssignment' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'serviceJobAssignment');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."serviceJobAssignment" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."serviceJobAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."serviceJobAssignment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.schedule_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."serviceJobAssignment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.schedule_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."serviceJobAssignment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.schedule_delete'))::text[]));
+
+-- serviceJobEstimateLine
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'serviceJobEstimateLine' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'serviceJobEstimateLine');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."serviceJobEstimateLine" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."serviceJobEstimateLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."serviceJobEstimateLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."serviceJobEstimateLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."serviceJobEstimateLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_delete'))::text[]));
+
+-- serviceJobItem
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'serviceJobItem' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'serviceJobItem');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."serviceJobItem" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."serviceJobItem" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."serviceJobItem" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."serviceJobItem" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."serviceJobItem" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_delete'))::text[]));
+
+-- serviceJobTime
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'serviceJobTime' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'serviceJobTime');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."serviceJobTime" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."serviceJobTime" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."serviceJobTime" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."serviceJobTime" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."serviceJobTime" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('service.jobs_delete'))::text[]));
 
 -- shift
 DO $authz$
@@ -4478,8 +5738,8 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."shipment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."shipment" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."shipment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_create'))::text[]));
+CREATE POLICY "SELECT" ON "public"."shipment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], ARRAY['sales.salesOrders_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."shipment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['inventory.shipments_create', 'sales.salesOrders_create']::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."shipment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."shipment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_delete'))::text[]));
 
@@ -4493,7 +5753,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."shipmentFixedAssetLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."shipmentFixedAssetLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."shipmentFixedAssetLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."shipmentFixedAssetLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."shipmentFixedAssetLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."shipmentFixedAssetLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_delete'))::text[]));
@@ -4508,10 +5768,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."shipmentLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."shipmentLine" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."shipmentLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."shipmentLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."shipmentLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.shipments_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."shipmentLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], ARRAY['sales.salesOrders_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."shipmentLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['inventory.shipments_create', 'sales.salesOrders_create']::text[]))::text[]));
+CREATE POLICY "UPDATE" ON "public"."shipmentLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['inventory.shipments_update', 'sales.salesOrders_update']::text[]))::text[]));
+CREATE POLICY "DELETE" ON "public"."shipmentLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['inventory.shipments_delete', 'sales.salesOrders_delete']::text[]))::text[]));
 
 -- shippingMethod
 DO $authz$
@@ -4643,7 +5903,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."suggestion" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."suggestion" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.suggestions_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."suggestion" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."suggestion" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
 CREATE POLICY "UPDATE" ON "public"."suggestion" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.suggestions_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."suggestion" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.suggestions_delete'))::text[]));
@@ -4658,7 +5918,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplier" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplier" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplier" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplier" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplier" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplier" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[]));
@@ -4673,7 +5933,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierAccount" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[]));
@@ -4688,10 +5948,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierBankAccount" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierBankAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
-CREATE POLICY "INSERT" ON "public"."supplierBankAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."supplierBankAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."supplierBankAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierBankAccount" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."supplierBankAccount" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.bankAccounts_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."supplierBankAccount" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.bankAccounts_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."supplierBankAccount" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.bankAccounts_delete'))::text[]));
 
 -- supplierContact
 DO $authz$
@@ -4703,7 +5963,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierContact" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierContact" FOR SELECT USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierContact" FOR SELECT USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierContact" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierContact" FOR UPDATE USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierContact" FOR DELETE USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[]));
@@ -4718,7 +5978,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierInteraction" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierInteraction" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierInteraction" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierInteraction" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierInteraction" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierInteraction" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_delete'))::text[]));
@@ -4733,7 +5993,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierLedger" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierLedger" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting.reporting_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierLedger" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['accounting']::text[], '{}'::text[]))::text[]));
 
 -- supplierLocation
 DO $authz$
@@ -4745,7 +6005,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierLocation" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierLocation" FOR SELECT USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierLocation" FOR SELECT USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierLocation" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierLocation" FOR UPDATE USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierLocation" FOR DELETE USING (get_company_id_from_foreign_key("supplierId", 'supplier') = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[]));
@@ -4760,7 +6020,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierPart" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING ((EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[])))) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."supplierPart" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['purchasing.suppliers_view', 'purchasing.purchaseOrders_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierPart" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))));
 CREATE POLICY "UPDATE" ON "public"."supplierPart" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))));
 CREATE POLICY "DELETE" ON "public"."supplierPart" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))));
@@ -4775,10 +6035,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierPartPrice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierPartPrice" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."supplierPartPrice" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."supplierPartPrice" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."supplierPartPrice" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierPartPrice" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], ARRAY['purchasing.purchaseOrders_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."supplierPartPrice" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."supplierPart" WHERE "supplierPart"."id" = "supplierPartPrice"."supplierPartId" AND "supplierPart"."companyId" = "supplierPartPrice"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))));
+CREATE POLICY "UPDATE" ON "public"."supplierPartPrice" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."supplierPart" WHERE "supplierPart"."id" = "supplierPartPrice"."supplierPartId" AND "supplierPart"."companyId" = "supplierPartPrice"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))));
+CREATE POLICY "DELETE" ON "public"."supplierPartPrice" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."supplierPart" WHERE "supplierPart"."id" = "supplierPartPrice"."supplierPartId" AND "supplierPart"."companyId" = "supplierPartPrice"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "supplierPart"."itemId" AND "item"."companyId" = "supplierPart"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))));
 
 -- supplierPayment
 DO $authz$
@@ -4790,7 +6050,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierPayment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierPayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierPayment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierPayment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 
 -- supplierProcess
@@ -4803,10 +6063,10 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierProcess" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierProcess" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.processes_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[])));
-CREATE POLICY "INSERT" ON "public"."supplierProcess" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.processes_update'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[])));
+CREATE POLICY "SELECT" ON "public"."supplierProcess" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], ARRAY['purchasing.suppliers_view', 'sales.quotes_view']::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."supplierProcess" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['resources.processes_update', 'purchasing.suppliers_update']::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierProcess" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.processes_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."supplierProcess" FOR DELETE USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.processes_delete'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_delete'))::text[])));
+CREATE POLICY "DELETE" ON "public"."supplierProcess" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_any_employee_permission(ARRAY['resources.processes_delete', 'purchasing.suppliers_delete']::text[]))::text[]));
 
 -- supplierQuote
 DO $authz$
@@ -4818,7 +6078,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierQuote" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierQuote" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierQuote" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierQuote" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierQuote" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierQuote" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_delete'))::text[]));
@@ -4833,7 +6093,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierQuoteLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierQuoteLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierQuoteLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierQuoteLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierQuoteLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierQuoteLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_delete'))::text[]));
@@ -4848,7 +6108,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierQuoteLinePrice" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierQuoteLinePrice" FOR SELECT USING (get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote') = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierQuoteLinePrice" FOR SELECT USING (get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote') = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplierQuoteLinePrice" FOR INSERT WITH CHECK (get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote') = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierQuoteLinePrice" FOR UPDATE USING (get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote') = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplierQuoteLinePrice" FOR DELETE USING (get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote') = ANY ((SELECT get_companies_with_employee_permission('purchasing.supplierQuotes_delete'))::text[]));
@@ -4863,7 +6123,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierShipping" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierShipping" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierShipping" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierShipping" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 
 -- supplierTax
@@ -4876,7 +6136,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplierTax" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplierTax" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."supplierTax" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplierTax" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.suppliers_update'))::text[]));
 
 -- supplierType
@@ -4904,7 +6164,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplyActual" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplyActual" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.materialPlanning_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."supplyActual" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], ARRAY['parts.parts_view', 'parts.materials_view', 'parts.tools_view', 'parts.consumables_view', 'parts.services_view', 'purchasing.materialPlanning_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplyActual" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplyActual" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplyActual" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_delete'))::text[]));
@@ -4919,7 +6179,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."supplyForecast" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."supplyForecast" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing.materialPlanning_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."supplyForecast" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['production']::text[], ARRAY['purchasing.materialPlanning_view']::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."supplyForecast" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."supplyForecast" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."supplyForecast" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.materialPlanning_delete'))::text[]));
@@ -4948,7 +6208,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."terms" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."terms" FOR SELECT USING (("id" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_view'))::text[]) OR "id" = ANY ((SELECT get_companies_with_employee_permission('purchasing.purchaseOrders_view'))::text[]) OR "id" = ANY ((SELECT get_companies_with_employee_permission('sales.quotes_view'))::text[]) OR "id" = ANY ((SELECT get_companies_with_employee_permission('sales.salesOrders_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."terms" FOR SELECT USING ("id" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], ARRAY['purchasing.purchaseOrders_view', 'sales.quotes_view', 'sales.salesOrders_view']::text[]))::text[]));
 CREATE POLICY "UPDATE" ON "public"."terms" FOR UPDATE USING ("id" = ANY ((SELECT get_companies_with_employee_permission('settings.documentTemplates_update'))::text[]));
 
 -- timeCardEntry
@@ -4961,10 +6221,49 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."timeCardEntry" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."timeCardEntry" FOR SELECT USING ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.timecards_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."timeCardEntry" FOR SELECT USING ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['people']::text[], '{}'::text[]))::text[])));
 CREATE POLICY "INSERT" ON "public"."timeCardEntry" FOR INSERT WITH CHECK ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.timecards_create'))::text[])));
 CREATE POLICY "UPDATE" ON "public"."timeCardEntry" FOR UPDATE USING ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.timecards_update'))::text[])));
 CREATE POLICY "DELETE" ON "public"."timeCardEntry" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('people.timecards_delete'))::text[]));
+
+-- timesheetCertification
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'timesheetCertification' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'timesheetCertification');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."timesheetCertification" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."timesheetCertification" FOR SELECT USING ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['projects']::text[], '{}'::text[]))::text[])));
+
+-- timesheetEntry
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'timesheetEntry' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'timesheetEntry');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."timesheetEntry" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."timesheetEntry" FOR SELECT USING (("employeeId" = ((SELECT auth.uid()))::text OR EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "timesheetEntry"."projectId" AND "p"."companyId" = "timesheetEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['projects']::text[], '{}'::text[]))::text[]))));
+CREATE POLICY "INSERT" ON "public"."timesheetEntry" FOR INSERT WITH CHECK (("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]) AND "status" = 'Draft'));
+CREATE POLICY "UPDATE" ON "public"."timesheetEntry" FOR UPDATE USING ((("employeeId" = ((SELECT auth.uid()))::text AND "status" = 'Draft') OR EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "timesheetEntry"."projectId" AND "p"."companyId" = "timesheetEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.approvals_update'))::text[])))) WITH CHECK ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]) AND "status" = 'Draft') OR EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "timesheetEntry"."projectId" AND "p"."companyId" = "timesheetEntry"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_permission('projects.approvals_update'))::text[]))));
+CREATE POLICY "DELETE" ON "public"."timesheetEntry" FOR DELETE USING (("employeeId" = ((SELECT auth.uid()))::text AND "status" = 'Draft'));
+
+-- timesheetEntryRevision
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'timesheetEntryRevision' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'timesheetEntryRevision');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."timesheetEntryRevision" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."timesheetEntryRevision" FOR SELECT USING ((("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])) OR "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['projects']::text[], '{}'::text[]))::text[])));
 
 -- tool
 DO $authz$
@@ -5066,7 +6365,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."trainingAssignment" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."trainingAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."trainingAssignment" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."trainingAssignment" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."trainingAssignment" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."trainingAssignment" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_delete'))::text[]));
@@ -5081,7 +6380,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."trainingCompletion" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."trainingCompletion" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."trainingCompletion" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."trainingCompletion" FOR INSERT WITH CHECK (("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_create'))::text[]) OR ("employeeId" = ((SELECT auth.uid()))::text AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]))));
 CREATE POLICY "UPDATE" ON "public"."trainingCompletion" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."trainingCompletion" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.assignments_delete'))::text[]));
@@ -5160,7 +6459,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."userAttribute" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."userAttribute" FOR SELECT USING (("userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.attributes_view'))::text[])) OR ("canSelfManage" = true AND "userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])))));
+CREATE POLICY "SELECT" ON "public"."userAttribute" FOR SELECT USING (("userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['people']::text[], '{}'::text[]))::text[])) OR ("canSelfManage" = true AND "userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])))));
 CREATE POLICY "INSERT" ON "public"."userAttribute" FOR INSERT WITH CHECK ("userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.attributes_create'))::text[])));
 CREATE POLICY "UPDATE" ON "public"."userAttribute" FOR UPDATE USING ("userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.attributes_update'))::text[])));
 CREATE POLICY "DELETE" ON "public"."userAttribute" FOR DELETE USING ("userAttributeCategoryId" IN (SELECT "userAttributeCategory"."id" FROM "public"."userAttributeCategory" WHERE "companyId" = ANY ((SELECT get_companies_with_employee_permission('people.attributes_delete'))::text[])));
@@ -5230,7 +6529,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."warehouseTransfer" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."warehouseTransfer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."warehouseTransfer" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."warehouseTransfer" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."warehouseTransfer" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."warehouseTransfer" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_delete'))::text[]));
@@ -5245,7 +6544,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."warehouseTransferLine" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."warehouseTransferLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."warehouseTransferLine" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['inventory']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."warehouseTransferLine" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."warehouseTransferLine" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."warehouseTransferLine" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory.warehouseTransfers_delete'))::text[]));
@@ -5260,7 +6559,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."webhook" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."webhook" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.webhooks_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."webhook" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['settings']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."webhook" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.webhooks_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."webhook" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.webhooks_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."webhook" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('settings.webhooks_delete'))::text[]));
@@ -5305,7 +6604,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."workCenterReplacementPart" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."workCenterReplacementPart" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."workCenterReplacementPart" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['resources']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."workCenterReplacementPart" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."workCenterReplacementPart" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."workCenterReplacementPart" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('resources.workCenters_delete'))::text[]));
@@ -5335,7 +6634,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."workflow" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."workflow" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.runs_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."workflow" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['workflows']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."workflow" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."workflow" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."workflow" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_delete'))::text[]));
@@ -5350,7 +6649,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."workflowRun" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."workflowRun" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.runs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."workflowRun" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['workflows']::text[], '{}'::text[]))::text[]));
 
 -- workflowStepRun
 DO $authz$
@@ -5362,7 +6661,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."workflowStepRun" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."workflowStepRun" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.runs_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."workflowStepRun" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['workflows']::text[], '{}'::text[]))::text[]));
 
 -- workflowTriggerEvent
 DO $authz$
@@ -5374,7 +6673,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."workflowTriggerEvent" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."workflowTriggerEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_view'))::text[]));
+CREATE POLICY "SELECT" ON "public"."workflowTriggerEvent" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['workflows']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."workflowTriggerEvent" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."workflowTriggerEvent" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_update'))::text[]));
 
@@ -5388,7 +6687,7 @@ BEGIN
 END
 $authz$;
 ALTER TABLE public."workflowVersion" ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "SELECT" ON "public"."workflowVersion" FOR SELECT USING (("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_view'))::text[]) OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.runs_view'))::text[])));
+CREATE POLICY "SELECT" ON "public"."workflowVersion" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['workflows']::text[], '{}'::text[]))::text[]));
 CREATE POLICY "INSERT" ON "public"."workflowVersion" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."workflowVersion" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."workflowVersion" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('workflows.workflows_delete'))::text[]));

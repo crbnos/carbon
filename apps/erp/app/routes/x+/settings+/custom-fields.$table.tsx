@@ -16,11 +16,7 @@ import { CustomFieldsTableDetail } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "settings.customFields": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "settings.customFields": "View" });
 
   const { table } = params;
   if (!table) throw notFound("Invalid table");

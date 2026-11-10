@@ -14,11 +14,7 @@ import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(
-    request,
-    { "resources.abilities": "View" },
-    { role: "employee" }
-  );
+  await authorize(request, { "resources.abilities": "View" });
 
   return null;
 }

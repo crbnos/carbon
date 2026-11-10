@@ -19,11 +19,9 @@ import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "settings.serialNumbers": "Create" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "settings.serialNumbers": "Create"
+  });
   // Items that already have a sequence can't get a second one.
   const existing = await getItemSerialSequences(client, companyId, {
     search: null,

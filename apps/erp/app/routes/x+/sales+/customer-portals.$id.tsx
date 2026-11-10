@@ -24,11 +24,9 @@ import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "sales.portals": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "sales.portals": "View"
+  });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

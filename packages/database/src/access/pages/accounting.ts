@@ -4,13 +4,16 @@
 
 import type { Page } from "../registry";
 
-export const ACCOUNTING_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Accounting";
+
+export const PAGES = [
   {
     id: "accounting.reporting",
     label: "Reporting",
     maxLevel: "Full",
     tables: ["costLedger", "supplierLedger"],
-    readers: ["journal", "journalLine", "accountingPeriod", "itemLedger"],
+    readers: ["itemLedger"],
     paths: ["/x/accounting/reports", "/x/reports/"]
   },
   {
@@ -68,7 +71,6 @@ export const ACCOUNTING_PAGES = [
     tables: ["revenueRecognitionRun"],
     where: { table: "revenueRecognitionRun", column: "type", value: "Lease" },
     children: [{ table: "revenueRecognitionRunLine", via: "runId" }],
-    readers: ["revenueRecognitionSchedule"],
     paths: ["/x/accounting/lease-runs"]
   },
   {
@@ -106,7 +108,6 @@ export const ACCOUNTING_PAGES = [
     label: "Fleet",
     maxLevel: "View",
     tables: [],
-    readers: ["fixedAsset", "fixedAssetUsageLog"],
     paths: ["/x/accounting/fleet"]
   },
   {

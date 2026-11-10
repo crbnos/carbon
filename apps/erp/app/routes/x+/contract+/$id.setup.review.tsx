@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { equals } from "@carbon/utils";
 import { Plural, Trans } from "@lingui/react/macro";
@@ -17,6 +16,7 @@ import type {
   ProjectContractGap
 } from "~/modules/sales/sales.models";
 import {
+  CONTRACT_READ_GATE,
   laborCategoriesWithoutBillRate,
   projectContractAccountDefaults
 } from "~/modules/sales/sales.models";
@@ -44,7 +44,7 @@ export async function loader({
   const { api, client, companyId } = await authorize(
     request,
     // Both contract lists open the same contract page.
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+    CONTRACT_READ_GATE
   );
   const { id } = params;
   if (!id) throw new Error("Could not find id");

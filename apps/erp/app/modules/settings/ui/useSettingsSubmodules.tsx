@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { PageId } from "@carbon/database/access";
 import { useFeatureFlags } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
@@ -41,7 +40,8 @@ import {
 import { usePermissions } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { AuthenticatedRouteGroup, Role } from "~/types";
+import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useSettingsSubmodules() {
@@ -67,8 +67,6 @@ export default function useSettingsSubmodules() {
           {
             name: t`Billing`,
             to: path.to.billing,
-            page: "settings.billing",
-            role: "employee",
             icon: <LuCreditCard />,
             requiresOwnership: true,
             requiresCloudEnvironment: true
@@ -76,36 +74,26 @@ export default function useSettingsSubmodules() {
           {
             name: t`Company`,
             to: path.to.company,
-            page: "settings.company",
-            role: "employee",
             icon: <LuFactory />
           },
           {
             name: t`Companies`,
             to: path.to.companies,
-            page: "settings.companies",
-            role: "employee",
             icon: <LuNetwork />
           },
           {
             name: t`Document Templates`,
             to: path.to.documentTemplates,
-            page: "settings.documentTemplates",
-            role: "employee",
             icon: <LuFileText />
           },
           {
             name: t`Logos`,
             to: path.to.logos,
-            page: "settings.logos",
-            role: "employee",
             icon: <LuImage />
           },
           {
             name: t`Printing`,
             to: path.to.printingSettings,
-            page: "settings.printing",
-            role: "employee",
             icon: <LuPrinter />
           }
         ]
@@ -116,99 +104,71 @@ export default function useSettingsSubmodules() {
           {
             name: t`Accounting`,
             to: path.to.accountingSettings,
-            page: "settings.accounting",
-            role: "employee",
             icon: <LuLandmark />
           },
           {
             name: t`Inventory`,
             to: path.to.inventorySettings,
-            page: "settings.inventory",
-            role: "employee",
             icon: <LuBox />
           },
           {
             name: t`Invoicing`,
             to: path.to.invoicingSettings,
-            page: "settings.invoicing",
-            role: "employee",
             icon: <LuCreditCard />
           },
           {
             name: t`Items`,
             to: path.to.itemsSettings,
-            page: "settings.items",
-            role: "employee",
             icon: <LuBlocks />
           },
           {
             name: t`People`,
             to: path.to.peopleSettings,
-            page: "settings.people",
-            role: "employee",
             icon: <LuUsers />
           },
           {
             name: t`Planning`,
             to: path.to.planningSettings,
-            page: "settings.planning",
-            role: "employee",
             icon: <LuCalendarClock />
           },
           {
             name: t`Purchasing`,
             to: path.to.purchasingSettings,
-            page: "settings.purchasing",
-            role: "employee",
             icon: <LuShoppingCart />
           },
           {
             name: t`Production`,
             to: path.to.productionSettings,
-            page: "settings.production",
-            role: "employee",
             icon: <LuFactory />
           },
           {
             name: t`Projects`,
             to: path.to.projectsSettings,
-            page: "settings.projects",
-            role: "employee",
             icon: <LuFolderKanban />
           },
           {
             name: t`Time`,
             to: path.to.timeSettings,
-            page: "settings.time",
-            role: "employee",
             icon: <LuTimer />
           },
           {
             name: t`Service`,
             to: path.to.serviceSettings,
-            page: "settings.service",
-            role: "employee",
             icon: <LuHeadphones />
           },
           {
             name: t`Quality`,
             to: path.to.qualitySettings,
-            page: "settings.quality",
-            role: "employee",
             icon: <LuFolderCheck />
           },
           {
             name: t`Sales`,
             to: path.to.salesSettings,
-            page: "settings.sales",
-            role: "employee",
             icon: <LuCrown />
           },
           {
             name: t`Resources`,
             to: path.to.resourcesSettings,
-            page: "settings.resources",
-            role: "employee",
             icon: <LuHeartHandshake />
           }
         ]
@@ -219,86 +179,62 @@ export default function useSettingsSubmodules() {
           {
             name: t`API Keys`,
             to: path.to.apiKeys,
-            page: "settings.apiKeys",
-            role: "employee",
             icon: <LuKey />
           },
           {
             name: t`Approval Rules`,
             to: path.to.approvalRules,
-            page: "settings.approvalRules",
-            role: "employee",
             icon: <LuCircleCheck />
           },
           {
             name: t`Audit Logs`,
             to: path.to.auditLog,
-            page: "settings.auditLogs",
-            role: "employee",
             icon: <LuHistory />
           },
           {
             name: t`Backups`,
             to: path.to.backups,
-            page: "settings.backups",
-            role: "employee",
             icon: <LuDatabase />
           },
           {
             name: t`Custom Fields`,
             to: path.to.customFields,
-            page: "settings.customFields",
-            role: "employee",
             icon: <LuLayoutDashboard />
           },
           {
             name: t`Demo Data`,
             to: path.to.demoData,
-            page: "settings.demoData",
-            role: "employee",
             icon: <LuFlaskConical />
           },
           {
             name: t`Integrations`,
             to: path.to.integrations,
-            page: "settings.integrations",
-            role: "employee",
             icon: <LuWorkflow />
           },
           {
             name: t`ITAR Certifications`,
             to: path.to.itarCertifications,
-            page: "settings.itarCertifications",
-            role: "employee",
             icon: <LuClipboardCheck />,
             requiresControlledEnvironment: true
           },
           {
             name: t`Security`,
             to: path.to.security,
-            page: "settings.security",
-            role: "employee",
             icon: <LuShieldCheck />
           },
           {
             name: t`Sequences`,
             to: path.to.sequences,
-            page: "settings.sequences",
-            role: "employee",
             icon: <LuSheet />
           },
           {
             name: t`Serial Numbers`,
             to: path.to.serialNumberSequences,
-            page: "settings.serialNumbers",
-            role: "employee",
             icon: <LuScanBarcode />
           },
           {
             name: t`Webhooks`,
             to: path.to.webhooks,
-            page: "settings.webhooks",
-            role: "employee",
             icon: <LuWebhook />
           }
         ]
@@ -307,16 +243,9 @@ export default function useSettingsSubmodules() {
     [t]
   );
 
-  const isRouteVisible = (route: {
-    to: string;
-    role?: string;
-    page?: PageId;
-    requiresOwnership?: boolean;
-    requiresCloudEnvironment?: boolean;
-    requiresControlledEnvironment?: boolean;
-  }) => {
-    if (route.role && !permissions.is(route.role as Role)) return false;
-    if (route.page && !permissions.has({ [route.page]: "View" })) return false;
+  const isEnabled = (
+    route: (typeof settingsRoutes)[number]["routes"][number]
+  ) => {
     if (route.requiresOwnership && !permissions.isOwner()) return false;
     if (route.requiresCloudEnvironment && !isCloud) return false;
     if (route.requiresControlledEnvironment && !isControlledEnvironment)
@@ -333,12 +262,5 @@ export default function useSettingsSubmodules() {
     return true;
   };
 
-  return {
-    groups: settingsRoutes
-      .filter((group) => group.routes.some(isRouteVisible))
-      .map((group) => ({
-        ...group,
-        routes: group.routes.filter(isRouteVisible)
-      }))
-  };
+  return { groups: visibleGroups(settingsRoutes, permissions, isEnabled) };
 }

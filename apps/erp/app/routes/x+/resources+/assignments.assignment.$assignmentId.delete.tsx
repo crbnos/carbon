@@ -15,11 +15,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await authorize(
-    request,
-    { "resources.assignments": "Full" },
-    { role: "employee" }
-  );
+  const { client } = await authorize(request, {
+    "resources.assignments": "Full"
+  });
 
   const { assignmentId } = params;
   if (!assignmentId) {

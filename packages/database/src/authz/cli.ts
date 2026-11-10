@@ -11,16 +11,21 @@ import { Client } from "pg";
 import { loadEnv } from "../datasets/cli";
 import { helperKey, loadHelpers } from "./helpers";
 import { renderMigration, unshipped } from "./migration";
+import { writeRegistryHelpers } from "./registry-sql";
 import { syncAuthz } from "./sync";
 
 // pnpm --filter @carbon/database authz <check|sync|migration <name>>
 //   check             report what sync would change (reads only)
 //   sync              make the database match manifest.ts and helpers/
+//   (sync and migration first rewrite the helpers rendered from the registry: registry-sql.ts)
 //   migration <name>  write a migration shipping every rule and helper production does
 //                     not have yet (see migration.ts; migration.test.ts fails until it does)
 //     --tables=a,b    also re-ship these tables' rules, shipped or not
 async function main() {
   const command = process.argv[2];
+  if (command === "sync" || command === "migration")
+    for (const file of writeRegistryHelpers())
+      console.log(`authz: wrote ${path.relative(process.cwd(), file)}`);
   if (command === "migration") {
     const name = process.argv[3];
     if (!name) {

@@ -22,6 +22,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
 import { DataType } from "~/modules/shared/types";
+import { grantsField } from "~/modules/users/users.models";
 
 export const modulesType = [
   "Accounting",
@@ -57,30 +58,10 @@ export const purchasePriceUpdateTimingTypes = [
   "Purchase Order Finalize"
 ] as const;
 
-/** The modules an API key can be given access to. */
-export const apiKeyModules = [
-  "accounting",
-  "documents",
-  "inventory",
-  "invoicing",
-  "parts",
-  "people",
-  "production",
-  "projects",
-  "purchasing",
-  "quality",
-  "resources",
-  "sales",
-  "service",
-  "settings",
-  "users"
-] as const;
-
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  /** The key's grants, as JSON. */
-  grants: zfd.text(z.string().optional()),
+  grants: grantsField,
   /** Requests per minute. Saved on a single-tenant deployment only. */
   rateLimit: zfd.numeric(
     z
@@ -99,14 +80,6 @@ export const apiKeyValidator = z.object({
       })
   )
 });
-
-/** An API key form's fields as saved: the form posts its grants as one JSON string. */
-export function apiKeyFields({
-  grants,
-  ...form
-}: z.output<typeof apiKeyValidator>) {
-  return { ...form, grants: grants ? JSON.parse(grants) : [] };
-}
 
 export const integrationConnectionActionValidator = z.discriminatedUnion(
   "intent",

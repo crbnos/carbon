@@ -15,11 +15,7 @@ import { deleteCustomerStatus } from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "sales.statuses": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "sales.statuses": "View" });
   const { customerStatusId } = params;
   if (!customerStatusId) throw notFound("customerStatusId not found");
 

@@ -25,7 +25,7 @@ import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
-import { RUN_PAGES } from "./runPages";
+import { RUN_PAGES, runPage } from "./runPages";
 
 type RevenueRecognitionRun =
   Database["public"]["Tables"]["revenueRecognitionRun"]["Row"];
@@ -85,9 +85,7 @@ const RevenueRecognitionRunHeader = () => {
             <>
               {isPosted && canRepeat && (
                 <DropdownMenuItem
-                  disabled={
-                    !permissions.has({ [RUN_PAGES[run.type].page]: "Create" })
-                  }
+                  disabled={!permissions.has({ [runPage(run.type)]: "Create" })}
                   onClick={repeatModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuRepeat />} />
@@ -96,9 +94,7 @@ const RevenueRecognitionRunHeader = () => {
               )}
               {isPosted && (
                 <DropdownMenuItem
-                  disabled={
-                    !permissions.has({ [RUN_PAGES[run.type].page]: "Edit" })
-                  }
+                  disabled={!permissions.has({ [runPage(run.type)]: "Edit" })}
                   destructive
                   onClick={reverseModal.onOpen}
                 >
@@ -108,9 +104,7 @@ const RevenueRecognitionRunHeader = () => {
               )}
               {isDraft && (
                 <DropdownMenuItem
-                  disabled={
-                    !permissions.has({ [RUN_PAGES[run.type].page]: "Full" })
-                  }
+                  disabled={!permissions.has({ [runPage(run.type)]: "Full" })}
                   destructive
                   onClick={deleteModal.onOpen}
                 >
@@ -122,7 +116,7 @@ const RevenueRecognitionRunHeader = () => {
           ) : undefined
         }
         actions={
-          isDraft && permissions.has({ [RUN_PAGES[run.type].page]: "Edit" }) ? (
+          isDraft && permissions.has({ [runPage(run.type)]: "Edit" }) ? (
             <>
               <Button
                 variant="secondary"

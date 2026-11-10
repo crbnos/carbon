@@ -13,7 +13,10 @@ import {
   data,
   type LoaderFunctionArgs
 } from "react-router";
-import { projectIssueValidator } from "~/modules/projects/projects.models";
+import {
+  PROJECT_ISSUE_GATE,
+  projectIssueValidator
+} from "~/modules/projects/projects.models";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -24,10 +27,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, {
-    "inventory.quantities": "Edit",
-    "projects.projects": "Edit"
-  });
+  await authorize(request, PROJECT_ISSUE_GATE);
   return null;
 }
 

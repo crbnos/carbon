@@ -15,11 +15,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "people.holidays": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "people.holidays": "View" });
 
   const { holidayId } = params;
   if (!holidayId) throw notFound("holidayId not found");

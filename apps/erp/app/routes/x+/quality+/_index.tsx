@@ -152,8 +152,7 @@ function formatWeekLabel(weekKey: string, locale?: string): string {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId, api } = await authorize(
     request,
-    anyOf(pagesOf("quality"), "View"),
-    { role: "employee" }
+    anyOf(pagesOf("quality"), "View")
   );
 
   const [

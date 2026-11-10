@@ -9,12 +9,8 @@ import {
   ServerFnError
 } from "@carbon/api/errors";
 import {
-  type AnyOfRule,
-  meetsRequirement,
   type PermissionRule,
   type Permissions,
-  permissionsFromClaims,
-  type RequiredPermissions,
   type Requirement,
   type RowsToRead,
   resolvePermissions
@@ -39,6 +35,7 @@ import {
   type StockStripe
 } from "@carbon/api/stock-stripes";
 import { error, getAppUrl } from "@carbon/auth";
+import { authenticateApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -49,6 +46,7 @@ import {
   type Json,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
+import { admits, claimsFor, type PageGate } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
@@ -1506,7 +1504,7 @@ export async function refuseUnlessOwned(
  */
 export function refuseKeyWithout(
   ctx: ServiceContext,
-  required: RequiredPermissions
+  required: PageGate
 ): CarbonError | null {
   if (ctx.actor.type !== "apiKey" || ctx.can(required)) return null;
   return ctx.error(
@@ -18647,7 +18645,7 @@ function bearerSubject(authorization: string | undefined): string | undefined {
   }
 }
 
-/** Refuses a caller who does not hold `required` in the company. */
+/** Refuses a caller who does not pass `required` in the company (`admits`). */
 export async function authorizePostingCaller(
   {
     db,
@@ -18666,66 +18664,30 @@ export async function authorizePostingCaller(
     typeof resolved === "object" && "ids" in resolved
       ? await readRowRequirement(db, companyId, resolved)
       : resolved;
-  const needed = required === "employee" ? {} : required;
   if (caller.type === "apiKey") {
-    return authorizeApiKey(db, companyId, caller.apiKey, needed);
+    const { key, refusal } = await authenticateApiKey(caller.apiKey);
+    if (refusal?.status === 429) {
+      throw new ServerFnError(refusal.message, 429, refusal.headers);
+    }
+    if (!key || key.companyId !== companyId) {
+      throw new ForbiddenError(refusal?.message ?? "Invalid API key");
+    }
+    if (
+      !admits(
+        { type: "apiKey", permissions: key.permissions },
+        companyId,
+        required
+      )
+    ) {
+      throw new ForbiddenError("API key lacks required permissions");
+    }
+    return;
   }
   const { rows } = await sql<{
     claims: Record<string, unknown> | null;
   }>`SELECT get_claims(${userId}, ${companyId}) AS claims`.execute(db);
-  const claims = rows[0]?.claims ?? {};
-  // A portal account holds a few view permissions, so the list alone would admit it.
-  if (claims.role === "customer" || claims.role === "supplier") {
+  const { role, permissions } = claimsFor(rows[0]?.claims ?? {}, companyId);
+  if (!admits({ type: "user", role, permissions }, companyId, required)) {
     throw new ForbiddenError();
-  }
-  if (
-    !meetsRequirement(
-      permissionsFromClaims(claims, companyId),
-      companyId,
-      needed
-    )
-  ) {
-    throw new ForbiddenError();
-  }
-}
-
-/** A key of this company, unexpired, whose grants cover `required`. Rate
- *  limiting stays with the route that authenticated the key. */
-async function authorizeApiKey(
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  apiKey: string,
-  required: RequiredPermissions | AnyOfRule
-): Promise<void> {
-  const key = await db
-    .selectFrom("apiKey")
-    .select("id")
-    .where(
-      "keyHash",
-      "=",
-      sql<string>`encode(sha256(convert_to(${apiKey}, 'UTF8')), 'hex')`
-    )
-    .where("companyId", "=", companyId)
-    .where((eb) =>
-      eb.or([
-        eb("expiresAt", "is", null),
-        eb("expiresAt", ">", sql<string>`now()`)
-      ])
-    )
-    .executeTakeFirst();
-  if (!key) throw new ForbiddenError("Invalid API key");
-  if (!("anyOf" in required) && Object.keys(required).length === 0) return;
-  const grants = await db
-    .selectFrom("permission")
-    .select(["module", "page", "level"])
-    .where("apiKeyId", "=", key.id)
-    .where("companyId", "=", companyId)
-    .execute();
-  const scopes = permissionsFromClaims(
-    { grants: grants.map((grant) => ({ subject: "key", ...grant })) },
-    companyId
-  );
-  if (!meetsRequirement(scopes, companyId, required)) {
-    throw new ForbiddenError("API key lacks required permissions");
   }
 }

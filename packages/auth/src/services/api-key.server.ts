@@ -4,9 +4,8 @@
 
 import { createHash } from "node:crypto";
 import {
+  claimsFor,
   expandClaims,
-  type Grant,
-  type Level,
   legacyGrants,
   REGISTRY_HASH
 } from "@carbon/database/access";
@@ -161,22 +160,19 @@ function toApiKeyRecord(row: {
   }[];
 }): ApiKeyRecord {
   const { permission, ...key } = row;
-  const grants: Grant[] = permission
+  const grants = permission
     .filter((grant) => grant.companyId === key.companyId)
-    .map((grant) => ({
+    .map(({ module, page, level }) => ({
       subject: "key",
-      module: grant.module,
-      page: grant.page,
-      level: grant.level as Level
+      module,
+      page,
+      level
     }));
   return {
     ...key,
     companyGroupId: key.companyGroupId as string,
     rateLimitWindow: key.rateLimitWindow as ApiKeyRecord["rateLimitWindow"],
-    permissions: expandClaims(
-      { role: null, admin: false, grants, portal: {} },
-      key.companyId
-    )
+    permissions: claimsFor({ grants }, key.companyId).permissions
   };
 }
 

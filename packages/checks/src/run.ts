@@ -91,6 +91,10 @@ import {
 } from "./conformance/provider-role-backfilled";
 import { routeActionShape } from "./conformance/route-action-shape";
 import {
+  gateConstants,
+  routeGateNamesPage
+} from "./conformance/route-gate-names-page";
+import {
   findScheduledSqlDrift,
   SCHEDULED_SQL_CONSTANTS
 } from "./conformance/scheduled-sql-constants";
@@ -275,6 +279,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       indexRedirectBeforeLoaders,
       loaderReadsThroughApi(
         wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
+      ),
+      routeGateNamesPage(
+        gateConstants(loadTypescriptFiles(root, ["apps/erp/app/modules"]))
       )
     ]),
     ...scanAll(

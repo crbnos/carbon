@@ -57,11 +57,7 @@ async function handleKanbanComplete({
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");

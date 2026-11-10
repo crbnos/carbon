@@ -28,11 +28,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(
-    request,
-    { "settings.documentTemplates": "View" },
-    { role: "employee" }
-  );
+  await authorize(request, { "settings.documentTemplates": "View" });
   return null;
 }
 

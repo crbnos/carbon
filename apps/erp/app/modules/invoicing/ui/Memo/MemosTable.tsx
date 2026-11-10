@@ -38,7 +38,7 @@ import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
-import { memoDirection, memoStatus } from "../../invoicing.models";
+import { memoDirection, memoPage, memoStatus } from "../../invoicing.models";
 import MemoStatus from "./MemoStatus";
 
 // The `memo` table is not present in the committed (cloud-generated) DB types, so
@@ -102,11 +102,7 @@ const MemosTable = memo((props: MemosTableProps) => {
           destructive
           disabled={
             row.status !== "Draft" ||
-            !permissions.has(
-              party === "supplier"
-                ? { "invoicing.supplierCredits": "Full" }
-                : { "invoicing.creditMemos": "Full" }
-            )
+            !permissions.has({ [memoPage(party)]: "Full" })
           }
           onClick={() => {
             setSelectedMemo(row);
@@ -259,11 +255,7 @@ const MemosTable = memo((props: MemosTableProps) => {
           reference: false
         }}
         primaryAction={
-          permissions.has(
-            party === "supplier"
-              ? { "invoicing.supplierCredits": "Create" }
-              : { "invoicing.creditMemos": "Create" }
-          ) && (
+          permissions.has({ [memoPage(party)]: "Create" }) && (
             <New
               label={party === "supplier" ? t`Supplier Credit` : t`Credit Memo`}
               to={`${path.to.memoNew}?party=${party}`}

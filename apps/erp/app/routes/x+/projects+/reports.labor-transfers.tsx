@@ -37,8 +37,7 @@ export const handle = projectReportHandle(
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api, companyId } = await authorize(
     request,
-    projectReportPermissions["labor-transfers"],
-    { role: "employee" }
+    projectReportPermissions["labor-transfers"]
   );
   // A DCAA report: only with DCAA timekeeping on.
   const settings = await api.settings.getCompanySettings({});

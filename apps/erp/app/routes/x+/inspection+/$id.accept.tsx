@@ -14,11 +14,9 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(
-    request,
-    { "quality.inspections": "Edit" },
-    { role: "employee" }
-  );
+  const { companyId, userId } = await authorize(request, {
+    "quality.inspections": "Edit"
+  });
   const { id } = params;
   invariant(id, "id is required");
 

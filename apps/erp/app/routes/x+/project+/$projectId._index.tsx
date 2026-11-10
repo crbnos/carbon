@@ -4,7 +4,7 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import { getUserClaims } from "@carbon/auth/users.server";
-import { anyOf, holdsGate } from "@carbon/database/access";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { datetime, EPSILON } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -24,6 +24,7 @@ import type { Project } from "~/modules/projects/types";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectOverview from "~/modules/projects/ui/Project/ProjectOverview";
 import {
+  CONTRACT_READ_GATE,
   currentContractLines,
   projectContractFunded
 } from "~/modules/sales/sales.models";
@@ -48,11 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // sales data; billing review also needs Edit on Approvals.
   const permissions =
     (await getUserClaims(userId, companyId))?.permissions ?? {};
-  const canViewSales = holdsGate(
-    permissions,
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View"),
-    companyId
-  );
+  const canViewSales = holdsGate(permissions, CONTRACT_READ_GATE, companyId);
   const canReviewBilling =
     canViewSales &&
     holdsGate(permissions, { "projects.approvals": "Edit" }, companyId);

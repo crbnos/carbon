@@ -24,11 +24,9 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "job-operations");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "production.jobs": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "production.jobs": "View"
+  });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

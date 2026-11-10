@@ -25,11 +25,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api, companyId } = await authorize(
-    request,
-    { "projects.laborCategories": "View" },
-    { role: "employee" }
-  );
+  const { api, companyId } = await authorize(request, {
+    "projects.laborCategories": "View"
+  });
 
   const searchParams = new URL(request.url).searchParams;
   const search = searchParams.get("search");

@@ -61,7 +61,7 @@ export const purchaseReturnOrdersList = searchList({
 
 export const supplierTypesList = {
   key: "supplier-types",
-  permission: { gate: { "purchasing.types": "View" }, role: "employee" },
+  permission: { gate: { "purchasing.types": "View" } },
   ...SUPPLIER_TYPES_PAGING,
   // The list has no column filters: the loader never passed them.
   query: (client, companyId, { params, limit, cursor, exactCount, sorts }) =>

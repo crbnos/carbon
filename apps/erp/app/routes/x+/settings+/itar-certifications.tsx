@@ -51,11 +51,9 @@ async function getLastLoginByUserId(): Promise<Map<string, string | null>> {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "settings.itarCertifications": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "settings.itarCertifications": "View"
+  });
 
   // Controlled environments only.
   if (!CONTROLLED_ENVIRONMENT) {

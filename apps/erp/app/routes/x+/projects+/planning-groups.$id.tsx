@@ -19,11 +19,9 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "planning-group");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, client, companyId } = await authorize(
-    request,
-    { "projects.planningGroups": "View" },
-    { role: "employee" }
-  );
+  const { api, client, companyId } = await authorize(request, {
+    "projects.planningGroups": "View"
+  });
 
   const { id } = params;
   if (!id) throw notFound("Planning group ID was not found");

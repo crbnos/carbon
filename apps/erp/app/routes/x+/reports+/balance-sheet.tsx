@@ -45,11 +45,9 @@ export const handle: Handle = {
 export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, api } = await authorize(
-    request,
-    { "accounting.reporting": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const url = new URL(request.url);
   // Invalid params fall back to defaults — a bad bookmark must not 500

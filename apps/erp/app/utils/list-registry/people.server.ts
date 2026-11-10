@@ -20,7 +20,7 @@ import { searchList } from "./index.server";
 // The people list searches with `?name=`, not `?search=`.
 export const peopleList = searchList({
   key: "people",
-  permission: { gate: { "people.employees": "View" }, role: "employee" },
+  permission: { gate: { "people.employees": "View" } },
   paging: EMPLOYEES_PAGING,
   service: getPeople,
   params: { search: "name" }
@@ -28,21 +28,21 @@ export const peopleList = searchList({
 
 export const attributeCategoriesList = searchList({
   key: "attribute-categories",
-  permission: { gate: { "people.attributes": "View" }, role: "employee" },
+  permission: { gate: { "people.attributes": "View" } },
   paging: ATTRIBUTE_CATEGORIES_PAGING,
   service: getAttributeCategories
 });
 
 export const holidaysList = searchList({
   key: "holidays",
-  permission: { gate: { "people.holidays": "View" }, role: "employee" },
+  permission: { gate: { "people.holidays": "View" } },
   paging: HOLIDAYS_PAGING,
   service: getHolidays
 });
 
 export const shiftsList = searchList({
   key: "shifts",
-  permission: { gate: { "people.shifts": "View" }, role: "employee" },
+  permission: { gate: { "people.shifts": "View" } },
   paging: SHIFTS_PAGING,
   service: getShifts
 });

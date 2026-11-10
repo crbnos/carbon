@@ -47,11 +47,9 @@ function parseInteger(raw: string | null, min: number, max: number) {
  * With no period it opens on the last period of the year with Actual rates.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "accounting.indirectRates": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectRates": "View"
+  });
 
   const searchParams = new URL(request.url).searchParams;
   // A missing or bad `?fiscalYear` opens the current fiscal year, as the

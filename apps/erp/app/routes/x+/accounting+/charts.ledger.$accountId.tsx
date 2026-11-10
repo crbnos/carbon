@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyGroupId, api } = await authorize(
     request,
     { "accounting.chartOfAccounts": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
 
   const { accountId } = params;

@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { LabelWithHelp } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -23,6 +22,7 @@ import {
   useRouteData
 } from "~/hooks";
 import type { ProjectCostType } from "~/modules/projects/projects.models";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractMoney } from "~/modules/sales/ui/Contracts";
 import { usePeople } from "~/stores";
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api, client, companyId } = await authorize(
     request,
     // Both contract lists open the same contract page.
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+    CONTRACT_READ_GATE
   );
 
   const { id, invoiceId } = params;

@@ -17,11 +17,7 @@ import { useResourceReferenceLabels } from "~/modules/resources/ui/useResourceRe
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.processes": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "resources.processes": "View" });
 
   const { processId } = params;
   if (!processId) throw notFound("processId not found");

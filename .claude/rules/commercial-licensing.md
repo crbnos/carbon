@@ -128,7 +128,7 @@ Refactor one at a time; each PR should leave the tree green.
 
 - ✅ **Permissions authoring / console** — body in `packages/ee` (`permissions.server.ts`,
   `console.server.ts`); `requireEntitlement` embedded in every authoring function
-  (employee-type CRUD, `updateEmployee`, `updatePermissions`, `updateConsoleSetting`).
+  (employee-type CRUD, `writeAccessGrants`, `updatePermissions`, `updateConsoleSetting`).
 - ✅ **Approvals** — reference implementation (`packages/ee/src/approvals/`);
   `requireEntitlement` in `upsertApprovalRule`/`deleteApprovalRule`, graceful degrade in
   `getApprovalRuleByAmount`.

@@ -4,7 +4,8 @@
 
 import type { Child, Hop, Page } from "../registry";
 
-// The Items module keeps its permission name, `parts`.
+/** The module's name in the sidebar. Its id stays `parts`, the permission name. */
+export const LABEL = "Items";
 
 const ITEM: Hop = ["itemId", "item"];
 const MAKE_METHOD: Hop = ["makeMethodId", "makeMethod"];
@@ -60,21 +61,41 @@ const ITEM_CHILDREN: readonly Child[] = [
   }
 ];
 
+/** The item pages, one per item type: they share `item` by `type`. */
+export const ITEM_PAGE_IDS = [
+  "parts.parts",
+  "parts.materials",
+  "parts.tools",
+  "parts.consumables",
+  "parts.services"
+] as const;
+
+/** Item tables that moved here and keep the page that wrote them before (Page.alsoWrittenBy). */
+const ITEM_ALSO_WRITTEN_BY = {
+  batchProperty: ["inventory.trackedEntities"],
+  methodOperationStep: ["production.jobs"],
+  methodOperationStepSlide: ["production.jobs"]
+};
+
 /** Restricted tables of other pages that an item's costing and planning tabs read. */
 const ITEM_READERS = ["costLedger", "demandActual", "supplyActual"];
 
-export const PARTS_PAGES = [
+export const PAGES = [
   {
     id: "parts.parts",
     label: "Parts",
     maxLevel: "Full",
     // An item points at its model (`item.modelUploadId`), and quotes, orders
     // and jobs point at models too: no one row names the page, so the
-    // models table sits on Parts.
+    // models table sits on Parts and every item page writes it.
     tables: ["item", "part", "modelUpload"],
     where: { table: "item", column: "type", value: "Part" },
     children: ITEM_CHILDREN,
     readers: ITEM_READERS,
+    alsoWrittenBy: {
+      ...ITEM_ALSO_WRITTEN_BY,
+      modelUpload: ITEM_PAGE_IDS.filter((id) => id !== "parts.parts")
+    },
     paths: ["/x/items/parts", "/x/part/"]
   },
   {
@@ -85,6 +106,7 @@ export const PARTS_PAGES = [
     where: { table: "item", column: "type", value: "Material" },
     children: ITEM_CHILDREN,
     readers: ITEM_READERS,
+    alsoWrittenBy: ITEM_ALSO_WRITTEN_BY,
     paths: ["/x/items/materials", "/x/material/"]
   },
   {
@@ -95,6 +117,7 @@ export const PARTS_PAGES = [
     where: { table: "item", column: "type", value: "Tool" },
     children: ITEM_CHILDREN,
     readers: ITEM_READERS,
+    alsoWrittenBy: ITEM_ALSO_WRITTEN_BY,
     paths: ["/x/items/tools", "/x/tool/"]
   },
   {
@@ -105,6 +128,7 @@ export const PARTS_PAGES = [
     where: { table: "item", column: "type", value: "Consumable" },
     children: ITEM_CHILDREN,
     readers: ITEM_READERS,
+    alsoWrittenBy: ITEM_ALSO_WRITTEN_BY,
     paths: ["/x/items/consumables", "/x/consumable/"]
   },
   {
@@ -115,6 +139,7 @@ export const PARTS_PAGES = [
     where: { table: "item", column: "type", value: "Service" },
     children: ITEM_CHILDREN,
     readers: ITEM_READERS,
+    alsoWrittenBy: ITEM_ALSO_WRITTEN_BY,
     paths: ["/x/items/services", "/x/service/"]
   },
   {

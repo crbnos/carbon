@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(
     request,
     { "quality.issueWorkflows": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
 
   const { id } = params;

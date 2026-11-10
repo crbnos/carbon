@@ -18,10 +18,9 @@ AS $function$
        AND NOT EXISTS (
          SELECT 1 FROM "userToCompany" utc
          WHERE utc."userId" = uid
-           AND utc."companyId" = ANY (
-             get_companies_with_employee_permission('users.accounts_view')
-             || get_companies_with_employee_permission('users.accounts_update')
-           )
+           AND utc."companyId" = ANY (get_companies_with_any_employee_permission(
+             ARRAY['users.accounts_view', 'users.accounts_update']
+           ))
        ) THEN
       RAISE EXCEPTION 'Not authorized to read claims for this user'
         USING ERRCODE = 'insufficient_privilege';
@@ -30,12 +29,11 @@ AS $function$
     SELECT role INTO company_role FROM "userToCompany" WHERE "userId" = uid AND "companyId" = company;
 
     IF company_role = 'employee' THEN
-      SELECT e."employeeTypeId", COALESCE(et."systemType" = 'Admin', false)
-      INTO employee_type, is_admin
+      SELECT e."employeeTypeId" INTO employee_type
       FROM employee e
-      -- Only the company's own type: another company's Admin type is not Admin here.
-      LEFT JOIN "employeeType" et ON et.id = e."employeeTypeId" AND et."companyId" = e."companyId"
       WHERE e.id = uid AND e."companyId" = company;
+      -- The Admin type: the only level on no page (util.access_level).
+      is_admin := util.access_level(uid, NULL, company, NULL) = 'Full';
 
       SELECT COALESCE(jsonb_agg(jsonb_build_object(
           'subject', CASE WHEN p."userId" IS NOT NULL THEN 'person' ELSE 'role' END,
@@ -48,26 +46,16 @@ AS $function$
       WHERE p."companyId" = company
         AND (p."userId" = uid OR (employee_type IS NOT NULL AND p."employeeTypeId" = employee_type));
 
-      -- TRANSITIONAL: the old claims keys, "<module>_<action>": [company], from
-      -- the effective MODULE grants (person beats role; Admin holds every
-      -- action), so app pods from before page permissions keep working on a
-      -- migrated database during a rolling deploy. Current code reads only
-      -- role/admin/grants/portal and ignores these. Remove once no deployed app
-      -- version predates page permissions (PR #1958).
+      -- TRANSITIONAL(#1958): the old claims keys, "<module>_<action>": [company],
+      -- from the level on the module id as a page (its module grants; Admin is
+      -- Full), so app pods from before page permissions keep working on a
+      -- migrated database during a rolling deploy. Current code ignores them.
+      -- Removal: packages/database/AGENTS.md, "Page permissions transition".
       SELECT COALESCE(jsonb_object_agg(lower(m.module::text) || '_' || a.action, jsonb_build_array(company)), '{}'::jsonb)
       INTO legacy_keys
       FROM unnest(enum_range(NULL::"module")) AS m(module)
-      CROSS JOIN LATERAL (
-        SELECT CASE WHEN COALESCE(is_admin, false) THEN 'Full'::"permissionLevel" ELSE (
-          SELECT p.level FROM permission p
-          WHERE p."companyId" = company AND p.module = m.module AND p.page IS NULL
-            AND (p."userId" = uid OR (employee_type IS NOT NULL AND p."employeeTypeId" = employee_type))
-          ORDER BY p."userId" IS NULL
-          LIMIT 1
-        ) END AS level
-      ) l
       JOIN (VALUES ('view', 'View'::"permissionLevel"), ('create', 'Create'), ('update', 'Edit'), ('delete', 'Full'))
-        AS a(action, needs) ON l.level >= a.needs;
+        AS a(action, needs) ON util.access_level(uid, NULL, company, lower(m.module::text)) >= a.needs;
     END IF;
 
     -- A portal account still holds its keys in userPermission. An employee's old
@@ -77,7 +65,7 @@ AS $function$
       INTO portal_keys
       FROM "userPermission" up, jsonb_each(up.permissions) kv
       WHERE up.id = uid AND jsonb_typeof(kv.value) = 'array' AND kv.value ? company;
-      legacy_keys := portal_keys; -- TRANSITIONAL, as above
+      legacy_keys := portal_keys; -- TRANSITIONAL(#1958), as above
     END IF;
 
     RETURN legacy_keys || jsonb_build_object(

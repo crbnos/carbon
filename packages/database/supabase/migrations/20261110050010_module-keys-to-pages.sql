@@ -4,7 +4,7 @@
 -- check now names the page of what it guards; a module grant still covers it.
 --
 -- The managed functions (get_claims, the audit log functions and
--- util.can_manage_event_subscription) ship in 20261110050009_page-keys-in-functions.
+-- util.can_manage_event_subscription) ship in 20261110113816_page-permissions.
 -- This file holds what lives in migrations. It is the last migration that may
 -- name a module key (no-module-permission-key, @carbon/checks): it renames the
 -- storage policies whose old names held one.

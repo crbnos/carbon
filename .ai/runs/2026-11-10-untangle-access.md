@@ -74,15 +74,15 @@ module grants, and the page's `maxLevel`. `cases.json` tests it, clamping includ
 **F6. One grant-write entry point in `@carbon/ee`, for every subject.** That means role, person, API
 key and console. It owns the ownership check, the entitlement (checked once), clamping, server-side
 subject rules, the transaction, cache clearing (people, role members and the key hash) and one audit
-event shape. The subject rules are which modules a key may hold, and Accounting ≤ Edit for keys.
+event shape. The subject rules are which modules a key may hold. Accounting stops at Edit only as the select-all default, as on main: Full stays a per-row choice the server accepts.
 Writers never clear caches by hand. Grants cross every form as one validated `grantsField`.
 - 7 write paths, each with its own checks, cache clearing and audit (U4).
 - About 13 hand `redis.del` sites, and the API-key cache is cleared only in the ERP (U2, U4).
 - API-key and console grant writes have no audit event (U4).
 - The entitlement is checked 4 times per person save (U4).
 - Deleting one grant rewrites the whole set and erases its conversion notes (U4).
-- The Accounting cap exists only in the form, and the key module list is not enforced on the server
-  (U4).
+- The key module list is not enforced on the server (U4). The Accounting select-all cap stays a form
+  default, as on main.
 - Every form parses the grant JSON by hand, and the bulk route has its own try/catch (U4).
 
 **F7. Page-of-a-URL and page-of-a-row come from the registry.**
@@ -170,5 +170,5 @@ Problems it removes:
 6. Full verification: every check, plus the 173-page one-page-role pass.
 
 ## Progress
-- [ ] 1 core — [ ] 1 authz — [ ] 2 auth/api — [ ] 2 ee/editors — [ ] 2 ERP — [ ] F10
+- [x] 1 core — [x] 1 authz — [x] 2 auth/api — [~] 2 ee/editors (follow-ups) — [ ] 2 ERP — [~] F10 (TS marker)
 - [ ] comments — [ ] re-survey — [ ] tests — [ ] verify

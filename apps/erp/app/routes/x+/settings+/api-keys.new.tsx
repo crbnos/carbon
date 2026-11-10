@@ -8,10 +8,7 @@ import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  apiKeyFields,
-  apiKeyValidator
-} from "~/modules/settings/settings.models";
+import { apiKeyValidator } from "~/modules/settings/settings.models";
 import { ApiKeyForm } from "~/modules/settings/ui";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +21,7 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(apiKeyValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { api } = await authorize(args.request);
-  return api.settings.createApiKey(apiKeyFields(input.data));
+  return api.settings.createApiKey(input.data);
 }
 
 export default function NewApiKeyRoute() {

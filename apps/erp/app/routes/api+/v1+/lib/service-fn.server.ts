@@ -6,7 +6,6 @@
 // workflow caller: the same function, with the same checks, the route calls.
 
 import type { ManifestEntry } from "@carbon/api";
-import { permissionsFromScopes } from "@carbon/api/permissions";
 import type {
   ErrorCategory,
   ServiceContext,
@@ -15,7 +14,7 @@ import type {
 import { ORPCError } from "@orpc/server";
 import type { z } from "zod";
 import { router as services } from "~/modules/router.server";
-import { contextFor } from "~/modules/service-context.server";
+import { serviceContext } from "~/modules/service-context.server";
 import type { AuthedContext } from "./base.server";
 import { scopedToCompany } from "./company-scope.server";
 import { COMPANY_TABLES } from "./operations.server";
@@ -50,17 +49,14 @@ function serviceFnAt(path: string[]): ServiceFn<z.ZodType, unknown> {
  * company they belong to, and an id from another one must match nothing.
  */
 export function contextFromAuthed(context: AuthedContext): ServiceContext {
-  return contextFor({
-    kind: context.authKind === "api-key" ? "apiKey" : "user",
+  return serviceContext({
+    caller: context.authKind === "api-key" ? "apiKey" : "session",
     userId: context.userId,
-    // Scopes are claims-shaped: `<module>_<action>` → company ids.
-    permissions: permissionsFromScopes(context.scopes),
+    permissions: context.permissions,
     companyId: context.companyId,
     companyGroupId: context.companyGroupId,
     client: scopedToCompany(context.client, context.companyId, COMPANY_TABLES),
-    // OAuth acts only as an employee (`oauthContext`), and a workflow only as
-    // an owner who is one (`readOwnerPermissions`).
-    role: context.authKind === "api-key" ? null : "employee"
+    role: context.role
   });
 }
 

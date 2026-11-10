@@ -111,6 +111,10 @@ import { claimPlanningActions } from "~/modules/production/planning-action-claim
 import { insertJob } from "~/modules/production/production.service";
 import { insertPurchaseOrder } from "~/modules/purchasing/purchasing.service";
 import {
+  CONTRACT_READ_GATE,
+  withContractRead
+} from "~/modules/sales/sales.models";
+import {
   allocateJournalLineIds,
   assertCompanyRecords,
   bookAdjustment,
@@ -15287,10 +15291,7 @@ export async function getBillingReviewCountForUser(
     (await getUserClaims(args.userId, args.companyId))?.permissions ?? {};
   const canReview = holdsGate(
     permissions,
-    [
-      { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
-      { "projects.approvals": "Edit", "sales.projectContracts": "View" }
-    ],
+    withContractRead({ "projects.approvals": "Edit" }),
     args.companyId
   );
   if (!canReview) return 0;
@@ -15458,9 +15459,7 @@ export function refuseContractBilling(
   level: "View" | "Edit"
 ) {
   const allowed =
-    ctx.can({ "projects.approvals": level }) &&
-    (ctx.can({ "sales.serviceContracts": "View" }) ||
-      ctx.can({ "sales.projectContracts": "View" }));
+    ctx.can({ "projects.approvals": level }) && ctx.can(CONTRACT_READ_GATE);
   return allowed
     ? null
     : ctx.error("forbidden", "You do not have permission to do this");

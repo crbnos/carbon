@@ -15,11 +15,7 @@ import { deleteSupplierType } from "~/modules/purchasing/purchasing.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "purchasing.types": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "purchasing.types": "View" });
   const { supplierTypeId } = params;
   if (!supplierTypeId) throw notFound("supplierTypeId not found");
 

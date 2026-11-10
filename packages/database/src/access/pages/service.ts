@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const SERVICE_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Service";
+
+export const PAGES = [
   {
     id: "service.jobs",
     label: "Jobs",

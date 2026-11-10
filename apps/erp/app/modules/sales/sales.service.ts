@@ -9,10 +9,10 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import {
   type Kysely,
@@ -13961,7 +13961,7 @@ export async function draftContractSetupPath(
   ]);
   if (contract.data?.status !== "Draft") return null;
   if (
-    !hasPermission(
+    !holdsGate(
       claims?.permissions,
       { "sales.serviceContracts": "Edit" },
       companyId
@@ -13992,7 +13992,7 @@ export async function draftRentalAgreementSetupPath(
   ]);
   if (agreement.data?.status !== "Draft") return null;
   if (
-    !hasPermission(
+    !holdsGate(
       claims?.permissions,
       { "sales.rentalAgreements": "Edit" },
       companyId

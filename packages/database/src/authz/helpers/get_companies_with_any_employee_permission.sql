@@ -2,24 +2,17 @@ CREATE OR REPLACE FUNCTION public.get_companies_with_any_employee_permission(per
  RETURNS text[]
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public', 'extensions'
+ SET search_path TO 'public'
 AS $function$
 DECLARE
-  raw_key text;
   api_key_id text;
   api_key_company text;
   companies text[];
 BEGIN
-  -- get_companies_with_employee_permission for a list of '<page>_<action>' keys:
-  -- the companies where the caller holds at least one. A read admits any page
-  -- of a module, so one call resolves every key instead of one call per page.
-  raw_key := (current_setting('request.headers'::text, true))::json ->> 'carbon-key';
-  IF raw_key IS NOT NULL THEN
-    SELECT id, "companyId" INTO api_key_id, api_key_company
-    FROM "apiKey"
-    WHERE "keyHash" = encode(digest(raw_key::bytea, 'sha256'::text), 'hex')
-      AND ("expiresAt" IS NULL OR "expiresAt" > NOW());
-  END IF;
+  -- The companies where the caller holds at least one of the '<page>_<action>'
+  -- keys: an API key in its own company, by the key's grants; a user in each
+  -- company where they are an employee, by theirs.
+  SELECT k.id, k.company_id INTO api_key_id, api_key_company FROM util.request_api_key() k;
 
   WITH wanted AS (
     SELECT

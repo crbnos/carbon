@@ -8,8 +8,10 @@
 -- grant on the old module becomes a page grant on it, at the same level, capped
 -- at the page's maxLevel. Where the new page owns much more (the item pages,
 -- Shipments, Quotes, Quantities, Storage Rules, Quality Documents, Workflows,
--- Sales Orders), no grant is given: the table's write rule also accepts the
--- page that wrote it before (manifest.ts, `writesAlso`), so nobody loses it.
+-- Sales Orders), no grant is given: the new page lists the table in
+-- `alsoWrittenBy` with the page that wrote it before (access/pages), so its
+-- write rule accepts that page too and nobody loses it. Each moved table is
+-- one or the other: authz/registry-sql.test.ts reads the rows below.
 --
 -- A subject that already holds a grant on the new page, or on its module,
 -- keeps what it has. A person's override is carried too (None included, when

@@ -26,11 +26,9 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.chartOfAccounts": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "accounting.chartOfAccounts": "View"
+  });
 
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");

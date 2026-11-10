@@ -15,11 +15,7 @@ import { deletePartner } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.abilities": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "resources.abilities": "View" });
 
   const { supplierId } = params;
   if (!supplierId) throw notFound("supplierId not found");

@@ -29,7 +29,7 @@ import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
 import AccessHolders from "./AccessHolders.ee";
 
 type EmployeeTypeFormProps = {
-  initialValues: Omit<z.infer<typeof employeeTypeValidator>, "data"> & {
+  initialValues: Omit<z.infer<typeof employeeTypeValidator>, "grants"> & {
     grants: AccessGrant[];
   };
   /** The Admin type has Full on every module, whatever its grants say. */
@@ -75,7 +75,7 @@ const EmployeeTypeForm = ({
           defaultValues={initialValues}
         >
           <Hidden name="id" />
-          <Hidden name="data" value={JSON.stringify(grants)} />
+          <Hidden name="grants" value={JSON.stringify(grants)} />
           <ModalHeader>
             <ModalTitle>
               {isEditing ? (

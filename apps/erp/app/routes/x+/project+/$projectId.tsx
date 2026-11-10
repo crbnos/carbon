@@ -7,7 +7,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { anyOf, holdsGate } from "@carbon/database/access";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
@@ -36,6 +36,7 @@ import {
 import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectElementTree";
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";
 import { ProjectSidebar } from "~/modules/projects/ui/Project/ProjectSidebar";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { getDatabaseClient } from "~/services/database.server";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -250,7 +251,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     showBilling: project.data.costTreatment === "Contract",
     projectContracts: holdsGate(
       claims?.permissions ?? {},
-      anyOf(["sales.serviceContracts", "sales.projectContracts"], "View"),
+      CONTRACT_READ_GATE,
       companyId
     )
       ? projectContracts.data.map((contract) => ({

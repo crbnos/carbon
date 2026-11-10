@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const PURCHASING_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Purchasing";
+
+export const PAGES = [
   {
     id: "purchasing.suppliers",
     label: "Suppliers",
@@ -19,7 +22,7 @@ export const PURCHASING_PAGES = [
       "supplierTax",
       "contact"
     ],
-    where: { table: "contact", column: "isCustomer", value: "false" },
+    where: { table: "contact", column: "isCustomer", value: false },
     readers: ["address", "paymentTerm", "supplierPart", "supplierProcess"],
     paths: ["/x/purchasing/suppliers", "/x/supplier/"]
   },

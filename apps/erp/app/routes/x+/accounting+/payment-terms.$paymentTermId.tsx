@@ -18,11 +18,9 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.paymentTerms": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "accounting.paymentTerms": "View"
+  });
 
   const { paymentTermId } = params;
   if (!paymentTermId) throw notFound("paymentTermId not found");

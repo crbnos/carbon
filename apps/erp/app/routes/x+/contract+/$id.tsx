@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { ContractRevenueRow } from "@carbon/utils";
@@ -32,6 +31,7 @@ import type {
 } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import type {
   Contract,
   ContractCreditMemoLinks,
@@ -88,7 +88,7 @@ export async function loader({
   const { client, companyId, api } = await authorize(
     request,
     // Both contract lists open the same contract page.
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+    CONTRACT_READ_GATE
   );
 
   const { id } = params;

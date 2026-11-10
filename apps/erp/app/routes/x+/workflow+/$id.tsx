@@ -74,11 +74,9 @@ export const shouldRevalidate = deferRootActionPost(
 );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(
-    request,
-    { "workflows.workflows": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, userId } = await authorize(request, {
+    "workflows.workflows": "View"
+  });
   await requireFeature({
     request,
     client,

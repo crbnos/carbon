@@ -13,11 +13,7 @@ import { BatchDetailDrawer } from "~/modules/production/ui/Batches/BatchDetailDr
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "production.batches": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "production.batches": "View" });
 
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");

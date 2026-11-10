@@ -10,7 +10,7 @@ paths:
 
 # Authz manifest: RLS policies and helpers
 
-Every RLS policy on a `public` table, and the 16 RLS/auth helper functions, are authored in
+Every RLS policy on a `public` table, and the 21 RLS/auth helper functions, are authored in
 `packages/database/src/authz/` and nowhere else. Migrations create tables; they never write
 `CREATE POLICY` / `ALTER POLICY` on a public table or define a managed helper
 (`no-authz-ddl-in-migrations` in `@carbon/checks` fails them, from `20260927000000` on).
@@ -33,6 +33,7 @@ The same machinery owns the event system's 45 functions, its 86 table handlers a
 | `manifest.ts` | one rule per public table, typed by table name (`satisfies Manifest`) |
 | `rules.ts` | the pieces and builders; `render()` compiles a rule to `CREATE POLICY` SQL with Kysely |
 | `helpers/<name>.sql` | one `CREATE OR REPLACE FUNCTION public.<name>` per file (validated with Postgres's parser) |
+| `registry-sql.ts` | renders `helpers/util.module_pages.sql` and `helpers/util.page_max_level.sql` from the access registry |
 | `../event-system/functions/<name>.sql` | the event system's functions, same format; `util.<name>.sql` for one in the `util` schema |
 | `sync.ts` | `authz sync` / `check`: make a database match, in one transaction |
 | `migration.ts` | `authz migration`: ship changes to databases that do not sync; `unshipped()` |
@@ -41,23 +42,36 @@ The same machinery owns the event system's 45 functions, its 86 table handlers a
 ## Writing a rule
 
 ```ts
-widget: company("inventory"),                       // the four standard policies
-widgetLine: parent("widget", "widgetId", "inventory"),
-maintenanceDispatchItemTrackedEntity: company("resources", { create: "employee" }),
-userToCompany: company("users", { create: false, update: false }),   // no API writes
+storageUnit: company(),                              // the four standard policies
+pickingListLineTrackedEntity: parent("pickingListLine", "pickingListLineId"),
+maintenanceDispatchItemTrackedEntity: company({ read: "employee", create: "employee" }),
+userToCompany: company({ read: "employee", create: false, update: false }),   // no API writes
+address: company({ create: anyOf("create", "purchasing.suppliers_create") }),
 note: policies({
   select: inCompany("companyId", "employee"),
   update: { using: owner("createdBy"), check: and(owner("createdBy"), inCompany("companyId", "employee")) }
 }),
 ```
 
-- `company(module, overrides)` — SELECT any employee, writes `<module>_<action>`; an actor is
-  `"employee"`, a permission, `anyOf(...)`, a predicate, or `false` (denied). `where` narrows a
-  write (`journal` edits only Draft/Posted rows).
-- `group(module)` — group-shared rows by `companyGroupId`.
+A rule never names a module. The registry (`@carbon/database/access`, `placeOf`) decides
+which page owns a table, so a rule names only what differs from the default.
+
+- An actor is a bare action (`"view"`, `"create"`, `"update"`, `"delete"`: the key of the page
+  that owns the table), a page key (`purchasing.suppliers_create`, written as is),
+  `"employee"`, `"member"`, `anyOf(...)`, `anyPageOf(...modules)` (View on any page of those
+  modules), a predicate, or `false` (denied).
+- `company(overrides)` — each action needs the owner's: read `"view"`, writes
+  `"create"`/`"update"`/`"delete"`. Override an action that differs (`read: "employee"` for a
+  table every employee reads). `where` narrows a write (`journal` edits only Draft/Posted rows).
+- `group(overrides)` — group-shared rows by `companyGroupId`; a group table sits on one page.
+- `parent(table, fk)` — the four policies through the FK; each action is the parent table's.
 - Pieces for `policies({...})`: `inCompany`, `inGroup`, `viaParent`, `exists` (optionally
   `sameCompany`), `through`, `throughIndexed`, `member`, `owner`, `portal.customer/supplier`,
   `authenticated`, `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
+- Each piece is compiled against the row it guards (`Row`: the registry table and the name
+  SQL gives it). `exists(parent, fk, who)` resolves a bare action against the parent table and
+  starts the parent's path at the parent row (`p`); `through` against its link table;
+  `viaParent`, whose parent row is not in the query, against the guarded table.
 - `through` renders `col IN (SELECT …)`; `throughIndexed` renders
   `col = ANY (COALESCE((SELECT array_agg(…) …), '{}'))`. Postgres evaluates the array once and
   can use the column's index for it, where an `IN` subquery branch of an `OR` forces a scan of
@@ -65,51 +79,53 @@ note: policies({
   portal branches).
 - An UPDATE that can change `companyId` needs a `check` that pins the company — without it
   Postgres reuses USING, and an owner-only USING lets the author move the row to any company.
-- `projectModule(column, action, { standard?, via? })` — the module that governs a project
-  row: a project follows `projects_<action>` (or `standard`, e.g. `"employee"` for
-  reads). `column` names the row's project. `via:
-  "projectElement"` reaches the project through an element (comments, labels). The
-  manifest's `projectTable(column, via)` builds the four policies from it; every project
-  table uses it.
+- `projectModule(column, action, { standard?, via? })` — a project row follows the owner's
+  `action` (or `standard`, e.g. `"employee"` for reads) in its project's company. `column` names
+  the row's project. `via: "projectElement"` reaches the project through an element (comments,
+  labels). The manifest's `projectTable(column, via)` builds the four policies from it.
 - `serviceOnly()` — RLS on, no policy: only the service role reaches it.
 - `custom(reason, sql)` — last resort (3 today). The rendered SQL must parse to only
   `CREATE POLICY` on its own table.
 
 ## Page keys
 
-A rule names a module (`company("inventory")`), but `render()` writes the key of the
-page that owns the table in the access registry (`placeOf`, `@carbon/database/access`).
-The module must be that page's (for a shared or child table, one of its pages'):
-`render()` throws on a module key of any other module, so a rule never reads as one
-module while it checks another. To admit a page of another module, name its page key.
+`render()` turns a bare action into the keys of the page that owns the table:
 
-- An owned table checks `<page>_<action>`, for example `inventory.receipts_update`.
-- A restricted read also admits every page that lists the table in `readers`
-  (`anyOf(<page>_view, <reader>_view …)`).
+- A write checks `<page>_<action>` (`inventory.receipts_update`), or any page the owner lists
+  for the table in `alsoWrittenBy` (`inventory.shipments` → `shipmentLine`: `sales.salesOrders`).
+- A read admits View on any page of the owner's module, plus every page that lists the table
+  in `readers`, in ONE call: `get_companies_with_module_view(ARRAY['<module>'], ARRAY[<reader
+  keys>])`. The module's pages are resolved in SQL by `util.module_pages`, so a policy never
+  lists them and adding a page changes no policy, only that helper.
 - A shared table (`where` on several pages) gets one branch per page:
   `<column> = <value>` (or `<column> IS NOT NULL` when `where` has no value) AND that page's key.
 - A child table (`children` of a shared table) writes through its parent with `EXISTS`. A
   child names one `via` column (`itemCost.itemId`) or a hop `path`
   (`methodMaterial` → `makeMethod` → `item`): one nested `EXISTS` per hop, each hop in the
-  company of the one before. A link row with no `companyId` (`methodMaterialStep`) starts its
-  path in the company of the `exists` parent it is checked through.
-- A child's restricted read never goes through its parent: it is `anyOf(<each page of the shared
-  entry>_view, <readers>_view)` in the row's company. The parent's SELECT reads the child (`item`'s
-  portal branches read `supplierPart`), so a lookup back made Postgres refuse both as recursive.
+  company of the one before.
+- A child's read never goes through its parent: it is a read of each branch page's module (and
+  its readers) in the row's company. The parent's SELECT reads the child (`item`'s portal
+  branches read `supplierPart`), so a lookup back made Postgres refuse both as recursive.
   `rules.test.ts` fails on any cycle of SELECT policies.
 - `rowRule` / `itemRule` take a child's path from the registry when `from` is a child of the
   shared table and no `path` is given.
-- A key with a dot is already a page key and renders as written. `"employee"`, portal and
-  `false` actors do not change.
+- A bare action on a table no page owns throws: name a page key.
 
-`util.access_level` resolves a page key: a page grant wins, else the module grant
-(the text before the first dot), so a module grant covers every page. `registry.test.ts`
-fails when a policy checks a key that is not a page id. A managed function file or a hand-written
-migration names page keys too: `no-module-permission-key` (`@carbon/checks`) fails a
-`<module>_<action>` token there (every migration not in the frozen list
-`packages/checks/src/conformance/module-key-migrations.json`, the migrations that existed
-at the cutoff `20261110050010` — so a late-landing migration dated earlier is checked too); portal keys
-(`get_customer_ids_with_customer_permission('parts_view')`) are exempt.
+`util.access_level` resolves a page key: person page, person module, role page, role module,
+key page, key module (the module is the text before the first dot), Admin is Full, and the
+result is at most the page's `maxLevel` (`util.page_max_level`). Its TS twin is `levelOf`;
+both pass `access/cases.json` (`supabase/tests/access-resolver.test.sql`). `registry.test.ts`
+fails when a policy checks a key that is not a page id, a read names a module with no pages,
+a page lists a reader in its own module, or a `where` spells a boolean as a string. A managed
+function file or a hand-written migration names page keys too: `no-module-permission-key`
+(`@carbon/checks`) fails a `<module>_<action>` token there (every migration not in the frozen
+list `packages/checks/src/conformance/module-key-migrations.json`, the migrations that existed
+at the cutoff `20261110050010` — so a late-landing migration dated earlier is checked too);
+portal keys (`get_customer_ids_with_customer_permission('parts_view')`) are exempt.
+
+The registry helpers `util.module_pages` and `util.page_max_level` are rendered from the pages
+by `registry-sql.ts`: `authz sync` and `authz migration` rewrite their files first, and
+`registry-sql.test.ts` fails when a file is stale.
 
 ## Shipping a change
 
@@ -237,8 +253,14 @@ The meaning equals its rule; the wording may not — production's `agentThread` 
   module. When the new page is essentially the table's own home, ship a hand-written
   migration that gives each such grant a page grant on it
   (`20261110101723_grants-for-moved-tables.sql`, `20261110050005` for Printing). When
-  the new page owns much more, a page grant would widen access: make the table's writes
-  also accept the page that wrote it before instead (`writesAlso` in `manifest.ts`).
+  the new page owns much more, a page grant would widen access: list the table in the new
+  page's `alsoWrittenBy` with the page that wrote it before instead. `registry-sql.test.ts`
+  reads that migration's rows and fails a moved table covered both ways or neither.
+- Helpers are applied callee first (`calleesFirst` in `helpers.ts`): Postgres checks a
+  SQL-language body at creation, so a generated migration or a sync on a database without the
+  callee would fail. A SQL helper on the hot path (`util.access_level`) stays inlinable: a
+  helper it calls has no SET, no SECURITY DEFINER, no subquery, and no runtime cast
+  (`util.page_max_level` uses constant enum arms).
 
 - A filtered `UPDATE … WHERE` also checks the new row against the SELECT policy, so a test of
   a missing WITH CHECK passes vacuously; test with an unfiltered UPDATE or `pg_temp.allows`.
@@ -252,4 +274,8 @@ The meaning equals its rule; the wording may not — production's `agentThread` 
   that last defined it (only that file may still define it), and `DROP FUNCTION` it in a migration AFTER the one that
   moved the callers, without CASCADE so a missed dependent fails loudly. Done this way for
   `has_role`, `has_company_permission`, `get_companies_with_permission`,
-  `get_permission_companies` (`20260927224243` + `20260927224314`).
+  `get_permission_companies` (`20260927224243` + `20260927224314`), and for
+  `has_any_company_permission` (no generated migration ever defined it, so no
+  `RETIRED_HELPERS` entry) with the unmanaged `get_my_permission`
+  (`20261110113817_drop-dead-permission-helpers.sql`). `authz-fixes.test.sql` asserts all
+  of them stay gone.

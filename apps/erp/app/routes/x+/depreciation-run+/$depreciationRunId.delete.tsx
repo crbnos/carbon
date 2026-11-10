@@ -14,11 +14,9 @@ import { deleteDepreciationRun } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.depreciation": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "accounting.depreciation": "View"
+  });
 
   const { depreciationRunId } = params;
   if (!depreciationRunId) throw notFound("depreciationRunId not found");

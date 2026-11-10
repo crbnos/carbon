@@ -4,7 +4,7 @@
 
 import { dataOrThrow } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { ITEM_TYPE_PAGES } from "@carbon/database/access";
+import { anyOf, ITEM_PAGES, pageOfRow } from "@carbon/database/access";
 import type { LoaderFunctionArgs } from "react-router";
 import type { UnreleasedChangeOrderItem } from "~/modules/items/items.service";
 import {
@@ -54,24 +54,34 @@ const typeConfig = {
 } as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
-  const typeParam = url.searchParams.get("type");
-  // Own-key check: `in` also accepts inherited keys, so e.g. ?type=toString
-  // would pass and crash on the destructure below.
-  const type =
-    typeParam && Object.prototype.hasOwnProperty.call(typeConfig, typeParam)
-      ? (typeParam as keyof typeof typeConfig)
-      : "Part";
-
-  // The item's type picks its page.
-  const { client, companyId, api } = await authorize(
-    request,
-    { [ITEM_TYPE_PAGES[type]]: "View" },
-    { bypassRls: true }
-  );
-
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+
+  // Any item page reads the item's type; the type picks the page that gates it.
+  const caller = await authorize(request, anyOf(ITEM_PAGES, "View"), {
+    bypassRls: true
+  });
+  const item = await caller.client
+    .from("item")
+    .select("type")
+    .eq("id", itemId)
+    .eq("companyId", caller.companyId)
+    .maybeSingle();
+  const page = item.data ? pageOfRow("item", item.data) : undefined;
+  // Own-key check: `in` also accepts inherited keys.
+  if (
+    !page ||
+    !item.data ||
+    !Object.prototype.hasOwnProperty.call(typeConfig, item.data.type)
+  ) {
+    throw new Response("Not Found", { status: 404 });
+  }
+  const type = item.data.type as keyof typeof typeConfig;
+  const { client, companyId, api } = await authorize(
+    request,
+    { [page]: "View" },
+    { bypassRls: true }
+  );
 
   const { tagTable, getSummary } = typeConfig[type];
   const needsMakeMethods = type === "Part" || type === "Tool";

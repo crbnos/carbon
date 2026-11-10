@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const RESOURCES_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Resources";
+
+export const PAGES = [
   {
     id: "resources.dispatches",
     label: "Dispatches",

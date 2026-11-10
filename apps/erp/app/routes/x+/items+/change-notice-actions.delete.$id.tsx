@@ -15,11 +15,9 @@ import { deleteChangeNoticeRequiredAction } from "~/modules/items/items.service"
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.changeNoticeActions": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "parts.changeNoticeActions": "View"
+  });
   const { id } = params;
   if (!id) throw notFound("id not found");
 

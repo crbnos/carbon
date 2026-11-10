@@ -23,11 +23,9 @@ export async function action(args: ActionFunctionArgs) {
   const input = await validator(partial).request(args, { params: ["id"] });
   if ("invalid" in input) return input.invalid;
   const { id } = input.params;
-  const { api } = await authorize(
-    args.request,
-    { "quality.inspections": "Edit" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(args.request, {
+    "quality.inspections": "Edit"
+  });
   const result = await api.quality.partialInspection({
     id,
     acceptedQuantity: input.data.acceptedQuantity,

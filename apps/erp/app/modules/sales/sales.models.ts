@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { anyOf, type PageGate } from "@carbon/database/access";
 import {
   bicMatchesCountry,
   conditionAstFormField,
@@ -45,6 +46,17 @@ import {
   priceOverrideScopeError,
   pricingRuleConfigurationPriceValidator
 } from "./sales.utils";
+
+/** View on either contracts list: both open the same contract page. */
+export const CONTRACT_READ_GATE = anyOf(
+  ["sales.serviceContracts", "sales.projectContracts"],
+  "View"
+);
+
+/** `gate` together with View on either contracts list. */
+export function withContractRead(gate: PageGate): PageGate[] {
+  return CONTRACT_READ_GATE.map((read) => ({ ...gate, ...read }));
+}
 
 export const KPIs = [
   {

@@ -18,7 +18,15 @@ import { onboardingSequence, path } from "~/utils/path";
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId, api } = await authorize(request);
+  const { companyId, userId, api } = await authorize(
+    request,
+    {},
+    {
+      // A user with no company role yet (self-signup, first admin) runs
+      // onboarding: it acts on their own account.
+      allowPortalAccounts: true
+    }
+  );
 
   const [company, stripeCustomer, locations] = await Promise.all([
     api.settings.getCompany({}),

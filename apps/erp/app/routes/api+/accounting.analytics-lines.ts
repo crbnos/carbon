@@ -31,11 +31,9 @@ import { getDimensionPivotLines } from "~/modules/accounting/accounting.service"
  * - colstart / colend    — period column bounds (period axis)
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, api } = await authorize(
-    request,
-    { "accounting.reporting": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, companyGroupId, api } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;

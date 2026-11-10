@@ -239,7 +239,7 @@ const TrackedEntitiesTable = memo(
           <>
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.view}
-              disabled={!permissions.has({ "inventory.traceability": "Edit" })}
+              disabled={!permissions.has({ "inventory.traceability": "View" })}
               onClick={() => {
                 navigate(
                   `${path.to.traceabilityGraph}?trackedEntityId=${row.id}`
@@ -252,7 +252,7 @@ const TrackedEntitiesTable = memo(
             <MenuItem
               shortcut={MENU_ITEM_SHORTCUTS.edit}
               disabled={
-                !permissions.has({ "inventory.traceability": "Edit" }) ||
+                !permissions.has({ "inventory.trackedEntities": "Edit" }) ||
                 row.status === "Consumed"
               }
               onClick={() => editExpiry.open(row)}
@@ -263,7 +263,7 @@ const TrackedEntitiesTable = memo(
             {row.status === "Scrapped" && (
               <MenuItem
                 disabled={
-                  !permissions.has({ "inventory.traceability": "Edit" }) ||
+                  !permissions.has({ "inventory.quantities": "Edit" }) ||
                   !row.itemId
                 }
                 onClick={() => unscrap.open(row)}

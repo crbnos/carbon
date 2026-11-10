@@ -29,11 +29,9 @@ export const handle: Handle = {
 // The list loads without a plan check: a gated company sees the upgrade
 // overlay. The write routes and `upsertPlanningGroup` enforce the plan.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api, companyId } = await authorize(
-    request,
-    { "projects.planningGroups": "View" },
-    { role: "employee" }
-  );
+  const { api, companyId } = await authorize(request, {
+    "projects.planningGroups": "View"
+  });
 
   const searchParams = new URL(request.url).searchParams;
   const search = searchParams.get("search");

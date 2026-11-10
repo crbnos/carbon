@@ -38,6 +38,7 @@ import {
 import { getDayOfWeek, parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { withContractRead } from "~/modules/sales/sales.models";
 import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
 import {
   methodType,
@@ -957,6 +958,12 @@ export function assertCanApprove(args: {
     throw new Error(LABOR_TRANSFER_SAME_APPROVER);
   }
 }
+
+/** Issue to Project moves stock to a project: its route and its sidebar entry. */
+export const PROJECT_ISSUE_GATE = {
+  "inventory.quantities": "Edit",
+  "projects.projects": "Edit"
+} as const satisfies Gate;
 
 export const projectIssueDirections = ["Issue", "Return"] as const;
 
@@ -4132,10 +4139,7 @@ export const projectReportPermissions: Record<ProjectReportKey, Gate> = {
     "people.employees": "View"
   },
   // Either contracts list opens the contracts the report rolls up.
-  "cost-by-clin": [
-    { "projects.reports": "View", "sales.serviceContracts": "View" },
-    { "projects.reports": "View", "sales.projectContracts": "View" }
-  ],
+  "cost-by-clin": withContractRead({ "projects.reports": "View" }),
   "rd-section-174a": {
     "projects.reports": "View",
     "accounting.reporting": "View"

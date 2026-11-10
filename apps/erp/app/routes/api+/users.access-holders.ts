@@ -11,8 +11,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The role form's "Who has access" panel calls it too.
   const { api } = await authorize(
     request,
-    anyOf(["users.accounts", "users.employeeTypes"], "View"),
-    { role: "employee" }
+    anyOf(["users.accounts", "users.employeeTypes"], "View")
   );
   const params = new URL(request.url).searchParams;
   const result = await api.users.getPageAccessHolders({

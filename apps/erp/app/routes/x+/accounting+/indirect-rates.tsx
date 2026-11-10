@@ -45,11 +45,9 @@ function parseFiscalYear(raw: string | null): number | null {
 // The page loads without a plan check: a gated company sees the upgrade
 // overlay. Every intent runs an operation, and the ee functions lock.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "accounting.indirectRates": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectRates": "View"
+  });
 
   const { fiscalYear: currentFiscalYear, startMonth } =
     await getCurrentFiscalYear(client, companyId);

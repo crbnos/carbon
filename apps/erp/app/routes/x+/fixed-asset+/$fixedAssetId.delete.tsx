@@ -14,11 +14,7 @@ import { deleteFixedAsset } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.assets": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "accounting.assets": "View" });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw notFound("fixedAssetId not found");

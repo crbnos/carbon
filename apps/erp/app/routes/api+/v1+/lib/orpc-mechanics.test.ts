@@ -9,7 +9,7 @@ import type { ManifestEntry } from "@carbon/api";
 import { CarbonJsonSchemaConverter, jsonSchema } from "@carbon/api/schema";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { describe, expect, it } from "vitest";
-import { base, scopesFromPermissions } from "./base.server";
+import { base } from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
 import { specOptions, withErrorResponses } from "./spec-options.server";
 
@@ -56,19 +56,6 @@ async function generateSpec(): Promise<any> {
 }
 
 describe("Carbon API v1 spec and response shaping", () => {
-  it("scopes an OAuth caller to the token's company only", () => {
-    const none = { create: [], update: [], delete: [] };
-    expect(
-      scopesFromPermissions(
-        {
-          parts: { view: ["c1", "c2"], ...none },
-          sales: { view: ["c2"], ...none }
-        },
-        "c1"
-      )
-    ).toEqual({ parts_view: ["c1"] });
-  });
-
   it("emits a list's { results, count } envelope as the 200 body", async () => {
     const spec = await generateSpec();
 

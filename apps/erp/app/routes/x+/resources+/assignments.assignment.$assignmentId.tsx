@@ -24,11 +24,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(
-    request,
-    { "resources.assignments": "View" },
-    { role: "employee" }
-  );
+  const { companyId, api } = await authorize(request, {
+    "resources.assignments": "View"
+  });
 
   const { assignmentId } = params;
   if (!assignmentId) {

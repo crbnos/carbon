@@ -8,11 +8,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.types": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "parts.types": "View" });
 
   if (!params.substanceId || !params.formId) {
     return data(

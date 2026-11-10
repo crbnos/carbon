@@ -62,11 +62,7 @@ const INTEGRATION_LABELS: Record<string, string> = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.syncTieOut": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "accounting.syncTieOut": "View" });
 
   const { cellId } = params;
   if (!cellId) throw notFound("cellId not found");

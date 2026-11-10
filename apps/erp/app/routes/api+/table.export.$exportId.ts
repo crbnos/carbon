@@ -43,8 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { companyId, userId } = await authorize(
     request,
-    definition.permission.gate,
-    { role: "employee" }
+    definition.permission.gate
   );
 
   const key = tableExportStorageKey(companyId, userId, exportId);

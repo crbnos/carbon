@@ -16,11 +16,7 @@ import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/Materia
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.dimensions": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "parts.dimensions": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

@@ -41,7 +41,10 @@ import {
 } from "~/modules/accounting/ui/RevenueRecognition";
 import ProjectRevenueProgress from "~/modules/accounting/ui/RevenueRecognition/ProjectRevenueProgress.ee";
 import { summarizeRunJournal } from "~/modules/accounting/ui/RevenueRecognition/runJournal";
-import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
+import {
+  RUN_PAGES,
+  runPage
+} from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -92,7 +95,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
   // The run's type picks its page.
-  await authorize(request, { [RUN_PAGES[run.data.type].page]: "View" });
+  await authorize(request, { [runPage(run.data.type)]: "View" });
 
   // Name the document behind each row: the invoice for a Deferral, the rental
   // agreement for an Accrual or Interest row (one lookup per source table).

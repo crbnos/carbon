@@ -22,11 +22,9 @@ const logger = getLogger("erp", "project-mspdi");
  * while 2 elements share a code.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "projects.projects": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "View"
+  });
   const { projectId } = params;
   if (!projectId) {
     throw new Response("The project could not be found", { status: 404 });

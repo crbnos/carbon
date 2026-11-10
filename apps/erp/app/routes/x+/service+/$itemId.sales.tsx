@@ -17,11 +17,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.services": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "parts.services": "View" });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");

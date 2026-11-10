@@ -24,6 +24,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useItemsSubmodules() {
@@ -37,35 +38,30 @@ export default function useItemsSubmodules() {
         {
           name: t`Parts`,
           to: path.to.parts,
-          page: "parts.parts",
           icon: <AiOutlinePartition />,
           table: "part"
         },
         {
           name: t`Materials`,
           to: path.to.materials,
-          page: "parts.materials",
           icon: <LuAtom />,
           table: "material"
         },
         {
           name: t`Tools`,
           to: path.to.tools,
-          page: "parts.tools",
           icon: <LuHammer />,
           table: "tool"
         },
         {
           name: t`Consumables`,
           to: path.to.consumables,
-          page: "parts.consumables",
           icon: <LuPizza />,
           table: "consumable"
         },
         {
           name: t`Services`,
           to: path.to.services,
-          page: "parts.services",
           icon: <LuHeadphones />,
           table: "service"
         }
@@ -77,7 +73,6 @@ export default function useItemsSubmodules() {
         {
           name: t`Change Notices`,
           to: path.to.changeNotices,
-          page: "parts.changeNotices",
           icon: <LuGitPullRequestArrow />,
           table: "changeOrder"
         }
@@ -89,44 +84,32 @@ export default function useItemsSubmodules() {
         {
           name: t`Dimensions`,
           to: path.to.materialDimensions,
-          page: "parts.dimensions",
-          icon: <LuAxis3D />,
-          role: "employee"
+          icon: <LuAxis3D />
         },
         {
           name: t`Finishes`,
           to: path.to.materialFinishes,
-          page: "parts.finishes",
-          icon: <LuDessert />,
-          role: "employee"
+          icon: <LuDessert />
         },
         {
           name: t`Grades`,
           to: path.to.materialGrades,
-          page: "parts.grades",
-          icon: <LuBeef />,
-          role: "employee"
+          icon: <LuBeef />
         },
         {
           name: t`Shapes`,
           to: path.to.materialForms,
-          page: "parts.shapes",
-          icon: <LuShapes />,
-          role: "employee"
+          icon: <LuShapes />
         },
         {
           name: t`Substances`,
           to: path.to.materialSubstances,
-          page: "parts.substances",
-          icon: <LuGlassWater />,
-          role: "employee"
+          icon: <LuGlassWater />
         },
         {
           name: t`Types`,
           to: path.to.materialTypes,
-          page: "parts.types",
-          icon: <LuPuzzle />,
-          role: "employee"
+          icon: <LuPuzzle />
         }
       ]
     },
@@ -136,55 +119,31 @@ export default function useItemsSubmodules() {
         {
           name: t`Change Notice Types`,
           to: path.to.changeNoticeTypes,
-          page: "parts.changeNoticeTypes",
-          icon: <LuTags />,
-          role: "employee"
+          icon: <LuTags />
         },
         {
           name: t`Change Notice Actions`,
           to: path.to.changeNoticeRequiredActions,
-          page: "parts.changeNoticeActions",
-          icon: <LuListChecks />,
-          role: "employee"
+          icon: <LuListChecks />
         },
         {
           name: t`Item Groups`,
           to: path.to.itemPostingGroups,
-          page: "parts.itemGroups",
-          role: "employee",
           icon: <LuGroup />
         },
         {
           name: t`Units`,
           to: path.to.uoms,
-          page: "parts.units",
-          role: "employee",
           icon: <LuRuler />
         }
       ]
     }
   ];
 
-  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    (!route.role || permissions.is(route.role)) &&
-    (!route.page || permissions.has({ [route.page]: "View" }));
-
   return {
-    groups: itemsRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          return isRouteVisible(route);
-        });
-
-        return filteredRoutes.length > 0;
-      })
-      .map((group) => ({
-        ...group,
-        routes: group.routes
-          .filter((route) => {
-            return isRouteVisible(route);
-          })
-          .map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(itemsRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

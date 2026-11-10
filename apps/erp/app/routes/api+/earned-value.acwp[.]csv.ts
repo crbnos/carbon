@@ -20,11 +20,9 @@ const logger = getLogger("erp", "earned-value-acwp-csv");
  * GOVERNMENT_CONTRACTING entitlement.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "projects.projects": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "projects.projects": "View"
+  });
 
   const searchParams = new URL(request.url).searchParams;
   const periodId = searchParams.get("periodId");

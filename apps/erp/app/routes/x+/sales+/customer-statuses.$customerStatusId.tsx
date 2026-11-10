@@ -17,11 +17,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "sales.statuses": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "sales.statuses": "View" });
 
   const { customerStatusId } = params;
   if (!customerStatusId) throw notFound("customerStatusId not found");

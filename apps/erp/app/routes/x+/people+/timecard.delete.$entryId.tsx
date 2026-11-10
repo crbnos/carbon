@@ -16,11 +16,7 @@ import { deleteTimeCardEntry } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "people.timecards": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "people.timecards": "View" });
 
   const { entryId } = params;
   if (!entryId) throw notFound("entryId not found");

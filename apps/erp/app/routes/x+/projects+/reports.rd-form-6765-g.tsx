@@ -45,8 +45,7 @@ export const handle = projectReportHandle(
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await authorize(
     request,
-    projectReportPermissions["rd-form-6765-g"],
-    { role: "employee" }
+    projectReportPermissions["rd-form-6765-g"]
   );
   const report = await getRdTaxReport(getDatabaseClient(), client, {
     companyId,

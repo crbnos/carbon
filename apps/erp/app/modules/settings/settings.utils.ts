@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { PageGate, PageId } from "@carbon/database/access";
+import { type PageGate, pageOfRow } from "@carbon/database/access";
 import type {
   DocumentEditType,
   DocumentTemplateType
@@ -54,7 +54,6 @@ export interface DocumentEditRecord {
     | "nonConformance";
   readableId: string;
   isLocked: (status: string | null | undefined) => boolean;
-  page: PageId;
   notesColumn: "externalNotes" | "notes" | "content" | null;
 }
 
@@ -66,77 +65,66 @@ export const DOCUMENT_EDIT_RECORDS: Record<
     table: "purchaseOrder",
     readableId: "purchaseOrderId",
     isLocked: isPurchaseOrderLocked,
-    page: "purchasing.purchaseOrders",
     notesColumn: "externalNotes"
   },
   purchaseReturnOrder: {
     table: "purchaseReturnOrder",
     readableId: "purchaseReturnOrderId",
     isLocked: isPurchaseReturnOrderLocked,
-    page: "purchasing.returns",
     notesColumn: "externalNotes"
   },
   purchasingRfq: {
     table: "purchasingRfq",
     readableId: "rfqId",
     isLocked: isRfqLocked,
-    page: "purchasing.rfqs",
     notesColumn: "notes"
   },
   quote: {
     table: "quote",
     readableId: "quoteId",
     isLocked: isQuoteLocked,
-    page: "sales.quotes",
     notesColumn: "externalNotes"
   },
   salesOrder: {
     table: "salesOrder",
     readableId: "salesOrderId",
     isLocked: isSalesOrderLocked,
-    page: "sales.salesOrders",
     notesColumn: "externalNotes"
   },
   salesReturnOrder: {
     table: "salesReturnOrder",
     readableId: "salesReturnOrderId",
     isLocked: isSalesReturnOrderLocked,
-    page: "sales.returns",
     notesColumn: "externalNotes"
   },
   salesInvoice: {
     table: "salesInvoice",
     readableId: "invoiceId",
     isLocked: isSalesInvoiceLocked,
-    page: "invoicing.salesInvoices",
     notesColumn: "externalNotes"
   },
   packingSlip: {
     table: "shipment",
     readableId: "shipmentId",
     isLocked: (status) => status === "Posted" || status === "Voided",
-    page: "inventory.shipments",
     notesColumn: "externalNotes"
   },
   stockTransfer: {
     table: "stockTransfer",
     readableId: "stockTransferId",
     isLocked: isStockTransferLocked,
-    page: "inventory.stockTransfers",
     notesColumn: null
   },
   jobTraveler: {
     table: "job",
     readableId: "jobId",
     isLocked: isJobLocked,
-    page: "production.jobs",
     notesColumn: "notes"
   },
   issue: {
     table: "nonConformance",
     readableId: "nonConformanceId",
     isLocked: isIssueLocked,
-    page: "quality.issues",
     notesColumn: "content"
   }
 };
@@ -158,10 +146,11 @@ export const DOCUMENT_TERMS_FIELD: Partial<
   purchasingRfq: "purchasingTerms"
 };
 
-/** Editing how a document prints needs Edit on the page of its record. */
+/** Editing how a document prints needs Edit on the page that owns its record's table. */
 export const documentEditPermissions = Object.fromEntries(
-  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
-    type,
-    { [record.page]: "Edit" }
-  ])
+  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => {
+    const page = pageOfRow(record.table, {});
+    if (!page) throw new Error(`No page owns ${record.table}`);
+    return [type, { [page]: "Edit" }];
+  })
 ) as Record<DocumentEditType, PageGate>;

@@ -18,11 +18,9 @@ import { path } from "~/utils/path";
 // RLS keeps deletes owner-only.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await authorize(
-    request,
-    { "accounting.reporting": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const { viewId } = params;
   if (!viewId) {

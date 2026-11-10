@@ -14,11 +14,7 @@ import { KanbanForm } from "~/modules/inventory/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "inventory.kanbans": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "inventory.kanbans": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

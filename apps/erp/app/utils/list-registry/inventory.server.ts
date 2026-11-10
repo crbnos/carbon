@@ -62,8 +62,7 @@ export const shipmentsList = searchList({
 export const shippingMethodsList = searchList({
   key: "shipping-methods",
   permission: {
-    gate: { "inventory.shippingMethods": "View" },
-    role: "employee"
+    gate: { "inventory.shippingMethods": "View" }
   },
   paging: SHIPPING_METHODS_PAGING,
   service: getShippingMethods
@@ -78,7 +77,7 @@ export const stockMovementsList = searchList({
 
 export const storageTypesList = searchList({
   key: "storage-types",
-  permission: { gate: { "inventory.storageTypes": "View" }, role: "employee" },
+  permission: { gate: { "inventory.storageTypes": "View" } },
   paging: STORAGE_TYPES_PAGING,
   service: getStorageTypes
 });
@@ -86,8 +85,7 @@ export const storageTypesList = searchList({
 export const trackedEntitiesList = searchList({
   key: "tracked-entities",
   permission: {
-    gate: { "inventory.trackedEntities": "View" },
-    role: "employee"
+    gate: { "inventory.trackedEntities": "View" }
   },
   paging: TRACKED_ENTITIES_PAGING,
   service: getTrackedEntities

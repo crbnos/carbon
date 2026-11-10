@@ -15,11 +15,9 @@ import { deleteChangeNoticeType } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.changeNoticeTypes": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "parts.changeNoticeTypes": "View"
+  });
   const { id } = params;
   if (!id) throw notFound("id not found");
 

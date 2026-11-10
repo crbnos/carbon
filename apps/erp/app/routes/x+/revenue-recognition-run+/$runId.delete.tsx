@@ -14,14 +14,16 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
+import {
+  RUN_PAGES,
+  runPage
+} from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(
     request,
-    anyOf(["accounting.revenueRecognition", "accounting.leases"], "View"),
-    { role: "employee" }
+    anyOf(["accounting.revenueRecognition", "accounting.leases"], "View")
   );
 
   const { runId } = params;
@@ -38,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
   // The run's type picks its page.
-  await authorize(request, { [RUN_PAGES[run.data.type].page]: "View" });
+  await authorize(request, { [runPage(run.data.type)]: "View" });
 
   return { run: run.data };
 }

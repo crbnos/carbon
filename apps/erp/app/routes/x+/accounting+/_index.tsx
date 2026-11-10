@@ -7,16 +7,22 @@ import { anyOf, pagesOf } from "@carbon/database/access";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import { moduleLanding } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
+  const { api, permissions, companyId } = await authorize(
     request,
     anyOf(pagesOf("accounting"), "View")
   );
 
-  const companySettings = await api.settings.getCompanySettings({});
+  const landing =
+    moduleLanding("accounting", permissions, companyId) ?? path.to.reports;
+  if (landing !== path.to.reports) throw redirect(landing);
 
+  // Before the cutover there is nothing to report on: Reporting opens the
+  // activation steps instead.
+  const companySettings = await api.settings.getCompanySettings({});
   throw redirect(
     hasAccountingCutover(companySettings.data)
       ? path.to.reports

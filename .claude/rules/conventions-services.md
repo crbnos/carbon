@@ -57,13 +57,14 @@ export const cancelJob = defineServiceFn({
 - **Gate**: every ENTRY call is checked against `permission` for its actor
   (`user` claims, `apiKey` scopes; `system` passes). A gate names each page
   it needs and the lowest level there, `{ "inventory.receipts": "Edit" }`
-  (`RequiredPermissions` is `Partial<Record<PageId, GateLevel>>`, typed by
-  the registry, `@carbon/database/access`); two entries need both. The check
+  (`PageGate`, `Partial<Record<PageId, GateLevel>>`, typed by the registry,
+  `@carbon/database/access`); two entries need both. The check is `admits`
+  (`@carbon/database/access`), the caller check routes share. The check
   reads the level's highest action (`inventory.receipts_update` for Edit). A
   page is the one that owns the table the function writes (else reads), or
-  the page whose route calls it. `"employee"` admits an
-  employee of the company or an API key of the company, never a customer or
-  supplier portal account (a read every screen needs, such as locations or
+  the page whose route calls it. `"employee"` (the same as
+  `{}`) admits an employee of the company or an API key holding some grant
+  there, never a customer or supplier portal account or a user with no role (a read every screen needs, such as locations or
   units; RLS still filters the rows). Use it only when every table the read
   touches is one RLS lets every employee read. `"system"` admits only the
   system actor, `{ by, rules }` keys the rule on an input field. A table
@@ -77,16 +78,16 @@ export const cancelJob = defineServiceFn({
   objects, or an item OR a make method) is checked there with
   `refusalOf(ctx, rule, input)`.
   `permission: {}` is refused by `service-fn-file`: write `"employee"`. Any
-  key of the company passes `"employee"`, even a read-only one, so a write on
-  it also calls `refuseKeyWithout` (`shared/shared.service.ts`). The
+  key holding a grant in the company passes `"employee"`, even a read-only
+  one, so a write on it also calls `refuseKeyWithout` (`shared/shared.service.ts`). The
   user actor carries `role` for this check: `requirePermissions` returns it,
   and a workflow runs only while its owner is an employee
   (`readOwnerPermissions`). A call made from inside another function's
   `run` is not checked again.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
   `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
-  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required)` checks
-  a permission the data decides (a posting mode, reopening a completed
+  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required, { reads? })` (`admits`; a gate,
+  a list, `{ anyOf }`, `"employee"` or `"system"`) checks a permission the data decides (a posting mode, reopening a completed
   transfer). Before an RLS-bypassing write keyed on an id the caller sent,
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns
   a refusal unless the row is the company's.

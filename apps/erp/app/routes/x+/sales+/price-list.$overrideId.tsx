@@ -22,11 +22,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "sales.priceLists": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "sales.priceLists": "View" });
 
   const { overrideId } = params;
   if (!overrideId) throw notFound("overrideId not found");

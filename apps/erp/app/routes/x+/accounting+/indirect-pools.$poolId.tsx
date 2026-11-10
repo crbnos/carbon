@@ -31,11 +31,9 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "indirect-pool");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, client, companyId } = await authorize(
-    request,
-    { "accounting.indirectPools": "View" },
-    { role: "employee" }
-  );
+  const { api, client, companyId } = await authorize(request, {
+    "accounting.indirectPools": "View"
+  });
 
   const { poolId } = params;
   if (!poolId) throw notFound("Pool ID was not found");

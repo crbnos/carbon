@@ -20,11 +20,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "quality.issueTypes": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "quality.issueTypes": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

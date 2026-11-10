@@ -31,7 +31,15 @@ import { getEmployeeCompanies } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await authorize(request);
+  const { client, userId } = await authorize(
+    request,
+    {},
+    {
+      // Picking a company is for a user who may have no role in the one
+      // their session points at; it reads only their own companies.
+      allowPortalAccounts: true
+    }
+  );
   const employeeCompanies = await getEmployeeCompanies(client, userId);
 
   if (employeeCompanies.error) {

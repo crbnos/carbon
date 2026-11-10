@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { NotFoundError } from "@carbon/api/errors";
-import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import type { PageGate } from "@carbon/database/access";
 import {
   type SyncedEntityType,
   syncedEntities,
@@ -216,7 +216,7 @@ const importTables = Object.keys(importPermissions) as [
 // single-record adjustment does.
 const importRules = Object.fromEntries(
   importTables.map((table) => [table, { [importPermissions[table]]: "Edit" }])
-) as Record<ImportTable, RequiredPermissions>;
+) as Record<ImportTable, PageGate>;
 
 /**
  * Import a CSV file into a table.
@@ -299,7 +299,7 @@ export const importCsvFile = defineServiceFn({
 
 // Creating a lookup is gated by the page that owns it. Exhaustive: a new
 // lookup without a permission fails typecheck.
-const lookupRules: Record<CreatableLookup, RequiredPermissions> = {
+const lookupRules: Record<CreatableLookup, PageGate> = {
   supplierType: { "purchasing.types": "Create" },
   customerType: { "sales.types": "Create" },
   customerStatus: { "sales.statuses": "Create" }

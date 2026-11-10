@@ -19,11 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { api } = await authorize(
-    request,
-    { "quality.actionTypes": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "quality.actionTypes": "View" });
 
   const result = await api.quality.getRequiredAction({ requiredActionId: id });
   if (!result.data) {

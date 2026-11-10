@@ -21,11 +21,9 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "labor-category");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, companyId } = await authorize(
-    request,
-    { "projects.laborCategories": "View" },
-    { role: "employee" }
-  );
+  const { api, companyId } = await authorize(request, {
+    "projects.laborCategories": "View"
+  });
 
   const { id } = params;
   if (!id) throw notFound("Labor category ID was not found");

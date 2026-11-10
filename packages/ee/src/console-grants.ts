@@ -16,6 +16,5 @@ export const CONSOLE_OPERATOR_GRANTS: readonly GrantInput[] = [
   { module: "Inventory", page: null, level: "Edit" },
   { module: "Quality", page: null, level: "Edit" },
   { module: "Resources", page: null, level: "View" },
-  { module: "Items", page: null, level: "View" },
   { module: "People", page: null, level: "View" }
 ];

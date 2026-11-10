@@ -61,8 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { client, companyId } = await authorize(
     request,
-    projectReportPermissions[reportKey],
-    { role: "employee" }
+    projectReportPermissions[reportKey]
   );
 
   const searchParams = new URL(request.url).searchParams;

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { type Gate, pageOfRow } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import { LuKeyRound, LuSection, LuShoppingCart } from "react-icons/lu";
@@ -16,6 +17,7 @@ import {
 } from "~/components/DocumentPage";
 import { usePermissions, useRouteData } from "~/hooks";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import RentalStatus from "~/modules/sales/ui/Rentals/RentalStatus";
 import SalesStatus from "~/modules/sales/ui/SalesOrder/SalesStatus";
 import { path } from "~/utils/path";
@@ -68,6 +70,29 @@ const PaymentDocuments = () => {
   );
 };
 
+function viewOf(table: string): Gate {
+  const page = pageOfRow(table, {});
+  if (!page) throw new Error(`No page owns ${table}`);
+  return { [page]: "View" };
+}
+
+/**
+ * The order, rental agreement or contract a payment is a deposit for, or the
+ * purchase order it is a prepayment for, with what showing it needs: View on
+ * the page that owns its table. A contract opens from either contracts list.
+ */
+const DEPOSIT_SOURCES = (
+  [
+    ["rentalAgreementId", "rentalAgreement"],
+    ["salesOrderId", "salesOrder"],
+    ["customerContractId", "customerContract"],
+    ["purchaseOrderId", "purchaseOrder"]
+  ] as const
+).map(([column, table]) => ({
+  column,
+  gate: table === "customerContract" ? CONTRACT_READ_GATE : viewOf(table)
+}));
+
 function PaymentDocumentList({
   payment,
   depositDocuments,
@@ -82,24 +107,10 @@ function PaymentDocumentList({
   const party = useCounterparty(payment);
   const settlementRows = useSettlementRows(related, payment.status === "Draft");
 
-  // The order, rental agreement or contract this payment is a deposit for, or
-  // the purchase order it is a prepayment for.
-  const depositId =
-    payment.rentalAgreementId ??
-    payment.salesOrderId ??
-    payment.customerContractId ??
-    payment.purchaseOrderId;
+  const source = DEPOSIT_SOURCES.find(({ column }) => payment[column]);
+  const depositId = source && payment[source.column];
   const deposit =
-    depositId &&
-    permissions.has(
-      payment.rentalAgreementId
-        ? { "sales.rentalAgreements": "View" }
-        : payment.salesOrderId
-          ? { "sales.salesOrders": "View" }
-          : payment.customerContractId
-            ? { "sales.serviceContracts": "View" }
-            : { "purchasing.purchaseOrders": "View" }
-    )
+    source && depositId && permissions.has(source.gate)
       ? depositDocuments.find((doc) => doc.id === depositId)
       : undefined;
 

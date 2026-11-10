@@ -44,14 +44,14 @@ export const apiKeysList = {
 
 export const sequencesList = searchList({
   key: "sequences",
-  permission: { gate: { "settings.sequences": "View" }, role: "employee" },
+  permission: { gate: { "settings.sequences": "View" } },
   paging: SEQUENCES_PAGING,
   service: getSequences
 });
 
 export const itemSerialSequencesList = searchList({
   key: "serial-numbers",
-  permission: { gate: { "settings.serialNumbers": "View" }, role: "employee" },
+  permission: { gate: { "settings.serialNumbers": "View" } },
   paging: ITEM_SERIAL_SEQUENCES_PAGING,
   service: getItemSerialSequences
 });
@@ -66,7 +66,7 @@ export const webhooksList = searchList({
 // The settings lists. Each entry follows `sales.server.ts`.
 export const customFieldTablesList = searchList({
   key: "custom-field-tables",
-  permission: { gate: { "settings.customFields": "View" }, role: "employee" },
+  permission: { gate: { "settings.customFields": "View" } },
   paging: CUSTOM_FIELD_TABLES_PAGING,
   service: getCustomFieldsTables
 });

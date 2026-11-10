@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(
     request,
     { "resources.abilities": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
 
   const url = new URL(request.url);

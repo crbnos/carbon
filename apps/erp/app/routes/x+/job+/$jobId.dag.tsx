@@ -14,11 +14,7 @@ import { JobDag } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "production.jobs": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "production.jobs": "View" });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");

@@ -3,8 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Page } from "../registry";
+import { ITEM_PAGE_IDS } from "./parts";
 
-export const SALES_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Sales";
+
+export const PAGES = [
   {
     id: "sales.customers",
     label: "Customers",
@@ -22,7 +26,7 @@ export const SALES_PAGES = [
       "address",
       "contact"
     ],
-    where: { table: "contact", column: "isCustomer", value: "true" },
+    where: { table: "contact", column: "isCustomer", value: true },
     readers: ["paymentTerm"],
     paths: ["/x/sales/customers", "/x/customer/"]
   },
@@ -69,6 +73,11 @@ export const SALES_PAGES = [
       "supplierProcess",
       "terms"
     ],
+    alsoWrittenBy: {
+      quoteOperationParameter: ITEM_PAGE_IDS,
+      quoteOperationStep: ["production.jobs"],
+      quoteOperationStepSlide: ["production.jobs"]
+    },
     paths: ["/x/sales/quotes", "/x/quote/"]
   },
   {

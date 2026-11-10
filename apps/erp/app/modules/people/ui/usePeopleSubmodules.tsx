@@ -17,6 +17,7 @@ import { useSavedViews } from "~/hooks/useSavedViews";
 import { useSettings } from "~/hooks/useSettings";
 import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import type { RouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function usePeopleSubmodules() {
@@ -32,14 +33,12 @@ export default function usePeopleSubmodules() {
         {
           name: t`Employees`,
           to: path.to.people,
-          page: "people.employees",
           icon: <LuUsers />,
           table: "employee"
         },
         {
           name: t`Timecards`,
           to: path.to.peopleTimecard,
-          page: "people.timecards",
           icon: <LuClock />,
           setting: "timeCardEnabled",
           table: "timeCardEntry"
@@ -48,7 +47,6 @@ export default function usePeopleSubmodules() {
           ? [
               {
                 name: t`Payroll Totals`,
-                page: "people.payrollTotals" as const,
                 to: path.to.payrollTotals,
                 icon: <LuBanknote />
               }
@@ -62,25 +60,21 @@ export default function usePeopleSubmodules() {
         {
           name: t`Attributes`,
           to: path.to.attributes,
-          page: "people.attributes",
           icon: <LuListChecks />
         },
         {
           name: t`Departments`,
           to: path.to.departments,
-          page: "people.departments",
           icon: <LuNetwork />
         },
         {
           name: t`Holidays`,
           to: path.to.holidays,
-          page: "people.holidays",
           icon: <LuCalendarHeart />
         },
         {
           name: t`Shifts`,
           to: path.to.shifts,
-          page: "people.shifts",
           icon: <LuCalendarClock />
         }
       ]
@@ -93,16 +87,15 @@ export default function usePeopleSubmodules() {
   const permissions = usePermissions();
 
   return {
-    groups: peopleRoutes.map((group) => ({
+    groups: visibleGroups(
+      peopleRoutes,
+      permissions,
+      (route) =>
+        !route.setting ||
+        settings[route.setting as keyof typeof settings] === true
+    ).map((group) => ({
       ...group,
-      routes: group.routes
-        .filter(
-          (route) =>
-            (!route.setting ||
-              settings[route.setting as keyof typeof settings] === true) &&
-            (!route.page || permissions.has({ [route.page]: "View" }))
-        )
-        .map(addSavedViewsToRoutes)
+      routes: group.routes.map(addSavedViewsToRoutes)
     }))
   };
 }

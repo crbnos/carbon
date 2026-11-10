@@ -4,9 +4,12 @@
 
 import type { Page } from "../registry";
 
+/** The module's name in the sidebar. */
+export const LABEL = "Users";
+
 // A grant belongs to a role, a person or an API key: the column it sets picks
 // its page (Employee Types, Accounts, or Settings → API Keys).
-export const USERS_PAGES = [
+export const PAGES = [
   {
     id: "users.accounts",
     label: "Accounts",

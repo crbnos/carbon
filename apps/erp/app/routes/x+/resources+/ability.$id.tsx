@@ -33,11 +33,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, client, companyId } = await authorize(
-    request,
-    { "resources.abilities": "View" },
-    { role: "employee" }
-  );
+  const { api, client, companyId } = await authorize(request, {
+    "resources.abilities": "View"
+  });
 
   const { id } = params;
   if (!id) throw notFound("Invalid ability id");

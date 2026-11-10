@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { anyOf } from "@carbon/database/access";
 import type { ShortcutInput } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -18,6 +17,7 @@ import {
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { PROJECT_TAB_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -106,10 +106,7 @@ export function useProjectSidebarLinks({
           }
         ]
       : []),
-    ...(showBilling &&
-    permissions.has(
-      anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
-    )
+    ...(showBilling && permissions.has(CONTRACT_READ_GATE)
       ? [
           {
             name: t`Billing`,

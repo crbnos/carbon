@@ -25,6 +25,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useSalesSubmodules() {
@@ -38,15 +39,12 @@ export default function useSalesSubmodules() {
         {
           name: t`Customers`,
           to: path.to.customers,
-          page: "sales.customers",
           icon: <LuSquareUser />,
           table: "customer"
         },
         {
           name: t`Portals`,
           to: path.to.customerPortals,
-          page: "sales.portals",
-          role: "employee",
           icon: <LuGlobe />
         }
       ]
@@ -57,14 +55,12 @@ export default function useSalesSubmodules() {
         {
           name: t`Sales Orders`,
           to: path.to.salesOrders,
-          page: "sales.salesOrders",
           icon: <RiProgress8Line />,
           table: "salesOrder"
         },
         {
           name: t`Returns`,
           to: path.to.salesReturnOrders,
-          page: "sales.returns",
           icon: <LuUndo2 />,
           table: "salesReturnOrder"
         }
@@ -76,14 +72,12 @@ export default function useSalesSubmodules() {
         {
           name: t`RFQs`,
           to: path.to.salesRfqs,
-          page: "sales.rfqs",
           icon: <RiProgress2Line />,
           table: "salesRfq"
         },
         {
           name: t`Quotes`,
           to: path.to.quotes,
-          page: "sales.quotes",
           icon: <RiProgress4Line />,
           table: "quote"
         }
@@ -95,21 +89,18 @@ export default function useSalesSubmodules() {
         {
           name: t`Service Contracts`,
           to: path.to.contracts,
-          page: "sales.serviceContracts",
           icon: <LuSection />,
           table: "customerContract"
         },
         {
           name: t`Project Contracts`,
           to: path.to.projectContracts,
-          page: "sales.projectContracts",
           icon: <LuFolderKanban />,
           table: "customerContract"
         },
         {
           name: t`Rental Agreements`,
           to: path.to.rentalAgreements,
-          page: "sales.rentalAgreements",
           icon: <LuKeyRound />,
           table: "rentalAgreement"
         }
@@ -121,15 +112,11 @@ export default function useSalesSubmodules() {
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,
-          page: "sales.priceLists",
-          role: "employee",
           icon: <LuList />
         },
         {
           name: t`Pricing Rules`,
           to: path.to.salesPricingRules,
-          page: "sales.pricingRules",
-          role: "employee",
           icon: <LuPercent />
         }
       ]
@@ -140,62 +127,36 @@ export default function useSalesSubmodules() {
         {
           name: t`Sales Rules`,
           to: path.to.salesRules,
-          page: "sales.salesRules",
-          role: "employee",
           icon: <LuShieldCheck />
         },
         {
           name: t`No Quote Reasons`,
           to: path.to.noQuoteReasons,
-          page: "sales.noQuoteReasons",
-          role: "employee",
           icon: <LuBan />
         },
         {
           name: t`Return Reasons`,
           to: path.to.returnReasons,
-          page: "sales.returnReasons",
-          role: "employee",
           icon: <LuUndo2 />
         },
         {
           name: t`Statuses`,
           to: path.to.customerStatuses,
-          page: "sales.statuses",
-          role: "employee",
           icon: <LuStar />
         },
         {
           name: t`Types`,
           to: path.to.customerTypes,
-          page: "sales.types",
-          role: "employee",
           icon: <LuShapes />
         }
       ]
     }
   ];
 
-  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    (!route.role || permissions.is(route.role)) &&
-    (!route.page || permissions.has({ [route.page]: "View" }));
-
   return {
-    groups: salesRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          return isRouteVisible(route);
-        });
-
-        return filteredRoutes.length > 0;
-      })
-      .map((group) => ({
-        ...group,
-        routes: group.routes
-          .filter((route) => {
-            return isRouteVisible(route);
-          })
-          .map(addSavedViewsToRoutes)
-      }))
+    groups: visibleGroups(salesRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }

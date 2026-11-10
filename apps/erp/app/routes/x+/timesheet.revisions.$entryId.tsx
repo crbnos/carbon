@@ -18,11 +18,7 @@ const logger = getLogger("erp", "timesheet-revisions");
  * on Projects or on Approvals reads any entry of the company.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId, userId } = await authorize(request, {});
   const { entryId } = params;
   if (!entryId) throw new Error("Could not find entryId");
 

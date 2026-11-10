@@ -10,11 +10,7 @@ import { data } from "react-router";
 import { resolveUserSelectIds } from "~/modules/users/users.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {});
 
   const url = new URL(request.url);
   const ids = [

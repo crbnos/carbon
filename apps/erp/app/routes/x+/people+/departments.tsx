@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(
     request,
     { "people.departments": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
 
   const departments = await api.people.getDepartmentsTree({});

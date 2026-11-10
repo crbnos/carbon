@@ -24,11 +24,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.assignments": "Create" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "resources.assignments": "Create"
+  });
 
   const trainings = await api.resources.getTrainingsList({});
 

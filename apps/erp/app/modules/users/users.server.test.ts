@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ModulePermissions } from "@carbon/api/permissions";
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import type { ExpandedClaims } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 import { pageClaims } from "../../../test/page-claims";
 import {
@@ -45,7 +45,7 @@ const unreachable = () => {
 
 /** A user in COMPANY holding `permissions`; the caller client returns `user`. */
 function userContext(
-  permissions: ModulePermissions,
+  permissions: ExpandedClaims,
   user: Record<string, unknown> | null = null
 ) {
   const chain: Record<string, unknown> = {

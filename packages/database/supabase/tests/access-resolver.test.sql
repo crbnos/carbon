@@ -33,7 +33,7 @@ DECLARE
   raw_key text := 'crbn_access_resolver_' || gen_random_uuid()::text;
   key_id text;
   test_case jsonb; g jsonb; only_key boolean; who text; actual text; failures int := 0;
-  claims jsonb; companies text[];
+  claims jsonb; companies text[]; module_view text[]; page_keys text[];
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Access A ' || id(), 'system')
     RETURNING id INTO group_a;
@@ -121,6 +121,25 @@ BEGIN
       failures := failures + 1;
       RAISE WARNING 'case "%": expected %, got %', test_case->>'name', test_case->>'expected', actual;
     END IF;
+
+    -- A module read is one call naming the module: the same companies as the
+    -- key list of every page of the module that policies used to carry.
+    PERFORM pg_temp.act_as(who, CASE WHEN only_key THEN raw_key END);
+    module_view := get_companies_with_module_view(
+      ARRAY[split_part(test_case->>'pageId', '.', 1)], ARRAY['sales.quotes_view']);
+    page_keys := get_companies_with_any_employee_permission(
+      ARRAY(SELECT p || '_view' FROM unnest(util.module_pages(split_part(test_case->>'pageId', '.', 1))) p)
+      || ARRAY['sales.quotes_view']);
+    IF module_view IS DISTINCT FROM page_keys THEN
+      failures := failures + 1;
+      RAISE WARNING 'case "%": the module read holds % but its pages hold %', test_case->>'name', module_view, page_keys;
+    END IF;
+    -- View on the case's page in the asked company admits a read of its module there.
+    IF (actual::"permissionLevel" >= 'View') AND asked = company_a
+       AND NOT company_a = ANY (module_view) THEN
+      failures := failures + 1;
+      RAISE WARNING 'case "%": View on the page must admit a read of its module', test_case->>'name';
+    END IF;
   END LOOP;
   IF failures > 0 THEN
     RAISE EXCEPTION '% access_level case(s) failed', failures;
@@ -156,6 +175,27 @@ BEGIN
   IF cardinality(get_companies_with_any_employee_permission(ARRAY['sales_view', 'inventory_delete', 'inventory'])) <> 0 THEN
     RAISE EXCEPTION 'any-of must hold nothing when no key is held';
   END IF;
+
+  -- The clamp reaches the helpers too: a role at Full on a View-only page holds View only.
+  INSERT INTO permission ("companyId", "employeeTypeId", module, page, level, "createdBy") VALUES
+    (company_a, role_type, 'Inventory', 'inventory.traceability', 'Full', 'system');
+  IF NOT company_a = ANY (get_companies_with_employee_permission('inventory.traceability_view')) THEN
+    RAISE EXCEPTION 'a role at Full on a View-only page must hold its view';
+  END IF;
+  IF company_a = ANY (get_companies_with_employee_permission('inventory.traceability_update')) THEN
+    RAISE EXCEPTION 'a role at Full on a View-only page must not hold more than View';
+  END IF;
+  -- A module read: the role's Inventory Edit admits it; nothing admits Quality.
+  IF NOT company_a = ANY (get_companies_with_module_view(ARRAY['inventory'], '{}')) THEN
+    RAISE EXCEPTION 'a module grant must admit a read of the module';
+  END IF;
+  IF cardinality(get_companies_with_module_view(ARRAY['quality', 'nosuchmodule'], '{}')) <> 0 THEN
+    RAISE EXCEPTION 'no grant on the module must admit no read of it';
+  END IF;
+  IF NOT company_a = ANY (get_companies_with_module_view(ARRAY['quality'], ARRAY['inventory.receipts_view'])) THEN
+    RAISE EXCEPTION 'a held key must admit the read, module view or not';
+  END IF;
+  DELETE FROM permission WHERE "companyId" = company_a AND page = 'inventory.traceability';
 
   PERFORM pg_temp.act_as(a);
   IF NOT company_a = ANY (get_companies_with_employee_permission('accounting_delete')) THEN

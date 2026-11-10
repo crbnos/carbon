@@ -19,6 +19,7 @@ import {
 } from "~/modules/projects/projects.service";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import ProjectBillingLines from "~/modules/projects/ui/Billing/ProjectBillingLines";
+import { withContractRead } from "~/modules/sales/sales.models";
 import type { ContractStatusType } from "~/modules/sales/ui/Contracts";
 import { ContractStatus } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
@@ -31,10 +32,10 @@ const logger = getLogger("erp", "project-billing");
  *  and its billable items. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Contract billing: a contracts page as well as the projects one.
-  const { api, client, companyId } = await authorize(request, [
-    { "projects.projects": "View", "sales.serviceContracts": "View" },
-    { "projects.projects": "View", "sales.projectContracts": "View" }
-  ]);
+  const { api, client, companyId } = await authorize(
+    request,
+    withContractRead({ "projects.projects": "View" })
+  );
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");

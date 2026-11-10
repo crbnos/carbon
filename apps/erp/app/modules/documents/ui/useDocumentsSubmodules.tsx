@@ -12,6 +12,7 @@ import {
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Route } from "~/types";
+import { visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export default function useDocumentsSubmodules() {
@@ -22,42 +23,35 @@ export default function useDocumentsSubmodules() {
     {
       name: t`All Documents`,
       to: path.to.documents,
-      page: "documents",
       icon: <LuFolder />
     },
     {
       name: t`My Documents`,
       to: path.to.documents,
-      page: "documents",
       q: "my",
       icon: <LuFolderHeart />
     },
     {
       name: t`Recent`,
       to: path.to.documents,
-      page: "documents",
       q: "recent",
       icon: <LuClock />
     },
     {
       name: t`Pinned`,
       to: path.to.documents,
-      page: "documents",
       q: "starred",
       icon: <LuPin />
     },
     {
       name: t`Trash`,
       to: path.to.documents,
-      page: "documents",
       q: "trash",
       icon: <LuTrash />
     }
   ];
 
   return {
-    links: documentsRoutes.filter(
-      (route) => !route.page || permissions.has({ [route.page]: "View" })
-    )
+    links: visibleRoutes(documentsRoutes, permissions)
   };
 }

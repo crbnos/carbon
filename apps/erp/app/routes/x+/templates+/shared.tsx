@@ -50,11 +50,9 @@ type Section = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "settings.documentTemplates": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "settings.documentTemplates": "View"
+  });
 
   const sections = await api.settings.getDocumentSections({});
   return {

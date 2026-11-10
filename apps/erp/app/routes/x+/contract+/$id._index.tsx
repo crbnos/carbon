@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf } from "@carbon/database/access";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { draftContractSetupPath } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
@@ -15,7 +15,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(
     request,
     // Both contract lists open the same contract page.
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+    CONTRACT_READ_GATE
   );
   const { id } = params;
   if (!id) throw new Error("Could not find id");

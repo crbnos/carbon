@@ -3,6 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import {
+  type AccessActor,
+  type AccessRequirement,
+  admits,
+  type ExpandedClaims,
+  type PageGate
+} from "@carbon/database/access";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -12,12 +19,7 @@ import { z } from "zod";
 import { databaseRefusal } from "./database-refusal";
 import { ForbiddenError, NotFoundError } from "./errors";
 import {
-  hasPermissions,
-  type ModulePermissions,
-  meetsRequirement,
   type PermissionRule,
-  type Permissions,
-  type RequiredPermissions,
   type Requirement,
   type RowsToRead,
   readGate,
@@ -98,11 +100,11 @@ export type Actor =
   | {
       type: "user";
       userId: string;
-      permissions: ModulePermissions;
+      permissions: ExpandedClaims;
       /** The user's role in the company: a portal account is not an employee. */
       role: "employee" | "customer" | "supplier" | null;
     }
-  | { type: "apiKey"; createdBy: string; scopes: ModulePermissions }
+  | { type: "apiKey"; createdBy: string; scopes: ExpandedClaims }
   | { type: "system"; onBehalfOf: string };
 
 type Kv = typeof redis;
@@ -124,10 +126,11 @@ export type ServiceContext = {
   /** The user id audit columns record: the user, a key's creator, or the user a job acts for. */
   auditUserId: string;
   /**
-   * Whether the actor also holds `required`: for a permission that depends on
-   * the data, which the entry gate cannot know. The system actor holds all.
+   * Whether the actor also passes `required` (`admits`): for a permission that
+   * depends on the data, which the entry gate cannot know. The system actor
+   * passes all. `reads` checks it as a data read (`widenReads`).
    */
-  can(required: Permissions): boolean;
+  can(required: AccessRequirement, options?: { reads?: boolean }): boolean;
   error<C extends ErrorCategory>(
     category: C,
     message: string,
@@ -262,8 +265,8 @@ class Context implements ServiceContext {
     return this.handles.kv();
   }
 
-  can(required: Permissions): boolean {
-    return allows(this.actor, this.company.id, required);
+  can(required: AccessRequirement, options?: { reads?: boolean }): boolean {
+    return admits(accessActor(this.actor), this.company.id, required, options);
   }
 
   inside(): Context {
@@ -321,23 +324,12 @@ export function createServiceContext(handles: Handles): ServiceContext {
   return new Context(handles, false, false);
 }
 
-function allows(
-  actor: Actor,
-  companyId: string,
-  required: Requirement
-): boolean {
-  if (actor.type === "system") return true;
-  if (required === "system") return false;
-  const claims = actor.type === "user" ? actor.permissions : actor.scopes;
-  if (required === "employee") {
-    // A user's role is their userToCompany role in this company (get_claims),
-    // so "employee" is membership already: an employee with no grants is one.
-    // A key belongs to its company but must hold some grant there.
-    return actor.type === "user"
-      ? actor.role === "employee"
-      : hasPermissions(claims, companyId, {});
+/** The actor as `admits` reads it. */
+export function accessActor(actor: Actor): AccessActor {
+  if (actor.type === "apiKey") {
+    return { type: "apiKey", permissions: actor.scopes };
   }
-  return meetsRequirement(claims, companyId, required);
+  return actor;
 }
 
 /**
@@ -350,7 +342,7 @@ export async function readRowRequirement(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   rows: RowsToRead
-): Promise<RequiredPermissions> {
+): Promise<PageGate> {
   const { from, path = [], cases } = rows.row;
   // Tables and columns come from the rule, which is code; Kysely quotes them
   // and binds every value.
@@ -436,7 +428,7 @@ export async function refusalOf<I>(
   } else {
     required = resolved;
   }
-  return allows(ctx.actor, ctx.company.id, required)
+  return admits(accessActor(ctx.actor), ctx.company.id, required)
     ? null
     : forbidden(ctx, required);
 }
@@ -483,7 +475,6 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
   // Compiled on the first call, not at import: a module of service functions
   // would otherwise pay for every schema at startup, used or not.
   let schema: I | undefined;
-  // A read on one page admits any page of its module (spec, "Reads").
   const permission = readGate(definition.permission);
 
   const call = async (

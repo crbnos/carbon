@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const PRODUCTION_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Production";
+
+export const PAGES = [
   {
     id: "production.jobs",
     label: "Jobs",

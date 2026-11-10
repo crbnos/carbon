@@ -30,11 +30,9 @@ export const handle: Handle = {
 // The list loads without a plan check: a gated company sees the upgrade
 // overlay. The write routes and the ee authoring functions enforce the plan.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "accounting.indirectPools": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "accounting.indirectPools": "View"
+  });
 
   const pools = await getIndirectPools(client, companyId);
   if (pools.error) {

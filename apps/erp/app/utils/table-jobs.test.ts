@@ -7,8 +7,8 @@ import {
   bulkActionPermission,
   bulkStartFormResponse,
   hasListPermission,
-  ITEMS_BULK_UPDATE,
   itemListType,
+  itemsBulkUpdatePermission,
   newTableExportId,
   parseAllMatching,
   parseTableExportId,
@@ -153,14 +153,12 @@ describe("hasListPermission", () => {
     ).toBe(false);
   });
 
-  it("accepts a role-only permission for an employee", () => {
-    expect(
-      hasListPermission(claims(), { gate: {}, role: "employee" }, "co_1")
-    ).toBe(true);
+  it("accepts an empty gate for an employee", () => {
+    expect(hasListPermission(claims(), { gate: {} }, "co_1")).toBe(true);
   });
 });
 
-describe("ITEMS_BULK_UPDATE", () => {
+describe("itemsBulkUpdatePermission", () => {
   const toolsEditor = claims({
     permissions: {
       "parts.tools": {
@@ -172,36 +170,53 @@ describe("ITEMS_BULK_UPDATE", () => {
       "parts.parts": { view: ["co_1"], create: [], update: [], delete: [] }
     }
   });
+  const list = (key: string, page: string) => ({
+    key,
+    permission: { gate: { [page]: "View" as const } }
+  });
+  const update = {
+    lists: ["parts", "tools", "services", "jobs"],
+    permission: itemsBulkUpdatePermission
+  };
 
-  function mayRun(listKey: string) {
-    const permission = bulkActionPermission(ITEMS_BULK_UPDATE, listKey);
+  function mayRun(key: string, page: string) {
+    const permission = bulkActionPermission(update, list(key, page));
     return permission !== null
       ? hasListPermission(toolsEditor, permission, "co_1")
       : false;
   }
 
   it("lets Tools Edit update the tools list", () => {
-    expect(mayRun("tools")).toBe(true);
+    expect(mayRun("tools", "parts.tools")).toBe(true);
   });
 
   it("refuses Tools Edit on the parts list, even with Parts View", () => {
-    expect(mayRun("parts")).toBe(false);
-    expect(mayRun("materials")).toBe(false);
+    expect(mayRun("parts", "parts.parts")).toBe(false);
   });
 
-  it("asks for the page of each list's own item type", () => {
-    expect(bulkActionPermission(ITEMS_BULK_UPDATE, "parts")).toEqual({
+  it("asks for Edit on the page of each list's own gate", () => {
+    expect(bulkActionPermission(update, list("parts", "parts.parts"))).toEqual({
       gate: { "parts.parts": "Edit" }
     });
-    expect(bulkActionPermission(ITEMS_BULK_UPDATE, "services")).toEqual({
-      gate: { "parts.services": "Edit" }
-    });
+    expect(
+      bulkActionPermission(update, list("services", "parts.services"))
+    ).toEqual({ gate: { "parts.services": "Edit" } });
   });
 
-  it("refuses a list that is not an items list", () => {
-    expect(bulkActionPermission(ITEMS_BULK_UPDATE, "jobs")).toBeNull();
-    expect(itemListType("constructor")).toBeNull();
-    expect(itemListType("consumables")).toBe("Consumable");
+  it("refuses a list it does not serve, or one that is not an items list", () => {
+    expect(
+      bulkActionPermission(update, list("materials", "parts.materials"))
+    ).toBeNull();
+    expect(
+      bulkActionPermission(update, list("jobs", "production.jobs"))
+    ).toBeNull();
+  });
+
+  it("reads the item type from the list's page", () => {
+    expect(itemListType(list("consumables", "parts.consumables"))).toBe(
+      "Consumable"
+    );
+    expect(itemListType(list("jobs", "production.jobs"))).toBeNull();
   });
 });
 

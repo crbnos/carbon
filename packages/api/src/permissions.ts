@@ -3,30 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  ACTION_LEVEL,
-  ACTIONS,
-  type Action,
-  claimsFromJson,
-  expandClaims,
-  holds,
+  type AnyOfGate,
+  type GateLevel,
   LEVELS,
-  type Level,
   type PAGES,
-  type PageId,
-  pageById,
+  type PageGate,
   placeOf,
-  readPages
+  widenReads
 } from "@carbon/database/access";
 import { ForbiddenError, InvalidInputError, NotFoundError } from "./errors";
 
-/** A level a gate can ask for: `"None"` asks for nothing. */
-export type GateLevel = Exclude<Level, "None">;
-
-/**
- * `{ "inventory.receipts": "Edit" }`: each page the operation needs, and the
- * lowest level it needs there. A gate with two entries needs both.
- */
-export type RequiredPermissions = Partial<Record<PageId, GateLevel>>;
+export type { GateLevel };
 
 /**
  * What an operation requires. `"system"` admits only the system actor;
@@ -34,7 +21,7 @@ export type RequiredPermissions = Partial<Record<PageId, GateLevel>>;
  * reads every screen needs, such as locations or units. RLS still filters the
  * rows. A customer or supplier portal account is refused.
  */
-export type Permissions = RequiredPermissions | "system" | "employee";
+export type Permissions = PageGate | "system" | "employee";
 
 /** One permission per value of a string field. Data, so the API manifest can read it. */
 type KeyedRule<I> = {
@@ -43,9 +30,6 @@ type KeyedRule<I> = {
     : never;
 }[keyof I & string];
 
-/** Passes when the actor holds any one entry: a list no single row decides. */
-export type AnyOfRule = { anyOf: readonly RequiredPermissions[] };
-
 /**
  * One way the last row of a row rule decides: its `column` equals `equals`,
  * or, without `equals`, is set. `then` is what the gate then requires.
@@ -53,7 +37,7 @@ export type AnyOfRule = { anyOf: readonly RequiredPermissions[] };
 export type RowCase = {
   column: string;
   equals?: string;
-  then: RequiredPermissions;
+  then: PageGate;
 };
 
 /** An input's own fields, without the index signature a loose object adds. */
@@ -90,11 +74,11 @@ export type RowSpec = {
 export type PermissionRule<I> =
   | Permissions
   | KeyedRule<I>
-  | AnyOfRule
+  | AnyOfGate
   | RowRule<I>;
 
 /** What a gate checks against the actor. */
-export type Requirement = Permissions | AnyOfRule;
+export type Requirement = Permissions | AnyOfGate;
 
 /** A row rule with the ids its input names: the rows decide, once read. */
 export type RowsToRead = { row: RowSpec; ids: string[] };
@@ -118,7 +102,7 @@ function sharedCases(table: string, level: GateLevel): RowCase[] {
   }
   return place.branches.map((branch) => ({
     column: branch.column,
-    ...(branch.value === undefined ? {} : { equals: branch.value }),
+    ...(branch.value === undefined ? {} : { equals: String(branch.value) }),
     then: { [branch.page]: level }
   }));
 }
@@ -191,60 +175,29 @@ export function anyOfRule<T extends string, L extends GateLevel>(
   };
 }
 
-/** `{ "<page>": "View" }`: the read `readGate` widens. */
-function onePageRead(rule: unknown): string | null {
-  if (typeof rule !== "object" || rule === null) return null;
-  const entries = Object.entries(rule);
-  if (entries.length !== 1) return null;
-  const [page, level] = entries[0] as [string, unknown];
-  return level === "View" && pageById(page) ? page : null;
-}
-
 /**
- * A read on one page admits View on any page of its module and on its
- * cross-module readers (`readPages`), the reads RLS renders. `defineServiceFn`
- * applies it to every permission; the manifest generator publishes the same.
- * A write stays as written, and so does a row rule: the row picks the page of
- * a table several pages share (an item by its type).
+ * A permission as its operation's data read asks it (`widenReads`): what
+ * `defineServiceFn` checks and the manifest publishes. A keyed rule widens
+ * each value; a row rule stays, since the row picks the page of a table
+ * several pages share (an item by its type).
  */
 export function readGate<R>(rule: R): R {
-  const widen = (entry: unknown): unknown => {
-    const page = onePageRead(entry);
-    const pages = page ? readPages(page) : [];
-    return pages.length > 1
-      ? { anyOf: pages.map((id) => ({ [id]: "View" })) }
-      : entry;
-  };
-  if (typeof rule !== "object" || rule === null) return rule;
-  if ("anyOf" in rule) {
-    // A list of a shared table's pages (`anyOfRule`) stays: RLS picks its rows.
-    const entries = (rule as AnyOfRule).anyOf.flatMap((entry) => {
-      const page = onePageRead(entry);
-      if (page && pageById(page)?.where) return [entry];
-      const widened = widen(entry);
-      return typeof widened === "object" && widened && "anyOf" in widened
-        ? (widened as AnyOfRule).anyOf
-        : [entry];
-    });
-    const seen = new Set<string>();
-    return {
-      anyOf: entries.filter((entry) => {
-        const key = JSON.stringify(entry);
-        return seen.has(key) ? false : (seen.add(key), true);
-      })
-    } as R;
-  }
+  if (typeof rule !== "object" || rule === null || "row" in rule) return rule;
   if ("by" in rule && "rules" in rule) {
     const { rules } = rule as { rules: Record<string, unknown> };
     return {
       ...rule,
       rules: Object.fromEntries(
-        Object.entries(rules).map(([value, entry]) => [value, widen(entry)])
+        Object.entries(rules).map(([value, entry]) => [
+          value,
+          typeof entry === "object" && entry !== null
+            ? widenReads(entry as PageGate)
+            : entry
+        ])
       )
     } as R;
   }
-  if ("row" in rule) return rule;
-  return widen(rule) as R;
+  return widenReads(rule as PageGate) as R;
 }
 
 /**
@@ -307,7 +260,7 @@ export function resolvePermissions<I>(
 export function requirementOfRows(
   { row, ids }: RowsToRead,
   rows: readonly Record<string, unknown>[]
-): RequiredPermissions {
+): PageGate {
   const byId = new Map(rows.map((found) => [found.id, found]));
   const required: Record<string, GateLevel> = {};
   for (const id of ids) {
@@ -329,70 +282,5 @@ export function requirementOfRows(
       }
     }
   }
-  return required as RequiredPermissions;
-}
-
-/** A user's claims per page: the company ids holding each action. */
-export type ModulePermissions = Record<string, Record<Action, string[]>>;
-
-/** The highest action a level holds: the one its check reads. */
-const LEVEL_ACTION = Object.fromEntries(
-  ACTIONS.map((action) => [ACTION_LEVEL[action], action])
-) as Record<GateLevel, Action>;
-
-/**
- * Whether `claims` hold every required page at its level in `companyId`: the
- * highest action of the level, `<page>_<action>`. With nothing required,
- * membership of the company (any permission naming it) is still needed.
- */
-export function hasPermissions(
-  claims: ModulePermissions,
-  companyId: string,
-  required: RequiredPermissions
-): boolean {
-  const entries = Object.entries(required) as [PageId, GateLevel][];
-  if (entries.length === 0) {
-    return Object.values(claims).some((permission) =>
-      ACTIONS.some((action) => permission[action]?.includes(companyId))
-    );
-  }
-  return entries.every(([page, level]) => {
-    const action = LEVEL_ACTION[level];
-    return !!action && holds(claims, `${page}_${action}`, companyId);
-  });
-}
-
-/** `hasPermissions`, or for an `anyOf` rule whether any one entry holds. */
-export function meetsRequirement(
-  claims: ModulePermissions,
-  companyId: string,
-  required: RequiredPermissions | AnyOfRule
-): boolean {
-  return "anyOf" in required
-    ? required.anyOf.some((entry) => hasPermissions(claims, companyId, entry))
-    : hasPermissions(claims, companyId, required);
-}
-
-/** The `get_claims` jsonb for one company as permissions per page. */
-export function permissionsFromClaims(
-  claims: unknown,
-  companyId: string
-): ModulePermissions {
-  return expandClaims(claimsFromJson(claims, companyId), companyId);
-}
-
-/** Flat scopes (`<page>_<action>` → company ids) as permissions per page. */
-export function permissionsFromScopes(
-  scopes: Record<string, unknown>
-): ModulePermissions {
-  const permissions: ModulePermissions = {};
-  for (const [key, value] of Object.entries(scopes)) {
-    const parts = key.split("_");
-    if (parts.length !== 2 || !Array.isArray(value)) continue;
-    const [module, action] = parts as [string, Action];
-    if (!(ACTIONS as readonly string[]).includes(action)) continue;
-    permissions[module] ??= { view: [], create: [], update: [], delete: [] };
-    permissions[module][action] = value as string[];
-  }
-  return permissions;
+  return required as PageGate;
 }

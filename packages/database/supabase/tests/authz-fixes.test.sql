@@ -93,7 +93,8 @@ BEGIN
   ASSERT NOT EXISTS (
     SELECT 1 FROM pg_proc
     WHERE pronamespace = 'public'::regnamespace
-      AND proname IN ('has_role', 'has_company_permission', 'get_companies_with_permission', 'get_permission_companies')
+      AND proname IN ('has_role', 'has_company_permission', 'get_companies_with_permission', 'get_permission_companies',
+                      'has_any_company_permission', 'get_my_permission')
   ), 'a deprecated RLS helper exists again';
   RAISE NOTICE 'PASS deprecated permission helpers are gone';
   PERFORM pg_temp.act_as(u);

@@ -8,15 +8,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import {
   bulkPermissionsAllMatchingValidator,
-  bulkPermissionsValidator,
-  permissionsValidator
+  bulkPermissionsValidator
 } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
 import { getParams, path } from "~/utils/path";
 import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
-
-// The same grants the per-user edit sends (the access grid's levels).
-const bulkGrants = permissionsValidator.shape.grants;
 
 export async function action(args: ActionFunctionArgs) {
   // Every matching user of the Employees list: the background job picks the
@@ -30,23 +26,13 @@ export async function action(args: ActionFunctionArgs) {
       args
     );
     if ("invalid" in input) return input.invalid;
-    let parsed: unknown = null;
-    try {
-      parsed = JSON.parse(input.data.data);
-    } catch {
-      parsed = null;
-    }
-    const grants = bulkGrants.safeParse(parsed);
-    if (!grants.success) {
-      return { success: false, message: "Failed to parse permissions" };
-    }
     const { ip } = originOf(args.request);
     const started = await startBackgroundBulkAction(
       args.request,
       "users.permissions",
       { allMatching },
       {
-        grants: grants.data,
+        grants: input.data.grants,
         addOnly: input.data.editType === "add",
         ...(ip ? { ip } : {})
       }
@@ -56,12 +42,9 @@ export async function action(args: ActionFunctionArgs) {
 
   const input = await validator(bulkPermissionsValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { editType, userIds, data } = input.data;
   const { api } = await authorize(args.request);
   const result = await api.users.bulkUpdatePermissions({
-    editType,
-    userIds,
-    grants: JSON.parse(data),
+    ...input.data,
     ip: originOf(args.request).ip
   });
   return respond(args.request, result).redirect(

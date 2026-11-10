@@ -30,11 +30,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId, userId } = await authorize(request, {});
 
   const url = new URL(request.url);
   const weekOffset = Number.parseInt(url.searchParams.get("week") ?? "0", 10);

@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { hasPermission } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
+import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { OPTIONS_PROVIDERS } from "~/modules/workflows/workflows.service";
@@ -68,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { options: [], errorCode: FAILED };
   }
 
-  const allowed = hasPermission(permissions, provider.permission, companyId);
+  const allowed = holdsGate(permissions, provider.permission, companyId);
   if (!allowed) return { options: [], errorCode: FORBIDDEN };
 
   try {

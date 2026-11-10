@@ -5,22 +5,44 @@
 import {
   ACTIONS,
   type Action,
+  type GateLevel,
+  LEVEL_ACTION,
   LEVELS,
   type Level,
   levelHolds,
+  levelReaches,
+  lowerLevel,
+  parsePermissionKey,
+  permissionKey,
   roundUp
 } from "./levels";
-import { moduleOf, PAGES, type PageId } from "./registry";
+import {
+  isPageModule,
+  moduleEnum,
+  moduleId,
+  moduleOf,
+  PAGES,
+  type PageId,
+  pageById,
+  pagesOf,
+  readPages
+} from "./registry";
 
 /** One row of the `permission` table, as the resolver reads it. */
 export type Grant = {
   subject: "person" | "role" | "key";
-  /** The `module` enum label ("Inventory"); a page id is its lowercase. */
+  /** The `module` enum label ("Inventory"); `moduleId` maps it to the page ids' module. */
   module: string;
   /** NULL: the grant covers the whole module. */
   page: string | null;
   level: Level;
 };
+
+/** What decided a level: Admin, or the subject and scope of the winning grant. */
+export type LevelSource =
+  | "admin"
+  | `${Grant["subject"]}-${"page" | "module"}`
+  | "none";
 
 // The first grant that exists wins: a person's override beats their role, and
 // a page beats its module. A key has only its own grants.
@@ -33,40 +55,84 @@ const PRECEDENCE: readonly [Grant["subject"], "page" | "module"][] = [
   ["key", "module"]
 ];
 
-/** The grant that decides a subject's level on a page; null when none does. */
-export function winningGrant<G extends Grant>(
-  grants: readonly G[],
+/**
+ * A person or an API key in one company: its grants there (each tagged with
+ * whose it is), and whether its employee type is that company's Admin type
+ * (`isAdminType`).
+ */
+export type LevelSubject<G extends Grant = Grant> = {
+  admin?: boolean;
+  grants: readonly G[];
+};
+
+export type LevelOf<G extends Grant = Grant> = {
+  /** The level the subject holds on the page: `granted`, at most the page's `maxLevel`. */
+  level: Level;
+  /** The level Admin or the winning grant gives, before `maxLevel`. */
+  granted: Level;
+  /** Whether `maxLevel` lowered `granted`. */
+  clamped: boolean;
+  source: LevelSource;
+  /** The winning grant; null for Admin and for none. */
+  grant: G | null;
+};
+
+/**
+ * The level of one subject on one page: Admin is Full; else the first grant in
+ * precedence order (person page, person module, role page, role module, key
+ * page, key module); else None. The SQL twin is `util.access_level`; both
+ * pass `access/cases.json`.
+ */
+export function levelOf<G extends Grant>(
+  subject: LevelSubject<G>,
   pageId: string
-): G | null {
+): LevelOf<G> {
+  const max = pageById(pageId)?.maxLevel ?? "Full";
+  const result = (granted: Level, source: LevelSource, grant: G | null) => {
+    const level = lowerLevel(granted, max);
+    return { level, granted, clamped: level !== granted, source, grant };
+  };
+  if (subject.admin) return result("Full", "admin", null);
   const module = moduleOf(pageId);
-  for (const [subject, scope] of PRECEDENCE) {
-    const grant = grants.find(
+  for (const [who, scope] of PRECEDENCE) {
+    const grant = subject.grants.find(
       (g) =>
-        g.subject === subject &&
+        g.subject === who &&
         (scope === "page"
           ? g.page === pageId
-          : g.page === null && g.module.toLowerCase() === module)
+          : g.page === null && moduleId(g.module) === module)
     );
-    if (grant) return grant;
+    if (grant) return result(grant.level, `${who}-${scope}`, grant);
   }
-  return null;
+  return result("None", "none", null);
 }
 
-/** The level of one subject on one page. The SQL helper `util.access_level` is its twin. */
+// The level the resolver hands out. `granted`, not `level`, until the gates
+// that ask above a page's `maxLevel` are fixed (untangle F5): clamping here
+// would refuse them to everyone.
+const resolved = (of: LevelOf<Grant>): Level => of.level;
+
+/** Whether an employee type is the company's own Admin type: one of another company grants nothing. */
+export function isAdminType(
+  type: { systemType?: string | null; companyId?: string | null },
+  companyId: string
+): boolean {
+  return type.systemType === "Admin" && type.companyId === companyId;
+}
+
+/** The level of one subject on one page, as claims carry it (`levelOf`). */
 export function resolveLevel(
   grants: readonly Grant[],
   pageId: string,
   { admin = false }: { admin?: boolean } = {}
 ): Level {
-  if (admin) return "Full";
-  return winningGrant(grants, pageId)?.level ?? "None";
+  return resolved(levelOf({ admin, grants }, pageId));
 }
 
 /** A person or an API key, with every grant that applies to it. */
-export type AccessSubject<G extends Grant = Grant> = {
+export type AccessSubject<G extends Grant = Grant> = LevelSubject<G> & {
   id: string;
   admin: boolean;
-  grants: readonly G[];
 };
 
 /** The subjects whose level on the page reaches `atLeast`, with the deciding grant. */
@@ -76,10 +142,10 @@ export function accessHolders<G extends Grant>(
   atLeast: Level
 ) {
   return subjects.flatMap((subject) => {
-    const grant = subject.admin ? null : winningGrant(subject.grants, pageId);
-    const level = subject.admin ? "Full" : (grant?.level ?? "None");
-    return LEVELS.indexOf(level) >= LEVELS.indexOf(atLeast)
-      ? [{ id: subject.id, level, grant }]
+    const of = levelOf(subject, pageId);
+    const level = resolved(of);
+    return levelReaches(level, atLeast)
+      ? [{ id: subject.id, level, grant: of.grant }]
       : [];
   });
 }
@@ -96,7 +162,12 @@ export type RawClaims = {
 
 const LEVEL_SET = new Set<string>(LEVELS);
 const SUBJECTS = new Set<string>(["person", "role", "key"]);
-const LEGACY_KEY = /^([a-z]+)_(view|create|update|delete)$/;
+
+/** A legacy `<module>_<action>` key: a module id is lowercase letters, no dot. */
+const legacyKey = (key: string) => {
+  const parsed = parsePermissionKey(key);
+  return parsed && /^[a-z]+$/.test(parsed.subject) ? parsed : null;
+};
 
 const asObject = (json: unknown): Record<string, unknown> =>
   typeof json === "object" && json !== null && !Array.isArray(json)
@@ -115,7 +186,8 @@ export function isLegacyClaims(json: unknown): boolean {
 /**
  * Old `<module>_<action>: [companyIds]` keys as module grants in one company,
  * each at the lowest level that holds every action listed for it there: the
- * rule the conversion migration (20261110050003) applied.
+ * rule the conversion migration (20261110050003) applied. A module with no
+ * pages (`items`, `printing`) grants nothing, so it is left out.
  */
 export function legacyGrants(
   keys: Record<string, unknown>,
@@ -124,18 +196,20 @@ export function legacyGrants(
 ): Grant[] {
   const flags = new Map<string, Partial<Record<Action, boolean>>>();
   for (const [key, companies] of Object.entries(keys)) {
-    const match = LEGACY_KEY.exec(key);
-    if (!match || !Array.isArray(companies) || !companies.includes(companyId))
+    const parsed = legacyKey(key);
+    if (!parsed || !Array.isArray(companies) || !companies.includes(companyId))
       continue;
-    const [, module, action] = match as unknown as [string, string, Action];
-    flags.set(module, { ...flags.get(module), [action]: true });
+    flags.set(parsed.subject, {
+      ...flags.get(parsed.subject),
+      [parsed.action]: true
+    });
   }
-  return [...flags].map(([module, held]) => ({
-    subject,
-    module: module.charAt(0).toUpperCase() + module.slice(1),
-    page: null,
-    level: roundUp(held)
-  }));
+  return [...flags].flatMap(([module, held]) => {
+    const label = moduleEnum(module as Parameters<typeof moduleEnum>[0]);
+    return isPageModule(label)
+      ? [{ subject, module: label, page: null, level: roundUp(held) }]
+      : [];
+  });
 }
 
 /**
@@ -143,16 +217,15 @@ export function legacyGrants(
  * legacy shape (no `grants`, see `isLegacyClaims`) is read as module grants in
  * `companyId`, or as portal keys for a customer or supplier.
  */
-export function claimsFromJson(json: unknown, companyId?: string): RawClaims {
+export function claimsFromJson(json: unknown, companyId: string): RawClaims {
   const value = asObject(json);
   const role = typeof value.role === "string" ? value.role : null;
   if (isLegacyClaims(value)) {
-    if (!companyId) return { role, admin: false, grants: [], portal: {} };
     if (role === "customer" || role === "supplier") {
       const portal: Record<string, string[]> = {};
       for (const [key, companies] of Object.entries(value))
         if (
-          LEGACY_KEY.test(key) &&
+          legacyKey(key) &&
           Array.isArray(companies) &&
           companies.includes(companyId)
         )
@@ -220,16 +293,24 @@ export function expandClaims(
     out[page.id] = permission;
   }
   for (const [key, companies] of Object.entries(raw.portal)) {
-    const match = key.match(/^(.+)_(view|create|update|delete)$/);
-    if (!match || !Array.isArray(companies)) continue;
-    const [, feature, action] = match as [string, string, Action];
-    out[feature] ??= empty();
+    const parsed = parsePermissionKey(key);
+    if (!parsed || !Array.isArray(companies)) continue;
+    const entry = (out[parsed.subject] ??= empty());
     for (const company of companies) {
-      if (!out[feature][action].includes(company))
-        out[feature][action].push(company);
+      if (!entry[parsed.action].includes(company))
+        entry[parsed.action].push(company);
     }
   }
   return out;
+}
+
+/** One user's claims in one company: what `get_claims` returned, and `permissions` expanded from it. */
+export type Claims = RawClaims & { permissions: ExpandedClaims };
+
+/** The `get_claims` jsonb for one company as `Claims`: the one way to build them. */
+export function claimsFor(json: unknown, companyId: string): Claims {
+  const raw = claimsFromJson(json, companyId);
+  return { ...raw, permissions: expandClaims(raw, companyId) };
 }
 
 /** Whether the expanded claims hold `<page>_<action>` in the company. */
@@ -238,14 +319,12 @@ export function holds(
   key: string,
   companyId: string
 ): boolean {
-  const match = key.match(/^(.+)_(view|create|update|delete)$/);
-  if (!match) return false;
-  const [, page, action] = match as [string, string, Action];
-  return expanded[page]?.[action]?.includes(companyId) ?? false;
+  const parsed = parsePermissionKey(key);
+  if (!parsed) return false;
+  return (
+    expanded[parsed.subject]?.[parsed.action]?.includes(companyId) ?? false
+  );
 }
-
-/** A level a gate can ask for: `"None"` asks for nothing. */
-export type GateLevel = Exclude<Level, "None">;
 
 /**
  * `{ "inventory.receipts": "Edit" }`: each page a gate needs, and the lowest
@@ -256,30 +335,103 @@ export type PageGate = Partial<Record<PageId, GateLevel>>;
 /** One gate, or a list of gates of which any one passes (`anyOf`). */
 export type Gate = PageGate | readonly PageGate[];
 
-/** The highest action a level holds: the one a gate's check reads. */
-export const LEVEL_ACTION: Record<GateLevel, Action> = {
-  View: "view",
-  Create: "create",
-  Edit: "update",
-  Full: "delete"
-};
+/** A list of gates of which any one passes, as service functions write it. */
+export type AnyOfGate = { readonly anyOf: readonly PageGate[] };
+
+/** Every form `holdsGate` reads. */
+export type AnyGate = Gate | AnyOfGate;
 
 /** A gate that any one of the pages passes at the level. */
 export function anyOf(pages: readonly PageId[], level: GateLevel): PageGate[] {
   return pages.map((page) => ({ [page]: level }) as PageGate);
 }
 
-/** Whether the expanded claims pass the gate in the company. */
-export function holdsGate(
+const isAnyOf = (gate: AnyGate): gate is AnyOfGate =>
+  typeof gate === "object" && gate !== null && "anyOf" in gate;
+
+/** The gates of which any one passes. */
+function alternatives(gate: AnyGate): readonly PageGate[] {
+  if (Array.isArray(gate)) return gate;
+  return isAnyOf(gate) ? gate.anyOf : [gate as PageGate];
+}
+
+/** `{ "<page>": "View" }` on a registry page: the one read `widenReads` widens. */
+function onePageRead(gate: unknown): PageId | null {
+  if (typeof gate !== "object" || gate === null) return null;
+  const entries = Object.entries(gate);
+  if (entries.length !== 1) return null;
+  const [page, level] = entries[0] as [string, unknown];
+  return level === "View" && pageById(page) ? (page as PageId) : null;
+}
+
+/** View on one page as View on any page that reads what it owns; anything else unchanged. */
+function widenOne(gate: PageGate): readonly PageGate[] {
+  const page = onePageRead(gate);
+  const pages = page ? readPages(page) : [];
+  return pages.length > 1 ? anyOf(pages, "View") : [gate];
+}
+
+/**
+ * A gate as a data read asks it: View on one page admits View on every page
+ * that reads what the page owns (`readPages`: its module, and the pages of
+ * other modules that list its tables in `readers`), the reads RLS renders.
+ * In a list, View on a page of a shared table stays: RLS picks which of its
+ * rows the caller reads. Any other entry, a write or a gate of two pages,
+ * stays as written. A widened gate comes back as `{ anyOf }`.
+ */
+export function widenReads(gate: AnyGate): AnyGate {
+  if (!Array.isArray(gate) && !isAnyOf(gate)) {
+    const widened = widenOne(gate as PageGate);
+    return widened.length > 1 ? { anyOf: widened } : gate;
+  }
+  const seen = new Set<string>();
+  return {
+    anyOf: alternatives(gate)
+      .flatMap((entry) => {
+        const page = onePageRead(entry);
+        return page && pageById(page)?.where ? [entry] : widenOne(entry);
+      })
+      .filter((entry) => {
+        const key = JSON.stringify(entry);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+  };
+}
+
+/** Whether every entry of one gate holds. */
+function holdsAll(
   expanded: ExpandedClaims,
-  gate: Gate,
+  gate: PageGate,
   companyId: string
 ): boolean {
-  if (Array.isArray(gate))
-    return gate.some((one: PageGate) => holdsGate(expanded, one, companyId));
-  return Object.entries(gate as PageGate).every(
-    ([page, level]) =>
-      !level || holds(expanded, `${page}_${LEVEL_ACTION[level]}`, companyId)
+  return Object.entries(gate).every(([page, level]) => {
+    if (!level) return true;
+    const action = LEVEL_ACTION[level as GateLevel];
+    return !!action && (expanded[page]?.[action]?.includes(companyId) ?? false);
+  });
+}
+
+/**
+ * Whether the expanded claims pass the gate in the company: every entry of a
+ * `PageGate` at the highest action of its level, or any one gate of a list or
+ * an `{ anyOf }`. An entry with no level asks for nothing, so `{}` passes:
+ * whether the caller belongs to the company is the caller check's question,
+ * not the gate's. An empty list passes nothing. No claims pass nothing.
+ *
+ * Page gates (routes, sidebars, buttons) are exact. A data read asks with
+ * `{ reads: true }`, which widens it first (`widenReads`).
+ */
+export function holdsGate(
+  expanded: ExpandedClaims | null | undefined,
+  gate: AnyGate,
+  companyId: string,
+  { reads = false }: { reads?: boolean } = {}
+): boolean {
+  if (!expanded) return false;
+  return alternatives(reads ? widenReads(gate) : gate).some((one) =>
+    holdsAll(expanded, one, companyId)
   );
 }
 
@@ -296,13 +448,38 @@ export function holdsAny(
   );
 }
 
+/**
+ * Where a module's link takes a person: `prefer` when they can view it, else
+ * the first page of the module, in sidebar order, that they can view and whose
+ * first path has no `$param`. Undefined when there is none. `path` is the
+ * page's first path.
+ */
+export function landingOf(
+  module: string,
+  expanded: ExpandedClaims | null | undefined,
+  companyId: string,
+  { prefer }: { prefer?: PageId } = {}
+): { page: PageId; path: string } | undefined {
+  const canView = (page: PageId) =>
+    holdsGate(expanded, { [page]: "View" }, companyId);
+  const at = (page: PageId) => pageById(page)?.paths[0];
+  const preferred = prefer && at(prefer);
+  if (prefer && preferred && canView(prefer))
+    return { page: prefer, path: preferred };
+  for (const page of pagesOf(module)) {
+    const path = at(page);
+    if (path && !path.includes("$") && canView(page)) return { page, path };
+  }
+  return undefined;
+}
+
 /** Expanded claims as flat `<page>_<action>` → company ids, as audit events carry them. */
 export function claimKeys(expanded: ExpandedClaims): Record<string, string[]> {
   const keys: Record<string, string[]> = {};
   for (const [page, permission] of Object.entries(expanded)) {
     for (const action of ACTIONS) {
       if (permission[action].length)
-        keys[`${page}_${action}`] = permission[action];
+        keys[permissionKey(page, action)] = permission[action];
     }
   }
   return keys;

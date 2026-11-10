@@ -15,11 +15,7 @@ import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "people.attributes": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "people.attributes": "View" });
 
   const { categoryId } = params;
   if (!categoryId) throw notFound("Invalid categoryId");

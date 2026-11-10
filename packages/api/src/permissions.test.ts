@@ -2,16 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { holdsGate } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 import { ForbiddenError, InvalidInputError, NotFoundError } from "./errors";
 import {
   anyOfRule,
-  hasPermissions,
-  type ModulePermissions,
-  meetsRequirement,
   type PermissionRule,
-  permissionsFromClaims,
-  permissionsFromScopes,
   readGate,
   requirementOfRows,
   resolvePermissions,
@@ -61,159 +57,6 @@ describe("resolvePermissions", () => {
     expect(resolvePermissions({ "sales.quotes": "View" }, {})).toEqual({
       "sales.quotes": "View"
     });
-  });
-});
-
-const none = { view: [], create: [], update: [], delete: [] };
-const claims: ModulePermissions = {
-  "inventory.receipts": {
-    ...none,
-    view: ["co1"],
-    create: ["co1"],
-    update: ["co1"]
-  },
-  "production.jobs": { ...none, view: ["co1", "co2"] }
-};
-
-describe("hasPermissions", () => {
-  it("grants when every required page holds its level in the company", () => {
-    expect(
-      hasPermissions(claims, "co1", {
-        "inventory.receipts": "Edit",
-        "production.jobs": "View"
-      })
-    ).toBe(true);
-  });
-
-  it("reads a level as its highest action", () => {
-    expect(
-      hasPermissions(claims, "co1", { "inventory.receipts": "Create" })
-    ).toBe(true);
-    expect(
-      hasPermissions(claims, "co1", { "inventory.receipts": "Full" })
-    ).toBe(false);
-    // Edit reads update alone: claims that hold update without view still pass.
-    expect(
-      hasPermissions(
-        { "inventory.receipts": { ...none, update: ["co1"] } },
-        "co1",
-        { "inventory.receipts": "Edit" }
-      )
-    ).toBe(true);
-  });
-
-  it("refuses when one page is short of its level", () => {
-    expect(
-      hasPermissions(claims, "co1", {
-        "inventory.receipts": "Edit",
-        "production.jobs": "Edit"
-      })
-    ).toBe(false);
-  });
-
-  it("refuses a page the claims do not name", () => {
-    expect(
-      hasPermissions(claims, "co1", { "inventory.shipments": "View" })
-    ).toBe(false);
-  });
-
-  it("refuses a permission held in another company only", () => {
-    expect(
-      hasPermissions(claims, "co2", { "inventory.receipts": "Edit" })
-    ).toBe(false);
-  });
-
-  it("with nothing required, still needs membership of the company", () => {
-    expect(hasPermissions(claims, "co2", {})).toBe(true);
-    expect(hasPermissions(claims, "co3", {})).toBe(false);
-  });
-});
-
-describe("permissionsFromScopes", () => {
-  it("groups <page>_<action> scopes by page and ignores the rest", () => {
-    expect(
-      permissionsFromScopes({
-        role: "employee",
-        inventory_update: ["co1"],
-        inventory_view: ["co1", "co2"],
-        "not-a-claim": ["co1"],
-        users_admin: ["co1"],
-        sales_view: "co1"
-      })
-    ).toEqual({
-      inventory: {
-        view: ["co1", "co2"],
-        create: [],
-        update: ["co1"],
-        delete: []
-      }
-    });
-  });
-});
-
-describe("permissionsFromClaims", () => {
-  it("resolves get_claims grants for the company", () => {
-    const permissions = permissionsFromClaims(
-      {
-        role: "employee",
-        admin: false,
-        grants: [
-          { subject: "role", module: "Inventory", page: null, level: "Edit" },
-          { subject: "person", module: "Sales", page: null, level: "None" },
-          { subject: "role", module: "Sales", page: null, level: "Full" }
-        ],
-        portal: {}
-      },
-      "co1"
-    );
-    // A module grant covers every page of the module.
-    expect(
-      hasPermissions(permissions, "co1", { "inventory.receipts": "Edit" })
-    ).toBe(true);
-    expect(
-      hasPermissions(permissions, "co1", { "inventory.shipments": "Edit" })
-    ).toBe(true);
-    expect(
-      hasPermissions(permissions, "co1", { "inventory.receipts": "Full" })
-    ).toBe(false);
-    // The person's None override beats the role's Full.
-    expect(hasPermissions(permissions, "co1", { "sales.quotes": "View" })).toBe(
-      false
-    );
-  });
-
-  it("checks a page against its own grant before the module's", () => {
-    const permissions = permissionsFromClaims(
-      {
-        role: "employee",
-        admin: false,
-        grants: [
-          { subject: "role", module: "Parts", page: null, level: "View" },
-          {
-            subject: "role",
-            module: "Parts",
-            page: "parts.tools",
-            level: "Edit"
-          }
-        ],
-        portal: {}
-      },
-      "co1"
-    );
-    expect(hasPermissions(permissions, "co1", { "parts.tools": "Edit" })).toBe(
-      true
-    );
-    expect(hasPermissions(permissions, "co1", { "parts.parts": "Edit" })).toBe(
-      false
-    );
-    expect(hasPermissions(permissions, "co1", { "parts.parts": "View" })).toBe(
-      true
-    );
-  });
-
-  it("reads malformed claims as no access", () => {
-    const permissions = permissionsFromClaims({ grants: "nope" }, "co1");
-    expect(hasPermissions(permissions, "co1", {})).toBe(false);
   });
 });
 
@@ -360,31 +203,6 @@ describe("a row rule", () => {
   });
 });
 
-describe("meetsRequirement", () => {
-  const tools: ModulePermissions = {
-    "parts.tools": { ...none, view: ["co1"], create: ["co1"], update: ["co1"] }
-  };
-
-  it("passes an anyOf rule when one entry holds, and refuses none", () => {
-    const rule = anyOfRule("item", "Edit");
-    expect(meetsRequirement(tools, "co1", rule)).toBe(true);
-    expect(meetsRequirement(tools, "co2", rule)).toBe(false);
-    expect(meetsRequirement(tools, "co1", anyOfRule("item", "Full"))).toBe(
-      false
-    );
-    expect(meetsRequirement(tools, "co1", { anyOf: [] })).toBe(false);
-  });
-
-  it("checks a page gate as hasPermissions does", () => {
-    expect(meetsRequirement(tools, "co1", { "parts.tools": "Edit" })).toBe(
-      true
-    );
-    expect(meetsRequirement(tools, "co1", { "parts.parts": "View" })).toBe(
-      false
-    );
-  });
-});
-
 describe("readGate", () => {
   const claimsFor = (page: string, action: "view" | "create" | "update") => ({
     [page]: {
@@ -398,14 +216,10 @@ describe("readGate", () => {
   it("lets View on any page of the module pass a read on one page", () => {
     const gate = readGate({ "inventory.receipts": "View" } as const);
     expect(
-      meetsRequirement(
-        claimsFor("inventory.shipments", "view"),
-        "c1",
-        gate as never
-      )
+      holdsGate(claimsFor("inventory.shipments", "view"), gate as never, "c1")
     ).toBe(true);
     expect(
-      meetsRequirement(claimsFor("sales.quotes", "view"), "c1", gate as never)
+      holdsGate(claimsFor("sales.quotes", "view"), gate as never, "c1")
     ).toBe(false);
   });
 
@@ -413,7 +227,7 @@ describe("readGate", () => {
     const gate = readGate({ "inventory.receipts": "Edit" } as const);
     expect(gate).toEqual({ "inventory.receipts": "Edit" });
     expect(
-      hasPermissions(claimsFor("inventory.shipments", "update"), "c1", gate)
+      holdsGate(claimsFor("inventory.shipments", "update"), gate, "c1")
     ).toBe(false);
   });
 
@@ -426,10 +240,10 @@ describe("readGate", () => {
       }
     });
     expect(
-      meetsRequirement(
+      holdsGate(
         claimsFor("users.accounts", "view"),
-        "c1",
-        resolvePermissions(keyed as never, { side: "a" }) as never
+        resolvePermissions(keyed as never, { side: "a" }) as never,
+        "c1"
       )
     ).toBe(true);
     expect(resolvePermissions(keyed as never, { side: "b" })).toEqual({

@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const WORKFLOWS_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Workflows";
+
+export const PAGES = [
   {
     id: "workflows.workflows",
     label: "Workflows",
@@ -22,7 +25,6 @@ export const WORKFLOWS_PAGES = [
     label: "Runs",
     maxLevel: "View",
     tables: ["workflowRun", "workflowStepRun"],
-    readers: ["workflow", "workflowVersion"],
     paths: ["/x/workflows/runs"]
   }
 ] as const satisfies readonly Page[];

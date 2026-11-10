@@ -2,38 +2,76 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { Constants } from "@carbon/database";
 import {
-  claimsFromJson,
-  expandClaims,
+  claimsFor,
+  type Grant,
   holdsGate,
   LEVELS,
-  type Level
+  type Level,
+  type LevelSubject,
+  levelOf,
+  lowerLevel,
+  MODULES,
+  type ModuleId,
+  moduleId,
+  pageById,
+  pagesOf
 } from "@carbon/database/access";
 import type { GrantInput, GrantModule } from "@carbon/database/access-write";
 
 /**
- * The decisions of permission authoring, with no I/O: what a bulk edit leaves
- * a person with, and whether an actor may edit accounts.
+ * The decisions of permission authoring, with no I/O: what one row of the
+ * access grid holds, what a bulk edit leaves a person with, what a subject may
+ * be granted, and whether an actor may edit accounts.
  */
 
-// Uppercase the first letter only (mirrors the ERP `~/utils/string` capitalize),
-// which `@carbon/ee` cannot import.
-function capitalize(words: string) {
-  const [first, ...otherLetters] = words;
-  return [first?.toLocaleUpperCase() ?? "", ...otherLetters].join("");
-}
-
-const MODULES = new Set<string>(Constants.public.Enums.module);
-
-/** A form's module name ("parts", "Parts") as the `module` enum value. */
+/** A form's module name ("parts", "Parts") as the `module` enum label; null for a module with no pages. */
 export function toModule(name: string): GrantModule | null {
-  const module = capitalize(name.toLowerCase());
-  return MODULES.has(module) ? (module as GrantModule) : null;
+  return MODULES.find((m) => m.id === name.toLowerCase())?.enum ?? null;
 }
 
 export const higher = (a: Level, b: Level) =>
   LEVELS.indexOf(a) >= LEVELS.indexOf(b) ? a : b;
+
+/** One row of the access grid: a page, or a whole module (`page` null). */
+export type GrantRow = { module: GrantModule; page: string | null };
+
+const sameRow = (grant: Grant, row: GrantRow) =>
+  grant.page === row.page && moduleId(grant.module) === moduleId(row.module);
+
+/**
+ * The level a subject holds on one row of the access grid, as the resolver
+ * gives it (`levelOf`), at most the page's `maxLevel`. A row of a module with
+ * pages covers pages of different maxima, so it reads only the module grants,
+ * unclamped. `without` leaves out that subject's own grant on the row: what
+ * the row inherits.
+ */
+export function rowLevel(
+  subject: LevelSubject,
+  row: GrantRow,
+  without?: Grant["subject"]
+): Level {
+  const id = moduleId(row.module);
+  if (!id) return "None";
+  const grants = without
+    ? subject.grants.filter((g) => !(g.subject === without && sameRow(g, row)))
+    : subject.grants;
+  const page = row.page ?? (pageById(id) ? id : null);
+  if (page) return levelOf({ admin: subject.admin, grants }, page).level;
+  const first = pagesOf(id)[0];
+  if (!first) return "None";
+  return levelOf(
+    { admin: subject.admin, grants: grants.filter((g) => g.page === null) },
+    first
+  ).granted;
+}
+
+/** A level at most what a row allows: its page's `maxLevel`, else unchanged. */
+const clampRow = (row: GrantRow, level: Level) => {
+  const id = row.page ?? moduleId(row.module);
+  const max = id ? pageById(id)?.maxLevel : undefined;
+  return max ? lowerLevel(level, max) : level;
+};
 
 export type LeveledGrant = {
   module: string;
@@ -41,20 +79,13 @@ export type LeveledGrant = {
   level: Level;
 };
 
-const findLevel = (
-  grants: readonly LeveledGrant[],
-  module: string,
-  page: string | null
-) => grants.find((g) => g.module === module && g.page === page)?.level;
-
 /**
  * A person's grants after a bulk edit. Each chosen grant becomes an override;
- * one whose level equals what the row inherits stores nothing. A page row
- * inherits the person's own module grant, else the role's page grant, else
- * the role's module grant (Full on the Admin type) — the order the access grid
- * shows. `addOnly` only raises a level above what the person holds today. The
- * person's other grants are kept, page overrides inside an edited module too:
- * the spec gives the bulk edit no "replace" meaning.
+ * one whose level equals what the row inherits (`rowLevel` without the
+ * person's own grant there) stores nothing. `addOnly` only raises a level
+ * above what the person holds on the row today. The person's other grants are
+ * kept, page overrides inside an edited module too: the spec gives the bulk
+ * edit no "replace" meaning.
  */
 export function bulkEditGrants({
   chosen,
@@ -69,26 +100,27 @@ export function bulkEditGrants({
   admin: boolean;
   addOnly: boolean;
 }): GrantInput[] {
-  const roleLevel = (module: string, page: string | null): Level =>
-    admin
-      ? "Full"
-      : (findLevel(role, module, page) ??
-        findLevel(role, module, null) ??
-        "None");
-  const inherited = (module: string, page: string | null): Level =>
-    page === null
-      ? roleLevel(module, null)
-      : (findLevel(own, module, null) ?? roleLevel(module, page));
+  const subject: LevelSubject = {
+    admin,
+    grants: [
+      ...own.map((g) => ({ ...g, subject: "person" as const })),
+      ...role.map((g) => ({ ...g, subject: "role" as const }))
+    ]
+  };
+  const key = (g: { module: string; page: string | null }) =>
+    `${moduleId(g.module)}:${g.page ?? ""}`;
 
   const edited = new Map<string, GrantInput>();
   for (const grant of chosen) {
     const module = toModule(grant.module);
     if (!module) continue;
-    const base = inherited(module, grant.page);
-    const level = addOnly
-      ? higher(grant.level, findLevel(own, module, grant.page) ?? base)
-      : grant.level;
-    edited.set(`${module}:${grant.page ?? ""}`, {
+    const row = { module, page: grant.page };
+    const base = rowLevel(subject, row, "person");
+    const level = clampRow(
+      row,
+      addOnly ? higher(grant.level, rowLevel(subject, row)) : grant.level
+    );
+    edited.set(key(row), {
       module,
       page: grant.page,
       level: level === base ? null : level
@@ -96,22 +128,61 @@ export function bulkEditGrants({
   }
 
   return [
-    ...own
-      .filter((g) => !edited.has(`${g.module}:${g.page ?? ""}`))
-      .map((g) => ({
-        module: g.module as GrantModule,
-        page: g.page,
-        level: g.level
-      })),
+    ...own.flatMap((g) => {
+      const module = toModule(g.module);
+      return module && !edited.has(key(g))
+        ? [{ module, page: g.page, level: g.level }]
+        : [];
+    }),
     ...edited.values()
   ];
 }
 
-/** Whether the user may edit people's access in the company, by their claims. */
+/** Who holds a grant: an employee type, a person, or an API key. */
+export type AccessSubjectType = "role" | "person" | "key";
+
+/**
+ * What a subject may be granted: the modules it may hold, enforced on every
+ * write. `selectAllCaps` is where the grid's "select all" stops on a module;
+ * a higher level stays a choice made on the module's own rows, and the server
+ * accepts it.
+ */
+export type SubjectRules = {
+  modules: readonly ModuleId[];
+  selectAllCaps: Partial<Record<ModuleId, Level>>;
+};
+
+const ALL_MODULES = MODULES.map((m) => m.id);
+
+export const SUBJECT_RULES: Record<AccessSubjectType, SubjectRules> = {
+  role: { modules: ALL_MODULES, selectAllCaps: {} },
+  person: { modules: ALL_MODULES, selectAllCaps: {} },
+  // Keys were never offered Workflows. Deleting accounting data through the
+  // API is never part of "select all".
+  key: {
+    modules: ALL_MODULES.filter((id) => id !== "workflows"),
+    selectAllCaps: { accounting: "Edit" }
+  }
+};
+
+/** The modules of `grants` the subject may not hold, by their labels. */
+export function refusedModules(
+  type: AccessSubjectType,
+  grants: readonly GrantInput[]
+): GrantModule[] {
+  const allowed = SUBJECT_RULES[type].modules;
+  const refused = new Set<GrantModule>();
+  for (const grant of grants) {
+    const id = moduleId(grant.module);
+    if (!id || !allowed.includes(id)) refused.add(grant.module);
+  }
+  return [...refused];
+}
+
 /** Whether a person's `get_claims` hold Users → Accounts at Edit in the company. */
 export function claimsMayEditAccounts(claims: unknown, companyId: string) {
   return holdsGate(
-    expandClaims(claimsFromJson(claims, companyId), companyId),
+    claimsFor(claims, companyId).permissions,
     { "users.accounts": "Edit" },
     companyId
   );

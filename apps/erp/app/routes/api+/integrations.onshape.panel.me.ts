@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { holdsGate } from "@carbon/database/access";
 import type { OnshapePanelMe } from "@carbon/ee";
 import { authorizePanel } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     company: company.data
       ? { id: company.data.id, name: company.data.name }
       : null,
-    canEditFields: hasPermission(
+    canEditFields: holdsGate(
       claims?.permissions,
       { "settings.integrations": "Edit" },
       companyId

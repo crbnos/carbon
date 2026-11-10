@@ -3,29 +3,33 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { type Action, type Level, lowerLevel } from "./levels";
-import { ACCOUNTING_PAGES } from "./pages/accounting";
-import { DOCUMENTS_PAGES } from "./pages/documents";
-import { INVENTORY_PAGES } from "./pages/inventory";
-import { INVOICING_PAGES } from "./pages/invoicing";
-import { PARTS_PAGES } from "./pages/parts";
-import { PEOPLE_PAGES } from "./pages/people";
-import { PRODUCTION_PAGES } from "./pages/production";
-import { PROJECTS_PAGES } from "./pages/projects";
-import { PURCHASING_PAGES } from "./pages/purchasing";
-import { QUALITY_PAGES } from "./pages/quality";
-import { RESOURCES_PAGES } from "./pages/resources";
-import { SALES_PAGES } from "./pages/sales";
-import { SERVICE_PAGES } from "./pages/service";
-import { SETTINGS_PAGES } from "./pages/settings";
-import { USERS_PAGES } from "./pages/users";
-import { WORKFLOWS_PAGES } from "./pages/workflows";
+import * as accounting from "./pages/accounting";
+import * as documents from "./pages/documents";
+import * as inventory from "./pages/inventory";
+import * as invoicing from "./pages/invoicing";
+import * as parts from "./pages/parts";
+import * as people from "./pages/people";
+import * as production from "./pages/production";
+import * as projects from "./pages/projects";
+import * as purchasing from "./pages/purchasing";
+import * as quality from "./pages/quality";
+import * as resources from "./pages/resources";
+import * as sales from "./pages/sales";
+import * as service from "./pages/service";
+import * as settings from "./pages/settings";
+import * as users from "./pages/users";
+import * as workflows from "./pages/workflows";
 
 /**
  * Two or more pages share a table: the column and value that pick this page's
  * rows. Without a value, the page's rows are the ones where the column is set
  * (a memo's `supplierId`, a grant's `apiKeyId`).
  */
-export type SharedTable = { table: string; column: string; value?: string };
+export type SharedTable = {
+  table: string;
+  column: string;
+  value?: string | boolean;
+};
 
 /** `[fk, table]`: the next table's row whose `id` is this row's `fk`. */
 export type Hop = readonly [fk: string, table: string];
@@ -51,54 +55,72 @@ export type Page = {
   where?: SharedTable;
   /** Tables of the shared table's pages that check `where` through it. */
   children?: readonly Child[];
-  /** Restricted tables of other pages that this page reads. */
+  /** Restricted tables of other modules' pages that this page reads. */
   readers?: readonly string[];
+  /**
+   * Tables this page owns that other pages also write, each with those pages:
+   * a table that moved to this page from another module keeps the page that
+   * wrote it before (20261110101723_grants-for-moved-tables.sql gives the
+   * moved tables it does not list a grant instead). RLS renders it.
+   */
+  alsoWrittenBy?: Readonly<Record<string, readonly string[]>>;
   /** Route path prefixes, used to map route files to pages. */
   paths: readonly string[];
 };
 
-/** The permission modules, in sidebar order. Items keeps its permission name, `parts`. */
-export const MODULES: readonly { id: string; label: string }[] = [
-  { id: "accounting", label: "Accounting" },
-  { id: "documents", label: "Documents" },
-  { id: "inventory", label: "Inventory" },
-  { id: "invoicing", label: "Invoicing" },
-  { id: "parts", label: "Items" },
-  { id: "people", label: "People" },
-  { id: "production", label: "Production" },
-  { id: "projects", label: "Projects" },
-  { id: "purchasing", label: "Purchasing" },
-  { id: "quality", label: "Quality" },
-  { id: "resources", label: "Resources" },
-  { id: "sales", label: "Sales" },
-  { id: "service", label: "Service" },
-  { id: "settings", label: "Settings" },
-  { id: "users", label: "Users" },
-  { id: "workflows", label: "Workflows" }
-];
+/** The page files, one per permission module, in sidebar order. */
+const MODULE_FILES = [
+  accounting,
+  documents,
+  inventory,
+  invoicing,
+  parts,
+  people,
+  production,
+  projects,
+  purchasing,
+  quality,
+  resources,
+  sales,
+  service,
+  settings,
+  users,
+  workflows
+] as const satisfies readonly { LABEL: string; PAGES: readonly Page[] }[];
+
+type RegistryPage = (typeof MODULE_FILES)[number]["PAGES"][number];
 
 /** Every page, module by module in sidebar order. */
-export const PAGES = [
-  ...ACCOUNTING_PAGES,
-  ...DOCUMENTS_PAGES,
-  ...INVENTORY_PAGES,
-  ...INVOICING_PAGES,
-  ...PARTS_PAGES,
-  ...PEOPLE_PAGES,
-  ...PRODUCTION_PAGES,
-  ...PROJECTS_PAGES,
-  ...PURCHASING_PAGES,
-  ...QUALITY_PAGES,
-  ...RESOURCES_PAGES,
-  ...SALES_PAGES,
-  ...SERVICE_PAGES,
-  ...SETTINGS_PAGES,
-  ...USERS_PAGES,
-  ...WORKFLOWS_PAGES
-] as const satisfies readonly Page[];
+export const PAGES: readonly RegistryPage[] = MODULE_FILES.flatMap(
+  (file) => file.PAGES as readonly RegistryPage[]
+);
 
 export type PageId = (typeof PAGES)[number]["id"];
 export type PermissionKey = `${PageId}_${Action}`;
+
+/** A permission module's id: a page id up to its first `.` (`inventory`, `documents`). */
+export type ModuleId = PageId extends infer P
+  ? P extends `${infer M}.${string}`
+    ? M
+    : P
+  : never;
+
+/** The `module` enum label of a permission module: `Inventory`, and `Parts` for Items. */
+export type ModuleEnum = Capitalize<ModuleId>;
+
+/** The permission modules, in sidebar order: `label` is the sidebar name, `enum` the `module` enum label. */
+export const MODULES: readonly {
+  id: ModuleId;
+  label: string;
+  enum: ModuleEnum;
+}[] = MODULE_FILES.map((file) => {
+  const id = moduleOf(file.PAGES[0].id) as ModuleId;
+  return { id, label: file.LABEL, enum: moduleEnum(id) };
+});
+
+const MODULE_IDS = new Set<string>(
+  MODULE_FILES.map((file) => moduleOf(file.PAGES[0].id))
+);
 
 const PAGE_BY_ID = new Map<string, Page>(PAGES.map((page) => [page.id, page]));
 
@@ -110,6 +132,24 @@ export function pageById(pageId: string): Page | undefined {
 export function moduleOf(pageId: string): string {
   const dot = pageId.indexOf(".");
   return dot === -1 ? pageId : pageId.slice(0, dot);
+}
+
+/** The `module` enum label of a module id: `inventory` → `Inventory`. */
+export function moduleEnum(id: ModuleId): ModuleEnum {
+  return (id.charAt(0).toUpperCase() + id.slice(1)) as ModuleEnum;
+}
+
+/** The module id of a `module` enum label; undefined for a label with no pages (`Items`). */
+export function moduleId(label: string): ModuleId | undefined {
+  const id = label.charAt(0).toLowerCase() + label.slice(1);
+  return MODULE_IDS.has(id) && moduleEnum(id as ModuleId) === label
+    ? (id as ModuleId)
+    : undefined;
+}
+
+/** Whether a `module` enum label names a module with pages: a grant can hold it. */
+export function isPageModule(label: string): label is ModuleEnum {
+  return moduleId(label) !== undefined;
 }
 
 /** The pages of a module, in sidebar order. */
@@ -133,7 +173,11 @@ export const ITEM_TYPE_PAGES: Readonly<Record<string, PageId>> =
 export const ITEM_PAGES: readonly PageId[] = Object.values(ITEM_TYPE_PAGES);
 
 /** One page's rows of a shared table: the column, and the value that picks them. */
-export type Branch = { page: string; column: string; value?: string };
+export type Branch = {
+  page: string;
+  column: string;
+  value?: string | boolean;
+};
 
 /**
  * Where a table sits in the registry, which decides what a module key in its
@@ -221,8 +265,8 @@ export function readersOf(table: string): readonly string[] {
 /**
  * The pages whose View admits a read of what a page owns: every page of its
  * module, then the pages of other modules that list one of its tables in
- * `readers`. Writes stay per page. RLS (`render`) and the read gates of
- * service functions (`readGate`, `@carbon/api/permissions`) both use it.
+ * `readers`. Writes stay per page. RLS (`render`) and `holdsGate`'s read
+ * mode (`widenReads`) both use it.
  */
 export function readPages(pageId: string): PageId[] {
   const module = moduleOf(pageId);
@@ -238,10 +282,65 @@ export function readPages(pageId: string): PageId[] {
   ];
 }
 
-/** A level at most the page's `maxLevel`. Grant writers call it; the resolver does not. */
+/** A level at most the page's `maxLevel`; an unknown page leaves it as it is. */
 export function clampLevel(pageId: string, level: Level): Level {
   const page = PAGE_BY_ID.get(pageId);
   return page ? lowerLevel(level, page.maxLevel) : level;
+}
+
+const segments = (path: string) => path.split("/").filter(Boolean);
+
+/**
+ * How many segments of a page path cover the URL; 0 when it does not. A path
+ * covers its own URL and every URL below it. A `$param` segment of the path
+ * matches any one segment, so a pathname (`/x/customer/c1/assets`) and a route
+ * pattern (`/x/customer/$customerId/assets`) both match.
+ */
+function coverage(path: string, url: readonly string[]): number {
+  const want = segments(path);
+  if (want.length > url.length) return 0;
+  for (const [i, part] of want.entries())
+    if (!part.startsWith("$") && part !== url[i]) return 0;
+  return want.length;
+}
+
+/**
+ * The page a URL belongs to: the page with the longest `paths` entry that
+ * covers it. Undefined for a URL no page covers (the dashboard, a settings
+ * index, a route listed in the registry test's `UNPAGED_ROUTES`).
+ */
+export function pageOfUrl(pathname: string): PageId | undefined {
+  const url = segments(pathname.split(/[?#]/)[0] ?? "");
+  let best: { page: PageId; length: number } | undefined;
+  for (const page of PAGES)
+    for (const path of page.paths) {
+      const length = coverage(path, url);
+      if (length > (best?.length ?? 0)) best = { page: page.id, length };
+    }
+  return best?.page;
+}
+
+/**
+ * The page that owns a row of `table`: the page that owns the table, or for a
+ * table several pages share, the page whose `where` the row matches (an item
+ * by its `type`, a memo by which party it carries, a run by its `type`). The
+ * row needs the `where` column. Undefined for a table no page owns, a shared
+ * row no `where` matches, and a child table (its row does not carry the
+ * shared column: ask about the shared row it hangs off).
+ */
+export function pageOfRow(
+  table: string,
+  row: Readonly<Record<string, unknown>>
+): PageId | undefined {
+  const place = placeOf(table);
+  if (place?.kind === "page") return place.page as PageId;
+  if (place?.kind !== "shared") return undefined;
+  const branch = place.branches.find(({ column, value }) => {
+    const cell = row[column];
+    if (cell === null || cell === undefined) return false;
+    return value === undefined || String(cell) === String(value);
+  });
+  return branch?.page as PageId | undefined;
 }
 
 // FNV-1a, not node:crypto: the claims cache key is built in browser code too.

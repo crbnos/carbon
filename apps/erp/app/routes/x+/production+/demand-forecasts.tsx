@@ -44,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(
     request,
     { "production.demandForecasts": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
 
   const url = new URL(request.url);

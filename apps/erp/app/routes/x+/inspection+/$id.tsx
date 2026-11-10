@@ -51,11 +51,9 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.inspection?.inspectionId, "Inspection");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(
-    request,
-    { "quality.inspections": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, userId, api } = await authorize(request, {
+    "quality.inspections": "View"
+  });
   const { id } = params;
   invariant(id, "id is required");
 

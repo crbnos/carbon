@@ -15,11 +15,7 @@ import { deleteDepartment } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "people.departments": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "people.departments": "View" });
 
   const { departmentId } = params;
   if (!departmentId) throw notFound("departmentId not found");

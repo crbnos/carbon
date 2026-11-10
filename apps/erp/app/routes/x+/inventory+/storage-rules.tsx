@@ -23,11 +23,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "inventory.storageRules": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "inventory.storageRules": "View"
+  });
 
   const rules = await api.shared.getEnforcementRules({
     search: null,

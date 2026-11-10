@@ -15,11 +15,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "people.shifts": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "people.shifts": "View" });
 
   const { shiftId } = params;
   if (!shiftId) throw notFound("shiftId not found");

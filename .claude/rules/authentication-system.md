@@ -402,7 +402,7 @@ Supabase's `auth.mfa_factors` — no app table.
 
 ## Permissions & RLS gating (`auth.server.ts` → `requirePermissions`)
 
-`requirePermissions(request, gate, { role?, bypassRls?, allowPortalAccounts? })` is
+`requirePermissions(request, gate, { bypassRls?, allowPortalAccounts? })` is
 the gate behind every loader/action. It is internal to `@carbon/auth`: apps call `authorize`
 (same module), which runs it and returns its result plus `api`, the service functions bound to
 that caller (bound on first read; the ERP registers the binding with `registerCarbon`, which
@@ -410,9 +410,12 @@ calls `registerApi`). Two paths:
 
 1. **`carbon-key` header present** → API-key auth (see below).
 2. **Otherwise** → `requireAuthSession`, then `getUserClaims(userId, companyId)`.
-   - A session whose role in the active company is `customer` or `supplier` (portal
-     accounts) is refused with a 403 BEFORE the empty-requirement early exit, unless the
-     route passes the `allowPortalAccounts: true` option. Portal accounts hold `documents_*`,
+   - Who passes is `admits(actor, companyId, gate, { allowPortalAccounts })`
+     (`@carbon/database/access`), the caller check every gate shares: an employee of the
+     company, then `holdsGate`; `{}` asks for nothing more. A session whose role in the
+     active company is `customer` or `supplier` (portal accounts) is refused with a 403,
+     and one with no role there is destroyed, unless the route passes the
+     `allowPortalAccounts: true` option (any signed-in user). Portal accounts hold `documents_*`,
      `parts_view`, `sales_view`/`purchasing_view`, and `{}` admitted any session, so before
      this ~50 routes that read with the service role (file previews, job travelers, order
      and quote pages) served them. No route is theirs: portal pages are share links on
@@ -447,7 +450,8 @@ calls `registerApi`). Two paths:
      `{ "inventory.receipts": "Edit" }`. Each entry is checked with `holdsGate`, which reads
      the highest action of its level, `<page>_<action>` (`inventory.receipts_update` for
      Edit). Two entries need both; a list of gates (`anyOf(pages, level)`) passes on any one,
-     for a route several pages share (an item, a memo, a run). `role` is matched directly.
+     for a route several pages share (an item, a memo, a run). The `role` option is a
+     deprecated no-op: the employee role is the default.
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
      → authenticated root.
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
@@ -464,18 +468,22 @@ flows call `redis.del(getPermissionCacheKey(userId))`.
 
 ## API key auth
 
-`carbon-key: <key>` header. `requirePermissions` resolves it through
-`getCompanyIdFromAPIKey`, which now reads via `getApiKeyRecord`
+`carbon-key: <key>` header. `requirePermissions` authenticates it with
+`authenticateApiKey(rawKey)` (`auth.server.ts`), the one path every key takes (the
+postings' `authorizePostingCaller` calls it too). It is memoized per request, so the rate
+limit counts a request once however many gates it meets. It reads via `getApiKeyRecord`
 (`packages/auth/src/services/api-key.server.ts`): a **30s Redis cache** at
 `apikey:auth:<keyHash>`, per-request memoized (`oncePerRequest`) so one HTTP call
 does one lookup even though both `requirePermissions` and the v1 scope read need
 the row. Unknown keys are cached too (the literal `"null"`), so a bad key
 hammering the endpoint doesn't hammer Postgres. Redis being down falls through to
-the DB. Busting: the api-key service functions (`updateApiKey`, `revokeApiKey` in
-`settings.server.ts`) call `invalidateApiKeyCache` (`settings.service.ts` →
-`bustApiKeyCache`) after an edit, and BEFORE and after a delete (the keyHash is
-unreadable once the row is gone), so a scope
-change or revocation takes effect immediately; the worst-case lag for any other
+the DB. Busting: every grant write of a key goes through `writeAccessGrants`
+(`@carbon/ee/permissions.server`), which calls `bustApiKeyCache` after it commits
+(`createApiKey` / `updateApiKey` write the key's grants through it, after the
+key row, so an expiry or limit edit is busted too); `revokeApiKey`
+(`settings.server.ts`) calls `invalidateApiKeyCache` (`settings.service.ts` →
+`bustApiKeyCache`) BEFORE and after the delete (the keyHash is unreadable once
+the row is gone). So a scope change or revocation takes effect immediately; the worst-case lag for any other
 writer is the 30s TTL. Then:
 
 - Reject if `expiresAt` passed (401).
@@ -505,9 +513,9 @@ writer is the 30s TTL. Then:
   this update with `void client.from(…).update(…)`, which never sends: a supabase-js
   builder only runs when awaited.)
 - Scope check: the key's `permission` rows (`apiKeyId`), embedded in the
-  `getApiKeyRecord` select and expanded into `record.permissions`; each required
-  permission must `holds` for the key's company. A key with no grants fails every
-  check — no grants is NOT full access. 403 on failure.
+  `getApiKeyRecord` select and expanded into `record.permissions` (`claimsFor`); the
+  gate is checked by `admits`, after the plan gate. A key with no grants fails every
+  check, `{}` included — no grants is NOT full access. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
   except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
   (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
@@ -564,7 +572,11 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   (`employeeTypeId` = role, `userId` = person override, `apiKeyId` = key, exactly
   one set) on a page or, with `page` NULL, a whole module, at a `level`
   (None/View/Create/Edit/Full). Unique per (company, subject, module, page).
-  Written only through `replaceGrants` (`@carbon/database/access-write`).
+  Written only through `writeAccessGrants` (`@carbon/ee/permissions.server`:
+  entitlement, ownership, the modules a subject may hold, one transaction over
+  `replaceGrants` / `removeGrant` from `@carbon/database/access-write`, cache
+  clearing and the audit event). Deactivation (`@carbon/auth` `users.server.ts`)
+  still deletes a person's rows by itself.
 - `userToCompany` — junction, PK `(userId, companyId)`, `role` enum
   `'employee' | 'supplier' | 'customer'`.
 - `ssoConnection` — SAML SSO tenant binding (see the SSO section): PK

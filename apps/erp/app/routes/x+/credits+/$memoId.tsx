@@ -16,7 +16,7 @@ import type {
 } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import { memoValidator } from "~/modules/invoicing/invoicing.models";
+import { memoPage, memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
   getSettlementRelatedItems,
@@ -74,13 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(memo.error, "Failed to load memo"))
     );
   }
-  // A supplier memo is a Supplier Credit, a customer memo a Credit Memo.
-  await authorize(
-    request,
-    memo.data.supplierId
-      ? { "invoicing.supplierCredits": "View" }
-      : { "invoicing.creditMemos": "View" }
-  );
+  await authorize(request, { [memoPage(memo.data)]: "View" });
 
   const applications = await api.invoicing.getMemoApplications({ memoId });
 
@@ -127,12 +121,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(existing.error, "Failed to load memo"))
     );
   }
-  await authorize(
-    request,
-    existing.data.supplierId
-      ? { "invoicing.supplierCredits": "Edit" }
-      : { "invoicing.creditMemos": "Edit" }
-  );
+  await authorize(request, { [memoPage(existing.data)]: "Edit" });
   if (existing.data.status !== "Draft") {
     throw redirect(
       path.to.memo(memoId),

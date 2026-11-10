@@ -101,7 +101,37 @@ export async function loadHelpers(
       }))
   );
   for (const helper of helpers) await validateHelper(helper);
-  return helpers;
+  return calleesFirst(helpers);
+}
+
+/**
+ * The helpers in file order, except that each comes after the helpers it calls:
+ * Postgres checks a SQL-language body when the function is created, so a
+ * migration or a sync on a database without the callee would fail.
+ */
+export function calleesFirst(helpers: Helper[]): Helper[] {
+  const calls = (caller: Helper, callee: Helper) => {
+    if (caller === callee) return false;
+    const name =
+      helperSchema(callee) === "public"
+        ? String.raw`(?<![\w.])(?:public\.)?${callee.name}`
+        : String.raw`(?<![\w.])${helperSchema(callee)}\.${callee.name}`;
+    const body = caller.sql.slice(caller.sql.indexOf("$function$"));
+    return new RegExp(String.raw`${name}\s*\(`).test(body);
+  };
+  const done = new Set<Helper>();
+  const visiting = new Set<Helper>();
+  const ordered: Helper[] = [];
+  const visit = (helper: Helper) => {
+    if (done.has(helper) || visiting.has(helper)) return;
+    visiting.add(helper);
+    for (const callee of helpers) if (calls(helper, callee)) visit(callee);
+    visiting.delete(helper);
+    done.add(helper);
+    ordered.push(helper);
+  };
+  for (const helper of helpers) visit(helper);
+  return ordered;
 }
 
 const definitions = async (db: Client, helper: Helper) =>

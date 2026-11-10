@@ -67,8 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { companyId, userId } = await authorize(
     request,
-    definition.permission.gate,
-    { role: "employee" }
+    definition.permission.gate
   );
 
   const exportId = newTableExportId(listKey);

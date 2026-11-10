@@ -25,8 +25,9 @@ import {
   levelHolds,
   moduleOf,
   PAGES,
+  type PageGate,
   pageById,
-  readPages
+  widenReads
 } from "../../packages/database/src/access";
 import {
   type CallExpression,
@@ -463,8 +464,8 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   );
   if (!value) throw new Error(`${where}: no literal \`permission\``);
 
-  // `"employee"`: any employee of the company. The API gate then checks only
-  // that the key is the company's.
+  // `"employee"`: any employee of the company, or a key holding some grant
+  // there (`admits`). No page to publish.
   if (Node.isStringLiteral(value) && value.getLiteralValue() === "employee") {
     return { permission: { module: null, actions: [] }, actions: [] };
   }
@@ -474,7 +475,7 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     return publishChoice(
       where,
       choice.kind === "anyOf"
-        ? { kind: "anyOf", gates: widenReads(choice.gates, true) }
+        ? { kind: "anyOf", gates: readAlternatives(choice.gates, true) }
         : choice
     );
 
@@ -513,25 +514,27 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     gates = values as ObjectLiteralExpression[];
   }
 
-  // A read on one page admits any page of its module (`readGate`, the gate
-  // `defineServiceFn` runs): publish the pages it admits.
-  if (gates.length === 1) {
-    const read = onePageRead(gates[0]!);
-    if (read && readPages(read).length > 1)
-      return publishChoice(where, {
-        kind: "anyOf",
-        gates: widenReads([[[read, "View"]]])
-      });
-  }
+  // Publish what `defineServiceFn` checks: each gate as its read
+  // (`readGate`), every page a widened read admits.
+  const reads = gates.map((gate) => {
+    const entries = entriesOf(gate);
+    return entries.length === gate.getProperties().length
+      ? readAlternatives([entries], false)
+      : [entries];
+  });
+  if (reads.length === 1 && reads[0]!.length > 1)
+    return publishChoice(where, { kind: "anyOf", gates: reads[0]! });
 
   const modules = new Set<string>();
   const pages = new Set<string>();
   const actions = new Set<PermissionAction>();
-  for (const page of gates.map(onePageRead)) {
-    if (!page) continue;
-    for (const read of readPages(page)) {
-      modules.add(moduleOf(read));
-      pages.add(read);
+  for (const read of reads) {
+    if (read.length < 2) continue;
+    for (const gate of read as [string, string][][]) {
+      const page = gate[0]?.[0];
+      if (!page) continue;
+      modules.add(moduleOf(page));
+      pages.add(page);
     }
   }
   for (const entry of gates.flatMap((gate) => gate.getProperties())) {
@@ -571,47 +574,33 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   };
 }
 
-/** `{ "<page>": "View" }`, as `readGate` reads it. */
-function onePageRead(gate: ObjectLiteralExpression): string | null {
-  const [entry, ...more] = gate.getProperties();
-  if (!entry || more.length > 0 || !Node.isPropertyAssignment(entry)) return null;
-  const page = literalName(entry);
-  const level = stringsOf(entry.getInitializer());
-  return page && pageById(page) && level?.length === 1 && level[0] === "View"
-    ? page
-    : null;
+/** A gate literal's `[page, level]` entries; what is not a literal is left out. */
+function entriesOf(gate: ObjectLiteralExpression): [string, string][] {
+  return gate.getProperties().flatMap((entry): [string, string][] => {
+    const page = literalName(entry);
+    const level = Node.isPropertyAssignment(entry)
+      ? stringsOf(entry.getInitializer())
+      : null;
+    return page && level?.length === 1 ? [[page, level[0]!]] : [];
+  });
 }
 
 /**
- * Each one-page View gate as every page `readPages` admits; the rest as
- * written. In an `anyOf` list, a shared table's page stays (`anyOfRule`).
+ * The gates as `widenReads` checks them, the one or the list (`inList`), as
+ * the alternatives of which any one passes.
  */
-function widenReads(
+function readAlternatives(
   gates: [string, string][][],
-  inList = false
+  inList: boolean
 ): [string, string][][] {
-  const out: [string, string][][] = [];
-  const seen = new Set<string>();
-  for (const gate of gates) {
-    const [entry, ...more] = gate;
-    const known = entry ? pageById(entry[0]) : undefined;
-    const widened =
-      entry &&
-      !more.length &&
-      entry[1] === "View" &&
-      known &&
-      !(inList && known.where)
-        ? readPages(entry[0]).map((page): [string, string][] => [[page, "View"]])
-        : [gate];
-    for (const one of widened) {
-      const key = JSON.stringify(one);
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push(one);
-      }
-    }
-  }
-  return out;
+  const asGate = (gate: [string, string][]) =>
+    Object.fromEntries(gate) as PageGate;
+  const widened = widenReads(
+    inList ? { anyOf: gates.map(asGate) } : asGate(gates[0] ?? [])
+  );
+  const list =
+    "anyOf" in widened ? widened.anyOf : [widened as PageGate];
+  return list.map((gate) => Object.entries(gate) as [string, string][]);
 }
 
 function classify(

@@ -41,11 +41,9 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "invoicing.purchaseInvoices": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    "invoicing.purchaseInvoices": "View"
+  });
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");

@@ -8,12 +8,8 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { createClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
-import {
-  permissionsFromClaims,
-  type RequiredPermissions,
-  resolvePermissions
-} from "@carbon/api/permissions";
-import { pageById } from "@carbon/database/access";
+import { resolvePermissions } from "@carbon/api/permissions";
+import { claimsFor, type PageGate, pageById } from "@carbon/database/access";
 import {
   connectLocalTestDatabase,
   databaseTest
@@ -96,11 +92,13 @@ describe("postingCaller", () => {
 });
 
 describe("authorizePostingCaller (API key)", () => {
-  class Rollback extends Error {}
-
-  /** Runs `fn` with a context for a real `apiKey` row, then rolls back. */
+  /**
+   * Runs `fn` with a context for a real `apiKey` row, then deletes it. The key
+   * is committed: the caller check reads it the way `authorize` does, through
+   * its own client.
+   */
   async function withApiKey(
-    row: { scopes: Record<string, string[]>; expiresAt: string | null },
+    row: { expiresAt: string | null; grant?: { module: string; level: string } },
     fn: (ctx: Caller, companyId: string) => Promise<void>
   ) {
     const db = await connectLocalTestDatabase();
@@ -109,21 +107,28 @@ describe("authorizePostingCaller (API key)", () => {
     `.execute(db);
     const { companyId, userId } = owner.rows[0]!;
     const rawKey = `crbn_test_${Date.now()}`;
+    const key = await db
+      .insertInto("apiKey")
+      .values({
+        name: "authorize test",
+        companyId,
+        createdBy: userId,
+        keyHash: createHash("sha256").update(rawKey).digest("hex"),
+        scopes: JSON.stringify({}),
+        expiresAt: row.expiresAt
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
     try {
-      await db.transaction().execute(async (trx) => {
-        await trx
-          .insertInto("apiKey")
-          .values({
-            name: "authorize test",
-            companyId,
-            createdBy: userId,
-            keyHash: createHash("sha256").update(rawKey).digest("hex"),
-            scopes: JSON.stringify(row.scopes),
-            expiresAt: row.expiresAt
-          })
-          .execute();
-        const ctx = {
-          db: trx,
+      if (row.grant) {
+        await sql`
+          INSERT INTO "permission" ("companyId", "apiKeyId", "module", "level", "createdBy")
+          VALUES (${companyId}, ${key.id}, ${row.grant.module}, ${row.grant.level}, ${userId})
+        `.execute(db);
+      }
+      await fn(
+        {
+          db,
           companyId,
           userId,
           caller: postingCaller(
@@ -132,20 +137,24 @@ describe("authorizePostingCaller (API key)", () => {
             }),
             userId
           )
-        };
-        await fn(ctx, companyId);
-        throw new Rollback();
-      });
-    } catch (err) {
-      if (!(err instanceof Rollback)) throw err;
+        },
+        companyId
+      );
     } finally {
+      await sql`DELETE FROM "permission" WHERE "apiKeyId" = ${key.id}`.execute(
+        db
+      );
+      await db.deleteFrom("apiKey").where("id", "=", key.id).execute();
       await db.destroy();
     }
   }
 
-  databaseTest("checks the key's scopes, not its creator's claims", () =>
-    withApiKey({ scopes: {}, expiresAt: null }, async (ctx) => {
-      await expect(authorize(ctx, {})).resolves.toBeUndefined();
+  databaseTest("refuses a key with no grant in the company, even for {}", () =>
+    withApiKey({ expiresAt: null }, async (ctx) => {
+      await expect(authorize(ctx, {})).rejects.toMatchObject({ status: 403 });
+      await expect(authorize(ctx, "employee")).rejects.toMatchObject({
+        status: 403
+      });
       // The creator of a real company holds this; the key does not.
       await expect(
         authorize(ctx, { "inventory.receipts": "View" })
@@ -154,31 +163,33 @@ describe("authorizePostingCaller (API key)", () => {
   );
 
   databaseTest("passes a key whose grants cover the requirement", () =>
-    withApiKey({ scopes: {}, expiresAt: null }, async (ctx, companyId) => {
-      await sql`
-        INSERT INTO "permission" ("companyId", "apiKeyId", "module", "level", "createdBy")
-        SELECT ${companyId}, id, 'Inventory', 'Edit', "createdBy"
-        FROM "apiKey" WHERE name = 'authorize test'
-      `.execute(ctx.db);
-      // A module grant covers every page of the module, at its level.
-      await expect(
-        authorize(ctx, { "inventory.receipts": "Edit" })
-      ).resolves.toBeUndefined();
-      await expect(
-        authorize(ctx, { "inventory.shipments": "Edit" })
-      ).resolves.toBeUndefined();
-      await expect(
-        authorize(ctx, { "inventory.receipts": "Full" })
-      ).rejects.toMatchObject({ status: 403 });
-      await expect(
-        authorize(ctx, { "invoicing.payments": "Edit" })
-      ).rejects.toMatchObject({ status: 403 });
-    })
+    withApiKey(
+      { expiresAt: null, grant: { module: "Inventory", level: "Edit" } },
+      async (ctx) => {
+        await expect(authorize(ctx, {})).resolves.toBeUndefined();
+        // A module grant covers every page of the module, at its level.
+        await expect(
+          authorize(ctx, { "inventory.receipts": "Edit" })
+        ).resolves.toBeUndefined();
+        await expect(
+          authorize(ctx, { "inventory.shipments": "Edit" })
+        ).resolves.toBeUndefined();
+        await expect(
+          authorize(ctx, { "inventory.receipts": "Full" })
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+          authorize(ctx, { "invoicing.payments": "Edit" })
+        ).rejects.toMatchObject({ status: 403 });
+      }
+    )
   );
 
   databaseTest("refuses an expired key", () =>
     withApiKey(
-      { scopes: {}, expiresAt: "2000-01-01T00:00:00Z" },
+      {
+        expiresAt: "2000-01-01T00:00:00Z",
+        grant: { module: "Inventory", level: "Edit" }
+      },
       async (ctx) => {
         await expect(authorize(ctx, {})).rejects.toMatchObject({
           status: 403
@@ -208,7 +219,7 @@ describe("authorizePostingCaller (user)", () => {
       `.execute(db);
       for (const { companyId, userId, claims } of rows) {
         const held = Object.entries(
-          permissionsFromClaims(claims, companyId)
+          claimsFor(claims, companyId).permissions
         ).find(
           ([page, permission]) =>
             pageById(page) && permission.update.includes(companyId)
@@ -227,7 +238,7 @@ describe("authorizePostingCaller (user)", () => {
     "admits a permission the user holds, in their company only",
     () =>
       withEmployee(async (fields, held) => {
-        const gate = { [held]: "Edit" } as RequiredPermissions;
+        const gate = { [held]: "Edit" } as PageGate;
         await expect(
           authorize({ ...fields, caller: { type: "user" } }, gate)
         ).resolves.toBeUndefined();
@@ -240,7 +251,7 @@ describe("authorizePostingCaller (user)", () => {
         await expect(
           authorize({ ...fields, caller: { type: "user" } }, {
             "no-such-page": "Edit"
-          } as RequiredPermissions)
+          } as PageGate)
         ).rejects.toMatchObject({ status: 403 });
       })
   );
@@ -251,7 +262,7 @@ describe("authorizePostingCaller (user)", () => {
         by: "type",
         rules: {
           internal: "system",
-          open: { [held]: "Edit" } as RequiredPermissions
+          open: { [held]: "Edit" } as PageGate
         }
       } as const;
       const user: Caller = { ...fields, caller: { type: "user" } };

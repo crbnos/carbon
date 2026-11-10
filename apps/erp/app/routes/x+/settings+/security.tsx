@@ -66,11 +66,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "settings.security": "View" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "settings.security": "View"
+  });
 
   // The SP URLs are un-prefixed on purpose: GoTrue self-declares its SP
   // entityID and ACS from API_EXTERNAL_URL (no /auth/v1) and validates each

@@ -15,11 +15,7 @@ import { deleteLocation } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.locations": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "resources.locations": "View" });
 
   const { locationId } = params;
   if (!locationId) throw notFound("locationId not found");

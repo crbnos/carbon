@@ -34,11 +34,7 @@ import {
   upsertDimensionValueMapping,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
-import {
-  deleteApiKey,
-  replaceApiKeyGrants,
-  upsertApiKey
-} from "@carbon/ee/api-keys.server";
+import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
 import {
   disableAuditLog,
   enableAuditLog,
@@ -99,7 +95,8 @@ import {
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
 import { fromServerFn } from "../shared/shared.service";
-import { permissionsValidator } from "../users/users.models";
+import { grantsSchema } from "../users/users.models";
+import { saveAccessGrants } from "../users/users.service";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -2026,7 +2023,7 @@ const apiKeyFields = {
   /** Requests per minute. Saved on a single-tenant deployment only; Carbon Cloud sets it. */
   rateLimit: z.number().int().min(1).max(1_000_000).optional(),
   /** What the key may do: one level per module or page. */
-  grants: permissionsValidator.shape.grants
+  grants: grantsSchema
 };
 /**
  * Create an API key.
@@ -2061,26 +2058,23 @@ export const createApiKey = defineServiceFn({
       return ctx.error("internal", "Failed to create API key", created.error);
     }
     const apiKeyId = created.data.id;
-    const granted = await replaceApiKeyGrants(
-      ctx.asCaller.supabase,
-      ctx.asSystem.pg,
-      {
-        companyId: ctx.company.id,
-        apiKeyId,
-        grants,
-        actorId: ctx.auditUserId
-      }
-    ).catch((err) => ({ error: err as { message: string } }));
-    if (granted.error) {
+    const refused = await saveAccessGrants(ctx, {
+      subjectType: "key",
+      subjectId: apiKeyId,
+      change: { set: grants }
+    }).catch((err: unknown) => ctx.error("internal", "Failed", err));
+    if (refused) {
       // A key without its grants authorizes nothing; remove it rather than
       // leave a key the person never saw. A Create-level caller cannot delete
       // keys, so the cleanup of the key it just made runs as the system.
       await deleteApiKey(ctx.asSystem.supabase, apiKeyId);
-      return ctx.error(
-        "internal",
-        "Failed to save the API key's permissions",
-        granted.error
-      );
+      return refused.category === "internal"
+        ? ctx.error(
+            "internal",
+            "Failed to save the API key's permissions",
+            refused
+          )
+        : refused;
     }
     return { key };
   }
@@ -2098,10 +2092,6 @@ export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { id, name, grants, expiresAt, rateLimit }) {
-    // The grants are written without RLS, which asks this of an apiKey write.
-    if (!ctx.can({ "settings.apiKeys": "Edit" })) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
     let updated: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
       updated = await upsertApiKey(ctx.asCaller.supabase, {
@@ -2116,30 +2106,22 @@ export const updateApiKey = defineServiceFn({
     if (updated.error) {
       return ctx.error("internal", "Failed to update API key", updated.error);
     }
-    let granted: Awaited<ReturnType<typeof replaceApiKeyGrants>>;
-    try {
-      granted = await replaceApiKeyGrants(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        {
-          companyId: ctx.company.id,
-          apiKeyId: id,
-          grants,
-          actorId: ctx.auditUserId
-        }
-      );
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
+    // Clears the key's cached authentication, so the new grants, expiry and
+    // limit apply at once.
+    const refused = await saveAccessGrants(ctx, {
+      subjectType: "key",
+      subjectId: id,
+      change: { set: grants }
+    });
+    if (refused) {
+      return refused.category === "internal"
+        ? ctx.error(
+            "internal",
+            "Failed to update the API key's permissions",
+            refused
+          )
+        : refused;
     }
-    if (granted.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update the API key's permissions",
-        granted.error
-      );
-    }
-    // A scope or expiry edit must not keep authenticating from the 30s cache.
-    await service.invalidateApiKeyCache(id, ctx.company.id);
     return { id };
   }
 });

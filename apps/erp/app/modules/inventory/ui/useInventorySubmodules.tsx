@@ -25,7 +25,9 @@ import {
 import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
+import { PROJECT_ISSUE_GATE } from "~/modules/projects/projects.models";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { visibleGroups } from "~/utils/nav";
 import { path } from "~/utils/path";
 import type { receiptInspectionStatusType } from "../inventory.models";
 
@@ -48,37 +50,30 @@ export default function useInventorySubmodules() {
         {
           name: t`Quantities`,
           to: path.to.inventory,
-          page: "inventory.quantities",
-          role: "employee",
           icon: <LuTally5 />,
           table: "inventory"
         },
         {
           name: t`Movements`,
           to: path.to.stockMovements,
-          page: "inventory.movements",
-          role: "employee",
           icon: <LuArrowDownUp />,
           table: "itemLedger"
         },
         {
           name: t`Inventory Count`,
           to: path.to.inventoryCounts,
-          page: "inventory.inventoryCount",
           icon: <LuClipboardCheck />,
           table: "inventoryCount"
         },
         {
           name: t`Issue to Project`,
           to: path.to.projectIssue,
-          page: "projects.projects",
+          gate: PROJECT_ISSUE_GATE,
           icon: <LuPackageMinus />
         },
         {
           name: t`Kanbans`,
           to: path.to.kanbans,
-          page: "inventory.kanbans",
-          role: "employee",
           icon: <LuScanQrCode />
         }
       ]
@@ -89,7 +84,6 @@ export default function useInventorySubmodules() {
         {
           name: t`Receipts`,
           to: path.to.receipts,
-          page: "inventory.receipts",
           icon: <LuHandCoins />,
           table: "receipt"
         },
@@ -99,7 +93,6 @@ export default function useInventorySubmodules() {
             "Pending Inspection",
             "Inspection In Progress"
           ]),
-          page: "inventory.receipts",
           icon: <LuClipboardCheck />
         },
         {
@@ -108,19 +101,16 @@ export default function useInventorySubmodules() {
             "Inspection Passed",
             "Partially Passed"
           ]),
-          page: "inventory.receipts",
           icon: <LuPackageCheck />
         },
         {
           name: t`Inspection failed`,
           to: receiptsByInspectionStatus(["Inspection Failed"]),
-          page: "inventory.receipts",
           icon: <LuClipboardX />
         },
         {
           name: t`Shipments`,
           to: path.to.shipments,
-          page: "inventory.shipments",
           icon: <LuTruck />,
           table: "shipment"
         }
@@ -132,20 +122,17 @@ export default function useInventorySubmodules() {
         {
           name: t`Picking Lists`,
           to: path.to.pickingLists,
-          page: "inventory.pickingLists",
           icon: <LuClipboardList />
         },
         {
           name: t`Stock Transfers`,
           to: path.to.stockTransfers,
-          page: "inventory.stockTransfers",
           icon: <LuListChecks />,
           table: "stockTransfer"
         },
         {
           name: t`Warehouse Transfers`,
           to: path.to.warehouseTransfers,
-          page: "inventory.warehouseTransfers",
           icon: <LuArrowRightLeft />,
           table: "warehouseTransfer"
         }
@@ -157,15 +144,11 @@ export default function useInventorySubmodules() {
         {
           name: t`Tracked Entities`,
           to: path.to.trackedEntities,
-          page: "inventory.trackedEntities",
-          role: "employee",
           icon: <LuQrCode />
         },
         {
           name: t`Traceability`,
           to: path.to.traceability,
-          page: "inventory.traceability",
-          role: "employee",
           icon: <LuNetwork />
         }
       ]
@@ -176,48 +159,34 @@ export default function useInventorySubmodules() {
         {
           name: t`Storage Units`,
           to: path.to.storageUnits,
-          page: "inventory.storageUnits",
-          role: "employee",
           icon: <LuWarehouse />,
           table: "storageUnit"
         },
         {
           name: t`Storage Types`,
           to: path.to.storageTypes,
-          page: "inventory.storageTypes",
-          role: "employee",
           icon: <LuTag />,
           table: "storageType"
         },
         {
           name: t`Storage Rules`,
           to: path.to.storageRules,
-          page: "inventory.storageRules",
-          role: "employee",
           icon: <LuShieldCheck />
         },
         {
           name: t`Shipping Methods`,
           to: path.to.shippingMethods,
-          page: "inventory.shippingMethods",
-          role: "employee",
           icon: <LuTruck />
         }
       ]
     }
   ];
 
-  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    (!route.role || permissions.is(route.role)) &&
-    (!route.page || permissions.has({ [route.page]: "View" }));
-
   return {
-    groups: inventoryRoutes
-      .map((group) => ({
-        ...group,
-        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
-      }))
-      .filter((group) => group.routes.length > 0)
+    groups: visibleGroups(inventoryRoutes, permissions).map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes)
+    }))
   };
 }
 

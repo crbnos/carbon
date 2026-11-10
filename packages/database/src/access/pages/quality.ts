@@ -4,13 +4,15 @@
 
 import type { Page } from "../registry";
 
-export const QUALITY_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Quality";
+
+export const PAGES = [
   {
     id: "quality.actions",
     label: "Actions",
     maxLevel: "View",
     tables: [],
-    readers: ["nonConformanceActionTask", "nonConformance"],
     paths: ["/x/quality/actions"]
   },
   {
@@ -90,6 +92,7 @@ export const QUALITY_PAGES = [
     label: "Quality Documents",
     maxLevel: "Full",
     tables: ["qualityDocument", "qualityDocumentStep"],
+    alsoWrittenBy: { qualityDocumentStep: ["production.procedures"] },
     paths: ["/x/quality/documents", "/x/quality-document/"]
   },
   {

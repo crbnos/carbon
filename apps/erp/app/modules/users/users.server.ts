@@ -31,6 +31,8 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
   createOperatorValidator,
+  grantModule,
+  grantsSchema,
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
   permissionsValidator,
@@ -471,33 +473,23 @@ export const deactivateUsers = defineServiceFn({
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). The employee and the type
  * must both be the company's. Access is the role's grants with these
- * overrides on top; the change is written to the permission audit log.
+ * overrides on top. The move and the overrides are one write and one entry in
+ * the permission audit log.
  */
 export const updateEmployeePermissions = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     employeeType: z.string().min(1),
-    grants: permissionsValidator.shape.grants,
+    grants: grantsSchema,
     ip: z.string().optional()
   }),
   permission: { "users.accounts": "Edit" },
   async run(ctx, { id, employeeType, grants, ip }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
-
-    // The move reads the claims before it writes and audits itself; the
-    // grants write then audits from the moved state (`moveEmployeeType`
-    // says why the two cannot share a transaction).
-    const moveRefused = await service.moveEmployeeType(ctx, {
-      id,
-      employeeType,
-      ip
-    });
-    if (moveRefused) return moveRefused;
     const refused = await service.saveAccessGrants(ctx, {
       subjectType: "person",
       subjectId: id,
-      grants,
+      change: { set: grants },
+      employeeType,
       ip
     });
     if (refused) return refused;
@@ -517,7 +509,7 @@ export const bulkUpdatePermissions = defineServiceFn({
   input: z.object({
     editType: z.string().min(1),
     userIds: z.array(z.string().min(1)).min(1),
-    grants: permissionsValidator.shape.grants,
+    grants: grantsSchema,
     ip: z.string().optional()
   }),
   permission: { "users.accounts": "Edit" },
@@ -543,22 +535,14 @@ export const bulkUpdatePermissions = defineServiceFn({
       return ctx.error("notFound", "Employee not found");
     }
 
-    const chosen = grants.flatMap((grant) =>
-      grant.level === null ? [] : [{ ...grant, level: grant.level }]
-    );
-    await batchTrigger(
-      "update-permissions",
-      userIds.map((id) => ({
-        payload: {
-          id,
-          grants: chosen,
-          addOnly: editType === "add",
-          companyId,
-          actorId: ctx.auditUserId,
-          ip
-        }
-      }))
-    );
+    await service.queuePermissionUpdates({
+      userIds,
+      companyId,
+      actorId: ctx.auditUserId,
+      grants,
+      addOnly: editType === "add",
+      ip
+    });
     return { count: userIds.length };
   }
 });
@@ -573,7 +557,7 @@ export const bulkUpdatePermissions = defineServiceFn({
 export const createEmployeeType = defineServiceFn({
   input: z.object({
     name: z.string().trim().min(1),
-    grants: permissionsValidator.shape.grants
+    grants: grantsSchema
   }),
   permission: { "users.employeeTypes": "Create" },
   async run(ctx, { name, grants }) {
@@ -599,7 +583,7 @@ export const createEmployeeType = defineServiceFn({
     const refused = await service.saveAccessGrants(ctx, {
       subjectType: "role",
       subjectId: employeeTypeId,
-      grants
+      change: { set: grants }
     });
     if (refused) return refused;
     return { id: employeeTypeId };
@@ -617,7 +601,7 @@ export const updateEmployeeType = defineServiceFn({
   input: z.object({
     id: z.string().min(1),
     name: z.string().trim().min(1),
-    grants: permissionsValidator.shape.grants
+    grants: grantsSchema
   }),
   permission: { "users.employeeTypes": "Edit" },
   async run(ctx, { id, name, grants }) {
@@ -637,7 +621,7 @@ export const updateEmployeeType = defineServiceFn({
     const refused = await service.saveAccessGrants(ctx, {
       subjectType: "role",
       subjectId: id,
-      grants
+      change: { set: grants }
     });
     if (refused) return refused;
     return { id };
@@ -741,7 +725,7 @@ export const upsertAccessGrants = defineServiceFn({
     const refused = await service.saveAccessGrants(ctx, {
       subjectType,
       subjectId,
-      grants,
+      change: { set: grants },
       ip
     });
     if (refused) return refused;
@@ -757,17 +741,16 @@ export const deleteAccessGrant = defineServiceFn({
   input: z.object({
     subjectType: permissionsValidator.shape.subjectType,
     subjectId: z.string().min(1),
-    module: z.string().min(1),
+    module: grantModule,
     page: z.string().min(1).nullable(),
     ip: z.string().optional()
   }),
   permission: { by: "subjectType", rules: grantSubjectRules },
   async run(ctx, { subjectType, subjectId, module, page, ip }) {
-    const current = await service.readAccessGrants(ctx, subjectType, subjectId);
     const refused = await service.saveAccessGrants(ctx, {
       subjectType,
       subjectId,
-      grants: current.filter((g) => g.module !== module || g.page !== page),
+      change: { remove: { module, page } },
       ip
     });
     if (refused) return refused;

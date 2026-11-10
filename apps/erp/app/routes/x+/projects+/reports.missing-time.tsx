@@ -74,8 +74,7 @@ type FilterKey = (typeof FILTER_KEYS)[number];
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api, companyId } = await authorize(
     request,
-    projectReportPermissions["missing-time"],
-    { role: "employee" }
+    projectReportPermissions["missing-time"]
   );
   // A DCAA report: only with DCAA timekeeping on.
   const settings = await api.settings.getCompanySettings({});

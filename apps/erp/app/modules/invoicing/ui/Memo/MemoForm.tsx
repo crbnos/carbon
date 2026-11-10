@@ -25,6 +25,7 @@ import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import {
   isMemoLocked,
   memoDirection,
+  memoPage,
   memoValidator
 } from "~/modules/invoicing/invoicing.models";
 
@@ -57,13 +58,9 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
   const permissions = usePermissions();
   const isEditing = Boolean(initialValues.id);
   const isLocked = isMemoLocked(initialValues.status);
-  const canMutate = permissions.has(
-    type === "supplierCredit"
-      ? { "invoicing.supplierCredits": "Edit" }
-      : { "invoicing.creditMemos": "Edit" }
-  );
-
   const isVendor = type === "supplierCredit";
+  const page = memoPage(isVendor ? "supplier" : "customer");
+  const canMutate = permissions.has({ [page]: "Edit" });
 
   // `type` decides the PARTY (and therefore which list this memo appears in and
   // which selector is shown) — never the direction. All four party×direction
@@ -140,11 +137,7 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
           isDisabled={
             isEditing
               ? isLocked || !canMutate
-              : !permissions.has(
-                  type === "supplierCredit"
-                    ? { "invoicing.supplierCredits": "Create" }
-                    : { "invoicing.creditMemos": "Create" }
-                )
+              : !permissions.has({ [page]: "Create" })
           }
         >
           <Trans>Save</Trans>

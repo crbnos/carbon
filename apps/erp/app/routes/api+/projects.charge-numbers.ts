@@ -11,11 +11,7 @@ import { getChargeNumbers } from "~/modules/projects/projects.service";
 const logger = getLogger("erp", "api-charge-numbers");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {});
 
   const chargeNumbers = await getChargeNumbers(client, companyId);
   if (chargeNumbers.error) {

@@ -7,27 +7,19 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { manifest } from "../authz/manifest";
 import { type AnyRule, render } from "../authz/rules";
-import { childPath, MODULES, moduleOf, PAGES } from "./registry";
-
-/** The spec's page table (`.ai/specs/2026-10-18-page-level-permissions.md`, "The pages"). */
-const SPEC_PAGE_COUNTS: Record<string, number> = {
-  accounting: 21,
-  documents: 1,
-  inventory: 15,
-  invoicing: 9,
-  parts: 16,
-  people: 7,
-  production: 12,
-  projects: 5,
-  purchasing: 8,
-  quality: 12,
-  resources: 10,
-  sales: 16,
-  service: 3,
-  settings: 32,
-  users: 4,
-  workflows: 2
-};
+import {
+  childPath,
+  isPageModule,
+  MODULES,
+  moduleEnum,
+  moduleId,
+  moduleOf,
+  PAGES,
+  type Page,
+  pageOfRow,
+  pageOfUrl,
+  placeOf
+} from "./registry";
 
 /**
  * Routes under `x+` that belong to no one page, with the reason. A key that
@@ -117,6 +109,11 @@ const policiesOf = (table: string) =>
     "\n"
   );
 
+const keysIn = (list: string) =>
+  [...list.matchAll(/'([\w.]+)_(?:view|create|update|delete)'/g)].map(
+    (key) => key[1] as string
+  );
+
 /** Every `<key>_<action>` an employee permission check in SQL names. */
 const checkedKeys = (sql: string) => [
   ...[
@@ -126,19 +123,22 @@ const checkedKeys = (sql: string) => [
   ].map((match) => match[1] as string),
   ...[
     ...sql.matchAll(
-      /get_companies_with_any_employee_permission\(ARRAY\[([^\]]*)\]/g
+      /get_companies_with_(?:any_employee_permission\(|module_view\(ARRAY\[[^\]]*\]::text\[\], )ARRAY\[([^\]]*)\]/g
     )
-  ].flatMap((match) =>
-    [
-      ...(match[1] as string).matchAll(
-        /'([\w.]+)_(?:view|create|update|delete)'/g
-      )
-    ].map((key) => key[1] as string)
-  )
+  ].flatMap((match) => keysIn(match[1] as string))
 ];
 
+/** The modules a read admits View on any page of (get_companies_with_module_view). */
+const viewedModules = (sql: string) =>
+  [
+    ...sql.matchAll(/get_companies_with_module_view\(ARRAY\[([^\]]*)\]/g)
+  ].flatMap((match) =>
+    [...(match[1] as string).matchAll(/'(\w+)'/g)].map((m) => m[1] as string)
+  );
+
 /** Whether SQL checks a permission, not only "employee". */
-const namesPermission = (sql: string) => checkedKeys(sql).length > 0;
+const namesPermission = (sql: string) =>
+  checkedKeys(sql).length > 0 || viewedModules(sql).length > 0;
 
 const NAMED_TABLES = Object.keys(manifest).filter((table) =>
   policiesOf(table).some(namesPermission)
@@ -201,20 +201,7 @@ describe("PAGES", () => {
     expect(ids.length - new Set(ids).size).toBe(0);
   });
 
-  it("has the spec's pages in each module, 173 in all", () => {
-    const counts: Record<string, number> = {};
-    for (const page of PAGES) {
-      const module = moduleOf(page.id);
-      counts[module] = (counts[module] ?? 0) + 1;
-    }
-    expect(counts).toEqual(SPEC_PAGE_COUNTS);
-    expect(PAGES.length).toBe(173);
-  });
-
-  it("lists the modules in sidebar order, each with its pages", () => {
-    expect(MODULES.map((module) => module.id)).toEqual(
-      Object.keys(SPEC_PAGE_COUNTS)
-    );
+  it("lists the modules in sidebar order, each page file one module", () => {
     expect([...new Set(PAGES.map((page) => moduleOf(page.id)))]).toEqual(
       MODULES.map((module) => module.id)
     );
@@ -265,22 +252,48 @@ describe("PAGES", () => {
     expect(problems).toEqual([]);
   });
 
-  it("lists as readers only restricted tables of other pages", () => {
+  // A read already admits View on any page of the owning page's module, so a
+  // reader in that module changes nothing; a table every employee reads needs
+  // no reader at all.
+  it("lists as readers only restricted tables of other modules", () => {
     const problems: string[] = [];
-    for (const page of PAGES) {
-      if (!("readers" in page)) continue;
-      for (const table of page.readers) {
-        const own =
-          (page.tables as readonly string[]).includes(table) ||
-          ("children" in page && page.children.some((c) => c.table === table));
+    for (const page of PAGES as readonly Page[]) {
+      for (const table of page.readers ?? []) {
+        const place = placeOf(table);
+        const owners = !place
+          ? []
+          : place.kind === "page"
+            ? [place.page]
+            : place.branches.map((branch) => branch.page);
         const select = policiesOf(table).find((policy) =>
           policy.includes("FOR SELECT")
         );
-        if (own) problems.push(`${page.id}: ${table} is its own table`);
+        if (!owners.length) problems.push(`${page.id}: ${table} is on no page`);
+        else if (owners.every((owner) => moduleOf(owner) === moduleOf(page.id)))
+          problems.push(`${page.id}: ${table} is a table of its own module`);
         else if (!select || !namesPermission(select))
           problems.push(`${page.id}: every employee reads ${table}`);
       }
     }
+    expect(problems).toEqual([]);
+  });
+
+  it("picks a shared table's rows by a string value, never a boolean spelled as a string", () => {
+    const problems = (PAGES as readonly Page[]).flatMap((page) =>
+      page.where?.value === "true" || page.where?.value === "false"
+        ? [`${page.id}: ${page.where.table}.${page.where.column}`]
+        : []
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("names modules that have pages in every module read", () => {
+    const modules = new Set(PAGES.map((page) => moduleOf(page.id)));
+    const problems = Object.keys(manifest).flatMap((table) =>
+      viewedModules(policiesOf(table).join("\n"))
+        .filter((module) => !modules.has(module))
+        .map((module) => `${table}: ${module}`)
+    );
     expect(problems).toEqual([]);
   });
 
@@ -373,6 +386,17 @@ describe("paths", () => {
     expect(stale).toEqual([]);
   });
 
+  it("puts each route on the page pageOfUrl names", () => {
+    const problems = urls.flatMap(({ file, url }) => {
+      const pages = pagesFor(url);
+      const page = pageOfUrl(url);
+      return pages.length === 1 && page !== pages[0]
+        ? [`${file} (${url}): ${pages[0]}, pageOfUrl ${page}`]
+        : [];
+    });
+    expect(problems).toEqual([]);
+  });
+
   it("gives every page path at least one route", () => {
     const empty = PAGES.flatMap((page) =>
       page.paths
@@ -380,5 +404,94 @@ describe("paths", () => {
         .map((path) => `${page.id}: ${path}`)
     );
     expect(empty).toEqual([]);
+  });
+});
+
+describe("modules", () => {
+  it("maps each module id to its enum label and back", () => {
+    expect(MODULES.find((module) => module.id === "parts")).toEqual({
+      id: "parts",
+      label: "Items",
+      enum: "Parts"
+    });
+    for (const module of MODULES) {
+      expect(moduleEnum(module.id)).toBe(module.enum);
+      expect(moduleId(module.enum)).toBe(module.id);
+    }
+  });
+
+  it("refuses a label with no pages, or not in enum case", () => {
+    for (const label of ["Items", "Messaging", "Printing", "inventory", ""])
+      expect(isPageModule(label)).toBe(false);
+    expect(moduleId("Items")).toBeUndefined();
+    expect(isPageModule("Parts")).toBe(true);
+    expect(isPageModule("Documents")).toBe(true);
+  });
+});
+
+describe("pageOfUrl", () => {
+  it("takes the page whose longest path covers the URL", () => {
+    expect(pageOfUrl("/x/inventory/receipts")).toBe("inventory.receipts");
+    expect(pageOfUrl("/x/inventory/receipts/")).toBe("inventory.receipts");
+    expect(pageOfUrl("/x/inventory/receipts?status=Draft")).toBe(
+      "inventory.receipts"
+    );
+    expect(pageOfUrl("/x/purchase-invoice/pi1/details")).toBe(
+      "invoicing.purchaseInvoices"
+    );
+  });
+
+  it("matches a $param segment against any one segment", () => {
+    expect(pageOfUrl("/x/customer/c1/assets")).toBe("service.customerAssets");
+    expect(pageOfUrl("/x/customer/$customerId/assets")).toBe(
+      "service.customerAssets"
+    );
+    expect(pageOfUrl("/x/customer/c1/bank-accounts")).toBe(
+      pageOfUrl("/x/supplier/s1/bank-accounts")
+    );
+  });
+
+  it("matches whole segments only", () => {
+    expect(pageOfUrl("/x/inventory/receiptsX")).not.toBe("inventory.receipts");
+  });
+
+  it("is undefined for a URL no page covers", () => {
+    expect(pageOfUrl("/x")).toBeUndefined();
+    expect(pageOfUrl("/somewhere/else")).toBeUndefined();
+  });
+});
+
+describe("pageOfRow", () => {
+  it("names the owning page of an unshared table", () => {
+    expect(pageOfRow("charge", {})).toBe("invoicing.charges");
+  });
+
+  it("picks a shared table's page by its where", () => {
+    expect(pageOfRow("item", { type: "Tool" })).toBe("parts.tools");
+    expect(pageOfRow("memo", { supplierId: "s1", customerId: null })).toBe(
+      "invoicing.supplierCredits"
+    );
+    expect(pageOfRow("memo", { supplierId: null, customerId: "c1" })).toBe(
+      "invoicing.creditMemos"
+    );
+    expect(pageOfRow("revenueRecognitionRun", { type: "Lease" })).toBe(
+      "accounting.leases"
+    );
+    expect(
+      pageOfRow("revenueRecognitionRun", { type: "Revenue Recognition" })
+    ).toBe("accounting.revenueRecognition");
+    expect(pageOfRow("contact", { isCustomer: true })).toBe(
+      pageOfRow("contact", { isCustomer: "true" })
+    );
+    expect(pageOfRow("contact", { isCustomer: false })).not.toBe(
+      pageOfRow("contact", { isCustomer: true })
+    );
+  });
+
+  it("is undefined when no where matches, or for an unknown or child table", () => {
+    expect(pageOfRow("item", { type: "Fixture" })).toBeUndefined();
+    expect(pageOfRow("memo", {})).toBeUndefined();
+    expect(pageOfRow("nowhere", {})).toBeUndefined();
+    expect(pageOfRow("purchaseReturnOrderCreditLine", {})).toBeUndefined();
   });
 });

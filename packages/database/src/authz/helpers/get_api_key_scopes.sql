@@ -5,20 +5,11 @@ CREATE OR REPLACE FUNCTION public.get_api_key_scopes()
  SET search_path TO 'public', 'extensions'
 AS $function$
   DECLARE
-    raw_key TEXT;
     key_id TEXT;
     key_company TEXT;
     grant_rows JSONB;
   BEGIN
-    raw_key := (current_setting('request.headers'::text, true))::json ->> 'carbon-key';
-    IF raw_key IS NULL THEN
-      RETURN NULL;
-    END IF;
-
-    SELECT id, "companyId" INTO key_id, key_company
-    FROM "apiKey"
-    WHERE "keyHash" = encode(digest(raw_key::bytea, 'sha256'::text), 'hex')
-      AND ("expiresAt" IS NULL OR "expiresAt" > NOW());
+    SELECT k.id, k.company_id INTO key_id, key_company FROM util.request_api_key() k;
     IF key_id IS NULL THEN
       RETURN NULL;
     END IF;

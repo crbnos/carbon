@@ -1420,14 +1420,7 @@
   "20261110041024_inspection-hold.sql",
   "20261110041037_inspection-hold-handlers.sql",
   "20261110050000_permission.sql",
-  "20261110050001_permission-rules.sql",
-  "20261110050002_access-resolver.sql",
   "20261110050003_convert-permissions-to-grants.sql",
-  "20261110050004_page-keys.sql",
   "20261110050005_printing-grants-to-settings-page.sql",
-  "20261110050006_bank-accounts-permission.sql",
-  "20261110050007_child-reads-without-parent.sql",
-  "20261110050008_method-tables-follow-item-type.sql",
-  "20261110050009_page-keys-in-functions.sql",
   "20261110050010_module-keys-to-pages.sql"
 ]

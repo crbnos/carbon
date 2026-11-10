@@ -12,11 +12,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    { "settings.approvalRules": "Full" },
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {
+    "settings.approvalRules": "Full"
+  });
 
   await requireFeature({
     request,

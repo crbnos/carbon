@@ -5,12 +5,12 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { anyOf } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { stripeCustomerChoiceValidator } from "~/modules/invoicing/invoicing.models";
+import { CONTRACT_READ_GATE } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-confirm");
@@ -26,7 +26,7 @@ export async function loader({
   const { companyId, api } = await authorize(
     request,
     // Both contract lists open the same contract page.
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+    CONTRACT_READ_GATE
   );
 
   const { id } = params;

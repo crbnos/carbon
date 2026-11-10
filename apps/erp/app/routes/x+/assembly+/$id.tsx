@@ -81,11 +81,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.instruction?.name, "Assembly Instruction");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "production.assemblies": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "production.assemblies": "View" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

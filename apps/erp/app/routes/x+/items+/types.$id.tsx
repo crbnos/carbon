@@ -16,11 +16,7 @@ import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm"
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "parts.types": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "parts.types": "View" });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

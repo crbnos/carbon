@@ -10,11 +10,7 @@ import { path } from "~/utils/path";
 // The reports hub lives inside the accounting module (with its sidebar);
 // this namespace only hosts the full-screen report pages.
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(
-    request,
-    { "accounting.reporting": "View" },
-    { role: "employee" }
-  );
+  await authorize(request, { "accounting.reporting": "View" });
   throw redirect(path.to.reports);
 }
 

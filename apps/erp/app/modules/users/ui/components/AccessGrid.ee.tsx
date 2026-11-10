@@ -4,13 +4,18 @@
 
 import type { TermId } from "@carbon/content/glossary";
 import {
+  type Grant,
   LEVELS,
   type Level,
+  type LevelSubject,
   MODULES,
+  type ModuleId,
   moduleOf,
   PAGES,
   type Page
 } from "@carbon/database/access";
+import type { GrantModule } from "@carbon/database/access-write";
+import { rowLevel } from "@carbon/ee/permission-grants";
 import {
   Checkbox,
   cn,
@@ -23,17 +28,19 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronRight, LuUndo2 } from "react-icons/lu";
-import { capitalize } from "~/utils/string";
 
-/** One grant as the grid edits it. `module` is the `module` enum value. */
-export type AccessGrant = { module: string; page: string | null; level: Level };
+/** One grant as the grid edits it. `module` is the `module` enum label. */
+export type AccessGrant = {
+  module: GrantModule;
+  page: string | null;
+  level: Level;
+};
 
 type AccessGridProps = {
   pages?: readonly Page[];
   value: AccessGrant[];
-  /** Per module or page id, what the row resolves to with no grant here: a
-   *  person's role. Missing is None. */
-  inherited?: Record<string, Level>;
+  /** The grants a row falls back to with no grant here: a person's role's. */
+  inherited?: readonly AccessGrant[];
   /** What clearing a row returns to: "Inherit", or "Role default" on a person. */
   inheritLabel?: string;
   /** Rows without a grant follow `inherited`. Off where it differs per row
@@ -44,9 +51,9 @@ type AccessGridProps = {
   inheritsFrom?: string;
   /** A note per module or page id, such as access that grew in the conversion. */
   notes?: Record<string, string>;
-  /** The most "select all" may set on a module: an API key's never gives Full
-   *  on Accounting. */
-  columnCaps?: Record<string, Level>;
+  /** Where "select all" and a column header stop on a module
+   *  (`SUBJECT_RULES[…].selectAllCaps`); a row can still go higher. */
+  selectAllCaps?: Partial<Record<ModuleId, Level>>;
   onChange: (grants: AccessGrant[]) => void;
   label?: string;
   termId?: TermId;
@@ -71,12 +78,12 @@ type Row = { page: string | null; label: string; max: Level };
 const AccessGrid = ({
   pages = PAGES,
   value,
-  inherited = {},
+  inherited = [],
   inheritLabel,
   showInherited = true,
   inheritsFrom,
   notes = {},
-  columnCaps = {},
+  selectAllCaps = {},
   onChange,
   label,
   termId,
@@ -98,7 +105,7 @@ const AccessGrid = ({
 
   const present = new Set(pages.map((page) => moduleOf(page.id)));
   const modules = MODULES.filter((module) => present.has(module.id)).map(
-    ({ id, label: moduleLabel }) => {
+    ({ id, label: moduleLabel, enum: enumValue }) => {
       const own = pages.find((p) => p.id === id);
       const row: Row = {
         page: null,
@@ -110,7 +117,7 @@ const AccessGrid = ({
         .map((p): Row => ({ page: p.id, label: p.label, max: p.maxLevel }));
       return {
         id,
-        enumValue: capitalize(id),
+        enumValue,
         row,
         rows: pageRows.length > 0 ? pageRows : [row]
       };
@@ -121,23 +128,27 @@ const AccessGrid = ({
   const grantFor = (module: string, page: string | null) =>
     value.find((g) => g.module === module && g.page === page);
 
-  /** What a row shows with no grant of its own. */
-  const fallback = (module: Module, row: Row): Level => {
-    if (!showInherited) return "None";
-    if (row.page === null) return inherited[module.id] ?? "None";
-    return (
-      grantFor(module.enumValue, null)?.level ??
-      inherited[row.page] ??
-      inherited[module.id] ??
-      "None"
-    );
+  // The grid's grants as the resolver reads them (`levelOf`): its own first,
+  // then the ones it inherits.
+  const subject: LevelSubject = {
+    grants: [
+      ...value.map((g): Grant => ({ ...g, subject: "person" })),
+      ...inherited.map((g): Grant => ({ ...g, subject: "role" }))
+    ]
   };
+  const at = (module: Module, row: Row) => ({
+    module: module.enumValue,
+    page: row.page
+  });
+
+  /** What a row shows with no grant of its own. */
+  const fallback = (module: Module, row: Row): Level =>
+    showInherited
+      ? lower(rowLevel(subject, at(module, row), "person"), row.max)
+      : "None";
 
   const effective = (module: Module, row: Row): Level =>
-    lower(
-      grantFor(module.enumValue, row.page)?.level ?? fallback(module, row),
-      row.max
-    );
+    lower(rowLevel(subject, at(module, row)), row.max);
 
   const without = (
     grants: AccessGrant[],
@@ -166,10 +177,6 @@ const AccessGrid = ({
   const resetLabel = inheritLabel ?? (inherits ? t`Inherit` : t`Clear`);
   const canSetColumn = !inherits && !isDisabled;
 
-  /** The most "select all" sets on a row. */
-  const capOf = (module: Module, row: Row) =>
-    lower(row.max, columnCaps[module.id] ?? "Full");
-
   /** Every row of a module to one level each. A role, key or bulk edit sets a
    *  module with pages through its module grant, which also covers pages added
    *  later; a person sets each row, so each one compares with its own default. */
@@ -191,6 +198,10 @@ const AccessGrid = ({
       )
     );
   };
+
+  /** The most "select all" sets on a row. */
+  const capOf = (module: Module, row: Row) =>
+    lower(row.max, selectAllCaps[module.id] ?? "Full");
 
   const moduleState = (module: Module) => {
     const levels = module.rows.map((row) => effective(module, row));

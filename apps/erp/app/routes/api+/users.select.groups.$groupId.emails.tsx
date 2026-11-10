@@ -10,11 +10,7 @@ import { data } from "react-router";
 import { getGroupEmails } from "~/modules/users/users.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {});
   const { groupId } = params;
   if (!groupId) {
     return { emails: [] };

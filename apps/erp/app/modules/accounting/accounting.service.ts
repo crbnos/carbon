@@ -10952,7 +10952,7 @@ export async function applyCtaToReportPeriodSeriesForReport(
   const { client, companyGroupId } = await authorize(
     request,
     { "accounting.reporting": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
   const root = await client
     .from("company")

@@ -13,7 +13,7 @@ import {
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
+import { admits } from "@carbon/database/access";
 import {
   CONTROLLED_ENVIRONMENT,
   SESSION_ABSOLUTE_MAX_MS,
@@ -195,18 +195,18 @@ async function panelCaller(
     return new Response("Forbidden", { status: 403 });
   };
 
-  if (myClaims.role !== "employee") {
-    throw deny(`${myClaims.role ?? "no"} role`);
-  }
-
-  const hasRequiredPermissions = holdsGate(
-    myClaims.permissions,
-    gate,
-    companyId
-  );
-
-  if (!hasRequiredPermissions) {
-    throw deny(JSON.stringify(gate));
+  if (
+    !admits(
+      { type: "user", role: myClaims.role, permissions: myClaims.permissions },
+      companyId,
+      gate
+    )
+  ) {
+    throw deny(
+      myClaims.role === "employee"
+        ? JSON.stringify(gate)
+        : `${myClaims.role ?? "no"} role`
+    );
   }
 
   // Only an authorized request counts as activity.

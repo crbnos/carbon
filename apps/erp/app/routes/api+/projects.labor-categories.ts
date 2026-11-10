@@ -11,11 +11,7 @@ import { getLaborCategoriesList } from "~/modules/projects/projects.service";
 const logger = getLogger("erp", "api-labor-categories");
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(
-    request,
-    {},
-    { role: "employee" }
-  );
+  const { client, companyId } = await authorize(request, {});
 
   const categories = await getLaborCategoriesList(client, companyId);
   if (categories.error) {

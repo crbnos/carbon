@@ -22,11 +22,9 @@ const resetForm = z.object({
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.exchangeRates": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "accounting.exchangeRates": "View"
+  });
 
   const { currencyId } = params;
   if (!currencyId) throw notFound("currencyId not found");

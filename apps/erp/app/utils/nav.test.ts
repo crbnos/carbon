@@ -1,0 +1,127 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { describe, expect, it } from "vitest";
+import {
+  gateOfRoute,
+  moduleLanding,
+  pageOfRoute,
+  routeOwnsUrl,
+  visibleGroups
+} from "./nav";
+
+const none = { view: [], create: [], update: [], delete: [] };
+const viewing = (...pages: string[]) =>
+  Object.fromEntries(pages.map((page) => [page, { ...none, view: ["c1"] }]));
+
+describe("pageOfRoute and gateOfRoute", () => {
+  it("take the page from `to`, unless the entry names one", () => {
+    expect(pageOfRoute({ to: "/x/sales/quotes" })).toBe("sales.quotes");
+    expect(
+      pageOfRoute({
+        to: "/x/inventory/receipts?filter=a",
+        page: "sales.quotes"
+      })
+    ).toBe("sales.quotes");
+    expect(pageOfRoute({ to: "/x/timesheet" })).toBeUndefined();
+  });
+
+  it("shows an entry behind View on its page, its own gate, or nothing", () => {
+    expect(gateOfRoute({ to: "/x/sales/quotes" })).toEqual({
+      "sales.quotes": "View"
+    });
+    expect(
+      gateOfRoute({
+        to: "/x/projects/issue",
+        gate: { "inventory.quantities": "Edit" }
+      })
+    ).toEqual({ "inventory.quantities": "Edit" });
+    expect(gateOfRoute({ to: "/x/timesheet" })).toEqual({});
+  });
+});
+
+describe("routeOwnsUrl", () => {
+  const projects = { to: "/x/projects" };
+  const approvals = { to: "/x/projects/approvals" };
+  const reports = { to: "/x/projects/reports" };
+  const siblings = [projects, approvals, reports];
+
+  it("lights the entry of the page the URL belongs to, records included", () => {
+    expect(routeOwnsUrl(projects, "/x/project/p1/details", siblings)).toBe(
+      true
+    );
+    expect(routeOwnsUrl(projects, "/x/projects/reports/x", siblings)).toBe(
+      false
+    );
+    expect(routeOwnsUrl(reports, "/x/projects/reports/x", siblings)).toBe(true);
+    expect(routeOwnsUrl(approvals, "/x/projects/billing", siblings)).toBe(true);
+  });
+
+  it("prefers the sibling whose `to` the URL starts with, longest first", () => {
+    const accounts = { to: "/x/users/employees" };
+    const customers = { to: "/x/users/customers", page: undefined };
+    const group = [accounts, customers];
+    expect(routeOwnsUrl(accounts, "/x/users/customers", group)).toBe(false);
+    expect(routeOwnsUrl(customers, "/x/users/customers", group)).toBe(true);
+    expect(routeOwnsUrl(accounts, "/x/users/employees/u1", group)).toBe(true);
+  });
+
+  it("matches an entry with no page by its `to`", () => {
+    expect(routeOwnsUrl({ to: "/x/timesheet" }, "/x/timesheet/review")).toBe(
+      true
+    );
+  });
+});
+
+describe("visibleGroups", () => {
+  const permissions = (...pages: string[]) => ({
+    has: (gate: object) =>
+      Object.keys(gate).every((page) => pages.includes(page))
+  });
+  const groups = [
+    {
+      name: "Quoting",
+      routes: [{ to: "/x/sales/quotes" }, { to: "/x/sales/rfqs" }]
+    },
+    { name: "Configure", routes: [{ to: "/x/sales/customer-statuses" }] }
+  ];
+
+  it("keeps the entries whose gate holds, and drops an empty group", () => {
+    expect(visibleGroups(groups, permissions("sales.quotes"))).toEqual([
+      { name: "Quoting", routes: [{ to: "/x/sales/quotes" }] }
+    ]);
+  });
+
+  it("applies the extra rule", () => {
+    expect(
+      visibleGroups(
+        groups,
+        permissions("sales.quotes", "sales.statuses"),
+        (route) => route.to !== "/x/sales/customer-statuses"
+      )
+    ).toEqual([{ name: "Quoting", routes: [{ to: "/x/sales/quotes" }] }]);
+  });
+});
+
+describe("moduleLanding", () => {
+  it("opens a module on the first page the person can view", () => {
+    expect(moduleLanding("parts", viewing("parts.tools"), "c1")).toBe(
+      "/x/items/tools"
+    );
+    expect(moduleLanding("parts", {}, "c1")).toBeUndefined();
+  });
+
+  it("opens Settings on Company when the person can view it", () => {
+    expect(
+      moduleLanding(
+        "settings",
+        viewing("settings.billing", "settings.company"),
+        "c1"
+      )
+    ).toBe("/x/settings/company");
+    expect(moduleLanding("settings", viewing("settings.billing"), "c1")).toBe(
+      "/x/settings/billing"
+    );
+  });
+});

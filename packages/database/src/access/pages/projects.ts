@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const PROJECTS_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Projects";
+
+export const PAGES = [
   {
     id: "projects.projects",
     label: "Projects",

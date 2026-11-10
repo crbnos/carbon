@@ -20,11 +20,7 @@ import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "sales.pricingRules": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "sales.pricingRules": "View" });
 
   const { ruleId } = params;
   if (!ruleId) throw notFound("ruleId not found");

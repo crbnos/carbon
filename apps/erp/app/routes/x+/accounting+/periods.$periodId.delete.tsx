@@ -34,11 +34,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.accountingPeriods": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, {
+    "accounting.accountingPeriods": "View"
+  });
 
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");

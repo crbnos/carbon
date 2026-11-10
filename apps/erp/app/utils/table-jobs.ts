@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { holdsGate, ITEM_TYPE_PAGES } from "@carbon/database/access";
+import { admits, pageById } from "@carbon/database/access";
 import type { Feature } from "@carbon/ee/plan";
 import { RoundingMode, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -25,18 +25,19 @@ export type TableJobClaims = {
 };
 
 /**
- * The check `authorize` does for a list's gate, on claims read
- * for one company. A table job also requires the employee role: the loaders
- * refuse portal accounts, and the job must never do more than the loader.
+ * The check `authorize` does for a list's gate (`admits`), on claims read for
+ * one company: the job must never do more than the loader.
  */
 export function hasListPermission(
   claims: TableJobClaims,
   permission: ListPermission,
   companyId: string
 ): boolean {
-  if (claims.role !== "employee") return false;
-  if (permission.role && claims.role !== permission.role) return false;
-  return holdsGate(claims.permissions, permission.gate, companyId);
+  return admits(
+    { type: "user", role: claims.role, permissions: claims.permissions },
+    companyId,
+    permission.gate
+  );
 }
 
 /** The answer when another job of the company holds the lock: the job kind
@@ -201,74 +202,72 @@ export function bulkStartFormResponse(start: BulkActionStart) {
  */
 export const ALL_MATCHING_RELEASE_LIMIT = 2_000;
 
-/** The item type each items list shows, so a bulk action on the list asks
- *  for that type's page and acts on that type's items only. */
-export const ITEM_LIST_TYPES: Readonly<
-  Record<string, Database["public"]["Enums"]["itemType"]>
-> = {
-  parts: "Part",
-  materials: "Material",
-  tools: "Tool",
-  consumables: "Consumable",
-  services: "Service"
-};
+/** A list a bulk action may run on: its key and its own gate. */
+export type BulkActionList = { key: string; permission: ListPermission };
 
-/** The item type of the items list `listKey`, or null for another list. */
+/** The one page a list's gate names (`{ "parts.tools": "View" }`), or null. */
+function pageOfList(list: BulkActionList): string | null {
+  const { gate } = list.permission;
+  if (Array.isArray(gate)) return null;
+  const pages = Object.keys(gate);
+  return pages.length === 1 ? pages[0]! : null;
+}
+
+/** The item type an items list shows: the `where` of its page; null for another list. */
 export function itemListType(
-  listKey: string | null | undefined
+  list: BulkActionList
 ): Database["public"]["Enums"]["itemType"] | null {
-  return listKey && Object.hasOwn(ITEM_LIST_TYPES, listKey)
-    ? ITEM_LIST_TYPES[listKey]!
+  const page = pageOfList(list);
+  const where = page ? pageById(page)?.where : undefined;
+  return where?.table === "item" && where.value
+    ? (where.value as Database["public"]["Enums"]["itemType"])
     : null;
 }
 
-/** The page of the items list `listKey` at `level`, or null when the key is
- *  not an items list. */
+/** The page of an items list at `level`, or null when it is not an items list. */
 export function itemListPermission(
-  listKey: string,
+  list: BulkActionList,
   level: "View" | "Create" | "Edit" | "Full"
 ): ListPermission | null {
-  const type = itemListType(listKey);
-  const page = type ? ITEM_TYPE_PAGES[type] : undefined;
+  const page = itemListType(list) ? pageOfList(list) : null;
   return page ? { gate: { [page]: level } } : null;
 }
 
-/** A bulk action's permission: one gate, or the gate of the list it runs on
+/** A bulk action's permission: one gate, or a gate of the list it runs on
  *  (null for a list it does not serve). */
 export type BulkActionPermission =
   | ListPermission
-  | ((listKey: string) => ListPermission | null);
+  | ((list: BulkActionList) => ListPermission | null);
 
-/** The permission a bulk action asks for on `listKey`. Null refuses. */
+/** The permission a bulk action asks for on `list`. Null refuses. */
 export function bulkActionPermission(
   action: Pick<BulkActionMeta, "lists" | "permission">,
-  listKey: string
+  list: BulkActionList
 ): ListPermission | null {
-  if (!action.lists.includes(listKey)) return null;
+  if (!action.lists.includes(list.key)) return null;
   return typeof action.permission === "function"
-    ? action.permission(listKey)
+    ? action.permission(list)
     : action.permission;
 }
 
 /**
- * Who may run the items tables' Update in the background, and on which lists:
- * Edit on the page of the list's item type, as `updateItems`' per-row item
- * rule asks on the action route. The job runs as the system, which skips that
- * rule, so a broader gate (any item page) would let Tools Edit update parts.
+ * Who may run the items tables' Update in the background: Edit on the page of
+ * the list's item type, as `updateItems`' per-row item rule asks on the action
+ * route. The job runs as the system, which skips that rule, so a broader gate
+ * (any item page) would let Tools Edit update parts.
  */
-export const ITEMS_BULK_UPDATE: Pick<BulkActionMeta, "lists" | "permission"> = {
-  lists: Object.keys(ITEM_LIST_TYPES),
-  permission: (listKey) => itemListPermission(listKey, "Edit")
-};
+export const itemsBulkUpdatePermission: BulkActionPermission = (list) =>
+  itemListPermission(list, "Edit");
 
 export type BulkActionMeta = {
   /** The action's English name for the notification ("Release jobs"). */
   label: string;
   /** The list keys whose rows the action may act on. */
   lists: readonly string[];
-  /** The action route's permission check (the job adds the employee role),
-   *  or a function of the list key when the route's check depends on the
-   *  list (the items lists: each asks for its own item type's page). */
+  /** What starting the action asks: the gate of the service function it
+   *  runs, which the job skips by running it as the system. A function of
+   *  the list when that gate is decided per row (the items lists: each asks
+   *  for its own item type's page). */
   permission: BulkActionPermission;
   /** The plan feature the action route requires, checked again by the job. */
   feature?: Feature;

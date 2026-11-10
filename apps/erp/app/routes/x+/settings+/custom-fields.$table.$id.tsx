@@ -19,11 +19,7 @@ import { DataType } from "~/modules/shared/types";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "settings.customFields": "View" },
-    { role: "employee" }
-  );
+  const { api } = await authorize(request, { "settings.customFields": "View" });
 
   const { table, id } = params;
   if (!table) throw notFound("Invalid table");

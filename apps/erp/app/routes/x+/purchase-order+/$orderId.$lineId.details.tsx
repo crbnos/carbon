@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(
     request,
     { "purchasing.purchaseOrders": "View" },
-    { role: "employee", bypassRls: true }
+    { bypassRls: true }
   );
 
   const { orderId, lineId } = params;

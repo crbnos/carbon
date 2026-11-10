@@ -37,8 +37,7 @@ export const handle = projectReportHandle("late-entries", msg`Late Entries`);
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api, companyId } = await authorize(
     request,
-    projectReportPermissions["late-entries"],
-    { role: "employee" }
+    projectReportPermissions["late-entries"]
   );
   // A DCAA report: only with DCAA timekeeping on.
   const settings = await api.settings.getCompanySettings({});

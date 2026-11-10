@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementValidator,
   isInvoicePayable,
+  memoPage,
   memoValidator,
   paymentValidator,
   purchaseInvoiceSupplierChange,
@@ -220,5 +221,18 @@ describe("salesInvoiceLineValidator: a Service line with no item", () => {
         invoiceLineType: "Labor"
       }).success
     ).toBe(false);
+  });
+});
+
+describe("memoPage", () => {
+  it("gives a memo with a supplier Supplier Credits, one with a customer Credit Memos", () => {
+    expect(memoPage({ supplierId: "s1", customerId: null })).toBe(
+      "invoicing.supplierCredits"
+    );
+    expect(memoPage({ supplierId: null, customerId: "c1" })).toBe(
+      "invoicing.creditMemos"
+    );
+    expect(memoPage("supplier")).toBe("invoicing.supplierCredits");
+    expect(memoPage("customer")).toBe("invoicing.creditMemos");
   });
 });

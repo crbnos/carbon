@@ -10,12 +10,10 @@ import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   getPermissionCacheKey,
-  hasPermission,
   ITAR_RIDER_SHA256,
   ITAR_RIDER_VERSION
 } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
-import { logPermissionChange } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   deactivateCustomer,
@@ -26,29 +24,25 @@ import {
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
-  accessHolders,
   actionsGained,
-  claimKeys,
-  claimsFromJson,
-  expandClaims,
   type Grant,
+  holdsGate,
+  isAdminType,
+  isPageModule,
   type Level,
-  PAGES,
-  winningGrant
+  levelOf,
+  levelReaches,
+  PAGES
 } from "@carbon/database/access";
-import {
-  type GrantInput,
-  type GrantSubject,
-  readGrants
-} from "@carbon/database/access-write";
+import { type GrantSubject, readGrants } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
-import { replaceApiKeyGrants } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
+import type { AccessSubjectType } from "@carbon/ee/permission-grants";
 import {
-  replaceAccessGrants,
-  updateEmployee
+  type AccessChange,
+  writeAccessGrants
 } from "@carbon/ee/permissions.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
@@ -99,7 +93,6 @@ import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { insertEmployeeJob } from "../people/people.service";
-import { invalidateApiKeyCache } from "../settings/settings.service";
 import type { UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
@@ -2193,10 +2186,10 @@ export async function convertConsoleOperatorToUser(
  *  what a first-time add's RLS inserts need: Edit on Accounts and Create on
  *  Employees. */
 export function canReAddDeactivatedEmployee(
-  permissions: Parameters<typeof hasPermission>[0],
+  permissions: Parameters<typeof holdsGate>[0],
   companyId: string
 ): boolean {
-  return hasPermission(
+  return holdsGate(
     permissions,
     { "users.accounts": "Edit", "people.employees": "Create" },
     companyId
@@ -2363,8 +2356,7 @@ export async function emailAccountInvite(
   return { userId: account.userId };
 }
 
-/** `updateEmployee` / `updatePermissions` refusals, by what they mean. */
-export type AccessSubjectType = "role" | "person" | "key";
+export type { AccessSubjectType };
 
 function grantSubject(type: AccessSubjectType, id: string): GrantSubject {
   if (type === "role") return { employeeTypeId: id };
@@ -2422,8 +2414,8 @@ function readCompanyGrants(ctx: ServiceContext) {
     .execute();
 }
 
-/** The company's employees (or one), with their employee type. */
-function readCompanyEmployees(ctx: ServiceContext, userId?: string) {
+/** The company's employees (or one), with whether their type is the company's Admin type. */
+async function readCompanyEmployees(ctx: ServiceContext, userId?: string) {
   let query = ctx.asSystem.pg
     .selectFrom("employee")
     .innerJoin("userToCompany", (join) =>
@@ -2438,30 +2430,41 @@ function readCompanyEmployees(ctx: ServiceContext, userId?: string) {
       "employee.id",
       "user.fullName",
       "employee.employeeTypeId",
-      "employeeType.systemType"
+      "employeeType.systemType",
+      "employeeType.companyId as employeeTypeCompanyId"
     ])
     .where("employee.companyId", "=", ctx.company.id);
   if (userId) query = query.where("employee.id", "=", userId);
-  return query.execute();
+  const rows = await query.execute();
+  return rows.map(({ systemType, employeeTypeCompanyId, ...employee }) => ({
+    ...employee,
+    admin: isAdminType(
+      { systemType, companyId: employeeTypeCompanyId },
+      ctx.company.id
+    )
+  }));
 }
 
-/** The grants that apply to an employee: their own and their role's. */
-function employeeGrants(
+/** An employee as `levelOf` reads them: Admin, and their own and their role's grants. */
+function employeeSubject(
   rows: GrantRow[],
-  employee: { id: string; employeeTypeId: string | null }
+  employee: { id: string; employeeTypeId: string | null; admin: boolean }
 ) {
-  return rows
-    .filter(
-      (row) =>
-        row.userId === employee.id ||
-        (row.employeeTypeId !== null &&
-          row.employeeTypeId === employee.employeeTypeId)
-    )
-    .map(toGrant);
+  return {
+    admin: employee.admin,
+    grants: rows
+      .filter(
+        (row) =>
+          row.userId === employee.id ||
+          (row.employeeTypeId !== null &&
+            row.employeeTypeId === employee.employeeTypeId)
+      )
+      .map(toGrant)
+  };
 }
 
 /**
- * What a person can do on each page and the grant that decides it: Admin,
+ * What a person can do on each page and what decides it (`levelOf`): Admin,
  * the person's own override, or their role. A converted grant lists the
  * actions the round-up added to its old checkboxes.
  */
@@ -2471,15 +2474,15 @@ export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
     readCompanyGrants(ctx)
   ]);
   if (!employee) return null;
-  const admin = employee.systemType === "Admin";
-  const grants = employeeGrants(rows, employee);
+  const subject = employeeSubject(rows, employee);
   return PAGES.map((page) => {
-    const grant = admin ? null : winningGrant(grants, page.id);
+    const { level, source, grant } = levelOf(subject, page.id);
     return {
       page: page.id,
       label: page.label,
-      level: admin ? ("Full" as const) : (grant?.level ?? "None"),
-      source: admin ? ("admin" as const) : (grant?.subject ?? null),
+      level,
+      source:
+        source === "admin" ? ("admin" as const) : (grant?.subject ?? null),
       scope: grant
         ? grant.page
           ? ("page" as const)
@@ -2492,7 +2495,8 @@ export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
 
 /**
  * The employees, and with the settings view the API keys, whose level on a
- * page reaches `level`. One read of the company's grants and employees.
+ * page (`levelOf`) reaches `level`. One read of the company's grants and
+ * employees.
  */
 export async function readPageAccessHolders(
   ctx: ServiceContext,
@@ -2511,180 +2515,89 @@ export async function readPageAccessHolders(
           .execute()
       : Promise.resolve([])
   ]);
-  const names = new Map(employees.map((e) => [e.id, e.fullName]));
-  const people = accessHolders(
-    employees.map((employee) => ({
-      id: employee.id,
-      admin: employee.systemType === "Admin",
-      grants: employeeGrants(rows, employee)
-    })),
-    page,
-    level
-  ).map((holder) => ({
-    userId: holder.id,
-    name: names.get(holder.id) ?? holder.id,
-    level: holder.level,
-    source: holder.grant?.subject ?? "admin"
-  }));
-  const keyNames = new Map(keys.map((key) => [key.id, key.name]));
-  const apiKeys = accessHolders(
-    keys.map((key) => ({
-      id: key.id,
-      admin: false,
-      grants: rows.filter((row) => row.apiKeyId === key.id).map(toGrant)
-    })),
-    page,
-    level
-  ).map((holder) => ({
-    apiKeyId: holder.id,
-    name: keyNames.get(holder.id) ?? holder.id,
-    level: holder.level
-  }));
+  const people = employees.flatMap((employee) => {
+    const of = levelOf(employeeSubject(rows, employee), page);
+    if (!levelReaches(of.level, level)) return [];
+    return [
+      {
+        userId: employee.id,
+        name: employee.fullName ?? employee.id,
+        level: of.level,
+        source: of.source === "admin" ? "admin" : (of.grant?.subject ?? "none")
+      }
+    ];
+  });
+  const apiKeys = keys.flatMap((key) => {
+    const of = levelOf(
+      { grants: rows.filter((row) => row.apiKeyId === key.id).map(toGrant) },
+      page
+    );
+    if (!levelReaches(of.level, level)) return [];
+    return [{ apiKeyId: key.id, name: key.name ?? key.id, level: of.level }];
+  });
   return { people, apiKeys };
 }
 
 /** Every role's grants in the company, in one read. */
-export function readRoleGrants(ctx: ServiceContext) {
-  return ctx.asSystem.pg
+export async function readRoleGrants(ctx: ServiceContext) {
+  const rows = await ctx.asSystem.pg
     .selectFrom("permission")
     .select(["employeeTypeId", "module", "page", "level"])
     .where("companyId", "=", ctx.company.id)
     .where("employeeTypeId", "is not", null)
     .execute();
-}
-
-/** A user's claims in the company as flat keys, for the audit log. Null when
- *  they cannot be read. */
-async function auditedClaims(ctx: ServiceContext, userId: string) {
-  const claims = await getClaims(ctx.asSystem.supabase, userId, ctx.company.id);
-  if (claims.error || claims.data === null) return null;
-  return claimKeys(
-    expandClaims(claimsFromJson(claims.data, ctx.company.id), ctx.company.id)
+  return rows.flatMap((row) =>
+    isPageModule(row.module) ? [{ ...row, module: row.module }] : []
   );
 }
 
-/**
- * Move an employee to another employee type of the company, with its own
- * permission audit event.
- *
- * @remarks
- * The person editor saves the type, then the person's grants
- * (`saveAccessGrants`). The two cannot share a transaction: the grants write
- * (`replaceAccessGrants`, `@carbon/ee`) commits its own and reads the audit
- * claims outside it. So the move reads the claims before it writes and logs
- * the move by itself; the grants write then logs from the moved state. The
- * two events together give the whole change. A grants write that fails after
- * the move leaves the move, which its own event records.
- */
-export async function moveEmployeeType(
-  ctx: ServiceContext,
-  args: { id: string; employeeType: string; ip?: string }
-) {
-  const companyId = ctx.company.id;
-  const current = await ctx.asSystem.pg
-    .selectFrom("employee")
-    .select("employeeTypeId")
-    .where("id", "=", args.id)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!current) return ctx.error("notFound", "Employee not found");
-  if (current.employeeTypeId === args.employeeType) return null;
-
-  const before = await auditedClaims(ctx, args.id);
-  const moved = await updateEmployee(ctx.asCaller.supabase, {
-    id: args.id,
-    employeeType: args.employeeType,
-    companyId
-  });
-  if (!moved.success) return permissionsWriteError(ctx, moved.message);
-
-  // The role's grants now apply: drop the cached claims.
-  await redis.del(getPermissionCacheKey(args.id));
-  logPermissionChange({
-    actor: ctx.auditUserId,
-    targetUserId: args.id,
-    companyId,
-    ip: args.ip,
-    before,
-    after: await auditedClaims(ctx, args.id),
-    reason: "Employee type changed"
-  });
-  return null;
-}
+const ENTITLEMENT_REFUSAL: Record<AccessSubjectType, () => string> = {
+  role: () =>
+    defaultUpgradeMessage(resolveRequirement({ feature: "PERMISSIONS" })),
+  person: () =>
+    defaultUpgradeMessage(resolveRequirement({ feature: "PERMISSIONS" })),
+  key: () => "API keys require the Business plan"
+};
 
 /**
- * Replace the grants of a role, a person or an API key. Roles and people need
- * role authoring (the PERMISSIONS feature), keys the API_KEYS feature; both
- * locks run inside `@carbon/ee`. A key's cached record is dropped after.
+ * Write the grants of a role, a person or an API key: replace them with a set,
+ * or remove one (`writeAccessGrants`, `@carbon/ee`, which checks the
+ * entitlement, the subject and what it may hold, and clears the caches). A
+ * person can move to another employee type in the same write.
  */
 export async function saveAccessGrants(
   ctx: ServiceContext,
   {
     subjectType,
     subjectId,
-    grants,
+    change,
+    employeeType,
     ip
   }: {
     subjectType: AccessSubjectType;
     subjectId: string;
-    grants: GrantInput[];
+    change: AccessChange;
+    employeeType?: string;
     ip?: string;
   }
-) {
-  const companyId = ctx.company.id;
-  if (subjectType === "key") {
-    let saved: Awaited<ReturnType<typeof replaceApiKeyGrants>>;
-    try {
-      saved = await replaceApiKeyGrants(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        {
-          companyId,
-          apiKeyId: subjectId,
-          grants,
-          actorId: ctx.auditUserId
-        }
-      );
-    } catch (err) {
-      if (!(err instanceof EntitlementError)) throw err;
-      return ctx.error("entitlement", "API keys require the Business plan");
-    }
-    if (saved.error) return ctx.error("notFound", saved.error.message);
-    await invalidateApiKeyCache(subjectId, companyId);
-    return null;
-  }
-
-  const gated = await refuseUnlessPermissionsFeature(ctx);
-  if (gated) return gated;
-  const saved = await replaceAccessGrants(
-    ctx.asCaller.supabase,
-    ctx.asSystem.pg,
-    {
-      companyId,
-      subject: grantSubject(subjectType, subjectId) as
-        | { employeeTypeId: string }
-        | { userId: string },
-      grants,
+): Promise<CarbonError | null> {
+  let written: Awaited<ReturnType<typeof writeAccessGrants>>;
+  try {
+    written = await writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      subject: grantSubject(subjectType, subjectId),
+      change,
+      employeeType,
       actorId: ctx.auditUserId,
       ip
-    }
-  );
-  return saved.success ? null : permissionsWriteError(ctx, saved.message);
-}
-
-export function permissionsWriteError(
-  ctx: ServiceContext,
-  message = "Failed to update permissions"
-) {
-  switch (message) {
-    case "Employee not found":
-    case "Employee type not found":
-      return ctx.error("notFound", message);
-    case "You do not have permission to update permissions":
-      return ctx.error("forbidden", message);
-    default:
-      return ctx.error("internal", message);
+    });
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    return ctx.error("entitlement", ENTITLEMENT_REFUSAL[subjectType]());
   }
+  return written.error
+    ? ctx.error(written.error.code, written.error.message)
+    : null;
 }
 
 /**

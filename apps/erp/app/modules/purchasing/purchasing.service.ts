@@ -13,7 +13,6 @@ import {
   CarbonError,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -22,6 +21,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import { holdsGate } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   type Kysely,
@@ -7567,11 +7567,7 @@ export async function draftLeaseSetupPath(
   ]);
   if (lease.data?.status !== "Draft") return null;
   if (
-    !hasPermission(
-      claims?.permissions,
-      { "purchasing.leases": "Edit" },
-      companyId
-    )
+    !holdsGate(claims?.permissions, { "purchasing.leases": "Edit" }, companyId)
   ) {
     return null;
   }

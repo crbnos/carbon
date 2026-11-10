@@ -24,7 +24,7 @@ import type {
 } from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
-import { memoValidator } from "~/modules/invoicing/invoicing.models";
+import { memoPage, memoValidator } from "~/modules/invoicing/invoicing.models";
 import { upsertMemo } from "~/modules/invoicing/invoicing.service";
 import { MemoForm } from "~/modules/invoicing/ui";
 import { getNextSequence } from "~/modules/settings/settings.service";
@@ -60,12 +60,9 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   const party = new URL(request.url).searchParams.get("party");
   const type = party === "supplier" ? "supplierCredit" : "creditMemo";
-  const { client, companyId, api } = await authorize(
-    request,
-    type === "supplierCredit"
-      ? { "invoicing.supplierCredits": "Create" }
-      : { "invoicing.creditMemos": "Create" }
-  );
+  const { client, companyId, api } = await authorize(request, {
+    [memoPage(party === "supplier" ? "supplier" : "customer")]: "Create"
+  });
 
   const company = await api.settings.getCompany({});
   const currencyCode = company.data?.baseCurrencyCode ?? "";
@@ -103,13 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
-  // A supplier memo is a Supplier Credit, a customer memo a Credit Memo.
-  await authorize(
-    request,
-    validation.data.supplierId
-      ? { "invoicing.supplierCredits": "Create" }
-      : { "invoicing.creditMemos": "Create" }
-  );
+  await authorize(request, { [memoPage(validation.data)]: "Create" });
 
   let memoId = validation.data.memoId;
   if (!memoId) {

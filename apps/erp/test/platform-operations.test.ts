@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it, vi } from "vitest";
+import type { ExpandedClaims } from "@carbon/database/access";
 
 // The service's imports reach the glossary, whose `msg` macro only runs compiled.
 vi.mock("@lingui/core/macro", () => ({
@@ -17,7 +18,6 @@ vi.mock("@carbon/ee/plan.server", async (importOriginal) => ({
   companyHasFeature: vi.fn(async () => false)
 }));
 
-import type { ModulePermissions } from "@carbon/api/permissions";
 import { insertModelUpload } from "../app/modules/items/items.server";
 import {
   type Actor,
@@ -31,7 +31,7 @@ import { createWorkflow } from "../app/modules/workflows/workflows.server";
 import { pageClaims } from "./page-claims";
 
 const grants = (...entries: [module: string, action: string][]) => {
-  const permissions: ModulePermissions = {};
+  const permissions: ExpandedClaims = {};
   for (const [module, action] of entries) {
     permissions[module] ??= { view: [], create: [], update: [], delete: [] };
     permissions[module][action as "view"] = ["company-1"];
@@ -39,7 +39,7 @@ const grants = (...entries: [module: string, action: string][]) => {
   return permissions;
 };
 
-const user = (permissions: ModulePermissions): Actor => ({
+const user = (permissions: ExpandedClaims): Actor => ({
   type: "user",
   role: "employee",
   userId: "user-1",

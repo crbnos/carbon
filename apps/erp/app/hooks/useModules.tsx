@@ -2,7 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type PageId, pageById, pagesOf } from "@carbon/database/access";
+import {
+  type ExpandedClaims,
+  MODULES,
+  type ModuleId
+} from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -25,33 +29,97 @@ import {
   LuWorkflow
 } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
+import { moduleLanding } from "~/utils/nav";
 import { path } from "~/utils/path";
 import { usePermissions } from "./usePermissions";
+import { useUser } from "./useUser";
+
+type ModuleLink = Authenticated<NavItem> & { key: string };
 
 /**
- * A nav module: it shows with View on any of its pages (`module`). A module
- * whose link opens one page names it (`page`); without View there, the link
- * opens the first page of the module the person can view.
+ * Each module's nav entry. `landing` modules open on the person's first page
+ * of the module (`moduleLanding`); the others open on `to`: a dashboard any
+ * page of the module can view, or an `_index` that picks the page itself.
+ * Names stay here: Lingui translates only strings the macro sees.
  */
-type ModuleDefinition = Authenticated<NavItem> & {
-  key: string;
-  module?: string;
-  page?: PageId;
-};
-
-function withLanding(
-  item: ModuleDefinition,
-  permissions: ReturnType<typeof usePermissions>
-): ModuleDefinition {
-  if (!item.module || !item.page || permissions.has({ [item.page]: "View" }))
-    return item;
-  const first = pagesOf(item.module)
-    .map((id) => ({ id, to: pageById(id)?.paths[0] }))
-    .find(
-      ({ id, to }) =>
-        to && !to.includes("$") && permissions.has({ [id]: "View" })
-    );
-  return first?.to ? { ...item, to: first.to } : item;
+function useModuleLinks(): Record<
+  ModuleId,
+  Omit<ModuleLink, "key"> & { landing?: true }
+> {
+  const { t } = useLingui();
+  return {
+    accounting: {
+      name: t`Accounting`,
+      to: path.to.accounting,
+      icon: LuLandmark
+    },
+    documents: { name: t`Documents`, to: path.to.documents, icon: LuFiles },
+    inventory: {
+      name: t`Inventory`,
+      to: path.to.inventory,
+      icon: LuBox,
+      landing: true
+    },
+    invoicing: {
+      name: t`Invoicing`,
+      to: path.to.invoicing,
+      icon: LuCreditCard
+    },
+    parts: { name: t`Items`, to: path.to.parts, icon: LuBlocks, landing: true },
+    people: {
+      name: t`People`,
+      to: path.to.people,
+      icon: LuUsers,
+      landing: true
+    },
+    production: {
+      name: t`Production`,
+      to: path.to.production,
+      icon: LuFactory
+    },
+    projects: {
+      name: t`Projects`,
+      to: path.to.projects,
+      icon: LuFolderKanban,
+      landing: true
+    },
+    purchasing: {
+      name: t`Purchasing`,
+      to: path.to.purchasing,
+      icon: LuShoppingCart
+    },
+    quality: { name: t`Quality`, to: path.to.quality, icon: LuFolderCheck },
+    resources: {
+      name: t`Resources`,
+      to: path.to.resources,
+      icon: LuHeartHandshake
+    },
+    sales: { name: t`Sales`, to: path.to.sales, icon: LuCrown },
+    service: {
+      name: t`Service`,
+      to: path.to.serviceJobs,
+      icon: LuHeadphones,
+      landing: true
+    },
+    settings: {
+      name: t`Settings`,
+      to: path.to.company,
+      icon: LuSettings,
+      landing: true
+    },
+    users: {
+      name: t`Users`,
+      to: path.to.employeeAccounts,
+      icon: LuShield,
+      landing: true
+    },
+    workflows: {
+      name: t`Workflows`,
+      to: path.to.workflows,
+      icon: LuWorkflow,
+      landing: true
+    }
+  };
 }
 
 type ModulePreference = {
@@ -60,225 +128,76 @@ type ModulePreference = {
   hidden: boolean;
 };
 
-function filterByPermissions(
-  modules: ModuleDefinition[],
-  permissions: ReturnType<typeof usePermissions>
-) {
-  return modules
-    .filter((item) => {
-      if (item.module) {
-        return permissions.hasAny(item.module, "View");
-      } else if (item.role) {
-        return permissions.is(item.role);
-      } else {
-        return true;
-      }
-    })
-    .map((item) => withLanding(item, permissions));
-}
-
-function useModuleDefinitions(): ModuleDefinition[] {
-  const { t } = useLingui();
-  return [
-    {
-      key: "accounting",
-      module: "accounting",
-      page: "accounting.reporting",
-      name: t`Accounting`,
-      to: path.to.accounting,
-      icon: LuLandmark
-    },
-    {
-      key: "documents",
-      module: "documents",
-      name: t`Documents`,
-      to: path.to.documents,
-      icon: LuFiles
-    },
-    {
-      key: "inventory",
-      module: "inventory",
-      page: "inventory.quantities",
-      name: t`Inventory`,
-      to: path.to.inventory,
-      icon: LuBox
-    },
-    {
-      key: "invoicing",
-      module: "invoicing",
-      name: t`Invoicing`,
-      to: path.to.invoicing,
-      icon: LuCreditCard
-    },
-    {
-      key: "parts",
-      module: "parts",
-      page: "parts.parts",
-      name: t`Items`,
-      to: path.to.parts,
-      icon: LuBlocks
-    },
-    {
-      key: "people",
-      module: "people",
-      page: "people.employees",
-      name: t`People`,
-      to: path.to.people,
-      icon: LuUsers
-    },
-    {
-      key: "production",
-      module: "production",
-      name: t`Production`,
-      to: path.to.production,
-      icon: LuFactory
-    },
-    {
-      key: "projects",
-      module: "projects",
-      page: "projects.projects",
-      name: t`Projects`,
-      to: path.to.projects,
-      icon: LuFolderKanban
-    },
-    {
-      key: "purchasing",
-      module: "purchasing",
-      name: t`Purchasing`,
-      to: path.to.purchasing,
-      icon: LuShoppingCart
-    },
-    {
-      key: "quality",
-      module: "quality",
-      name: t`Quality`,
-      to: path.to.quality,
-      icon: LuFolderCheck
-    },
-    {
-      key: "resources",
-      module: "resources",
-      name: t`Resources`,
-      to: path.to.resources,
-      icon: LuHeartHandshake
-    },
-    {
-      key: "sales",
-      module: "sales",
-      name: t`Sales`,
-      to: path.to.sales,
-      icon: LuCrown
-    },
-    {
-      key: "service",
-      module: "service",
-      page: "service.jobs",
-      name: t`Service`,
-      to: path.to.serviceJobs,
-      icon: LuHeadphones
-    },
-    {
-      key: "settings",
-      module: "settings",
-      page: "settings.company",
-      name: t`Settings`,
-      to: path.to.company,
-      icon: LuSettings
-    },
-    {
-      key: "shopFloor",
-      name: t`Shop Floor`,
-      to: path.to.external.mes,
-      icon: LuTvMinimalPlay,
-      role: "employee",
-      external: true,
-      newTab: true
-    },
-    {
-      key: "users",
-      module: "users",
-      page: "users.accounts",
-      name: t`Users`,
-      to: path.to.employeeAccounts,
-      icon: LuShield
-    },
-    {
-      key: "workflows",
-      module: "workflows",
-      page: "workflows.workflows",
-      name: t`Workflows`,
-      to: path.to.workflows,
-      icon: LuWorkflow
-    }
-  ];
-}
-
-const PINNED_MODULES = new Set(["settings"]);
-
-export function useModules() {
+/** The modules the person can open (View on any of their pages), plus Shop Floor. */
+function usePermittedModules(): {
+  settings: ModuleLink | null;
+  modules: ModuleLink[];
+  preferences: Map<string, ModulePreference>;
+} {
   const permissions = usePermissions();
-  const modules = useModuleDefinitions();
-
+  const links = useModuleLinks();
+  const { t } = useLingui();
+  const {
+    company: { id: companyId }
+  } = useUser();
   const routeData = useRouteData<{
     modulePreferences: ModulePreference[];
+    permissions: ExpandedClaims;
   }>(path.to.authenticatedRoot);
 
-  const modulePreferences = routeData?.modulePreferences ?? [];
-  const permitted = filterByPermissions(modules, permissions).filter(
-    (m) => !PINNED_MODULES.has(m.key)
-  );
-
-  const alphabetical = permitted.sort((a, b) => a.name.localeCompare(b.name));
-
-  if (modulePreferences.length === 0) {
-    return alphabetical;
-  }
-
-  const prefMap = new Map(modulePreferences.map((p) => [p.module, p]));
-
-  const visible = alphabetical.filter((m) => {
-    const pref = prefMap.get(m.key);
-    return !pref?.hidden;
+  const permitted = MODULES.filter(({ id }) =>
+    permissions.hasAny(id, "View")
+  ).map(({ id }): ModuleLink => {
+    const { landing, ...link } = links[id];
+    const to = landing
+      ? moduleLanding(id, routeData?.permissions, companyId)
+      : undefined;
+    return { ...link, key: id, to: to ?? link.to };
   });
+  const shopFloor: ModuleLink = {
+    key: "shopFloor",
+    name: t`Shop Floor`,
+    to: path.to.external.mes,
+    icon: LuTvMinimalPlay,
+    external: true,
+    newTab: true
+  };
 
-  return visible.sort((a, b) => {
-    const posA = prefMap.get(a.key)?.position ?? Infinity;
-    const posB = prefMap.get(b.key)?.position ?? Infinity;
-    return posA - posB;
-  });
+  return {
+    // Settings is pinned apart from the reorderable modules.
+    settings: permitted.find((m) => m.key === "settings") ?? null,
+    modules: [...permitted.filter((m) => m.key !== "settings"), shopFloor].sort(
+      (a, b) => a.name.localeCompare(b.name)
+    ),
+    preferences: new Map(
+      (routeData?.modulePreferences ?? []).map((p) => [p.module, p])
+    )
+  };
+}
+
+export function useModules() {
+  const { modules, preferences } = usePermittedModules();
+  if (preferences.size === 0) return modules;
+  return modules
+    .filter((m) => !preferences.get(m.key)?.hidden)
+    .sort(
+      (a, b) =>
+        (preferences.get(a.key)?.position ?? Infinity) -
+        (preferences.get(b.key)?.position ?? Infinity)
+    );
 }
 
 export function useSettingsModule() {
-  const permissions = usePermissions();
-  const modules = useModuleDefinitions();
-  const settings = modules.find((m) => m.key === "settings");
-  if (!settings) return null;
-  if (settings.module && !permissions.hasAny(settings.module, "View")) {
-    return null;
-  }
-  return withLanding(settings, permissions);
+  return usePermittedModules().settings;
 }
 
 export function useAllModules() {
-  const permissions = usePermissions();
-  const modules = useModuleDefinitions();
-
-  const routeData = useRouteData<{
-    modulePreferences: ModulePreference[];
-  }>(path.to.authenticatedRoot);
-
-  const modulePreferences = routeData?.modulePreferences ?? [];
-  const permitted = filterByPermissions(modules, permissions)
-    .filter((m) => !PINNED_MODULES.has(m.key))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const prefMap = new Map(modulePreferences.map((p) => [p.module, p]));
-
-  return permitted
+  const { modules, preferences } = usePermittedModules();
+  return modules
     .map((m, index) => ({
       ...m,
-      position: prefMap.get(m.key)?.position ?? index + 1,
-      hidden: prefMap.get(m.key)?.hidden ?? false
+      position: preferences.get(m.key)?.position ?? index + 1,
+      hidden: preferences.get(m.key)?.hidden ?? false
     }))
     .sort((a, b) => a.position - b.position);
 }

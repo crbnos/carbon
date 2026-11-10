@@ -21,11 +21,9 @@ import { getGenericQueryFilters } from "~/utils/query";
 const logger = getLogger("erp", "reports-general-ledger");
 
 export async function resolveGeneralLedgerRequest(request: Request) {
-  const { api, client, companyId, companyGroupId } = await authorize(
-    request,
-    { "accounting.reporting": "View" },
-    { role: "employee" }
-  );
+  const { api, client, companyId, companyGroupId } = await authorize(request, {
+    "accounting.reporting": "View"
+  });
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;

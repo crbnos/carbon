@@ -105743,6 +105743,10 @@ export type Database = {
         Returns: string[]
       }
       get_companies_with_employee_role: { Args: never; Returns: string[] }
+      get_companies_with_module_view: {
+        Args: { modules: string[]; permissions: string[] }
+        Returns: string[]
+      }
       get_company_groups_for_employee: { Args: never; Returns: string[] }
       get_company_groups_for_root_permission: {
         Args: { permission: string }
@@ -106593,7 +106597,6 @@ export type Database = {
         }[]
       }
       get_my_claim: { Args: { claim: string }; Returns: Json }
-      get_my_permission: { Args: { claim: string }; Returns: Json }
       get_next_numeric_sequence: {
         Args: {
           company_id: string
@@ -107732,7 +107735,6 @@ export type Database = {
           quantity: number
         }[]
       }
-      has_any_company_permission: { Args: { claim: string }; Returns: boolean }
       has_valid_api_key_for_company: {
         Args: { company: string }
         Returns: boolean

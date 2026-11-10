@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { type Gate, holdsGate } from "@carbon/database/access";
+import { admits, type Gate } from "@carbon/database/access";
 import {
   ApiKeyNotFoundError,
   checkApiKeyRateLimit
@@ -35,7 +35,11 @@ import {
 import type { AuthSession, Permission } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
-import { type ApiKeyRecord, getApiKeyRecord } from "./api-key.server";
+import {
+  type ApiKeyRecord,
+  getApiKeyRecord,
+  hashApiKey
+} from "./api-key.server";
 import { logAuthEvent } from "./auth-events.server";
 import { getCompanyPlanId, isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
@@ -124,14 +128,95 @@ export {
   hashApiKey
 } from "./api-key.server";
 
-// Exported so the Carbon API v1 surface can read a key's scopes: each service
-// function's own permission gate checks them per operation. The carbon-key
-// branch of requirePermissions already covers client/rate-limit/plan/expiry.
-// Kept as `{ data, error }` for its existing callers; the row now comes through the
-// ~30s Redis cache (with per-request memoization) in api-key.server.ts.
-export async function getCompanyIdFromAPIKey(apiKey: string) {
-  const data = await getApiKeyRecord(apiKey);
-  return { data, error: data ? null : new Error("API key not found") };
+/** Why an API key was turned away, as the HTTP answer to give. */
+export type ApiKeyRefusal = {
+  status: 401 | 403 | 429;
+  message: string;
+  headers?: Record<string, string>;
+};
+
+/**
+ * A raw API key authenticated: its record (through the cache), unexpired,
+ * within its rate limit, and its company on a plan with API access. Every
+ * caller presenting a key goes through it: `authorize` and the postings'
+ * caller check. Once per request, so the rate limit counts a request once
+ * however many gates it meets.
+ */
+export function authenticateApiKey(
+  rawKey: string
+): Promise<
+  { key: ApiKeyRecord; refusal: null } | { key: null; refusal: ApiKeyRefusal }
+> {
+  return oncePerRequest(`apikey:authenticate:${hashApiKey(rawKey)}`, () =>
+    loadAuthenticatedApiKey(rawKey)
+  );
+}
+
+async function loadAuthenticatedApiKey(
+  rawKey: string
+): Promise<
+  { key: ApiKeyRecord; refusal: null } | { key: null; refusal: ApiKeyRefusal }
+> {
+  const refuse = (refusal: ApiKeyRefusal) => ({ key: null, refusal }) as const;
+  const key = await getApiKeyRecord(rawKey);
+  if (!key) return refuse({ status: 401, message: "Invalid API key" });
+
+  if (key.expiresAt && new Date(key.expiresAt) < new Date()) {
+    return refuse({ status: 401, message: "API key has expired" });
+  }
+
+  let rl: Awaited<ReturnType<typeof checkApiKeyRateLimit>>;
+  try {
+    rl = await checkApiKeyRateLimit(
+      getCarbonServiceRole(),
+      key.id,
+      key.rateLimit,
+      key.rateLimitWindow
+    );
+  } catch (err) {
+    // The key was deleted while its auth record was still cached — that is a
+    // revoked credential, not a server error.
+    if (err instanceof ApiKeyNotFoundError) {
+      return refuse({ status: 401, message: "Invalid API key" });
+    }
+    throw err;
+  }
+  if (!rl.success) {
+    return refuse({
+      status: 429,
+      message: "Rate limit exceeded",
+      headers: {
+        "Content-Type": "application/json",
+        "X-RateLimit-Limit": rl.limit.toString(),
+        "X-RateLimit-Remaining": rl.remaining.toString(),
+        "X-RateLimit-Reset": rl.resetAt.toString(),
+        "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString()
+      }
+    });
+  }
+
+  // API access is a Business-tier feature. Self-hosted editions and
+  // bypass-listed companies are never gated.
+  if (CarbonEdition === Edition.Cloud) {
+    const isBypass = STRIPE_BYPASS_COMPANY_IDS
+      ? STRIPE_BYPASS_COMPANY_IDS.split(",")
+          .map((id: string) => id.trim())
+          .includes(key.companyId)
+      : false;
+    if (
+      !isBypass &&
+      (await getCompanyPlanId(key.companyId)) === Plan.Starter &&
+      !(await isCarbonOwnedCompany(key.companyId))
+    ) {
+      return refuse({
+        status: 403,
+        message:
+          "API access requires the Business plan and above. Please upgrade your plan to use API keys."
+      });
+    }
+  }
+
+  return { key, refusal: null };
 }
 
 export function makeAuthSession(
@@ -200,14 +285,14 @@ function companyRole(
 
 /** How a gate authenticates, beside the pages it needs. */
 export type GateOptions = {
-  /** The caller's role in the company, matched exactly. */
-  role?: "employee" | "customer" | "supplier";
   /** A service-role client for an employee, instead of the user's RLS client. */
   bypassRls?: boolean;
   /**
-   * Also admit customer and supplier portal accounts. Only for routes that
-   * act on the signed-in user's own identity (onboarding); everything else
-   * holds company data they must not reach.
+   * Also admit a signed-in user who is not an employee of the company: a
+   * customer or supplier portal account, or a user with no role there
+   * (onboarding before their first company). Only for routes that act on the
+   * user's own identity; everything else holds company data they must not
+   * reach.
    */
   allowPortalAccounts?: boolean;
 };
@@ -234,104 +319,39 @@ async function requirePermissions(
   const apiKey = request.headers.get("carbon-key");
 
   if (apiKey) {
-    const company = await getCompanyIdFromAPIKey(apiKey);
     // A caller presenting a key is on the machine path: 401, never the /login
     // redirect requireAuthSession would answer with below.
-    if (!company.data) {
-      throw new Response("Invalid API key", { status: 401 });
+    const { key, refusal } = await authenticateApiKey(apiKey);
+    if (refusal) {
+      throw new Response(refusal.message, {
+        status: refusal.status,
+        headers: refusal.headers
+      });
     }
-    if (company.data) {
-      // Lets traces tell a script from a person at the keyboard.
-      annotateRequestSpan({ "carbon.caller": "apiKey" });
-      const apiKeyData = company.data as unknown as ApiKeyRecord;
-      const companyId = apiKeyData.companyId;
-      const companyGroupId = apiKeyData.companyGroupId;
-      const userId = apiKeyData.createdBy;
+    // Lets traces tell a script from a person at the keyboard.
+    annotateRequestSpan({ "carbon.caller": "apiKey" });
+    const { companyId, companyGroupId, createdBy: userId } = key;
 
-      // Check expiration
-      if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
-        throw new Response("API key has expired", { status: 401 });
-      }
-
-      // Check rate limit via Postgres function
-      const serviceRole = getCarbonServiceRole();
-      let rl: Awaited<ReturnType<typeof checkApiKeyRateLimit>>;
-      try {
-        rl = await checkApiKeyRateLimit(
-          serviceRole,
-          apiKeyData.id,
-          apiKeyData.rateLimit,
-          apiKeyData.rateLimitWindow
-        );
-      } catch (err) {
-        // The key was deleted while its auth record was still cached — that is a
-        // revoked credential, not a server error.
-        if (err instanceof ApiKeyNotFoundError) {
-          throw new Response("Invalid API key", { status: 401 });
-        }
-        throw err;
-      }
-      if (!rl.success) {
-        throw new Response("Rate limit exceeded", {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "X-RateLimit-Limit": rl.limit.toString(),
-            "X-RateLimit-Remaining": rl.remaining.toString(),
-            "X-RateLimit-Reset": rl.resetAt.toString(),
-            "Retry-After": Math.ceil(
-              (rl.resetAt - Date.now()) / 1000
-            ).toString()
-          }
-        });
-      }
-
-      // Check the key's grants against the gate. A key has no role.
-      const scopes = apiKeyData.permissions ?? {};
-      if (!holdsGate(scopes, gate, companyId)) {
-        throw new Response("API key lacks required permissions", {
-          status: 403
-        });
-      }
-
-      // Plan gate: API access is a Business-tier feature. Block Starter
-      // companies from authenticating with their API key. Self-hosted editions
-      // and bypass-listed companies are never gated.
-      if (CarbonEdition === Edition.Cloud) {
-        const isBypass = STRIPE_BYPASS_COMPANY_IDS
-          ? STRIPE_BYPASS_COMPANY_IDS.split(",")
-              .map((id: string) => id.trim())
-              .includes(companyId)
-          : false;
-
-        if (!isBypass) {
-          if (
-            (await getCompanyPlanId(companyId)) === Plan.Starter &&
-            !(await isCarbonOwnedCompany(companyId))
-          ) {
-            throw new Response(
-              "API access requires the Business plan and above. Please upgrade your plan to use API keys.",
-              { status: 403 }
-            );
-          }
-        }
-      }
-
-      const client = getCarbonAPIKeyClient(apiKey, requestFetch(request));
-
-      return {
-        client,
-        companyId,
-        companyGroupId,
-        userId,
-        sessionUserId: userId,
-        email: "",
-        consoleMode: false,
-        caller: "apiKey",
-        permissions: scopes,
-        role: null
-      };
+    if (
+      !admits({ type: "apiKey", permissions: key.permissions }, companyId, gate)
+    ) {
+      throw new Response("API key lacks required permissions", {
+        status: 403
+      });
     }
+
+    return {
+      client: getCarbonAPIKeyClient(apiKey, requestFetch(request)),
+      companyId,
+      companyGroupId,
+      userId,
+      sessionUserId: userId,
+      email: "",
+      consoleMode: false,
+      caller: "apiKey",
+      permissions: key.permissions,
+      role: null
+    };
   }
 
   const authSession = await requireAuthSession(request);
@@ -340,48 +360,36 @@ async function requirePermissions(
 
   const myClaims = await getUserClaims(userId, companyId);
 
-  // A customer or supplier portal account is a member of the company too, and
-  // holds a few permissions (documents, parts, sales/purchasing view), but no
-  // route in the apps is theirs — portal pages are share links served with the
-  // service role. Before this check, `{}` and those permissions admitted them to
-  // every route that then reads with the service role (file previews, job
-  // travelers, order and quote pages). A 403, not a redirect: the MES shell calls
-  // requirePermissions itself, so a redirect to it would loop.
-  if (
-    (myClaims.role === "customer" || myClaims.role === "supplier") &&
-    !options.allowPortalAccounts
-  ) {
+  const admitted = admits(
+    { type: "user", role: myClaims.role, permissions: myClaims.permissions },
+    companyId,
+    gate,
+    { allowPortalAccounts: options.allowPortalAccounts }
+  );
+
+  if (!admitted) {
+    // A customer or supplier portal account is a member of the company too,
+    // and holds a few permissions, but no route in the apps is theirs: portal
+    // pages are share links served with the service role. A 403, not a
+    // redirect: the MES shell calls requirePermissions itself, so a redirect
+    // to it would loop.
+    const portal = myClaims.role === "customer" || myClaims.role === "supplier";
     logAuthEvent("permission_denied", {
       userId,
       actor: email,
       companyId,
       ip: getClientIp(request) ?? undefined,
-      reason: `${myClaims.role} portal account`
+      reason: portal
+        ? `${myClaims.role} portal account`
+        : JSON.stringify({ gate, ...options })
     });
-    throw new Response("Forbidden", { status: 403 });
-  }
-
-  const hasRequiredPermissions =
-    (!options.role || myClaims.role === options.role) &&
-    holdsGate(myClaims.permissions, gate, companyId);
-
-  if (!hasRequiredPermissions) {
-    logAuthEvent("permission_denied", {
-      userId,
-      actor: email,
-      companyId,
-      ip: getClientIp(request) ?? undefined,
-      reason: JSON.stringify({ gate, ...options })
-    });
+    if (portal) throw new Response("Forbidden", { status: 403 });
     if (myClaims.role === null) {
       throw redirect("/", await destroyAuthSession(request));
     }
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(
-        request,
-        error({ myClaims: myClaims, gate, role: options.role }, "Access Denied")
-      )
+      await flash(request, error({ myClaims, gate }, "Access Denied"))
     );
   }
 
@@ -452,9 +460,9 @@ export function authorize<A extends CallerAuth>(
  * The caller of this request, refused unless they hold `gate`, with the
  * operations bound to them:
  * `const { api, companyId } = await authorize(request, { "sales.customers": "View" })`.
- * With no gate, any employee or API key of the company passes; each call on
- * `api` is still checked against its own permission. `options` sets the role,
- * the service-role client and portal access.
+ * With no gate, any employee or API key of the company passes (`admits`);
+ * each call on `api` is still checked against its own permission. `options`
+ * sets the service-role client and portal access.
  */
 export function authorize(
   request: Request,

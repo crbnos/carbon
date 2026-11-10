@@ -105,7 +105,7 @@ local-dev only via the plain `canAccessBackups`.
 (`x+/users+/employee-types*`), editing an individual user's permissions
 (`employees.$employeeId`, `bulk-edit-permissions`), and console/kiosk mode
 (`x+/settings+/people.tsx`). The licensed logic — the flattened-permission-object
-builder `updatePermissions`, `updateEmployee`, the employee-type CRUD, and the
+builder `updatePermissions`, `writeAccessGrants`, the employee-type CRUD, and the
 claims/employee-type translators — lives once in **`@carbon/ee/permissions.server`**
 (consumed by the ERP authoring routes AND the `@carbon/jobs` bulk-edit task, which
 no longer carries its own copy). Console-operator provisioning is `@carbon/ee/console.server`

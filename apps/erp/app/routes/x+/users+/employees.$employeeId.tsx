@@ -7,6 +7,7 @@ import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { isAdminType } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import {
   Modal,
@@ -74,11 +75,9 @@ function PermissionsUpgradeModal() {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(
-    request,
-    { "users.accounts": "View" },
-    { role: "employee" }
-  );
+  const { companyId, api } = await authorize(request, {
+    "users.accounts": "View"
+  });
 
   const { employeeId } = params;
   if (!employeeId) throw notFound("employeeId not found");
@@ -116,7 +115,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     employee: employee.data,
-    employeeTypes: employeeTypes.data ?? [],
+    employeeTypes: (employeeTypes.data ?? []).map((type) => ({
+      id: type.id,
+      name: type.name,
+      admin: isAdminType(type, companyId)
+    })),
     grants: grants.data,
     roleGrants: roleGrants.data,
     effectiveAccess: effectiveAccess.data ?? []
@@ -126,12 +129,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(employeeValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { id, employeeType, data: grants } = input.data;
   const { api } = await authorize(args.request);
   const result = await api.users.updateEmployeePermissions({
-    id,
-    employeeType,
-    grants: JSON.parse(grants),
+    ...input.data,
     ip: originOf(args.request).ip
   });
   return respond(args.request, result).redirect(path.to.employeeAccounts, {

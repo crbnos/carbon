@@ -4,44 +4,108 @@
 
 import { describe, expect, it } from "vitest";
 import cases from "./cases.json";
-import { actionsGained, roundUp } from "./levels";
+import {
+  actionsGained,
+  LEVEL_ACTION,
+  parsePermissionKey,
+  permissionKey,
+  roundUp
+} from "./levels";
 import {
   clampLevel,
+  ITEM_PAGES,
   ITEM_TYPE_PAGES,
   PAGES,
+  pageById,
   pagesOf,
-  REGISTRY_HASH
+  REGISTRY_HASH,
+  readPages
 } from "./registry";
 import {
   accessHolders,
   anyOf,
   claimKeys,
+  claimsFor,
   claimsFromJson,
   expandClaims,
   type Grant,
   holds,
   holdsAny,
   holdsGate,
+  isAdminType,
   isLegacyClaims,
+  landingOf,
+  legacyGrants,
+  levelOf,
   type RawClaims,
   resolveLevel,
-  winningGrant
+  widenReads
 } from "./resolve";
 
 // A case's grants and Admin type are in company "A" unless they name another,
 // and it asks about "A" unless `askCompany` names another. get_claims hands the
 // resolver one company's grants and its own Admin flag; this is that filter.
+// `expected` is the level after the page's maxLevel; `granted`, when a case
+// has it, the level before.
 type Case = (typeof cases)[number] & {
   adminCompany?: string;
   askCompany?: string;
+  granted?: string;
   grants: (Grant & { company?: string })[];
 };
 
+const subjectOf = (c: Case) => {
+  const asked = c.askCompany ?? "A";
+  return {
+    grants: c.grants.filter((g) => (g.company ?? "A") === asked),
+    admin: c.admin && (c.adminCompany ?? "A") === asked
+  };
+};
+
+describe("levelOf", () => {
+  it.each(cases as Case[])("$name", (c) => {
+    const of = levelOf(subjectOf(c), c.pageId);
+    expect(of.level).toBe(c.expected);
+    expect(of.granted).toBe(c.granted ?? c.expected);
+    expect(of.clamped).toBe(c.granted !== undefined);
+  });
+
+  it("names what decided the level", () => {
+    const g = (
+      subject: Grant["subject"],
+      page: string | null,
+      level: Grant["level"]
+    ): Grant => ({ subject, module: "Inventory", page, level });
+    const source = (grants: Grant[], admin = false) =>
+      levelOf({ admin, grants }, "inventory.receipts").source;
+    expect(source([], true)).toBe("admin");
+    expect(source([g("role", null, "View")])).toBe("role-module");
+    expect(source([g("role", "inventory.receipts", "View")])).toBe("role-page");
+    expect(source([g("person", null, "None"), g("role", null, "Full")])).toBe(
+      "person-module"
+    );
+    expect(source([g("person", "inventory.receipts", "Edit")])).toBe(
+      "person-page"
+    );
+    expect(source([g("key", null, "View")])).toBe("key-module");
+    expect(source([g("key", "inventory.receipts", "View")])).toBe("key-page");
+    expect(source([])).toBe("none");
+  });
+
+  it("matches a module grant by its enum label only", () => {
+    const items: Grant = {
+      subject: "role",
+      module: "Items",
+      page: null,
+      level: "Full"
+    };
+    expect(levelOf({ grants: [items] }, "parts.parts").level).toBe("None");
+  });
+});
+
 describe("resolveLevel", () => {
   it.each(cases as Case[])("$name", (c) => {
-    const asked = c.askCompany ?? "A";
-    const grants = c.grants.filter((g) => (g.company ?? "A") === asked);
-    const admin = c.admin && (c.adminCompany ?? "A") === asked;
+    const { grants, admin } = subjectOf(c);
     expect(resolveLevel(grants, c.pageId, { admin })).toBe(c.expected);
   });
 });
@@ -94,11 +158,15 @@ describe("expandClaims", () => {
     for (const page of PAGES) expect(expanded[page.id]).toBeDefined();
   });
 
-  it("gives every page of the module the module grant's actions", () => {
+  it("gives every page of the module the module grant's actions, up to its maxLevel", () => {
     for (const page of pagesOf("inventory")) {
-      expect(holds(expanded, `${page}_update`, "c1")).toBe(true);
+      expect(holds(expanded, `${page}_update`, "c1")).toBe(
+        clampLevel(page, "Edit") === "Edit"
+      );
       expect(holds(expanded, `${page}_delete`, "c1")).toBe(false);
     }
+    expect(holds(expanded, "inventory.traceability_view", "c1")).toBe(true);
+    expect(holds(expanded, "inventory.traceability_update", "c1")).toBe(false);
     expect(expanded["inventory.receipts"]).toEqual({
       view: ["c1"],
       create: ["c1"],
@@ -123,10 +191,13 @@ describe("expandClaims", () => {
     expect(holds(expanded, "customerPortal_view", "c1")).toBe(false);
   });
 
-  it("gives an admin Full on every page", () => {
+  it("gives an admin every page's maxLevel", () => {
     const admin = expandClaims({ ...raw, admin: true }, "c1");
     for (const page of PAGES) {
-      expect(holds(admin, `${page.id}_delete`, "c1")).toBe(true);
+      expect(holds(admin, `${page.id}_view`, "c1")).toBe(true);
+      expect(holds(admin, `${page.id}_delete`, "c1")).toBe(
+        page.maxLevel === "Full"
+      );
     }
   });
 
@@ -185,6 +256,159 @@ describe("holdsGate", () => {
   });
 });
 
+describe("holdsGate forms", () => {
+  const view = { view: ["c1"], create: [], update: [], delete: [] };
+  const expanded = { "inventory.shipments": view };
+
+  it("reads an { anyOf } list like a bare list", () => {
+    const pages = ["inventory.receipts", "inventory.shipments"] as const;
+    expect(
+      holdsGate(expanded, { anyOf: anyOf([...pages], "View") }, "c1")
+    ).toBe(true);
+    expect(holdsGate(expanded, anyOf([...pages], "View"), "c1")).toBe(true);
+    expect(holdsGate(expanded, { anyOf: [] }, "c1")).toBe(false);
+    expect(holdsGate(expanded, [], "c1")).toBe(false);
+  });
+
+  it("passes {} and an entry with no level, and refuses no claims", () => {
+    expect(holdsGate({}, {}, "c1")).toBe(true);
+    expect(holdsGate({}, { "inventory.receipts": undefined }, "c1")).toBe(true);
+    expect(holdsGate(null, {}, "c1")).toBe(false);
+    expect(holdsGate(undefined, { "inventory.receipts": "View" }, "c1")).toBe(
+      false
+    );
+  });
+
+  it("checks a page exactly unless asked for a read", () => {
+    const gate = { "inventory.receipts": "View" } as const;
+    expect(holdsGate(expanded, gate, "c1")).toBe(false);
+    expect(holdsGate(expanded, gate, "c1", { reads: true })).toBe(true);
+    expect(
+      holdsGate({ "sales.quotes": view }, gate, "c1", { reads: true })
+    ).toBe(false);
+  });
+
+  it("never widens a write", () => {
+    const edit = { view: ["c1"], create: ["c1"], update: ["c1"], delete: [] };
+    expect(
+      holdsGate(
+        { "inventory.shipments": edit },
+        { "inventory.receipts": "Edit" },
+        "c1",
+        { reads: true }
+      )
+    ).toBe(false);
+  });
+});
+
+describe("widenReads", () => {
+  it("widens View on one page to the pages that read what it owns", () => {
+    expect(widenReads({ "inventory.receipts": "View" })).toEqual({
+      anyOf: anyOf(readPages("inventory.receipts"), "View")
+    });
+    // Receipts and Purchase Invoices list purchaseOrder in `readers`.
+    const order = widenReads({ "purchasing.purchaseOrders": "View" });
+    expect(order).toEqual({
+      anyOf: anyOf(
+        [
+          ...pagesOf("purchasing"),
+          "inventory.receipts",
+          "invoicing.purchaseInvoices"
+        ],
+        "View"
+      )
+    });
+  });
+
+  it("leaves a write, two pages and an unknown page as written", () => {
+    const edit = { "inventory.receipts": "Edit" } as const;
+    expect(widenReads(edit)).toBe(edit);
+    const two = {
+      "inventory.receipts": "View",
+      "inventory.shipments": "View"
+    } as const;
+    expect(widenReads(two)).toBe(two);
+    const unknown = { "inventory.nowhere": "View" } as never;
+    expect(widenReads(unknown)).toBe(unknown);
+  });
+
+  it("keeps a shared table's pages in a list, and widens the rest", () => {
+    const items = anyOf(ITEM_PAGES, "View");
+    expect(widenReads({ anyOf: items })).toEqual({ anyOf: items });
+    expect(
+      widenReads([{ "parts.parts": "View" }, { "inventory.receipts": "View" }])
+    ).toEqual({
+      anyOf: [
+        { "parts.parts": "View" },
+        ...anyOf(readPages("inventory.receipts"), "View")
+      ]
+    });
+  });
+
+  it("widens one shared page outside a list, as readGate did", () => {
+    expect(widenReads({ "parts.tools": "View" })).toEqual({
+      anyOf: anyOf(readPages("parts.tools"), "View")
+    });
+  });
+
+  it("lists each widened page once", () => {
+    const widened = widenReads({
+      anyOf: [
+        { "inventory.receipts": "View" },
+        { "inventory.shipments": "View" }
+      ]
+    }) as { anyOf: unknown[] };
+    const pages = new Set([
+      ...readPages("inventory.receipts"),
+      ...readPages("inventory.shipments")
+    ]);
+    expect(widened.anyOf).toEqual(anyOf([...pages], "View"));
+  });
+});
+
+describe("landingOf", () => {
+  const view = { view: ["c1"], create: [], update: [], delete: [] };
+
+  it("takes the preferred page when the person can view it", () => {
+    expect(
+      landingOf("inventory", { "inventory.quantities": view }, "c1", {
+        prefer: "inventory.quantities"
+      })
+    ).toEqual({
+      page: "inventory.quantities",
+      path: "/x/inventory/quantities"
+    });
+  });
+
+  it("else the first page in sidebar order the person can view", () => {
+    const [, second] = pagesOf("inventory");
+    expect(
+      landingOf("inventory", { [second as string]: view }, "c1", {
+        prefer: "inventory.quantities"
+      })
+    ).toEqual({
+      page: second,
+      path: pageById(second as string)?.paths[0]
+    });
+  });
+
+  it("is undefined when the person can view no page of the module", () => {
+    expect(landingOf("inventory", { "sales.quotes": view }, "c1")).toBe(
+      undefined
+    );
+    expect(landingOf("inventory", null, "c1")).toBe(undefined);
+  });
+
+  it("returns the page's first path", () => {
+    expect(
+      landingOf("service", { "service.customerAssets": view }, "c1")
+    ).toEqual({
+      page: "service.customerAssets",
+      path: "/x/service-jobs/assets"
+    });
+  });
+});
+
 describe("holdsAny", () => {
   const expanded = {
     "inventory.receipts": { view: ["c1"], create: [], update: [], delete: [] },
@@ -214,8 +438,8 @@ describe("claimKeys", () => {
   });
 });
 
-describe("winningGrant", () => {
-  it("returns the grant precedence picks, or null", () => {
+describe("levelOf grant", () => {
+  it("is the grant precedence picks, or null", () => {
     const role = {
       subject: "role" as const,
       module: "Sales",
@@ -227,9 +451,9 @@ describe("winningGrant", () => {
       subject: "person" as const,
       level: "None" as const
     };
-    expect(winningGrant([role, person], "sales")).toBe(person);
-    expect(winningGrant([role], "sales")).toBe(role);
-    expect(winningGrant([role], "parts")).toBeNull();
+    expect(levelOf({ grants: [role, person] }, "sales").grant).toBe(person);
+    expect(levelOf({ grants: [role] }, "sales").grant).toBe(role);
+    expect(levelOf({ grants: [role] }, "parts").grant).toBeNull();
   });
 });
 
@@ -331,9 +555,70 @@ describe("claimsFromJson", () => {
     expect(raw.portal).toEqual({ sales_view: ["co1"] });
   });
 
-  it("grants nothing from the old shape without a company", () => {
+  it("leaves out an old module key with no pages", () => {
     expect(
-      claimsFromJson({ role: "employee", sales_view: ["co1"] }).grants
-    ).toEqual([]);
+      legacyGrants({ items_view: ["co1"], parts_view: ["co1"] }, "co1", "key")
+    ).toEqual([{ subject: "key", module: "Parts", page: null, level: "View" }]);
+  });
+});
+
+describe("claimsFor", () => {
+  it("is claimsFromJson with its permissions expanded in the company", () => {
+    const json = {
+      role: "employee",
+      admin: false,
+      grants: [{ subject: "role", module: "Sales", page: null, level: "View" }],
+      portal: {}
+    };
+    const claims = claimsFor(json, "co1");
+    expect(claims.role).toBe("employee");
+    expect(claims.admin).toBe(false);
+    expect(claims.grants).toEqual(claimsFromJson(json, "co1").grants);
+    expect(claims.permissions).toEqual(
+      expandClaims(claimsFromJson(json, "co1"), "co1")
+    );
+    expect(holds(claims.permissions, "sales.quotes_view", "co1")).toBe(true);
+  });
+});
+
+describe("isAdminType", () => {
+  it("is the company's own Admin type only", () => {
+    expect(isAdminType({ systemType: "Admin", companyId: "c1" }, "c1")).toBe(
+      true
+    );
+    expect(isAdminType({ systemType: "Admin", companyId: "c2" }, "c1")).toBe(
+      false
+    );
+    expect(isAdminType({ systemType: null, companyId: "c1" }, "c1")).toBe(
+      false
+    );
+  });
+});
+
+describe("permissionKey", () => {
+  it("formats and parses <subject>_<action>", () => {
+    expect(permissionKey("inventory.receipts", "update")).toBe(
+      "inventory.receipts_update"
+    );
+    expect(parsePermissionKey("inventory.receipts_update")).toEqual({
+      subject: "inventory.receipts",
+      action: "update"
+    });
+    expect(parsePermissionKey("customerPortal_view")).toEqual({
+      subject: "customerPortal",
+      action: "view"
+    });
+    expect(parsePermissionKey("inventory")).toBeNull();
+    expect(parsePermissionKey("inventory_edit")).toBeNull();
+    expect(parsePermissionKey("_view")).toBeNull();
+  });
+
+  it("reads each level by its highest action", () => {
+    expect(LEVEL_ACTION).toEqual({
+      View: "view",
+      Create: "create",
+      Edit: "update",
+      Full: "delete"
+    });
   });
 });

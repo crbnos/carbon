@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { type Level, moduleOf, PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -29,14 +28,10 @@ import { employeeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
 
-type EmployeeType = { id: string; name: string; systemType: string | null };
+/** `admin`: the company's own Admin type (`isAdminType`). */
+type EmployeeType = { id: string; name: string; admin: boolean };
 
-type RoleGrant = {
-  employeeTypeId: string | null;
-  module: string;
-  page: string | null;
-  level: Level;
-};
+type RoleGrant = AccessGrant & { employeeTypeId: string | null };
 
 type EmployeePermissionsFormProps = {
   employee: { name: string; email: string | null; avatarUrl: string | null };
@@ -45,29 +40,11 @@ type EmployeePermissionsFormProps = {
   roleGrants: RoleGrant[];
   /** Access as saved, per page: what grew in the conversion. */
   effectiveAccess: { page: string; gained: string[] }[];
-  initialValues: Omit<z.infer<typeof employeeValidator>, "data"> & {
+  initialValues: Omit<z.infer<typeof employeeValidator>, "grants"> & {
     /** The person's own overrides. */
     grants: AccessGrant[];
   };
 };
-
-/** What a person on the type gets with no override, per module or page id. */
-function roleLevels(
-  type: EmployeeType | undefined,
-  roleGrants: RoleGrant[]
-): Record<string, Level> {
-  if (!type) return {};
-  if (type.systemType === "Admin") {
-    const ids = PAGES.flatMap((page) => [page.id, moduleOf(page.id)]);
-    return Object.fromEntries(ids.map((id) => [id, "Full" as const]));
-  }
-  const levels: Record<string, Level> = {};
-  for (const grant of roleGrants) {
-    if (grant.employeeTypeId !== type.id) continue;
-    levels[grant.page ?? grant.module.toLowerCase()] = grant.level;
-  }
-  return levels;
-}
 
 const EmployeePermissionsForm = ({
   employee,
@@ -90,8 +67,8 @@ const EmployeePermissionsForm = ({
     initialValues.employeeType
   );
   const type = employeeTypes.find((et) => et.id === employeeTypeId);
-  const isAdmin = type?.systemType === "Admin";
-  const inherited = roleLevels(type, roleGrants);
+  const isAdmin = type?.admin ?? false;
+  const inherited = roleGrants.filter((g) => g.employeeTypeId === type?.id);
 
   const isDirty =
     employeeTypeId !== initialValues.employeeType ||
@@ -121,7 +98,7 @@ const EmployeePermissionsForm = ({
           defaultValues={initialValues}
         >
           <Hidden name="id" />
-          <Hidden name="data" value={JSON.stringify(grants)} />
+          <Hidden name="grants" value={JSON.stringify(grants)} />
           <ModalHeader>
             <div className="flex items-center gap-3">
               <Avatar

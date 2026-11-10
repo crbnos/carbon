@@ -26,6 +26,7 @@ import {
   useQuantityFormatter
 } from "~/hooks";
 import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { withContractRead } from "~/modules/sales/sales.models";
 import { BillableItemStatus } from "~/modules/service/ui/ServiceStatus";
 import { path } from "~/utils/path";
 import type {
@@ -68,10 +69,9 @@ const ProjectBillableItemsTable = memo(
     const formatRate = useCurrencyFormatter({ rate: true });
     const formatQuantity = useQuantityFormatter();
     const { formatDate } = useDateFormatter();
-    const canUpdate = permissions.has([
-      { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
-      { "projects.approvals": "Edit", "sales.projectContracts": "View" }
-    ]);
+    const canUpdate = permissions.has(
+      withContractRead({ "projects.approvals": "Edit" })
+    );
     const acting = useDrawerItem<{
       action: BillableItemAction;
       items: ContractBillableItem[];

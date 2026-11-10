@@ -4,7 +4,10 @@
 
 import type { Page } from "../registry";
 
-export const INVENTORY_PAGES = [
+/** The module's name in the sidebar. */
+export const LABEL = "Inventory";
+
+export const PAGES = [
   {
     id: "inventory.quantities",
     label: "Quantities",
@@ -17,7 +20,6 @@ export const INVENTORY_PAGES = [
     label: "Movements",
     maxLevel: "Full",
     tables: [],
-    readers: ["itemLedger"],
     paths: ["/x/inventory/stock-movements"]
   },
   {
@@ -48,6 +50,7 @@ export const INVENTORY_PAGES = [
     maxLevel: "Full",
     tables: ["shipment", "shipmentLine", "shipmentFixedAssetLine"],
     readers: ["salesOrder", "fulfillment"],
+    alsoWrittenBy: { shipmentLine: ["sales.salesOrders"] },
     paths: ["/x/inventory/shipments", "/x/shipment/"]
   },
   {

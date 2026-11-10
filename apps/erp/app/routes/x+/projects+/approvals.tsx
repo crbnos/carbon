@@ -5,7 +5,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { Tabs, TabsList, TabsTrigger, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -22,6 +21,10 @@ import Empty from "~/components/Empty";
 import { usePermissions } from "~/hooks";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import TimesheetApprovals from "~/modules/projects/ui/Timesheet/TimesheetApprovals";
+import {
+  CONTRACT_READ_GATE,
+  withContractRead
+} from "~/modules/sales/sales.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -50,10 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { api, companyId } = await authorize(
     request,
     tab === "billing"
-      ? [
-          { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
-          { "projects.approvals": "Edit", "sales.projectContracts": "View" }
-        ]
+      ? withContractRead({ "projects.approvals": "Edit" })
       : { "projects.approvals": "Edit" }
   );
 
@@ -191,9 +191,7 @@ export default function ProjectTimesheetApprovalsRoute() {
   const { tab, groups, billing } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
   const permissions = usePermissions();
-  const canReviewBilling = permissions.has(
-    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
-  );
+  const canReviewBilling = permissions.has(CONTRACT_READ_GATE);
 
   const projects = new Map<string, string>();
   for (const item of billing?.items ?? []) {
