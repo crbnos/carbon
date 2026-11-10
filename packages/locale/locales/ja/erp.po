@@ -262,7 +262,7 @@ msgstr "{0, plural, one {# 品目を移動} other {# 品目すべてを移動}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {このパスを削除すると、#件の接続も切断されます。} other {このパスを削除すると、#件の接続も切断されます。}}"
 
@@ -4456,8 +4456,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "本当に{0}を削除してもよろしいですか？この操作は取り消せません。"
 
@@ -4470,12 +4470,12 @@ msgstr "本当に{orderLabel}を削除してもよろしいですか？この操
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "本当に{readableId}を削除しますか？この操作は元に戻せません。"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "支払 {0} を削除してもよろしいですか？"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "「{0}」ビューを削除してもよろしいですか？この操作は元に戻せません。"
 
@@ -4807,7 +4807,7 @@ msgstr "この仕入先を却下してもよろしいですか？"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "この製造指図をリリースしてもよろしいですか？これは製造現場で利用可能になり、購買と生産を推進します。"
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "{0}とその支払明細をこのリースから除去してもよろしいですか？"
 
@@ -9876,7 +9876,7 @@ msgstr "削除"
 msgid "Delete {0}"
 msgstr "{0} を削除"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "{0} およびその下のすべてのエレメントを削除しますか？原価、時間、製造指図、または発注書明細を持つエレメントは削除できません。"
@@ -15979,7 +15979,7 @@ msgstr "このウィンドウ内のアイテムは黄色いバッジが表示さ
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "品目：品目マスター、BOM、工程表、設計変更、CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "今週の下書き時間 {0} 時間が削除されました"
 
@@ -21743,7 +21743,7 @@ msgstr "支払い"
 msgid "Payment — {0}"
 msgstr "支払 — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "支払 {0}"
 
@@ -24331,7 +24331,7 @@ msgid "Release Batch"
 msgstr "バッチをリリース"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "バッチ {0} をリリース"
 
@@ -24431,7 +24431,7 @@ msgstr "最近使用から{0}を削除"
 msgid "Remove {0} from recent searches"
 msgstr "最近の検索から {0} を除去"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}をこのバッチから除去しますか？その工程はスケジュールに戻り、独自に実行されます。"
 
@@ -24444,7 +24444,7 @@ msgstr "このステップから{0}を除去"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1} から {memberCount} 工程中 {0} 個を除去しますか？"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "{0}を除去しますか?"
 
@@ -25113,7 +25113,7 @@ msgstr "再在庫手数料"
 msgid "Restock Fee Percent"
 msgstr "再在庫手数料率"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "返品手数料 {0}"
 

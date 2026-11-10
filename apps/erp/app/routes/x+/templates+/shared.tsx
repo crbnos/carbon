@@ -179,13 +179,11 @@ export default function SharedSectionsRoute() {
         </div>
       </VStack>
 
-      {disclosure.isOpen && (
-        <SectionFormModal
-          key={editing?.id ?? "new"}
-          section={editing}
-          onClose={disclosure.onClose}
-        />
-      )}
+      <SectionFormModal
+        open={disclosure.isOpen}
+        section={editing}
+        onClose={disclosure.onClose}
+      />
     </ScrollArea>
   );
 }

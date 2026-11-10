@@ -5,10 +5,10 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { Avatar, HStack, useDisclosure } from "@carbon/react";
+import { Avatar, HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useCompanySettings } from "~/hooks";
+import { useEffect, useMemo, useRef } from "react";
+import { useCompanySettings, useDrawerItem } from "~/hooks";
 import type { getCustomerContacts } from "~/modules/sales/sales.service";
 import type { CustomerContact as CustomerContactType } from "~/modules/sales/types";
 import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
@@ -57,11 +57,10 @@ const CustomerContact = ({
 }: CustomerContactSelectProps) => {
   const { t } = useLingui();
   const companySettings = useCompanySettings();
-  const newContactModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const [firstName, ...lastName] = created.split(" ");
+  const [firstName, ...lastName] = (create.item ?? "").split(" ");
 
   const { options, data, reload } = useCustomerContacts(customer);
 
@@ -90,7 +89,7 @@ const CustomerContact = ({
 
   const emptyMessage = useEmptyState(
     "customerContact",
-    customer ? { onCreate: () => newContactModal.onOpen() } : undefined
+    customer ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -105,8 +104,7 @@ const CustomerContact = ({
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newContactModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
       {missingEmail && (
@@ -114,18 +112,19 @@ const CustomerContact = ({
           {t`This contact has no email address.`}
         </p>
       )}
-      {newContactModal.isOpen && (
+      {create.item !== null && (
         <CustomerContactForm
+          key={create.key}
+          open={create.isOpen}
           customerId={customer!}
           type="modal"
           requireEmail={!!companySettings?.requireCustomerContactEmail}
           onClose={() => {
-            setCreated("");
-            newContactModal.onClose();
+            create.close();
             // The options come from a per-customer fetcher that only loads once;
             // reload it so a just-created contact shows up in the list.
             reload();
-            triggerRef.current?.click();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             email: "",

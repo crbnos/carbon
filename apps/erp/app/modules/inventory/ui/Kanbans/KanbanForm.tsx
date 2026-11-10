@@ -44,10 +44,15 @@ type KanbanFormValues = z.infer<typeof kanbanValidator>;
 type KanbanFormProps = {
   initialValues: KanbanFormValues;
   locationId?: string;
+  open?: boolean;
   onClose: () => void;
 };
 
-const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
+const KanbanForm = ({
+  initialValues,
+  open = true,
+  onClose
+}: KanbanFormProps) => {
   const { t } = useLingui();
   const [selectedReplenishmentSystem, setSelectedReplenishmentSystem] =
     useState<string>(initialValues.replenishmentSystem || "Buy");
@@ -192,7 +197,12 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
   const isTransfer = selectedReplenishmentSystem === "Transfer";
 
   return (
-    <Drawer open onOpenChange={onClose}>
+    <Drawer
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DrawerContent>
         <ValidatedForm
           method="post"

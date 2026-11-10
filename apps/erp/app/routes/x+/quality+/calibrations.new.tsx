@@ -6,14 +6,14 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useUrlParams } from "@carbon/react";
+import { useRouteDialog, useUrlParams } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { FileObject } from "@supabase/storage-js";
 import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
 import {
   getQualityFiles,
@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function GaugeCalibrationRecordNewRoute() {
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.calibrations);
   const { files, id, gaugeId } = useLoaderData<typeof loader>();
   const [params, setParams] = useUrlParams();
 
@@ -125,7 +125,8 @@ export default function GaugeCalibrationRecordNewRoute() {
     <GaugeCalibrationRecordForm
       initialValues={initialValues}
       files={files}
-      onClose={() => navigate(path.to.calibrations)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

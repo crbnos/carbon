@@ -27,7 +27,7 @@ import {
 import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -48,7 +48,12 @@ import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import type { InfiniteOptions } from "~/components/Table";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDrawerItem,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import type { PriceListRow } from "~/modules/sales/types";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
@@ -90,9 +95,8 @@ const PriceListTable = memo(
     const [searchParams, setSearchParams] = useSearchParams();
     const previewQuantity = searchParams.get("quantity") ?? "1";
     const itemPostingGroups = useItemPostingGroups();
-    const [duplicateState, setDuplicateState] = useState<{
-      overrideIds?: string[];
-    } | null>(null);
+    const duplicate = useDrawerItem<{ overrideIds?: string[] }>();
+    const { open: openDuplicate } = duplicate;
 
     const canCreate = permissions.can("create", "sales");
     const canDelete = permissions.can("delete", "sales");
@@ -337,7 +341,7 @@ const PriceListTable = memo(
                 shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                 disabled={!canCreate}
                 onClick={() => {
-                  setDuplicateState({ overrideIds: [row.overrideId!] });
+                  openDuplicate({ overrideIds: [row.overrideId!] });
                 }}
               >
                 <MenuIcon icon={<LuCopy />} />
@@ -369,6 +373,7 @@ const PriceListTable = memo(
         canDelete,
         hasScope,
         navigate,
+        openDuplicate,
         searchParams,
         t,
         permissions.can
@@ -439,7 +444,7 @@ const PriceListTable = memo(
                 <Button
                   variant="secondary"
                   leftIcon={<LuCopy />}
-                  onClick={() => setDuplicateState({})}
+                  onClick={() => openDuplicate({})}
                 >
                   <Trans>Duplicate</Trans>
                 </Button>
@@ -455,11 +460,12 @@ const PriceListTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Price List`}
         />
-        {duplicateState !== null && (
+        {duplicate.item && (
           <DuplicatePriceListModal
+            open={duplicate.isOpen}
             sourceScope={sourceScope}
-            overrideIds={duplicateState.overrideIds}
-            onClose={() => setDuplicateState(null)}
+            overrideIds={duplicate.item.overrideIds}
+            onClose={duplicate.close}
           />
         )}
       </>

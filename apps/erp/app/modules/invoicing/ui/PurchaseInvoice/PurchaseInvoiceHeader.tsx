@@ -378,31 +378,28 @@ const PurchaseInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
-        <PurchaseInvoicePostModal
-          invoiceId={invoiceId}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToReceive={linesNotAssociatedWithPO}
-        />
-      )}
-      {voidModal.isOpen && (
-        <PurchaseInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchaseInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.purchaseInvoice?.invoiceId ?? "purchase invoice"}
-          text={t`Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
+      <PurchaseInvoicePostModal
+        isOpen={postingModal.isOpen}
+        invoiceId={invoiceId}
+        onClose={postingModal.onClose}
+        linesToReceive={linesNotAssociatedWithPO}
+      />
+      <PurchaseInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deletePurchaseInvoice(invoiceId)}
+        name={routeData?.purchaseInvoice?.invoiceId ?? "purchase invoice"}
+        text={t`Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
       {auditLogDrawer}
     </>
   );

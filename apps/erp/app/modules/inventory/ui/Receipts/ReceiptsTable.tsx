@@ -456,11 +456,9 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           text={`Are you sure you want to delete ${selectedReceipt.receiptId!}? This cannot be undone.`}
           onCancel={() => {
             deleteReceiptModal.onClose();
-            setSelectedReceipt(null);
           }}
           onSubmit={() => {
             deleteReceiptModal.onClose();
-            setSelectedReceipt(null);
           }}
         />
       )}

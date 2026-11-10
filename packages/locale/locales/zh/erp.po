@@ -262,7 +262,7 @@ msgstr "{0, plural, one {移动 # 项物料} other {移动全部 # 项物料}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {过账或删除日期在截断前的 # 份文件。} other {过账或删除日期在截断前的 # 份文档。}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {删除此路径还将断开 # 个连接。} other {删除此路径还将断开 # 个连接。}}"
 
@@ -4456,8 +4456,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "您确定要删除 {0} 吗？此操作无法撤销。"
 
@@ -4470,12 +4470,12 @@ msgstr "您确定要删除 {orderLabel} 吗？此操作无法撤销。"
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "确定要删除 {readableId} 吗？此操作无法撤销。"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "您确定要删除付款{0}吗？"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "确定要删除\"{0}\"查看吗？此操作无法撤消。"
 
@@ -4807,7 +4807,7 @@ msgstr "你确定要拒绝此供应商吗？"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "确定要下达此工单吗？它将对车间可用，并驱动采购和生产。"
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "您确定要从此租赁中移除 {0} 及其付款行吗？"
 
@@ -9876,7 +9876,7 @@ msgstr "删除"
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "删除 {0} 及其下方的每个要素？具有成本、时间、工单或采购订单行的要素无法删除。"
@@ -15979,7 +15979,7 @@ msgstr "此窗口内的物料将获得黄色徽章。"
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "物料：物料主数据、BOM、工序清单、工程变更、CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "本周的{0}小时草稿时间已被删除。"
 
@@ -21743,7 +21743,7 @@ msgstr "付款"
 msgid "Payment — {0}"
 msgstr "付款 — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "付款{0}"
 
@@ -24331,7 +24331,7 @@ msgid "Release Batch"
 msgstr "下达生产批次"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "下达生产批次{0}"
 
@@ -24431,7 +24431,7 @@ msgstr "从最近记录中移除{0}"
 msgid "Remove {0} from recent searches"
 msgstr "从最近搜索中移除 {0}"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行。"
 
@@ -24444,7 +24444,7 @@ msgstr "从此步骤中移除 {0}"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "移除{0}?"
 
@@ -25113,7 +25113,7 @@ msgstr "补货费"
 msgid "Restock Fee Percent"
 msgstr "补货费百分比"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "补货费 {0}"
 

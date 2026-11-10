@@ -62,6 +62,7 @@ export function QuantityModal({
   trackedEntityReadableId,
   type,
   returnFocusRef,
+  open = true,
   onClose
 }: {
   allStepsRecorded?: boolean;
@@ -80,6 +81,7 @@ export function QuantityModal({
   // Where focus goes on close when the control that opened the modal is gone
   // (an item in a sheet that closed as the modal opened).
   returnFocusRef?: RefObject<HTMLElement | null>;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -170,7 +172,7 @@ export function QuantityModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

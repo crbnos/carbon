@@ -106,7 +106,6 @@ export function IssueAssociationsTree({
   };
 
   const onDeleteCancel = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -151,7 +150,7 @@ export function IssueAssociationsTree({
             ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild?.id && (
+      {selectedChild?.id && (
         <ConfirmDelete
           action={path.to.deleteIssueAssociation(
             nonConformanceId,
@@ -306,7 +305,7 @@ export function IssueAssociationItem({
           )}
         </div>
       )}
-      {newAssociationModal.isOpen && !node.readOnly && (
+      {!node.readOnly && (
         <NewAssociationModal
           open={newAssociationModal.isOpen}
           onClose={newAssociationModal.onClose}
@@ -1190,19 +1189,41 @@ function NewInspectionAssociation() {
   );
 }
 
-function NewAssociationModal({
-  open,
-  onClose,
-  type,
-  name,
-  items
-}: {
+type NewAssociationModalProps = {
   open: boolean;
   onClose: () => void;
   type: IssueAssociationKey;
   name: string;
   items?: string[];
-}) {
+};
+
+function NewAssociationModal({
+  open,
+  onClose,
+  ...props
+}: NewAssociationModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <NewAssociationBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function NewAssociationBody({
+  onClose,
+  type,
+  name,
+  items
+}: Omit<NewAssociationModalProps, "open">) {
   const { id } = useParams();
   if (!id) throw new Error("No issue ID found");
 
@@ -1240,39 +1261,28 @@ function NewAssociationModal({
   }
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ValidatedForm
+      method="post"
+      action={path.to.newIssueAssociation(id)}
+      validator={issueAssociationValidator}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.newIssueAssociation(id)}
-          validator={issueAssociationValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>New {name}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="type" value={type} />
-            <VStack spacing={4}>{renderFields(type)}</VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>New {name}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="type" value={type} />
+        <VStack spacing={4}>{renderFields(type)}</VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

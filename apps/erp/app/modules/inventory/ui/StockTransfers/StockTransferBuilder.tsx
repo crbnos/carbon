@@ -54,7 +54,7 @@ import { ItemThumbnail } from "~/components";
 import type { StorageUnitTreeRow } from "~/components/Form/StorageUnit";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
-import { usePermissions, useQuantityFormatter } from "~/hooks";
+import { useDrawerItem, usePermissions, useQuantityFormatter } from "~/hooks";
 import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { StockTransferWizardLine } from "~/stores";
 import {
@@ -485,7 +485,8 @@ function StockBrowser({
   const [view, setView] = useState<StockView>("inStock");
   const [groupBy, setGroupBy] = useState<GroupBy>("bin");
   const [filterValues, setFilterValues] = useState<StockFilterValues>({});
-  const [assignBatchRow, setAssignBatchRow] = useState<BinRow | null>(null);
+  const assignBatch = useDrawerItem<BinRow>();
+  const assignBatchRow = assignBatch.item;
   const { batchesByItem } = useBuilderData();
 
   // A serial or batch row is in stock when it holds a unit, or stock with no
@@ -854,7 +855,7 @@ function StockBrowser({
                       formatQuantity={formatQuantity}
                       onMove={() => moveRow(row, remainingOf(row))}
                       onFill={() => fillRow(row)}
-                      onAssignBatch={() => setAssignBatchRow(row)}
+                      onAssignBatch={() => assignBatch.open(row)}
                     />
                   ))}
                 </div>
@@ -873,13 +874,14 @@ function StockBrowser({
       </div>
       {assignBatchRow && (
         <AssignBatchModal
+          open={assignBatch.isOpen}
           itemId={assignBatchRow.itemId}
           itemReadableId={assignBatchRow.itemReadableId}
           locationId={locationId}
           storageUnitId={assignBatchRow.storageUnitId}
           quantity={assignBatchRow.quantityUnnumbered}
           batches={batchesByItem.get(assignBatchRow.itemId) ?? EMPTY_BATCHES}
-          onClose={() => setAssignBatchRow(null)}
+          onClose={assignBatch.close}
         />
       )}
     </VStack>

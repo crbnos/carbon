@@ -73,7 +73,7 @@ import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useDrawerItem, usePermissions, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
@@ -694,9 +694,8 @@ export default function InspectionDocumentEditor({
   const [docSampling, setDocSampling] = useState<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
   );
-  const [samplingTarget, setSamplingTarget] = useState<
-    "document" | string | null
-  >(null);
+  const samplingModal = useDrawerItem<"document" | string>();
+  const { item: samplingTarget, open: openSamplingModal } = samplingModal;
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [replacePdfConfirmOpen, setReplacePdfConfirmOpen] = useState(false);
@@ -2676,7 +2675,7 @@ export default function InspectionDocumentEditor({
               className="text-left text-sm underline-offset-2 hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
-                setSamplingTarget(row.original.featureId);
+                openSamplingModal(row.original.featureId);
               }}
             >
               {summary ?? (
@@ -2765,6 +2764,7 @@ export default function InspectionDocumentEditor({
       isOverlayReady,
       model,
       modelFeatureId,
+      openSamplingModal,
       uomCodeToName,
       gaugeTypeIdToName,
       t
@@ -2989,7 +2989,7 @@ export default function InspectionDocumentEditor({
             type="button"
             variant="secondary"
             leftIcon={<LuSlidersHorizontal className="h-4 w-4" />}
-            onClick={() => setSamplingTarget("document")}
+            onClick={() => openSamplingModal("document")}
           >
             {samplingRuleSummary(docSampling) ?? t`Sampling`}
           </Button>
@@ -3064,39 +3064,38 @@ export default function InspectionDocumentEditor({
         </HStack>
       </div>
 
-      {isLeaving && saveFailed && (
-        <Modal open onOpenChange={(open) => !open && blocker.reset?.()}>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Unsaved changes`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={() => blocker.reset?.()}>
-                {t`Stay on this page`}
-              </Button>
-              <Button onClick={() => blocker.proceed?.()}>
-                {t`Leave this page`}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={isLeaving && saveFailed}
+        onOpenChange={(open) => !open && blocker.reset?.()}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Unsaved changes`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => blocker.reset?.()}>
+              {t`Stay on this page`}
+            </Button>
+            <Button onClick={() => blocker.proceed?.()}>
+              {t`Leave this page`}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteInspectionDocument(diagramId)}
-          isOpen
-          name={title || t`this inspection plan`}
-          text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
-          onCancel={() => deleteDisclosure.onClose()}
-          onSubmit={() => deleteDisclosure.onClose()}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteInspectionDocument(diagramId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={title || t`this inspection plan`}
+        text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
+        onCancel={() => deleteDisclosure.onClose()}
+        onSubmit={() => deleteDisclosure.onClose()}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
         <div
@@ -3809,6 +3808,7 @@ export default function InspectionDocumentEditor({
 
       {samplingTarget !== null && (
         <SamplingRuleModal
+          open={samplingModal.isOpen}
           context={samplingTarget === "document" ? "document" : "feature"}
           featureLabel={
             samplingTarget === "document"
@@ -3842,7 +3842,7 @@ export default function InspectionDocumentEditor({
               updateFeatureSampling(samplingTarget, rule);
             }
           }}
-          onClose={() => setSamplingTarget(null)}
+          onClose={samplingModal.close}
         />
       )}
     </div>

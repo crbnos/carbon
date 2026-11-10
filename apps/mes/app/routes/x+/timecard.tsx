@@ -218,6 +218,7 @@ export default function MESTimecardPage() {
     id: string;
     clockIn: string;
   } | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const isCurrentWeek = weekOffset === 0;
 
@@ -315,12 +316,13 @@ export default function MESTimecardPage() {
         </DropdownMenuItem>
         <DropdownMenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
-          onClick={() =>
+          onClick={() => {
             setDeletingEntry({
               id: entry.id,
               clockIn: entry.clockIn
-            })
-          }
+            });
+            setIsDeleteOpen(true);
+          }}
           className="text-destructive"
         >
           <DropdownMenuIcon icon={<LuTrash />} />
@@ -625,9 +627,9 @@ export default function MESTimecardPage() {
         </div>
         {deletingEntry && (
           <Modal
-            open
+            open={isDeleteOpen}
             onOpenChange={(open) => {
-              if (!open) setDeletingEntry(null);
+              if (!open) setIsDeleteOpen(false);
             }}
           >
             <ModalOverlay />
@@ -653,7 +655,7 @@ export default function MESTimecardPage() {
               <ModalFooter>
                 <Button
                   variant="secondary"
-                  onClick={() => setDeletingEntry(null)}
+                  onClick={() => setIsDeleteOpen(false)}
                 >
                   <Trans>Cancel</Trans>
                 </Button>
@@ -664,7 +666,7 @@ export default function MESTimecardPage() {
                     formData.append("intent", "deleteEntry");
                     formData.append("entryId", deletingEntry.id);
                     fetcher.submit(formData, { method: "post" });
-                    setDeletingEntry(null);
+                    setIsDeleteOpen(false);
                   }}
                 >
                   <Trans>Delete</Trans>

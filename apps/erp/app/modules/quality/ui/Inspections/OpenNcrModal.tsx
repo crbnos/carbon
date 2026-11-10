@@ -80,17 +80,38 @@ type OpenNcrModalProps = {
   action: string;
   issueTypes: IssueTypeListItem[];
   isTrackedLot: boolean;
+  open?: boolean;
   onCancel: () => void;
   onSubmit: () => void;
 };
 
 const OpenNcrModal = ({
+  open = true,
+  onCancel,
+  ...props
+}: OpenNcrModalProps) => {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <OpenNcrBody onCancel={onCancel} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+};
+
+const OpenNcrBody = ({
   action,
   issueTypes,
   isTrackedLot,
   onCancel,
   onSubmit
-}: OpenNcrModalProps) => {
+}: Omit<OpenNcrModalProps, "open">) => {
   const fetcher = useAction<{}>({
     onSettled: (data) => {
       if (!submitted.current) return;
@@ -106,71 +127,63 @@ const OpenNcrModal = ({
   );
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {isTrackedLot ? (
+            <Trans>Open an NCR for the failed units</Trans>
+          ) : (
+            <Trans>Open NCR</Trans>
+          )}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">
             {isTrackedLot ? (
-              <Trans>Open an NCR for the failed units</Trans>
+              <Trans>
+                This lot is partly accepted. An NCR records the failed units and
+                decides what happens to them.
+              </Trans>
             ) : (
-              <Trans>Open NCR</Trans>
+              <Trans>
+                This lot is partly accepted, but its NCR did not open. The NCR
+                decides the rejected part of the lot.
+              </Trans>
             )}
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
-            <p className="text-sm text-muted-foreground">
-              {isTrackedLot ? (
-                <Trans>
-                  This lot is partly accepted. An NCR records the failed units
-                  and decides what happens to them.
-                </Trans>
-              ) : (
-                <Trans>
-                  This lot is partly accepted, but its NCR did not open. The NCR
-                  decides the rejected part of the lot.
-                </Trans>
-              )}
-            </p>
-            <IssueTypeField
-              issueTypes={issueTypes}
-              value={issueTypeId}
-              onChange={setIssueTypeId}
-            />
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={action}
-            onSubmit={() => (submitted.current = true)}
+          </p>
+          <IssueTypeField
+            issueTypes={issueTypes}
+            value={issueTypeId}
+            onChange={setIssueTypeId}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={action}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <input
+            type="hidden"
+            name="nonConformanceTypeId"
+            value={issueTypeId}
+          />
+          <input type="hidden" name="createNcr" value="true" />
+          <Button
+            type="submit"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle" || !issueTypeId}
           >
-            <input
-              type="hidden"
-              name="nonConformanceTypeId"
-              value={issueTypeId}
-            />
-            <input type="hidden" name="createNcr" value="true" />
-            <Button
-              type="submit"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle" || !issueTypeId}
-            >
-              <Trans>Open NCR</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Open NCR</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 };
 

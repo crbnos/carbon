@@ -14,7 +14,7 @@ import {
 import { distinctItemText } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuArrowRightLeft,
   LuBlocks,
@@ -41,7 +41,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import type { InfiniteOptions } from "~/components/Table";
-import { usePermissions } from "~/hooks";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -65,8 +65,7 @@ const StockMovementsTable = memo(
     const { t } = useLingui();
     const nonNettable = useNonNettableStorageUnits();
     const permissions = usePermissions();
-    const [correctionTarget, setCorrectionTarget] =
-      useState<StockMovement | null>(null);
+    const correction = useDrawerItem<StockMovement>();
     const [people] = usePeople();
     const locations = useLocations();
     const locationsById = useMemo(
@@ -301,13 +300,13 @@ const StockMovementsTable = memo(
       (row: StockMovement) => (
         <MenuItem
           disabled={!permissions.can("update", "inventory")}
-          onClick={() => setCorrectionTarget(row)}
+          onClick={() => correction.open(row)}
         >
           <MenuIcon icon={<LuWrench />} />
           {t`Correct Quantity`}
         </MenuItem>
       ),
-      [permissions, t]
+      [correction.open, permissions, t]
     );
 
     return (
@@ -325,10 +324,11 @@ const StockMovementsTable = memo(
           table="itemLedger"
           withSavedView
         />
-        {correctionTarget && (
+        {correction.item && (
           <StockMovementCorrectionModal
-            movement={correctionTarget}
-            onClose={() => setCorrectionTarget(null)}
+            open={correction.isOpen}
+            movement={correction.item}
+            onClose={correction.close}
           />
         )}
       </>

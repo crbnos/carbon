@@ -121,18 +121,12 @@ const RequiredActionsTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Required Actions`}
         />
-        {deleteDisclosure.isOpen && selectedRequiredAction && (
+        {selectedRequiredAction && (
           <ConfirmDelete
             action={path.to.deleteRequiredAction(selectedRequiredAction.id)}
-            isOpen
-            onCancel={() => {
-              setSelectedRequiredAction(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedRequiredAction(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedRequiredAction.name ?? "required action"}
             text={t`Are you sure you want to delete this required action?`}
           />

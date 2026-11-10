@@ -69,12 +69,11 @@ const ChangeRequestsTable = ({
         </div>
       )}
 
-      {isOpening && (
-        <NewChangeRequestModal
-          projectId={projectId}
-          onClose={() => setIsOpening(false)}
-        />
-      )}
+      <NewChangeRequestModal
+        open={isOpening}
+        projectId={projectId}
+        onClose={() => setIsOpening(false)}
+      />
     </div>
   );
 };

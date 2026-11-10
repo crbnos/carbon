@@ -20,12 +20,13 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger
+  TabsTrigger,
+  useDisclosure
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuDownload, LuEllipsis } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -103,7 +104,7 @@ export default function Route() {
   // Departments render a bespoke tree/list rather than the shared <Table>, so
   // the Bulk Import entry cannot arrive through its `importCSV` prop. Same
   // dropdown shape as TableHeader so the control is where users expect it.
-  const [importOpen, setImportOpen] = useState(false);
+  const importModal = useDisclosure();
   // Named `label` deliberately: Lingui bakes the placeholder name into the
   // msgid, so this must match TableHeader's `Import {label} CSV` to reuse its
   // existing translation rather than create a second, untranslated key.
@@ -122,7 +123,7 @@ export default function Route() {
         <Trans>Bulk Import</Trans>
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={() => setImportOpen(true)}>
+      <DropdownMenuItem onClick={importModal.onOpen}>
         <DropdownMenuIcon icon={<LuDownload />} />
         {/* Reuses TableHeader's parameterized msgid rather than
             introducing a second one that every catalog would have to
@@ -211,10 +212,12 @@ export default function Route() {
         />
       </TabsContent>
 
-      {importOpen && (
+      {importModal.openCount > 0 && (
         <ImportCSVModal
+          key={importModal.openCount}
+          open={importModal.isOpen}
           table="department"
-          onClose={() => setImportOpen(false)}
+          onClose={importModal.onClose}
         />
       )}
 

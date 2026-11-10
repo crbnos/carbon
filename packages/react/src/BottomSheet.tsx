@@ -167,11 +167,11 @@ const BottomSheetContent = forwardRef<
           <DialogPrimitive.Content
             ref={mergeRefs(ref, sheetRef)}
             className={cn(
-              "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg duration-300",
+              "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg data-[state=open]:duration-300 data-[state=closed]:duration-200",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
               "motion-reduce:data-[state=closed]:fade-out-0 motion-reduce:data-[state=open]:fade-in-0",
               // Phones: a sheet settles in on the iOS curve and leaves faster.
-              "max-md:ease-drawer max-md:data-[state=open]:[animation-duration:300ms] max-md:data-[state=closed]:[animation-duration:200ms]",
+              "max-md:ease-drawer",
               "max-md:max-h-[88dvh] max-md:rounded-t-[14px] max-md:bg-popover max-md:pb-safe",
               "max-md:after:absolute max-md:after:inset-x-0 max-md:after:top-full max-md:after:h-10 max-md:after:bg-popover",
               size === "full" &&

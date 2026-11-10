@@ -238,9 +238,10 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
         </HStack>
       </div>
 
-      {current && confirm.isOpen && (
+      {current && (
         <Confirm
           action={current.action}
+          isOpen={confirm.isOpen}
           title={current.title}
           text={current.text}
           confirmText={current.confirmText}
@@ -249,40 +250,35 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
         />
       )}
 
-      {confirmContract.isOpen && (
-        <ContractConfirmModal
-          contract={contract}
-          onClose={confirmContract.onClose}
-        />
-      )}
+      <ContractConfirmModal
+        contract={contract}
+        open={confirmContract.isOpen}
+        onClose={confirmContract.onClose}
+      />
 
-      {amendDisclosure.isOpen && (
-        <ContractAmendModal
-          contract={contract}
-          lines={lines}
-          action={path.to.contractAmend(id)}
-          onClose={amendDisclosure.onClose}
-        />
-      )}
+      <ContractAmendModal
+        contract={contract}
+        lines={lines}
+        action={path.to.contractAmend(id)}
+        open={amendDisclosure.isOpen}
+        onClose={amendDisclosure.onClose}
+      />
 
-      {cancelDisclosure.isOpen && (
-        <ContractCancelModal
-          contract={contract}
-          action={path.to.contractCancel(id)}
-          onClose={cancelDisclosure.onClose}
-        />
-      )}
+      <ContractCancelModal
+        contract={contract}
+        action={path.to.contractCancel(id)}
+        open={cancelDisclosure.isOpen}
+        onClose={cancelDisclosure.onClose}
+      />
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteContract(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={readableId}
-          text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteContract(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={readableId}
+        text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

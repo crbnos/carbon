@@ -284,23 +284,20 @@ const ReceiptHeader = () => {
       />
 
       <putAwayRules.ViolationModal />
-      {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
-      {voidModal.isOpen && (
-        <ReceiptVoidModal
-          isSalesReturn={receipt.sourceDocument === "Sales Return Order"}
-          onClose={voidModal.onClose}
-        />
-      )}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteReceipt(receiptId)}
-          isOpen={deleteDisclosure.isOpen}
-          name={receipt.receiptId ?? "receipt"}
-          text={t`Are you sure you want to delete ${receipt.receiptId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ReceiptPostModal open={postModal.isOpen} onClose={postModal.onClose} />
+      <ReceiptVoidModal
+        open={voidModal.isOpen}
+        isSalesReturn={receipt.sourceDocument === "Sales Return Order"}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.deleteReceipt(receiptId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={receipt.receiptId ?? "receipt"}
+        text={t`Are you sure you want to delete ${receipt.receiptId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

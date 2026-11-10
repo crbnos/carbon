@@ -162,7 +162,6 @@ export default function TrainingExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setSelectedQuestion(null);
     deleteQuestionDisclosure.onClose();
   };
 
@@ -283,16 +282,16 @@ export default function TrainingExplorer() {
           </Tooltip>
         </div>
       </VStack>
-      {questionDisclosure.isOpen && (
-        <TrainingQuestionForm
-          initialValues={trainingQuestionInitialValues}
-          isDisabled={isDisabled}
-          onClose={questionDisclosure.onClose}
-        />
-      )}
-      {deleteQuestionDisclosure.isOpen && selectedQuestion && (
+      <TrainingQuestionForm
+        open={questionDisclosure.isOpen}
+        initialValues={trainingQuestionInitialValues}
+        isDisabled={isDisabled}
+        onClose={questionDisclosure.onClose}
+      />
+      {selectedQuestion && (
         <DeleteTrainingQuestion
           question={selectedQuestion}
+          isOpen={deleteQuestionDisclosure.isOpen}
           onCancel={onDeleteCancel}
         />
       )}
@@ -460,9 +459,11 @@ function TrainingQuestionItem({
 
 function DeleteTrainingQuestion({
   question,
+  isOpen = true,
   onCancel
 }: {
   question: TrainingQuestion;
+  isOpen?: boolean;
   onCancel: () => void;
 }) {
   const { id } = useParams();
@@ -472,6 +473,7 @@ function DeleteTrainingQuestion({
   return (
     <ConfirmDelete
       action={path.to.deleteTrainingQuestion(id, question.id)}
+      isOpen={isOpen}
       name={question.question ?? "this question"}
       text={`Are you sure you want to delete this question? This cannot be undone.`}
       onCancel={onCancel}
@@ -481,6 +483,37 @@ function DeleteTrainingQuestion({
 }
 
 function TrainingQuestionForm({
+  initialValues,
+  isDisabled,
+  open = true,
+  onClose
+}: {
+  initialValues: z.infer<typeof trainingQuestionValidator>;
+  isDisabled: boolean;
+  open?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DrawerContent position="left">
+        <TrainingQuestionFormBody
+          initialValues={initialValues}
+          isDisabled={isDisabled}
+          onClose={onClose}
+        />
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+function TrainingQuestionFormBody({
   initialValues,
   isDisabled,
   onClose
@@ -565,149 +598,135 @@ function TrainingQuestionForm({
   };
 
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ValidatedForm
+      method="post"
+      action={
+        isEditing
+          ? path.to.trainingQuestion(trainingId, initialValues.id!)
+          : path.to.newTrainingQuestion(trainingId)
+      }
+      defaultValues={initialValues}
+      validator={trainingQuestionValidator}
+      fetcher={fetcher}
+      className="flex flex-col h-full"
     >
-      <DrawerContent position="left">
-        <ValidatedForm
-          method="post"
-          action={
-            isEditing
-              ? path.to.trainingQuestion(trainingId, initialValues.id!)
-              : path.to.newTrainingQuestion(trainingId)
-          }
-          defaultValues={initialValues}
-          validator={trainingQuestionValidator}
-          fetcher={fetcher}
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? (
-                <Trans>Edit Question</Trans>
-              ) : (
-                <Trans>Add Question</Trans>
-              )}
-            </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="trainingId" />
-            <Hidden name="sortOrder" />
-            <Hidden name="id" />
-            <Hidden name="correctBoolean" value={String(correctBoolean)} />
-            <Hidden
-              name="matchingPairs"
-              value={JSON.stringify(matchingPairs)}
+      <DrawerHeader>
+        <DrawerTitle>
+          {isEditing ? (
+            <Trans>Edit Question</Trans>
+          ) : (
+            <Trans>Add Question</Trans>
+          )}
+        </DrawerTitle>
+      </DrawerHeader>
+      <DrawerBody>
+        <Hidden name="trainingId" />
+        <Hidden name="sortOrder" />
+        <Hidden name="id" />
+        <Hidden name="correctBoolean" value={String(correctBoolean)} />
+        <Hidden name="matchingPairs" value={JSON.stringify(matchingPairs)} />
+        <VStack spacing={4}>
+          <SelectControlled
+            name="type"
+            label={t`Type`}
+            options={typeOptions}
+            value={type}
+            onChange={(option) => {
+              if (option) {
+                setType(option.value as TrainingQuestion["type"]);
+              }
+            }}
+          />
+          <Input name="question" label={t`Question`} />
+
+          {(type === "MultipleChoice" || type === "MultipleAnswers") && (
+            <OptionsWithCorrectAnswers
+              type={type}
+              initialCorrectAnswers={initialValues.correctAnswers ?? []}
+              initialOptions={initialValues.options ?? []}
             />
-            <VStack spacing={4}>
-              <SelectControlled
-                name="type"
-                label={t`Type`}
-                options={typeOptions}
-                value={type}
-                onChange={(option) => {
-                  if (option) {
-                    setType(option.value as TrainingQuestion["type"]);
-                  }
-                }}
-              />
-              <Input name="question" label={t`Question`} />
+          )}
 
-              {(type === "MultipleChoice" || type === "MultipleAnswers") && (
-                <OptionsWithCorrectAnswers
-                  type={type}
-                  initialCorrectAnswers={initialValues.correctAnswers ?? []}
-                  initialOptions={initialValues.options ?? []}
+          {type === "TrueFalse" && (
+            <VStack spacing={2} className="w-full">
+              <Label>
+                <Trans>Correct Answer</Trans>
+              </Label>
+              <HStack>
+                <Switch
+                  checked={correctBoolean}
+                  onCheckedChange={setCorrectBoolean}
                 />
-              )}
-
-              {type === "TrueFalse" && (
-                <VStack spacing={2} className="w-full">
-                  <Label>
-                    <Trans>Correct Answer</Trans>
-                  </Label>
-                  <HStack>
-                    <Switch
-                      checked={correctBoolean}
-                      onCheckedChange={setCorrectBoolean}
-                    />
-                    <span>{correctBoolean ? "True" : "False"}</span>
-                  </HStack>
-                </VStack>
-              )}
-
-              {type === "MatchingPairs" && (
-                <VStack spacing={2} className="w-full">
-                  <Label>
-                    <Trans>Matching Pairs</Trans>
-                  </Label>
-                  {matchingPairs.map((pair, index) => (
-                    <HStack key={index} className="w-full">
-                      <Input
-                        aria-label={t`Left item ${index + 1}`}
-                        name={`pair-left-${index}`}
-                        placeholder={t`Left item`}
-                        value={pair.left}
-                        onChange={(e) =>
-                          updateMatchingPair(index, "left", e.target.value)
-                        }
-                      />
-                      <Input
-                        aria-label={t`Right item ${index + 1}`}
-                        name={`pair-right-${index}`}
-                        placeholder={t`Right item`}
-                        value={pair.right}
-                        onChange={(e) =>
-                          updateMatchingPair(index, "right", e.target.value)
-                        }
-                      />
-                      <IconButton
-                        aria-label={t`Remove pair`}
-                        icon={<LuTrash />}
-                        variant="ghost"
-                        onClick={() => removeMatchingPair(index)}
-                      />
-                    </HStack>
-                  ))}
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuCirclePlus />}
-                    onClick={addMatchingPair}
-                    type="button"
-                  >
-                    <Trans>Add Pair</Trans>
-                  </Button>
-                </VStack>
-              )}
-
-              {type === "Numerical" && (
-                <>
-                  <Number name="correctNumber" label={t`Correct Answer`} />
-                  <Number
-                    name="tolerance"
-                    label={t`Tolerance (+/-)`}
-                    helperText={t`Leave empty for exact match`}
-                  />
-                </>
-              )}
+                <span>{correctBoolean ? "True" : "False"}</span>
+              </HStack>
             </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit isDisabled={isDisabled}>
-              <Trans>Save</Trans>
-            </Submit>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+          )}
+
+          {type === "MatchingPairs" && (
+            <VStack spacing={2} className="w-full">
+              <Label>
+                <Trans>Matching Pairs</Trans>
+              </Label>
+              {matchingPairs.map((pair, index) => (
+                <HStack key={index} className="w-full">
+                  <Input
+                    aria-label={t`Left item ${index + 1}`}
+                    name={`pair-left-${index}`}
+                    placeholder={t`Left item`}
+                    value={pair.left}
+                    onChange={(e) =>
+                      updateMatchingPair(index, "left", e.target.value)
+                    }
+                  />
+                  <Input
+                    aria-label={t`Right item ${index + 1}`}
+                    name={`pair-right-${index}`}
+                    placeholder={t`Right item`}
+                    value={pair.right}
+                    onChange={(e) =>
+                      updateMatchingPair(index, "right", e.target.value)
+                    }
+                  />
+                  <IconButton
+                    aria-label={t`Remove pair`}
+                    icon={<LuTrash />}
+                    variant="ghost"
+                    onClick={() => removeMatchingPair(index)}
+                  />
+                </HStack>
+              ))}
+              <Button
+                variant="secondary"
+                leftIcon={<LuCirclePlus />}
+                onClick={addMatchingPair}
+                type="button"
+              >
+                <Trans>Add Pair</Trans>
+              </Button>
+            </VStack>
+          )}
+
+          {type === "Numerical" && (
+            <>
+              <Number name="correctNumber" label={t`Correct Answer`} />
+              <Number
+                name="tolerance"
+                label={t`Tolerance (+/-)`}
+                helperText={t`Leave empty for exact match`}
+              />
+            </>
+          )}
+        </VStack>
+      </DrawerBody>
+      <DrawerFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit isDisabled={isDisabled}>
+          <Trans>Save</Trans>
+        </Submit>
+      </DrawerFooter>
+    </ValidatedForm>
   );
 }
 

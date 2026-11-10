@@ -611,6 +611,7 @@ interface IntegrationFormProps {
   installed: boolean;
   collapseSettings?: boolean;
   settingsLabel?: ReactNode;
+  open?: boolean;
   onClose: () => void;
   /** Dynamic options to merge into settings (e.g., fetched from external APIs) */
   dynamicOptions?: Record<
@@ -641,6 +642,7 @@ export function IntegrationForm({
   metadata,
   collapseSettings = false,
   settingsLabel,
+  open = true,
   onClose,
   dynamicOptions = {},
   tabs = [],
@@ -1115,7 +1117,7 @@ export function IntegrationForm({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

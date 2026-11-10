@@ -5,9 +5,8 @@
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { usePermissions } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import type { getShippingMethodsList } from "~/modules/inventory/inventory.service";
 import ShippingMethodForm from "~/modules/inventory/ui/ShippingMethods/ShippingMethodForm";
 import { path } from "~/utils/path";
@@ -19,12 +18,11 @@ const ShippingMethod = (props: ShippingMethodSelectProps) => {
   const options = useShippingMethod();
   const permissions = usePermissions();
 
-  const newShippingMethodModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const emptyMessage = useEmptyState("shippingMethod", {
-    onCreate: () => newShippingMethodModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return permissions.can("create", "inventory") ? (
@@ -36,20 +34,20 @@ const ShippingMethod = (props: ShippingMethodSelectProps) => {
         {...props}
         label={props?.label ?? "Shipping Method"}
         onCreateOption={(option) => {
-          newShippingMethodModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newShippingMethodModal.isOpen && (
+      {create.item !== null && (
         <ShippingMethodForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newShippingMethodModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             carrier: "" as "FedEx"
           }}
         />

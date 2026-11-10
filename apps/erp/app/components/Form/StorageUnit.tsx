@@ -17,14 +17,11 @@
 import type { TermId } from "@carbon/content/glossary";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import {
-  CreatableCombobox as CreatableComboboxBase,
-  useDisclosure
-} from "@carbon/react";
+import { CreatableCombobox as CreatableComboboxBase } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { MouseEventHandler } from "react";
-import { useMemo, useRef, useState } from "react";
-import { useQuantityFormatter } from "~/hooks";
+import { useCallback, useMemo, useRef } from "react";
+import { useDrawerItem, useQuantityFormatter } from "~/hooks";
 import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { getStorageUnitsList } from "~/modules/inventory/inventory.service";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
@@ -259,22 +256,22 @@ export function useStorageUnitLeafOptions(
  * with the freshly created unit selectable.
  */
 function useNewStorageUnitModal(locationId?: string | null) {
-  const modal = useDisclosure();
-  const [created, setCreated] = useState("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const node =
-    modal.isOpen && locationId ? (
+    create.item !== null && locationId ? (
       <StorageUnitForm
+        key={create.key}
+        open={create.isOpen}
         type="modal"
         locationId={locationId}
         onClose={() => {
-          setCreated("");
-          modal.onClose();
-          triggerRef.current?.click();
+          create.close();
+          create.afterClose(() => triggerRef.current?.click());
         }}
         initialValues={{
-          name: created,
+          name: create.item,
           locationId,
           storageTypeIds: [],
           nonNettable: false
@@ -283,11 +280,13 @@ function useNewStorageUnitModal(locationId?: string | null) {
     ) : null;
 
   const onCreateOption = (value: string) => {
-    setCreated(value);
-    modal.onOpen();
+    create.open(value);
   };
 
-  return { triggerRef, onCreateOption, onOpen: modal.onOpen, node };
+  const { open } = create;
+  const onOpen = useCallback(() => open(""), [open]);
+
+  return { triggerRef, onCreateOption, onOpen, node };
 }
 
 const storageUnitPreview = (

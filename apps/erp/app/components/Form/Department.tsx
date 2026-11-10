@@ -5,9 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Enumerable } from "~/components/Enumerable";
+import { useDrawerItem } from "~/hooks";
 import type { getDepartmentsList } from "~/modules/people/people.service";
 import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
 import { path } from "~/utils/path";
@@ -16,14 +16,13 @@ import { useEmptyState } from "./emptyStates";
 type DepartmentSelectProps = Omit<ComboboxProps, "options">;
 
 const Department = (props: DepartmentSelectProps) => {
-  const newDepartmentModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useDepartments();
 
   const emptyMessage = useEmptyState("department", {
-    onCreate: () => newDepartmentModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -38,20 +37,20 @@ const Department = (props: DepartmentSelectProps) => {
         {...props}
         label={props?.label ?? "Department"}
         onCreateOption={(option) => {
-          newDepartmentModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newDepartmentModal.isOpen && (
+      {create.item !== null && (
         <DepartmentForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newDepartmentModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}

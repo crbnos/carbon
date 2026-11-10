@@ -381,11 +381,9 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
           )}? This cannot be undone.`}
           onCancel={() => {
             deleteQuotationModal.onClose();
-            setSelectedQuotation(null);
           }}
           onSubmit={() => {
             deleteQuotationModal.onClose();
-            setSelectedQuotation(null);
           }}
         />
       )}

@@ -65,6 +65,7 @@ const ChangeNoticeHeader = () => {
   const approvalFetcher = useFetcher<unknown>();
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalDecision | null>(null);
+  const approvalModal = useDisclosure();
   const deleteModal = useDisclosure();
   const cancelModal = useDisclosure();
 
@@ -226,7 +227,10 @@ const ChangeNoticeHeader = () => {
                     leftIcon={<LuCheckCheck />}
                     variant="primary"
                     isDisabled={approvalFetcher.state !== "idle"}
-                    onClick={() => setApprovalDecision("Approved")}
+                    onClick={() => {
+                      setApprovalDecision("Approved");
+                      approvalModal.onOpen();
+                    }}
                   >
                     {t`Approve`}
                   </Button>
@@ -236,7 +240,10 @@ const ChangeNoticeHeader = () => {
                     leftIcon={<LuX />}
                     variant="destructive"
                     isDisabled={approvalFetcher.state !== "idle"}
-                    onClick={() => setApprovalDecision("Rejected")}
+                    onClick={() => {
+                      setApprovalDecision("Rejected");
+                      approvalModal.onOpen();
+                    }}
                   >
                     {t`Reject`}
                   </Button>
@@ -297,38 +304,36 @@ const ChangeNoticeHeader = () => {
           </>
         }
       />
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteChangeNotice(id)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.changeNotice?.changeOrderId ?? ""}
-          text={t`Are you sure you want to delete ${
-            routeData?.changeNotice?.changeOrderId ?? ""
-          }? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
-      {cancelModal.isOpen && (
-        <Confirm
-          action={path.to.changeNoticeStatus(id)}
-          title={t`Cancel change notice`}
-          text={t`Are you sure you want to cancel ${
-            routeData?.changeNotice?.changeOrderId ?? ""
-          }? It will be closed and read-only until you reopen it.`}
-          confirmText={t`Cancel Change Notice`}
-          cancelText={t`Keep Open`}
-          confirmVariant="destructive"
-          onCancel={cancelModal.onClose}
-          onSubmit={cancelModal.onClose}
-        >
-          <input type="hidden" name="id" value={id} />
-          <input type="hidden" name="fromStatus" value={status} />
-          <input type="hidden" name="status" value="Cancelled" />
-        </Confirm>
-      )}
+      <ConfirmDelete
+        action={path.to.deleteChangeNotice(id)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.changeNotice?.changeOrderId ?? ""}
+        text={t`Are you sure you want to delete ${
+          routeData?.changeNotice?.changeOrderId ?? ""
+        }? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
+      <Confirm
+        isOpen={cancelModal.isOpen}
+        action={path.to.changeNoticeStatus(id)}
+        title={t`Cancel change notice`}
+        text={t`Are you sure you want to cancel ${
+          routeData?.changeNotice?.changeOrderId ?? ""
+        }? It will be closed and read-only until you reopen it.`}
+        confirmText={t`Cancel Change Notice`}
+        cancelText={t`Keep Open`}
+        confirmVariant="destructive"
+        onCancel={cancelModal.onClose}
+        onSubmit={cancelModal.onClose}
+      >
+        <input type="hidden" name="id" value={id} />
+        <input type="hidden" name="fromStatus" value={status} />
+        <input type="hidden" name="status" value="Cancelled" />
+      </Confirm>
       {approvalDecision && pendingRequestId && (
         <ApprovalDecisionModal
+          open={approvalModal.isOpen}
           action={path.to.changeNoticeApproval(id)}
           approvalRequestId={pendingRequestId}
           decision={approvalDecision}
@@ -343,7 +348,7 @@ const ChangeNoticeHeader = () => {
               : t`Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again.`
           }
           fetcher={approvalFetcher}
-          onClose={() => setApprovalDecision(null)}
+          onClose={approvalModal.onClose}
         />
       )}
       {auditLogDrawer}
