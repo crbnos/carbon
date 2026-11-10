@@ -6,19 +6,16 @@ AS $function$
 DECLARE
   v_location TEXT;
   v_lot TEXT;
-  v_becomes_nettable BOOLEAN;
   v_deactivated BOOLEAN;
   v_moved BOOLEAN;
 BEGIN
   IF p_operation <> 'UPDATE' THEN
     RETURN;
   END IF;
-  v_becomes_nettable := COALESCE((p_new->>'effectiveNettable')::boolean, true)
-    AND NOT COALESCE((p_old->>'effectiveNettable')::boolean, true);
   v_deactivated := COALESCE((p_old->>'active')::boolean, true)
     AND NOT COALESCE((p_new->>'active')::boolean, true);
   v_moved := (p_new->'locationId') IS DISTINCT FROM (p_old->'locationId');
-  IF NOT v_becomes_nettable AND NOT v_deactivated AND NOT v_moved THEN
+  IF NOT v_deactivated AND NOT v_moved THEN
     RETURN;
   END IF;
   IF current_setting('app.inspection_release', true) = 'on'

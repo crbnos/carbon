@@ -151,17 +151,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? [{ id: line.id, itemId: line.itemId, lineId: line.lineId }]
       : []
   );
-  // Before posting, the location's non-nettable units: an inspected line must
-  // post into one.
   const isPosted = receipt.data.status === "Posted";
   // The marks only inform: a failed lookup leaves them off rather than
   // failing the receipt, but it must not pass silently for "none needed".
-  const [
-    putAwayLines,
-    putAwayTransfers,
-    nonNettableStorageUnits,
-    linesOpeningLots
-  ] = await Promise.all([
+  const [putAwayLines, putAwayTransfers, linesOpeningLots] = await Promise.all([
     isPosted &&
     !["Not Required", "Put Away"].includes(receipt.data.inspectionStatus)
       ? getReceiptPutAwayLines(getDatabaseClient(), companyId, receiptId).catch(
@@ -181,21 +174,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("receiptId", receiptId)
       .eq("companyId", companyId)
       .order("createdAt"),
-    !isPosted
-      ? serviceRole
-          .from("storageUnit")
-          .select("id")
-          .in("locationId", [
-            ...new Set([
-              ...(receipt.data.locationId ? [receipt.data.locationId] : []),
-              ...(receiptLines.data ?? []).flatMap(
-                (line) => line.locationId ?? []
-              )
-            ])
-          ])
-          .eq("companyId", companyId)
-          .eq("effectiveNettable", false)
-      : Promise.resolve({ data: [] as { id: string }[], error: null }),
     receipt.data.sourceDocument === "Purchase Order" &&
     receipt.data.status !== "Posted" &&
     receipt.data.status !== "Voided"
@@ -222,11 +200,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           })
       : Promise.resolve([])
   ]);
-  if (putAwayTransfers.error || nonNettableStorageUnits.error) {
+  if (putAwayTransfers.error) {
     logger.error("Failed to load the receipt's putaway state", {
       companyId,
       receiptId,
-      error: putAwayTransfers.error ?? nonNettableStorageUnits.error
+      error: putAwayTransfers.error
     });
   }
 
@@ -294,9 +272,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .map((line) => line.id),
     putAwayReadyCount: putAwayLines.length,
     putAwayTransfers: putAwayTransfers.data ?? [],
-    nonNettableStorageUnitIds: (nonNettableStorageUnits.data ?? []).map(
-      (unit) => unit.id
-    ),
     fixedAssetLines,
     rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],

@@ -276,19 +276,19 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
 ## Goods-in inspection hold (spec `.ai/specs/2026-11-03-goods-in-inspection-hold.md`)
 
 - **Where it lands.** `location.inspectionStorageUnitId` / `rejectedStorageUnitId`
-  (both non-nettable, refused otherwise by `updateQualitySettings`; card
-  `GoodsInStorageCard` on Settings → Quality, saved with the company settings
-  in one transaction; inactive units are refused too, and so is one unit for
-  both. The card sends only the unit that changed; `setLocationGoodsInStorage`
+  (ordinary storage units, nettable or not: a unit's own Non-nettable setting
+  decides whether its stock is supply; card `GoodsInStorageCard` on Settings →
+  Quality, saved with the company settings in one transaction; inactive units
+  are refused, and so is one unit for both. The card sends only the unit that changed; `setLocationGoodsInStorage`
   keeps an unsent one and checks the pair under the location's row lock). The BEFORE interceptor
   `check_location_goods_in_storage_units` refuses a unit of another location
-  or company, an inactive unit and a nettable one. The two FKs are `NO ACTION
+  or company and an inactive unit. The two FKs are `NO ACTION
   DEFERRABLE INITIALLY DEFERRED`, so a restore or company delete can load and
   clear `location` and `storageUnit` in one transaction. `createDocument` sets
   `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
   inspection unit; sales return lines default there too (the RMA disposition
   releases them, no lot). `postReceipt` refuses an inspected Purchase Order line
-  on a nettable unit, on a unit of another location, or at a location with no
+  with no storage unit, on a unit of another location, or at a location with no
   inspection unit. A Non-Inventory part is not checked: it has no stock to
   hold. The receipt's Draft "Inspection required" marks read
   `receiptLinesOpeningLots` (`inventory.service.ts`: planned, stocked, not outside
@@ -355,9 +355,11 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   which counts it (`inspection_held_quantity`'s `p_open_lots_only` is false).
   Untracked on-hand at an (item, unit) has one definition,
   `inspection_untracked_on_hand`, which the guard and every pre-check call. A lot
-  holds untracked stock only in a non-nettable unit: lots open before the hold
-  existed were left without a `storageUnitId`, and the roll-up counts only
-  such lots (`20261110041024`). Its on-hand read is served by the partial
+  holds untracked stock in the unit it records, nettable or not. Lots open
+  before the hold existed in a nettable unit were left without a
+  `storageUnitId` (`20261110041024`, and the Passed ones by
+  `20261110084113`); the roll-up counts a lot that records a unit, and a
+  Failed lot with none only when its line's unit is non-nettable. Its on-hand read is served by the partial
   index `itemLedger_untracked_storageUnit_item_idx` (`storageUnitId, itemId,
   companyId` INCLUDE `quantity`, untracked rows only), an index-only scan.
 - **No release by a direct edit.** Seven BEFORE interceptors (the generated
@@ -394,14 +396,11 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `itemTrackingType` while a receipt lot is open, or holds its remainder, or
   while a serial Partial with no Closed NCR would start holding one); and
   `check_goods_in_storage_unit` on `storageUnit` (a change that makes
-  `effectiveNettable` true, `active` false, or moves the unit to another
-  `locationId`, while a location names the unit as `inspectionStorageUnitId`
+  `active` false or moves the unit to another `locationId`, while a location names the unit as `inspectionStorageUnitId`
   or `rejectedStorageUnitId`, or while a lot still holds stock in it, per
   `inspection_lot_holds`, so a unit Settings no longer names stays protected
-  until its lots are decided). `effectiveNettable`
-  is only written by `util.refresh_storage_unit_nettable` as an UPDATE of the
-  unit, so a change of the unit's own flag, a parent's or a storage type's all
-  reach that check. A company restore or import sets `app.inspection_release`
+  until its lots are decided). Making a goods-in unit nettable is allowed
+  (`20261110084113`). A company restore or import sets `app.inspection_release`
   (not `app.sync_in_progress`, which would also stop the event queue and the
   other sync handlers) in its load transaction, so without replica mode the
   guard and these checks step aside for restored and wiped rows. A foreign
@@ -867,9 +866,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   the `20260419163058` migration (and newer) for the real shape. One lot per received line
   (partial unique index on `sourceDocumentLineId`).
 - **Inspection-required tracked entities post `On Hold`, not Available.** They still count
-  in on-hand (`get_inventory_quantities` reports them as `quantityOnHold`); the inspection
-  storage unit being non-nettable is what keeps them out of MRP and picking, and
+  in on-hand (`get_inventory_quantities` reports them as `quantityOnHold`).
   `check_inspection_hold` (statement handler on `itemLedger`) is what keeps them from moving.
+  Whether held stock counts as supply for MRP depends on the inspection unit's own
+  Non-nettable setting; a nettable inspection unit's held stock is supply, and a pick
+  of it is refused by the guard at post.
 - **`trackedEntityId` is nullable** on samples; serial uniqueness is enforced by a *partial* index.
 - **Inspection *documents* ("Inspection Plans") are authored in the quality module** (list
   at `/x/quality/inspection-plans`, editor at `/x/inspection-document/{id}`; `inspectionDocument`/

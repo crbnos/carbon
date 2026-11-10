@@ -1114,9 +1114,6 @@ msgstr "{name} заканчивается {end} (было открыто)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} неактивна. Выберите активную единицу хранения."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} теперь учитывается в MRP. Выберите единицу хранения, не учитываемую в MRP."
-
 msgid "{name} needs an account number."
 msgstr "{name} требует номера счета."
 
@@ -6829,12 +6826,6 @@ msgstr "Выберите покупателя"
 msgid "Choose a labor category or an employee"
 msgstr "Выберите категорию труда или сотрудника"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Для деталей с контролем выберите единицу хранения в этом месте, не учитываемую в MRP."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Выберите единицу хранения в этом месте, не учитываемую в MRP."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
 
@@ -6849,6 +6840,12 @@ msgstr "Выберите пул"
 
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Выберите единицу хранения на этой площадке для деталей, подлежащих контролю."
+
+msgid "Choose a storage unit at this location."
+msgstr "Выберите единицу хранения на этой площадке."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19572,9 +19569,6 @@ msgstr "Модули не найдены"
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
-msgid "No non-nettable storage units at this location"
-msgstr "Нет единиц хранения в этом месте, не учитываемых в MRP"
-
 msgid "No notes"
 msgstr "Нет примечаний"
 
@@ -19944,6 +19938,9 @@ msgstr "На этой площадке ни в одной единице хра�
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "Ни у одной единицы хранения нет нехватки для открытых производственных заказов и нет отрицательного остатка."
+
+msgid "No storage units at this location"
+msgstr "На этой площадке нет единиц хранения"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Единицы хранения или номера отслеживания не совпадают."
@@ -23967,8 +23964,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Полученные детали, требующие контроля, поступают в единицу хранения для контроля. Отклонённый запас перемещается в единицу хранения для отклонённого. Обе не должны учитываться в MRP."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Принятые детали, требующие контроля, попадают в единицу хранения для контроля. Отклонённый запас перемещается в единицу хранения для брака. Чтобы их запас не учитывался в планировании, отметьте их как не учитываемые в MRP в их собственных настройках."
 
 msgid "Received Qty"
 msgstr "Полученное кол-во"

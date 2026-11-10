@@ -434,8 +434,8 @@ async function receiptLot(
     storageUnitId: string | null;
   }>(
     ctx.client,
-    // A lot holds stock only in a non-nettable unit, as every inspected
-    // receipt posts into one; a seeded line on an ordinary shelf holds nothing.
+    // A seeded line on an ordinary shelf opens a lot that records no unit, as
+    // a lot from before the hold did, so it holds nothing.
     `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
             r."supplierId", rl."receivedQuantity",
             CASE WHEN su."effectiveNettable" = false THEN rl."storageUnitId" END

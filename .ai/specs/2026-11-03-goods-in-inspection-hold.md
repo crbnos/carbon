@@ -756,3 +756,16 @@ These came out of the research and are not part of this spec:
   - The goods-in pickers need `resources` update.
   - A foreign restore remaps `trackedEntity.attributes` `Receipt` and
     `Receipt Line` (`rewriteTrackedEntityReceiptRefs`).
+
+## Amendment 2026-11-10: goods-in units may be nettable
+
+The inspection and rejected storage units are ordinary storage units. Settings,
+`check_location_goods_in_storage_units` and `postReceipt` no longer refuse a
+nettable unit, and `check_goods_in_storage_unit` no longer refuses making a
+goods-in unit nettable. Whether held stock counts as supply is the unit's own
+Non-nettable setting; `check_inspection_hold` keeps held stock from moving in
+any unit. The roll-up counts every lot that records a unit, and a Failed lot
+with none only when its line's unit is non-nettable
+(`20261110084113_goods-in-storage-any-nettable.sql`, which also clears the
+unit of Passed lots from before the hold that sit in a nettable unit). This
+supersedes the "must be non-nettable" answers and rows above.

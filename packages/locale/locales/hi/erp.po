@@ -1114,9 +1114,6 @@ msgstr "{name} {end} को समाप्त होता है (पहले
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} निष्क्रिय है। एक सक्रिय भंडारण इकाई चुनें।"
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} अब MRP में शामिल है। MRP से बाहर वाली भंडारण इकाई चुनें।"
-
 msgid "{name} needs an account number."
 msgstr "{name} को खाता संख्या की आवश्यकता है।"
 
@@ -6829,12 +6826,6 @@ msgstr "एक ग्राहक चुनें"
 msgid "Choose a labor category or an employee"
 msgstr "एक श्रम श्रेणी या एक कर्मचारी चुनें"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "निरीक्षण वाले पुर्ज़ों के लिए इस स्थान पर MRP से बाहर वाली भंडारण इकाई चुनें।"
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "इस स्थान पर MRP से बाहर वाली भंडारण इकाई चुनें।"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
@@ -6849,6 +6840,12 @@ msgstr "एक पूल चुनें"
 
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "निरीक्षण वाले पुर्ज़ों के लिए इस स्थान पर एक भंडारण इकाई चुनें।"
+
+msgid "Choose a storage unit at this location."
+msgstr "इस स्थान पर एक भंडारण इकाई चुनें।"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19572,9 +19569,6 @@ msgstr "कोई मॉड्यूल नहीं मिला"
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
-msgid "No non-nettable storage units at this location"
-msgstr "इस स्थान पर MRP से बाहर कोई भंडारण इकाई नहीं"
-
 msgid "No notes"
 msgstr "कोई नोट नहीं"
 
@@ -19944,6 +19938,9 @@ msgstr "इस स्थान की किसी भी भंडारण इ
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "खुले जॉब के लिए कोई भी भंडारण इकाई कम नहीं है, और न ही कोई शून्य से नीचे है।"
+
+msgid "No storage units at this location"
+msgstr "इस स्थान पर कोई भंडारण इकाई नहीं है"
 
 msgid "No storage units or tracking numbers match."
 msgstr "कोई भंडारण इकाई या ट्रैकिंग संख्या मेल नहीं खाती।"
@@ -23967,8 +23964,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "इस आपूर्तिकर्ता से प्राप्त लाइनें जिनमें रिटर्न करने के लिए मात्रा बाकी है"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "निरीक्षण वाले प्राप्त पुर्ज़े निरीक्षण भंडारण इकाई में जाते हैं। अस्वीकृत स्टॉक अस्वीकृत भंडारण इकाई में जाता है। दोनों MRP से बाहर होनी चाहिए।"
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "निरीक्षण की आवश्यकता वाले प्राप्त पुर्ज़े निरीक्षण भंडारण इकाई में जाते हैं। अस्वीकृत स्टॉक अस्वीकृत भंडारण इकाई में जाता है। उनके स्टॉक को योजना से बाहर रखने के लिए, उन्हें उनकी अपनी सेटिंग्स में MRP से बाहर करें।"
 
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"

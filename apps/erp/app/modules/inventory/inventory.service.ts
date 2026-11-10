@@ -6872,7 +6872,7 @@ export async function storageRuleViolations(
 
 /**
  * Refuses a purchase receipt line whose part has a Receipt inspection plan
- * unless it posts to a non-nettable storage unit at a location that has an
+ * unless it posts to a storage unit at its location, and that location has an
  * inspection storage unit. Returns the refusal message, or null.
  */
 export async function refuseUnheldInspectedReceiptLines(
@@ -7242,7 +7242,7 @@ async function projectConsumedPurchaseOrderLineIds(
 /**
  * The refusal for a receipt whose inspected lines (parts in `plannedItemIds`)
  * would not be held: the location has no inspection storage unit, or a line is
- * not in a non-nettable unit of that location. Null when every one is held.
+ * not in a storage unit of that location. Null when every one is held.
  */
 export async function unheldInspectedLineRefusal(
   db: Kysely<KyselyDatabase>,
@@ -7296,8 +7296,7 @@ export async function unheldInspectedLineRefusal(
         .filter((id): id is string => !!id)
     )
   ];
-  // Held: non-nettable, and at the line's location, where its lot and ledger
-  // rows are booked.
+  // Held: at the line's location, where its lot and ledger rows are booked.
   const held =
     unitIds.length > 0
       ? await db
@@ -7305,7 +7304,6 @@ export async function unheldInspectedLineRefusal(
           .select(["id", "locationId"])
           .where("id", "in", unitIds)
           .where("companyId", "=", companyId)
-          .where("effectiveNettable", "=", false)
           .execute()
       : [];
   const heldLocationById = new Map(
@@ -7326,7 +7324,7 @@ export async function unheldInspectedLineRefusal(
     .executeTakeFirst();
   const readableId = item?.readableIdWithRevision ?? offending.itemId;
   const atLocation = locationById.get(locationOf(offending) ?? "")?.name;
-  return `${readableId} needs inspection. Choose a non-nettable storage unit at ${atLocation}.`;
+  return `${readableId} needs inspection. Choose a storage unit at ${atLocation}.`;
 }
 
 export type HeldStockWarning = {

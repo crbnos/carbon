@@ -23,7 +23,7 @@ Inspection is **lot-based**: one inspection per received line (the `receiptLineI
 **Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**. **Cancelled** comes only from voiding the receipt.
 
 <Callout type="warn" title="Received stock is held until the lot is decided">
-A part that needs inspection posts into its location's inspection storage unit, a <Term id="non-nettable">non-nettable</Term> unit set in **Settings → Quality**. Serial and batch units are **On Hold**. For an untracked part, the open lot holds its lot size at that unit. Nothing held can be picked, shipped, issued or transferred until the lot is decided.
+A part that needs inspection posts into its location's inspection storage unit, set in **Settings → Quality**. Serial and batch units are **On Hold**. For an untracked part, the open lot holds its lot size at that unit. Nothing held can be picked, shipped, issued or transferred until the lot is decided.
 
 See [parts that need inspection](/docs/reference/receipts#parts-that-need-inspection) for setup, the receipt's inspection status and Put Away.
 </Callout>

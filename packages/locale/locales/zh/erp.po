@@ -1114,9 +1114,6 @@ msgstr "{name} 在 {end} 结束（之前是开放式）"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} 已停用。请选择启用的存储单元。"
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} 现在计入MRP。请选择不计入MRP的存储单元。"
-
 msgid "{name} needs an account number."
 msgstr "{name} 需要账户编号。"
 
@@ -6829,12 +6826,6 @@ msgstr "选择客户"
 msgid "Choose a labor category or an employee"
 msgstr "选择人工类别或员工"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "请为需检验的零件选择此位置不计入MRP的存储单元。"
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "请选择此位置不计入MRP的存储单元。"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -6849,6 +6840,12 @@ msgstr "选择成本池"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "请为需检验的零件选择此地点的存储单元。"
+
+msgid "Choose a storage unit at this location."
+msgstr "请选择此地点的存储单元。"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19572,9 +19569,6 @@ msgstr "未找到模块"
 msgid "No new notifications"
 msgstr "没有新通知"
 
-msgid "No non-nettable storage units at this location"
-msgstr "此位置没有不计入MRP的存储单元"
-
 msgid "No notes"
 msgstr "没有备注"
 
@@ -19944,6 +19938,9 @@ msgstr "此地点的存储单元中没有任何库存。"
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "没有存储单元因未结工单而缺料或库存为负。"
+
+msgid "No storage units at this location"
+msgstr "此地点没有存储单元"
 
 msgid "No storage units or tracking numbers match."
 msgstr "没有存储单元或追踪号与之匹配。"
@@ -23967,8 +23964,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "来自此供应商且还有数量待退货的已收行"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "需检验的收货零件进入检验存储单元。拒收库存移至拒收存储单元。两者都必须不计入MRP。"
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "需要检验的收货零件会进入检验存储单元。被拒收的库存会移至拒收存储单元。若不想让其库存计入计划，请在存储单元自身的设置中将其设为不计入MRP。"
 
 msgid "Received Qty"
 msgstr "已收货数量"
