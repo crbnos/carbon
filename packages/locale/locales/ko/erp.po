@@ -599,6 +599,11 @@ msgstr "{0} 작업 · {1} 개"
 msgid "{0} orders"
 msgstr "주문 {0}건"
 
+#. placeholder {0}: formatCount(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0}개 부품 링크가 공정의 BOM 라인과 일치하지 않음"
@@ -9214,6 +9219,9 @@ msgstr "고객 계약 라인"
 msgid "Customer Country"
 msgstr "고객 국가"
 
+msgid "Customer credits"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "고객 선금"
 
@@ -12537,6 +12545,9 @@ msgstr "제외됨 ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "누락된 시간에서 제외됨"
 
+msgid "Excludes tax and freight"
+msgstr ""
+
 msgid "Executive P&L"
 msgstr "경영진 손익계산"
 
@@ -13812,6 +13823,9 @@ msgstr "출하 사업장"
 
 msgid "Full name"
 msgstr "전체 이름"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "완전한 셋업 및 마이그레이션"
@@ -15531,6 +15545,9 @@ msgstr "지금 {readableId} 송장을 발행하시겠습니까?"
 msgid "Invoice Address"
 msgstr "송장 주소"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "송장 담당자"
 
@@ -15628,6 +15645,12 @@ msgstr "송장 발행됨"
 msgid "Invoiced Amount:"
 msgstr "송장 발행 금액:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "별도로 송장 발행됨"
 
@@ -15645,6 +15668,9 @@ msgstr "송장 발행됨: {shipmentId}"
 
 msgid "Invoices"
 msgstr "송장"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "회계를 활성화한 후 송장과 청구서가 동기화됩니다"
@@ -15679,6 +15705,9 @@ msgstr "송장은 청구 고객에 이미 연결된 Stripe 고객에게 발송�
 msgid "Invoices could not be loaded"
 msgstr "송장을 불러올 수 없습니다."
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "이 메모가 적용된 송장입니다. 행을 클릭하여 문서를 엽니다."
 
@@ -15690,6 +15719,9 @@ msgstr "송장 관리"
 
 msgid "Invoicing Dashboard"
 msgstr "송장 관리 대시보드"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "같음"
@@ -16340,6 +16372,9 @@ msgstr "더 크게"
 
 msgid "Largest child"
 msgstr "가장 큰 자식"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "지난 6개월"
@@ -18300,6 +18335,9 @@ msgstr "MRP 제안"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP는 주문의 날짜가 이 일수보다 더 차이날 때만 기존 주문을 이동할 것을 제안합니다. 작은 차이는 작업 목록을 조용하게 유지하기 위해 무시됩니다."
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "여러 작업 지시가 이 공법에서 동시에 실행될 수 있습니다 — 예: 레이저 테이블, 용광로 또는 도금 조에"
 
@@ -18449,6 +18487,9 @@ msgstr "리스 순투자"
 msgid "Net Investment in Leases (default)"
 msgstr "리스 순투자(기본값)"
 
+msgid "Net invoiced sales"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "순 사용권 자산"
 
@@ -18457,6 +18498,13 @@ msgstr "순 사용권 자산:"
 
 msgid "Net ROU Asset"
 msgstr "순 사용권 자산"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "순 단가"
@@ -20900,6 +20948,9 @@ msgstr "NCR 열기"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "검토자가 승인한 초안에서 계획을 변경하기 위해 하나를 여세요."
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "미결 주문"
 
@@ -20921,22 +20972,13 @@ msgstr "미결 발주서"
 msgid "Open Purchase Orders"
 msgstr "미결 발주서"
 
-msgid "Open Quotes"
-msgstr "미결 견적"
-
 msgid "Open Reactive"
 msgstr "미결 반응형 정비"
 
 msgid "Open receivables by customer and age"
 msgstr "고객 및 기간별 미결 매출채권"
 
-msgid "Open RFQs"
-msgstr "미결 견적요청"
-
 msgid "Open sales orders"
-msgstr "미결 수주"
-
-msgid "Open Sales Orders"
 msgstr "미결 수주"
 
 msgid "Open Scheduled"
@@ -22446,6 +22488,9 @@ msgstr "전기자"
 
 msgid "Posted hours"
 msgstr "전기된 시간"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "이러한 원본 유형을 가진 전기된 전표는 항상 동기화됩니다. 매일 요약은 하루의 전표를 계정당 하나의 공급자 항목으로 그룹화합니다."
@@ -25832,9 +25877,6 @@ msgstr "영업 할인"
 msgid "Sales Discounts (default)"
 msgstr "영업 할인 (기본값)"
 
-msgid "Sales Funnel"
-msgstr "영업 퍼널"
-
 msgid "Sales invoice"
 msgstr "매출 송장"
 
@@ -25900,9 +25942,6 @@ msgstr "판매 반품"
 
 msgid "Sales return receipts"
 msgstr "판매 반품 입고"
-
-msgid "Sales Revenue"
-msgstr "매출"
 
 msgid "Sales Rule"
 msgstr "판매 규칙"
@@ -26539,6 +26578,9 @@ msgstr "구성할 블록을 선택하세요"
 
 msgid "Select a completed job"
 msgstr "완료된 작업 지시를 선택하세요"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
@@ -31893,6 +31935,9 @@ msgstr "공구"
 msgid "Tools"
 msgstr "공구"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "최상위 수준"
 
@@ -32468,6 +32513,9 @@ msgstr "먼저 {0}을(를) 제거하세요"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "먼저 {conflictsWith}를 제거하세요"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "미청구 출하"
@@ -33318,6 +33366,9 @@ msgstr "원가 보기"
 msgid "View Count"
 msgstr "조회수"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "사용자 정의 필드 보기"
 
@@ -33393,17 +33444,8 @@ msgstr "미결 송장 보기"
 msgid "View Open Issues"
 msgstr "미결 이슈 보기"
 
-msgid "View Open Orders"
-msgstr "미결 주문 보기"
-
 msgid "View Open POs"
 msgstr "미결 구매주문 보기"
-
-msgid "View Open Quotes"
-msgstr "미결 견적 보기"
-
-msgid "View Open RFQs"
-msgstr "미결 견적요청 보기"
 
 msgid "View or open"
 msgstr "보기 또는 열기"
@@ -33452,6 +33494,12 @@ msgstr "대체 수주 보기"
 
 msgid "View Run"
 msgstr "실행 보기"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "일정 보기"

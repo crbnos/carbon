@@ -29,6 +29,7 @@ import {
   suggestContractType,
   unchecked
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
@@ -121,6 +122,64 @@ import * as utils from "./sales.utils";
 import { reconcileQuantityBreaks } from "./sales.utils";
 
 const logger = getLogger("erp", "sales-server");
+const salesDashboardDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Get invoice-based sales analytics and today's open order backlog.
+ *
+ * @remarks
+ * Invoice amounts are returned only to callers with Invoicing view access.
+ */
+export const getSalesDashboardAnalytics = defineServiceFn({
+  input: z.object({
+    startDate: salesDashboardDate.optional(),
+    endDate: salesDashboardDate.optional(),
+    customerId: z.string().nullable().optional()
+  }),
+  permission: { view: "sales" },
+  async run(ctx, input) {
+    const timeZone = await getCompanyTimeZone(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
+    const today = datetime.today(timeZone);
+    const startDate = input.startDate ?? today.set({ day: 1 }).toString();
+    const endDate = input.endDate ?? today.toString();
+    let start;
+    let end;
+    try {
+      start = parseDate(startDate);
+      end = parseDate(endDate);
+    } catch {
+      return ctx.error("validation", "Enter valid dashboard dates");
+    }
+    if (
+      start.compare(end) > 0 ||
+      start.compare(end.subtract({ years: 1 })) < 0
+    ) {
+      return ctx.error("validation", "Select a date range of at most one year");
+    }
+
+    const canViewRevenue = ctx.can({ view: "invoicing" });
+    const [backlog, revenue] = await Promise.all([
+      service.getSalesDashboardBacklog(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        input.customerId ?? null
+      ),
+      canViewRevenue
+        ? service.getSalesDashboardRevenue(
+            ctx.asSystem.pg,
+            ctx.company.id,
+            startDate,
+            endDate,
+            input.customerId ?? null
+          )
+        : Promise.resolve(null)
+    ]);
+    return { startDate, endDate, asOfDate: today.toString(), backlog, revenue };
+  }
+});
 // ---------------------------------------------------------------------------
 // Operations (`defineServiceFn`): what the routes, the API and MCP all run
 // ---------------------------------------------------------------------------

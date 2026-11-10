@@ -599,6 +599,11 @@ msgstr "{0} işlem · {1} adet"
 msgid "{0} orders"
 msgstr "{0} sipariş"
 
+#. placeholder {0}: formatCount(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} parça bağlantısı operasyonda eşleşen BOM satırına sahip değildir"
@@ -9214,6 +9219,9 @@ msgstr "Müşteri sözleşmesi satırı"
 msgid "Customer Country"
 msgstr "Müşteri Ülkesi"
 
+msgid "Customer credits"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "Müşteri depozu"
 
@@ -12537,6 +12545,9 @@ msgstr "Hariç Tutuldu ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "Eksik Zamandan Hariç Tutuldu"
 
+msgid "Excludes tax and freight"
+msgstr ""
+
 msgid "Executive P&L"
 msgstr "Yönetici P&L"
 
@@ -13812,6 +13823,9 @@ msgstr "Sevkiyat lokasyonu"
 
 msgid "Full name"
 msgstr "Tam adı"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "Tam kurulum ve göçler"
@@ -15531,6 +15545,9 @@ msgstr "{readableId} şimdi faturalansın mı?"
 msgid "Invoice Address"
 msgstr "Fatura Adresi"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "Fatura İlgili Kişisi"
 
@@ -15628,6 +15645,12 @@ msgstr "Faturalandırıldı"
 msgid "Invoiced Amount:"
 msgstr "Faturalandı Tutarı:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "Ayrı olarak faturalandı"
 
@@ -15645,6 +15668,9 @@ msgstr "Faturalandı: {shipmentId}"
 
 msgid "Invoices"
 msgstr "Faturalar"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Muhasebeleştirmeyi etkinleştirdikten sonra faturalar senkronize olur"
@@ -15679,6 +15705,9 @@ msgstr "Faturalar, faturalandırma müşterisiyle zaten bağlı olan Stripe mü�
 msgid "Invoices could not be loaded"
 msgstr "Faturalar yüklenemedi"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Bu muhasebe belgesinin uygulandığı faturalar. Belgeyi açmak için bir satıra tıklayın."
 
@@ -15690,6 +15719,9 @@ msgstr "Faturalama"
 
 msgid "Invoicing Dashboard"
 msgstr "Faturalama panosu"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "eşittir"
@@ -16340,6 +16372,9 @@ msgstr "Daha büyük"
 
 msgid "Largest child"
 msgstr "En büyük alt öğe"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
@@ -18300,6 +18335,9 @@ msgstr "MRP Önerileri"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP, mevcut bir siparişi ancak tarihinden bu sayıda günden fazla fark olduğunda taşımayı önerir. Daha küçük farklar, iş listesinin sessiz kalması için yalnız bırakılır."
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Bu Proses üzerinde aynı anda birden fazla İş emri çalışabilir — örneğin bir lazer masası, fırın veya kaplama havuzu"
 
@@ -18449,6 +18487,9 @@ msgstr "Net Kiralama Yatırımı"
 msgid "Net Investment in Leases (default)"
 msgstr "Net Kiralama Yatırımı (varsayılan)"
 
+msgid "Net invoiced sales"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Net kullanım hakkı varlığı"
 
@@ -18457,6 +18498,13 @@ msgstr "Net Kullanım Hakkı Varlığı:"
 
 msgid "Net ROU Asset"
 msgstr "Net ROU Varlığı"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "Net Birim Fiyat"
@@ -20900,6 +20948,9 @@ msgstr "NCR aç"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Tasarıdaki planı değiştirmek için birini açın; inceleyenler onaylamadan önce uygulanır."
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Açık Siparişler"
 
@@ -20921,23 +20972,14 @@ msgstr "Açık satın alma siparişleri"
 msgid "Open Purchase Orders"
 msgstr "Açık Satın Alma Siparişleri"
 
-msgid "Open Quotes"
-msgstr "Açık Teklifler"
-
 msgid "Open Reactive"
 msgstr "Açık Reaktif"
 
 msgid "Open receivables by customer and age"
 msgstr "Müşteri ve yaşa göre açık alacaklar"
 
-msgid "Open RFQs"
-msgstr "Açık RFQ'lar"
-
 msgid "Open sales orders"
 msgstr "Açık satış siparişleri"
-
-msgid "Open Sales Orders"
-msgstr "Açık Satış Siparişleri"
 
 msgid "Open Scheduled"
 msgstr "Planlanmış Açık"
@@ -22446,6 +22488,9 @@ msgstr "Gönderen"
 
 msgid "Posted hours"
 msgstr "Muhasebeleştirilmiş saatler"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Bu kaynak türlerine sahip Muhasebeleştirildi Muhasebe fişleri her zaman senkronize olur. Günlük özet, bir günün Muhasebe fişlerini hesap başına bir sağlayıcı giriş halinde gruplandırır."
@@ -25832,9 +25877,6 @@ msgstr "Satış İskontoları"
 msgid "Sales Discounts (default)"
 msgstr "Satış İskontoları (varsayılan)"
 
-msgid "Sales Funnel"
-msgstr "Satış Hunisi"
-
 msgid "Sales invoice"
 msgstr "Satış faturası"
 
@@ -25900,9 +25942,6 @@ msgstr "Satış İadesi"
 
 msgid "Sales return receipts"
 msgstr "Satış iade mal kabulü"
-
-msgid "Sales Revenue"
-msgstr "Satış Hasılat"
 
 msgid "Sales Rule"
 msgstr "Satış kuralı"
@@ -26539,6 +26578,9 @@ msgstr "Yapılandırmak için bir blok seçin"
 
 msgid "Select a completed job"
 msgstr "Tamamlanmış bir iş emri seçin"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
@@ -31893,6 +31935,9 @@ msgstr "Araçlar"
 msgid "Tools"
 msgstr "Araçlar"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "Üst düzey"
 
@@ -32468,6 +32513,9 @@ msgstr "Önce {0} kaldırın"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Önce {conflictsWith} kaldırın"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "Faturalanmamış sevkiyatlar"
@@ -33318,6 +33366,9 @@ msgstr "Maliyetleri Görüntüle"
 msgid "View Count"
 msgstr "Sayımı Görüntüle"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "Özel Alanları Görüntüle"
 
@@ -33393,17 +33444,8 @@ msgstr "Açık Faturaları Görüntüle"
 msgid "View Open Issues"
 msgstr "Açık Sorunları Görüntüle"
 
-msgid "View Open Orders"
-msgstr "Açık Siparişleri Görüntüle"
-
 msgid "View Open POs"
 msgstr "Açık Satın Alma Siparişlerini Görüntüle"
-
-msgid "View Open Quotes"
-msgstr "Açık Teklifleri Görüntüle"
-
-msgid "View Open RFQs"
-msgstr "Açık RFQ'ları Görüntüle"
 
 msgid "View or open"
 msgstr "Görüntüle veya Aç"
@@ -33452,6 +33494,12 @@ msgstr "Yedek Satış Siparişini Görüntüle"
 
 msgid "View Run"
 msgstr "Çalıştırmayı Görüntüle"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "Çizelgeyi Görüntüle"

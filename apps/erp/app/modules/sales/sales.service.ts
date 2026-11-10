@@ -2048,6 +2048,228 @@ export async function getSalesDocumentsAssignedToMe(
   return merged;
 }
 
+export async function getSalesDashboardRevenue(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  customerId: string | null
+) {
+  // Sales line amounts are in base currency. A memo amount is in document
+  // currency, so convert each posted memo before summing it.
+  let invoicesQuery = db
+    .selectFrom("salesInvoice as si")
+    .innerJoin("salesInvoiceLine as sil", (join) =>
+      join
+        .onRef("sil.invoiceId", "=", "si.id")
+        .onRef("sil.companyId", "=", "si.companyId")
+    )
+    .select(["si.postingDate as day", "si.customerId as customerId"])
+    .select((eb) => [
+      eb.fn
+        .sum<number>(
+          eb(
+            eb(
+              eb(
+                "sil.quantity",
+                "*",
+                eb.fn.coalesce("sil.netUnitPrice", eb.val(0))
+              ),
+              "+",
+              eb.ref("sil.addOnCost")
+            ),
+            "+",
+            eb.ref("sil.nonTaxableAddOnCost")
+          )
+        )
+        .as("invoiceSales"),
+      eb.val(0).as("credits")
+    ])
+    .where("si.companyId", "=", companyId)
+    .where("si.status", "not in", ["Draft", "Pending", "Voided"])
+    .where("si.postingDate", ">=", startDate)
+    .where("si.postingDate", "<=", endDate)
+    .groupBy(["si.postingDate", "si.customerId"]);
+  let creditsQuery = db
+    .selectFrom("memo as m")
+    .leftJoin("customerContract as cc", (join) =>
+      join
+        .onRef("cc.id", "=", "m.customerContractId")
+        .onRef("cc.companyId", "=", "m.companyId")
+    )
+    .select("m.postingDate as day")
+    .select((eb) => [
+      eb.fn
+        .coalesce("cc.customerId", "m.customerId", eb.val(""))
+        .as("customerId"),
+      eb.val(0).as("invoiceSales"),
+      eb.fn
+        .sum<number>(
+          eb.fn<number>("round", [
+            eb("m.amount", "/", eb.ref("m.exchangeRate")),
+            eb.val(5)
+          ])
+        )
+        .as("credits")
+    ])
+    .where("m.companyId", "=", companyId)
+    .where("m.customerId", "is not", null)
+    .where("m.direction", "=", "Credit")
+    .where("m.status", "=", "Posted")
+    .where("m.postingDate", ">=", startDate)
+    .where("m.postingDate", "<=", endDate)
+    .groupBy((eb) => [
+      "m.postingDate",
+      eb.fn.coalesce("cc.customerId", "m.customerId", eb.val(""))
+    ]);
+  if (customerId) {
+    invoicesQuery = invoicesQuery.where("si.customerId", "=", customerId);
+    creditsQuery = creditsQuery.where((eb) =>
+      eb(eb.fn.coalesce("cc.customerId", "m.customerId"), "=", customerId)
+    );
+  }
+  const facts = invoicesQuery.unionAll(creditsQuery);
+  const [dailyRows, customerRows] = await Promise.all([
+    db
+      .with("revenueFacts", () => facts)
+      .selectFrom("revenueFacts")
+      .select("day")
+      .select((eb) => [
+        eb.fn.sum<number>("invoiceSales").as("invoiceSales"),
+        eb.fn.sum<number>("credits").as("credits")
+      ])
+      .where("day", "is not", null)
+      .groupBy("day")
+      .orderBy("day")
+      .execute(),
+    db
+      .with("revenueFacts", () => facts)
+      .selectFrom("revenueFacts")
+      .select("customerId")
+      .select((eb) => [
+        eb.fn.sum<number>("invoiceSales").as("invoiceSales"),
+        eb.fn.sum<number>("credits").as("credits")
+      ])
+      .where("customerId", "is not", null)
+      .groupBy("customerId")
+      .orderBy(
+        (eb) =>
+          eb(
+            eb.fn.sum<number>("invoiceSales"),
+            "-",
+            eb.fn.sum<number>("credits")
+          ),
+        "desc"
+      )
+      .orderBy("customerId")
+      .limit(10)
+      .execute()
+  ]);
+  const topCustomers = customerRows.filter(
+    (row): row is typeof row & { customerId: string } => !!row.customerId
+  );
+  const names = topCustomers.length
+    ? await db
+        .selectFrom("customer")
+        .select(["id", "name"])
+        .where("companyId", "=", companyId)
+        .where(
+          "id",
+          "in",
+          topCustomers.map((customer) => customer.customerId)
+        )
+        .execute()
+    : [];
+  const namesById = new Map(
+    names.map((customer) => [customer.id, customer.name])
+  );
+  return {
+    daily: dailyRows
+      .filter((row): row is typeof row & { day: string } => !!row.day)
+      .map((row) => ({
+        day: row.day,
+        invoiceSales: Number(row.invoiceSales),
+        credits: Number(row.credits)
+      })),
+    customers: topCustomers.map((customer) => ({
+      customerId: customer.customerId,
+      invoiceSales: Number(customer.invoiceSales),
+      credits: Number(customer.credits),
+      customerName: namesById.get(customer.customerId) ?? customer.customerId
+    }))
+  };
+}
+
+export async function getSalesDashboardBacklog(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  customerId: string | null
+) {
+  const result = await db
+    .with("openOrders", (query) => {
+      let orders = query
+        .selectFrom("salesOrder as so")
+        .innerJoin("salesOrderLine as sol", (join) =>
+          join
+            .onRef("sol.salesOrderId", "=", "so.id")
+            .onRef("sol.companyId", "=", "so.companyId")
+        )
+        .leftJoin("customer as c", (join) =>
+          join
+            .onRef("c.id", "=", "so.customerId")
+            .onRef("c.companyId", "=", "so.companyId")
+        )
+        .select(["so.id", "so.salesOrderId"])
+        .select((eb) => [
+          eb.fn.coalesce("c.name", "so.customerId").as("customerName"),
+          eb.fn
+            .sum<number>(
+              eb(
+                "sol.quantityToInvoice",
+                "*",
+                eb.fn.coalesce("sol.unitPrice", eb.val(0))
+              )
+            )
+            .as("amount")
+        ])
+        .where("so.companyId", "=", companyId)
+        .where("so.status", "in", [
+          "Confirmed",
+          "In Progress",
+          "Completed",
+          "To Ship and Invoice",
+          "To Ship",
+          "To Invoice"
+        ])
+        .where("sol.quantityToInvoice", ">", 0)
+        .where("sol.invoicedComplete", "=", false)
+        .groupBy(["so.id", "so.salesOrderId", "so.customerId", "c.name"]);
+      if (customerId) orders = orders.where("so.customerId", "=", customerId);
+      return orders;
+    })
+    .selectFrom("openOrders")
+    .selectAll()
+    .select((eb) => [
+      eb.fn.sum<number>("amount").over().as("totalAmount"),
+      eb.fn.countAll<number>().over().as("orderCount")
+    ])
+    .orderBy("amount", "desc")
+    .orderBy("id")
+    .limit(5)
+    .execute();
+
+  return {
+    amount: Number(result[0]?.totalAmount ?? 0),
+    count: Number(result[0]?.orderCount ?? 0),
+    orders: result.map((row) => ({
+      id: row.id,
+      salesOrderId: row.salesOrderId,
+      customerName: row.customerName,
+      amount: Number(row.amount)
+    }))
+  };
+}
+
 export async function getSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string

@@ -599,6 +599,11 @@ msgstr "{0} 道工序 · {1} 件"
 msgid "{0} orders"
 msgstr "{0} 个订单"
 
+#. placeholder {0}: formatCount(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} 个零件链接在工序上没有匹配的 BOM 行"
@@ -9214,6 +9219,9 @@ msgstr "客户合同行"
 msgid "Customer Country"
 msgstr "客户国家"
 
+msgid "Customer credits"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "客户押金"
 
@@ -12537,6 +12545,9 @@ msgstr "已排除 ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "从缺失时间中排除"
 
+msgid "Excludes tax and freight"
+msgstr ""
+
 msgid "Executive P&L"
 msgstr "执行损益表"
 
@@ -13812,6 +13823,9 @@ msgstr "发货地点"
 
 msgid "Full name"
 msgstr "全名"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "完整设置和迁移"
@@ -15531,6 +15545,9 @@ msgstr "立即为 {readableId} 开票？"
 msgid "Invoice Address"
 msgstr "发票地址"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "发票联系人"
 
@@ -15628,6 +15645,12 @@ msgstr "已开票"
 msgid "Invoiced Amount:"
 msgstr "已开票金额："
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "单独开票"
 
@@ -15645,6 +15668,9 @@ msgstr "已开票：{shipmentId}"
 
 msgid "Invoices"
 msgstr "发票"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "激活会计后，发票和账单将同步"
@@ -15679,6 +15705,9 @@ msgstr "发票发送到已链接到计费客户的 Stripe 客户。"
 msgid "Invoices could not be loaded"
 msgstr "无法加载发票"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "此备忘录已应用的发票。点击一行打开文件。"
 
@@ -15690,6 +15719,9 @@ msgstr "开票"
 
 msgid "Invoicing Dashboard"
 msgstr "开票仪表板"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "是"
@@ -16340,6 +16372,9 @@ msgstr "更大"
 
 msgid "Largest child"
 msgstr "最大子项"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "最近6个月"
@@ -18300,6 +18335,9 @@ msgstr "MRP 建议"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP 仅在现有订单的日期偏差超过此天数时才建议移动订单。较小的偏差将被忽略，以保持工作列表的清晰。"
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
 
@@ -18449,6 +18487,9 @@ msgstr "租赁净投资"
 msgid "Net Investment in Leases (default)"
 msgstr "租赁净投资（默认）"
 
+msgid "Net invoiced sales"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "使用权资产净额"
 
@@ -18457,6 +18498,13 @@ msgstr "使用权资产净额:"
 
 msgid "Net ROU Asset"
 msgstr "净ROU资产"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "净单价"
@@ -20900,6 +20948,9 @@ msgstr "打开 NCR"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "打开一个以更改审核者批准后才能应用的草稿中的计划。"
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "未结订单"
 
@@ -20921,22 +20972,13 @@ msgstr "未结采购订单"
 msgid "Open Purchase Orders"
 msgstr "未结采购订单"
 
-msgid "Open Quotes"
-msgstr "未结报价"
-
 msgid "Open Reactive"
 msgstr "打开 Reactive"
 
 msgid "Open receivables by customer and age"
 msgstr "按客户和期限打开应收款项"
 
-msgid "Open RFQs"
-msgstr "未结RFQ"
-
 msgid "Open sales orders"
-msgstr "未结销售订单"
-
-msgid "Open Sales Orders"
 msgstr "未结销售订单"
 
 msgid "Open Scheduled"
@@ -22446,6 +22488,9 @@ msgstr "过账人"
 
 msgid "Posted hours"
 msgstr "已过账工时"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "具有这些来源类型的已过账凭证始终同步。每日汇总将一天的凭证按账户分组为一个供应商条目。"
@@ -25832,9 +25877,6 @@ msgstr "销售折扣"
 msgid "Sales Discounts (default)"
 msgstr "销售折扣 (默认)"
 
-msgid "Sales Funnel"
-msgstr "销售漏斗"
-
 msgid "Sales invoice"
 msgstr "销售发票"
 
@@ -25900,9 +25942,6 @@ msgstr "销售退货"
 
 msgid "Sales return receipts"
 msgstr "销售退货收货"
-
-msgid "Sales Revenue"
-msgstr "销售收入"
 
 msgid "Sales Rule"
 msgstr "销售规则"
@@ -26539,6 +26578,9 @@ msgstr "选择要配置的块"
 
 msgid "Select a completed job"
 msgstr "选择已完成的工单"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"
@@ -31893,6 +31935,9 @@ msgstr "工具"
 msgid "Tools"
 msgstr "工具"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "顶级"
 
@@ -32468,6 +32513,9 @@ msgstr "请先卸载 {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "先卸载 {conflictsWith}"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "未开票发货"
@@ -33318,6 +33366,9 @@ msgstr "查看成本"
 msgid "View Count"
 msgstr "查看计数"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "查看自定义字段"
 
@@ -33393,17 +33444,8 @@ msgstr "查看未结发票"
 msgid "View Open Issues"
 msgstr "查看未结问题"
 
-msgid "View Open Orders"
-msgstr "查看未结订单"
-
 msgid "View Open POs"
 msgstr "查看未结采购订单"
-
-msgid "View Open Quotes"
-msgstr "查看未结报价"
-
-msgid "View Open RFQs"
-msgstr "查看未结束的询价单"
 
 msgid "View or open"
 msgstr "查看或打开"
@@ -33452,6 +33494,12 @@ msgstr "查看替换销售订单"
 
 msgid "View Run"
 msgstr "查看运行"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "查看排程"
