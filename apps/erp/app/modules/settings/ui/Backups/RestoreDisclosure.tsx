@@ -18,6 +18,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import { LuCircleAlert, LuInfo, LuTriangleAlert } from "react-icons/lu";
+import { DEFAULT_INCLUDE_STORAGE } from "~/modules/settings/settings.models";
 import { areaLabel, tableArea } from "../../backups.areas";
 import type { CompanyBackupSummary } from "../../types";
 import { CONFIRM_WORD, disclosureState } from "./disclosure-state";
@@ -156,7 +157,8 @@ export function RestoreDisclosure({
                 onClick={() => {
                   onConfirm({
                     source: source ?? "",
-                    includeStorage: includeStorage ?? "all"
+                    includeStorage:
+                      includeStorage ?? DEFAULT_INCLUDE_STORAGE.restore
                   });
                   close();
                 }}

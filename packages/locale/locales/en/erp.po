@@ -5335,6 +5335,9 @@ msgstr "Backup failed"
 msgid "Backup for {0}"
 msgstr "Backup for {0}"
 
+msgid "Backup ready"
+msgstr "Backup ready"
+
 msgid "Backup uploaded"
 msgstr "Backup uploaded"
 
@@ -5982,6 +5985,9 @@ msgstr "Bulk Import"
 
 msgid "Bulk Jobs"
 msgstr "Bulk Jobs"
+
+msgid "Bundling files"
+msgstr "Bundling files"
 
 msgid "Burden"
 msgstr "Burden"
@@ -6981,6 +6987,12 @@ msgstr "Clearing account for goods received / invoice received matching"
 msgid "Clearing demo data"
 msgstr "Clearing demo data"
 
+msgid "Clearing existing data"
+msgstr "Clearing existing data"
+
+msgid "Clearing restored data"
+msgstr "Clearing restored data"
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 
@@ -7140,6 +7152,9 @@ msgstr "Collapse Setup"
 
 msgid "Collapse subtree"
 msgstr "Collapse subtree"
+
+msgid "Collecting records"
+msgstr "Collecting records"
 
 msgid "Color"
 msgstr "Color"
@@ -8482,6 +8497,9 @@ msgstr "Couldn't complete the Onshape Government connection"
 msgid "Couldn't confirm the account"
 msgstr "Couldn't confirm the account"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
 
@@ -8900,6 +8918,9 @@ msgstr "Creates a draft supplier credit memo for the shipped quantities that hav
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
+
+msgid "Creating backup…"
+msgstr "Creating backup…"
 
 msgid "Creating part..."
 msgstr "Creating part..."
@@ -16899,6 +16920,10 @@ msgstr "Load open transactions (orders, POs, inventory, balances)"
 msgid "Load Templates"
 msgstr "Load Templates"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Loaded last, right at cutover, so balances are current."
 
@@ -16907,6 +16932,9 @@ msgstr "Loading assets..."
 
 msgid "Loading associated jobs..."
 msgstr "Loading associated jobs..."
+
+msgid "Loading backup"
+msgstr "Loading backup"
 
 msgid "Loading creditable lines..."
 msgstr "Loading creditable lines..."
@@ -25013,6 +25041,12 @@ msgstr "Restorable with changes"
 msgid "Restore"
 msgstr "Restore"
 
+msgid "Restore complete"
+msgstr "Restore complete"
+
+msgid "Restore failed"
+msgstr "Restore failed"
+
 msgid "Restore from Trash"
 msgstr "Restore from Trash"
 
@@ -25028,8 +25062,14 @@ msgstr "Restore…"
 msgid "Restoring files"
 msgstr "Restoring files"
 
+msgid "Restoring your snapshot"
+msgstr "Restoring your snapshot"
+
 msgid "restoring…"
 msgstr "restoring…"
+
+msgid "Restoring…"
+msgstr "Restoring…"
 
 msgid "Restrict charging to members"
 msgstr "Restrict charging to members"
@@ -25325,6 +25365,12 @@ msgstr "Revert Cancellation"
 msgid "Revert cancellation of {readableId}"
 msgstr "Revert cancellation of {readableId}"
 
+msgid "Revert failed"
+msgstr "Revert failed"
+
+msgid "Reverted"
+msgstr "Reverted"
+
 msgid "Reverting"
 msgstr "Reverting"
 
@@ -25333,6 +25379,9 @@ msgstr "Reverting restores the end date, renewal and line end dates the cancella
 
 msgid "reverting…"
 msgstr "reverting…"
+
+msgid "Reverting…"
+msgstr "Reverting…"
 
 msgid "Review"
 msgstr "Review"
@@ -27783,6 +27832,9 @@ msgstr "Smallest run worth batching. Leave empty for none."
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test the core daily flows end to end"
 
+msgid "Snapshotting current data"
+msgstr "Snapshotting current data"
+
 msgid "so you can assign it here."
 msgstr "so you can assign it here."
 
@@ -27821,6 +27873,9 @@ msgstr "Some of this process's work can't be scheduled"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+
+msgid "Some rows excluded"
+msgstr "Some rows excluded"
 
 msgid "Some Shifts"
 msgstr "Some Shifts"
@@ -28214,6 +28269,9 @@ msgstr "Still owed"
 
 msgid "Still Owed"
 msgstr "Still Owed"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr "Still working — this is a large dataset. You can close this and check back in a bit."
 
 msgid "Stock"
 msgstr "Stock"
@@ -34472,6 +34530,9 @@ msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Your account stays safe even if your login is stolen"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr "Your backup is ready — it's in the list below."
+
 msgid "Your backups"
 msgstr "Your backups"
 
@@ -34552,6 +34613,9 @@ msgstr "Your part numbers"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Your part numbers and the item master behind them"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr "Your previous data is back, exactly as it was before the restore."
 
 msgid "Your profile could not be loaded."
 msgstr "Your profile could not be loaded."

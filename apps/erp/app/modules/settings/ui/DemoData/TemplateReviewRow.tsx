@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { JobPhase } from "@carbon/jobs/backups";
 import {
   Button,
   Card,
@@ -20,15 +21,12 @@ import type { CompanyTemplateRun } from "~/modules/settings/types";
 import { ExcludedRowsInfo } from "~/modules/settings/ui/Backups/ExcludedRowsInfo";
 import {
   formatElapsed,
+  JOB_POLL,
   totalScopeRows
 } from "~/modules/settings/ui/Backups/format";
 import { PurgeCorruptedRowsModal } from "~/modules/settings/ui/Backups/PurgeCorruptedRowsModal";
 import { path } from "~/utils/path";
 import { KeepDemoDataModal } from "./KeepDemoDataModal";
-
-/** A run with no completion after this long is treated as stalled, and offered a
- *  revert retry — the job's own crash handler can't fire if the process died. */
-const STALLED_AFTER_MS = 5 * 60 * 1000;
 
 export function TemplateReviewRow({
   run,
@@ -69,7 +67,7 @@ export function TemplateReviewRow({
   }, [run.status]);
 
   // Phase keys are stable; the copy for them lives here, not in the job.
-  const phaseLabel: Record<string, string> = {
+  const phaseLabel: Partial<Record<JobPhase, string>> = {
     snapshot: t`Saving a copy of your current data`,
     seed: t`Adding demo records`,
     wipe: t`Clearing demo data`,
@@ -93,7 +91,9 @@ export function TemplateReviewRow({
     revertRequestedAt ??
     (run.startedAt ? Date.parse(run.startedAt) : mountedAt);
   const elapsedMs = now - startedMs;
-  const stalled = busy && elapsedMs > STALLED_AFTER_MS;
+  // Stalled runs are offered a revert retry: the job's own crash handler can't
+  // fire if its process died.
+  const stalled = busy && elapsedMs > JOB_POLL.stalledMs;
   const elapsed = formatElapsed(elapsedMs);
 
   // Keep and Dismiss hide the row once the job is enqueued; a refused one (its

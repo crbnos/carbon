@@ -111,8 +111,9 @@ export type CompanyBackupSummary = {
   } | null;
   /** Per-edge breakdown of what a `skipCorrupted` export left out; `[]` for a full export. */
   excludedRows: NonNullable<Manifest["excludedRows"]>;
-  /** DISTINCT excluded rows per table — sum this, never `excludedRows`. */
-  excludedRowsByTable: RowsByTable;
+  /** DISTINCT excluded rows per table — sum this, never `excludedRows`. Null on
+   *  a backup taken before the count existed: unknown, not zero. */
+  excludedRowsByTable: RowsByTable | null;
 };
 
 /** What every backup job's marker tells the page. */

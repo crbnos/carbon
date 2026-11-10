@@ -107,3 +107,17 @@ export function formatBackupDate(
 export function totalScopeRows(rowsByTable: RowsByTable): number {
   return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
 }
+
+/** How the Backups and Demo Data pages follow a running job. */
+export const JOB_POLL = {
+  /** A job's own status, while its progress is on screen. */
+  statusMs: 500,
+  /** The page's list, while a job runs. */
+  listMs: 2500,
+  /** No first heartbeat this long after starting: the job may never have run. */
+  noStartMs: 60_000,
+  /** Running this long: say it's a large dataset, and let the dialog close. */
+  slowMs: 120_000,
+  /** A demo data change running this long counts as stalled. */
+  stalledMs: 5 * 60_000
+} as const;

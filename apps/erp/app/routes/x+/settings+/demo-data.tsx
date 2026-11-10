@@ -23,6 +23,7 @@ import {
   startCompanyTemplate
 } from "~/modules/settings/settings.service";
 import type { CompanyTemplateRun } from "~/modules/settings/types";
+import { JOB_POLL } from "~/modules/settings/ui/Backups/format";
 import { TemplateCards } from "~/modules/settings/ui/DemoData/TemplateCards";
 import { TemplateReviewRow } from "~/modules/settings/ui/DemoData/TemplateReviewRow";
 import { getDatabaseClient } from "~/services/database.server";
@@ -233,7 +234,7 @@ export default function DemoDataRoute() {
   // writes, so a faster poll would only re-read the same row.
   useEffect(() => {
     if (!active) return;
-    const id = setInterval(() => revalidator.revalidate(), 2500);
+    const id = setInterval(() => revalidator.revalidate(), JOB_POLL.listMs);
     return () => clearInterval(id);
   }, [active, revalidator]);
 

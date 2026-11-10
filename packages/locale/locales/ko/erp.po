@@ -5335,6 +5335,9 @@ msgstr "백업 실패"
 msgid "Backup for {0}"
 msgstr "{0}의 백업"
 
+msgid "Backup ready"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "백업이 업로드되었습니다"
 
@@ -5982,6 +5985,9 @@ msgstr "일괄 가져오기"
 
 msgid "Bulk Jobs"
 msgstr "대량 작업 지시"
+
+msgid "Bundling files"
+msgstr ""
 
 msgid "Burden"
 msgstr "부담금"
@@ -6981,6 +6987,12 @@ msgstr "입고 / 송장 수령 매칭을 위한 상계 계정"
 msgid "Clearing demo data"
 msgstr "데모 데이터 삭제 중"
 
+msgid "Clearing existing data"
+msgstr ""
+
+msgid "Clearing restored data"
+msgstr ""
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "{selectedLabel}에 시간을 추가하려면 날짜를 클릭하세요. 막대의 아래쪽 가장자리를 드래그하여 시간을 변경합니다."
 
@@ -7140,6 +7152,9 @@ msgstr "셋업 접기"
 
 msgid "Collapse subtree"
 msgstr "하위 트리 접기"
+
+msgid "Collecting records"
+msgstr ""
 
 msgid "Color"
 msgstr "색상"
@@ -8482,6 +8497,9 @@ msgstr "Onshape Government 연동을 완료 처리할 수 없습니다."
 msgid "Couldn't confirm the account"
 msgstr "계정을 확인할 수 없습니다"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "문서를 불러올 수 없습니다"
 
@@ -8900,6 +8918,9 @@ msgstr "아직 대변전표로 처리되지 않은 출하된 수량에 대한 �
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "회계연도의 12개월 기간을 생성합니다. 이미 존재하는 기간은 유지됩니다."
+
+msgid "Creating backup…"
+msgstr ""
 
 msgid "Creating part..."
 msgstr "품목 생성 중..."
@@ -16899,6 +16920,10 @@ msgstr "미결 거래 불러오기(주문, 구매주문, 재고, 잔액)"
 msgid "Load Templates"
 msgstr "템플릿 불러오기"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr ""
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "전환 시점에 마지막으로 불러와 잔액이 최신 상태로 유지됩니다."
 
@@ -16907,6 +16932,9 @@ msgstr "자산 로드 중..."
 
 msgid "Loading associated jobs..."
 msgstr "관련 작업 지시를 로딩 중..."
+
+msgid "Loading backup"
+msgstr ""
 
 msgid "Loading creditable lines..."
 msgstr "신용권을 받을 수 있는 라인 로드 중..."
@@ -25013,6 +25041,12 @@ msgstr "변경 사항과 함께 복원 가능"
 msgid "Restore"
 msgstr "복원"
 
+msgid "Restore complete"
+msgstr ""
+
+msgid "Restore failed"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "휴지통에서 복원"
 
@@ -25028,8 +25062,14 @@ msgstr "복원…"
 msgid "Restoring files"
 msgstr "파일 복원 중"
 
+msgid "Restoring your snapshot"
+msgstr ""
+
 msgid "restoring…"
 msgstr "복원 중…"
+
+msgid "Restoring…"
+msgstr ""
 
 msgid "Restrict charging to members"
 msgstr "구성원에게만 청구 제한"
@@ -25325,6 +25365,12 @@ msgstr "취소 복구"
 msgid "Revert cancellation of {readableId}"
 msgstr "{readableId}의 취소 복구"
 
+msgid "Revert failed"
+msgstr ""
+
+msgid "Reverted"
+msgstr ""
+
 msgid "Reverting"
 msgstr "복원 중"
 
@@ -25333,6 +25379,9 @@ msgstr "복구하면 취소 시에 변경된 종료일, 갱신 및 라인 종료
 
 msgid "reverting…"
 msgstr "되돌리는 중…"
+
+msgid "Reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "검토"
@@ -27783,6 +27832,9 @@ msgstr "배치할 가치가 있는 가장 작은 실행. 없으면 비워두세�
 msgid "Smoke-test the core daily flows end to end"
 msgstr "핵심 매일 흐름의 종단 간 스모크 테스트"
 
+msgid "Snapshotting current data"
+msgstr ""
+
 msgid "so you can assign it here."
 msgstr "그래서 여기에 할당할 수 있습니다."
 
@@ -27821,6 +27873,9 @@ msgstr "이 공법의 일부 작업은 예약할 수 없습니다"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "일부 레코드는 돌아오지 않습니다. 계속하려면 <0>{CONFIRM_WORD}</0>를 입력하세요."
+
+msgid "Some rows excluded"
+msgstr ""
 
 msgid "Some Shifts"
 msgstr "일부 교대조"
@@ -28214,6 +28269,9 @@ msgstr "여전히 대금이 남음"
 
 msgid "Still Owed"
 msgstr "여전히 대금이 남음"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr ""
 
 msgid "Stock"
 msgstr "재고"
@@ -34469,6 +34527,9 @@ msgstr "{hoursElapsed}시간 동안 작업이 진행 중입니다. 작업 종료
 msgid "Your account stays safe even if your login is stolen"
 msgstr "로그인이 도난당해도 계정은 안전하게 유지됩니다"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr ""
+
 msgid "Your backups"
 msgstr "내 백업"
 
@@ -34549,6 +34610,9 @@ msgstr "품번"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "품번과 그 기반이 되는 품목 마스터"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr ""
 
 msgid "Your profile could not be loaded."
 msgstr "프로필을 로드할 수 없습니다."

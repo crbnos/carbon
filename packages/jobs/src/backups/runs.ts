@@ -39,10 +39,17 @@ export const PER_COMPANY_CONCURRENCY = {
   limit: 1
 } as const;
 
-/** Live progress of the current phase. `phase` is a stable KEY
- *  (`snapshot`/`seed`/`wipe`/`load`/`files`/`tables`); the page maps it to a
+/** The stable keys a job reports its progress under; the page maps each to a
  *  label per job, so the job never bakes in display copy. */
-export type JobProgress = { phase: string; done: number; total: number };
+export type JobPhase =
+  | "snapshot"
+  | "seed"
+  | "wipe"
+  | "load"
+  | "files"
+  | "tables";
+
+export type JobProgress = { phase: JobPhase; done: number; total: number };
 
 type RunStatus = "running" | "ready" | "failed" | "reverting";
 

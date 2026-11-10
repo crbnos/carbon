@@ -5335,6 +5335,9 @@ msgstr "Yedekleme başarısız oldu"
 msgid "Backup for {0}"
 msgstr "{0} için yedek"
 
+msgid "Backup ready"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Yedek yüklendi"
 
@@ -5982,6 +5985,9 @@ msgstr "Toplu İçe Aktarma"
 
 msgid "Bulk Jobs"
 msgstr "Toplu İş Emirleri"
+
+msgid "Bundling files"
+msgstr ""
 
 msgid "Burden"
 msgstr "Yükle"
@@ -6981,6 +6987,12 @@ msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 msgid "Clearing demo data"
 msgstr "Demo verisi temizleniyor"
 
+msgid "Clearing existing data"
+msgstr ""
+
+msgid "Clearing restored data"
+msgstr ""
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Zaman eklemek için bir gün tıkla {selectedLabel}. Saatleri değiştirmek için çubuğun alt kenarını sürükle."
 
@@ -7140,6 +7152,9 @@ msgstr "Kurulumu Daralt"
 
 msgid "Collapse subtree"
 msgstr "Alt ağacı daralt"
+
+msgid "Collecting records"
+msgstr ""
 
 msgid "Color"
 msgstr "Renk"
@@ -8482,6 +8497,9 @@ msgstr "Onshape Government bağlantısı tamamlanamadı"
 msgid "Couldn't confirm the account"
 msgstr "Hesap doğrulanamadı"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Belgeler yüklenemedi"
 
@@ -8900,6 +8918,9 @@ msgstr "Henüz ödenmemiş sevkiyat miktarları için taslak bir tedarikçi alac
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Mali yıl için 12 aylık dönem oluşturur. Zaten mevcut olan dönemler korunur."
+
+msgid "Creating backup…"
+msgstr ""
 
 msgid "Creating part..."
 msgstr "Parça oluşturuluyor..."
@@ -16899,6 +16920,10 @@ msgstr "Açık işlemleri yükle (siparişler, PO'lar, envanter, bakiyeler)"
 msgid "Load Templates"
 msgstr "Şablonları Yükle"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr ""
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Son yüklenen, kesme noktasında hemen, bu nedenle bakiyeler günceldir."
 
@@ -16907,6 +16932,9 @@ msgstr "Varlıklar yükleniyor..."
 
 msgid "Loading associated jobs..."
 msgstr "İlişkili iş emirleri yükleniyor..."
+
+msgid "Loading backup"
+msgstr ""
 
 msgid "Loading creditable lines..."
 msgstr "Kredilendirilecek satırlar yükleniyor..."
@@ -25013,6 +25041,12 @@ msgstr "Değişikliklerle geri yüklenebilir"
 msgid "Restore"
 msgstr "Geri yükle"
 
+msgid "Restore complete"
+msgstr ""
+
+msgid "Restore failed"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Çöp'ten Geri Yükle"
 
@@ -25028,8 +25062,14 @@ msgstr "Geri yükle…"
 msgid "Restoring files"
 msgstr "Dosyalar geri yükleniyor"
 
+msgid "Restoring your snapshot"
+msgstr ""
+
 msgid "restoring…"
 msgstr "geri yükleniyor…"
+
+msgid "Restoring…"
+msgstr ""
 
 msgid "Restrict charging to members"
 msgstr "Ücretlendirmeyi üyelere kısıtla"
@@ -25325,6 +25365,12 @@ msgstr "İptali Geri Al"
 msgid "Revert cancellation of {readableId}"
 msgstr "{readableId} iptali geri al"
 
+msgid "Revert failed"
+msgstr ""
+
+msgid "Reverted"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Geri alınıyor"
 
@@ -25333,6 +25379,9 @@ msgstr "İptali geri almak, iptal tarafından değiştirilen bitiş tarihini, ye
 
 msgid "reverting…"
 msgstr "geri alınıyor…"
+
+msgid "Reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "İncele"
@@ -27783,6 +27832,9 @@ msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Temel günlük akışları uçtan uca test et"
 
+msgid "Snapshotting current data"
+msgstr ""
+
 msgid "so you can assign it here."
 msgstr "burada atayabilmeniz için."
 
@@ -27821,6 +27873,9 @@ msgstr "Bu prosesin bazı işleri planlanamıyor"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Bazı kayıtlar geri gelmeyecek. Devam etmek için <0>{CONFIRM_WORD}</0> yazın."
+
+msgid "Some rows excluded"
+msgstr ""
 
 msgid "Some Shifts"
 msgstr "Bazı Vardiyalar"
@@ -28214,6 +28269,9 @@ msgstr "Henüz ödenmemiş"
 
 msgid "Still Owed"
 msgstr "Henüz Ödenmemiş"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr ""
 
 msgid "Stock"
 msgstr "Stok"
@@ -34469,6 +34527,9 @@ msgstr "{hoursElapsed} saattir işte idiniz. İş bitişini unuttunuz mu?"
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Oturum açma bilgileriniz çalınsa bile hesabınız güvenli kalır"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr ""
+
 msgid "Your backups"
 msgstr "Sizin Yedeklemeleriniz"
 
@@ -34549,6 +34610,9 @@ msgstr "Parça numaralarınız"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Parça numaralarınız ve bunların arkasındaki madde ana kaydı"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr ""
 
 msgid "Your profile could not be loaded."
 msgstr "Profiliniz yüklenemedi."

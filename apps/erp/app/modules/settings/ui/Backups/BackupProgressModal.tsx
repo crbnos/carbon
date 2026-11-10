@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { JobPhase } from "@carbon/jobs/backups";
 import { useRevalidator } from "@carbon/query";
 import {
   BarProgress,
@@ -13,40 +14,57 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { loader as exportStatusLoader } from "~/routes/api+/settings.backup-export-status";
 import type { loader as restoreStatusLoader } from "~/routes/api+/settings.backup-restore-status.$restoreRunId";
 import { path } from "~/utils/path";
-import { formatElapsed } from "./format";
+import { formatElapsed, JOB_POLL } from "./format";
 
-// The job reports progress as a stable phase KEY + done/total; these order the
-// keys and map them to labels per mode (display copy stays out of the job).
-const PHASE_ORDER: Record<"export" | "restore" | "revert", string[]> = {
-  export: ["tables", "files"],
-  restore: ["snapshot", "wipe", "load", "files"],
-  revert: ["wipe", "load", "files"]
+type JobMode = "export" | "restore" | "revert";
+
+// The job reports progress as a stable phase key + done/total; these order the
+// keys and label them per mode (display copy stays out of the job).
+const PHASES: Record<JobMode, [JobPhase, MessageDescriptor][]> = {
+  export: [
+    ["tables", msg`Collecting records`],
+    ["files", msg`Bundling files`]
+  ],
+  restore: [
+    ["snapshot", msg`Snapshotting current data`],
+    ["wipe", msg`Clearing existing data`],
+    ["load", msg`Loading backup`],
+    ["files", msg`Restoring files`]
+  ],
+  revert: [
+    ["wipe", msg`Clearing restored data`],
+    ["load", msg`Restoring your snapshot`],
+    ["files", msg`Restoring files`]
+  ]
 };
-const PHASE_LABELS: Record<
-  "export" | "restore" | "revert",
-  Record<string, string>
+
+const TITLES: Record<
+  JobMode,
+  Record<"working" | "failed" | "done", MessageDescriptor>
 > = {
   export: {
-    tables: "Collecting records",
-    files: "Bundling files"
+    working: msg`Creating backup…`,
+    failed: msg`Backup failed`,
+    done: msg`Backup ready`
   },
   restore: {
-    snapshot: "Snapshotting current data",
-    wipe: "Clearing existing data",
-    load: "Loading backup",
-    files: "Restoring files"
+    working: msg`Restoring…`,
+    failed: msg`Restore failed`,
+    done: msg`Restore complete`
   },
   revert: {
-    wipe: "Clearing restored data",
-    load: "Restoring your snapshot",
-    files: "Restoring files"
+    working: msg`Reverting…`,
+    failed: msg`Revert failed`,
+    done: msg`Reverted`
   }
 };
 
@@ -119,12 +137,13 @@ export function JobProgressModal({
   completed,
   onClose
 }: {
-  mode: "export" | "restore" | "revert";
+  mode: JobMode;
   runId?: string;
   /** Export only: true once the new backup has actually landed in the list. */
   completed?: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const isExport = mode === "export";
   const isRevert = mode === "revert";
   const revalidator = useRevalidator();
@@ -151,17 +170,15 @@ export function JobProgressModal({
   const startedAt = isExport
     ? (exportFetcher.data?.startedAt ?? null)
     : (statusFetcher.data?.startedAt ?? null);
-  // Watchdog thresholds are in 500ms ticks: ~120s "slow", ~60s "stalled".
-  const [ticks, setTicks] = useState(0);
-  const slow = !done && ticks > 240;
-
+  const [openedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (done || !startedAt) return;
+    if (done) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [done, startedAt]);
+  }, [done]);
   const elapsedMs = startedAt ? now - Date.parse(startedAt) : 0;
+  const slow = !done && now - openedAt > JOB_POLL.slowMs;
 
   // Pre-heartbeat watchdog: if a restore never writes its first marker (the job
   // failed to start / never reached Inngest), the status stays "gone" forever.
@@ -170,7 +187,11 @@ export function JobProgressModal({
   useEffect(() => {
     if (raw && raw !== "gone" && raw !== "unreadable") setSawMarker(true);
   }, [raw]);
-  const stalled = mode === "restore" && !done && !sawMarker && ticks > 120;
+  const stalled =
+    mode === "restore" &&
+    !done &&
+    !sawMarker &&
+    now - openedAt > JOB_POLL.noStartMs;
 
   const load = statusFetcher.load;
   useEffect(() => {
@@ -181,10 +202,7 @@ export function JobProgressModal({
     }
     const href = path.to.api.backupRestoreStatus(runId);
     load(href);
-    const id = setInterval(() => {
-      load(href);
-      setTicks((t) => t + 1);
-    }, 500);
+    const id = setInterval(() => load(href), JOB_POLL.statusMs);
     return () => clearInterval(id);
   }, [isExport, runId, done, load, revalidator]);
 
@@ -195,11 +213,8 @@ export function JobProgressModal({
     if (!isExport || done) return;
     const href = path.to.api.backupExportStatus;
     loadExport(href);
-    const poll = setInterval(() => {
-      loadExport(href);
-      setTicks((t) => t + 1);
-    }, 500);
-    const reval = setInterval(() => revalidator.revalidate(), 2000);
+    const poll = setInterval(() => loadExport(href), JOB_POLL.statusMs);
+    const reval = setInterval(() => revalidator.revalidate(), JOB_POLL.listMs);
     return () => {
       clearInterval(poll);
       clearInterval(reval);
@@ -209,9 +224,9 @@ export function JobProgressModal({
   // Checklist + bar from the real phase + done/total. Before the first heartbeat
   // we hold phase 1 rather than fake-advancing (which would snap backward once
   // real progress arrives).
-  const order = PHASE_ORDER[mode];
+  const order = PHASES[mode].map(([key]) => key);
   const checklist = (() => {
-    const labels = order.map((k) => PHASE_LABELS[mode][k] ?? k);
+    const labels = PHASES[mode].map(([, label]) => t(label));
     const elapsed = startedAt ? formatElapsed(elapsedMs) : null;
     if (progress) {
       const idx = order.indexOf(progress.phase);
@@ -233,24 +248,9 @@ export function JobProgressModal({
     };
   })();
 
-  const workingTitle = isExport
-    ? "Creating backup…"
-    : isRevert
-      ? "Reverting…"
-      : "Restoring…";
-  const title = failed
-    ? isExport
-      ? "Backup failed"
-      : isRevert
-        ? "Revert failed"
-        : "Restore failed"
-    : success
-      ? isExport
-        ? "Backup ready"
-        : isRevert
-          ? "Reverted"
-          : "Restore complete"
-      : workingTitle;
+  const title = t(
+    TITLES[mode][failed ? "failed" : success ? "done" : "working"]
+  );
 
   // The modal just reports progress — keep/revert is decided from the review
   // card, so any terminal (or slow/stalled) state is dismissable. Export is
@@ -274,11 +274,19 @@ export function JobProgressModal({
             <div className="flex flex-col items-center gap-3 py-4">
               <LuCheck className="h-8 w-8 text-emerald-500 duration-300 animate-in fade-in zoom-in-75 motion-reduce:animate-none" />
               <p className="text-center text-sm text-muted-foreground">
-                {isExport
-                  ? "Your backup is ready — it's in the list below."
-                  : isRevert
-                    ? "Your previous data is back, exactly as it was before the restore."
-                    : `Loaded ${rows.toLocaleString()} rows. Review it below — keep the restore, or revert to what was here before.`}
+                {isExport ? (
+                  <Trans>Your backup is ready — it's in the list below.</Trans>
+                ) : isRevert ? (
+                  <Trans>
+                    Your previous data is back, exactly as it was before the
+                    restore.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    Loaded {rows.toLocaleString()} rows. Review it below — keep
+                    the restore, or revert to what was here before.
+                  </Trans>
+                )}
               </p>
             </div>
           ) : failed ? (
@@ -336,13 +344,17 @@ export function JobProgressModal({
               />
               {stalled ? (
                 <p className="text-center text-xs text-muted-foreground">
-                  Couldn't confirm the restore started. It may still be running
-                  — close this and check the list in a moment.
+                  <Trans>
+                    Couldn't confirm the restore started. It may still be
+                    running — close this and check the list in a moment.
+                  </Trans>
                 </p>
               ) : slow ? (
                 <p className="text-center text-xs text-muted-foreground">
-                  Still working — this is a large dataset. You can close this
-                  and check back in a bit.
+                  <Trans>
+                    Still working — this is a large dataset. You can close this
+                    and check back in a bit.
+                  </Trans>
                 </p>
               ) : null}
             </>
@@ -350,7 +362,9 @@ export function JobProgressModal({
         </ModalBody>
         <ModalFooter>
           {dismissable && (
-            <Button onClick={onClose}>{success ? "Done" : "Close"}</Button>
+            <Button onClick={onClose}>
+              {success ? <Trans>Done</Trans> : <Trans>Close</Trans>}
+            </Button>
           )}
         </ModalFooter>
       </ModalContent>

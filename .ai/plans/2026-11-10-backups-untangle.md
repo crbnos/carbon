@@ -204,5 +204,12 @@ Solves: ERP audit hidden/needless links, `_pre-template-` listed (BUG), view-onl
 - Per-table queries in import's re-added-table loop: bounded by table count, not rows.
 - Purge's sole-member check (locked, in its transaction) vs restore's: different contexts.
 - Unparsable manifest lists as Incomplete (deletable) rather than breaking the page.
-- Phase-key union + untranslated progress-modal copy; one shared poll-timing set; tar pack/unpack in one file; includeStorage default constants; the ERP reading markers itself; the "unknown vs zero" excluded-rows display for pre-field backups.
+- The ERP reading markers itself (it reads through the user's RLS client; the jobs write through the service role).
 - Auth (ask first): staff pass the ERP gate via isInternalEmail, the jobs' entitlement exempts only local dev.
+
+## Deferred items, fixed (2026-11-10)
+- `JobPhase` union from the engine; the progress modal's phases, titles and messages go through Lingui.
+- `JOB_POLL` (ui/Backups/format.ts) holds every poll interval and watchdog; the modal's watchdogs count elapsed time, not poll ticks.
+- `packBackupArchive` sits beside `unpackBackupArchive` in settings.service.ts; both use the engine's layout helpers.
+- `DEFAULT_INCLUDE_STORAGE` (settings.models.ts): export "none", restore "all".
+- A backup with no per-table excluded count shows "Some rows excluded" instead of nothing.

@@ -5335,6 +5335,9 @@ msgstr "Backup non riuscito"
 msgid "Backup for {0}"
 msgstr "Backup per {0}"
 
+msgid "Backup ready"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Backup caricato"
 
@@ -5982,6 +5985,9 @@ msgstr "Importazione in blocco"
 
 msgid "Bulk Jobs"
 msgstr "Ordini di produzione in blocco"
+
+msgid "Bundling files"
+msgstr ""
 
 msgid "Burden"
 msgstr "Onere"
@@ -6981,6 +6987,12 @@ msgstr "Conto di compensazione per ricevimento merce / abbinamento ricevimento f
 msgid "Clearing demo data"
 msgstr "Cancellazione dei dati demo"
 
+msgid "Clearing existing data"
+msgstr ""
+
+msgid "Clearing restored data"
+msgstr ""
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Fai clic su un giorno per aggiungere tempo a {selectedLabel}. Trascina il bordo inferiore di una barra per cambiare le sue ore."
 
@@ -7140,6 +7152,9 @@ msgstr "Comprimi preparazione"
 
 msgid "Collapse subtree"
 msgstr "Comprimi sottostruttura"
+
+msgid "Collecting records"
+msgstr ""
 
 msgid "Color"
 msgstr "Colore"
@@ -8482,6 +8497,9 @@ msgstr "Impossibile completare la connessione Onshape Government"
 msgid "Couldn't confirm the account"
 msgstr "Non è stato possibile confermare l'account"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Impossibile caricare i documenti"
 
@@ -8900,6 +8918,9 @@ msgstr "Crea una bozza di nota di credito fornitore per le quantità spedite che
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Crea i 12 periodi mensili per un esercizio fiscale. I periodi già esistenti vengono mantenuti."
+
+msgid "Creating backup…"
+msgstr ""
 
 msgid "Creating part..."
 msgstr "Creazione parte in corso..."
@@ -16899,6 +16920,10 @@ msgstr "Carica transazioni aperte (ordini, ordini di acquisto, inventario, saldi
 msgid "Load Templates"
 msgstr "Carica Modelli"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr ""
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Caricato per ultimo, proprio al momento del cutover, quindi i saldi sono attuali."
 
@@ -16907,6 +16932,9 @@ msgstr "Caricamento risorse..."
 
 msgid "Loading associated jobs..."
 msgstr "Caricamento degli ordini di produzione associati..."
+
+msgid "Loading backup"
+msgstr ""
 
 msgid "Loading creditable lines..."
 msgstr "Caricamento linee credibili in corso..."
@@ -25013,6 +25041,12 @@ msgstr "Ripristinabile con modifiche"
 msgid "Restore"
 msgstr "Ripristina"
 
+msgid "Restore complete"
+msgstr ""
+
+msgid "Restore failed"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Ripristina dal Cestino"
 
@@ -25028,8 +25062,14 @@ msgstr "Ripristina…"
 msgid "Restoring files"
 msgstr "Ripristino dei file"
 
+msgid "Restoring your snapshot"
+msgstr ""
+
 msgid "restoring…"
 msgstr "ripristino in corso…"
+
+msgid "Restoring…"
+msgstr ""
 
 msgid "Restrict charging to members"
 msgstr "Limita l'addebito ai membri"
@@ -25325,6 +25365,12 @@ msgstr "Annulla cancellazione"
 msgid "Revert cancellation of {readableId}"
 msgstr "Annulla cancellazione di {readableId}"
 
+msgid "Revert failed"
+msgstr ""
+
+msgid "Reverted"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Ripristino in corso"
 
@@ -25333,6 +25379,9 @@ msgstr "L'annullamento ripristina la data di fine, il rinnovo e le date di fine 
 
 msgid "reverting…"
 msgstr "annullamento in corso…"
+
+msgid "Reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Revisione"
@@ -27783,6 +27832,9 @@ msgstr "La corsa più piccola che vale la pena raggruppare in lotti. Lasciare vu
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test dei flussi giornalieri principali da inizio a fine"
 
+msgid "Snapshotting current data"
+msgstr ""
+
 msgid "so you can assign it here."
 msgstr "così puoi assegnarlo qui."
 
@@ -27821,6 +27873,9 @@ msgstr "Parte del lavoro di questo processo non può essere programmata"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Alcuni record non torneranno. Digita <0>{CONFIRM_WORD}</0> per continuare."
+
+msgid "Some rows excluded"
+msgstr ""
 
 msgid "Some Shifts"
 msgstr "Alcuni turni"
@@ -28214,6 +28269,9 @@ msgstr "Ancora dovuto"
 
 msgid "Still Owed"
 msgstr "Ancora dovuto"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr ""
 
 msgid "Stock"
 msgstr "Giacenza"
@@ -34469,6 +34527,9 @@ msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbrare fine?"
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Il tuo account rimane al sicuro anche se il tuo accesso viene rubato"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr ""
+
 msgid "Your backups"
 msgstr "I tuoi backup"
 
@@ -34549,6 +34610,9 @@ msgstr "I tuoi numeri di parte"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "I tuoi numeri di parte e il master articoli dietro di essi"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr ""
 
 msgid "Your profile could not be loaded."
 msgstr "Non è stato possibile caricare il tuo profilo."

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Readable } from "node:stream";
-import { createGunzip } from "node:zlib";
+import { createGunzip, createGzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
@@ -222,7 +222,9 @@ import { flags } from "@carbon/env/flags.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
 import { type Events, trigger } from "@carbon/jobs";
 import {
+  backupAssetsDir,
   backupDir,
+  backupManifestPath,
   compatibilityStatus,
   deleteCompanyFiles,
   EXPORT_INTEGRATION,
@@ -230,6 +232,7 @@ import {
   getCompanyTableCatalog,
   isSnapshotName,
   listBackups,
+  listCompanyFiles,
   newBackupName,
   purgeScopeViolations,
   RESTORE_INTEGRATION,
@@ -256,7 +259,7 @@ import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { data } from "react-router";
-import { extract as tarExtract } from "tar-stream";
+import { extract as tarExtract, pack as tarPack } from "tar-stream";
 import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
@@ -339,7 +342,11 @@ import type {
   sequenceValidator,
   subsidiaryValidator
 } from "./settings.models";
-import { companyValidator, type customFieldValidator } from "./settings.models";
+import {
+  companyValidator,
+  type customFieldValidator,
+  DEFAULT_INCLUDE_STORAGE
+} from "./settings.models";
 import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
 
 const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
@@ -1566,6 +1573,103 @@ export function isUserBackupName(name: string): boolean {
   return name.length > 0 && !name.includes("/") && !isSnapshotName(name);
 }
 
+/** How many objects to download at once while packing the tar in order.
+ *  Bounds memory to about this many buffered files, not the whole backup. */
+const ARCHIVE_DOWNLOAD_CONCURRENCY = 6;
+
+/**
+ * Stream a self-contained `.carbon.tar.gz` of a backup folder (manifest, table
+ * files, assets) so a cross-environment import carries everything; null when the
+ * folder is empty. Objects are prefetched in a bounded window but packed in
+ * order. The outer gzip is level 1 — the entries are already compressed — but
+ * stays a valid gzip tar for `unpackBackupArchive`.
+ */
+export async function packBackupArchive(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string
+): Promise<ReadableStream<Uint8Array> | null> {
+  const dir = backupDir(name);
+  const bucket = getCompanyPrivateBucket(companyId);
+
+  // A listing cut short would ship an archive that looks complete without the
+  // files it left out; `listCompanyFiles` pages and throws on errors.
+  const relPaths = (await listCompanyFiles(client, companyId, dir)).map((f) =>
+    f.path.slice(dir.length + 1)
+  );
+  if (relPaths.length === 0) return null;
+
+  const archive = tarPack();
+  const addEntry = (entryName: string, body: Buffer) =>
+    new Promise<void>((resolve, reject) => {
+      archive.entry({ name: entryName }, body, (err) =>
+        err ? reject(err) : resolve()
+      );
+    });
+
+  // A file that can't be read fails the download: skipped, the archive
+  // would still carry its manifest and import as if complete.
+  const downloadAt = (i: number): Promise<Buffer> => {
+    const download = client.storage
+      .from(bucket)
+      .download(`${dir}/${relPaths[i]}`)
+      .then((f) => {
+        if (f.error || !f.data) {
+          throw new Error(
+            `Failed to read ${relPaths[i]}: ${f.error?.message ?? "no data"}`
+          );
+        }
+        return f.data.arrayBuffer().then((b) => Buffer.from(b));
+      });
+    // Prefetched before it is awaited: mark it handled so an early failure
+    // isn't an unhandled rejection (fatal in Node). The await still throws.
+    download.catch(() => undefined);
+    return download;
+  };
+
+  (async () => {
+    try {
+      // Sliding window: keep up to ARCHIVE_DOWNLOAD_CONCURRENCY downloads in flight, but
+      // write entries to the tar strictly in index order.
+      const inflight = new Map<number, Promise<Buffer>>();
+      const prime = Math.min(ARCHIVE_DOWNLOAD_CONCURRENCY, relPaths.length);
+      for (let i = 0; i < prime; i++) inflight.set(i, downloadAt(i));
+
+      for (let i = 0; i < relPaths.length; i++) {
+        const buf = await inflight.get(i)!;
+        inflight.delete(i);
+        const next = i + ARCHIVE_DOWNLOAD_CONCURRENCY;
+        if (next < relPaths.length) inflight.set(next, downloadAt(next));
+        await addEntry(relPaths[i], buf);
+      }
+      archive.finalize();
+    } catch (err) {
+      archive.destroy(err as Error);
+    }
+  })();
+
+  // tar -> gzip -> web stream. (Readable.toWeb yields a byte stream undici rejects
+  // with "highWaterMark is required", so drain the gzip output by hand.)
+  const gzip = createGzip({ level: 1 });
+  archive.on("error", (err) => gzip.destroy(err));
+  archive.pipe(gzip);
+  const stream = new ReadableStream({
+    start(controller) {
+      gzip.on("data", (chunk: Buffer) =>
+        controller.enqueue(new Uint8Array(chunk))
+      );
+      gzip.on("end", () => controller.close());
+      gzip.on("error", (err) => controller.error(err));
+    },
+    cancel() {
+      gzip.destroy();
+      archive.destroy();
+    }
+  });
+
+  return stream;
+}
+
 /**
  * Unpack a `.carbon.tar.gz` (a whole backup folder) into a fresh backup folder
  * so restore/import can read it. Streams entry-by-entry — every file is small
@@ -1608,13 +1712,15 @@ export async function unpackBackupArchive(
             next();
             return;
           }
+          const objectPath = `${dir}/${rel}`;
           const up = await client.storage
             .from(getCompanyPrivateBucket(companyId))
-            .upload(`${dir}/${rel}`, Buffer.concat(chunks), { upsert: true });
+            .upload(objectPath, Buffer.concat(chunks), { upsert: true });
           if (up.error) {
-            if (rel.startsWith("assets/")) assetErrors++;
-            else criticalErrors++;
-          } else if (rel === "manifest.json") {
+            if (objectPath.startsWith(`${backupAssetsDir(name)}/`)) {
+              assetErrors++;
+            } else criticalErrors++;
+          } else if (objectPath === backupManifestPath(name)) {
             // Only mark the manifest seen once it's actually landed — an
             // interrupted/failed upload must not pass the completeness check
             // below and yield a phantom folder a restore would fire against.
@@ -1702,7 +1808,7 @@ export async function getCompanyBackups(
           ? { status: compatibilityStatus(report), findings: report.findings }
           : null,
         excludedRows: m.excludedRows ?? [],
-        excludedRowsByTable: m.excludedRowsByTable ?? []
+        excludedRowsByTable: m.excludedRowsByTable ?? null
       };
     })
     .sort((a, b) => (b.exportedAt ?? "").localeCompare(a.exportedAt ?? ""));
@@ -1864,7 +1970,7 @@ export async function exportCompanyBackup(args: {
     companyId: args.companyId,
     userId: args.userId,
     label: args.label?.slice(0, 80),
-    includeStorage: args.includeStorage ?? "none",
+    includeStorage: args.includeStorage ?? DEFAULT_INCLUDE_STORAGE.export,
     skipCorrupted: args.skipCorrupted === true
   });
 }

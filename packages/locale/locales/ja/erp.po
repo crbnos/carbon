@@ -5335,6 +5335,9 @@ msgstr "バックアップに失敗しました"
 msgid "Backup for {0}"
 msgstr "{0} のバックアップ"
 
+msgid "Backup ready"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "バックアップをアップロードしました"
 
@@ -5982,6 +5985,9 @@ msgstr "一括インポート"
 
 msgid "Bulk Jobs"
 msgstr "一括製造指図"
+
+msgid "Bundling files"
+msgstr ""
 
 msgid "Burden"
 msgstr "負担"
@@ -6981,6 +6987,12 @@ msgstr "商品受領/請求書受領照合用相殺勘定"
 msgid "Clearing demo data"
 msgstr "デモデータをクリア中"
 
+msgid "Clearing existing data"
+msgstr ""
+
+msgid "Clearing restored data"
+msgstr ""
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "{selectedLabel} に時間を追加するには、日をクリックしてください。時間を変更するには、バーの下端をドラッグしてください。"
 
@@ -7140,6 +7152,9 @@ msgstr "段取りを折りたたむ"
 
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
+
+msgid "Collecting records"
+msgstr ""
 
 msgid "Color"
 msgstr "色"
@@ -8482,6 +8497,9 @@ msgstr "Onshape Government接続を完了できませんでした"
 msgid "Couldn't confirm the account"
 msgstr "アカウントを確認できませんでした"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -8900,6 +8918,9 @@ msgstr "まだクレジットされていない出荷数量に対して、仕入
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "会計年度の12ヶ月間の期間を作成します。既に存在する期間は保持されます。"
+
+msgid "Creating backup…"
+msgstr ""
 
 msgid "Creating part..."
 msgstr "パーツを作成中..."
@@ -16899,6 +16920,10 @@ msgstr "未決済トランザクションを読み込む(注文、発注書、�
 msgid "Load Templates"
 msgstr "テンプレートを読み込む"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr ""
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "最後に読み込まれ、カットオーバー時に残高が最新の状態になります。"
 
@@ -16907,6 +16932,9 @@ msgstr "資産を読み込み中..."
 
 msgid "Loading associated jobs..."
 msgstr "関連する製造指図を読み込み中..."
+
+msgid "Loading backup"
+msgstr ""
 
 msgid "Loading creditable lines..."
 msgstr "クレジット対象行を読み込み中..."
@@ -25013,6 +25041,12 @@ msgstr "変更ありで復元可能"
 msgid "Restore"
 msgstr "復元"
 
+msgid "Restore complete"
+msgstr ""
+
+msgid "Restore failed"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
 
@@ -25028,8 +25062,14 @@ msgstr "復元…"
 msgid "Restoring files"
 msgstr "ファイルを復元中"
 
+msgid "Restoring your snapshot"
+msgstr ""
+
 msgid "restoring…"
 msgstr "復元中…"
+
+msgid "Restoring…"
+msgstr ""
 
 msgid "Restrict charging to members"
 msgstr "請求を会員に制限する"
@@ -25325,6 +25365,12 @@ msgstr "キャンセルを取り消す"
 msgid "Revert cancellation of {readableId}"
 msgstr "{readableId} のキャンセルを取り消す"
 
+msgid "Revert failed"
+msgstr ""
+
+msgid "Reverted"
+msgstr ""
+
 msgid "Reverting"
 msgstr "リバート中"
 
@@ -25333,6 +25379,9 @@ msgstr "取り消すと、キャンセルによって変更された終了日、
 
 msgid "reverting…"
 msgstr "戻す中…"
+
+msgid "Reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "レビュー"
@@ -27783,6 +27832,9 @@ msgstr "バッチ処理に値する最小ラン。設定しない場合は空白
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コアの毎日のワークフローをエンドツーエンドでスモークテストします"
 
+msgid "Snapshotting current data"
+msgstr ""
+
 msgid "so you can assign it here."
 msgstr "ここで割り当てることができます。"
 
@@ -27821,6 +27873,9 @@ msgstr "このプロセスの一部の仕事はスケジュールできません
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "いくつかのレコードは戻りません。続行するには<0>{CONFIRM_WORD}</0>と入力してください。"
+
+msgid "Some rows excluded"
+msgstr ""
 
 msgid "Some Shifts"
 msgstr "一部のシフト"
@@ -28214,6 +28269,9 @@ msgstr "未払い"
 
 msgid "Still Owed"
 msgstr "未払い"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr ""
 
 msgid "Stock"
 msgstr "在庫"
@@ -34469,6 +34527,9 @@ msgstr "{hoursElapsed}時間作業しています。作業終了を忘れまし�
 msgid "Your account stays safe even if your login is stolen"
 msgstr "ログインが盗まれてもアカウントは安全です"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr ""
+
 msgid "Your backups"
 msgstr "バックアップ"
 
@@ -34549,6 +34610,9 @@ msgstr "あなたの部品番号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "あなたの部品番号とそれらの背後にあるアイテムマスター"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr ""
 
 msgid "Your profile could not be loaded."
 msgstr "プロファイルを読み込めませんでした。"

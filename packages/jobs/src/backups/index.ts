@@ -12,7 +12,9 @@ export {
 } from "./compatibility";
 export { rebuildDerivedGroups } from "./derived-groups";
 export {
+  backupAssetsDir,
   backupDir,
+  backupManifestPath,
   isSnapshotName,
   type Manifest,
   newBackupName
@@ -20,6 +22,7 @@ export {
 export {
   EXPORT_INTEGRATION,
   type ExportRunMeta,
+  type JobPhase,
   type JobProgress,
   RESTORE_INTEGRATION,
   type RestoreRunMeta,

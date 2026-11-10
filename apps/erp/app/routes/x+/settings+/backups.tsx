@@ -46,6 +46,7 @@ import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
 import { SettingsPageHeading } from "~/components/SettingsPage";
+import { DEFAULT_INCLUDE_STORAGE } from "~/modules/settings/settings.models";
 import {
   deleteCompanyBackup,
   dismissCompanyExportFailure,
@@ -73,6 +74,7 @@ import {
   backupStatusVariant,
   formatBackupDate,
   formatBackupName,
+  JOB_POLL,
   totalScopeRows
 } from "~/modules/settings/ui/Backups/format";
 import { PurgeCorruptedRowsModal } from "~/modules/settings/ui/Backups/PurgeCorruptedRowsModal";
@@ -106,7 +108,10 @@ function useExportChoices(): { label: string; includeStorage: "none" | "all" } {
     "includeStorage",
     EXPORT_FORM_ID
   );
-  return { label: label ?? "", includeStorage: includeStorage ?? "none" };
+  return {
+    label: label ?? "",
+    includeStorage: includeStorage ?? DEFAULT_INCLUDE_STORAGE.export
+  };
 }
 
 // The skip retry posts the Create form's CURRENT values (label + include) so the
@@ -292,7 +297,9 @@ export async function action({ request }: ActionFunctionArgs) {
           userId,
           label: validation.data.label || run.label || undefined,
           includeStorage:
-            validation.data.includeStorage ?? run.includeStorage ?? "none",
+            validation.data.includeStorage ??
+            run.includeStorage ??
+            DEFAULT_INCLUDE_STORAGE.export,
           skipCorrupted: true
         });
       } catch (err) {
@@ -329,7 +336,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         retry = {
           filePath: run.filePath,
-          includeStorage: run.includeStorage ?? "all"
+          includeStorage: run.includeStorage ?? DEFAULT_INCLUDE_STORAGE.restore
         };
       } catch (err) {
         return failure(err, "Failed to read the restore");
@@ -480,7 +487,7 @@ export default function BackupsRoute() {
   const revalidator = useRevalidator();
   useEffect(() => {
     if (!runningExport || active) return;
-    const id = setInterval(() => revalidator.revalidate(), 2500);
+    const id = setInterval(() => revalidator.revalidate(), JOB_POLL.listMs);
     return () => clearInterval(id);
   }, [runningExport, active, revalidator]);
 
@@ -516,8 +523,9 @@ export default function BackupsRoute() {
         ? `failed-${exportRun.startedAt}`
         : "new",
     label: (exportFailed ? exportRun?.label : null) ?? "",
-    includeStorage: ((exportFailed ? exportRun?.includeStorage : null) ??
-      "none") as "none" | "all"
+    includeStorage:
+      (exportFailed ? exportRun?.includeStorage : null) ??
+      DEFAULT_INCLUDE_STORAGE.export
   };
 
   const startRevert = (runId: string) => {
@@ -874,7 +882,13 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
     );
   });
   const name = file.label || formatBackupName(file.name);
-  const excluded = totalScopeRows(file.excludedRowsByTable);
+  // An older backup has the per-edge list but no row count: say rows were left
+  // out without a number, rather than hide it as zero.
+  const excluded = file.excludedRowsByTable
+    ? totalScopeRows(file.excludedRowsByTable)
+    : file.excludedRows.length > 0
+      ? null
+      : 0;
   // A half-written folder has no verdict — the incompleteness is the whole story.
   // A null verdict means the schema could not be read: show no badge rather than
   // a green one nothing actually checked.
@@ -905,14 +919,18 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
                   {convertKbToString(Math.round(file.sizeBytes / 1024))}
                 </>
               ) : null}
-              {excluded > 0 ? (
+              {excluded !== 0 ? (
                 <>
                   {" · "}
-                  <Plural
-                    value={excluded}
-                    one="# row excluded"
-                    other="# rows excluded"
-                  />{" "}
+                  {excluded === null ? (
+                    <Trans>Some rows excluded</Trans>
+                  ) : (
+                    <Plural
+                      value={excluded}
+                      one="# row excluded"
+                      other="# rows excluded"
+                    />
+                  )}{" "}
                   <ExcludedRowsInfo excludedRows={file.excludedRows} />
                 </>
               ) : null}

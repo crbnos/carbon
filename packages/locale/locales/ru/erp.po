@@ -5335,6 +5335,9 @@ msgstr "Ошибка резервной копии"
 msgid "Backup for {0}"
 msgstr "Резервная копия для {0}"
 
+msgid "Backup ready"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Резервная копия загружена"
 
@@ -5982,6 +5985,9 @@ msgstr "Массовый импорт"
 
 msgid "Bulk Jobs"
 msgstr "Массовые производственные заказы"
+
+msgid "Bundling files"
+msgstr ""
 
 msgid "Burden"
 msgstr "Обремение"
@@ -6981,6 +6987,12 @@ msgstr "Счет учета для согласования поступлени
 msgid "Clearing demo data"
 msgstr "Удаление демо-данных"
 
+msgid "Clearing existing data"
+msgstr ""
+
+msgid "Clearing restored data"
+msgstr ""
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Щелкните день, чтобы добавить время к {selectedLabel}. Перетащите нижний край полосы, чтобы изменить её часы."
 
@@ -7140,6 +7152,9 @@ msgstr "Свернуть настройку"
 
 msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
+
+msgid "Collecting records"
+msgstr ""
 
 msgid "Color"
 msgstr "Цвет"
@@ -8482,6 +8497,9 @@ msgstr "Не удалось завершить подключение Onshape Go
 msgid "Couldn't confirm the account"
 msgstr "Не удалось подтвердить аккаунт"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
@@ -8900,6 +8918,9 @@ msgstr "Создает черновик кредит-ноты поставщик
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Создает 12 ежемесячных периодов для финансового года. Уже существующие периоды сохраняются."
+
+msgid "Creating backup…"
+msgstr ""
 
 msgid "Creating part..."
 msgstr "Создание детали..."
@@ -16899,6 +16920,10 @@ msgstr "Загрузить открытые транзакции (заказы, 
 msgid "Load Templates"
 msgstr "Загрузить шаблоны"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr ""
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Загружается в последнюю очередь, прямо при переходе, поэтому остатки актуальны."
 
@@ -16907,6 +16932,9 @@ msgstr "Загрузка активов..."
 
 msgid "Loading associated jobs..."
 msgstr "Загрузка связанных производственных заказов..."
+
+msgid "Loading backup"
+msgstr ""
 
 msgid "Loading creditable lines..."
 msgstr "Загрузка строк, доступных для кредитования..."
@@ -25013,6 +25041,12 @@ msgstr "Восстановима с изменениями"
 msgid "Restore"
 msgstr "Восстановить"
 
+msgid "Restore complete"
+msgstr ""
+
+msgid "Restore failed"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
 
@@ -25028,8 +25062,14 @@ msgstr "Восстановить…"
 msgid "Restoring files"
 msgstr "Восстановление файлов"
 
+msgid "Restoring your snapshot"
+msgstr ""
+
 msgid "restoring…"
 msgstr "восстановление…"
+
+msgid "Restoring…"
+msgstr ""
 
 msgid "Restrict charging to members"
 msgstr "Ограничить начисление членам"
@@ -25325,6 +25365,12 @@ msgstr "Восстановить отмену"
 msgid "Revert cancellation of {readableId}"
 msgstr "Восстановить отмену {readableId}"
 
+msgid "Revert failed"
+msgstr ""
+
+msgid "Reverted"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Восстановление"
 
@@ -25333,6 +25379,9 @@ msgstr "Восстановление восстанавливает дату к�
 
 msgid "reverting…"
 msgstr "откат…"
+
+msgid "Reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Рассмотрение"
@@ -27783,6 +27832,9 @@ msgstr "Минимальный размер партии для комплект
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Дымовое тестирование основных ежедневных процессов от начала до конца"
 
+msgid "Snapshotting current data"
+msgstr ""
+
 msgid "so you can assign it here."
 msgstr "чтобы вы могли назначить его здесь."
 
@@ -27821,6 +27873,9 @@ msgstr "Часть работ этого процесса не может быт
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Некоторые записи не вернутся. Введите <0>{CONFIRM_WORD}</0> для продолжения."
+
+msgid "Some rows excluded"
+msgstr ""
 
 msgid "Some Shifts"
 msgstr "Некоторые смены"
@@ -28214,6 +28269,9 @@ msgstr "Все еще задолжено"
 
 msgid "Still Owed"
 msgstr "Все еще задолжено"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr ""
 
 msgid "Stock"
 msgstr "Запас"
@@ -34469,6 +34527,9 @@ msgstr "Вы в работе уже {hoursElapsed} часов. Вы забыли
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Ваша учетная запись остается в безопасности, даже если ваше имя входа украдено"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr ""
+
 msgid "Your backups"
 msgstr "Ваши резервные копии"
 
@@ -34549,6 +34610,9 @@ msgstr "Ваши номера деталей"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Ваши номера деталей и основной справочник товаров"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr ""
 
 msgid "Your profile could not be loaded."
 msgstr "Не удалось загрузить ваш профиль."

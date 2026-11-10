@@ -6,12 +6,13 @@ import { useControlField } from "@carbon/form";
 import { ChoiceSelect } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { LuDatabaseBackup, LuFiles } from "react-icons/lu";
+import { DEFAULT_INCLUDE_STORAGE } from "~/modules/settings/settings.models";
 
 // What to bundle in a backup. Compact trigger; the trade-off shows on open.
 export function IncludeStorageChoice() {
   const { t } = useLingui();
   const [value, setValue] = useControlField<"none" | "all">("includeStorage");
-  const current = value ?? "none";
+  const current = value ?? DEFAULT_INCLUDE_STORAGE.export;
   return (
     <>
       <ChoiceSelect<"none" | "all">
@@ -46,7 +47,7 @@ export function IncludeStorageChoice() {
 export function RestoreIncludeChoice() {
   const { t } = useLingui();
   const [value, setValue] = useControlField<"none" | "all">("includeStorage");
-  const current = value ?? "all";
+  const current = value ?? DEFAULT_INCLUDE_STORAGE.restore;
   return (
     <>
       <ChoiceSelect<"none" | "all">

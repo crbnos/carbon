@@ -5335,6 +5335,9 @@ msgstr "Kopia bezpieczeństwa nie powiodła się"
 msgid "Backup for {0}"
 msgstr "Kopia zapasowa dla {0}"
 
+msgid "Backup ready"
+msgstr ""
+
 msgid "Backup uploaded"
 msgstr "Przesłano kopię zapasową"
 
@@ -5982,6 +5985,9 @@ msgstr "Import zbiorczy"
 
 msgid "Bulk Jobs"
 msgstr "Zbiorcze Zlecenia produkcyjne"
+
+msgid "Bundling files"
+msgstr ""
 
 msgid "Burden"
 msgstr "Obciążenie"
@@ -6981,6 +6987,12 @@ msgstr "Konto rozliczeniowe dla odboru towaru / dopasowania odboru faktury"
 msgid "Clearing demo data"
 msgstr "Czyszczenie danych demonstracyjnych"
 
+msgid "Clearing existing data"
+msgstr ""
+
+msgid "Clearing restored data"
+msgstr ""
+
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Kliknij dzień, aby dodać czas do {selectedLabel}. Przeciągnij dolną krawędź paska, aby zmienić godziny."
 
@@ -7140,6 +7152,9 @@ msgstr "Zwiń Setup"
 
 msgid "Collapse subtree"
 msgstr "Zwiń poddrzewo"
+
+msgid "Collecting records"
+msgstr ""
 
 msgid "Color"
 msgstr "Kolor"
@@ -8482,6 +8497,9 @@ msgstr "Nie udało się zakończyć połączenia Onshape Government"
 msgid "Couldn't confirm the account"
 msgstr "Nie można potwierdzić konta"
 
+msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Nie udało się załadować dokumentów"
 
@@ -8900,6 +8918,9 @@ msgstr "Tworzy Wersję roboczą Faktury korygującej dostawcy dla wysłanych ilo
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Tworzy 12 okresów miesięcznych dla Roku obrotowego. Okresy, które już istnieją, są zachowywane."
+
+msgid "Creating backup…"
+msgstr ""
 
 msgid "Creating part..."
 msgstr "Tworzenie części..."
@@ -16899,6 +16920,10 @@ msgstr "Załaduj otwarte transakcje (zamówienia, PZ, zapasy, salda)"
 msgid "Load Templates"
 msgstr "Załaduj szablony"
 
+#. placeholder {0}: rows.toLocaleString()
+msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
+msgstr ""
+
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Załadowane ostatnie, tuż przy przejściu, aby salda były aktualne."
 
@@ -16907,6 +16932,9 @@ msgstr "Ładowanie zasobów..."
 
 msgid "Loading associated jobs..."
 msgstr "Ładowanie powiązanych zleceń produkcyjnych..."
+
+msgid "Loading backup"
+msgstr ""
 
 msgid "Loading creditable lines..."
 msgstr "Ładowanie linii podlegających kredytowaniu..."
@@ -25013,6 +25041,12 @@ msgstr "Do przywrócenia ze zmianami"
 msgid "Restore"
 msgstr "Przywróć"
 
+msgid "Restore complete"
+msgstr ""
+
+msgid "Restore failed"
+msgstr ""
+
 msgid "Restore from Trash"
 msgstr "Przywróć z Kosza"
 
@@ -25028,8 +25062,14 @@ msgstr "Przywróć…"
 msgid "Restoring files"
 msgstr "Przywracanie plików"
 
+msgid "Restoring your snapshot"
+msgstr ""
+
 msgid "restoring…"
 msgstr "przywracanie…"
+
+msgid "Restoring…"
+msgstr ""
 
 msgid "Restrict charging to members"
 msgstr "Ogranicz obciążanie do członków"
@@ -25325,6 +25365,12 @@ msgstr "Cofnij anulowanie"
 msgid "Revert cancellation of {readableId}"
 msgstr "Cofnij anulowanie {readableId}"
 
+msgid "Revert failed"
+msgstr ""
+
+msgid "Reverted"
+msgstr ""
+
 msgid "Reverting"
 msgstr "Przywracanie"
 
@@ -25333,6 +25379,9 @@ msgstr "Przywrócenie przywraca datę końca, odnowienie i daty końca pozycji, 
 
 msgid "reverting…"
 msgstr "cofanie…"
+
+msgid "Reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Przegląd"
@@ -27783,6 +27832,9 @@ msgstr "Najmniejszy cykl do tworzenia partii. Zostaw puste, aby go pominąć."
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test podstawowych codziennych przepływów od końca do końca"
 
+msgid "Snapshotting current data"
+msgstr ""
+
 msgid "so you can assign it here."
 msgstr "abyś mógł go tutaj przypisać."
 
@@ -27821,6 +27873,9 @@ msgstr "Niektóre prace tego procesu nie mogą być zaplanowane"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Niektóre rekordy nie wrócą. Wpisz <0>{CONFIRM_WORD}</0> aby kontynuować."
+
+msgid "Some rows excluded"
+msgstr ""
 
 msgid "Some Shifts"
 msgstr "Niektóre zmiany"
@@ -28214,6 +28269,9 @@ msgstr "Wciąż należne"
 
 msgid "Still Owed"
 msgstr "Wciąż Należne"
+
+msgid "Still working — this is a large dataset. You can close this and check back in a bit."
+msgstr ""
 
 msgid "Stock"
 msgstr "Zapas"
@@ -34469,6 +34527,9 @@ msgstr "Pracujesz już {hoursElapsed} godzin. Czy zapomniałeś o zakończeniu p
 msgid "Your account stays safe even if your login is stolen"
 msgstr "Twoje konto pozostaje bezpieczne, nawet jeśli twoje logowanie zostanie skradzione"
 
+msgid "Your backup is ready — it's in the list below."
+msgstr ""
+
 msgid "Your backups"
 msgstr "Twoje kopie zapasowe"
 
@@ -34549,6 +34610,9 @@ msgstr "Twoje numery części"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Twoje numery części i główny katalog pozycji za nimi"
+
+msgid "Your previous data is back, exactly as it was before the restore."
+msgstr ""
 
 msgid "Your profile could not be loaded."
 msgstr "Nie udało się załadować profilu."
