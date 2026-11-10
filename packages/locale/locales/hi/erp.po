@@ -1969,7 +1969,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "एक गैर-अनुरूपता कार्य जो समस्या को अन्य स्थानों पर फिर से होने से रोकता है — सुधारात्मक सुधार और नियंत्रण से अलग।"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "किसी आंकड़े के बगल में आया अंक या चिह्न उसका अर्थ बदल देता है। दोनों के बीच एक शब्द डालें।"
 
 msgid "A part"
 msgstr "एक पार्ट"
@@ -2239,7 +2239,7 @@ msgid "A sales order line contains order details for a particular item"
 msgstr "एक विक्रय आदेश पंक्ति एक विशेष आइटम के लिए आदेश विवरण शामिल करती है"
 
 msgid "A sales order line keeps a date it cannot meet"
-msgstr ""
+msgstr "विक्रय आदेश पंक्ति में ऐसी तिथि है जो पूरी नहीं हो सकती"
 
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "एक बिक्रय आदेश सीधे एक अलग ग्राहक और स्थान पर भेजा गया है, जो आदेश देने वाले ग्राहक के हेडर पते से अलग है; शिपमेंट का गंतव्य हेडर को ओवरराइड करता है।"
@@ -6355,7 +6355,7 @@ msgid "Capacity"
 msgstr "क्षमता"
 
 msgid "Capacity — free stock, then the shop's schedule"
-msgstr ""
+msgstr "क्षमता — उपलब्ध स्टॉक, फिर शॉप का शेड्यूल"
 
 msgid "Capacity reservation"
 msgstr "क्षमता आरक्षण"
@@ -6779,7 +6779,7 @@ msgid "Chat"
 msgstr "चैट"
 
 msgid "Check"
-msgstr ""
+msgstr "जाँच"
 
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
@@ -6803,7 +6803,7 @@ msgid "Checking the batch's jobs..."
 msgstr "बैच की जॉब्स को जाँच रहे हैं..."
 
 msgid "Checking the delivery date…"
-msgstr ""
+msgstr "डिलीवरी तिथि की जाँच हो रही है…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe ग्राहक लिंक की जांच जारी है…"
@@ -9500,16 +9500,16 @@ msgid "Date Issued"
 msgstr "जारी करने की तारीख"
 
 msgid "Date kept"
-msgstr ""
+msgstr "तिथि रखी गई"
 
 msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr ""
+msgstr "तिथि रखी गई। सबसे जल्दी की डिलीवरी तिथि: {earliest}।"
 
 msgid "Date not confirmed"
-msgstr ""
+msgstr "तिथि की पुष्टि नहीं हुई"
 
 msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr ""
+msgstr "तिथि की पुष्टि नहीं हुई। सबसे जल्दी की डिलीवरी तिथि: {earliest}।"
 
 msgid "Date paid"
 msgstr "भुगतान की तारीख"
@@ -10363,10 +10363,10 @@ msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
 
 msgid "Delivery Date Check"
-msgstr ""
+msgstr "डिलीवरी तिथि जाँच"
 
 msgid "Delivery date check updated"
-msgstr ""
+msgstr "डिलीवरी तिथि जाँच अपडेट की गई"
 
 msgid "Delivery Location"
 msgstr "डिलीवरी स्थान"
@@ -16202,7 +16202,7 @@ msgid "Keep matching items"
 msgstr "मेल खाने वाले आइटम रखें"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "मेरी तिथि रखें"
 
 msgid "Keep navigation open"
 msgstr "नेविगेशन खुला रखें"
@@ -16479,7 +16479,7 @@ msgid "Lead Time"
 msgstr "लीड टाइम"
 
 msgid "Lead Time — the lead time through the BOM"
-msgstr ""
+msgstr "लीड टाइम — BOM के ज़रिए लीड टाइम"
 
 msgid "Lead time (days)"
 msgstr "लीड टाइम (दिन)"
@@ -16606,7 +16606,7 @@ msgid "Leave empty to use the account default"
 msgstr "खाता डिफ़ॉल्ट का उपयोग करने के लिए खाली छोड़ें"
 
 msgid "Leave empty to use the level in Settings → Sales."
-msgstr ""
+msgstr "खाली छोड़ें तो सेटिंग्स → बिक्री में दिया स्तर उपयोग होगा।"
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "MRP द्वारा योजनाबद्ध सब कुछ दिखाने के लिए खाली छोड़ें, या 0 दर्ज करें।"
@@ -16953,7 +16953,7 @@ msgid "Linked Record"
 msgstr "लिंक किया गया रिकॉर्ड"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "एक साझा अनुभाग से जुड़ा है। हर जगह अपडेट करने के लिए इसे लाइब्रेरी में संपादित करें।"
 
 msgid "Links"
 msgstr "लिंक"
@@ -20057,7 +20057,7 @@ msgid "No values available"
 msgstr "कोई मान उपलब्ध नहीं"
 
 msgid "No values found"
-msgstr ""
+msgstr "कोई मान नहीं मिला"
 
 msgid "No variable matches {query}"
 msgstr "कोई चर {query} से मेल नहीं खाता"
@@ -20172,7 +20172,7 @@ msgid "None"
 msgstr "कोई नहीं"
 
 msgid "None — no check"
-msgstr ""
+msgstr "कोई नहीं — कोई जाँच नहीं"
 
 msgid "None available"
 msgstr "कोई उपलब्ध नहीं"
@@ -20717,7 +20717,7 @@ msgid "Only {available} available"
 msgstr "केवल {available} उपलब्ध"
 
 msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "{promised} तक केवल {free} उपलब्ध हैं। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
 
 msgid "Only {quantity} in batches there"
 msgstr "वहाँ बैचों में केवल {quantity}"
@@ -21184,7 +21184,7 @@ msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
 
 msgid "Optional. Saving keeps the date and records who kept it."
-msgstr ""
+msgstr "वैकल्पिक। सहेजने पर तिथि बनी रहेगी और दर्ज होगा कि इसे किसने रखा।"
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "वैकल्पिक। इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
@@ -22357,7 +22357,7 @@ msgid "Playback"
 msgstr "प्लेबैक"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "कृपया <0>इसे बदलें</0>।"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "कृपया ऑडिट लॉगिंग सक्षम करने के लिए अपने प्रशासक से संपर्क करें।"
@@ -23886,7 +23886,7 @@ msgid "Reason for declining (Optional)"
 msgstr "अस्वीकार करने का कारण (वैकल्पिक)"
 
 msgid "Reason for keeping this date"
-msgstr ""
+msgstr "यह तिथि रखने का कारण"
 
 msgid "Reason for late entry"
 msgstr "देरी से प्रविष्टि का कारण"
@@ -24010,7 +24010,7 @@ msgid "Received By"
 msgstr "द्वारा प्राप्त"
 
 msgid "Received Date"
-msgstr ""
+msgstr "प्राप्ति तिथि"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "इस आपूर्तिकर्ता से प्राप्त लाइनें जिनमें रिटर्न करने के लिए मात्रा बाकी है"
@@ -24519,7 +24519,7 @@ msgid "Remove authenticator app"
 msgstr "प्रमाणकर्ता ऐप्लिकेशन निकालें"
 
 msgid "Remove block"
-msgstr ""
+msgstr "ब्लॉक निकालें"
 
 msgid "Remove clause"
 msgstr "खंड निकालें"
@@ -24911,7 +24911,7 @@ msgid "Request date"
 msgstr "अनुरोध तारीख"
 
 msgid "Requested"
-msgstr ""
+msgstr "अनुरोधित"
 
 msgid "Requested By"
 msgstr "द्वारा अनुरोधित"
@@ -27347,7 +27347,7 @@ msgid "Shared channel"
 msgstr "साझा चैनल"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "साझा अनुभाग (हटाया गया)"
 
 msgid "Shared Sections"
 msgstr "साझा अनुभाग"
@@ -27990,7 +27990,7 @@ msgid "Someone"
 msgstr "कोई"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "किसी और ने अभी यह टेम्पलेट सहेजा है। उनका संस्करण लोड करने के लिए रीफ़्रेश करें, या सहेजते समय इसे ओवरराइट करने के लिए संपादन जारी रखें।"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "जो कोई भी लेखांकन को अपडेट कर सकता है, उसे इसे पूंजीकृत करने से पहले इसे बनाने की लागत दर्ज करनी होगी।"
@@ -28380,7 +28380,7 @@ msgid "Stock"
 msgstr "स्टॉक"
 
 msgid "Stock — free stock, then the lead time"
-msgstr ""
+msgstr "स्टॉक — उपलब्ध स्टॉक, फिर लीड टाइम"
 
 msgid "Stock and planning"
 msgstr "स्टॉक और योजना"
@@ -29983,7 +29983,7 @@ msgid "The document could not be downloaded."
 msgstr "दस्तावेज़ डाउनलोड नहीं किया जा सका।"
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "दस्तावेज़ नहीं खोला जा सका।"
 
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
@@ -30253,7 +30253,7 @@ msgid "The latest date to place this PO so it arrives by the need-by date, given
 msgstr "इस PO को रखने की सबसे हाल की तिथि ताकि यह प्राप्ति की आवश्यकता तिथि तक पहुँचे, आपूर्तिकर्ता की लीड टाइम दी गई।"
 
 msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "लीड टाइम {days} दिन है। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -30556,7 +30556,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "कार्यों और अनुमोदन आवश्यकताओं का पूर्वनिर्धारित बंडल इस समस्या पर लागू होता है; जब सेट किया जाता है तो समस्या प्रकार के डिफ़ॉल्ट वर्कफ़्लो को ओवरराइड करता है।"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "पूर्वावलोकन नहीं बन सका। यह पिछला सफल पूर्वावलोकन दिखा रहा है।"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Time & Materials लाइन पर एक घंटे की मूल्य: कर्मचारी के लिए लाइन की दर, अन्यथा श्रम श्रेणी के लिए, अन्यथा श्रम श्रेणी की डिफ़ॉल्ट Bill Rate, दिन में प्रभाव में।"
@@ -30762,7 +30762,7 @@ msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
 msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "शॉप {promised} तक यह काम पूरा नहीं कर सकती। सबसे जल्दी की डिलीवरी तिथि {earliest} है।"
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य सामग्री जो आप हाथ में रखते हैं"
@@ -31229,7 +31229,7 @@ msgid "This customer's rate"
 msgstr "इस ग्राहक की दर"
 
 msgid "This date cannot be met"
-msgstr ""
+msgstr "यह तिथि पूरी नहीं हो सकती"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "इस विभाग के पास {locationName} पर कोई वर्क सेंटर नहीं है। किसी अन्य विभाग या स्थान को चुनें।"
@@ -31418,7 +31418,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "यह PIN फिर से नहीं दिखाया जाएगा। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "एक टेक्स्ट किसी आंकड़े को बदल रहा है, इसलिए यह पूर्वावलोकन रोका गया है।"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "यह मूल्य मैन्युअल रूप से दर्ज किया गया था, इसलिए कोई मूल्य नियम लागू नहीं किए गए।"
@@ -31484,7 +31484,7 @@ msgid "This serial"
 msgstr "यह सीरियल"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "यह साझा अनुभाग अब मौजूद नहीं है। ब्लॉक निकालें या अनुभाग दोबारा बनाएं।"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "यह स्टेशन कौशल-गेटेड कार्य चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मानिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आगे आकार देते हैं।"
@@ -33016,7 +33016,7 @@ msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
 
 msgid "Use {earliest}"
-msgstr ""
+msgstr "{earliest} का उपयोग करें"
 
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"
@@ -34009,16 +34009,16 @@ msgid "When serial numbers are assigned"
 msgstr "सीरियल नंबर असाइन होने पर"
 
 msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr ""
+msgstr "जब कोई विक्रय आदेश पंक्ति जोड़ता या बदलता है, तो जाँच करें कि वादा की गई तिथि पूरी हो सकती है या नहीं। यह जाँच तभी चलती है जब तिथि उस आइटम के BOM के ज़रिए लीड टाइम से कम समय में हो। यह चेतावनी देती है और सबसे जल्दी की तिथि दिखाती है; यह सहेजने को कभी नहीं रोकती। किसी आइटम का योजना टैब उसका अपना स्तर तय कर सकता है।"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "वह तिथि जब खरीदार ने माल माँगा था; आपूर्तिकर्ता प्राप्ति के लिए वादा की गई तिथि पर कुछ और वादा कर सकता है, और डिलीवरी तिथि पर कुछ और दर्ज कर सकता है।"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "वह तिथि जब खरीदार को इस पंक्ति का माल डॉक पर चाहिए। नई पंक्ति ऑर्डर की प्राप्ति अनुरोधित तिथि से शुरू होती है; योजना इस तिथि का उपयोग स्टॉक की उपलब्धता और बाहरी प्रसंस्करण के शेड्यूल के लिए करती है।"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "जब अनुबंध चलता है और जब वह पूर्ण होता है तो क्या होता है।"

@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "위치"
 
 msgid "Locations"
-msgstr ""
+msgstr "사업장"
 
 msgid "Log completed"
 msgstr "완료 기록"

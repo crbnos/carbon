@@ -1969,7 +1969,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Число или знак рядом с цифрой меняет её смысл. Поставьте между ними слово."
 
 msgid "A part"
 msgstr "Деталь"
@@ -2239,7 +2239,7 @@ msgid "A sales order line contains order details for a particular item"
 msgstr "Строка заказа покупателя содержит детали заказа для конкретной номенклатуры"
 
 msgid "A sales order line keeps a date it cannot meet"
-msgstr ""
+msgstr "Строка заказа покупателя сохраняет дату, которую невозможно выдержать"
 
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Заказ на продажу, отправленный напрямую другому клиенту и в другое место, чем адрес клиента в заголовке заказа; пункт назначения отправки переопределяет адрес в заголовке."
@@ -6355,7 +6355,7 @@ msgid "Capacity"
 msgstr "Емкость"
 
 msgid "Capacity — free stock, then the shop's schedule"
-msgstr ""
+msgstr "Мощность — свободный запас, затем график цеха"
 
 msgid "Capacity reservation"
 msgstr "Резервирование мощности"
@@ -6779,7 +6779,7 @@ msgid "Chat"
 msgstr "Чат"
 
 msgid "Check"
-msgstr ""
+msgstr "Проверка"
 
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
@@ -6803,7 +6803,7 @@ msgid "Checking the batch's jobs..."
 msgstr "Проверка производственных заказов серии..."
 
 msgid "Checking the delivery date…"
-msgstr ""
+msgstr "Проверяем дату поставки…"
 
 msgid "Checking the Stripe customer link…"
 msgstr "Проверка связи с клиентом Stripe…"
@@ -9500,16 +9500,16 @@ msgid "Date Issued"
 msgstr "Дата выпуска"
 
 msgid "Date kept"
-msgstr ""
+msgstr "Дата соблюдена"
 
 msgid "Date kept. Earliest delivery date: {earliest}."
-msgstr ""
+msgstr "Дата соблюдена. Ближайшая дата поставки: {earliest}."
 
 msgid "Date not confirmed"
-msgstr ""
+msgstr "Дата не подтверждена"
 
 msgid "Date not confirmed. Earliest delivery date: {earliest}."
-msgstr ""
+msgstr "Дата не подтверждена. Ближайшая дата поставки: {earliest}."
 
 msgid "Date paid"
 msgstr "Дата оплаты"
@@ -10363,10 +10363,10 @@ msgid "Delivery Date"
 msgstr "Дата поставки"
 
 msgid "Delivery Date Check"
-msgstr ""
+msgstr "Проверка даты поставки"
 
 msgid "Delivery date check updated"
-msgstr ""
+msgstr "Проверка даты поставки обновлена"
 
 msgid "Delivery Location"
 msgstr "Место доставки"
@@ -16202,7 +16202,7 @@ msgid "Keep matching items"
 msgstr "Сохранить соответствующие элементы"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Оставить мою дату"
 
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
@@ -16479,7 +16479,7 @@ msgid "Lead Time"
 msgstr "Срок поставки"
 
 msgid "Lead Time — the lead time through the BOM"
-msgstr ""
+msgstr "Срок поставки — суммарный срок по BOM"
 
 msgid "Lead time (days)"
 msgstr "Срок поставки (дни)"
@@ -16606,7 +16606,7 @@ msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
 
 msgid "Leave empty to use the level in Settings → Sales."
-msgstr ""
+msgstr "Оставьте поле пустым, чтобы использовать уровень из Настройки → Продажи."
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
@@ -16953,7 +16953,7 @@ msgid "Linked Record"
 msgstr "Связанная запись"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Связано с общим разделом. Измените его в библиотеке, чтобы обновить везде."
 
 msgid "Links"
 msgstr "Ссылки"
@@ -20057,7 +20057,7 @@ msgid "No values available"
 msgstr "Нет доступных значений"
 
 msgid "No values found"
-msgstr ""
+msgstr "Значения не найдены"
 
 msgid "No variable matches {query}"
 msgstr "Нет переменных соответствующих {query}"
@@ -20172,7 +20172,7 @@ msgid "None"
 msgstr "Нет"
 
 msgid "None — no check"
-msgstr ""
+msgstr "Нет — без проверки"
 
 msgid "None available"
 msgstr "Нет доступных"
@@ -20717,7 +20717,7 @@ msgid "Only {available} available"
 msgstr "Доступно только {available}"
 
 msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "К {promised} свободно только {free}. Ближайшая дата поставки: {earliest}."
 
 msgid "Only {quantity} in batches there"
 msgstr "Там только {quantity} в сериях"
@@ -21184,7 +21184,7 @@ msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
 
 msgid "Optional. Saving keeps the date and records who kept it."
-msgstr ""
+msgstr "Необязательно. Сохранение оставит дату и запишет, кто её оставил."
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Опционально. Останавливает новые предложения по закупкам после этой даты."
@@ -22357,7 +22357,7 @@ msgid "Playback"
 msgstr "Воспроизведение"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Пожалуйста, <0>измените её</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Пожалуйста, обратитесь к администратору для включения логирования аудита."
@@ -23886,7 +23886,7 @@ msgid "Reason for declining (Optional)"
 msgstr "Причина отказа (Необязательно)"
 
 msgid "Reason for keeping this date"
-msgstr ""
+msgstr "Причина сохранения этой даты"
 
 msgid "Reason for late entry"
 msgstr "Причина позднего ввода"
@@ -24010,7 +24010,7 @@ msgid "Received By"
 msgstr "Получено от"
 
 msgid "Received Date"
-msgstr ""
+msgstr "Дата поступления"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
@@ -24519,7 +24519,7 @@ msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Убрать блок"
 
 msgid "Remove clause"
 msgstr "Убрать условие"
@@ -24911,7 +24911,7 @@ msgid "Request date"
 msgstr "Дата запроса"
 
 msgid "Requested"
-msgstr ""
+msgstr "Запрошено"
 
 msgid "Requested By"
 msgstr "Запрошено"
@@ -27347,7 +27347,7 @@ msgid "Shared channel"
 msgstr "Общий канал"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Общий раздел (удалён)"
 
 msgid "Shared Sections"
 msgstr "Общие разделы"
@@ -27990,7 +27990,7 @@ msgid "Someone"
 msgstr "Кто-то"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Кто-то другой только что сохранил этот шаблон. Обновите страницу, чтобы загрузить его версию, или продолжайте редактировать, чтобы перезаписать его при сохранении."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
@@ -28380,7 +28380,7 @@ msgid "Stock"
 msgstr "Запас"
 
 msgid "Stock — free stock, then the lead time"
-msgstr ""
+msgstr "Запас — свободный запас, затем срок поставки"
 
 msgid "Stock and planning"
 msgstr "Запас и планирование"
@@ -29983,7 +29983,7 @@ msgid "The document could not be downloaded."
 msgstr "Не удалось скачать документ."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Не удалось открыть документ."
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -30253,7 +30253,7 @@ msgid "The latest date to place this PO so it arrives by the need-by date, given
 msgstr "Самая поздняя дата размещения этого заказа поставщику, чтобы он прибыл к нужной дате, с учетом срока поставки поставщика."
 
 msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "Срок поставки составляет {days} дн. Ближайшая дата поставки: {earliest}."
 
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
@@ -30556,7 +30556,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Не удалось отрисовать предпросмотр. Показан последний удачный."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Цена часа на строке Time & Materials: ставка строки для сотрудника, иначе для категории труда, иначе стандартная ставка выставления счета категории труда, действующая на день."
@@ -30762,7 +30762,7 @@ msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и ячейки, где физически располагается запас."
 
 msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
-msgstr ""
+msgstr "Цех не может выполнить это к {promised}. Ближайшая дата поставки: {earliest}."
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
@@ -31229,7 +31229,7 @@ msgid "This customer's rate"
 msgstr "Ставка этого покупателя"
 
 msgid "This date cannot be met"
-msgstr ""
+msgstr "Эта дата не может быть выдержана"
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Этот отдел не имеет рабочих центров на {locationName}. Выберите другой отдел или площадку."
@@ -31418,7 +31418,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Предпросмотр приостановлен, потому что текст меняет число."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
@@ -31484,7 +31484,7 @@ msgid "This serial"
 msgstr "Этот серийный номер"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Этот общий раздел больше не существует. Уберите блок или создайте раздел заново."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."
@@ -33016,7 +33016,7 @@ msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
 
 msgid "Use {earliest}"
-msgstr ""
+msgstr "Использовать {earliest}"
 
 msgid "Use a different account"
 msgstr "Использовать другую учетную запись"
@@ -34009,16 +34009,16 @@ msgid "When serial numbers are assigned"
 msgstr "Когда назначаются серийные номера"
 
 msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
-msgstr ""
+msgstr "Когда кто-то добавляет или меняет строку заказа покупателя, проверяется, можно ли выдержать подтвержденную дату. Проверка выполняется, только если дата ближе, чем срок поставки номенклатуры по BOM. Она предупреждает и показывает ближайшую дату; сохранение она никогда не останавливает. На вкладке «Планирование» номенклатуры можно задать собственный уровень."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Когда покупатель запросил товар; поставщик может подтвердить другую дату в поле «Подтвержденная дата поступления», а затем указать другую дату в поле «Дата поставки»."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Когда покупателю нужны товары по этой строке на складе. Новая строка по умолчанию получает «Запрошенную дату поступления» заказа; планирование использует эту дату для расписания по наличию запаса и внешней обработки."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Когда контракт вступает в действие и что происходит при его завершении."

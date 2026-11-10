@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "ロケーション"
 
 msgid "Locations"
-msgstr ""
+msgstr "拠点"
 
 msgid "Log completed"
 msgstr "完了をログ記録"
