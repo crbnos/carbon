@@ -4,6 +4,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { renderRegistryHelpers } from "@carbon/database/authz-registry-sql";
 import { validateEnv } from "@carbon/env/validate";
 import { keyOf, loadBaseline } from "./baseline";
 import type {
@@ -43,6 +44,10 @@ import {
   wrappedBuildingBlocks
 } from "./conformance/loader-reads-through-api";
 import { moduleShape } from "./conformance/module-shape";
+import {
+  findMovedTableGaps,
+  MOVED_TABLES_COVERED
+} from "./conformance/moved-tables-covered";
 import {
   MANAGED_FUNCTION_SETS,
   type ManagedFunction,
@@ -89,6 +94,10 @@ import {
   findProviderRoleDrift,
   PROVIDER_ROLE_BACKFILLED
 } from "./conformance/provider-role-backfilled";
+import {
+  findStaleRegistryHelpers,
+  REGISTRY_HELPERS_FRESH
+} from "./conformance/registry-helpers-fresh";
 import { routeActionShape } from "./conformance/route-action-shape";
 import {
   gateConstants,
@@ -110,6 +119,10 @@ import {
 } from "./conformance/stamp-matches-columns";
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
+import {
+  loadMovedTablesMigration,
+  loadRegistryHelperFiles
+} from "./sources/authz-registry";
 import {
   loadDeploymentEnvSources,
   loadEventFunctionSources,
@@ -247,6 +260,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
   const migrations = loadSqlFiles(migrationsDir(root));
   const listSources = loadListSources(root);
   const eventSources = loadEventFunctionSources(root);
+  const registryHelpers = renderRegistryHelpers();
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
@@ -300,6 +314,17 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
     ),
+    ...findStaleRegistryHelpers(
+      registryHelpers,
+      loadRegistryHelperFiles(
+        root,
+        registryHelpers.map((helper) => helper.name)
+      )
+    ).map((violation) => ({ checkId: REGISTRY_HELPERS_FRESH, violation })),
+    ...findMovedTableGaps(loadMovedTablesMigration(root)).map((violation) => ({
+      checkId: MOVED_TABLES_COVERED,
+      violation
+    })),
     ...findDroppedFunctionChanges(migrations).map((violation) => ({
       checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
       violation

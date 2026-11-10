@@ -11,7 +11,7 @@
 -- Sales Orders), no grant is given: the new page lists the table in
 -- `alsoWrittenBy` with the page that wrote it before (access/pages), so its
 -- write rule accepts that page too and nobody loses it. Each moved table is
--- one or the other: authz/registry-sql.test.ts reads the rows below.
+-- one or the other: the moved-tables-covered check (@carbon/checks) reads the rows below.
 --
 -- A subject that already holds a grant on the new page, or on its module,
 -- keeps what it has. A person's override is carried too (None included, when

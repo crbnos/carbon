@@ -47,6 +47,7 @@
     "./posting": "./src/posting.ts",
     "./access": "./src/access/index.ts",
     "./access-write": "./src/access/write.ts",
+    "./authz-registry-sql": "./src/authz/registry-sql.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./machine-time": "./src/machine-time.ts",

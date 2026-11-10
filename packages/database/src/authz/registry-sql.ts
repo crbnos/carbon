@@ -9,7 +9,8 @@ import { HELPERS_DIR } from "./helpers";
 
 /**
  * The managed helpers whose bodies are the registry (access/pages): written by
- * `authz sync` and `authz migration`, checked by registry-sql.test.ts. A page edit
+ * `authz sync` and `authz migration`, checked by `registry-helpers-fresh`
+ * (@carbon/checks). A page edit
  * changes these two functions, not the policies that call them.
  */
 
@@ -61,18 +62,23 @@ $function$;
 `;
 }
 
+/**
+ * Each registry helper's file name in helpers/ and the text it must hold. The
+ * `registry-helpers-fresh` check (@carbon/checks) compares them with the files.
+ */
+export function renderRegistryHelpers(): { name: string; sql: string }[] {
+  return [
+    { name: "util.module_pages.sql", sql: modulePages() },
+    { name: "util.page_max_level.sql", sql: pageMaxLevel() }
+  ];
+}
+
 /** Each registry helper's file in helpers/ and the text it must hold. */
 export function registryHelperFiles(): { file: string; sql: string }[] {
-  return [
-    {
-      file: path.join(HELPERS_DIR, "util.module_pages.sql"),
-      sql: modulePages()
-    },
-    {
-      file: path.join(HELPERS_DIR, "util.page_max_level.sql"),
-      sql: pageMaxLevel()
-    }
-  ];
+  return renderRegistryHelpers().map(({ name, sql }) => ({
+    file: path.join(HELPERS_DIR, name),
+    sql
+  }));
 }
 
 const read = (file: string) => {

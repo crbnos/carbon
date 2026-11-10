@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T12:10:24.467Z",
+  "exportedAt": "2026-11-10T12:20:10.556Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -2536,7 +2536,9 @@
         "module",
         "position",
         "hidden",
-        "updatedAt"
+        "updatedAt",
+        "hiddenSubmodules",
+        "submoduleOrder"
       ]
     },
     {
