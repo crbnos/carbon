@@ -15148,6 +15148,9 @@ msgstr "Le azioni inattive non appariranno negli elenchi di selezione"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Le categorie inattive non possono essere selezionate per nuovo tempo"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Controllo in accettazione"
 
@@ -32387,6 +32390,9 @@ msgstr "Riprova"
 msgid "Tuesday"
 msgstr "Martedì"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Attiva"
 
@@ -32610,6 +32616,9 @@ msgstr "Spedizioni non fatturate"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Univoco, maiuscolo, senza spazi (max 10 caratteri)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Unità"

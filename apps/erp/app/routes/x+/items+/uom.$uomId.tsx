@@ -7,10 +7,13 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { unitOfMeasureValidator } from "~/modules/items/items.models";
+import {
+  UNIT_OF_MEASURE_TAKEN,
+  unitOfMeasureValidator
+} from "~/modules/items/items.models";
 import { upsertUnitOfMeasure } from "~/modules/items/items.service";
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -57,7 +60,12 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateUnitOfMeasure.error, "Failed to update unit of measure")
+        error(
+          updateUnitOfMeasure.error,
+          isUniqueViolation(updateUnitOfMeasure.error)
+            ? UNIT_OF_MEASURE_TAKEN
+            : "Failed to update unit of measure"
+        )
       )
     );
   }
@@ -76,6 +84,7 @@ export default function EditUnitOfMeasuresRoute() {
     id: unitOfMeasure?.id ?? undefined,
     name: unitOfMeasure?.name ?? "",
     code: unitOfMeasure?.code ?? "",
+    active: unitOfMeasure?.active ?? true,
     ...getCustomFields(unitOfMeasure?.customFields)
   };
 

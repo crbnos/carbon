@@ -15148,6 +15148,9 @@ msgstr "已停用的操作不会出现在选择列表中"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "已停用的分类无法为新工时选择"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "来料检验"
 
@@ -32387,6 +32390,9 @@ msgstr "重试"
 msgid "Tuesday"
 msgstr "星期二"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "打开"
 
@@ -32610,6 +32616,9 @@ msgstr "未开票发货"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "单位"

@@ -15148,6 +15148,9 @@ msgstr "निष्क्रिय क्रियाएं चयन सूच
 msgid "Inactive categories cannot be picked for new time"
 msgstr "निष्क्रिय श्रेणियां नए समय के लिए नहीं चुनी जा सकतीं"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "इनबाउंड निरीक्षण"
 
@@ -32387,6 +32390,9 @@ msgstr "फिर से कोशिश करें"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "चालू करें"
 
@@ -32610,6 +32616,9 @@ msgstr "बिना चालान वाले शिपमेंट"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "अद्वितीय, बड़े अक्षरों में, बिना स्थान के (अधिकतम 10 वर्ण)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "इकाई"

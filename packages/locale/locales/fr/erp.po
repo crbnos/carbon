@@ -15148,6 +15148,9 @@ msgstr "Les actions inactives n'apparaîtront pas dans les listes de sélection"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Les catégories inactives ne peuvent pas être choisies pour le nouveau temps"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Contrôle à réception"
 
@@ -32387,6 +32390,9 @@ msgstr "Réessayer"
 msgid "Tuesday"
 msgstr "Mardi"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Activer"
 
@@ -32610,6 +32616,9 @@ msgstr "Expéditions non facturées"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, en majuscules, sans espaces (10 caractères max.)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Unité"

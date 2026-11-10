@@ -15148,6 +15148,9 @@ msgstr "無効なアクションは選択リストに表示されません。"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "無効なカテゴリは新しい時間に対してピックできません"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "受入検査"
 
@@ -32387,6 +32390,9 @@ msgstr "もう一度お試しください"
 msgid "Tuesday"
 msgstr "火曜日"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "オンにする"
 
@@ -32610,6 +32616,9 @@ msgstr "未請求の出荷"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "単位"

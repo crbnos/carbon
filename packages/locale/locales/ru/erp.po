@@ -15148,6 +15148,9 @@ msgstr "Неактивные действия не будут отображат
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Неактивные категории не могут быть выбраны для новых отметок времени"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Входной контроль"
 
@@ -32387,6 +32390,9 @@ msgstr "Повторить попытку"
 msgid "Tuesday"
 msgstr "Вторник"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Включить"
 
@@ -32610,6 +32616,9 @@ msgstr "Неотфактурованные отгрузки"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Уникальный, заглавными буквами, без пробелов (макс. 10 символов)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Единица"

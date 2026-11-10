@@ -15148,6 +15148,9 @@ msgstr "Pasif eylemler seçim listelerinde görünmeyecektir"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Pasif kategoriler yeni zaman için seçilemez"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Girdi kontrolü"
 
@@ -32387,6 +32390,9 @@ msgstr "Tekrar deneyin"
 msgid "Tuesday"
 msgstr "Salı"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Aç"
 
@@ -32610,6 +32616,9 @@ msgstr "Faturalanmamış sevkiyatlar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Birim"
