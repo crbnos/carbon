@@ -21,22 +21,6 @@ export async function generateQRCode(
   return `data:image/png;base64,${buffer.toString("base64")}`;
 }
 
-export async function generateQRCodeBuffer(
-  text: string,
-  size: number,
-  color?: string
-): Promise<Buffer> {
-  const buffer = await bwipjs.toBuffer({
-    bcid: "qrcode",
-    text,
-    scale: 2,
-    height: size,
-    width: size,
-    ...(color && { barcolor: color })
-  });
-  return buffer;
-}
-
 // The Carbon mark (`carbon-mark-light.svg`, 424 x 480) as two polygons: the
 // hexagon, and the shape cut out of it. The points are the path's corners;
 // its rounding is too small to show under the dots, so it is left out.
@@ -73,8 +57,9 @@ const CARBON_MARK_HEIGHT = 480;
 
 // The mark's height, as a share of the code's width.
 const CARBON_MARK_SHARE = 0.62;
-// A module's dot radius (a module is 1 x 1).
-const DOT_RADIUS = 0.4;
+// A module's dot radius (a module is 1 x 1). At 0.45 a phone camera reads the
+// code at its on-screen size as reliably as a plain one; at 0.4 it misses more.
+const DOT_RADIUS = 0.45;
 // How far the mark's top and bottom edges fade, in modules (a blur).
 const MARK_FADE = 0.25;
 
