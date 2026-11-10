@@ -18,12 +18,10 @@ import { useCallback, useId, useMemo } from "react";
 import { LuMapPin } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 
-// Both goods-in units must be non-nettable, so the loader passes only
-// non-nettable, active storage units.
+// The loader passes only active storage units.
 
 type StoredStorageUnit = {
   name: string;
-  effectiveNettable: boolean;
   active: boolean;
 };
 
@@ -95,8 +93,9 @@ export function GoodsInStorageCard({
         <CardDescription>
           <Trans>
             Received parts that need inspection go to the inspection storage
-            unit. Rejected stock moves to the rejected storage unit. Both must
-            be non-nettable.
+            unit. Rejected stock moves to the rejected storage unit. To keep
+            their stock out of planning, make them non-nettable in their own
+            settings.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -197,15 +196,13 @@ function GoodsInStorageSelect({
     : options;
   const noneAvailable = options.length === 0 && !value;
   const noneAvailableText = noneAvailable
-    ? t`No non-nettable storage units at this location`
+    ? t`No storage units at this location`
     : undefined;
   const warning = !notOffered
     ? null
-    : storedUnit?.effectiveNettable
-      ? t`${name} is nettable now. Choose a non-nettable storage unit.`
-      : storedUnit && !storedUnit.active
-        ? t`${name} is inactive. Choose an active storage unit.`
-        : t`Choose a non-nettable storage unit at this location.`;
+    : storedUnit && !storedUnit.active
+      ? t`${name} is inactive. Choose an active storage unit.`
+      : t`Choose a storage unit at this location.`;
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-1 md:w-[220px]">

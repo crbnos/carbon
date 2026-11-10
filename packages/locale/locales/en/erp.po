@@ -1121,9 +1121,6 @@ msgstr "{name} ends {end} (was open-ended)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} is inactive. Choose an active storage unit."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} is nettable now. Choose a non-nettable storage unit."
-
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
 
@@ -6861,12 +6858,6 @@ msgstr "Choose a customer"
 msgid "Choose a labor category or an employee"
 msgstr "Choose a labor category or an employee"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Choose a non-nettable storage unit at this location for inspected parts."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Choose a non-nettable storage unit at this location."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
@@ -6881,6 +6872,12 @@ msgstr "Choose a pool"
 
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Choose a storage unit at this location for inspected parts."
+
+msgid "Choose a storage unit at this location."
+msgstr "Choose a storage unit at this location."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19614,9 +19611,6 @@ msgstr "No modules found"
 msgid "No new notifications"
 msgstr "No new notifications"
 
-msgid "No non-nettable storage units at this location"
-msgstr "No non-nettable storage units at this location"
-
 msgid "No notes"
 msgstr "No notes"
 
@@ -19986,6 +19980,9 @@ msgstr "No storage unit at this location holds any stock."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "No storage unit is short for open jobs or below zero."
+
+msgid "No storage units at this location"
+msgstr "No storage units at this location"
 
 msgid "No storage units or tracking numbers match."
 msgstr "No storage units or tracking numbers match."
@@ -24012,8 +24009,8 @@ msgstr "Received Date"
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Received lines from this supplier with quantity remaining to return"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
 
 msgid "Received Qty"
 msgstr "Received Qty"

@@ -6872,7 +6872,7 @@ export async function storageRuleViolations(
 
 /**
  * Refuses a purchase receipt line whose part has a Receipt inspection plan
- * unless it posts to a non-nettable storage unit at a location that has an
+ * unless it posts to a storage unit at its location, and that location has an
  * inspection storage unit. Returns the refusal message, or null.
  */
 export async function refuseUnheldInspectedReceiptLines(
@@ -7242,7 +7242,7 @@ async function projectConsumedPurchaseOrderLineIds(
 /**
  * The refusal for a receipt whose inspected lines (parts in `plannedItemIds`)
  * would not be held: the location has no inspection storage unit, or a line is
- * not in a non-nettable unit of that location. Null when every one is held.
+ * not in a storage unit of that location. Null when every one is held.
  */
 export async function unheldInspectedLineRefusal(
   db: Kysely<KyselyDatabase>,
@@ -7296,8 +7296,7 @@ export async function unheldInspectedLineRefusal(
         .filter((id): id is string => !!id)
     )
   ];
-  // Held: non-nettable, and at the line's location, where its lot and ledger
-  // rows are booked.
+  // Held: at the line's location, where its lot and ledger rows are booked.
   const held =
     unitIds.length > 0
       ? await db
@@ -7305,7 +7304,6 @@ export async function unheldInspectedLineRefusal(
           .select(["id", "locationId"])
           .where("id", "in", unitIds)
           .where("companyId", "=", companyId)
-          .where("effectiveNettable", "=", false)
           .execute()
       : [];
   const heldLocationById = new Map(
@@ -7326,7 +7324,7 @@ export async function unheldInspectedLineRefusal(
     .executeTakeFirst();
   const readableId = item?.readableIdWithRevision ?? offending.itemId;
   const atLocation = locationById.get(locationOf(offending) ?? "")?.name;
-  return `${readableId} needs inspection. Choose a non-nettable storage unit at ${atLocation}.`;
+  return `${readableId} needs inspection. Choose a storage unit at ${atLocation}.`;
 }
 
 export type HeldStockWarning = {
@@ -7428,9 +7426,11 @@ export type ReceiptPutAwayLine = {
 };
 
 /**
- * What a receipt's Put Away would move: per Passed or Partial lot, the passed
- * stock still in its received unit and on no linked transfer. To is the part's
- * nettable default storage unit at the location, else null (stores choose).
+ * What a receipt's Put Away would move: per Passed or Partial lot that records
+ * where it held its stock, the passed stock still in its received unit and on
+ * no linked transfer. To is the part's nettable default storage unit at the
+ * location, else null (stores choose); null too when that default is the
+ * received unit, which a nettable inspection unit can be.
  */
 export async function getReceiptPutAwayLines(
   db: Kysely<KyselyDatabase>,
@@ -7463,6 +7463,9 @@ export async function getReceiptPutAwayLines(
     .where("inspection.sourceDocument", "=", "Receipt")
     .where("inspection.sourceDocumentId", "=", receiptId)
     .where("inspection.status", "in", ["Passed", "Partial"])
+    // A lot that records no unit held nothing (from before the hold, in a
+    // pickable bin): the roll-up leaves it out, so Put Away does too.
+    .where("inspection.storageUnitId", "is not", null)
     .execute();
   const lines = lots.filter(
     (lot): lot is typeof lot & { storageUnitId: string; locationId: string } =>
@@ -7634,13 +7637,15 @@ export async function getReceiptPutAwayLines(
       if (quantity > EPSILON) free.set(key, round(available - quantity));
     }
     if (quantity <= EPSILON) continue;
+    const toStorageUnitId =
+      defaultUnit.get(`${line.itemId}::${line.locationId}`) ?? null;
     result.push({
       receiptLineId: line.receiptLineId,
       itemId: line.itemId,
       locationId: line.locationId,
       fromStorageUnitId: line.storageUnitId,
       toStorageUnitId:
-        defaultUnit.get(`${line.itemId}::${line.locationId}`) ?? null,
+        toStorageUnitId === line.storageUnitId ? null : toStorageUnitId,
       quantity,
       requiresSerialTracking: line.itemTrackingType === "Serial",
       requiresBatchTracking: line.itemTrackingType === "Batch"

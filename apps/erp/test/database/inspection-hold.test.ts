@@ -480,13 +480,38 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold", () => {
     );
 
   databaseTest(
-    "refuses to post an inspected line on a nettable storage unit",
+    "posts an inspected line on a nettable storage unit and holds it there",
     async () => {
+      const nettableUnit = `${f.prefix}-qc-nettable`;
+      await seed(f, (trx) =>
+        trx
+          .insertInto("storageUnit")
+          .values({
+            id: nettableUnit,
+            name: nettableUnit,
+            locationId: f.locationId,
+            companyId: f.companyId,
+            createdBy: USER
+          })
+          .execute()
+      );
       const draftId = await draftReceiptFromPurchaseOrder(f, "nettable");
-      await setLineUnit(draftId, shelf);
+      await setLineUnit(draftId, nettableUnit);
       const result = await post(draftId);
-      expect(result.error?.status).toBe(400);
-      await expectNothingPosted(draftId);
+      expect(result.error).toBeNull();
+      const lots = await f.db
+        .selectFrom("inspection")
+        .select(["status", "storageUnitId"])
+        .where("sourceDocumentId", "=", draftId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(lots).toEqual([
+        { status: "Pending", storageUnitId: nettableUnit }
+      ]);
+      const before = await onHand(nettableUnit);
+      const moved = await adjust("Negative Adjmt.", nettableUnit, 1);
+      expect(refusal(moved.error)).toMatch(/held for inspection/);
+      expect(await onHand(nettableUnit)).toBe(before);
     }
   );
 

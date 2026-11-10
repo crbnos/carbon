@@ -78,7 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client
       .from("location")
       .select(
-        "id, name, inspectionStorageUnitId, rejectedStorageUnitId, inspectionStorageUnit:storageUnit!location_inspectionStorageUnitId_fkey(name, effectiveNettable, active), rejectedStorageUnit:storageUnit!location_rejectedStorageUnitId_fkey(name, effectiveNettable, active)"
+        "id, name, inspectionStorageUnitId, rejectedStorageUnitId, inspectionStorageUnit:storageUnit!location_inspectionStorageUnitId_fkey(name, active), rejectedStorageUnit:storageUnit!location_rejectedStorageUnitId_fkey(name, active)"
       )
       .eq("companyId", companyId)
       .order("name"),
@@ -89,7 +89,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (query) =>
         query
           .eq("companyId", companyId)
-          .eq("effectiveNettable", false)
           .eq("active", true)
           .order("name")
           .order("id")

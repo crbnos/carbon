@@ -134,7 +134,6 @@ const ReceiptLines = () => {
     receiptInspections: ReceiptLineInspection[];
     inspectedLineIds: string[];
     heldLineIds: string[];
-    nonNettableStorageUnitIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -308,12 +307,6 @@ const ReceiptLines = () => {
                       }
                       needsHeldUnit={
                         !!routeData?.heldLineIds?.includes(line.id ?? "")
-                      }
-                      inNonNettableUnit={
-                        !!line.storageUnitId &&
-                        !!routeData?.nonNettableStorageUnitIds?.includes(
-                          line.storageUnitId
-                        )
                       }
                       isReadOnly={isPosted}
                       onUpdate={onUpdateReceiptLine}
@@ -696,7 +689,6 @@ function ReceiptLineItem({
   inspection,
   requiresInspection,
   needsHeldUnit,
-  inNonNettableUnit,
   className,
   isReadOnly,
   onUpdate,
@@ -715,7 +707,6 @@ function ReceiptLineItem({
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
   needsHeldUnit: boolean;
-  inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -760,13 +751,13 @@ function ReceiptLineItem({
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
-  const showNettableWarning =
+  const showHeldUnitWarning =
     needsHeldUnit &&
     !isReadOnly &&
     receipt?.sourceDocument === "Purchase Order" &&
     (line.receivedQuantity ?? 0) > 0 &&
-    !inNonNettableUnit;
-  const nettableWarningId = useId();
+    !line.storageUnitId;
+  const heldUnitWarningId = useId();
 
   return (
     <div
@@ -944,7 +935,7 @@ function ReceiptLineItem({
                 isReadOnly={isReadOnly}
                 label={t`Storage unit for ${itemName}`}
                 aria-describedby={
-                  showNettableWarning ? nettableWarningId : undefined
+                  showHeldUnitWarning ? heldUnitWarningId : undefined
                 }
                 onChange={(storageUnit) => {
                   onUpdate({
@@ -955,14 +946,13 @@ function ReceiptLineItem({
                 }}
               />
             </div>
-            {showNettableWarning && (
+            {showHeldUnitWarning && (
               <span
-                id={nettableWarningId}
+                id={heldUnitWarningId}
                 className="text-xs text-destructive w-full"
               >
                 <Trans>
-                  Choose a non-nettable storage unit at this location for
-                  inspected parts.
+                  Choose a storage unit at this location for inspected parts.
                 </Trans>
               </span>
             )}

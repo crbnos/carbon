@@ -1121,9 +1121,6 @@ msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} pasif. Aktif bir depolama birimi seçin."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} artık MRP'ye dahil. MRP dışı bir depolama birimi seçin."
-
 msgid "{name} needs an account number."
 msgstr "{name} bir hesap numarasına ihtiyaç duyuyor."
 
@@ -6861,12 +6858,6 @@ msgstr "Müşteri seç"
 msgid "Choose a labor category or an employee"
 msgstr "Bir işçilik kategorisi veya bir çalışan seç"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Muayene edilen parçalar için bu konumda MRP dışı bir depolama birimi seçin."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Bu konumda MRP dışı bir depolama birimi seçin."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
@@ -6881,6 +6872,12 @@ msgstr "Bir havuz seç"
 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Muayene edilecek parçalar için bu konumda bir depolama birimi seçin."
+
+msgid "Choose a storage unit at this location."
+msgstr "Bu konumda bir depolama birimi seçin."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19614,9 +19611,6 @@ msgstr "Modül bulunamadı"
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
-msgid "No non-nettable storage units at this location"
-msgstr "Bu konumda MRP dışı depolama birimi yok"
-
 msgid "No notes"
 msgstr "Notlar yok"
 
@@ -19986,6 +19980,9 @@ msgstr "Bu lokasyondaki hiçbir depolama birimi stok tutmuyor."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "Açık iş emirleri için eksik olan veya sıfırın altına düşen depolama birimi yok."
+
+msgid "No storage units at this location"
+msgstr "Bu konumda depolama birimi yok"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
@@ -24012,8 +24009,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Muayene gerektiren kabul edilen parçalar muayene depolama birimine gider. Reddedilen stok reddedilen depolama birimine taşınır. İkisi de MRP dışı olmalıdır."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Muayene gerektiren teslim alınan parçalar muayene depolama birimine gider. Reddedilen stok, ret depolama birimine taşınır. Stoklarının planlamaya girmemesi için onları kendi ayarlarında MRP dışı yapın."
 
 msgid "Received Qty"
 msgstr "Alınan Miktar"
