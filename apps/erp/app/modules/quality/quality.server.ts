@@ -36,7 +36,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
-  insertModelUpload,
+  isModelUploadPath,
   updateChangeNotice
 } from "~/modules/items/items.service";
 import {
@@ -2022,72 +2022,54 @@ export const attachInspectionDocumentModel = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, modelId, path, name, size }) {
-    // Refused before the model is recorded; the plan update below refuses a
-    // version locked since.
-    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
-    if (locked) return locked;
-
-    const plan = await ctx.asCaller.supabase
-      .from("inspectionDocument")
-      .select("id, storagePath, modelUploadId")
-      .eq("id", id)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (plan.error) {
-      return ctx.error(
-        "internal",
-        "Failed to load the inspection plan",
-        plan.error
-      );
-    }
-    if (!plan.data) {
-      return ctx.error("notFound", "The inspection plan could not be found");
-    }
-    if (plan.data.storagePath || plan.data.modelUploadId) {
-      return ctx.error(
-        "rule",
-        "This inspection plan already has a drawing or a model"
-      );
+    // The path comes from the caller: it must be the one minted for this
+    // model, inside this tenant's storage prefix.
+    if (!isModelUploadPath(ctx.company.id, modelId, path)) {
+      return ctx.error("rule", "Failed to record the model", {
+        message: "Invalid model path"
+      });
     }
 
     // A quality user need not hold parts permissions, and the model belongs to
-    // the plan, not to a part: insert it as the system, linked to nothing.
-    const model = await insertModelUpload(ctx.asSystem.supabase, {
-      companyId: ctx.company.id,
-      createdBy: ctx.auditUserId,
-      modelId,
-      path,
-      name,
-      size
-    });
-    if (model.error) {
-      return ctx.error("rule", "Failed to record the model", model.error);
-    }
-
-    const updated = await ctx.asCaller.supabase
-      .from("inspectionDocument")
-      .update({
-        modelUploadId: modelId,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", id)
-      .eq("companyId", ctx.company.id)
-      .eq("status", "Draft")
-      .is("storagePath", null)
-      .is("modelUploadId", null)
-      .select("id");
-    if (updated.error) {
-      return ctx.error("internal", "Failed to attach the model", updated.error);
-    }
-    if (updated.data.length === 0) {
-      return (
-        (await service.inspectionDocumentLockRefusal(ctx, id)) ??
-        ctx.error(
-          "rule",
-          "This inspection plan already has a drawing or a model"
-        )
+    // the plan, not to a part: it is recorded as the system, linked to nothing,
+    // in the transaction that claims the plan.
+    let attached: Awaited<
+      ReturnType<typeof service.attachModelToInspectionDocument>
+    >;
+    try {
+      attached = await service.attachModelToInspectionDocument(
+        ctx.asSystem.pg,
+        {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          modelId,
+          path,
+          name,
+          size
+        }
       );
+    } catch (error) {
+      return ctx.error("internal", "Failed to attach the model", error);
+    }
+    if (!attached.ok) {
+      switch (attached.reason) {
+        case "notFound":
+          return ctx.error(
+            "notFound",
+            "The inspection plan could not be found"
+          );
+        case "locked":
+          return ctx.error(
+            "rule",
+            `This inspection plan version is ${attached.status}. Make a new version to change it.`
+          );
+        case "hasDrawing":
+          return ctx.error(
+            "rule",
+            "This inspection plan already has a drawing or a model"
+          );
+      }
     }
     return { id, modelUploadId: modelId };
   }

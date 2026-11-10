@@ -434,15 +434,8 @@ export const inspectionSampleValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-// One decision surface for closing an inspection lot: the verdict carries its
-// physical outcome. Accept completes the remaining lot; Reject/Partial split
-// the failed set between Scrap (reason) and Rework (upstream target op) — or
-// record only. Serial lots allocate per entity (two disjoint JSON id arrays);
-// non-serial lots allocate by quantity. The route recomputes every bucket from
-// the DB and clamps to the operation's remaining quantity — these fields are
-// operator intent, not trusted arithmetic.
-// A manual inspection's verdict: no production outcome rides on it, so it is
-// only Accept or Reject, with the reason a Reject needs when nothing failed.
+// A receipt or manual lot's verdict: no production outcome rides on it, so it
+// is only Accept or Reject, with the reason a Reject needs when nothing failed.
 export const inspectionVerdictValidator = z.object({
   decision: z.enum(["Accept", "Reject"], {
     error: "Decision is required"
@@ -452,6 +445,13 @@ export const inspectionVerdictValidator = z.object({
   createNcr: zfd.checkbox()
 });
 
+// One decision surface for closing an inspection lot: the verdict carries its
+// physical outcome. Accept completes the remaining lot; Reject/Partial split
+// the failed set between Scrap (reason) and Rework (upstream target op) — or
+// record only. Serial lots allocate per entity (two disjoint JSON id arrays);
+// non-serial lots allocate by quantity. The route recomputes every bucket from
+// the DB and clamps to the operation's remaining quantity — these fields are
+// operator intent, not trusted arithmetic.
 export const inspectionDispositionValidator = z
   .object({
     decision: z.enum(["Accept", "Reject", "Partial"], {

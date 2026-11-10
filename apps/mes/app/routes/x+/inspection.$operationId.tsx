@@ -147,11 +147,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // An "inspect all" serial lot gets every unit as a sample up front, so the
   // operator records results without scanning each one.
-  await prefillInspectionSamples(getDatabaseClient(), {
+  // A failure only means the units are scanned in instead: log it and go on.
+  const prefill = await prefillInspectionSamples(getDatabaseClient(), {
     inspectionId: lot.data.id,
     companyId,
     userId
   });
+  if (prefill.error) {
+    logger.error("Failed to prefill inspection samples", {
+      companyId,
+      inspectionId: lot.data.id,
+      error: prefill.error
+    });
+  }
 
   const inspectionResult = await getInspection(serviceRole, lot.data.id);
   if (inspectionResult.error || !inspectionResult.data) {
@@ -167,12 +175,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The lot references its document live: features added to the document
   // after lot creation get their per-lot plan rows resolved lazily.
+  // A failure leaves the new features without a column: log it and go on.
   if (inspection.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(
+    const reconciled = await reconcileInspectionSamplingPlans(
       getDatabaseClient(),
       lot.data.id,
       companyId
     );
+    if (reconciled.error) {
+      logger.error("Failed to reconcile inspection sampling plans", {
+        companyId,
+        inspectionId: lot.data.id,
+        error: reconciled.error
+      });
+    }
   }
 
   const [

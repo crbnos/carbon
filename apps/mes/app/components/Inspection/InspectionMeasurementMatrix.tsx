@@ -9,15 +9,18 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
-import type { JSONContent } from "@carbon/react";
+import type {
+  InspectionParameter,
+  InspectionPlanTab,
+  JSONContent
+} from "@carbon/react";
 import {
   Badge,
   cn,
-  generateHTML,
   IconButton,
-  Tabs,
-  TabsList,
-  TabsTrigger,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs,
   ToggleGroup,
   ToggleGroupItem,
   toast
@@ -112,17 +115,6 @@ type Characteristic = {
 
 type CellPayload = { value?: string; passed?: "true" | "false" };
 
-type MatrixTab = "characteristics" | "parameters" | "instructions";
-
-// A document with nothing but empty paragraphs has no instructions to read.
-function hasWorkInstruction(doc: JSONContent | null | undefined) {
-  return (doc?.content ?? []).some(
-    (node) => node.type !== "paragraph" || (node.content?.length ?? 0) > 0
-  );
-}
-
-export type InspectionParameter = { id: string; key: string; value: string };
-
 type InspectionMeasurementMatrixProps = {
   inspectionId: string;
   isReadOnly: boolean;
@@ -198,7 +190,7 @@ const InspectionMeasurementMatrix = ({
   placementRef,
   onBusyChange
 }: InspectionMeasurementMatrixProps) => {
-  const [tab, setTab] = useState<MatrixTab>("characteristics");
+  const [tab, setTab] = useState<InspectionPlanTab>("characteristics");
   const { t } = useLingui();
 
   // The matrix ignores plan rows whose live feature was deleted from the document.
@@ -1301,7 +1293,9 @@ const InspectionMeasurementMatrix = ({
   }, [isBusy, onBusyChange]);
   useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
 
-  const characteristicsTitle = hasFeatures ? t`Characteristics` : t`Result`;
+  const characteristicsTitle = hasFeatures
+    ? `${t`Characteristics`} (${characteristics.length})`
+    : t`Result`;
   const showingParameters = parameters !== undefined && tab === "parameters";
   const showingInstructions =
     parameters !== undefined && tab === "instructions";
@@ -1310,18 +1304,12 @@ const InspectionMeasurementMatrix = ({
     <div className="flex min-h-10 flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <span className="flex min-w-0 items-center gap-2">
         {parameters !== undefined ? (
-          <Tabs
+          <InspectionPlanTabs
             value={tab}
-            onValueChange={(value) => setTab(value as MatrixTab)}
-          >
-            <TabsList className="max-md:w-auto max-md:px-0">
-              <TabsTrigger value="characteristics">
-                {characteristicsTitle}
-              </TabsTrigger>
-              <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
-              <TabsTrigger value="instructions">{t`Instructions`}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+            onValueChange={setTab}
+            characteristicsLabel={characteristicsTitle}
+            className="max-md:w-auto max-md:px-0"
+          />
         ) : (
           <span className="truncate text-sm font-medium text-foreground">
             {characteristicsTitle}
@@ -1366,20 +1354,10 @@ const InspectionMeasurementMatrix = ({
     return (
       <>
         {toolbar}
-        {hasWorkInstruction(workInstruction) ? (
-          <div className="min-h-0 flex-1 overflow-auto p-4">
-            <div
-              className="prose max-w-none dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(workInstruction as JSONContent)
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
-            {t`This inspection plan has no work instructions.`}
-          </div>
-        )}
+        <InspectionPlanInstructions
+          workInstruction={workInstruction}
+          size="lg"
+        />
       </>
     );
   }
@@ -1388,34 +1366,7 @@ const InspectionMeasurementMatrix = ({
     return (
       <>
         {toolbar}
-        {parameters.length === 0 ? (
-          <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
-            {t`This inspection plan has no parameters.`}
-          </div>
-        ) : (
-          <dl className="min-h-0 flex-1 divide-y divide-border overflow-auto">
-            {parameters.map((parameter) => (
-              <div
-                key={parameter.id}
-                className="flex min-h-14 items-center justify-between gap-4 px-4 py-2"
-              >
-                <dt className="text-sm text-muted-foreground">
-                  {parameter.key}
-                </dt>
-                <dd
-                  className={cn(
-                    "text-right text-foreground",
-                    parameter.value.length > 8
-                      ? "text-sm font-medium"
-                      : "text-xl font-semibold tabular-nums tracking-tight"
-                  )}
-                >
-                  {parameter.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        )}
+        <InspectionPlanParameters parameters={parameters} size="lg" />
       </>
     );
   }

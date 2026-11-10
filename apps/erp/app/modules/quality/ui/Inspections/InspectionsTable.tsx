@@ -58,10 +58,10 @@ function computeProgress(row: Inspection): {
 } {
   // The list loader selects `inspectionSample(status)` as an array of
   // child rows; count the non-Pending ones.
-  const samples: { status: string }[] =
-    ((row as any).inspectionSample as { status: string }[]) ?? [];
-  const inspected = samples.filter((s) => s.status !== "Pending").length;
-  return { inspected, total: (row as any).sampleSize ?? 0 };
+  const inspected = (row.inspectionSample ?? []).filter(
+    (s) => s.status !== "Pending"
+  ).length;
+  return { inspected, total: row.sampleSize ?? 0 };
 }
 
 const InspectionsTable = memo((props: InspectionsTableProps) => {
@@ -78,20 +78,15 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
 
   const renderContextMenu = useCallback(
     (row: Inspection) => {
-      const lot = row as unknown as {
-        id: string;
-        inspectionId: string | null;
-        sourceDocument: string;
-        status: string;
-        inspectionSample?: { status: string }[];
-      };
-      const isManual = lot.sourceDocument === "Manual";
+      const isManual = row.sourceDocument === "Manual";
+      // The rule InspectionView applies: nothing recorded, no measurement.
+      const measurementCount = row.inspectionMeasurement?.[0]?.count ?? 0;
       return (
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.view}
             onClick={() =>
-              navigate(`${path.to.inspection(lot.id)}?${params.toString()}`)
+              navigate(`${path.to.inspection(row.id)}?${params.toString()}`)
             }
           >
             <MenuIcon icon={<LuExternalLink />} />
@@ -101,7 +96,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
             <MenuItem
               disabled={
                 !permissions.can("update", "quality") ||
-                !canCancelInspection(lot)
+                !canCancelInspection(row)
               }
               onClick={() => setPending({ action: "cancel", row })}
             >
@@ -115,7 +110,8 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
               destructive
               disabled={
                 !permissions.can("delete", "quality") ||
-                !canDeleteInspection(lot, lot.inspectionSample ?? [])
+                !canDeleteInspection(row, row.inspectionSample ?? []) ||
+                measurementCount > 0
               }
               onClick={() => setPending({ action: "delete", row })}
             >
@@ -138,7 +134,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
           <Hyperlink
             to={`${path.to.inspection(row.original.id!)}?${params.toString()}`}
           >
-            {(row.original as any).inspectionId}
+            {row.original.inspectionId}
           </Hyperlink>
         ),
         meta: {
@@ -152,12 +148,12 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
         cell: ({ row }) => (
           <div className="flex flex-col gap-0">
             <span className="text-sm font-medium max-md:text-[0.8125rem] max-md:font-normal">
-              {getItemReadableId(items, (row.original as any).itemId) ??
-                (row.original as any).itemReadableId ??
+              {getItemReadableId(items, row.original.itemId) ??
+                row.original.itemReadableId ??
                 ""}
             </span>
             <span className="text-xs text-muted-foreground">
-              {(row.original as any).item?.name}
+              {row.original.item?.name}
             </span>
           </div>
         ),
@@ -174,15 +170,13 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
           // Without this the exporter substitutes the item's name for the id
           // (Download.tsx idNameMaps), losing the readable id the cell shows.
           exportValue: (row) =>
-            getItemReadableId(items, (row as any).itemId) ??
-            (row as any).itemReadableId ??
-            null
+            getItemReadableId(items, row.itemId) ?? row.itemReadableId ?? null
         }
       },
       exportOnlyColumn<Inspection>({
         id: "itemName",
         header: t`Item Name`,
-        value: (row) => (row as any).item?.name ?? null
+        value: (row) => row.item?.name ?? null
       }),
       {
         accessorKey: "sourceDocument",
@@ -190,12 +184,11 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
         cell: ({ row }) => (
           <div className="flex flex-col gap-0 text-sm">
             <span>
-              {(row.original as any).sourceDocumentReadableId ??
-                (row.original as any).sourceDocument}
+              {row.original.sourceDocumentReadableId ??
+                row.original.sourceDocument}
             </span>
             <span className="text-xs text-muted-foreground">
-              {(row.original as any).supplier?.name ??
-                (row.original as any).sourceDocument}
+              {row.original.supplier?.name ?? row.original.sourceDocument}
             </span>
           </div>
         ),
@@ -209,16 +202,14 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
             }))
           },
           exportValue: (row) =>
-            (row as any).sourceDocumentReadableId ??
-            (row as any).sourceDocument ??
-            null
+            row.sourceDocumentReadableId ?? row.sourceDocument ?? null
         }
       },
       {
         accessorKey: "lotSize",
         header: t`Lot Size`,
         cell: ({ row }) => (
-          <span className="text-sm">{(row.original as any).lotSize ?? 0}</span>
+          <span className="text-sm">{row.original.lotSize ?? 0}</span>
         ),
         meta: { mobile: "P2", mobileLabel: true, icon: <LuBlocks /> }
       },
@@ -259,20 +250,18 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
         accessorKey: "workCenterId",
         header: t`Work Center`,
         cell: ({ row }) => (
-          <span className="text-sm">
-            {(row.original as any).workCenter?.name ?? ""}
-          </span>
+          <span className="text-sm">{row.original.workCenter?.name ?? ""}</span>
         ),
         meta: {
           icon: <LuFactory />,
-          exportValue: (row) => (row as any).workCenter?.name ?? null
+          exportValue: (row) => row.workCenter?.name ?? null
         }
       },
       {
         accessorKey: "assignee",
         header: t`Assignee`,
         cell: ({ row }) => (
-          <EmployeeAvatar employeeId={(row.original as any).assignee} />
+          <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: { icon: <LuUser /> }
       },
@@ -318,14 +307,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
       {pending && (
         <ManualInspectionConfirm
           action={pending.action}
-          lot={
-            pending.row as unknown as {
-              id: string;
-              inspectionId: string | null;
-              sourceDocument: string;
-              status: string;
-            }
-          }
+          lot={pending.row}
           onClose={() => setPending(null)}
         />
       )}

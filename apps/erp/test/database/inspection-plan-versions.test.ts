@@ -8,6 +8,7 @@
 // item's receipt assignment to it.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
+import { sql } from "kysely";
 import { expect, it } from "vitest";
 import * as quality from "../../app/modules/quality/quality.server";
 import {
@@ -336,6 +337,56 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
       expect(parameters).toEqual([{ key: "Fixture", value: "F-12" }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "the atomic save is refused on an Active version and saves a Draft one",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const v0 = await activePlan(f);
+      const v1 = (await copyInspectionDocumentAsVersion(f.db, {
+        copyFromId: v0,
+        companyId: f.companyId,
+        userId: USER
+      }))!.id;
+      // What a direct API call (or a save racing a Publish) would send.
+      const save = (planId: string, featureId: string) =>
+        sql`SELECT save_inspection_document_atomic(
+          ${planId}, ${f.companyId}, ${USER}, NULL, NULL, NULL, NULL,
+          ${JSON.stringify({
+            create: [{ id: `${planId}-new`, label: "2", nominalValue: "5" }],
+            update: [{ id: featureId, nominalValue: "99" }],
+            delete: []
+          })}::jsonb,
+          '{}'::jsonb
+        )`.execute(f.db);
+      const features = (planId: string) =>
+        f.db
+          .selectFrom("inspectionFeature")
+          .select(["label", "nominalValue"])
+          .where("inspectionDocumentId", "=", planId)
+          .where("companyId", "=", f.companyId)
+          .orderBy("label")
+          .execute();
+
+      await expect(save(v0, `${f.prefix}-f1`)).rejects.toThrow();
+      expect(await features(v0)).toEqual([{ label: "1", nominalValue: "10" }]);
+
+      const v1Feature = await f.db
+        .selectFrom("inspectionFeature")
+        .select("id")
+        .where("inspectionDocumentId", "=", v1)
+        .executeTakeFirstOrThrow();
+      await save(v1, v1Feature.id);
+      expect(await features(v1)).toEqual([
+        { label: "1", nominalValue: "99" },
+        { label: "2", nominalValue: "5" }
+      ]);
     } finally {
       await f.cleanup();
     }

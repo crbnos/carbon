@@ -2306,7 +2306,9 @@ export async function getInspections(
   let query = client
     .from("inspection")
     .select(
-      "*, item(readableId, name), supplier(name), workCenter(name), inspectionSample(status)",
+      // The measurement count lets the row menu offer Delete only on a lot
+      // that recorded nothing, as the server requires.
+      "*, item(readableId, name), supplier(name), workCenter(name), inspectionSample(status), inspectionMeasurement(count)",
       { count: listCount(args) }
     )
     .eq("companyId", companyId);
@@ -2392,19 +2394,27 @@ export async function getInspectionTrackedEntities(
 // The tracked entities of an item a manual inspection may take: Available or
 // On Hold (a manual inspection holds what it inspects, and releases or rejects
 // it at the verdict).
+// Every unit, not the first 1,000: the New Inspection drawer searches them in
+// the browser, so a cut list would hide units with no sign of it. Paged in
+// `readableId, id` order so the pages neither overlap nor skip a row.
 export async function getInspectableTrackedEntities(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
 ) {
-  return client
-    .from("trackedEntity")
-    .select("id, readableId, quantity, status")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .in("status", ["Available", "On Hold"])
-    .order("readableId", { ascending: true })
-    .limit(1000);
+  return fetchAllFromTable<{
+    id: string;
+    readableId: string | null;
+    quantity: number;
+    status: Database["public"]["Enums"]["trackedEntityStatus"];
+  }>(client, "trackedEntity", "id, readableId, quantity, status", (query) =>
+    query
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .in("status", ["Available", "On Hold"])
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+  );
 }
 
 // The tracked entities a manual inspection covers (Receipt lots find theirs
@@ -3215,6 +3225,79 @@ export async function inspectionDocumentWriteRefusal(
       "The inspection plan changed. Reload it and try again."
     )
   );
+}
+
+/**
+ * Records a staged model and makes it the model of plan `id`, in one
+ * transaction: the plan is locked and checked (a Draft with no drawing and no
+ * model) before the `modelUpload` row goes in, so a concurrent attach or a
+ * version locked since rolls the row back. The row's insert queues
+ * `model-optimize` (`queue_model_pipeline`), which goes out at commit only, so
+ * a refused attach starts no job. The row is linked to no item: the model
+ * belongs to the plan.
+ */
+export async function attachModelToInspectionDocument(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    modelId: string;
+    path: string;
+    name: string;
+    size: number;
+  }
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "hasDrawing" }
+  | { ok: false; reason: "locked"; status: string }
+> {
+  const { id, companyId, userId, modelId, path, name, size } = args;
+  return withTransaction(db, async (trx) => {
+    const plan = await trx
+      .selectFrom("inspectionDocument")
+      .select(["status", "storagePath", "modelUploadId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!plan) return { ok: false, reason: "notFound" } as const;
+    if (plan.status !== "Draft") {
+      return { ok: false, reason: "locked", status: plan.status } as const;
+    }
+    if (plan.storagePath || plan.modelUploadId) {
+      return { ok: false, reason: "hasDrawing" } as const;
+    }
+
+    await trx
+      .insertInto("modelUpload")
+      .values({
+        id: modelId,
+        modelPath: path,
+        name,
+        size,
+        // As `insertModelUpload`: the as-uploaded size and path stay fixed
+        // while the optimiser repoints `size` and `modelPath`.
+        originalSize: size,
+        originalPath: path,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    await trx
+      .updateTable("inspectionDocument")
+      .set({
+        modelUploadId: modelId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { ok: true } as const;
+  });
 }
 
 /**

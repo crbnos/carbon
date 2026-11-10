@@ -261,8 +261,10 @@ references).
   updates carry `status = 'Draft'` in the UPDATE, and a write that changes no
   row is refused by `inspectionDocumentWriteRefusal`;
   `replaceInspectionDocumentParameters` reads the status under its row lock.
-  `save_inspection_document_atomic` (characteristics and balloons) still relies
-  on `inspectionDocumentLockRefusal` read just before it. A lot reads its plan
+  `save_inspection_document_atomic` (characteristics and balloons) refuses a
+  version that is not a Draft under its `FOR UPDATE` lock on the plan row
+  (`20261110133830_inspection-plan-save-draft-lock.sql`), so a Publish racing a
+  save, or a direct API call, cannot write into a locked version. A lot reads its plan
   live, so a locked version is what keeps a lot's characteristics fixed. The
   editor disables every edit on a locked version (grids, drawing drags, the
   Sampling cell, annotation actions) and Publish while a change is unsaved.
@@ -311,10 +313,12 @@ parameters live, as it reads the characteristics.
   (the editor's own `uploadPdfAndSave`) or STEP file. A STEP file is staged with
   `useModelUpload` and attached by `attachInspectionDocumentModel`
   (`quality.server.ts`, `@mcp`, `update: "quality"`; route
-  `x+/inspection-document+/$id.model.tsx`): it inserts the `modelUpload` as the
-  system with no item link (a quality user need not hold `parts`), which starts
-  `model-optimize`, then sets `inspectionDocument.modelUploadId`. Refused when the
-  plan already has a PDF (`storagePath`) or a model. Once a PDF or model exists the
+  `x+/inspection-document+/$id.model.tsx`): one transaction
+  (`attachModelToInspectionDocument`, `quality.service.ts`) locks the plan,
+  checks it is a Draft with no PDF (`storagePath`) and no model, inserts the
+  `modelUpload` as the system with no item link (a quality user need not hold
+  `parts`) and sets `inspectionDocument.modelUploadId`; `model-optimize` is sent
+  only after it commits, so a refused attach leaves no upload to process. Once a PDF or model exists the
   viewer takes the top half and the sidebar is gone. The PMI job only plans for
   ITEMS on a model, so an attached model's PMI does not fill the plan's
   characteristics.

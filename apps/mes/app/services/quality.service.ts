@@ -164,7 +164,8 @@ export async function getInspectionDocumentWithBalloons(
 }
 
 // Every open inspection of the company (all sources), newest first, for the
-// Inspections queue. Closed lots (Passed / Failed / Partial) are left out.
+// Inspections queue. Closed lots (Passed / Failed / Partial / Cancelled) are
+// left out.
 export async function getOpenInspections(
   client: SupabaseClient<Database>,
   companyId: string
@@ -193,6 +194,24 @@ export async function getInspectionJobOperations(
     client
       .from("jobOperation")
       .select("id, workCenterId, assignee, description")
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
+}
+
+// The receipt lines Receipt lots inspect, with their receipt: a voided
+// receipt's lot leaves the queue, and the line's location (else the
+// receipt's) decides which operators see it.
+export async function getInspectionReceiptLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  receiptLineIds: string[]
+) {
+  return fetchAllByIds([...new Set(receiptLineIds)], (batch) =>
+    client
+      .from("receiptLine")
+      .select("id, locationId, receipt(status, locationId)")
       .in("id", batch)
       .eq("companyId", companyId)
       .order("id")

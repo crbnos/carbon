@@ -17,6 +17,7 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { ManualInspectionView } from "~/components/Inspection/ManualInspectionView";
+import type { InspectionLot } from "~/components/Inspection/useInspectionLotState";
 import { getDatabaseClient } from "~/services/database.server";
 import {
   getInspection,
@@ -43,6 +44,10 @@ export const handle: Handle = {
 };
 
 const logger = getLogger("mes", "manual-inspection");
+
+type LoadedInspection = InspectionLot & {
+  inspectionSample: InspectionSample[] | null;
+};
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(
@@ -93,12 +98,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // A serial receipt lot that inspects every unit has nothing to choose: each
   // unit is a sample from the start (idempotent). One sampling a subset is
   // left to the scanner. A manual lot made its samples at create.
+  // A failure only means the units are scanned in instead: log it and go on.
   if (isReceipt) {
-    await prefillInspectionSamples(getDatabaseClient(), {
+    const prefill = await prefillInspectionSamples(getDatabaseClient(), {
       inspectionId: id,
       companyId,
       userId
     });
+    if (prefill.error) {
+      logger.error("Failed to prefill inspection samples", {
+        companyId,
+        inspectionId: id,
+        error: prefill.error
+      });
+    }
   }
 
   const inspectionResult = await getInspection(serviceRole, id);
@@ -111,12 +124,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-  const inspection = inspectionResult.data as any;
+  // getInspection's embeds are untyped: this is the row it selects.
+  const inspection = inspectionResult.data as LoadedInspection;
 
   // The lot references its document live: features added to the document
   // after the lot was made get their per-lot plan rows resolved lazily.
+  // A failure leaves the new features without a column: log it and go on.
   if (inspection.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(getDatabaseClient(), id, companyId);
+    const reconciled = await reconcileInspectionSamplingPlans(
+      getDatabaseClient(),
+      id,
+      companyId
+    );
+    if (reconciled.error) {
+      logger.error("Failed to reconcile inspection sampling plans", {
+        companyId,
+        inspectionId: id,
+        error: reconciled.error
+      });
+    }
   }
 
   const [
@@ -171,9 +197,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Sample column order must match the engine's required-feature derivation
   // (createdAt asc, id asc).
-  const samples = (
-    [...(inspection.inspectionSample ?? [])] as InspectionSample[]
-  ).sort(
+  const samples = [...(inspection.inspectionSample ?? [])].sort(
     (a, b) =>
       (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
       a.id.localeCompare(b.id)

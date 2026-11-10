@@ -5,7 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { manualInspectionValidator } from "~/modules/quality/quality.models";
 import ManualInspectionForm from "~/modules/quality/ui/Inspections/ManualInspectionForm";
@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewInspectionRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   return (
     <ManualInspectionForm
       initialValues={{
@@ -37,7 +37,8 @@ export default function NewInspectionRoute() {
         trackedEntityIds: [],
         inspectionDocumentId: ""
       }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -55,7 +55,15 @@ import { getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useId, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuCalendar,
   LuCircleAlert,
@@ -1398,17 +1406,57 @@ function SerialForm({
   }, [tracking?.expirationDate]);
 
   // The line's batch properties: every serial on the line carries the same.
-  const [properties, setProperties] = useState<Record<string, unknown>>(() =>
-    serialProperties(tracking)
+  // Shown as the server's copy with the person's own unsaved edits on top, so
+  // a revalidation never overwrites a field they are changing. An edit leaves
+  // `edits` once the server holds its value.
+  const serverProperties = useMemo(
+    () => serialProperties(tracking),
+    [tracking]
+  );
+  const [edits, setEdits] = useState<Record<string, unknown>>({});
+  const properties = useMemo(
+    () => ({ ...serverProperties, ...edits }),
+    [serverProperties, edits]
   );
 
   useEffect(() => {
-    setProperties(serialProperties(tracking));
-  }, [tracking]);
+    setEdits((prev) => {
+      const pending = Object.entries(prev).filter(
+        ([key, value]) => serverProperties[key] !== value
+      );
+      return pending.length === Object.keys(prev).length
+        ? prev
+        : Object.fromEntries(pending);
+    });
+  }, [serverProperties]);
 
-  const submit = useSubmit();
+  // One save at a time, the latest kept for when it ends: two saves in flight
+  // can land in either order, and the older one would win.
+  const savingProperties = useRef(false);
+  const queuedProperties = useRef<FormData | null>(null);
+  const propertiesFetcher = useAction({
+    onSettled: () => {
+      const next = queuedProperties.current;
+      queuedProperties.current = null;
+      savingProperties.current = next !== null;
+      if (next && receipt?.id) {
+        propertiesFetcher.submit(next, {
+          method: "post",
+          action: path.to.receiptLinesTracking(receipt.id)
+        });
+      }
+    }
+  });
+
   const handlePropertiesChange = (newProperties: Record<string, unknown>) => {
-    setProperties(newProperties);
+    setEdits((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        Object.entries(newProperties).filter(
+          ([key, value]) => properties[key] !== value
+        )
+      )
+    }));
     // With no serial on the line yet there is no unit to store them on (the
     // server refuses); the first serial save sends them instead.
     if (!receipt?.id || !tracking) return;
@@ -1417,10 +1465,14 @@ function SerialForm({
     formData.append("receiptLineId", line.id!);
     formData.append("trackingType", "serialProperties");
     formData.append("properties", JSON.stringify(newProperties));
-    submit(formData, {
+    if (savingProperties.current) {
+      queuedProperties.current = formData;
+      return;
+    }
+    savingProperties.current = true;
+    propertiesFetcher.submit(formData, {
       method: "post",
-      action: path.to.receiptLinesTracking(receipt.id),
-      navigate: false
+      action: path.to.receiptLinesTracking(receipt.id)
     });
   };
 

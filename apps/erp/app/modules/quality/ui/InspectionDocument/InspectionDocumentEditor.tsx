@@ -3,23 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { serviceErrorMessage, useAction } from "@carbon/query";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
-  Badge,
   Button,
-  Combobox,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  generateHTML,
-  HStack,
   IconButton,
-  Input,
-  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -27,152 +16,81 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   toast,
   toastError,
   useDebounce,
   useDisclosure,
-  usePaneResize,
-  VStack
+  usePaneResize
 } from "@carbon/react";
-import { Editor } from "@carbon/react/Editor";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Circle, Group, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
-import {
-  BALLOON_CALLOUT_STROKE,
-  BALLOON_H_NORM,
-  BALLOON_W_NORM,
-  clippedBalloonToAnchorLine
-} from "@carbon/utils";
 import { ModelUploadPreview } from "@carbon/viewer/model-upload-preview";
-import type { ColumnDef } from "@tanstack/react-table";
 import {
   LuChevronDown,
-  LuChevronLeft,
-  LuChevronRight,
   LuChevronUp,
-  LuCrosshair,
-  LuEllipsisVertical,
-  LuExternalLink,
-  LuFileDown,
-  LuMaximize,
-  LuMinus,
   LuPlus,
-  LuRectangleHorizontal,
-  LuScan,
-  LuSlidersHorizontal,
-  LuTrash2,
-  LuUpload
+  LuSlidersHorizontal
 } from "react-icons/lu";
-import { useBlocker, useFetcher, useNavigate } from "react-router";
-import type { EditableTableCellComponentProps } from "~/components/Editable";
-import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
-import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { VersionMenu } from "~/components/VersionMenu";
 import {
   useDrawerItem,
-  useImageUpload,
   useModelUpload,
   usePermissions,
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type {
-  BalloonRegionAnalysis,
-  InspectionDocumentStatus
-} from "~/modules/quality/quality.models";
+import type { InspectionDocumentStatus } from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
-import { procedureStepType } from "~/modules/shared/shared.models";
-import type { action as saveAction } from "~/routes/x+/inspection-document+/$id.save";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
-import QualityDocumentStatus from "../Documents/QualityDocumentStatus";
+import AnnotationPopover from "./AnnotationPopover";
+import { newFeatureId, type ParameterRow } from "./autosave";
+import DrawingOverlay from "./DrawingOverlay";
+import DrawingToolbar from "./DrawingToolbar";
+import { buildInspectionDocumentPdfWithOverlaysBytes } from "./drawingRaster";
 import {
-  AUTOSAVE_DELAY_MS,
-  hasUnsavedRows,
-  mergeSaveResponse,
-  newBalloonId,
-  newFeatureId,
-  newParameterId,
-  type ParameterRow,
-  sendableParameters
-} from "./autosave";
-import {
-  buildInspectionDocumentPdfWithOverlaysBytes,
-  cropInspectionAnchorToPngBlob
-} from "./drawingRaster";
+  buildFeatureRowsFromLoader,
+  type FeatureRow,
+  hasBalloonGeometry,
+  newFeatureRow,
+  nextBalloonLabel,
+  type PdfMetrics,
+  readPdfBytes,
+  type SelectorRect,
+  sanitizeFilenameBase,
+  selectorRectsFromBalloonRecords,
+  stripBalloonGeometryFromFeatureRows,
+  triggerDownload
+} from "./editorModel";
 import InspectionDocumentDropzone from "./InspectionDocumentDropzone";
+import InspectionDocumentHeader, {
+  type EditorTab,
+  type InspectionDocumentVersion
+} from "./InspectionDocumentHeader";
+import InspectionDocumentWorkInstruction, {
+  useWorkInstructionDraft
+} from "./InspectionDocumentWorkInstruction";
 import type { SamplingRule } from "./SamplingRuleModal";
 import SamplingRuleModal, { EMPTY_SAMPLING_RULE } from "./SamplingRuleModal";
+import { useDrawingInteractions } from "./useDrawingInteractions";
+import { useFeatureColumns, useSamplingRuleSummary } from "./useFeatureColumns";
+import {
+  useInspectionDocumentAutosave,
+  useSaveLedger
+} from "./useInspectionDocumentAutosave";
+import { useParameterRows } from "./useParameterRows";
 
 // Registered here, not in the client entry: this module is lazy, so the PDF
 // engine stays out of every page that shows no PDF.
 registerReactPdfWorker(pdfjs);
-
-type DragState = {
-  startX: number;
-  startY: number;
-  currentX: number;
-  currentY: number;
-} | null;
-type DragKind =
-  | "anchor"
-  | "zoom"
-  | "annotation"
-  | "annotationResize"
-  | "balloonMove"
-  | "anchorResize"
-  | null;
-
-type SelectorResizeHandle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
-
-type AnnotationRecord = {
-  id: string;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  text: string;
-  fontSize: number;
-};
-
-type AnnotationDraft = {
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  text: string;
-  fontSize: number;
-};
-
-type AnnotationEditDraft = {
-  id: string;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  text: string;
-  fontSize: number;
-};
 
 type InspectionDocumentEditorProps = {
   diagramId: string;
@@ -197,34 +115,11 @@ type InspectionDocumentEditorProps = {
   // Only a Draft version can be edited; the versions of the plan, newest first.
   version: number;
   status: InspectionDocumentStatus;
-  versions: Array<{
-    id: string;
-    name: string | null;
-    fileName: string | null;
-    version: number;
-    status: InspectionDocumentStatus;
-  }>;
+  versions: InspectionDocumentVersion[];
 };
-
-type PdfMetrics = {
-  pageCount: number;
-  defaultPageWidth: number;
-  defaultPageHeight: number;
-};
-
-function toPercent(px: number, total: number) {
-  return (px / total) * 100;
-}
 
 const EDITOR_SPLITTER_H = 8;
 const MIN_PDF_PANE_PX = 160;
-const ANNOTATION_DIALOG_WIDTH_PX = 220;
-const ANNOTATION_DIALOG_HEIGHT_PX = 140;
-const ANNOTATION_DIALOG_GAP_PX = 8;
-const SELECTOR_RESIZE_HANDLE_PX = 10;
-const SELECTOR_MIN_SIZE_PX = 12;
-const ANNOTATION_RESIZE_HANDLE_PX = 10;
-const ANNOTATION_MIN_SIZE_PX = 12;
 
 /** When the features table is expanded it keeps at least half the editor stack; PDF height is capped accordingly. */
 function clampPdfPaneHeight(
@@ -241,435 +136,6 @@ function clampPdfPaneHeight(
     stackH - EDITOR_SPLITTER_H - minFeatures
   );
   return Math.min(maxPdf, Math.max(MIN_PDF_PANE_PX, pdfPx));
-}
-
-function getAnnotationDialogPosition(args: {
-  renderedWidth: number;
-  overlayHeight: number;
-  totalPagesStage: number;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}) {
-  const {
-    renderedWidth,
-    overlayHeight,
-    totalPagesStage,
-    pageNumber,
-    x,
-    y,
-    width,
-    height
-  } = args;
-
-  const annLeft = (x / 100) * renderedWidth;
-  const annTop =
-    ((pageNumber - 1) / totalPagesStage) * overlayHeight +
-    (y / 100) * (overlayHeight / totalPagesStage);
-  const annWidth = (width / 100) * renderedWidth;
-  const annHeight = (height / 100) * (overlayHeight / totalPagesStage);
-  const annRight = annLeft + annWidth;
-  const annBottom = annTop + annHeight;
-
-  const maxLeft = Math.max(8, renderedWidth - ANNOTATION_DIALOG_WIDTH_PX);
-  const maxTop = Math.max(8, overlayHeight - ANNOTATION_DIALOG_HEIGHT_PX);
-
-  const rightCandidate = annRight + ANNOTATION_DIALOG_GAP_PX;
-  const leftCandidate =
-    annLeft - ANNOTATION_DIALOG_WIDTH_PX - ANNOTATION_DIALOG_GAP_PX;
-
-  let left = rightCandidate;
-  if (rightCandidate <= maxLeft) {
-    left = rightCandidate;
-  } else if (leftCandidate >= 8) {
-    left = leftCandidate;
-  } else {
-    left = Math.max(8, Math.min(maxLeft, rightCandidate));
-  }
-
-  let top = Math.max(8, Math.min(maxTop, annTop));
-
-  const dialogRight = left + ANNOTATION_DIALOG_WIDTH_PX;
-  const dialogBottom = top + ANNOTATION_DIALOG_HEIGHT_PX;
-  const overlapsAnnotation =
-    left < annRight &&
-    dialogRight > annLeft &&
-    top < annBottom &&
-    dialogBottom > annTop;
-
-  if (overlapsAnnotation) {
-    const belowCandidate = annBottom + ANNOTATION_DIALOG_GAP_PX;
-    const aboveCandidate =
-      annTop - ANNOTATION_DIALOG_HEIGHT_PX - ANNOTATION_DIALOG_GAP_PX;
-    if (belowCandidate <= maxTop) {
-      top = belowCandidate;
-    } else if (aboveCandidate >= 8) {
-      top = aboveCandidate;
-    } else {
-      top = Math.max(8, Math.min(maxTop, belowCandidate));
-    }
-  }
-
-  return { left, top };
-}
-
-function cursorForSelectorResizeHandle(
-  handle: SelectorResizeHandle
-): "ew-resize" | "ns-resize" | "nwse-resize" | "nesw-resize" | "pointer" {
-  switch (handle) {
-    case "n":
-    case "s":
-      return "ns-resize";
-    case "e":
-    case "w":
-      return "ew-resize";
-    case "ne":
-    case "sw":
-      return "nesw-resize";
-    case "nw":
-    case "se":
-      return "nwse-resize";
-    default:
-      return "pointer";
-  }
-}
-
-const CALLOUT_TEXT = "#171717";
-
-/**
- * Konva 9 does not apply the `cursor` prop to the DOM; Transformer only sets
- * `stage.content.style.cursor` manually. Use these helpers for hover/drag cursors.
- */
-function konvaContentFromStageRef(stageRef: {
-  current: unknown;
-}): HTMLElement | null {
-  const st = stageRef.current as { content?: HTMLElement } | null | undefined;
-  return st?.content ?? null;
-}
-
-type SelectorRect = {
-  id: string;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  isNew: boolean;
-  isDirty: boolean;
-};
-
-/** One grid row = one inspectionFeature; optional balloon for drawing overlay. */
-type FeatureRow = {
-  featureId: string;
-  balloonId: string | null;
-  balloonAnchorId: string;
-  label: string;
-  pageNumber: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  /** Maps to inspectionFeature.description (editable "Description" column). */
-  featureName: string;
-  nominalValue: string;
-  tolerancePlus: string;
-  toleranceMinus: string;
-  units: string;
-  type: (typeof procedureStepType)[number];
-  samplingPlanType: SamplingRule["samplingPlanType"];
-  samplingSampleSize: number | null;
-  samplingPercentage: number | null;
-  samplingAql: number | null;
-  samplingInspectionLevel: SamplingRule["samplingInspectionLevel"];
-  samplingSeverity: SamplingRule["samplingSeverity"];
-  /** Optional gauge type the feature must be measured with. */
-  gaugeTypeId: string | null;
-  /** The PMI item a model plan's feature was made from (read-only). */
-  pmiItemId: string | null;
-  featureDirty?: boolean;
-  geometryDirty?: boolean;
-};
-
-const featureTypeOptions = procedureStepType.map((t) => ({
-  label: t,
-  value: t
-}));
-
-// Compact display of a sampling rule ("AQL 1 · II · Normal"); null = no rule
-// (a feature inherits the document default; the document falls back to All).
-type FeatureMutationFn = (
-  accessorKey: string,
-  newValue: string,
-  row: FeatureRow
-) => Promise<{
-  data: null;
-  error: null;
-  count: null;
-  status: number;
-  statusText: string;
-  success: true;
-}>;
-
-const ConditionalMeasurementText =
-  (baseMutation: FeatureMutationFn) =>
-  (props: EditableTableCellComponentProps<FeatureRow>) => {
-    if (props.row.type !== "Measurement") {
-      return <span className="text-muted-foreground text-sm">&mdash;</span>;
-    }
-    return EditableText(baseMutation)(props);
-  };
-
-const ConditionalMeasurementList =
-  (
-    baseMutation: FeatureMutationFn,
-    options: { label: string; value: string }[]
-  ) =>
-  (props: EditableTableCellComponentProps<FeatureRow>) => {
-    if (props.row.type !== "Measurement") {
-      return <span className="text-muted-foreground text-sm">&mdash;</span>;
-    }
-    return EditableList(baseMutation, options)(props);
-  };
-
-// Optional gauge type: a clearable list (cleared = any gauge may be used).
-const EditableGaugeType =
-  (
-    baseMutation: FeatureMutationFn,
-    options: { label: string; value: string }[]
-  ) =>
-  ({
-    value,
-    row,
-    accessorKey,
-    label,
-    onUpdate
-  }: EditableTableCellComponentProps<FeatureRow>) => (
-    <Combobox
-      autoFocus
-      isClearable
-      aria-label={label}
-      className="rounded-none"
-      size="sm"
-      value={(value as string | null) ?? undefined}
-      options={options}
-      onChange={(newValue) => {
-        onUpdate({ [accessorKey]: newValue || null });
-        baseMutation(accessorKey, newValue, row);
-      }}
-    />
-  );
-
-const BALLOON_OFFSET_NORM = 0.02;
-const BALLOON_W_PCT = BALLOON_W_NORM * 100;
-const BALLOON_H_PCT = BALLOON_H_NORM * 100;
-const BALLOON_OFFSET_PCT = BALLOON_OFFSET_NORM * 100;
-
-function nextBalloonLabel(rows: FeatureRow[]): string {
-  const nums = rows
-    .map((r) => parseInt(r.label, 10))
-    .filter((n) => Number.isFinite(n));
-  const max = nums.length ? Math.max(...nums) : 0;
-  return String(max + 1);
-}
-
-/** What a save sent, so its response can tell what changed since. */
-type SaveSnapshot = {
-  featureRows: FeatureRow[];
-  anchorRects: SelectorRect[];
-  docSampling: SamplingRule;
-  parameterRows: ParameterRow[];
-  /** The parameters payload the save sent; null when it sent none. */
-  parameters: string | null;
-  pdfUrl: string;
-  sentPdfMetrics: boolean;
-  /** Characteristic and balloon ids this save creates. */
-  createdIds: string[];
-  featureDeleteIds: string[];
-  balloonDeleteIds: string[];
-};
-
-function stripBalloonGeometryFromFeatureRows(rows: FeatureRow[]): FeatureRow[] {
-  return rows.map((r) =>
-    r.balloonId == null
-      ? r
-      : {
-          ...r,
-          balloonId: null,
-          balloonAnchorId: "",
-          x: 0,
-          y: 0,
-          geometryDirty: false
-        }
-  );
-}
-
-function hasBalloonGeometry(
-  rows: FeatureRow[],
-  selectors: SelectorRect[]
-): boolean {
-  return rows.some((r) => r.balloonId != null) || selectors.length > 0;
-}
-
-function sanitizeFilenameBase(name: string) {
-  const trimmed = name.trim().replace(/[\\/:*?"<>|]+/g, "_");
-  return (trimmed.length > 0 ? trimmed : "diagram").slice(0, 120);
-}
-
-function triggerDownload(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function getBalloonValueOrNull(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function blobToBase64Data(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const comma = dataUrl.indexOf(",");
-      resolve(comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl);
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
-/** Selector regions are always derived from balloon rows (region = anchor rect). */
-function selectorRectsFromBalloonRecords(
-  balloons: Array<Record<string, unknown>>
-): SelectorRect[] {
-  return balloons.map((b) => ({
-    id: String(b.id),
-    pageNumber: Number(b.pageNumber ?? 1),
-    x: Number(b.regionX ?? b.xCoordinate ?? 0) * 100,
-    y: Number(b.regionY ?? b.yCoordinate ?? 0) * 100,
-    width: Number(b.regionWidth ?? 0.1) * 100,
-    height: Number(b.regionHeight ?? 0.1) * 100,
-    isNew: false,
-    isDirty: false
-  }));
-}
-
-/** When a balloon exists, its page is authoritative for overlay placement. */
-function resolvedFeaturePageNumber(
-  feature: Record<string, unknown>,
-  balloon?: Record<string, unknown>
-): number {
-  if (
-    balloon != null &&
-    balloon.pageNumber != null &&
-    balloon.pageNumber !== ""
-  ) {
-    return Number(balloon.pageNumber);
-  }
-  return Number(feature.pageNumber ?? 1);
-}
-
-function mapFeatureRowFromRecords(
-  feature: Record<string, unknown>,
-  balloon?: Record<string, unknown>
-): FeatureRow {
-  const desc =
-    feature.description != null && String(feature.description).trim() !== ""
-      ? String(feature.description)
-      : "";
-  const label = String(feature.label ?? "");
-  const featureName = desc || `Characteristic ${label}`;
-  const balloonId =
-    balloon != null
-      ? String(balloon.id)
-      : feature.balloonId != null
-        ? String(feature.balloonId)
-        : null;
-
-  return {
-    featureId: String(feature.id),
-    balloonId,
-    balloonAnchorId: balloonId ?? "",
-    label,
-    pageNumber: resolvedFeaturePageNumber(feature, balloon),
-    x: balloon ? Number(balloon.xCoordinate ?? 0) * 100 : 0,
-    y: balloon ? Number(balloon.yCoordinate ?? 0) * 100 : 0,
-    width: BALLOON_W_PCT,
-    height: BALLOON_H_PCT,
-    featureName,
-    nominalValue: String(feature.nominalValue ?? ""),
-    tolerancePlus: String(feature.tolerancePlus ?? ""),
-    toleranceMinus: String(feature.toleranceMinus ?? ""),
-    units: String(feature.unit ?? ""),
-    type: (feature.type as (typeof procedureStepType)[number]) ?? "Measurement",
-    samplingPlanType:
-      (feature.samplingPlanType as SamplingRule["samplingPlanType"]) ?? null,
-    samplingSampleSize: (feature.samplingSampleSize as number | null) ?? null,
-    samplingPercentage:
-      feature.samplingPercentage == null
-        ? null
-        : Number(feature.samplingPercentage),
-    samplingAql:
-      feature.samplingAql == null ? null : Number(feature.samplingAql),
-    samplingInspectionLevel:
-      (feature.samplingInspectionLevel as SamplingRule["samplingInspectionLevel"]) ??
-      null,
-    samplingSeverity:
-      (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
-    gaugeTypeId: (feature.gaugeTypeId as string | null) ?? null,
-    pmiItemId: (feature.pmiItemId as string | null) ?? null,
-    featureDirty: false,
-    geometryDirty: false
-  };
-}
-
-// Features saved together share one createdAt (the save RPC runs in a single
-// transaction), so createdAt alone leaves their order to the heap, and an
-// UPDATE moves the edited row to the end. Break the tie by balloon label, the
-// order the inspection grid shows them in. Rows are sorted on load only; a
-// save response keeps the editor's order (mergeSaveResponse), so a row never
-// moves under the cursor.
-function compareFeatureRecords(
-  a: Record<string, unknown>,
-  b: Record<string, unknown>
-) {
-  const aCreated = String(a.createdAt ?? "");
-  const bCreated = String(b.createdAt ?? "");
-  return (
-    (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
-    String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
-      numeric: true
-    }) ||
-    String(a.id).localeCompare(String(b.id))
-  );
-}
-
-function buildFeatureRowsFromLoader(
-  features: Array<Record<string, unknown>>,
-  balloons: Array<Record<string, unknown>>
-) {
-  const balloonByFeatureId = new Map(
-    balloons.map((b) => [String(b.inspectionFeatureId), b])
-  );
-  return [...features]
-    .sort(compareFeatureRecords)
-    .map((f) =>
-      mapFeatureRowFromRecords(
-        f,
-        f.balloonId != null
-          ? balloons.find((b) => String(b.id) === String(f.balloonId))
-          : balloonByFeatureId.get(String(f.id))
-      )
-    );
 }
 
 export default function InspectionDocumentEditor({
@@ -691,38 +157,11 @@ export default function InspectionDocumentEditor({
   versions
 }: InspectionDocumentEditorProps) {
   const { t } = useLingui();
-  // A sampling rule as the inspector would say it: "Inspect All", "First 2".
-  // Null when the rule is unset (a characteristic then inherits the plan's).
-  const samplingRuleSummary = useCallback(
-    (rule: SamplingRule): string | null => {
-      switch (rule.samplingPlanType) {
-        case "All":
-          return t`Inspect All`;
-        case "First": {
-          const count = rule.samplingSampleSize ?? 1;
-          return t`First ${count}`;
-        }
-        case "Percentage": {
-          const percentage = rule.samplingPercentage ?? 100;
-          return t`${percentage}%`;
-        }
-        case "AQL":
-          return `AQL ${rule.samplingAql ?? 1} · ${rule.samplingInspectionLevel ?? "II"} · ${rule.samplingSeverity ?? "Normal"}`;
-        default:
-          return null;
-      }
-    },
-    [t]
-  );
-  const navigate = useNavigate();
+  const samplingRuleSummary = useSamplingRuleSummary();
   const permissions = usePermissions();
   // Active and Archived versions are what lots were inspected against.
   const isLocked = status !== "Draft";
   const canUpdate = permissions.can("update", "quality") && !isLocked;
-  const newVersionFetcher = useFetcher();
-  const activateFetcher = useAction({
-    onSuccess: () => toast.success(t`Version published`)
-  });
   const [items] = useItems();
   const deleteDisclosure = useDisclosure();
   // A model plan: the characteristic whose PMI item the model shows.
@@ -733,11 +172,10 @@ export default function InspectionDocumentEditor({
     part && part.type !== "Fixture"
       ? getLinkToItemDetails(part.type, part.id)
       : null;
-  const fetcher = useFetcher<typeof saveAction>();
   const nameFetcher = useAction();
   const [title, setTitle] = useState(name);
-  // A typed name or work instruction waiting out its debounce, so Publish
-  // waits for it rather than locking the version under it.
+  // A typed name waiting out its debounce, so Publish waits for it rather
+  // than locking the version under it.
   const [namePending, setNamePending] = useState(false);
   const debouncedSaveName = useDebounce((value: string) => {
     setNamePending(false);
@@ -761,39 +199,15 @@ export default function InspectionDocumentEditor({
     sampling ?? EMPTY_SAMPLING_RULE
   );
   // The plan's parameters; autosaved as a whole list when they change.
-  const [parameterRows, setParameterRows] = useState<ParameterRow[]>(() =>
-    initialParameters.map(({ id, key, value }) => ({ id, key, value }))
-  );
-  const parametersPayload = useMemo(
-    () => JSON.stringify(sendableParameters(parameterRows)),
-    [parameterRows]
-  );
-  const [bottomTab, setBottomTab] = useState<
-    "characteristics" | "parameters" | "instructions"
-  >("characteristics");
-  // Saved on its own, debounced, like the name: the autosave carries the
-  // characteristics and balloons.
-  const workInstructionFetcher = useAction();
-  // What was typed here, so switching tabs does not drop an unsaved edit.
-  const [typedWorkInstruction, setTypedWorkInstruction] =
-    useState<JSONContent | null>(null);
-  const [workInstructionPending, setWorkInstructionPending] = useState(false);
-  const debouncedSaveWorkInstruction = useDebounce(
-    (content: JSONContent) => {
-      setWorkInstructionPending(false);
-      workInstructionFetcher.submit(
-        { workInstruction: content },
-        {
-          method: "post",
-          action: path.to.updateInspectionDocumentWorkInstruction(diagramId),
-          encType: "application/json"
-        }
-      );
-    },
-    1000,
-    true
-  );
-  const onUploadImage = useImageUpload("inspection-documents");
+  const {
+    parameterRows,
+    parametersPayload,
+    handleAddParameter,
+    parameterColumns,
+    parameterEditableComponents
+  } = useParameterRows(initialParameters, canUpdate);
+  const [bottomTab, setBottomTab] = useState<EditorTab>("characteristics");
+  const workInstructionDraft = useWorkInstructionDraft(diagramId);
   const samplingModal = useDrawerItem<"document" | string>();
   const { item: samplingTarget, open: openSamplingModal } = samplingModal;
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -821,17 +235,12 @@ export default function InspectionDocumentEditor({
       })),
     [featureRows]
   );
-  const [placing, setPlacing] = useState(false);
-  const [placingAnnotation, setPlacingAnnotation] = useState(false);
-  const [zoomBoxMode, setZoomBoxMode] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [numPages, setNumPages] = useState<number>(0);
   /** 1-based page index for the PDF viewer (one page on screen at a time). */
   const [pdfViewPage, setPdfViewPage] = useState(1);
   const [pdfMetrics, setPdfMetrics] = useState<PdfMetrics | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [drag, setDrag] = useState<DragState>(null);
-  const [dragKind, setDragKind] = useState<DragKind>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [overlayHeight, setOverlayHeight] = useState<number>(0);
   /** Expanded when no PDF (edit features); collapsed when a document is loaded (room for drawing). */
@@ -850,86 +259,12 @@ export default function InspectionDocumentEditor({
   }
   const overlayRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<unknown>(null);
   const editorStackRef = useRef<HTMLDivElement>(null);
-  const balloonDragRef = useRef<{
-    balloonId: string;
-    startX: number;
-    startY: number;
-  } | null>(null);
-  const anchorResizeRef = useRef<{
-    balloonAnchorId: string;
-    handle: SelectorResizeHandle;
-    startRect: Pick<SelectorRect, "x" | "y" | "width" | "height">;
-  } | null>(null);
-  const annotationResizeRef = useRef<{
-    annotationId: string;
-    handle: SelectorResizeHandle;
-    startRect: Pick<
-      AnnotationRecord,
-      "x" | "y" | "width" | "height" | "pageNumber"
-    >;
-  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pdfReplaceToastRef = useRef(false);
   /** A replaced drawing's page metrics still need saving once it renders. */
   const [pdfMetricsDirty, setPdfMetricsDirty] = useState(false);
-  /** Persisted feature ids to hard-delete on the next save. */
-  const pendingFeatureDeleteIdsRef = useRef(new Set<string>());
-  /** Persisted balloon ids to hard-delete on the next save (unballoon). */
-  const pendingBalloonDeleteIdsRef = useRef(new Set<string>());
-  /** The save in flight; null when none is. */
-  const inFlightSaveRef = useRef<SaveSnapshot | null>(null);
-  /** The save response last merged — the merge effect also runs on edits. */
-  const handledSaveDataRef = useRef<unknown>(null);
-  /** The last autosave that failed — not retried until something changes. */
-  const failedSaveRef = useRef<SaveSnapshot | null>(null);
-  /** Characteristic and balloon ids minted here that no save has created
-   * yet. A save sends these as creates, everything else as updates. */
-  const unsavedIdsRef = useRef(new Set<string>());
-  const isUnsaved = useCallback(
-    (id: string) => unsavedIdsRef.current.has(id),
-    []
-  );
-  /** Queues a delete for a row the server has — or is creating right now —
-   * and simply forgets one that never left the browser. */
-  const queueDelete = useCallback((pending: Set<string>, id: string) => {
-    const sending = inFlightSaveRef.current?.createdIds.includes(id);
-    if (unsavedIdsRef.current.has(id) && !sending) {
-      unsavedIdsRef.current.delete(id);
-    } else {
-      pending.add(id);
-    }
-  }, []);
-  const savedSamplingRef = useRef<SamplingRule>(
-    sampling ?? EMPTY_SAMPLING_RULE
-  );
-  const savedPdfUrlRef = useRef(content?.pdfUrl ?? "");
-  const savedParametersRef = useRef(
-    JSON.stringify(sendableParameters(initialParameters))
-  );
-  /** Whether a save has succeeded yet — the label shows nothing before. */
-  const [hasSaved, setHasSaved] = useState(false);
-  const [placingFeatureId, setPlacingFeatureId] = useState<string | null>(null);
-
-  const [annotations, setAnnotations] = useState<AnnotationRecord[]>([]);
-  const [selectedAnnotationId, setSelectedAnnotationId] = useState<
-    string | null
-  >(null);
-  const [selectedBalloonId, setSelectedBalloonId] = useState<string | null>(
-    null
-  );
-  const [selectedSelectorId, setSelectedSelectorId] = useState<string | null>(
-    null
-  );
-  const [annotationDraft, setAnnotationDraft] =
-    useState<AnnotationDraft | null>(null);
-  const [annotationFontSizeInput, setAnnotationFontSizeInput] =
-    useState<string>("12");
-  const [annotationEditDraft, setAnnotationEditDraft] =
-    useState<AnnotationEditDraft | null>(null);
-  const [annotationEditFontSizeInput, setAnnotationEditFontSizeInput] =
-    useState<string>("12");
+  const ledger = useSaveLedger();
+  const { queueDelete, unsavedIdsRef } = ledger;
 
   const documentPageCount = Math.max(1, numPages, pdfMetrics?.pageCount ?? 0);
 
@@ -943,27 +278,6 @@ export default function InspectionDocumentEditor({
     void pdfViewPage;
     containerRef.current?.scrollTo(0, 0);
   }, [pdfViewPage]);
-
-  useEffect(() => {
-    setSelectedSelectorId((id) => {
-      if (!id) return null;
-      const sel = anchorRects.find((s) => s.id === id);
-      if (!sel || sel.pageNumber !== pdfViewPage) return null;
-      return id;
-    });
-    setSelectedBalloonId((bid) => {
-      if (!bid) return null;
-      const row = featureRows.find((r) => r.balloonId === bid);
-      if (!row || row.pageNumber !== pdfViewPage) return null;
-      return bid;
-    });
-    setSelectedAnnotationId((aid) => {
-      if (!aid) return null;
-      const ann = annotations.find((a) => a.id === aid);
-      if (!ann || ann.pageNumber !== pdfViewPage) return null;
-      return aid;
-    });
-  }, [pdfViewPage, anchorRects, featureRows, annotations]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -1018,1436 +332,45 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [pdfFile, pdfUrl]);
 
-  // Merges each save response into the editor's current state. It reads the
-  // current rows, so it also runs on every edit; handledSaveDataRef makes each
-  // response merge exactly once.
-  useEffect(() => {
-    const result = fetcher.data;
-    if (!result || result === handledSaveDataRef.current) return;
-    handledSaveDataRef.current = result;
-    const sent = inFlightSaveRef.current;
-    inFlightSaveRef.current = null;
-    if (!sent) return;
-
-    // A refused save, or a payload the route could not read (field errors).
-    const data = "data" in result ? result.data : null;
-    if (!data?.success) {
-      failedSaveRef.current = sent;
-      pdfReplaceToastRef.current = false;
-      toast.error(
-        serviceErrorMessage(result) ?? t`Failed to save inspection plan`
-      );
-      return;
-    }
-
-    const savedBalloons = data.balloons ?? [];
-    const merged = mergeSaveResponse({
-      sentRows: sent.featureRows,
-      sentAnchors: sent.anchorRects,
-      currentRows: featureRows,
-      currentAnchors: anchorRects,
-      savedRows: buildFeatureRowsFromLoader(data.features ?? [], savedBalloons),
-      savedAnchors: selectorRectsFromBalloonRecords(savedBalloons)
-    });
-
-    for (const id of sent.createdIds) unsavedIdsRef.current.delete(id);
-    for (const id of sent.featureDeleteIds) {
-      pendingFeatureDeleteIdsRef.current.delete(id);
-    }
-    for (const id of sent.balloonDeleteIds) {
-      pendingBalloonDeleteIdsRef.current.delete(id);
-    }
-    savedSamplingRef.current = sent.docSampling;
-    if (sent.parameters !== null) savedParametersRef.current = sent.parameters;
-    savedPdfUrlRef.current = sent.pdfUrl;
-    failedSaveRef.current = null;
-    if (sent.sentPdfMetrics) setPdfMetricsDirty(false);
-    setFeatureRows(merged.rows);
-    setSelectorRects(merged.anchors);
-    setHasSaved(true);
-
-    if (pdfReplaceToastRef.current && sent.pdfUrl === pdfUrl) {
-      pdfReplaceToastRef.current = false;
-      toast.success(
-        t`Drawing replaced. Balloon placements were removed; characteristic rows are unchanged.`
-      );
-    }
-  }, [fetcher.data, featureRows, anchorRects, pdfUrl, t]);
-
-  const loadAnnotations = useCallback(async () => {
-    setAnnotations([]);
-  }, []);
-
-  useEffect(() => {
-    void loadAnnotations();
-  }, [loadAnnotations]);
-
-  useEffect(() => {
-    if (!selectedAnnotationId || annotationDraft) {
-      setAnnotationEditDraft(null);
-      return;
-    }
-    const selected = annotations.find(
-      (item) => item.id === selectedAnnotationId
-    );
-    if (!selected) {
-      setAnnotationEditDraft(null);
-      return;
-    }
-    setAnnotationEditDraft({
-      id: selected.id,
-      pageNumber: selected.pageNumber,
-      x: selected.x,
-      y: selected.y,
-      width: selected.width,
-      height: selected.height,
-      text: selected.text,
-      fontSize: selected.fontSize
-    });
-    setAnnotationEditFontSizeInput(String(selected.fontSize));
-  }, [selectedAnnotationId, annotations, annotationDraft]);
-
-  const getRelativePosFromStage = useCallback(() => {
-    const stage = stageRef.current as {
-      getPointerPosition: () => { x: number; y: number } | null;
-      width: () => number;
-      height: () => number;
-    } | null;
-    const pos = stage?.getPointerPosition?.() ?? null;
-    if (!pos || !stage) return { x: 0, y: 0 };
-    const w = stage.width();
-    const h = stage.height();
-    return { x: toPercent(pos.x, w), y: toPercent(pos.y, h) };
-  }, []);
-
-  const persistAnnotationResize = useCallback(
-    async (_annotation: AnnotationRecord) => {
-      return;
-    },
-    []
-  );
-
-  const finalizeDragAt = useCallback(
-    (x: number, y: number) => {
-      if (!drag || !dragKind) return;
-
-      const rx = Math.min(drag.startX, x);
-      const ry = Math.min(drag.startY, y);
-      const rw = Math.abs(x - drag.startX);
-      const rh = Math.abs(y - drag.startY);
-
-      if (rw < 0.5 || rh < 0.5) {
-        if (dragKind === "balloonMove") {
-          balloonDragRef.current = null;
-        }
-        if (dragKind === "annotationResize") {
-          annotationResizeRef.current = null;
-        }
-        if (dragKind === "anchorResize") {
-          anchorResizeRef.current = null;
-        }
-        setDragKind(null);
-        setDrag(null);
-        return;
-      }
-
-      if (dragKind === "zoom") {
-        if (!containerRef.current || !overlayRef.current) {
-          setDragKind(null);
-          setDrag(null);
-          return;
-        }
-        const overlayRect = overlayRef.current.getBoundingClientRect();
-        const boxWidthPx = (rw / 100) * overlayRect.width;
-        const boxHeightPx = (rh / 100) * overlayRect.height;
-        if (boxWidthPx < 8 || boxHeightPx < 8) {
-          setDragKind(null);
-          setDrag(null);
-          return;
-        }
-        const fitX = containerRef.current.clientWidth / boxWidthPx;
-        const fitY = containerRef.current.clientHeight / boxHeightPx;
-        const nextZoom = Math.max(
-          0.5,
-          Math.min(3, Number((zoomScale * Math.min(fitX, fitY)).toFixed(2)))
-        );
-        const zoomRatio = nextZoom / zoomScale;
-        const centerXPx = ((rx + rw / 2) / 100) * overlayRect.width;
-        const centerYPx = ((ry + rh / 2) / 100) * overlayHeight;
-        setZoomScale(nextZoom);
-        requestAnimationFrame(() => {
-          if (!containerRef.current) return;
-          containerRef.current.scrollLeft =
-            centerXPx * zoomRatio - containerRef.current.clientWidth / 2;
-          containerRef.current.scrollTop =
-            centerYPx * zoomRatio - containerRef.current.clientHeight / 2;
-        });
-        setDragKind(null);
-        setDrag(null);
-        return;
-      }
-
-      if (dragKind === "annotation") {
-        const pageNumber = pdfViewPage;
-        const localY = ry;
-        const localHeight = rh;
-        const clippedLocalHeight = Math.min(localHeight, 100 - localY);
-
-        if (clippedLocalHeight < 0.5) {
-          setDragKind(null);
-          setDrag(null);
-          return;
-        }
-
-        setAnnotationDraft({
-          pageNumber,
-          x: rx,
-          y: localY,
-          width: rw,
-          height: clippedLocalHeight,
-          text: "",
-          fontSize: 12
-        });
-        setAnnotationFontSizeInput("12");
-        setDragKind(null);
-        setDrag(null);
-        setPlacingAnnotation(false);
-        return;
-      }
-
-      if (dragKind === "annotationResize" && annotationResizeRef.current) {
-        const activeResize = annotationResizeRef.current;
-        const stageWidthPctBase = Math.max(1, containerWidth * zoomScale);
-        const pageHeightPx = overlayHeight;
-        const minWidthPct = Math.max(
-          0.5,
-          (ANNOTATION_MIN_SIZE_PX / stageWidthPctBase) * 100
-        );
-        const minHeightPct = Math.max(
-          0.5,
-          (ANNOTATION_MIN_SIZE_PX / Math.max(1, pageHeightPx)) * 100
-        );
-        const start = activeResize.startRect;
-        const deltaX = x - drag.startX;
-        const deltaY = y - drag.startY;
-        let nextX = start.x;
-        let nextY = start.y;
-        let nextW = start.width;
-        let nextH = start.height;
-
-        if (activeResize.handle.includes("e")) {
-          nextW = Math.max(
-            minWidthPct,
-            Math.min(100 - start.x, start.width + deltaX)
-          );
-        }
-        if (activeResize.handle.includes("s")) {
-          nextH = Math.max(
-            minHeightPct,
-            Math.min(100 - start.y, start.height + deltaY)
-          );
-        }
-        if (activeResize.handle.includes("w")) {
-          const limitedX = Math.max(
-            0,
-            Math.min(start.x + start.width - minWidthPct, start.x + deltaX)
-          );
-          nextX = limitedX;
-          nextW = start.width - (limitedX - start.x);
-        }
-        if (activeResize.handle.includes("n")) {
-          const limitedY = Math.max(
-            0,
-            Math.min(start.y + start.height - minHeightPct, start.y + deltaY)
-          );
-          nextY = limitedY;
-          nextH = start.height - (limitedY - start.y);
-        }
-
-        const resized = {
-          x: Math.max(0, Math.min(100 - nextW, nextX)),
-          y: Math.max(0, Math.min(100 - nextH, nextY)),
-          width: nextW,
-          height: nextH
-        };
-
-        const finalAnnotation: AnnotationRecord = {
-          id: activeResize.annotationId,
-          pageNumber: start.pageNumber,
-          ...resized,
-          text:
-            annotations.find((item) => item.id === activeResize.annotationId)
-              ?.text ?? "",
-          fontSize:
-            annotations.find((item) => item.id === activeResize.annotationId)
-              ?.fontSize ?? 12
-        };
-
-        setAnnotations((prev) =>
-          prev.map((a) =>
-            a.id === activeResize.annotationId ? { ...a, ...resized } : a
-          )
-        );
-        setAnnotationEditDraft((prev) =>
-          prev && prev.id === activeResize.annotationId
-            ? { ...prev, ...resized }
-            : prev
-        );
-        annotationResizeRef.current = null;
-        setDragKind(null);
-        setDrag(null);
-        void persistAnnotationResize(finalAnnotation);
-        return;
-      }
-
-      if (dragKind === "anchor") {
-        const pageNumber = pdfViewPage;
-        const localY = ry;
-        const localHeight = rh;
-        const clippedLocalHeight = Math.min(localHeight, 100 - localY);
-
-        if (clippedLocalHeight < 0.5) {
-          setDragKind(null);
-          setDrag(null);
-          return;
-        }
-
-        const placingExistingFeatureId = placingFeatureId;
-        const balloonId = newBalloonId();
-        const featureId = newFeatureId();
-        unsavedIdsRef.current.add(balloonId);
-        if (!placingExistingFeatureId) unsavedIdsRef.current.add(featureId);
-        let balloonX = rx + rw + BALLOON_OFFSET_PCT;
-        if (balloonX + BALLOON_W_PCT > 100) {
-          balloonX = rx - BALLOON_OFFSET_PCT - BALLOON_W_PCT;
-        }
-        balloonX = Math.max(0, Math.min(100 - BALLOON_W_PCT, balloonX));
-        const balloonY = Math.max(0, Math.min(100 - BALLOON_H_PCT, localY));
-
-        setSelectorRects((prev) => [
-          ...prev,
-          {
-            id: balloonId,
-            pageNumber,
-            x: rx,
-            y: localY,
-            width: rw,
-            height: clippedLocalHeight,
-            isNew: true,
-            isDirty: false
-          }
-        ]);
-
-        setFeatureRows((prev) => {
-          const existing = placingExistingFeatureId
-            ? prev.find((r) => r.featureId === placingExistingFeatureId)
-            : null;
-          if (existing) {
-            return prev.map((r) =>
-              r.featureId !== placingExistingFeatureId
-                ? r
-                : {
-                    ...r,
-                    balloonId,
-                    balloonAnchorId: balloonId,
-                    pageNumber,
-                    x: balloonX,
-                    y: balloonY,
-                    featureDirty: true,
-                    geometryDirty: true
-                  }
-            );
-          }
-          // The feature being placed was deleted meanwhile: a new one it is.
-          unsavedIdsRef.current.add(featureId);
-          const label = nextBalloonLabel(prev);
-          return [
-            ...prev,
-            {
-              featureId,
-              balloonId,
-              balloonAnchorId: balloonId,
-              label,
-              pageNumber,
-              x: balloonX,
-              y: balloonY,
-              width: BALLOON_W_PCT,
-              height: BALLOON_H_PCT,
-              featureName: `Characteristic ${label}`,
-              nominalValue: "",
-              tolerancePlus: "",
-              toleranceMinus: "",
-              units: "",
-              type: "Measurement",
-              samplingPlanType: null,
-              samplingSampleSize: null,
-              samplingPercentage: null,
-              samplingAql: null,
-              samplingInspectionLevel: null,
-              samplingSeverity: null,
-              gaugeTypeId: null,
-              pmiItemId: null
-            }
-          ];
-        });
-        setPlacingFeatureId(null);
-
-        // New selector rows only — skip AI when placing geometry on an existing table feature.
-        if (!placingExistingFeatureId) {
-          const renderedPageWidthPx = Math.max(1, containerWidth * zoomScale);
-          void (async () => {
-            try {
-              if (pdfFile === null && !pdfUrl) {
-                return;
-              }
-              let bytes: ArrayBuffer;
-              if (pdfFile !== null) {
-                bytes = await pdfFile.arrayBuffer();
-              } else {
-                const res = await fetch(pdfUrl, { credentials: "include" });
-                if (!res.ok) {
-                  throw new Error(String(res.status));
-                }
-                bytes = await res.arrayBuffer();
-              }
-              const blob = await cropInspectionAnchorToPngBlob({
-                pdfBytes: bytes,
-                pageNumber,
-                x: rx,
-                y: localY,
-                width: rw,
-                height: clippedLocalHeight,
-                renderedPageWidthPx
-              });
-
-              try {
-                const imageBase64 = await blobToBase64Data(blob);
-                const analyzeRes = await fetch(
-                  path.to.api.inspectionDocumentBalloonAnalyze(diagramId),
-                  {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      imageBase64,
-                      mediaType: "image/png"
-                    })
-                  }
-                );
-                const payloadUnknown: unknown = await analyzeRes.json();
-                const payload = payloadUnknown as {
-                  success?: boolean;
-                  analysis?: BalloonRegionAnalysis;
-                  message?: string;
-                };
-                if (!analyzeRes.ok || !payload.success || !payload.analysis) {
-                  toast.error(
-                    t`Could not analyze region: ${payload.message ?? analyzeRes.statusText}`
-                  );
-                  return;
-                }
-                const a = payload.analysis;
-                setFeatureRows((prev) =>
-                  prev.map((r) => {
-                    if (r.balloonId !== balloonId) return r;
-                    const fmt = (n: number | null, fallback: string) =>
-                      n != null && Number.isFinite(n) ? String(n) : fallback;
-                    const nextNominal = fmt(a.nominal, r.nominalValue);
-                    const nextPlus = fmt(a.tol_plus, r.tolerancePlus);
-                    const nextMinus = fmt(a.tol_minus, r.toleranceMinus);
-                    const nextUnits = a.unit != null ? a.unit : r.units;
-                    let nextFeatureName = r.featureName;
-                    if (a.type !== "unknown") {
-                      const tag = ` [${a.type}]`;
-                      if (!nextFeatureName.includes(tag)) {
-                        nextFeatureName = `${nextFeatureName}${tag}`;
-                      }
-                    }
-                    return {
-                      ...r,
-                      nominalValue: nextNominal,
-                      tolerancePlus: nextPlus,
-                      toleranceMinus: nextMinus,
-                      units: nextUnits,
-                      type: "Measurement",
-                      featureName: nextFeatureName,
-                      featureDirty: true
-                    };
-                  })
-                );
-                toast.success(t`Characteristic values suggested from drawing`);
-              } catch {
-                toast.error(t`Could not analyze cropped region`);
-              }
-            } catch {
-              toast.error(t`Could not prepare region image for analysis`);
-            }
-          })();
-        }
-
-        setDragKind(null);
-        setDrag(null);
-        setPlacing(false);
-        return;
-      }
-
-      if (dragKind === "balloonMove") {
-        balloonDragRef.current = null;
-        setDragKind(null);
-        setDrag(null);
-        return;
-      }
-
-      if (dragKind === "anchorResize") {
-        anchorResizeRef.current = null;
-        setDragKind(null);
-        setDrag(null);
-        return;
-      }
-
-      setDragKind(null);
-      setDrag(null);
-    },
-    [
-      drag,
-      pdfViewPage,
-      dragKind,
-      zoomScale,
-      overlayHeight,
-      containerWidth,
-      pdfFile,
-      pdfUrl,
-      diagramId,
-      annotations,
-      persistAnnotationResize,
-      placingFeatureId,
-      t
-    ]
-  );
-
-  const getAnnotationIdAt = useCallback(
-    (x: number, y: number): string | null => {
-      const pageNumber = pdfViewPage;
-      const localY = y;
-
-      for (let i = annotations.length - 1; i >= 0; i -= 1) {
-        const annotation = annotations[i];
-        if (annotation.pageNumber !== pageNumber) continue;
-        const inRect =
-          x >= annotation.x &&
-          x <= annotation.x + annotation.width &&
-          localY >= annotation.y &&
-          localY <= annotation.y + annotation.height;
-        if (inRect) return annotation.id;
-      }
-
-      return null;
-    },
-    [annotations, pdfViewPage]
-  );
-
-  const getAnnotationResizeHandleAt = useCallback(
-    (
-      x: number,
-      y: number
-    ): { annotationId: string; handle: SelectorResizeHandle } | null => {
-      const pageNumber = pdfViewPage;
-      const localY = y;
-      const pageHeightPx = overlayHeight;
-      const stageWidthPctBase = Math.max(1, containerWidth * zoomScale);
-      const hPad = Math.max(
-        0.5,
-        (ANNOTATION_RESIZE_HANDLE_PX / stageWidthPctBase) * 100
-      );
-      const vPad = Math.max(
-        0.5,
-        (ANNOTATION_RESIZE_HANDLE_PX / Math.max(1, pageHeightPx)) * 100
-      );
-
-      for (let i = annotations.length - 1; i >= 0; i -= 1) {
-        const a = annotations[i];
-        if (a.pageNumber !== pageNumber) continue;
-        const left = a.x;
-        const right = a.x + a.width;
-        const top = a.y;
-        const bottom = a.y + a.height;
-        const nearLeft = Math.abs(x - left) <= hPad;
-        const nearRight = Math.abs(x - right) <= hPad;
-        const nearTop = Math.abs(localY - top) <= vPad;
-        const nearBottom = Math.abs(localY - bottom) <= vPad;
-        const withinXBand = x >= left - hPad && x <= right + hPad;
-        const withinYBand = localY >= top - vPad && localY <= bottom + vPad;
-        if (!withinXBand || !withinYBand) continue;
-
-        if (nearTop && nearLeft) return { annotationId: a.id, handle: "nw" };
-        if (nearTop && nearRight) return { annotationId: a.id, handle: "ne" };
-        if (nearBottom && nearLeft) return { annotationId: a.id, handle: "sw" };
-        if (nearBottom && nearRight)
-          return { annotationId: a.id, handle: "se" };
-        if (nearTop) return { annotationId: a.id, handle: "n" };
-        if (nearBottom) return { annotationId: a.id, handle: "s" };
-        if (nearLeft) return { annotationId: a.id, handle: "w" };
-        if (nearRight) return { annotationId: a.id, handle: "e" };
-      }
-
-      return null;
-    },
-    [annotations, pdfViewPage, overlayHeight, containerWidth, zoomScale]
-  );
-
-  const getBalloonIdAt = useCallback(
-    (x: number, y: number): string | null => {
-      const pageNumber = pdfViewPage;
-      const localY = y;
-
-      for (let i = featureRows.length - 1; i >= 0; i -= 1) {
-        const balloon = featureRows[i];
-        if (balloon.pageNumber !== pageNumber) continue;
-        const inRect =
-          x >= balloon.x &&
-          x <= balloon.x + balloon.width &&
-          localY >= balloon.y &&
-          localY <= balloon.y + balloon.height;
-        if (inRect && balloon.balloonId) return balloon.balloonId;
-      }
-
-      return null;
-    },
-    [featureRows, pdfViewPage]
-  );
-
-  const getSelectorIdAt = useCallback(
-    (x: number, y: number): string | null => {
-      const pageNumber = pdfViewPage;
-      const localY = y;
-
-      for (let i = anchorRects.length - 1; i >= 0; i -= 1) {
-        const anchor = anchorRects[i];
-        if (anchor.pageNumber !== pageNumber) continue;
-        const inRect =
-          x >= anchor.x &&
-          x <= anchor.x + anchor.width &&
-          localY >= anchor.y &&
-          localY <= anchor.y + anchor.height;
-        if (inRect) return anchor.id;
-      }
-
-      return null;
-    },
-    [anchorRects, pdfViewPage]
-  );
-
-  const getSelectorResizeHandleAt = useCallback(
-    (
-      x: number,
-      y: number
-    ): { balloonAnchorId: string; handle: SelectorResizeHandle } | null => {
-      const pageNumber = pdfViewPage;
-      const localY = y;
-
-      const pageHeightPx = overlayHeight;
-      const stageWidthPctBase = Math.max(1, containerWidth * zoomScale);
-      const hPad = Math.max(
-        0.5,
-        (SELECTOR_RESIZE_HANDLE_PX / stageWidthPctBase) * 100
-      );
-      const vPad = Math.max(
-        0.5,
-        (SELECTOR_RESIZE_HANDLE_PX / Math.max(1, pageHeightPx)) * 100
-      );
-
-      for (let i = anchorRects.length - 1; i >= 0; i -= 1) {
-        const s = anchorRects[i];
-        if (s.pageNumber !== pageNumber) continue;
-
-        const left = s.x;
-        const right = s.x + s.width;
-        const top = s.y;
-        const bottom = s.y + s.height;
-
-        const nearLeft = Math.abs(x - left) <= hPad;
-        const nearRight = Math.abs(x - right) <= hPad;
-        const nearTop = Math.abs(localY - top) <= vPad;
-        const nearBottom = Math.abs(localY - bottom) <= vPad;
-
-        const withinXBand = x >= left - hPad && x <= right + hPad;
-        const withinYBand = localY >= top - vPad && localY <= bottom + vPad;
-        if (!withinXBand || !withinYBand) continue;
-
-        if (nearTop && nearLeft) return { balloonAnchorId: s.id, handle: "nw" };
-        if (nearTop && nearRight)
-          return { balloonAnchorId: s.id, handle: "ne" };
-        if (nearBottom && nearLeft)
-          return { balloonAnchorId: s.id, handle: "sw" };
-        if (nearBottom && nearRight)
-          return { balloonAnchorId: s.id, handle: "se" };
-        if (nearTop) return { balloonAnchorId: s.id, handle: "n" };
-        if (nearBottom) return { balloonAnchorId: s.id, handle: "s" };
-        if (nearLeft) return { balloonAnchorId: s.id, handle: "w" };
-        if (nearRight) return { balloonAnchorId: s.id, handle: "e" };
-      }
-
-      return null;
-    },
-    [anchorRects, pdfViewPage, overlayHeight, containerWidth, zoomScale]
-  );
-
-  const handleStageMouseDown = useCallback(
-    (e: unknown) => {
-      const ke = e as {
-        evt?: MouseEvent;
-        target?: unknown;
-        cancelBubble?: boolean;
-        getTarget?: () => unknown;
-      };
-      const evt = ke.evt;
-      if (!evt) return;
-
-      if (placing && canUpdate) {
-        evt.preventDefault();
-        const { x, y } = getRelativePosFromStage();
-        setDragKind("anchor");
-        setDrag({ startX: x, startY: y, currentX: x, currentY: y });
-        return;
-      }
-
-      if (placingAnnotation && canUpdate) {
-        evt.preventDefault();
-        const { x, y } = getRelativePosFromStage();
-        setDragKind("annotation");
-        setDrag({ startX: x, startY: y, currentX: x, currentY: y });
-        return;
-      }
-
-      if (zoomBoxMode) {
-        evt.preventDefault();
-        const { x, y } = getRelativePosFromStage();
-        setDragKind("zoom");
-        setDrag({ startX: x, startY: y, currentX: x, currentY: y });
-        return;
-      }
-
-      const { x, y } = getRelativePosFromStage();
-      const annotationId = getAnnotationIdAt(x, y);
-      // A locked or view-only plan selects on a click but never drags.
-      const annotationResize = canUpdate
-        ? getAnnotationResizeHandleAt(x, y)
-        : null;
-      if (annotationResize) {
-        const annotation = annotations.find(
-          (a) => a.id === annotationResize.annotationId
-        );
-        if (annotation) {
-          setSelectedAnnotationId(annotation.id);
-          setSelectedBalloonId(null);
-          setSelectedSelectorId(null);
-          annotationResizeRef.current = {
-            annotationId: annotation.id,
-            handle: annotationResize.handle,
-            startRect: {
-              x: annotation.x,
-              y: annotation.y,
-              width: annotation.width,
-              height: annotation.height,
-              pageNumber: annotation.pageNumber
-            }
-          };
-          evt.preventDefault();
-          setDragKind("annotationResize");
-          setDrag({ startX: x, startY: y, currentX: x, currentY: y });
-          return;
-        }
-      }
-
-      if (annotationId) {
-        setSelectedAnnotationId(annotationId);
-        setSelectedBalloonId(null);
-        setSelectedSelectorId(null);
-        return;
-      }
-
-      const anchorResize = canUpdate ? getSelectorResizeHandleAt(x, y) : null;
-      if (anchorResize) {
-        const anchor = anchorRects.find(
-          (s) => s.id === anchorResize.balloonAnchorId
-        );
-        if (anchor) {
-          const linkedBalloonId =
-            featureRows.find((row) => row.balloonAnchorId === anchor.id)
-              ?.balloonId ?? null;
-          setSelectedSelectorId(anchor.id);
-          setSelectedBalloonId(linkedBalloonId);
-          setSelectedAnnotationId(null);
-          anchorResizeRef.current = {
-            balloonAnchorId: anchor.id,
-            handle: anchorResize.handle,
-            startRect: {
-              x: anchor.x,
-              y: anchor.y,
-              width: anchor.width,
-              height: anchor.height
-            }
-          };
-          evt.preventDefault();
-          setDragKind("anchorResize");
-          setDrag({ startX: x, startY: y, currentX: x, currentY: y });
-          return;
-        }
-      }
-
-      const balloonId = getBalloonIdAt(x, y);
-      if (balloonId) {
-        const linkedSelectorId =
-          featureRows.find((row) => row.balloonId === balloonId)
-            ?.balloonAnchorId ?? null;
-        setSelectedBalloonId(balloonId);
-        setSelectedAnnotationId(null);
-        setSelectedSelectorId(linkedSelectorId);
-        const dragged = featureRows.find((row) => row.balloonId === balloonId);
-        if (dragged && canUpdate) {
-          evt.preventDefault();
-          balloonDragRef.current = {
-            balloonId,
-            startX: dragged.x,
-            startY: dragged.y
-          };
-          setDragKind("balloonMove");
-          setDrag({ startX: x, startY: y, currentX: x, currentY: y });
-        }
-        return;
-      }
-
-      const balloonAnchorId = getSelectorIdAt(x, y);
-      if (balloonAnchorId) {
-        const linkedBalloonId =
-          featureRows.find((row) => row.balloonAnchorId === balloonAnchorId)
-            ?.balloonId ?? null;
-        setSelectedSelectorId(balloonAnchorId);
-        setSelectedAnnotationId(null);
-        setSelectedBalloonId(linkedBalloonId);
-        return;
-      }
-
-      setSelectedAnnotationId(null);
-      setSelectedBalloonId(null);
-      setSelectedSelectorId(null);
-    },
-    [
-      placingAnnotation,
-      placing,
-      getRelativePosFromStage,
-      zoomBoxMode,
-      getAnnotationIdAt,
-      getAnnotationResizeHandleAt,
-      getSelectorResizeHandleAt,
-      getBalloonIdAt,
-      getSelectorIdAt,
-      annotations,
-      featureRows,
-      anchorRects,
-      canUpdate
-    ]
-  );
-
-  const handleCreateAnnotation = useCallback(async () => {
-    if (!annotationDraft || annotationDraft.text.trim().length === 0) {
-      toast.error(t`Annotation text is required`);
-      return;
-    }
-    const next: AnnotationRecord = {
-      id: `temp-ann-${Date.now()}`,
-      pageNumber: annotationDraft.pageNumber,
-      x: annotationDraft.x,
-      y: annotationDraft.y,
-      width: annotationDraft.width,
-      height: annotationDraft.height,
-      text: annotationDraft.text.trim(),
-      fontSize: annotationDraft.fontSize
-    };
-    setAnnotations((prev) => [...prev, next]);
-    setAnnotationDraft(null);
-    setAnnotationFontSizeInput("12");
-    toast.success(t`Annotation added`);
-  }, [annotationDraft, t]);
-
-  const handleUpdateAnnotation = useCallback(async () => {
-    if (!annotationEditDraft || annotationEditDraft.text.trim().length === 0) {
-      toast.error(t`Annotation text is required`);
-      return;
-    }
-    const updated: AnnotationRecord = {
-      ...annotationEditDraft,
-      text: annotationEditDraft.text.trim()
-    };
-    setAnnotations((prev) =>
-      prev.map((item) => (item.id === updated.id ? updated : item))
-    );
-    setSelectedAnnotationId(null);
-    setAnnotationEditDraft(null);
-    toast.success(t`Annotation updated`);
-  }, [annotationEditDraft, t]);
-
-  const handleDeleteAnnotation = useCallback(async () => {
-    if (!annotationEditDraft) return;
-    setAnnotations((prev) =>
-      prev.filter((item) => item.id !== annotationEditDraft.id)
-    );
-    setSelectedAnnotationId(null);
-    setAnnotationEditDraft(null);
-    toast.success(t`Annotation deleted`);
-  }, [annotationEditDraft, t]);
-
-  const getHoverCursorAt = useCallback(
-    (
-      x: number,
-      y: number
-    ):
-      | ""
-      | "pointer"
-      | "ew-resize"
-      | "ns-resize"
-      | "nwse-resize"
-      | "nesw-resize" => {
-      const pageNumber = pdfViewPage;
-      const localY = y;
-
-      const inRect = (
-        left: number,
-        top: number,
-        width: number,
-        height: number
-      ) =>
-        x >= left &&
-        x <= left + width &&
-        localY >= top &&
-        localY <= top + height;
-
-      // Top-most visual priority: annotation -> balloon -> anchor.
-      const annotationResize = canUpdate
-        ? getAnnotationResizeHandleAt(x, y)
-        : null;
-      if (annotationResize) {
-        return cursorForSelectorResizeHandle(annotationResize.handle);
-      }
-
-      for (const annotation of annotations) {
-        if (annotation.pageNumber !== pageNumber) continue;
-        if (
-          inRect(
-            annotation.x,
-            annotation.y,
-            annotation.width,
-            annotation.height
-          )
-        ) {
-          return "pointer";
-        }
-      }
-
-      for (const balloon of featureRows) {
-        if (balloon.pageNumber !== pageNumber || !balloon.balloonId) continue;
-        if (inRect(balloon.x, balloon.y, balloon.width, balloon.height)) {
-          return "pointer";
-        }
-      }
-
-      const anchorResize = canUpdate ? getSelectorResizeHandleAt(x, y) : null;
-      if (anchorResize) {
-        return cursorForSelectorResizeHandle(anchorResize.handle);
-      }
-
-      for (const anchor of anchorRects) {
-        if (anchor.pageNumber !== pageNumber) continue;
-        if (inRect(anchor.x, anchor.y, anchor.width, anchor.height)) {
-          return "pointer";
-        }
-      }
-
-      return "";
-    },
-    [
-      annotations,
-      featureRows,
-      anchorRects,
-      pdfViewPage,
-      getAnnotationResizeHandleAt,
-      getSelectorResizeHandleAt,
-      canUpdate
-    ]
-  );
-
-  const handleStageMouseMove = useCallback(
-    (e: unknown) => {
-      const evt = (e as { evt?: MouseEvent }).evt;
-      if (!evt) return;
-
-      const { x, y } = getRelativePosFromStage();
-
-      const stageContent = konvaContentFromStageRef(stageRef);
-      if (placing || placingAnnotation || zoomBoxMode || drag) {
-        if (stageContent) {
-          if (dragKind === "balloonMove") {
-            stageContent.style.cursor = "grabbing";
-          } else if (
-            dragKind === "annotationResize" &&
-            annotationResizeRef.current
-          ) {
-            stageContent.style.cursor = cursorForSelectorResizeHandle(
-              annotationResizeRef.current.handle
-            );
-          } else if (dragKind === "anchorResize" && anchorResizeRef.current) {
-            stageContent.style.cursor = cursorForSelectorResizeHandle(
-              anchorResizeRef.current.handle
-            );
-          } else {
-            stageContent.style.cursor = "";
-          }
-        }
-      } else if (stageContent) {
-        stageContent.style.cursor = getHoverCursorAt(x, y);
-      }
-
-      if (dragKind === "balloonMove" && drag && balloonDragRef.current) {
-        const activeDrag = balloonDragRef.current;
-        const deltaX = x - drag.startX;
-        const deltaY = y - drag.startY;
-        setFeatureRows((prev) =>
-          prev.map((row) => {
-            if (row.balloonId !== activeDrag.balloonId) return row;
-            const nextX = Math.max(
-              0,
-              Math.min(100 - row.width, activeDrag.startX + deltaX)
-            );
-            const nextY = Math.max(
-              0,
-              Math.min(100 - row.height, activeDrag.startY + deltaY)
-            );
-            return {
-              ...row,
-              x: nextX,
-              y: nextY,
-              geometryDirty: true
-            };
-          })
-        );
-      }
-
-      if (
-        dragKind === "annotationResize" &&
-        drag &&
-        annotationResizeRef.current
-      ) {
-        const activeResize = annotationResizeRef.current;
-        const pageHeightPx = overlayHeight;
-        const stageWidthPctBase = Math.max(1, containerWidth * zoomScale);
-        const minWidthPct = Math.max(
-          0.5,
-          (ANNOTATION_MIN_SIZE_PX / stageWidthPctBase) * 100
-        );
-        const minHeightPct = Math.max(
-          0.5,
-          (ANNOTATION_MIN_SIZE_PX / Math.max(1, pageHeightPx)) * 100
-        );
-        const start = activeResize.startRect;
-        const deltaX = x - drag.startX;
-        const deltaY = y - drag.startY;
-        let nextX = start.x;
-        let nextY = start.y;
-        let nextW = start.width;
-        let nextH = start.height;
-
-        if (activeResize.handle.includes("e")) {
-          nextW = Math.max(
-            minWidthPct,
-            Math.min(100 - start.x, start.width + deltaX)
-          );
-        }
-        if (activeResize.handle.includes("s")) {
-          nextH = Math.max(
-            minHeightPct,
-            Math.min(100 - start.y, start.height + deltaY)
-          );
-        }
-        if (activeResize.handle.includes("w")) {
-          const limitedX = Math.max(
-            0,
-            Math.min(start.x + start.width - minWidthPct, start.x + deltaX)
-          );
-          nextX = limitedX;
-          nextW = start.width - (limitedX - start.x);
-        }
-        if (activeResize.handle.includes("n")) {
-          const limitedY = Math.max(
-            0,
-            Math.min(start.y + start.height - minHeightPct, start.y + deltaY)
-          );
-          nextY = limitedY;
-          nextH = start.height - (limitedY - start.y);
-        }
-
-        const resized = {
-          x: Math.max(0, Math.min(100 - nextW, nextX)),
-          y: Math.max(0, Math.min(100 - nextH, nextY)),
-          width: nextW,
-          height: nextH
-        };
-
-        setAnnotations((prev) =>
-          prev.map((a) =>
-            a.id === activeResize.annotationId ? { ...a, ...resized } : a
-          )
-        );
-        setAnnotationEditDraft((prev) =>
-          prev && prev.id === activeResize.annotationId
-            ? { ...prev, ...resized }
-            : prev
-        );
-      }
-
-      if (dragKind === "anchorResize" && drag && anchorResizeRef.current) {
-        const activeResize = anchorResizeRef.current;
-        const deltaX = x - drag.startX;
-        const deltaY = y - drag.startY;
-        const pageHeightPx = overlayHeight;
-        const stageWidthPctBase = Math.max(1, containerWidth * zoomScale);
-        const minWidthPct = Math.max(
-          0.5,
-          (SELECTOR_MIN_SIZE_PX / stageWidthPctBase) * 100
-        );
-        const minHeightPct = Math.max(
-          0.5,
-          (SELECTOR_MIN_SIZE_PX / Math.max(1, pageHeightPx)) * 100
-        );
-        const start = activeResize.startRect;
-        let nextX = start.x;
-        let nextY = start.y;
-        let nextW = start.width;
-        let nextH = start.height;
-
-        if (activeResize.handle.includes("e")) {
-          nextW = Math.max(
-            minWidthPct,
-            Math.min(100 - start.x, start.width + deltaX)
-          );
-        }
-        if (activeResize.handle.includes("s")) {
-          nextH = Math.max(
-            minHeightPct,
-            Math.min(100 - start.y, start.height + deltaY)
-          );
-        }
-        if (activeResize.handle.includes("w")) {
-          const limitedX = Math.max(
-            0,
-            Math.min(start.x + start.width - minWidthPct, start.x + deltaX)
-          );
-          nextX = limitedX;
-          nextW = start.width - (limitedX - start.x);
-        }
-        if (activeResize.handle.includes("n")) {
-          const limitedY = Math.max(
-            0,
-            Math.min(start.y + start.height - minHeightPct, start.y + deltaY)
-          );
-          nextY = limitedY;
-          nextH = start.height - (limitedY - start.y);
-        }
-
-        const resizedRect = {
-          x: Math.max(0, Math.min(100 - nextW, nextX)),
-          y: Math.max(0, Math.min(100 - nextH, nextY)),
-          width: nextW,
-          height: nextH
-        };
-
-        setSelectorRects((prev) =>
-          prev.map((anchor) =>
-            anchor.id !== activeResize.balloonAnchorId
-              ? anchor
-              : { ...anchor, ...resizedRect, isDirty: true }
-          )
-        );
-
-        setFeatureRows((prev) =>
-          prev.map((row) =>
-            row.balloonAnchorId !== activeResize.balloonAnchorId
-              ? row
-              : {
-                  ...row,
-                  geometryDirty: true
-                }
-          )
-        );
-      }
-
-      if (!drag) return;
-      setDrag((d) => (d ? { ...d, currentX: x, currentY: y } : null));
-    },
-    [
-      drag,
-      dragKind,
-      getRelativePosFromStage,
-      getHoverCursorAt,
-      placing,
-      placingAnnotation,
-      zoomBoxMode,
-      overlayHeight,
-      containerWidth,
-      zoomScale
-    ]
-  );
-
-  const handleStageMouseUp = useCallback(
-    (e: unknown) => {
-      const evt = (e as { evt?: MouseEvent }).evt;
-      if (!evt) return;
-
-      if (!drag || !dragKind) return;
-
-      const { x, y } = getRelativePosFromStage();
-      finalizeDragAt(x, y);
-    },
-    [drag, dragKind, getRelativePosFromStage, finalizeDragAt]
-  );
-
-  const { submit: submitSave } = fetcher;
-  const saveChanges = useCallback(() => {
-    const featureDeleteIds = [...pendingFeatureDeleteIdsRef.current];
-    const balloonDeleteIds = [...pendingBalloonDeleteIdsRef.current];
-    const formData = new FormData();
-    formData.set("name", name);
-    if (pdfUrl) formData.set("pdfUrl", pdfUrl);
-    const featuresCreate = featureRows
-      .filter((r) => isUnsaved(r.featureId))
-      .map((r) => ({
-        id: r.featureId,
-        pageNumber: r.pageNumber,
-        label: r.label,
-        description: r.featureName.trim() || null,
-        nominalValue: getBalloonValueOrNull(r.nominalValue),
-        tolerancePlus: getBalloonValueOrNull(r.tolerancePlus),
-        toleranceMinus: getBalloonValueOrNull(r.toleranceMinus),
-        unit: getBalloonValueOrNull(r.units),
-        type: r.type,
-        samplingPlanType: r.samplingPlanType,
-        samplingSampleSize: r.samplingSampleSize,
-        samplingPercentage: r.samplingPercentage,
-        samplingAql: r.samplingAql,
-        samplingInspectionLevel: r.samplingInspectionLevel,
-        samplingSeverity: r.samplingSeverity,
-        gaugeTypeId: r.gaugeTypeId
-      }));
-
-    const featuresUpdate = featureRows
-      .filter(
-        (r) =>
-          !isUnsaved(r.featureId) &&
-          (r.featureDirty || (r.geometryDirty && r.balloonId != null))
-      )
-      .map((r) => ({
-        id: r.featureId,
-        pageNumber: r.pageNumber,
-        label: r.label,
-        description: r.featureName.trim() || null,
-        nominalValue: getBalloonValueOrNull(r.nominalValue),
-        tolerancePlus: getBalloonValueOrNull(r.tolerancePlus),
-        toleranceMinus: getBalloonValueOrNull(r.toleranceMinus),
-        unit: getBalloonValueOrNull(r.units),
-        type: r.type,
-        samplingPlanType: r.samplingPlanType,
-        samplingSampleSize: r.samplingSampleSize,
-        samplingPercentage: r.samplingPercentage,
-        samplingAql: r.samplingAql,
-        samplingInspectionLevel: r.samplingInspectionLevel,
-        samplingSeverity: r.samplingSeverity,
-        gaugeTypeId: r.gaugeTypeId
-      }));
-
-    formData.set(
-      "features",
-      JSON.stringify({
-        create: featuresCreate,
-        update: featuresUpdate,
-        delete: featureDeleteIds
-      })
-    );
-
-    const balloonsCreate = featureRows
-      .filter(
-        (r): r is FeatureRow & { balloonId: string } =>
-          r.balloonId != null && isUnsaved(r.balloonId)
-      )
-      .map((r) => {
-        const anchor = anchorRects.find((s) => s.id === r.balloonAnchorId);
-        return {
-          id: r.balloonId,
-          inspectionFeatureId: r.featureId,
-          pageNumber: r.pageNumber,
-          regionX: (anchor?.x ?? 0) / 100,
-          regionY: (anchor?.y ?? 0) / 100,
-          regionWidth: (anchor?.width ?? BALLOON_W_PCT) / 100,
-          regionHeight: (anchor?.height ?? BALLOON_H_PCT) / 100,
-          xCoordinate: r.x / 100,
-          yCoordinate: r.y / 100
-        };
-      });
-
-    const balloonsUpdateById = new Map<
-      string,
-      {
-        id: string;
-        pageNumber?: number;
-        regionX?: number;
-        regionY?: number;
-        regionWidth?: number;
-        regionHeight?: number;
-        xCoordinate?: number;
-        yCoordinate?: number;
-      }
-    >();
-
-    for (const anchor of anchorRects.filter((s) => !s.isNew && s.isDirty)) {
-      balloonsUpdateById.set(anchor.id, {
-        id: anchor.id,
-        pageNumber: anchor.pageNumber,
-        regionX: anchor.x / 100,
-        regionY: anchor.y / 100,
-        regionWidth: anchor.width / 100,
-        regionHeight: anchor.height / 100
-      });
-    }
-
-    for (const row of featureRows.filter(
-      (r) => r.balloonId && !isUnsaved(r.balloonId) && r.geometryDirty
-    )) {
-      const anchor = anchorRects.find((s) => s.id === row.balloonAnchorId);
-      const existing = balloonsUpdateById.get(row.balloonId!) ?? {
-        id: row.balloonId!
-      };
-      balloonsUpdateById.set(row.balloonId!, {
-        ...existing,
-        pageNumber: anchor?.pageNumber ?? row.pageNumber,
-        ...(anchor
-          ? {
-              regionX: anchor.x / 100,
-              regionY: anchor.y / 100,
-              regionWidth: anchor.width / 100,
-              regionHeight: anchor.height / 100
-            }
-          : {}),
-        xCoordinate: row.x / 100,
-        yCoordinate: row.y / 100
-      });
-    }
-
-    formData.set(
-      "balloons",
-      JSON.stringify({
-        create: balloonsCreate,
-        update: [...balloonsUpdateById.values()],
-        delete: balloonDeleteIds
-      })
-    );
-
-    if (pdfMetrics) {
-      formData.set("pageCount", String(pdfMetrics.pageCount));
-      formData.set("defaultPageWidth", String(pdfMetrics.defaultPageWidth));
-      formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
-    }
-    formData.set("samplingDefault", JSON.stringify(docSampling));
-    const sendParameters = parametersPayload !== savedParametersRef.current;
-    if (sendParameters) formData.set("parameters", parametersPayload);
-    inFlightSaveRef.current = {
-      featureRows,
-      anchorRects,
-      docSampling,
-      parameterRows,
-      parameters: sendParameters ? parametersPayload : null,
-      pdfUrl,
-      sentPdfMetrics: pdfMetrics != null,
-      createdIds: [
-        ...featuresCreate.map((f) => f.id),
-        ...balloonsCreate.map((b) => b.id)
-      ],
-      featureDeleteIds,
-      balloonDeleteIds
-    };
-    submitSave(formData, {
-      method: "post",
-      action: path.to.saveInspectionDocument(diagramId)
-    });
-  }, [
+  const drawing = useDrawingInteractions({
+    diagramId,
+    canUpdate,
+    pdfViewPage,
+    pdfFile,
+    pdfUrl,
+    featureRows,
+    setFeatureRows,
+    anchorRects,
+    setSelectorRects,
+    zoomScale,
+    setZoomScale,
+    containerWidth,
+    overlayHeight,
+    containerRef,
+    overlayRef,
+    unsavedIdsRef
+  });
+
+  const autosave = useInspectionDocumentAutosave({
     diagramId,
     name,
-    pdfUrl,
-    anchorRects,
+    canUpdate,
+    ledger,
     featureRows,
-    pdfMetrics,
+    setFeatureRows,
+    anchorRects,
+    setSelectorRects,
     docSampling,
     parameterRows,
     parametersPayload,
-    submitSave,
-    isUnsaved
-  ]);
-
-  // Every edit saves itself once the editor has been quiet for a moment — a
-  // drag saves when it ends, and one save at a time: an edit made while a save
-  // is in flight is picked up when it returns. Someone without update
-  // permission can still look around, but nothing they change is saved.
-  const isSaving = fetcher.state !== "idle";
-  const hasUnsavedChanges =
-    canUpdate &&
-    (hasUnsavedRows(featureRows, anchorRects, isUnsaved) ||
-      pendingFeatureDeleteIdsRef.current.size > 0 ||
-      pendingBalloonDeleteIdsRef.current.size > 0 ||
-      pdfUrl !== savedPdfUrlRef.current ||
-      (pdfMetricsDirty && pdfMetrics != null) ||
-      JSON.stringify(docSampling) !==
-        JSON.stringify(savedSamplingRef.current) ||
-      parametersPayload !== savedParametersRef.current);
-  const failedSave = failedSaveRef.current;
-  const saveFailed =
-    failedSave != null &&
-    failedSave.featureRows === featureRows &&
-    failedSave.anchorRects === anchorRects &&
-    failedSave.docSampling === docSampling &&
-    failedSave.parameterRows === parameterRows &&
-    failedSave.pdfUrl === pdfUrl;
-
-  // Leaving with unsaved changes saves them first, then continues; only a
-  // failed save asks.
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      (hasUnsavedChanges || isSaving) &&
-      currentLocation.pathname !== nextLocation.pathname
-  );
-  const isLeaving = blocker.state === "blocked";
-
-  useEffect(() => {
-    if (!hasUnsavedChanges || isSaving || uploading || saveFailed) return;
-    if (dragKind !== null) return;
-    const timer = setTimeout(saveChanges, isLeaving ? 0 : AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [
-    hasUnsavedChanges,
-    isSaving,
+    pdfUrl,
+    pdfMetrics,
+    pdfMetricsDirty,
+    setPdfMetricsDirty,
     uploading,
-    saveFailed,
-    dragKind,
-    isLeaving,
-    saveChanges
-  ]);
-
-  useEffect(() => {
-    if (isLeaving && !hasUnsavedChanges && !isSaving) blocker.proceed?.();
-  }, [blocker, isLeaving, hasUnsavedChanges, isSaving]);
-
-  useEffect(() => {
-    if (!hasUnsavedChanges && !isSaving) return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [hasUnsavedChanges, isSaving]);
+    dragKind: drawing.dragKind
+  });
+  const { blocker, isLeaving, saveFailed, pdfReplaceToastRef } = autosave;
 
   const uploadPdfAndSave = useCallback(
     async (file: File, options: { clearBalloons: boolean }) => {
@@ -2480,7 +403,7 @@ export default function InspectionDocumentEditor({
       if (options.clearBalloons) {
         for (const r of featureRows) {
           if (r.balloonId != null) {
-            queueDelete(pendingBalloonDeleteIdsRef.current, r.balloonId);
+            queueDelete(ledger.pendingBalloonDeleteIdsRef.current, r.balloonId);
           }
         }
         setSelectorRects([]);
@@ -2488,7 +411,16 @@ export default function InspectionDocumentEditor({
         pdfReplaceToastRef.current = true;
       }
     },
-    [carbon, companyId, diagramId, featureRows, t, queueDelete]
+    [
+      carbon,
+      companyId,
+      diagramId,
+      featureRows,
+      t,
+      queueDelete,
+      ledger.pendingBalloonDeleteIdsRef,
+      pdfReplaceToastRef
+    ]
   );
 
   // A dropped STEP file is staged (resumable upload), then attached to the
@@ -2498,13 +430,12 @@ export default function InspectionDocumentEditor({
   const modelFetcher = useAction();
   // Publishing locks the version, so it waits for every edit to land.
   const hasPendingEdits =
-    hasUnsavedChanges ||
-    isSaving ||
+    autosave.hasUnsavedChanges ||
+    autosave.isSaving ||
     uploading ||
     namePending ||
     nameFetcher.state !== "idle" ||
-    workInstructionPending ||
-    workInstructionFetcher.state !== "idle" ||
+    workInstructionDraft.isPending ||
     modelUpload.upload !== null ||
     modelFetcher.state !== "idle";
   const handleModelUpload = useCallback(
@@ -2574,7 +505,9 @@ export default function InspectionDocumentEditor({
     (featureId: string) => {
       setFeatureRows((prev) => {
         const row = prev.find((r) => r.featureId === featureId);
-        if (row) queueDelete(pendingFeatureDeleteIdsRef.current, row.featureId);
+        if (row) {
+          queueDelete(ledger.pendingFeatureDeleteIdsRef.current, row.featureId);
+        }
         const nextRows = prev.filter((r) => r.featureId !== featureId);
         const keptAnchorIds = new Set(
           nextRows
@@ -2587,58 +520,32 @@ export default function InspectionDocumentEditor({
         return nextRows;
       });
     },
-    [queueDelete]
+    [queueDelete, ledger.pendingFeatureDeleteIdsRef]
   );
 
   const handleAddFeature = useCallback(() => {
     const featureId = newFeatureId();
     unsavedIdsRef.current.add(featureId);
-    setFeatureRows((prev) => {
-      const label = nextBalloonLabel(prev);
-      return [
-        ...prev,
-        {
-          featureId,
-          balloonId: null,
-          balloonAnchorId: "",
-          label,
-          pageNumber: pdfViewPage,
-          x: 0,
-          y: 0,
-          width: BALLOON_W_PCT,
-          height: BALLOON_H_PCT,
-          featureName: `Characteristic ${label}`,
-          nominalValue: "",
-          tolerancePlus: "",
-          toleranceMinus: "",
-          units: "",
-          type: "Measurement",
-          samplingPlanType: null,
-          samplingSampleSize: null,
-          samplingPercentage: null,
-          samplingAql: null,
-          samplingInspectionLevel: null,
-          samplingSeverity: null,
-          gaugeTypeId: null,
-          pmiItemId: null
-        }
-      ];
-    });
-  }, [pdfViewPage]);
-
-  const handlePlaceFeatureOnDrawing = useCallback((featureId: string) => {
-    setPlacingFeatureId(featureId);
-    setPlacing(true);
-    setPlacingAnnotation(false);
-    setZoomBoxMode(false);
-  }, []);
+    setFeatureRows((prev) => [
+      ...prev,
+      newFeatureRow({
+        featureId,
+        balloonId: null,
+        balloonAnchorId: "",
+        label: nextBalloonLabel(prev),
+        pageNumber: pdfViewPage,
+        x: 0,
+        y: 0
+      })
+    ]);
+  }, [pdfViewPage, unsavedIdsRef]);
 
   const handleUnballoon = useCallback(
     (featureId: string) => {
       setFeatureRows((prev) => {
         const row = prev.find((r) => r.featureId === featureId);
         if (!row?.balloonId) return prev;
-        queueDelete(pendingBalloonDeleteIdsRef.current, row.balloonId);
+        queueDelete(ledger.pendingBalloonDeleteIdsRef.current, row.balloonId);
         if (row.balloonAnchorId) {
           setSelectorRects((sels) =>
             sels.filter((s) => s.id !== row.balloonAnchorId)
@@ -2658,63 +565,7 @@ export default function InspectionDocumentEditor({
         );
       });
     },
-    [queueDelete]
-  );
-
-  const updateFeatureField = useCallback(
-    (
-      featureId: string,
-      field:
-        | "label"
-        | "featureName"
-        | "nominalValue"
-        | "tolerancePlus"
-        | "toleranceMinus"
-        | "units"
-        | "type"
-        | "gaugeTypeId",
-      value: string
-    ) => {
-      setFeatureRows((prev) =>
-        prev.map((r) =>
-          r.featureId !== featureId
-            ? r
-            : {
-                ...r,
-                [field]: field === "gaugeTypeId" ? value || null : value,
-                featureDirty: true
-              }
-        )
-      );
-    },
-    []
-  );
-
-  const featureMutation = useCallback(
-    async (accessorKey: string, newValue: string, row: FeatureRow) => {
-      updateFeatureField(
-        row.featureId,
-        accessorKey as
-          | "label"
-          | "featureName"
-          | "nominalValue"
-          | "tolerancePlus"
-          | "toleranceMinus"
-          | "units"
-          | "type"
-          | "gaugeTypeId",
-        newValue
-      );
-      return {
-        data: null,
-        error: null,
-        count: null,
-        status: 200,
-        statusText: "OK",
-        success: true
-      } as const;
-    },
-    [updateFeatureField]
+    [queueDelete, ledger.pendingBalloonDeleteIdsRef]
   );
 
   const updateFeatureSampling = useCallback(
@@ -2728,293 +579,21 @@ export default function InspectionDocumentEditor({
     []
   );
 
-  const unitOfMeasureOptions = useMemo(
-    () => unitOfMeasures.map((uom) => ({ value: uom.code, label: uom.name })),
-    [unitOfMeasures]
-  );
-
-  const uomCodeToName = useMemo(
-    () => new Map(unitOfMeasures.map((uom) => [uom.code, uom.name])),
-    [unitOfMeasures]
-  );
-
-  const gaugeTypeOptions = useMemo(
-    () => gaugeTypes.map((gt) => ({ value: gt.id, label: gt.name })),
-    [gaugeTypes]
-  );
-
-  const gaugeTypeIdToName = useMemo(
-    () => new Map(gaugeTypes.map((gt) => [gt.id, gt.name])),
-    [gaugeTypes]
-  );
-
-  const featureEditableComponents = useMemo(
-    () => ({
-      type: EditableList(featureMutation, featureTypeOptions),
-      label: EditableText(featureMutation),
-      featureName: EditableText(featureMutation),
-      nominalValue: ConditionalMeasurementText(featureMutation),
-      tolerancePlus: ConditionalMeasurementText(featureMutation),
-      toleranceMinus: ConditionalMeasurementText(featureMutation),
-      units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions),
-      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions)
-    }),
-    [featureMutation, unitOfMeasureOptions, gaugeTypeOptions]
-  );
-
-  const handleAddParameter = useCallback(() => {
-    setParameterRows((prev) => [
-      ...prev,
-      { id: newParameterId(), key: "", value: "" }
-    ]);
-  }, []);
-
-  const handleDeleteParameter = useCallback((id: string) => {
-    setParameterRows((prev) => prev.filter((r) => r.id !== id));
-  }, []);
-
-  const parameterMutation = useCallback(
-    async (accessorKey: string, newValue: string, row: ParameterRow) => {
-      setParameterRows((prev) =>
-        prev.map((r) =>
-          r.id !== row.id
-            ? r
-            : { ...r, [accessorKey as "key" | "value"]: newValue }
-        )
-      );
-      return {
-        data: null,
-        error: null,
-        count: null,
-        status: 200,
-        statusText: "OK",
-        success: true
-      } as const;
-    },
-    []
-  );
-
-  const parameterEditableComponents = useMemo(
-    () => ({
-      key: EditableText(parameterMutation),
-      value: EditableText(parameterMutation)
-    }),
-    [parameterMutation]
-  );
-
-  const parameterColumns = useMemo<ColumnDef<ParameterRow>[]>(
-    () => [
-      { accessorKey: "key", header: t`Key`, size: 240 },
-      { accessorKey: "value", header: t`Value`, size: 360 },
-      {
-        id: "actions",
-        header: t`Actions`,
-        size: 80,
-        cell: ({ row }) =>
-          canUpdate && (
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={t`Delete parameter ${row.original.key}`}
-              icon={<LuTrash2 />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteParameter(row.original.id);
-              }}
-            />
-          )
-      }
-    ],
-    [canUpdate, handleDeleteParameter, t]
-  );
-
-  const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
-    () => [
-      { accessorKey: "label", header: t`Characteristic`, size: 80 },
-      {
-        accessorKey: "type",
-        header: t`Type`,
-        size: 140,
-        cell: ({ row }) => (
-          <HStack spacing={1} className="items-center">
-            <ProcedureStepTypeIcon
-              type={
-                row.original
-                  .type as Database["public"]["Enums"]["procedureStepType"]
-              }
-              className="h-4 w-4"
-            />
-            <span className="text-sm">{row.original.type}</span>
-          </HStack>
-        )
-      },
-      { accessorKey: "featureName", header: t`Description` },
-      {
-        accessorKey: "nominalValue",
-        header: t`Nom`,
-        size: 112,
-        cell: ({ row }) =>
-          row.original.type === "Measurement" ? row.original.nominalValue : null
-      },
-      {
-        accessorKey: "tolerancePlus",
-        header: t`Tol+`,
-        size: 112,
-        cell: ({ row }) =>
-          row.original.type === "Measurement"
-            ? row.original.tolerancePlus
-            : null
-      },
-      {
-        accessorKey: "toleranceMinus",
-        header: t`Tol-`,
-        size: 112,
-        cell: ({ row }) =>
-          row.original.type === "Measurement"
-            ? row.original.toleranceMinus
-            : null
-      },
-      {
-        accessorKey: "units",
-        header: t`Units`,
-        size: 96,
-        cell: ({ row }) =>
-          row.original.type === "Measurement"
-            ? (uomCodeToName.get(row.original.units) ?? row.original.units)
-            : null
-      },
-      {
-        accessorKey: "gaugeTypeId",
-        header: t`Gauge Type`,
-        size: 160,
-        cell: ({ row }) =>
-          row.original.gaugeTypeId ? (
-            (gaugeTypeIdToName.get(row.original.gaugeTypeId) ?? "—")
-          ) : (
-            <span className="text-muted-foreground">{t`Any`}</span>
-          )
-      },
-      {
-        id: "sampling",
-        header: t`Sampling`,
-        size: 148,
-        cell: ({ row }) => {
-          const summary = samplingRuleSummary(row.original);
-          if (!canUpdate) {
-            return (
-              <span className="text-sm">
-                {summary ?? (
-                  <span className="text-muted-foreground">{t`Inherit`}</span>
-                )}
-              </span>
-            );
-          }
-          return (
-            <button
-              type="button"
-              className="text-left text-sm underline-offset-2 hover:underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                openSamplingModal(row.original.featureId);
-              }}
-            >
-              {summary ?? (
-                <span className="text-muted-foreground">{t`Inherit`}</span>
-              )}
-            </button>
-          );
-        }
-      },
-      {
-        id: "actions",
-        header: t`Actions`,
-        size: 148,
-        cell: ({ row }) => (
-          <HStack spacing={1} className="items-center">
-            {model && row.original.pmiItemId && (
-              <Button
-                type="button"
-                variant={
-                  modelFeatureId === row.original.featureId
-                    ? "primary"
-                    : "outline"
-                }
-                size="sm"
-                leftIcon={<LuCrosshair className="h-3.5 w-3.5" />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setModelFeatureId(row.original.featureId);
-                }}
-              >
-                {t`Show`}
-              </Button>
-            )}
-            {canUpdate && !model && !row.original.balloonId && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                leftIcon={<LuRectangleHorizontal className="h-3.5 w-3.5" />}
-                isDisabled={!isOverlayReady}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePlaceFeatureOnDrawing(row.original.featureId);
-                }}
-              >
-                {t`Balloon`}
-              </Button>
-            )}
-            {canUpdate && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label={t`More actions`}
-                    icon={<LuEllipsisVertical />}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {row.original.balloonId && (
-                    <DropdownMenuItem
-                      onClick={() => handleUnballoon(row.original.featureId)}
-                    >
-                      <LuRectangleHorizontal className="mr-2 size-4" />
-                      {t`Unballoon`}
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    destructive
-                    onClick={() => handleDeleteFeature(row.original.featureId)}
-                  >
-                    <LuTrash2 className="mr-2 size-4" />
-                    {t`Delete`}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </HStack>
-        )
-      }
-    ],
-    [
-      canUpdate,
-      handleDeleteFeature,
-      handlePlaceFeatureOnDrawing,
-      handleUnballoon,
-      isOverlayReady,
-      model,
-      modelFeatureId,
-      openSamplingModal,
-      uomCodeToName,
-      gaugeTypeIdToName,
-      samplingRuleSummary,
-      t
-    ]
-  );
+  const { featureColumns, featureEditableComponents } = useFeatureColumns({
+    setFeatureRows,
+    unitOfMeasures,
+    gaugeTypes,
+    canUpdate,
+    hasModel: !!model,
+    modelFeatureId,
+    onShowOnModel: setModelFeatureId,
+    isOverlayReady,
+    onPlaceOnDrawing: drawing.startPlacingFeature,
+    onUnballoon: handleUnballoon,
+    onDelete: handleDeleteFeature,
+    onEditSampling: openSamplingModal,
+    samplingRuleSummary
+  });
 
   const handleDownloadPdfWithBalloons = useCallback(async () => {
     if (!hasPdf) {
@@ -3023,16 +602,7 @@ export default function InspectionDocumentEditor({
     }
     setPdfExporting(true);
     try {
-      let bytes: ArrayBuffer;
-      if (pdfFile) {
-        bytes = await pdfFile.arrayBuffer();
-      } else {
-        const res = await fetch(pdfUrl, { credentials: "include" });
-        if (!res.ok) {
-          throw new Error(String(res.status));
-        }
-        bytes = await res.arrayBuffer();
-      }
+      const bytes = await readPdfBytes(pdfFile, pdfUrl);
       const placedRows = featureRows
         .filter(
           (r): r is FeatureRow & { balloonId: string } => r.balloonId != null
@@ -3067,20 +637,15 @@ export default function InspectionDocumentEditor({
     }
   }, [hasPdf, pdfFile, pdfUrl, name, featureRows, anchorRects, t]);
 
-  const previewRect =
-    drag &&
-    dragKind !== "balloonMove" &&
-    dragKind !== "anchorResize" &&
-    dragKind !== "annotationResize"
-      ? {
-          x: Math.min(drag.startX, drag.currentX),
-          y: Math.min(drag.startY, drag.currentY),
-          width: Math.abs(drag.currentX - drag.startX),
-          height: Math.abs(drag.currentY - drag.startY)
-        }
-      : null;
   const renderedWidth =
     containerWidth > 0 ? Math.max(1, containerWidth * zoomScale) : 0;
+  const {
+    placing,
+    placingAnnotation,
+    zoomBoxMode,
+    annotationDraft,
+    annotationEditDraft
+  } = drawing;
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Modal
@@ -3130,175 +695,33 @@ export default function InspectionDocumentEditor({
         disabled={uploading}
       />
 
-      {/* Header bar — min-height only so controls are not clipped when the row wraps */}
-      <div className="grid min-h-[var(--header-height)] flex-shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
-        <div className="flex min-w-0 items-center gap-1 pr-2">
-          <Input
-            aria-label={t`Diagram title`}
-            borderless
-            value={title}
-            placeholder={t`Untitled Diagram`}
-            className="field-sizing-content w-auto min-w-[6rem] max-w-[28rem] font-semibold text-base truncate"
-            readOnly={!canUpdate}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              setNamePending(true);
-              debouncedSaveName(e.target.value);
-            }}
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label={t`More actions`}
-                icon={<LuEllipsisVertical />}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-56">
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.view}
-                disabled={!itemMasterLink}
-                onClick={() => {
-                  if (itemMasterLink) navigate(itemMasterLink);
-                }}
-              >
-                <LuExternalLink className="mr-2 size-4" />
-                {t`View Item Master`}
-              </DropdownMenuItem>
-              {hasPdf && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    disabled={uploading || !canUpdate}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <LuUpload className="mr-2 size-4" />
-                    {uploading ? t`Uploading…` : t`Replace PDF`}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.download}
-                    disabled={pdfExporting}
-                    onClick={handleDownloadPdfWithBalloons}
-                  >
-                    <LuFileDown className="mr-2 size-4" />
-                    {t`Download PDF`}
-                  </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.delete}
-                destructive
-                disabled={!permissions.can("delete", "quality")}
-                onClick={() => deleteDisclosure.onOpen()}
-              >
-                <LuTrash2 className="mr-2 size-4" />
-                {t`Delete Inspection Plan`}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <Tabs
-          value={bottomTab}
-          onValueChange={(value) =>
-            setBottomTab(
-              value as "characteristics" | "parameters" | "instructions"
-            )
-          }
-          className="justify-self-center"
-        >
-          <TabsList className="max-md:w-auto max-md:px-0">
-            <TabsTrigger value="characteristics">
-              {t`Characteristics`}
-            </TabsTrigger>
-            <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
-            <TabsTrigger value="instructions">{t`Instructions`}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <HStack spacing={2} className="justify-end justify-self-end">
-          {isLocked ? (
-            <span className="text-xs text-muted-foreground">
-              {t`Make a new version to change this plan`}
-            </span>
-          ) : !canUpdate ? (
-            <span className="text-xs text-muted-foreground">
-              {t`View only — changes are not saved`}
-            </span>
-          ) : saveFailed ? (
-            <span className="text-xs text-destructive">{t`Could not save`}</span>
-          ) : hasUnsavedChanges || isSaving ? (
-            <span className="text-xs text-muted-foreground">{t`Saving…`}</span>
-          ) : hasSaved ? (
-            <span className="text-xs text-muted-foreground">{t`Saved`}</span>
-          ) : null}
-          <div className="flex shrink-0 items-center gap-1">
-            <VersionMenu
-              variant="secondary"
-              label={`V${version}`}
-              versions={versions}
-              currentVersionId={diagramId}
-              getKey={(v) => v.id}
-              getHref={(v) => path.to.inspectionDocument(v.id)}
-              renderLabel={(v) => (
-                <>
-                  <Badge variant="outline">V{v.version}</Badge>
-                  <span>{v.name ?? v.fileName}</span>
-                </>
-              )}
-              renderStatus={(v) => <QualityDocumentStatus status={v.status} />}
-              isNewVersionDisabled={newVersionFetcher.state !== "idle"}
-              onNewVersion={
-                permissions.can("create", "quality")
-                  ? () =>
-                      newVersionFetcher.submit(
-                        {},
-                        {
-                          method: "post",
-                          action: path.to.inspectionDocumentVersion(diagramId)
-                        }
-                      )
-                  : undefined
-              }
-            />
-            {status !== "Draft" && <QualityDocumentStatus status={status} />}
-            {status !== "Active" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    isLoading={activateFetcher.state !== "idle"}
-                    isDisabled={
-                      !permissions.can("update", "quality") ||
-                      activateFetcher.state !== "idle" ||
-                      hasPendingEdits
-                    }
-                    onClick={() =>
-                      activateFetcher.submit(
-                        {},
-                        {
-                          method: "post",
-                          action: path.to.inspectionDocumentActivate(diagramId)
-                        }
-                      )
-                    }
-                  >
-                    {status === "Archived" ? t`Reactivate` : t`Publish`}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasPendingEdits
-                    ? t`Publish once your changes are saved.`
-                    : status === "Archived"
-                      ? t`Makes this version Active again and archives the Active version.`
-                      : t`This version is a Draft. Publishing makes it Active and archives the Active version.`}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </HStack>
-      </div>
+      <InspectionDocumentHeader
+        diagramId={diagramId}
+        title={title}
+        onTitleChange={(value) => {
+          setTitle(value);
+          setNamePending(true);
+          debouncedSaveName(value);
+        }}
+        canUpdate={canUpdate}
+        isLocked={isLocked}
+        itemMasterLink={itemMasterLink}
+        hasPdf={hasPdf}
+        uploading={uploading}
+        onReplacePdf={() => fileInputRef.current?.click()}
+        pdfExporting={pdfExporting}
+        onDownloadPdf={handleDownloadPdfWithBalloons}
+        onDelete={() => deleteDisclosure.onOpen()}
+        tab={bottomTab}
+        onTabChange={setBottomTab}
+        saveFailed={saveFailed}
+        saving={autosave.hasUnsavedChanges || autosave.isSaving}
+        hasSaved={autosave.hasSaved}
+        version={version}
+        versions={versions}
+        status={status}
+        hasPendingEdits={hasPendingEdits}
+      />
 
       <Modal
         open={isLeaving && saveFailed}
@@ -3363,144 +786,27 @@ export default function InspectionDocumentEditor({
               }}
             >
               {hasPdf && (
-                <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-card px-2 py-1.5">
-                  <div className="flex items-center">
-                    {canUpdate && (
-                      <Button
-                        size="sm"
-                        variant={placing ? "primary" : "secondary"}
-                        leftIcon={<LuRectangleHorizontal />}
-                        onClick={() => {
-                          setPlacing((v) => {
-                            const next = !v;
-                            if (next) {
-                              setPlacingAnnotation(false);
-                              setZoomBoxMode(false);
-                              setPlacingFeatureId(null);
-                            }
-                            return next;
-                          });
-                        }}
-                        isDisabled={!isOverlayReady}
-                      >
-                        {placing
-                          ? t`Drag to place on drawing`
-                          : t`Add Selector`}
-                      </Button>
-                    )}
-                  </div>
-                  {documentPageCount > 1 ? (
-                    <nav
-                      aria-label={t`PDF pages`}
-                      className="flex items-center gap-2"
-                    >
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t`Previous page`}
-                        icon={<LuChevronLeft className="h-4 w-4" />}
-                        isDisabled={pdfViewPage <= 1}
-                        onClick={() =>
-                          setPdfViewPage((p) => Math.max(1, p - 1))
-                        }
-                      />
-                      <span className="min-w-[8.5rem] select-none text-center text-sm font-medium tabular-nums text-foreground">
-                        {t`Page ${pdfViewPage} of ${documentPageCount}`}
-                      </span>
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t`Next page`}
-                        icon={<LuChevronRight className="h-4 w-4" />}
-                        isDisabled={pdfViewPage >= documentPageCount}
-                        onClick={() =>
-                          setPdfViewPage((p) =>
-                            Math.min(documentPageCount, p + 1)
-                          )
-                        }
-                      />
-                    </nav>
-                  ) : (
-                    <span />
-                  )}
-                  <div className="flex items-center justify-end">
-                    <HStack
-                      spacing={0}
-                      className="rounded-md border bg-background px-0.5 py-0.5"
-                    >
-                      <IconButton
-                        type="button"
-                        variant={zoomBoxMode ? "active" : "ghost"}
-                        size="sm"
-                        aria-label={zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
-                        icon={<LuScan />}
-                        isDisabled={!isOverlayReady}
-                        onClick={() =>
-                          setZoomBoxMode((v) => {
-                            const next = !v;
-                            if (next) {
-                              setPlacing(false);
-                              setPlacingAnnotation(false);
-                            }
-                            return next;
-                          })
-                        }
-                      />
-                      <span
-                        className="mx-0.5 h-4 w-px bg-border"
-                        aria-hidden="true"
-                      />
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t`Zoom out`}
-                        icon={<LuMinus />}
-                        onClick={() =>
-                          setZoomScale((z) =>
-                            Math.max(0.5, Number((z - 0.1).toFixed(2)))
-                          )
-                        }
-                      />
-                      <span className="min-w-14 select-none text-center text-sm font-medium tabular-nums">
-                        {Math.round(zoomScale * 100)}%
-                      </span>
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t`Zoom in`}
-                        icon={<LuPlus />}
-                        onClick={() =>
-                          setZoomScale((z) =>
-                            Math.min(3, Number((z + 0.1).toFixed(2)))
-                          )
-                        }
-                      />
-                      <span
-                        className="mx-0.5 h-4 w-px bg-border"
-                        aria-hidden="true"
-                      />
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t`Reset view`}
-                        icon={<LuMaximize />}
-                        onClick={() => {
-                          setZoomScale(1);
-                          requestAnimationFrame(() => {
-                            if (!containerRef.current) return;
-                            containerRef.current.scrollLeft = 0;
-                            containerRef.current.scrollTop = 0;
-                          });
-                        }}
-                      />
-                    </HStack>
-                  </div>
-                </div>
+                <DrawingToolbar
+                  canUpdate={canUpdate}
+                  isOverlayReady={isOverlayReady}
+                  placing={placing}
+                  onTogglePlacing={drawing.togglePlacing}
+                  zoomBoxMode={zoomBoxMode}
+                  onToggleZoomBox={drawing.toggleZoomBox}
+                  pdfViewPage={pdfViewPage}
+                  setPdfViewPage={setPdfViewPage}
+                  documentPageCount={documentPageCount}
+                  zoomScale={zoomScale}
+                  setZoomScale={setZoomScale}
+                  onResetView={() => {
+                    setZoomScale(1);
+                    requestAnimationFrame(() => {
+                      if (!containerRef.current) return;
+                      containerRef.current.scrollLeft = 0;
+                      containerRef.current.scrollTop = 0;
+                    });
+                  }}
+                />
               )}
               <div
                 ref={containerRef}
@@ -3520,15 +826,7 @@ export default function InspectionDocumentEditor({
                     style={{
                       width: renderedWidth > 0 ? renderedWidth : "100%"
                     }}
-                    onMouseLeave={() => {
-                      if (drag) setDrag(null);
-                      if (dragKind) setDragKind(null);
-                      balloonDragRef.current = null;
-                      annotationResizeRef.current = null;
-                      anchorResizeRef.current = null;
-                      const el = konvaContentFromStageRef(stageRef);
-                      if (el) el.style.cursor = "";
-                    }}
+                    onMouseLeave={drawing.handleOverlayMouseLeave}
                   >
                     {isMounted && (
                       <div className="pointer-events-none">
@@ -3574,293 +872,25 @@ export default function InspectionDocumentEditor({
                       containerWidth > 0 &&
                       overlayHeight > 0 && (
                         <div className="pointer-events-auto absolute inset-0 z-[9]">
-                          <Stage
-                            ref={stageRef as never}
-                            width={renderedWidth}
-                            height={overlayHeight}
-                            listening
-                            onMouseDown={handleStageMouseDown as never}
-                            onMouseMove={handleStageMouseMove as never}
-                            onMouseUp={handleStageMouseUp as never}
-                          >
-                            <Layer>
-                              {anchorRects
-                                .filter((s) => s.pageNumber === pdfViewPage)
-                                .map((s) => {
-                                  const pageHeightPx = overlayHeight;
-                                  const x = (s.x / 100) * renderedWidth;
-                                  const y = (s.y / 100) * pageHeightPx;
-                                  const width = (s.width / 100) * renderedWidth;
-                                  const height =
-                                    (s.height / 100) * pageHeightPx;
-                                  const isSelected =
-                                    s.id === selectedSelectorId;
-
-                                  return (
-                                    <Rect
-                                      key={`konva-rect-${s.id}`}
-                                      x={x}
-                                      y={y}
-                                      width={width}
-                                      height={height}
-                                      stroke={BALLOON_CALLOUT_STROKE}
-                                      strokeWidth={isSelected ? 3 : 2}
-                                      fill={
-                                        isSelected
-                                          ? "rgba(249,115,22,0.12)"
-                                          : undefined
-                                      }
-                                      fillEnabled={isSelected}
-                                      hitStrokeWidth={8}
-                                      listening={false}
-                                    />
-                                  );
-                                })}
-                              {annotations
-                                .filter((a) => a.pageNumber === pdfViewPage)
-                                .map((annotation) => {
-                                  const pageHeightPx = overlayHeight;
-                                  const x =
-                                    (annotation.x / 100) * renderedWidth;
-                                  const y = (annotation.y / 100) * pageHeightPx;
-                                  const w =
-                                    (annotation.width / 100) * renderedWidth;
-                                  const h =
-                                    (annotation.height / 100) * pageHeightPx;
-                                  const isSelected =
-                                    annotation.id === selectedAnnotationId;
-                                  const previewText =
-                                    annotationEditDraft?.id === annotation.id
-                                      ? annotationEditDraft.text
-                                      : annotation.text;
-                                  const previewFontSize =
-                                    annotationEditDraft?.id === annotation.id
-                                      ? annotationEditDraft.fontSize
-                                      : annotation.fontSize;
-
-                                  return (
-                                    <Group
-                                      key={`annotation-${annotation.id}`}
-                                      x={x}
-                                      y={y}
-                                    >
-                                      <Rect
-                                        x={0}
-                                        y={0}
-                                        width={w}
-                                        height={h}
-                                        fill={
-                                          isSelected
-                                            ? "rgba(249,115,22,0.22)"
-                                            : "rgba(249,115,22,0.12)"
-                                        }
-                                        stroke={BALLOON_CALLOUT_STROKE}
-                                        strokeWidth={isSelected ? 2.5 : 1.5}
-                                        cornerRadius={4}
-                                        listening={false}
-                                      />
-                                      <Text
-                                        x={8}
-                                        y={6}
-                                        width={Math.max(20, w - 16)}
-                                        height={Math.max(16, h - 12)}
-                                        text={previewText}
-                                        fill={CALLOUT_TEXT}
-                                        fontSize={previewFontSize}
-                                        listening={false}
-                                      />
-                                    </Group>
-                                  );
-                                })}
-                              {annotationDraft &&
-                                annotationDraft.pageNumber === pdfViewPage &&
-                                (() => {
-                                  const pageHeightPx = overlayHeight;
-                                  const x =
-                                    (annotationDraft.x / 100) * renderedWidth;
-                                  const y =
-                                    (annotationDraft.y / 100) * pageHeightPx;
-                                  const w =
-                                    (annotationDraft.width / 100) *
-                                    renderedWidth;
-                                  const h =
-                                    (annotationDraft.height / 100) *
-                                    pageHeightPx;
-
-                                  return (
-                                    <Group key="annotation-draft" x={x} y={y}>
-                                      <Rect
-                                        x={0}
-                                        y={0}
-                                        width={w}
-                                        height={h}
-                                        fill="rgba(249,115,22,0.16)"
-                                        stroke={BALLOON_CALLOUT_STROKE}
-                                        dash={[4, 4]}
-                                        strokeWidth={2}
-                                        cornerRadius={4}
-                                        listening={false}
-                                      />
-                                      {annotationDraft.text.trim().length >
-                                        0 && (
-                                        <Text
-                                          x={8}
-                                          y={6}
-                                          width={Math.max(20, w - 16)}
-                                          height={Math.max(16, h - 12)}
-                                          text={annotationDraft.text}
-                                          fill={CALLOUT_TEXT}
-                                          fontSize={annotationDraft.fontSize}
-                                          listening={false}
-                                        />
-                                      )}
-                                    </Group>
-                                  );
-                                })()}
-                              {featureRows
-                                .filter(
-                                  (b) =>
-                                    b.pageNumber === pdfViewPage && b.balloonId
-                                )
-                                .map((b) => {
-                                  const pageHeightPx = overlayHeight;
-                                  const balloonWidthPx =
-                                    (b.width / 100) * renderedWidth;
-                                  const balloonHeightPx =
-                                    (b.height / 100) * pageHeightPx;
-                                  const balloonX = (b.x / 100) * renderedWidth;
-                                  const balloonY = (b.y / 100) * pageHeightPx;
-                                  const balloonCenterX =
-                                    balloonX + balloonWidthPx / 2;
-                                  const balloonCenterY =
-                                    balloonY + balloonHeightPx / 2;
-                                  const radius = Math.max(
-                                    8,
-                                    Math.min(balloonWidthPx, balloonHeightPx) /
-                                      2
-                                  );
-                                  const balloonLabelFontSize = Math.max(
-                                    14,
-                                    Math.min(26, Math.round(radius * 1.15))
-                                  );
-                                  const isSelected =
-                                    b.balloonId === selectedBalloonId;
-                                  const linkedSelector = anchorRects.find(
-                                    (s) => s.id === b.balloonAnchorId
-                                  );
-                                  let linePoints:
-                                    | [number, number, number, number]
-                                    | null = null;
-                                  if (
-                                    linkedSelector &&
-                                    linkedSelector.pageNumber === pdfViewPage
-                                  ) {
-                                    const sx =
-                                      (linkedSelector.x / 100) * renderedWidth;
-                                    const sy =
-                                      (linkedSelector.y / 100) * pageHeightPx;
-                                    const sw =
-                                      (linkedSelector.width / 100) *
-                                      renderedWidth;
-                                    const sh =
-                                      (linkedSelector.height / 100) *
-                                      pageHeightPx;
-                                    const anchorX = sx + sw / 2;
-                                    const anchorY = sy + sh / 2;
-                                    linePoints = clippedBalloonToAnchorLine(
-                                      balloonCenterX,
-                                      balloonCenterY,
-                                      radius,
-                                      anchorX,
-                                      anchorY,
-                                      { x: sx, y: sy, w: sw, h: sh }
-                                    );
-                                  }
-
-                                  return (
-                                    <Group
-                                      key={`balloon-group-${b.balloonId}`}
-                                      x={balloonX}
-                                      y={balloonY}
-                                      listening={false}
-                                    >
-                                      {/* Hit target: children use listening={false}, so without this rect
-                                the group receives no pointer events (no hover cursor, no drag). */}
-                                      <Rect
-                                        x={0}
-                                        y={0}
-                                        width={balloonWidthPx}
-                                        height={balloonHeightPx}
-                                        fill="rgba(0,0,0,0.001)"
-                                        listening={false}
-                                      />
-                                      {linePoints && (
-                                        <Line
-                                          key={`balloon-line-${b.balloonId}`}
-                                          points={[
-                                            linePoints[0] - balloonX,
-                                            linePoints[1] - balloonY,
-                                            linePoints[2] - balloonX,
-                                            linePoints[3] - balloonY
-                                          ]}
-                                          stroke={BALLOON_CALLOUT_STROKE}
-                                          strokeWidth={2}
-                                          listening={false}
-                                        />
-                                      )}
-                                      <Circle
-                                        key={`balloon-circle-${b.balloonId}`}
-                                        x={balloonWidthPx / 2}
-                                        y={balloonHeightPx / 2}
-                                        radius={radius}
-                                        fill={
-                                          isSelected
-                                            ? "rgba(249,115,22,0.14)"
-                                            : "rgba(0,0,0,0)"
-                                        }
-                                        fillEnabled
-                                        stroke={BALLOON_CALLOUT_STROKE}
-                                        strokeWidth={isSelected ? 3 : 2}
-                                        listening={false}
-                                      />
-                                      <Text
-                                        key={`balloon-text-${b.balloonId}`}
-                                        x={balloonWidthPx / 2 - radius}
-                                        y={balloonHeightPx / 2 - radius}
-                                        width={radius * 2}
-                                        height={radius * 2}
-                                        text={b.label}
-                                        align="center"
-                                        verticalAlign="middle"
-                                        fill={BALLOON_CALLOUT_STROKE}
-                                        fontStyle="bold"
-                                        fontSize={balloonLabelFontSize}
-                                        listening={false}
-                                      />
-                                    </Group>
-                                  );
-                                })}
-                              {previewRect && (
-                                <Rect
-                                  x={(previewRect.x / 100) * renderedWidth}
-                                  y={(previewRect.y / 100) * overlayHeight}
-                                  width={
-                                    (previewRect.width / 100) * renderedWidth
-                                  }
-                                  height={
-                                    (previewRect.height / 100) * overlayHeight
-                                  }
-                                  stroke={
-                                    dragKind === "zoom"
-                                      ? "#2563eb"
-                                      : BALLOON_CALLOUT_STROKE
-                                  }
-                                  strokeWidth={2}
-                                  fillEnabled={false}
-                                />
-                              )}
-                            </Layer>
-                          </Stage>
+                          <DrawingOverlay
+                            stageRef={drawing.stageRef}
+                            renderedWidth={renderedWidth}
+                            overlayHeight={overlayHeight}
+                            pdfViewPage={pdfViewPage}
+                            anchorRects={anchorRects}
+                            annotations={drawing.annotations}
+                            annotationDraft={annotationDraft}
+                            annotationEditDraft={annotationEditDraft}
+                            featureRows={featureRows}
+                            selectedSelectorId={drawing.selectedSelectorId}
+                            selectedAnnotationId={drawing.selectedAnnotationId}
+                            selectedBalloonId={drawing.selectedBalloonId}
+                            previewRect={drawing.previewRect}
+                            dragKind={drawing.dragKind}
+                            onMouseDown={drawing.handleStageMouseDown}
+                            onMouseMove={drawing.handleStageMouseMove}
+                            onMouseUp={drawing.handleStageMouseUp}
+                          />
                         </div>
                       )}
                   </div>
@@ -3882,95 +912,20 @@ export default function InspectionDocumentEditor({
                   annotationDraft.pageNumber === pdfViewPage &&
                   renderedWidth > 0 &&
                   overlayHeight > 0 && (
-                    <div
-                      className="absolute z-20 rounded-md border bg-background p-2 shadow-md"
-                      style={getAnnotationDialogPosition({
-                        renderedWidth,
-                        overlayHeight,
-                        totalPagesStage: 1,
-                        pageNumber: annotationDraft.pageNumber,
-                        x: annotationDraft.x,
-                        y: annotationDraft.y,
-                        width: annotationDraft.width,
-                        height: annotationDraft.height
-                      })}
-                    >
-                      <VStack spacing={2} className="w-52">
-                        <input
-                          aria-label={t`Annotation text`}
-                          className="h-8 w-full rounded border bg-background px-2 text-xs"
-                          placeholder={t`Annotation text`}
-                          value={annotationDraft.text}
-                          onChange={(event) =>
-                            setAnnotationDraft((prev) =>
-                              prev
-                                ? { ...prev, text: event.target.value }
-                                : prev
-                            )
-                          }
-                        />
-                        <input
-                          aria-label={t`Annotation text size`}
-                          type="text"
-                          inputMode="numeric"
-                          className="h-8 w-full rounded border bg-background px-2 text-xs"
-                          placeholder={t`Text size`}
-                          value={annotationFontSizeInput}
-                          onChange={(event) => {
-                            const raw = event.target.value;
-                            if (!/^\d*$/.test(raw)) return;
-                            setAnnotationFontSizeInput(raw);
-                            if (raw === "") return;
-                            const parsed = Number(raw);
-                            if (!Number.isFinite(parsed)) return;
-                            setAnnotationDraft((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    fontSize: Math.max(8, Math.min(48, parsed))
-                                  }
-                                : prev
-                            );
-                          }}
-                          onBlur={() => {
-                            const parsed = Number(
-                              annotationFontSizeInput || "12"
-                            );
-                            const normalized = Math.max(
-                              8,
-                              Math.min(
-                                48,
-                                Number.isFinite(parsed) ? parsed : 12
-                              )
-                            );
-                            setAnnotationFontSizeInput(String(normalized));
-                            setAnnotationDraft((prev) =>
-                              prev ? { ...prev, fontSize: normalized } : prev
-                            );
-                          }}
-                        />
-                        <HStack spacing={1} className="justify-end">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setAnnotationDraft(null);
-                              setAnnotationFontSizeInput("12");
-                            }}
-                          >
-                            {t`Cancel`}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => void handleCreateAnnotation()}
-                          >
-                            {t`Add`}
-                          </Button>
-                        </HStack>
-                      </VStack>
-                    </div>
+                    <AnnotationPopover
+                      draft={annotationDraft}
+                      renderedWidth={renderedWidth}
+                      overlayHeight={overlayHeight}
+                      fontSizeInput={drawing.annotationFontSizeInput}
+                      onFontSizeInputChange={drawing.setAnnotationFontSizeInput}
+                      onDraftChange={(patch) =>
+                        drawing.setAnnotationDraft((prev) =>
+                          prev ? { ...prev, ...patch } : prev
+                        )
+                      }
+                      onCancel={drawing.cancelAnnotationDraft}
+                      onSubmit={() => void drawing.handleCreateAnnotation()}
+                    />
                   )}
                 {canUpdate &&
                   !annotationDraft &&
@@ -3978,106 +933,23 @@ export default function InspectionDocumentEditor({
                   annotationEditDraft.pageNumber === pdfViewPage &&
                   renderedWidth > 0 &&
                   overlayHeight > 0 && (
-                    <div
-                      className="absolute z-20 rounded-md border bg-background p-2 shadow-md"
-                      style={getAnnotationDialogPosition({
-                        renderedWidth,
-                        overlayHeight,
-                        totalPagesStage: 1,
-                        pageNumber: annotationEditDraft.pageNumber,
-                        x: annotationEditDraft.x,
-                        y: annotationEditDraft.y,
-                        width: annotationEditDraft.width,
-                        height: annotationEditDraft.height
-                      })}
-                    >
-                      <VStack spacing={2} className="w-52">
-                        <input
-                          aria-label={t`Annotation text`}
-                          className="h-8 w-full rounded border bg-background px-2 text-xs"
-                          placeholder={t`Annotation text`}
-                          value={annotationEditDraft.text}
-                          onChange={(event) =>
-                            setAnnotationEditDraft((prev) =>
-                              prev
-                                ? { ...prev, text: event.target.value }
-                                : prev
-                            )
-                          }
-                        />
-                        <input
-                          aria-label={t`Annotation text size`}
-                          type="text"
-                          inputMode="numeric"
-                          className="h-8 w-full rounded border bg-background px-2 text-xs"
-                          placeholder={t`Text size`}
-                          value={annotationEditFontSizeInput}
-                          onChange={(event) => {
-                            const raw = event.target.value;
-                            if (!/^\d*$/.test(raw)) return;
-                            setAnnotationEditFontSizeInput(raw);
-                            if (raw === "") return;
-                            const parsed = Number(raw);
-                            if (!Number.isFinite(parsed)) return;
-                            setAnnotationEditDraft((prev) =>
-                              prev
-                                ? {
-                                    ...prev,
-                                    fontSize: Math.max(8, Math.min(48, parsed))
-                                  }
-                                : prev
-                            );
-                          }}
-                          onBlur={() => {
-                            const parsed = Number(
-                              annotationEditFontSizeInput || "12"
-                            );
-                            const normalized = Math.max(
-                              8,
-                              Math.min(
-                                48,
-                                Number.isFinite(parsed) ? parsed : 12
-                              )
-                            );
-                            setAnnotationEditFontSizeInput(String(normalized));
-                            setAnnotationEditDraft((prev) =>
-                              prev ? { ...prev, fontSize: normalized } : prev
-                            );
-                          }}
-                        />
-                        <HStack spacing={1} className="justify-between">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            leftIcon={<LuTrash2 />}
-                            onClick={() => void handleDeleteAnnotation()}
-                          >
-                            {t`Delete`}
-                          </Button>
-                          <HStack spacing={1}>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedAnnotationId(null);
-                                setAnnotationEditDraft(null);
-                              }}
-                            >
-                              {t`Cancel`}
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => void handleUpdateAnnotation()}
-                            >
-                              {t`Update`}
-                            </Button>
-                          </HStack>
-                        </HStack>
-                      </VStack>
-                    </div>
+                    <AnnotationPopover
+                      draft={annotationEditDraft}
+                      renderedWidth={renderedWidth}
+                      overlayHeight={overlayHeight}
+                      fontSizeInput={drawing.annotationEditFontSizeInput}
+                      onFontSizeInputChange={
+                        drawing.setAnnotationEditFontSizeInput
+                      }
+                      onDraftChange={(patch) =>
+                        drawing.setAnnotationEditDraft((prev) =>
+                          prev ? { ...prev, ...patch } : prev
+                        )
+                      }
+                      onCancel={drawing.cancelAnnotationEdit}
+                      onSubmit={() => void drawing.handleUpdateAnnotation()}
+                      onDelete={() => void drawing.handleDeleteAnnotation()}
+                    />
                   )}
               </div>
             </div>
@@ -4209,31 +1081,12 @@ export default function InspectionDocumentEditor({
                   canEdit={canUpdate}
                   contained={!hasDocument}
                 />
-              ) : canUpdate ? (
-                <Editor
-                  key="instructions"
-                  initialValue={
-                    typedWorkInstruction ??
-                    workInstruction ??
-                    ({} as JSONContent)
-                  }
-                  onUpload={onUploadImage}
-                  onChange={(content) => {
-                    setTypedWorkInstruction(content);
-                    setWorkInstructionPending(true);
-                    debouncedSaveWorkInstruction(content);
-                  }}
-                  // A toolbar flush with the pane's top and sides: pad the
-                  // text, not the editor around it.
-                  toolbar
-                  className="[&_.ProseMirror]:px-4 [&_.ProseMirror]:py-6"
-                />
               ) : (
-                <div
-                  className="prose dark:prose-invert px-4 py-6"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(workInstruction ?? ({} as JSONContent))
-                  }}
+                <InspectionDocumentWorkInstruction
+                  key="instructions"
+                  canUpdate={canUpdate}
+                  workInstruction={workInstruction}
+                  draft={workInstructionDraft}
                 />
               )}
             </div>

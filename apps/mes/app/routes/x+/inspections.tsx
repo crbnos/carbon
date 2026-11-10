@@ -42,6 +42,7 @@ import { useUrlParams } from "~/hooks";
 import { getWorkCentersByCompany } from "~/services/operations.service";
 import {
   getInspectionJobOperations,
+  getInspectionReceiptLines,
   getOpenInspections
 } from "~/services/quality.service";
 import type { Handle } from "~/utils/handle";
@@ -70,6 +71,7 @@ function filterValues(filters: string[], key: string): string[] {
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
+  const locationId = context.get(userContext)?.locationId;
 
   const url = new URL(request.url);
   const search = url.searchParams.get("search")?.toLowerCase() ?? null;
@@ -92,40 +94,73 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   }
 
   const lots = inspections.data ?? [];
-  const jobOperations = await getInspectionJobOperations(
-    serviceRole,
-    companyId,
+  const lineIdsOf = (source: string) =>
     lots
       .filter(
-        (lot) =>
-          lot.sourceDocument === "Job Operation" && lot.sourceDocumentLineId
+        (lot) => lot.sourceDocument === source && lot.sourceDocumentLineId
       )
-      .map((lot) => lot.sourceDocumentLineId as string)
-  );
+      .map((lot) => lot.sourceDocumentLineId as string);
+  const [jobOperations, receiptLines] = await Promise.all([
+    getInspectionJobOperations(
+      serviceRole,
+      companyId,
+      lineIdsOf("Job Operation")
+    ),
+    getInspectionReceiptLines(serviceRole, companyId, lineIdsOf("Receipt"))
+  ]);
   if (jobOperations.error) {
     logger.error("Failed to load inspection job operations", {
       companyId,
       error: jobOperations.error
     });
   }
+  if (receiptLines.error) {
+    logger.error("Failed to load inspection receipt lines", {
+      companyId,
+      error: receiptLines.error
+    });
+  }
   const operationById = new Map(
     (jobOperations.data ?? []).map((operation) => [operation.id, operation])
   );
-
-  const workCenterOptions = (workCenters.data ?? [])
-    .filter((wc) => wc.id && wc.name)
-    .map((wc) => ({ value: wc.id as string, label: wc.name as string }));
-  const workCenterName = new Map(
-    workCenterOptions.map((wc) => [wc.value, wc.label])
+  const receiptLineById = new Map(
+    (receiptLines.data ?? []).map((line) => [line.id, line])
   );
 
+  const companyWorkCenters = (workCenters.data ?? []).filter(
+    (wc) => wc.id && wc.name
+  );
+  const workCenterName = new Map(
+    companyWorkCenters.map((wc) => [wc.id as string, wc.name as string])
+  );
+  const workCenterLocation = new Map(
+    companyWorkCenters.map((wc) => [wc.id as string, wc.locationId])
+  );
+  // The filter offers the work centers of the operator's location: the queue
+  // shows no lot of another location's work center.
+  const workCenterOptions = companyWorkCenters
+    .filter((wc) => !locationId || wc.locationId === locationId)
+    .map((wc) => ({ value: wc.id as string, label: wc.name as string }));
+
   // A Manual lot names its work center and assignee; a Job Operation lot
-  // takes its operation's. A Receipt lot has neither.
-  const rows = lots.map((lot) => {
+  // takes its operation's. A Receipt lot has neither, and is where its
+  // receipt line is (else its receipt).
+  const rows = lots.flatMap((lot) => {
     const operation =
       lot.sourceDocument === "Job Operation" && lot.sourceDocumentLineId
         ? operationById.get(lot.sourceDocumentLineId)
         : undefined;
+    const receiptLine =
+      lot.sourceDocument === "Receipt" && lot.sourceDocumentLineId
+        ? receiptLineById.get(lot.sourceDocumentLineId)
+        : undefined;
+    const receipt = receiptLine?.receipt as {
+      status: string;
+      locationId: string | null;
+    } | null;
+    // A voided receipt's lot inspects stock that was never received.
+    if (receipt?.status === "Voided") return [];
+
     const workCenterId =
       lot.sourceDocument === "Job Operation"
         ? (operation?.workCenterId ?? null)
@@ -134,32 +169,47 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       lot.sourceDocument === "Job Operation"
         ? (operation?.assignee ?? null)
         : (lot.assignee ?? null);
-    return {
-      id: lot.id,
-      inspectionId: lot.inspectionId,
-      sourceDocument: lot.sourceDocument,
-      sourceDocumentLineId: lot.sourceDocumentLineId,
-      sourceDocumentReadableId: lot.sourceDocumentReadableId,
-      itemReadableId: lot.itemReadableId,
-      itemName: (lot.item as { name: string | null } | null)?.name ?? null,
-      // The plan names what to check; pickers show name ?? fileName.
-      planName: (() => {
-        const plan = lot.inspectionDocument as {
-          name: string | null;
-          fileName: string | null;
-        } | null;
-        return plan?.name ?? plan?.fileName ?? null;
-      })(),
-      operationDescription: operation?.description ?? null,
-      status: lot.status,
-      lotSize: lot.lotSize,
-      createdAt: lot.createdAt,
-      workCenterId,
-      workCenterName: workCenterId
-        ? (workCenterName.get(workCenterId) ?? null)
-        : null,
-      assignee
-    };
+
+    // The operator sees the lots of their location. A lot with no location
+    // to read (no work center, no receipt line) stays visible to everyone.
+    const lotLocationId =
+      lot.sourceDocument === "Receipt"
+        ? (receiptLine?.locationId ?? receipt?.locationId ?? null)
+        : workCenterId
+          ? (workCenterLocation.get(workCenterId) ?? null)
+          : null;
+    if (locationId && lotLocationId && lotLocationId !== locationId) {
+      return [];
+    }
+
+    return [
+      {
+        id: lot.id,
+        inspectionId: lot.inspectionId,
+        sourceDocument: lot.sourceDocument,
+        sourceDocumentLineId: lot.sourceDocumentLineId,
+        sourceDocumentReadableId: lot.sourceDocumentReadableId,
+        itemReadableId: lot.itemReadableId,
+        itemName: (lot.item as { name: string | null } | null)?.name ?? null,
+        // The plan names what to check; pickers show name ?? fileName.
+        planName: (() => {
+          const plan = lot.inspectionDocument as {
+            name: string | null;
+            fileName: string | null;
+          } | null;
+          return plan?.name ?? plan?.fileName ?? null;
+        })(),
+        operationDescription: operation?.description ?? null,
+        status: lot.status,
+        lotSize: lot.lotSize,
+        createdAt: lot.createdAt,
+        workCenterId,
+        workCenterName: workCenterId
+          ? (workCenterName.get(workCenterId) ?? null)
+          : null,
+        assignee
+      }
+    ];
   });
 
   const filtered = rows.filter((row) => {

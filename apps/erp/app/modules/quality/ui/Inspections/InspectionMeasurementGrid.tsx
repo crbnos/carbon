@@ -9,15 +9,18 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
-import type { JSONContent } from "@carbon/react";
+import type {
+  InspectionParameter,
+  InspectionPlanTab,
+  JSONContent
+} from "@carbon/react";
 import {
   Badge,
   cn,
-  generateHTML,
   IconButton,
-  Tabs,
-  TabsList,
-  TabsTrigger,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -67,20 +70,10 @@ import type {
 import { path } from "~/utils/path";
 import InspectionGaugePicker from "./InspectionGaugePicker";
 
+export type { InspectionParameter };
+
 // A cell save's response payload (the measurement action returns it so the
 // grid can update without a revalidation roundtrip).
-/** A plan parameter: setup the inspector reads before measuring. */
-export type InspectionParameter = { id: string; key: string; value: string };
-
-type InspectionGridTab = "characteristics" | "parameters" | "instructions";
-
-// A document with nothing but empty paragraphs has no instructions to read.
-function hasWorkInstruction(doc: JSONContent | null | undefined) {
-  return (doc?.content ?? []).some(
-    (node) => node.type !== "paragraph" || (node.content?.length ?? 0) > 0
-  );
-}
-
 export type MeasurementSaveResult = {
   sampleId: string;
   measurementId: string;
@@ -1746,7 +1739,7 @@ const InspectionMeasurementGrid = ({
 
   const gridRef = useRef<HTMLDivElement>(null);
   const rowCount = rows.length;
-  const [tab, setTab] = useState<InspectionGridTab>("characteristics");
+  const [tab, setTab] = useState<InspectionPlanTab>("characteristics");
 
   useEffect(() => {
     if (!activeFeatureId) return;
@@ -1923,21 +1916,16 @@ const InspectionMeasurementGrid = ({
     [isReadOnly, characteristics, persistCell, rowCount, t]
   );
 
-  const characteristicsTitle = hasFeatures ? t`Characteristics` : t`Result`;
+  const characteristicsTitle = hasFeatures
+    ? `${t`Characteristics`} (${characteristics.length})`
+    : t`Result`;
   const parameterTabs =
     parameters !== undefined ? (
-      <Tabs
+      <InspectionPlanTabs
         value={tab}
-        onValueChange={(value) => setTab(value as InspectionGridTab)}
-      >
-        <TabsList>
-          <TabsTrigger value="characteristics">
-            {characteristicsTitle}
-          </TabsTrigger>
-          <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
-          <TabsTrigger value="instructions">{t`Instructions`}</TabsTrigger>
-        </TabsList>
-      </Tabs>
+        onValueChange={setTab}
+        characteristicsLabel={characteristicsTitle}
+      />
     ) : null;
 
   if (parameters !== undefined && tab === "instructions") {
@@ -1946,20 +1934,10 @@ const InspectionMeasurementGrid = ({
         <div className="flex min-h-12 shrink-0 items-center px-4 py-2">
           {parameterTabs}
         </div>
-        {hasWorkInstruction(workInstruction) ? (
-          <div className="min-h-0 flex-1 overflow-auto border-t border-border px-4 py-4">
-            <div
-              className="prose max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(workInstruction as JSONContent)
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 items-center justify-center border-t border-border p-8 text-center text-sm text-muted-foreground">
-            {t`This inspection plan has no work instructions.`}
-          </div>
-        )}
+        <InspectionPlanInstructions
+          workInstruction={workInstruction}
+          className="border-t border-border"
+        />
       </div>
     );
   }
@@ -1970,27 +1948,10 @@ const InspectionMeasurementGrid = ({
         <div className="flex min-h-12 shrink-0 items-center px-4 py-2">
           {parameterTabs}
         </div>
-        {parameters.length === 0 ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center border-t border-border p-8 text-center text-sm text-muted-foreground">
-            {t`This inspection plan has no parameters.`}
-          </div>
-        ) : (
-          <dl className="min-h-0 flex-1 divide-y divide-border overflow-auto border-t border-border">
-            {parameters.map((parameter) => (
-              <div
-                key={parameter.id}
-                className="flex items-baseline justify-between gap-4 px-4 py-2.5"
-              >
-                <dt className="text-sm text-muted-foreground">
-                  {parameter.key}
-                </dt>
-                <dd className="text-right text-sm font-medium tabular-nums">
-                  {parameter.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        )}
+        <InspectionPlanParameters
+          parameters={parameters}
+          className="border-t border-border"
+        />
       </div>
     );
   }

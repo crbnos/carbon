@@ -1215,7 +1215,7 @@
     {"name":"quality_getInspectionGauges","classification":"READ","schema":"6fa849e2a3d3","response":"68597e017f0d","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionMeasurements","classification":"READ","schema":"6fa849e2a3d3","response":"c743640a210d","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionPlan","classification":"READ","schema":"884c2071bf73","response":"83a9b3640e41","permission":"quality:view","paginates":false},
-    {"name":"quality_getInspections","classification":"READ","schema":"c51c4913cfa1","response":"ab34449fc7de","permission":"quality:view","paginates":true},
+    {"name":"quality_getInspections","classification":"READ","schema":"c51c4913cfa1","response":"c0ce0b8b47c2","permission":"quality:view","paginates":true},
     {"name":"quality_getInspectionSamplingPlans","classification":"READ","schema":"6fa849e2a3d3","response":"7bdcf800065e","permission":"quality:view","paginates":false},
     {"name":"quality_getInspectionTrackedEntities","classification":"READ","schema":"f7d68d720fd8","response":"ec54684c77fb","permission":"quality:view","paginates":false},
     {"name":"quality_getIssue","classification":"READ","schema":"01fd03c465aa","response":"a1e666efa89c","permission":"quality:view","paginates":false},

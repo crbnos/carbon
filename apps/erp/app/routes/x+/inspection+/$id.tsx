@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { prefillInspectionSamples } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -45,6 +46,8 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "inspection");
+
 export const handle: Handle = {
   realtime: [
     { table: "inspection", column: "id", param: "id" },
@@ -68,17 +71,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   invariant(id, "id is required");
 
-  // A serial lot whose plan inspects every unit gets every unit as a sample
-  // up front, so the inspector records results without scanning. Scoped to
-  // the company inside the engine; a lot of another company is left alone.
-  await prefillInspectionSamples(getDatabaseClient(), {
-    inspectionId: id,
-    companyId,
-    userId
-  });
-
   const [inspection, settings, issueTypes] = await Promise.all([
-    getInspection(client, id),
+    // A serial lot whose plan inspects every unit gets every unit as a sample
+    // up front, so the inspector records results without scanning. Scoped to
+    // the company inside the engine; a lot of another company is left alone.
+    // It runs before the lot is read, whose embed carries the samples. A
+    // failure only leaves the scanner to add them, so it is logged, not thrown.
+    prefillInspectionSamples(getDatabaseClient(), {
+      inspectionId: id,
+      companyId,
+      userId
+    }).then((prefill) => {
+      if (prefill.error) {
+        logger.error("Failed to prefill the inspection samples", {
+          companyId,
+          inspectionId: id,
+          error: prefill.error
+        });
+      }
+      return getInspection(client, id);
+    }),
     getCompanySettings(client, companyId),
     getIssueTypesList(client, companyId)
   ]);

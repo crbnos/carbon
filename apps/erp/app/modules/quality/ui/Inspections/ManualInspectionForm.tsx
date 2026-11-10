@@ -40,11 +40,13 @@ import { path } from "~/utils/path";
 
 type ManualInspectionFormProps = {
   initialValues: z.infer<typeof manualInspectionValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
 const ManualInspectionForm = ({
   initialValues,
+  open = true,
   onClose
 }: ManualInspectionFormProps) => {
   const { t } = useLingui();
@@ -108,9 +110,9 @@ const ManualInspectionForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
-        onOpenChange={(open) => {
-          if (!open) onClose();
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) onClose();
         }}
       >
         <ModalDrawerContent>
