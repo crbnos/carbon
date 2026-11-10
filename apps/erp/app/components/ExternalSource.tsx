@@ -10,6 +10,7 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -37,9 +38,9 @@ type ExternalSourceMapping = {
 };
 
 /**
- * Self-loading card for the item's `onshape-v2` link: the fields a push
- * replaces, last push time, Open in Onshape and Detach. Renders nothing when
- * the item has no link.
+ * Self-loading card for the item's `onshape-v2` link: what a push can update,
+ * last push time, Open in Onshape and Detach. Renders nothing when the item
+ * has no link.
  */
 export function ExternalSourceCard({
   itemId,
@@ -50,7 +51,7 @@ export function ExternalSourceCard({
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { formatDateTime } = useDateFormatter();
   const [mapping, setMapping] = useState<ExternalSourceMapping | null>(null);
   const [confirmingDetach, setConfirmingDetach] = useState(false);
@@ -145,40 +146,50 @@ export function ExternalSourceCard({
       : `https://cad.onshape.com/documents/${meta.documentId}`;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
   const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
+  // The card cannot tell which of these a push brings (BOM lines come only
+  // with an assembly, files only when picked), so it names all it can change.
+  const pushTargets = new Intl.ListFormat(i18n.locale, {
+    style: "long",
+    type: "conjunction"
+  }).format([
+    t`BOM`,
+    t`CAD model`,
+    t`drawings`,
+    ...(replaced ?? [t`any fields set to update on every push`])
+  ]);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Onshape
-          <Badge variant="green">
-            <Trans>Linked</Trans>
-          </Badge>
-        </CardTitle>
-      </CardHeader>
+      <HStack className="justify-between items-start">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Onshape
+            <Badge variant="green">
+              <Trans>Linked</Trans>
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        {lastPushed ? (
+          <CardAction>
+            <span className="text-sm text-muted-foreground">
+              <Trans>Last pushed {lastPushed}</Trans>
+            </span>
+          </CardAction>
+        ) : null}
+      </HStack>
       <CardContent>
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            {replaced === null ? (
+            {replaced?.length === 0 ? (
               <Trans>
-                Pushes replace only the fields that Onshape's Fields page sets
-                to Update on every push.
-              </Trans>
-            ) : replaced.length === 0 ? (
-              <Trans>
-                Pushes don't change this item's fields, so edits made here stay.
+                Pushes from Onshape can update this item's {pushTargets}, but
+                not its fields.
               </Trans>
             ) : (
               <Trans>
-                Each push replaces: {replaced.join(", ")}. Other edits stay.
+                Pushes from Onshape can update this item's {pushTargets}.
               </Trans>
             )}
-            {lastPushed ? (
-              <>
-                {" "}
-                <Trans>Last pushed {lastPushed}.</Trans>
-              </>
-            ) : null}
           </p>
           <HStack spacing={2} className="shrink-0">
             {onshapeUrl ? (
@@ -204,7 +215,7 @@ export function ExternalSourceCard({
         <Confirm
           action={path.to.api.onShapeDetach}
           title={t`Detach from Onshape?`}
-          text={t`Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back.`}
+          text={t`Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again.`}
           confirmText={t`Detach`}
           onCancel={() => setConfirmingDetach(false)}
           onSubmit={() => {
