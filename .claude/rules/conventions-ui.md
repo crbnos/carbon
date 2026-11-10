@@ -228,7 +228,9 @@ or counters to get the same effect.
    writes a plain `Modal` / `Drawer` (account settings and search are plain
    modals). Use `BottomSheet` directly only for UI that exists on phones alone
    (the profile sheet, menus). A sheet drags down from its grabber or its
-   header; a control in the header does not start a drag.
+   header; a control in the header does not start a drag. A dialog that keeps
+   itself open on a press outside (`onInteractOutside` calls `preventDefault`)
+   also stays open on a drag: the sheet springs back.
 
 ## Popovers inside Drawers / Dialogs
 

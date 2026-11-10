@@ -19,7 +19,11 @@ import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { DialogRoot, useDialogDismissable } from "./DialogRoot";
 import { cn } from "./utils/cn";
-import { keepOpenOnToast, startsSheetDrag } from "./utils/dialog";
+import {
+  keepOpenOnToast,
+  refusesDragDismiss,
+  startsSheetDrag
+} from "./utils/dialog";
 import {
   addDragSample,
   type DragSample,
@@ -164,7 +168,12 @@ const BottomSheetContent = forwardRef<
           offset,
           height: state.height,
           velocity: releaseVelocity(state.samples, event.timeStamp)
-        })
+        }) &&
+        // A dialog that stays open on a press outside stays open on a drag.
+        !refusesDragDismiss(sheet, event.nativeEvent, [
+          props.onPointerDownOutside,
+          props.onInteractOutside
+        ])
       ) {
         // Reduced motion zeroes the exit movement, which would slide the sheet
         // back up before it closes.

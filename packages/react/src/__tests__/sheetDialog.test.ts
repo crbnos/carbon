@@ -5,7 +5,11 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { keepOpenOnToast, startsSheetDrag } from "../utils/dialog";
+import {
+  keepOpenOnToast,
+  refusesDragDismiss,
+  startsSheetDrag
+} from "../utils/dialog";
 
 // A sheet as a phone renders it: grabber, header (title, a control), body.
 function sheet(id: string) {
@@ -87,5 +91,42 @@ describe("keepOpenOnToast", () => {
     const handler = vi.fn();
     expect(outside(page, handler).defaultPrevented).toBe(false);
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("refusesDragDismiss", () => {
+  // jsdom has no PointerEvent; the handlers only pass it along.
+  const release = () => new MouseEvent("pointerup") as PointerEvent;
+
+  it("keeps a dialog open that refuses a press outside", () => {
+    const panel = sheet("a");
+    const refuse = (event: Event) => event.preventDefault();
+    expect(refusesDragDismiss(panel, release(), [undefined, refuse])).toBe(
+      true
+    );
+  });
+
+  it("closes a dialog that refuses only while it holds a draft, once it does not", () => {
+    const panel = sheet("a");
+    let draft = true;
+    const guard = (event: Event) => {
+      if (draft) event.preventDefault();
+    };
+    expect(refusesDragDismiss(panel, release(), [guard])).toBe(true);
+    draft = false;
+    expect(refusesDragDismiss(panel, release(), [guard])).toBe(false);
+  });
+
+  it("closes a dialog with no outside handler", () => {
+    expect(
+      refusesDragDismiss(sheet("a"), release(), [undefined, undefined])
+    ).toBe(false);
+  });
+
+  it("tells a handler where the drag happened, as Radix does", () => {
+    const panel = sheet("a");
+    let target: EventTarget | null = null;
+    refusesDragDismiss(panel, release(), [(event) => (target = event.target)]);
+    expect(target).toBe(panel);
   });
 });

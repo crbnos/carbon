@@ -217,6 +217,38 @@ export function startsSheetDrag(
   );
 }
 
+type OutsideHandler = (
+  event: CustomEvent<{ originalEvent: PointerEvent }>
+) => void;
+
+/**
+ * Whether the dialog refuses to close when its sheet is dragged down. A drag
+ * dismisses it as a press outside does, so it asks the same handlers, with
+ * the event Radix gives them, and a dialog that keeps itself open on an
+ * outside press (an editor with a draft) springs back instead of closing.
+ * The event is dispatched on `target`, as Radix's is, for handlers that read
+ * where it happened.
+ */
+export function refusesDragDismiss(
+  target: Element,
+  originalEvent: PointerEvent,
+  handlers: (OutsideHandler | undefined)[]
+): boolean {
+  const event = new CustomEvent("dismissableLayer.pointerDownOutside", {
+    cancelable: true,
+    detail: { originalEvent }
+  });
+  target.addEventListener(
+    event.type,
+    () => {
+      for (const handler of handlers) handler?.(event);
+    },
+    { once: true }
+  );
+  target.dispatchEvent(event);
+  return event.defaultPrevented;
+}
+
 function whenDialogRemoved(dialog: Element, timeoutMs = 500): Promise<void> {
   return new Promise((resolve) => {
     if (!dialog.isConnected) {
