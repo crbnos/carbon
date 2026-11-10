@@ -302,6 +302,7 @@ export const companyImportFunction = inngest.createFunction(
             trx
           );
         }
+        await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
         const ledger: LedgerRow[] = [];
 

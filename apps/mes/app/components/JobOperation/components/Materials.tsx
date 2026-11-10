@@ -8,6 +8,7 @@ import {
   cn,
   HStack,
   IconButton,
+  NonNettableBadge,
   Table,
   Tbody,
   Td,
@@ -405,6 +406,9 @@ function MaterialsTable({
                               ? t`WIP`
                               : t`Default Storage Unit`)}
                         </Badge>
+                        {material.storageUnit?.effectiveNettable === false && (
+                          <NonNettableBadge />
+                        )}
                       </div>
                     </Td>
                     <Td>

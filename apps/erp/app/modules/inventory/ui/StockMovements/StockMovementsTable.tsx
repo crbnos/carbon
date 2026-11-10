@@ -7,6 +7,7 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  NonNettableBadge,
   PrefetchLink,
   VStack
 } from "@carbon/react";
@@ -42,6 +43,7 @@ import { useLocations } from "~/components/Form/Location";
 import type { InfiniteOptions } from "~/components/Table";
 import { useDrawerItem, usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { MethodItemType } from "~/modules/shared/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -61,6 +63,7 @@ type StockMovementsTableProps = {
 const StockMovementsTable = memo(
   ({ data, count, infinite }: StockMovementsTableProps) => {
     const { t } = useLingui();
+    const nonNettable = useNonNettableStorageUnits();
     const permissions = usePermissions();
     const correction = useDrawerItem<StockMovement>();
     const [people] = usePeople();
@@ -203,7 +206,15 @@ const StockMovementsTable = memo(
         {
           accessorKey: "storageUnitName",
           header: t`Storage Unit`,
-          cell: ({ row }) => row.original.storageUnitName ?? "",
+          cell: ({ row }) => (
+            <HStack spacing={2}>
+              <span>{row.original.storageUnitName ?? ""}</span>
+              {row.original.storageUnitId &&
+                nonNettable.has(row.original.storageUnitId) && (
+                  <NonNettableBadge />
+                )}
+            </HStack>
+          ),
           meta: {
             icon: <LuWarehouse />
           }
@@ -283,7 +294,7 @@ const StockMovementsTable = memo(
           }
         }
       ];
-    }, [people, locations, locationsById, t]);
+    }, [people, locations, locationsById, nonNettable, t]);
 
     const renderContextMenu = useCallback(
       (row: StockMovement) => (

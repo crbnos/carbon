@@ -11,6 +11,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  NonNettableBadge,
   VStack
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -18,6 +19,7 @@ import { useMemo } from "react";
 import { LuMoveDown, LuMoveUp, LuPencil, LuPlus } from "react-icons/lu";
 import { DateTime, EmployeeAvatar, Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import { path } from "~/utils/path";
 import type { StockMovement } from "../../types";
 
@@ -93,6 +95,7 @@ const InventoryCountHistory = ({
   onClose
 }: InventoryCountHistoryProps) => {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnits();
 
   const versions = useMemo(() => toVersions(movements), [movements]);
   const corrections = versions.filter((v) => v.isCorrection).length;
@@ -190,6 +193,10 @@ const InventoryCountHistory = ({
                           <span className="whitespace-nowrap text-muted-foreground text-xs">
                             {m.storageUnitName ?? "—"}
                           </span>
+                          {m.storageUnitId &&
+                            nonNettable.has(m.storageUnitId) && (
+                              <NonNettableBadge />
+                            )}
                         </HStack>
                         <div className="justify-self-end">
                           <QuantityDelta value={m.quantity} />

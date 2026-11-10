@@ -38,6 +38,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  NonNettableBadge,
   Input as SearchInput,
   toast,
   useDisclosure,
@@ -86,6 +87,7 @@ import {
   useUser
 } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type {
   itemTrackingTypes,
   pickMethodValidator
@@ -156,6 +158,7 @@ const InventoryStorageUnits = ({
     [storageUnits]
   );
 
+  const nonNettableIds = useNonNettableStorageUnits();
   const ownerLabels = useStockOwnerLabels(
     itemStorageUnitQuantities
       .map((item) => item.projectId)
@@ -704,8 +707,13 @@ const InventoryStorageUnits = ({
                           isSingleUntrackedRow && "hover:bg-muted/60"
                         )}
                       >
-                        <span className="truncate font-medium">
-                          {unitLabel}
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-medium">
+                            {unitLabel}
+                          </span>
+                          {nonNettableIds.has(unit.storageUnitId) && (
+                            <NonNettableBadge />
+                          )}
                         </span>
                         {renderQuantity(unit.quantity, "font-medium")}
                         {isSingleUntrackedRow ? (

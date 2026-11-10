@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ServerFnError } from "@carbon/api/errors";
+import { raisedMessage, ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -118,6 +118,8 @@ export const setItemTrackingType = defineServiceFn({
       .in("id", ids)
       .eq("companyId", ctx.company.id);
     if (update.error) {
+      const refusal = raisedMessage(update.error);
+      if (refusal) return ctx.error("rule", refusal, update.error);
       return ctx.error(
         "internal",
         "Failed to change the tracking type",

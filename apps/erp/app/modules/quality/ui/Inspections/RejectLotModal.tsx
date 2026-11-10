@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
+import { actionOutcome, useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -28,6 +28,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
+import { receiptLotIssueType } from "~/modules/quality/quality.utils";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
 export type FailedFeatureSummary = {
@@ -82,10 +83,12 @@ const RejectLotBody = ({
 }: Omit<RejectLotModalProps, "open">) => {
   const { t } = useLingui();
   const fetcher = useAction<{}>({
-    onSettled: () => {
-      if (submitted.current) {
+    onSettled: (data) => {
+      if (!submitted.current) return;
+      submitted.current = false;
+      // A refusal keeps the dialog open; useAction toasts it.
+      if (data === undefined || actionOutcome(data) === "success") {
         onSubmit();
-        submitted.current = false;
       }
     }
   });
@@ -93,7 +96,7 @@ const RejectLotBody = ({
   const [createNcr, setCreateNcr] = useState(true);
   const [reason, setReason] = useState("");
   const [issueTypeId, setIssueTypeId] = useState<string>(
-    issueTypes[0]?.id ?? ""
+    receiptLotIssueType(issueTypes)?.id ?? ""
   );
 
   const hasIssueTypes = issueTypes.length > 0;

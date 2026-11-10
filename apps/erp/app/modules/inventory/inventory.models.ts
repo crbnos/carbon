@@ -115,6 +115,16 @@ export const receiptStatusType = [
   "Voided"
 ] as const;
 
+export const receiptInspectionStatusType = [
+  "Not Required",
+  "Pending Inspection",
+  "Inspection In Progress",
+  "Inspection Passed",
+  "Inspection Failed",
+  "Partially Passed",
+  "Put Away"
+] as const;
+
 export const batchPropertyValidator = z
   .object({
     id: zfd.text(z.string().optional()),

@@ -98,7 +98,7 @@ function StockTransferMoveBody({
         toast.error(
           <span>
             <Trans>
-              Not moved: {created.moveError}. Recorded on{" "}
+              Not moved: {created.moveError.replace(/\.$/, "")}. Recorded on{" "}
               <Link
                 className="underline"
                 to={path.to.stockTransfer(created.id)}

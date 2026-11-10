@@ -43,16 +43,28 @@ import {
 
 type GroupedRoute = RouteGroup["routes"][number];
 
+const matchesFilteredRoute = (to: string, pathname: string, search: string) => {
+  const [toPath, toSearch] = to.split("?");
+  if (pathname !== toPath) return false;
+  const current = new URLSearchParams(search);
+  return [...new URLSearchParams(toSearch)].every(([key, value]) =>
+    current.getAll(key).includes(value)
+  );
+};
+
 const matchesRoute = (
   route: GroupedRoute,
   pathname: string,
-  exactMatch: boolean
+  exactMatch: boolean,
+  search = ""
 ) =>
   route.isActive
     ? route.isActive(pathname)
-    : exactMatch
-      ? pathname === route.to
-      : pathname.includes(route.to);
+    : route.to.includes("?")
+      ? matchesFilteredRoute(route.to, pathname, search)
+      : exactMatch
+        ? pathname === route.to
+        : pathname.includes(route.to);
 
 const GroupedContentSidebar = ({
   groups,
@@ -104,14 +116,25 @@ const GroupedContentSidebar = ({
   const isViewActive = (view: { id: string }) =>
     search.includes(`view=${view.id}`);
   // While a saved view is open (view= in the URL), it holds the highlight.
+  const filteredSiblingActive = groups.some((group) =>
+    group.routes.some(
+      (route) =>
+        route.to.includes("?") &&
+        !route.isActive &&
+        matchesRoute(route, location.pathname, exactMatch, location.search)
+    )
+  );
   const isActive = (route: GroupedRoute) =>
-    matchesRoute(route, location.pathname, exactMatch) &&
+    matchesRoute(route, location.pathname, exactMatch, location.search) &&
+    (route.to.includes("?") ||
+      !(filteredSiblingActive && route.to === location.pathname)) &&
     (Boolean(route.isActive) || exactMatch || !search.includes("view="));
 
   if (presentation === "title") {
     // Compact app bar title: the item the switcher sheet below ticks.
     for (const route of groups.flatMap((group) => group.routes)) {
-      if (!matchesRoute(route, location.pathname, exactMatch)) continue;
+      if (!matchesRoute(route, location.pathname, exactMatch, location.search))
+        continue;
       const view = route.views?.find(isViewActive);
       if (view) return <>{view.name}</>;
       if (isActive(route)) return <>{route.name}</>;

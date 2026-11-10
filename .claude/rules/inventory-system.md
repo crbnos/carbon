@@ -402,6 +402,42 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
 - **Physical readers are unchanged:** `get_inventory_quantities` (the Inventory screen), the
   item picker badge, the workflow `item.quantityOnHand`, valuation and GL.
 
+## Inspection hold (goods-in)
+
+Stock received under an open inspection lot cannot move
+(`.ai/specs/2026-11-03-goods-in-inspection-hold.md`, full detail in
+`inspection-system.md` → Goods-in inspection hold). `check_inspection_hold`, a
+statement handler on `itemLedger`, refuses an INSERT statement with a negative row of an `On Hold`
+serial or batch unit whose receipt line's inspection lot is open, or with
+untracked moves out that leave an (item, storage unit) below
+`inspection_held_quantity` (under a per-(item, unit) advisory lock). It is the one enforcement point for
+every move path, the SQL backflush included. The release flag (GUC
+`app.inspection_release`, `@carbon/database/quality`) covers only the write that
+IS the release: `withInspectionRelease(trx, fn)` turns it on for one step and
+restores it. A lot's decision, an NCR's close and a purchase receipt void's
+cancelled lots run under it; the stock moves, write-offs and unit changes that
+follow run with the guard on, because a decided lot (or a closed NCR, or a
+cancelled lot) no longer holds stock: the guard lets that stock go and keeps
+what other lots hold. A sales-return receipt void opens no lot and needs no
+flag. `setInspectionRelease(trx)` (the whole transaction) stays for
+`postInventoryCount` (a count records where held stock really is, and
+`heldStockMovedByCount` names what it found elsewhere), the four return-shipment
+transactions and the delete of an NCR that failed to open; a company restore or
+import sets the flag with `SET LOCAL`. A return
+shipment also calls `refuseShippingOpenLotStock` after its ledger rows, so it
+cannot ship stock an open lot still holds (checked only where an open lot
+holds stock). The guard also steps aside under
+`app.sync_in_progress` (dataset apply, test fixtures). Picking a unit never
+changes its status, so a stock transfer unpick leaves the status as it is: a
+held unit stays `On Hold`. A direct edit cannot release the hold either: BEFORE
+interceptors refuse changing a held unit's `On Hold` status, a receipt lot's
+status, unit or accepted quantity, deleting a lot that holds stock, closing or
+deleting the NCR of a Partial lot's held remainder or moving its link, or
+making a goods-in storage unit nettable, inactive or another location's,
+outside a release posting (a company deletion is never refused) (detail in
+`inspection-system.md`). A PO line its project consumes at receipt opens no lot. Put Away offers an untracked line no more than is free
+in its unit (on-hand less what open lots hold).
+
 ## Gotchas
 
 - **Migrations are timestamp-ordered; tables get renamed.** `shelf`→`storageUnit`/`shelfId`→`storageUnitId`,

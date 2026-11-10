@@ -13,6 +13,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  NonNettableBadge,
   NumberField,
   NumberInput,
   NumberInputGroup,
@@ -54,6 +55,7 @@ import type { StorageUnitTreeRow } from "~/components/Form/StorageUnit";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { PhoneActionBar } from "~/components/Layout/Mobile/ChromeSlots";
 import { useDrawerItem, usePermissions, useQuantityFormatter } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import type { StockTransferWizardLine } from "~/stores";
 import {
   addTransferLine,
@@ -477,6 +479,7 @@ function StockBrowser({
   incomingByBin: Map<string, number>;
 }) {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnits();
   const formatQuantity = useQuantityFormatter();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<StockView>("inStock");
@@ -812,6 +815,9 @@ function StockBrowser({
                     >
                       {group.label}
                     </span>
+                    {groupBy === "bin" && nonNettable.has(group.key) && (
+                      <NonNettableBadge />
+                    )}
                     {view === "inStock" &&
                       groupBy === "bin" &&
                       movable.length > 1 && (
@@ -906,6 +912,7 @@ function StockRow({
   onAssignBatch: () => void;
 }) {
   const { t } = useLingui();
+  const nonNettable = useNonNettableStorageUnits();
   const shortfall = shortfallOf(row);
 
   return (
@@ -940,6 +947,9 @@ function StockRow({
               <Badge variant="secondary" className="ml-2">
                 <Trans>Default</Trans>
               </Badge>
+            )}
+            {row.storageUnitId && nonNettable.has(row.storageUnitId) && (
+              <NonNettableBadge className="ml-2" />
             )}
           </span>
           {view === "needsStock" && row.quantityRequired > 0 && (

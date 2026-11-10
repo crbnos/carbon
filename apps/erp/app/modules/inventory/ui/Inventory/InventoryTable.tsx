@@ -8,6 +8,7 @@ import {
   Checkbox,
   Combobox,
   HStack,
+  NonNettableBadge,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -17,7 +18,7 @@ import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { Fragment, memo, useCallback, useMemo } from "react";
 import {
   LuBlocks,
   LuBookMarked,
@@ -57,6 +58,7 @@ import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useMrpScheduleDescription, useUrlParams } from "~/hooks";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
 import {
   itemReorderingPolicies,
   itemReplenishmentSystems
@@ -113,6 +115,7 @@ const InventoryTable = memo(
 
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
+    const nonNettable = useNonNettableStorageUnits();
     const storageUnitNameById = useMemo(
       () => new Map(storageUnits.map((s) => [s.id, s.name])),
       [storageUnits]
@@ -550,10 +553,10 @@ const InventoryTable = memo(
             return (
               <HStack spacing={0} className="gap-1">
                 {ids.map((id) => (
-                  <Enumerable
-                    key={id}
-                    value={storageUnitNameById.get(id) ?? id}
-                  />
+                  <Fragment key={id}>
+                    <Enumerable value={storageUnitNameById.get(id) ?? id} />
+                    {nonNettable.has(id) && <NonNettableBadge />}
+                  </Fragment>
                 ))}
               </HStack>
             );
@@ -644,6 +647,7 @@ const InventoryTable = memo(
       tags,
       storageTypes,
       storageUnitNameById,
+      nonNettable,
       unitOfMeasures,
       t,
       translateReplenishment

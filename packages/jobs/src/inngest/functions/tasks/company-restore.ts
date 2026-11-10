@@ -152,6 +152,7 @@ export async function wipeAndLoad(
     if (replicaMode) {
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
+    await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
     // The company's groups before the wipe: memberships survive an own
     // restore, and any left pointing at a group that doesn't come back go.

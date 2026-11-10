@@ -463,6 +463,10 @@ msgstr "{0}库存，用于{1}个组件；剩余的{2}将按{3}拣货"
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0}库存；剩余的{1}将按{2}拣货"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} 检验存储单元"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
@@ -624,6 +628,10 @@ msgstr "{0} 已收货 · {1} 已开贷项"
 msgid "{0} registered"
 msgstr "{0}已登记"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} 拒收存储单元"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0}报告账本由以下机构持有"
@@ -770,6 +778,12 @@ msgstr "{0}h 需要"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}小时配置人员"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "已接受 {lotSize} 中的 {acceptedQuantity}。"
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "已接受 {lotSize} 中的 {acceptedQuantity}。其余部分保持冻结，直到其 NCR 关闭。"
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} 有已过账的历史记录，因此无法删除。"
@@ -1097,6 +1111,12 @@ msgstr "{name} 在 {end} 结束（之前是 {was}）"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} 在 {end} 结束（之前是开放式）"
 
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} 已停用。请选择启用的存储单元。"
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} 现在计入MRP。请选择不计入MRP的存储单元。"
+
 msgid "{name} needs an account number."
 msgstr "{name} 需要账户编号。"
 
@@ -1200,6 +1220,9 @@ msgstr "已收 {received} / 已订购 {ordered}"
 
 msgid "{ref} not found"
 msgstr "未找到 {ref}"
+
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity} 将作为拒收保持冻结。"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} 已完成。# 件未交付} other {{jobId} 已完成。# 件未交付}}"
@@ -1590,6 +1613,9 @@ msgstr "创建操作员时会生成4位数PIN。"
 
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" 或 3\" x 2\" 标签每张打印一张卡片，适用于 Zebra 等热敏打印机。"
+
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr "批次批量只能整体接受或拒收。"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "生产批次需要至少一个工序。要分解整个生产批次，请改用\"分解\"。"
@@ -2488,6 +2514,9 @@ msgstr "已接受"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "已接受 {0}"
+
+msgid "Accepted quantity"
+msgstr "接受数量"
 
 msgid "Account"
 msgstr "账户"
@@ -6800,6 +6829,12 @@ msgstr "选择客户"
 msgid "Choose a labor category or an employee"
 msgstr "选择人工类别或员工"
 
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "请为需检验的零件选择此位置不计入MRP的存储单元。"
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "请选择此位置不计入MRP的存储单元。"
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -7501,6 +7536,9 @@ msgstr "配置"
 
 msgid "Configure {label}"
 msgstr "配置 {label}"
+
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "请至少配置一个问题类型。批次的拒收部分需要 NCR。"
 
 msgid "Configure Carbon"
 msgstr "配置 Carbon"
@@ -8440,6 +8478,9 @@ msgstr "无法列出提供商的设备。已映射的设备仍会显示。"
 
 msgid "Could not load operations"
 msgstr "无法加载工序"
+
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "无法加载不计入MRP的存储单元。部分标记可能缺失。"
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "无法加载在 {workCenterName} 上运行的内容。"
@@ -12065,6 +12106,9 @@ msgstr "输入借方为正数，贷方为负数。CSV 需要包含以下列：ac
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "输入借方为正数，贷方为负数。CSV 需要包含以下列：accountNumber、借方 和 贷方。导入会替换整个试算表。"
 
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "请输入 {lotSize} 批次中通过的数量。接受数量可以上架。其余部分保持冻结，直到其 NCR 关闭。"
+
 msgid "Enter number…"
 msgstr "输入数字…"
 
@@ -14182,6 +14226,12 @@ msgstr "晚上好，{name}。"
 msgid "Good morning, {name}."
 msgstr "早上好，{name}。"
 
+msgid "Goods-in storage"
+msgstr "收货存储"
+
+msgid "Goods-in storage updated"
+msgstr "收货存储已更新"
+
 msgid "Google Calendar"
 msgstr "Google日历"
 
@@ -15201,9 +15251,8 @@ msgid "Inspection {0}"
 msgstr "检验 {0}"
 
 #. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "检验 {0} · {1}"
+msgid "Inspection {0}: {statusLabel}"
+msgstr "检验 {0}：{statusLabel}"
 
 msgid "Inspection Date"
 msgstr "检验日期"
@@ -15211,14 +15260,26 @@ msgstr "检验日期"
 msgid "Inspection document"
 msgstr "检验文件"
 
+msgid "Inspection failed"
+msgstr "检验不合格"
+
+msgid "Inspection Failed"
+msgstr "检验不合格"
+
 msgid "Inspection file"
 msgstr "检验文件"
+
+msgid "Inspection In Progress"
+msgstr "检验进行中"
 
 msgid "Inspection Job"
 msgstr "检验工作"
 
 msgid "Inspection Level"
 msgstr "检验水平"
+
+msgid "Inspection Passed"
+msgstr "检验已通过"
 
 msgid "Inspection Plan"
 msgstr "检验计划"
@@ -15229,11 +15290,23 @@ msgstr "检验计划分配"
 msgid "Inspection Plans"
 msgstr "检验计划"
 
+msgid "Inspection required"
+msgstr "需要检验"
+
+msgid "Inspection status"
+msgstr "检验状态"
+
 msgid "Inspection Status"
+msgstr "检验状态"
+
+msgid "Inspection Statuses"
 msgstr "检验状态"
 
 msgid "Inspection Step"
 msgstr "检验步骤"
+
+msgid "Inspection storage unit"
+msgstr "检验存储单元"
 
 msgid "Inspections"
 msgstr "检验"
@@ -17419,6 +17492,9 @@ msgstr "标记浅色模式"
 msgid "Mark not done"
 msgstr "标记为未完成"
 
+msgid "Mark Partial"
+msgstr "标记为部分"
+
 msgid "Mark reviewed"
 msgstr "标记为已审查"
 
@@ -19496,6 +19572,9 @@ msgstr "未找到模块"
 msgid "No new notifications"
 msgstr "没有新通知"
 
+msgid "No non-nettable storage units at this location"
+msgstr "此位置没有不计入MRP的存储单元"
+
 msgid "No notes"
 msgstr "没有备注"
 
@@ -20056,6 +20135,9 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 msgid "None"
 msgstr "无"
 
+msgid "None available"
+msgstr "无可用项"
+
 msgid "Normal"
 msgstr "正常"
 
@@ -20102,7 +20184,7 @@ msgstr "不是工单时间"
 msgid "Not mapped"
 msgstr "未映射"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "未移动：{0}。已记录在<0>{1}</0>"
@@ -20157,6 +20239,9 @@ msgstr "未开始"
 
 msgid "Not synced"
 msgstr "未同步"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "不可用库存。MRP 和计划不计入此库存，拣货也不会从中取货。"
 
 msgid "Not working today"
 msgstr "今天不工作"
@@ -20716,6 +20801,9 @@ msgstr "未结操作"
 msgid "Open an NCR for MRB disposition"
 msgstr "打开 NCR 进行 MRB 处置"
 
+msgid "Open an NCR for the failed units"
+msgstr "为不合格单元创建 NCR"
+
 msgid "Open AP"
 msgstr "未结应付账款"
 
@@ -20802,6 +20890,9 @@ msgstr "打开菜单"
 
 msgid "Open My Time"
 msgstr "打开我的时间表"
+
+msgid "Open NCR"
+msgstr "打开 NCR"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "打开一个以更改审核者批准后才能应用的草稿中的计划。"
@@ -21515,8 +21606,14 @@ msgstr "零件供应商已创建"
 msgid "Partial"
 msgstr "部分"
 
+msgid "Partial Lot"
+msgstr "部分批次"
+
 msgid "Partially Delivered"
 msgstr "部分已交付"
+
+msgid "Partially Passed"
+msgstr "部分通过"
 
 msgid "Partially Returned"
 msgstr "部分已退回"
@@ -21767,6 +21864,12 @@ msgstr "待处理审批"
 
 msgid "Pending Employee Review"
 msgstr "待员工评审"
+
+msgid "Pending inspection"
+msgstr "待检验"
+
+msgid "Pending Inspection"
+msgstr "待检验"
 
 msgid "people"
 msgstr "人员"
@@ -23244,11 +23347,18 @@ msgstr "推送仅替换 Onshape 的 Fields 页面在每次推送时设置为更�
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "将合同项目根据停工令搁置，包含其90天结束日期，当订单结束时恢复。"
 
+msgid "Put Away"
+msgstr "上架"
+
 msgid "Put on hold"
 msgstr "搁置"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "将此费用单独放在发票上，在过账之前保留以待评审。否则，它将放在协议的下一张发票上。"
+
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "上架 {0}"
 
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
@@ -23688,6 +23798,9 @@ msgstr "就绪"
 msgid "Ready at"
 msgstr "就绪于"
 
+msgid "Ready for putaway"
+msgstr "可上架"
+
 msgid "Ready for Quote"
 msgstr "可报价"
 
@@ -23853,6 +23966,9 @@ msgstr ""
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "来自此供应商且还有数量待退货的已收行"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr "需检验的收货零件进入检验存储单元。拒收库存移至拒收存储单元。两者都必须不计入MRP。"
 
 msgid "Received Qty"
 msgstr "已收货数量"
@@ -24189,6 +24305,9 @@ msgstr "拒绝人"
 
 msgid "Rejected Date"
 msgstr "拒绝日期"
+
+msgid "Rejected storage unit"
+msgstr "拒收存储单元"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "重新标记中心并框架化交易。"
@@ -24863,9 +24982,6 @@ msgstr "需要采取行动"
 
 msgid "Requires Adjustment"
 msgstr "需要调整"
-
-msgid "Requires inspection"
-msgstr "需要检验"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "需要检验。过账收据时将创建一个批次。"
@@ -29398,6 +29514,12 @@ msgstr "该字段包含多个值，因此它们被合并为一个列表。"
 msgid "That integration is not available"
 msgstr "该集成不可用"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr "这会拒收整个批次。请改用拒收批次。"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "这是整个批次。请改用接受批次。"
+
 msgid "That list was empty."
 msgstr "该列表为空。"
 
@@ -31181,6 +31303,12 @@ msgstr "该地点仅排程在人员配备板上已分配操作员的工作。此
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期且无法拣货。"
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "此批次已部分接受，但其 NCR 未能创建。批次的拒收部分由 NCR 决定。"
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr "此批次已部分接受。NCR 记录不合格单元并决定其处理方式。"
+
 msgid "This may take a moment. Hang tight."
 msgstr "这可能需要一些时间。请稍候。"
 
@@ -32408,6 +32536,9 @@ msgstr "计量单位"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
+
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "抽样不合格的单元仍为已拒绝。其他所有单元，包括从未抽样的单元，均可上架。"
 
 msgid "Units this customer owns show here once registered."
 msgstr "此客户拥有的单位在已登记后显示在此处。"

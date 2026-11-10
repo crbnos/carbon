@@ -463,6 +463,10 @@ msgstr "{0} auf Lager für {1} Baugruppen; die verbleibenden {2} werden als {3} 
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} auf Lager; die verbleibenden {1} werden als {2} kommissioniert"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "Prüf-Lagereinheit für {0}"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} Rechnungen wurden in Ihrem vorherigen System fakturiert und werden nicht erneut erstellt."
@@ -624,6 +628,10 @@ msgstr "{0} erhalten · {1} gutgeschrieben"
 msgid "{0} registered"
 msgstr "{0} registriert"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "Lagereinheit für abgelehnte Ware für {0}"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} meldet, dass das Ledger von"
@@ -770,6 +778,12 @@ msgstr "{0}h erforderlich"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h besetzt"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{acceptedQuantity} von {lotSize} angenommen."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{acceptedQuantity} von {lotSize} angenommen. Der Rest bleibt gesperrt, bis seine NCR abgeschlossen ist."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} hat Buchungsverlauf, daher kann es nicht entfernt werden."
@@ -1097,6 +1111,12 @@ msgstr "{name} endet {end} (war {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} endet {end} (war unbegrenzt)"
 
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} ist inaktiv. Wählen Sie eine aktive Lagereinheit."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name} ist jetzt disponierbar. Wählen Sie eine nicht disponierbare Lagereinheit."
+
 msgid "{name} needs an account number."
 msgstr "{name} benötigt eine Kontonummer."
 
@@ -1200,6 +1220,9 @@ msgstr "{received} von {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} nicht gefunden"
+
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity} bleiben als abgelehnt gesperrt."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} ist fertiggestellt. # Einheit ist nicht geliefert} other {{jobId} ist fertiggestellt. # Einheiten sind nicht geliefert}}"
@@ -1590,6 +1613,9 @@ msgstr "Eine 4-stellige PIN wird generiert, wenn ein Werker erstellt wird."
 
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "Ein 4\" x 2\"- oder 3\" x 2\"-Etikett druckt eine Karte pro Etikett, für einen Thermodrucker wie Zebra."
+
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr "Eine Charge wird nur als Ganzes angenommen oder abgelehnt."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Ein Los benötigt mindestens einen Arbeitsgang. Um das ganze Los aufzulösen, nutzen Sie stattdessen Auflösen."
@@ -2488,6 +2514,9 @@ msgstr "Angenommen"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Angenommen {0}"
+
+msgid "Accepted quantity"
+msgstr "Angenommene Menge"
 
 msgid "Account"
 msgstr "Konto"
@@ -6800,6 +6829,12 @@ msgstr "Wählen Sie einen Kunden"
 msgid "Choose a labor category or an employee"
 msgstr "Wählen Sie eine Personalkategorie oder einen Mitarbeiter"
 
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "Wählen Sie für prüfpflichtige Teile eine nicht disponierbare Lagereinheit an diesem Standort."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "Wählen Sie eine nicht disponierbare Lagereinheit an diesem Standort."
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Wählen Sie ein Teil aus, das {itemReadableId} ersetzt. Die Regel wird auf diesem Teil mit {itemReadableId} als Nachfolger gespeichert."
 
@@ -7501,6 +7536,9 @@ msgstr "Konfigurieren"
 
 msgid "Configure {label}"
 msgstr "Konfigurieren {label}"
+
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "Legen Sie mindestens einen Problemtyp an. Der abgelehnte Teil der Charge braucht eine NCR."
 
 msgid "Configure Carbon"
 msgstr "Carbon konfigurieren"
@@ -8440,6 +8478,9 @@ msgstr "Die Geräte des Anbieters konnten nicht abgerufen werden. Zugeordnete Ge
 
 msgid "Could not load operations"
 msgstr "Arbeitsgänge konnten nicht geladen werden"
+
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "Die nicht disponierbaren Lagereinheiten konnten nicht geladen werden. Markierungen fehlen möglicherweise."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Konnte nicht laden, was auf {workCenterName} gelaufen ist."
@@ -12065,6 +12106,9 @@ msgstr "Geben Sie Sollbeträge als positive und Habenbeträge als negative Betr�
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Geben Sie Sollbeträge als positive und Habenbeträge als negative Beträge ein. Die CSV muss die Spalten accountNumber, debit und credit enthalten. Ein Import ersetzt die gesamte Probebilanz."
 
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "Geben Sie an, wie viel der Charge von {lotSize} bestanden hat. Die angenommene Menge ist bereit zur Einlagerung. Der Rest bleibt gesperrt, bis seine NCR abgeschlossen ist."
+
 msgid "Enter number…"
 msgstr "Zahl eingeben…"
 
@@ -14182,6 +14226,12 @@ msgstr "Guten Abend, {name}."
 msgid "Good morning, {name}."
 msgstr "Guten Morgen, {name}."
 
+msgid "Goods-in storage"
+msgstr "Wareneingangslager"
+
+msgid "Goods-in storage updated"
+msgstr "Wareneingangslager aktualisiert"
+
 msgid "Google Calendar"
 msgstr "Google Kalender"
 
@@ -15201,9 +15251,8 @@ msgid "Inspection {0}"
 msgstr "Prüfung {0}"
 
 #. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "Prüfung {0} · {1}"
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Prüfung {0}: {statusLabel}"
 
 msgid "Inspection Date"
 msgstr "Prüfdatum"
@@ -15211,14 +15260,26 @@ msgstr "Prüfdatum"
 msgid "Inspection document"
 msgstr "Prüfungsdokument"
 
+msgid "Inspection failed"
+msgstr "Prüfung fehlgeschlagen"
+
+msgid "Inspection Failed"
+msgstr "Prüfung fehlgeschlagen"
+
 msgid "Inspection file"
 msgstr "Prüfdatei"
+
+msgid "Inspection In Progress"
+msgstr "Prüfung in Bearbeitung"
 
 msgid "Inspection Job"
 msgstr "Fertigungsauftrag der Prüfung"
 
 msgid "Inspection Level"
 msgstr "Prüfniveau"
+
+msgid "Inspection Passed"
+msgstr "Prüfung bestanden"
 
 msgid "Inspection Plan"
 msgstr "Prüfplan"
@@ -15229,11 +15290,23 @@ msgstr "Prüfplan-Zuordnungen"
 msgid "Inspection Plans"
 msgstr "Prüfpläne"
 
+msgid "Inspection required"
+msgstr "Prüfung erforderlich"
+
+msgid "Inspection status"
+msgstr "Prüfstatus"
+
 msgid "Inspection Status"
 msgstr "Prüfungsstatus"
 
+msgid "Inspection Statuses"
+msgstr "Prüfstatus"
+
 msgid "Inspection Step"
 msgstr "Prüfschritt"
+
+msgid "Inspection storage unit"
+msgstr "Prüf-Lagereinheit"
 
 msgid "Inspections"
 msgstr "Prüfungen"
@@ -17419,6 +17492,9 @@ msgstr "Marke Hellmodus"
 msgid "Mark not done"
 msgstr "Als nicht erledigt markieren"
 
+msgid "Mark Partial"
+msgstr "Teilweise annehmen"
+
 msgid "Mark reviewed"
 msgstr "Als überprüft markieren"
 
@@ -19496,6 +19572,9 @@ msgstr "Keine Module gefunden"
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
+msgid "No non-nettable storage units at this location"
+msgstr "Keine nicht disponierbaren Lagereinheiten an diesem Standort"
+
 msgid "No notes"
 msgstr "Keine Notizen"
 
@@ -20056,6 +20135,9 @@ msgstr "Arbeitsfreie Tage, die Planung und Kapazität berücksichtigen"
 msgid "None"
 msgstr "Keine"
 
+msgid "None available"
+msgstr "Keine verfügbar"
+
 msgid "Normal"
 msgstr "Normal"
 
@@ -20102,7 +20184,7 @@ msgstr "Keine Auftragszeit"
 msgid "Not mapped"
 msgstr "Nicht zugeordnet"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Nicht umgelagert: {0}. Erfasst unter <0>{1}</0>"
@@ -20157,6 +20239,9 @@ msgstr "Nicht gestartet"
 
 msgid "Not synced"
 msgstr "Nicht synchronisiert"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Kein verwendbarer Bestand. MRP und Planung zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus."
 
 msgid "Not working today"
 msgstr "Arbeitet heute nicht"
@@ -20716,6 +20801,9 @@ msgstr "Offene Maßnahmen"
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie ein NCR für MRB-Verwendungsentscheid"
 
+msgid "Open an NCR for the failed units"
+msgstr "NCR für die fehlerhaften Einheiten öffnen"
+
 msgid "Open AP"
 msgstr "Offene Kreditoren"
 
@@ -20802,6 +20890,9 @@ msgstr "Menü öffnen"
 
 msgid "Open My Time"
 msgstr "Meine Zeit öffnen"
+
+msgid "Open NCR"
+msgstr "NCR öffnen"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Öffnen Sie einen, um den Plan in einem Entwurf zu ändern, den Reviewer genehmigen, bevor er angewendet wird."
@@ -21515,8 +21606,14 @@ msgstr "Teil-Lieferant erstellt"
 msgid "Partial"
 msgstr "Teilweise"
 
+msgid "Partial Lot"
+msgstr "Teilcharge"
+
 msgid "Partially Delivered"
 msgstr "Teilweise geliefert"
+
+msgid "Partially Passed"
+msgstr "Teilweise bestanden"
 
 msgid "Partially Returned"
 msgstr "Teilweise zurückgegeben"
@@ -21767,6 +21864,12 @@ msgstr "Genehmigung ausstehend"
 
 msgid "Pending Employee Review"
 msgstr "Ausstehende Mitarbeiterüberprüfung"
+
+msgid "Pending inspection"
+msgstr "Prüfung ausstehend"
+
+msgid "Pending Inspection"
+msgstr "Prüfung ausstehend"
 
 msgid "people"
 msgstr "Personal"
@@ -23244,11 +23347,18 @@ msgstr "Pushes ersetzen nur die Felder, die auf der Seite „Felder\" von Onshap
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Setzen Sie ein Vertragsprojekt unter einen Arbeitsstoppauftrag mit seinem 90-Tage-Enddatum Angehalten, und nehmen Sie es wieder auf, wenn der Auftrag endet."
 
+msgid "Put Away"
+msgstr "Einlagern"
+
 msgid "Put on hold"
 msgstr "Angehalten"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Legen Sie diese Gebühr auf einer separaten Rechnung ab, die vor der Buchung überprüft wird. Andernfalls wird sie auf der nächsten Rechnung der Vereinbarung eingefügt."
+
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "Einlagerung {0}"
 
 msgid "Putting your data back"
 msgstr "Ihre Daten werden wiederhergestellt"
@@ -23688,6 +23798,9 @@ msgstr "Bereit"
 msgid "Ready at"
 msgstr "Bereit am"
 
+msgid "Ready for putaway"
+msgstr "Bereit zur Einlagerung"
+
 msgid "Ready for Quote"
 msgstr "Angebotsbereit"
 
@@ -23853,6 +23966,9 @@ msgstr ""
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Von diesem Lieferanten eingegangene Zeilen mit verbleibender Menge zur Rückgabe"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr "Prüfpflichtige Wareneingänge kommen in die Prüf-Lagereinheit. Abgelehnte Ware wird in die Lagereinheit für abgelehnte Ware verschoben. Beide müssen nicht disponierbar sein."
 
 msgid "Received Qty"
 msgstr "Empfangene Menge"
@@ -24189,6 +24305,9 @@ msgstr "Abgelehnt von"
 
 msgid "Rejected Date"
 msgstr "Ablehnungsdatum"
+
+msgid "Rejected storage unit"
+msgstr "Lagereinheit für abgelehnte Ware"
 
 msgid "Relabels the hub and frames the deal."
 msgstr "Beschriftet den Hub neu und rahmt das Geschäft ein."
@@ -24863,9 +24982,6 @@ msgstr "Erfordert Maßnahmen"
 
 msgid "Requires Adjustment"
 msgstr "Erfordert Korrektur"
-
-msgid "Requires inspection"
-msgstr "Erfordert Prüfung"
 
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Erfordert Prüfung. Beim Buchen des Belegs wird ein Los eröffnet."
@@ -29398,6 +29514,12 @@ msgstr "Dieses Feld enthält mehrere Werte, daher werden sie zu einer Liste komb
 msgid "That integration is not available"
 msgstr "Diese Integration ist nicht verfügbar"
 
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr "Damit wäre die ganze Charge abgelehnt. Verwenden Sie stattdessen „Charge ablehnen“."
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "Das ist die ganze Charge. Verwenden Sie stattdessen „Charge annehmen“."
+
 msgid "That list was empty."
 msgstr "Diese Liste war leer."
 
@@ -31181,6 +31303,12 @@ msgstr "Dieser Standort plant nur Arbeiten, bei denen ein Werker auf der Besetzu
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "Diese Charge ist teilweise angenommen, aber ihre NCR wurde nicht geöffnet. Die NCR entscheidet über den abgelehnten Teil der Charge."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr "Diese Charge ist teilweise angenommen. Eine NCR erfasst die fehlerhaften Einheiten und entscheidet, was mit ihnen geschieht."
+
 msgid "This may take a moment. Hang tight."
 msgstr "Das kann einen Moment dauern. Bleib dran."
 
@@ -32408,6 +32536,9 @@ msgstr "Maßeinheiten"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar gemeldet werden — die Alternative zu Nacharbeiten."
+
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "Einheiten, die bei einer Stichprobe durchgefallen sind, bleiben abgelehnt. Alle anderen Einheiten, auch nie geprüfte, sind bereit zur Einlagerung."
 
 msgid "Units this customer owns show here once registered."
 msgstr "Einheiten, die dieser Kunde besitzt, werden hier angezeigt, sobald sie registriert sind."
