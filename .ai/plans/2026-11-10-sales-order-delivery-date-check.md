@@ -5,25 +5,30 @@
 **Closest sibling:** the quote lead-time check (`routes/x+/quote+/$quoteId.$lineId.lead-time.tsx`, `QuoteLeadTimeModal.tsx`)
 **Branch:** naveenkash/time-fence-exception-messages
 
+## Deviations (recorded at Task 18)
+- Task 8: the result write lives inside `checkSalesOrderDeliveryDates`, not a separate `writeDeliveryDateResults`. The check is split into `runDeliveryDateCheck`, so the read-only operation shares it.
+- Task 10: the escape hatch triggered. The catalog has no `salesOrderLine` entity, so the moment outputs are `salesOrder` and `overriddenBy`.
+- Task 14: the alert uses a plain `fetch`, not a fetcher, so the order page does not revalidate on each change.
+
 ## Progress
-- [ ] Task 1: Start the local stack for this worktree
-- [ ] Task 2: Add the migration and regenerate the types
-- [ ] Task 3: Calculate the cumulative lead time
-- [ ] Task 4: Calculate free stock by week (ATP)
-- [ ] Task 5: Feed an item routing to the quote engine (CTP)
-- [ ] Task 6: Decide the result and export `checkDeliveryDates`
-- [ ] Task 7: Extend the sales models
-- [ ] Task 8: Add the check operation and the result write
-- [ ] Task 9: Run the check on line save and on quote conversion
-- [ ] Task 10: Register the moment `sales.deliveryDateOverridden`
-- [ ] Task 11: Add the check route
-- [ ] Task 12: Add the company level to Settings → Sales
-- [ ] Task 13: Add the item override to the Planning form
-- [ ] Task 14: Show the warning and the requested date in the line form
-- [ ] Task 15: Flag a failing line in the explorer
-- [ ] Task 16: Fill the translations and run the gates
-- [ ] Task 17: Verify in the browser
-- [ ] Task 18: Review the branch
+- [x] Task 1: Start the local stack for this worktree
+- [x] Task 2: Add the migration and regenerate the types
+- [x] Task 3: Calculate the cumulative lead time
+- [x] Task 4: Calculate free stock by week (ATP)
+- [x] Task 5: Feed an item routing to the quote engine (CTP)
+- [x] Task 6: Decide the result and export `checkDeliveryDates`
+- [x] Task 7: Extend the sales models
+- [x] Task 8: Add the check operation and the result write
+- [x] Task 9: Run the check on line save and on quote conversion
+- [x] Task 10: Register the moment `sales.deliveryDateOverridden`
+- [x] Task 11: Add the check route
+- [x] Task 12: Add the company level to Settings → Sales
+- [x] Task 13: Add the item override to the Planning form
+- [x] Task 14: Show the warning and the requested date in the line form
+- [x] Task 15: Flag a failing line in the explorer
+- [x] Task 16: Fill the translations and run the gates
+- [x] Task 17: Verify in the browser
+- [x] Task 18: Review the branch
 
 ## Dependencies
 - Task 2 needs Task 1.

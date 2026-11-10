@@ -212,13 +212,13 @@ CREATE VIEW "salesOrderLines" WITH(SECURITY_INVOKER=true) AS ( ...same body... )
 | `packages/planning/src/promising/delivery-date-check.ts` | New. Pure `decideDeliveryDate(...)` (the table in section 3); orchestrator `checkDeliveryDates({ db, client, companyId, userId, lines })` |
 | `packages/planning/src/scheduling/quote-lead-time.ts` | `runQuoteLeadTimeWhatIf` accepts an optional `routing`; export the `QuoteLineRouting` type |
 | `packages/planning/src/index.ts` | Export `checkDeliveryDates` and its types |
-| `sales.service.ts` | New `writeDeliveryDateResults(ctx, results)` (one Kysely `UPDATE … FROM (VALUES …)`, scoped by `companyId`); new `checkSalesOrderDeliveryDates(ctx, { salesOrderId, lineIds?, overrideReason? , recordOverride })` |
+| `sales.service.ts` | New `resolveDeliveryDateControls(ctx, keys)` (company level + `itemPlanning` override); `runDeliveryDateCheck(ctx, candidates)` (skips the lines of section 6, calls `checkDeliveryDates`); `checkSalesOrderDeliveryDates(ctx, { salesOrderId, lineIds?, recordOverride, overrideReason? })` (writes every result in one Kysely `UPDATE … FROM (VALUES …)`, scoped by `companyId`); `recordSalesOrderLineDeliveryDate` (after a save, raises the moment); `checkConvertedSalesOrderDeliveryDates` (after a conversion) |
 | `sales.server.ts` | New `checkSalesOrderLineDeliveryDate` (`{ view: "sales" }`, `@mcp read`); `createSalesOrderLine` / `updateSalesOrderLine` run the check after the save; `convertQuote` / `acceptDigitalQuote` run it after the conversion |
 | `sales.models.ts` | `salesOrderLineValidator` gains `requestedDate` and `deliveryDateOverrideReason`; new `deliveryDateCheckValidator` |
 | `settings.server.ts` | `updateSalesSettings` accepts `deliveryDateControl` |
 | `items.models.ts` / `items.server.ts` | `itemPlanningValidator` and `updateItemPlanning` accept `deliveryDateControl` |
 | Route `x+/sales-order+/$orderId.delivery-date.tsx` | New action. It calls `api.sales.checkSalesOrderLineDeliveryDate` |
-| Workflow catalog | New moment `sales.deliveryDateOverridden` (`packages/workflows-core/src/moments.ts`, `packages/ee/src/workflows/catalog/moments.ts`, `pnpm run generate:workflow-catalog`) |
+| Workflow catalog | New moment `sales.deliveryDateOverridden` with the outputs `salesOrder` and `overriddenBy` (`packages/workflows-core/src/moments.ts`, `packages/ee/src/workflows/catalog/moments.ts`, `pnpm run generate:workflow-catalog`). The catalog has no sales order line entity, so the moment names the order. |
 
 ## Closest Sibling
 
@@ -297,3 +297,6 @@ The page archetypes are the sibling's: the sales order record page (explorer + l
   3. an inline warning;
   4. the override on `itemPlanning`;
   5. no check for a line with an open job.
+- 2026-11-10: Implemented. Two changes from the design:
+  1. The moment outputs are `salesOrder` and `overriddenBy`. The workflow catalog has no `salesOrderLine` entity, and adding one brings record-change triggers.
+  2. The line form calls the check with a plain `fetch`, not a fetcher, so the order page does not revalidate on each change.
