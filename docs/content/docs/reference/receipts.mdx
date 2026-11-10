@@ -33,7 +33,7 @@ Search **Purchasing → Purchase Orders** with whatever the packing slip shows: 
 
 ## Parts that need inspection
 
-A part needs inspection at receipt when it has an inspection plan assigned to **Receipt** (the part's **Quality** tab, **Inspection Plan Assignments**). Posting its purchase-order receipt opens an <Term id="inbound-inspection">inbound inspection</Term> lot. The stock stays held in a quarantine area until quality decides the lot. Outside processing receipts are not inspected.
+A part needs inspection at receipt when it has an inspection plan assigned to **Receipt** (the part's **Quality** tab, **Inspection Plan Assignments**). Posting its purchase-order receipt opens an <Term id="inbound-inspection">inbound inspection</Term> lot. The stock stays held in a quarantine area until quality decides the lot. Outside processing receipts are not inspected. A non-inventory part with a plan still gets a lot, but it has no stock to hold, so it needs no inspection storage unit. A line that delivers to another location is held at that location: it takes that location's inspection storage unit.
 
 ### Set up goods-in storage
 
@@ -99,11 +99,11 @@ A count records where stock really is, so it posts even when held stock was foun
 
 When passed stock waits in the inspection storage unit, a posted receipt shows a **Put Away** button. It needs create permission for Inventory.
 
-1. Click **Put Away**. Carbon creates a **"Released"** stock transfer linked to the receipt and opens it. If a line has no To storage unit, the transfer is **"Draft"**: set the unit, then release it.
+1. Click **Put Away**. Carbon creates a **"Released"** stock transfer linked to the receipt and opens it, one per location when the receipt's lines deliver to more than one. If a line has no To storage unit, the transfer is **"Draft"**: set the unit, then release it. A Put Away line's item, From unit and quantity are fixed; you can change only its To unit.
 2. Check each line's To storage unit. Carbon fills in the part's default nettable storage unit at the location. With none, the line has no To unit. Choose one before you pick the line: Carbon refuses the pick without it.
 3. Pick and complete the transfer as usual. The receipt moves to **"Put Away"** when completed transfers cover all passed stock.
 
-The transfer takes only passed stock. For a serial or batch part, that is its **Available** units. For an untracked part, it is the lot size of a passed lot, or the accepted quantity of a Partial lot. If more lots pass later, click **Put Away** again: the new transfer takes only the stock that no linked transfer has yet. The receipt's menu lists each linked transfer as **"Putaway"** and its number.
+The transfer takes only passed stock. For a serial or batch part, that is its **Available** units, so a lot accepted with a failed unit puts away the units that passed. For an untracked part, it is the lot size of a passed lot, or the accepted quantity of a Partial lot. If more lots pass later, click **Put Away** again: the new transfer takes only the stock that no linked transfer has yet. The receipt's menu lists each linked transfer as **"Putaway"** and its number.
 
 A sales return receipt has no Put Away button. Move its stock with an ordinary stock transfer.
 
@@ -181,6 +181,15 @@ Put Away found no passed stock still in the unit it was received into and not al
 
 ### "Choose a non-nettable storage unit." / "Choose a storage unit at this location."
 Refusals from the Goods-in storage card in Settings → Quality. Both units must be non-nettable and belong to the row's location. "You do not have permission to change this location" means the user lacks Resources update permission. A storage unit set on the card cannot be deleted; clear the setting first.
+
+### "Choose the To storage unit of every Put Away line first."
+A Put Away line has no To storage unit, so the transfer cannot be released or picked. Open the line, choose the To unit, then release the transfer.
+
+### "A Put Away line moves what the receipt holds. Only its To storage unit can change."
+The edit changed a Put Away line's item, From unit or quantity. Those come from the receipt. Change only the To unit. To put away a different quantity, pick less and complete the transfer short.
+
+### "Cannot void: Put Away … has picked stock. Unpick it first."
+A Put Away transfer of the receipt is still open and has moved some stock. Unpick its lines, then void the receipt. A Put Away that picked nothing is deleted with the void.
 
 ### "Failed to post receipt"
 The generic wrapper when the posting function fails. Most common underlying causes: the [accounting period](/docs/reference/accounting) for the posting date is closed or locked, or the company's default accounts (inventory, goods received not invoiced) aren't configured — the underlying message is then "Error getting account defaults". Check the period first, then the default accounts, and ask the user for the full error text if they have it.
