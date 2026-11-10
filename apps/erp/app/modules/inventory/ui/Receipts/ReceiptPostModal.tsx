@@ -224,7 +224,9 @@ const ReceiptPostBody = ({ onClose }: Omit<ReceiptPostModalProps, "open">) => {
 
   const ruleViolations = useRuleViolations({
     action: path.to.receiptPost(receiptId),
-    onSuccess: onClose
+    onSuccess: onClose,
+    // A refusal is toasted; the confirm dialog over it adds nothing.
+    onError: onClose
   });
   const { fetcher } = ruleViolations;
 
