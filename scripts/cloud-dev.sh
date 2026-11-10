@@ -167,7 +167,7 @@ pull_images() {
   echo "cloud-dev: pulling ${#missing[@]} stack images in parallel"
   printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} pnpm exec tsx --eval '
     import { execa } from "execa";
-    import { withExponentialBackoff } from "./packages/dev/src/retry.ts";
+    import { withExponentialBackoff } from "./packages/utils/src/retry.ts";
     const image = process.argv[1];
     withExponentialBackoff(() => execa("docker", ["pull", "-q", image]))
       .catch(() => { console.error(`cloud-dev: could not pull ${image}`); process.exitCode = 1; });

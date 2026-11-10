@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import retry from "@carbon/utils/retry";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
@@ -26,7 +27,6 @@ import {
   syncHostsFile
 } from "../portless-setup.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
-import { withExponentialBackoff } from "../retry.js";
 import {
   assemblerMissingPrerequisite,
   installDeps,
@@ -108,6 +108,9 @@ import {
   stackPorts,
   writeStackMode
 } from "../worktree.js";
+
+// The dev CLI loads utils' TypeScript subpath as CommonJS under tsx.
+const { withExponentialBackoff } = retry;
 
 type UpOpts = {
   migrate?: boolean;

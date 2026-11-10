@@ -2379,6 +2379,9 @@ importers:
       '@bomb.sh/tab':
         specifier: ^0.0.15
         version: 0.0.15(cac@6.7.14)(citty@0.1.6)(commander@13.1.0)
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@clack/prompts':
         specifier: ^1.3.0
         version: 1.3.0
