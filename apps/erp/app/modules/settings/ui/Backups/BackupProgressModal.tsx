@@ -17,6 +17,7 @@ import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { path } from "~/utils/path";
 import { formatElapsed } from "./format";
 
 // The job reports progress as a stable phase KEY + done/total; these order the
@@ -170,7 +171,7 @@ export function JobProgressModal({
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [done, startedAt]);
-  const elapsedMs = startedAt ? now - new Date(startedAt).getTime() : 0;
+  const elapsedMs = startedAt ? now - Date.parse(startedAt) : 0;
 
   // Pre-heartbeat watchdog: if a restore never writes its first marker (the job
   // failed to start / never reached Inngest), the status stays "gone" forever.
@@ -189,7 +190,7 @@ export function JobProgressModal({
       revalidator.revalidate();
       return;
     }
-    const href = `/api/settings/backup-restore-status/${runId}`;
+    const href = path.to.api.backupRestoreStatus(runId);
     load(href);
     const id = setInterval(() => {
       load(href);
@@ -203,7 +204,7 @@ export function JobProgressModal({
   const loadExport = exportFetcher.load;
   useEffect(() => {
     if (!isExport || done) return;
-    const href = `/api/settings/backup-export-status`;
+    const href = path.to.api.backupExportStatus;
     loadExport(href);
     const poll = setInterval(() => {
       loadExport(href);

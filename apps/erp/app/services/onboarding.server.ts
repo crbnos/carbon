@@ -15,7 +15,6 @@ import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
@@ -27,6 +26,7 @@ import {
   getCompanies,
   insertCompany,
   seedCompany,
+  startCompanyTemplate,
   unpackBackupArchive,
   updateCompany
 } from "~/modules/settings/settings.service";
@@ -83,7 +83,7 @@ export async function provisionCompanyData(
   // The user's `.carbon.tar.gz`: unpack into a fresh `exports/<name>/` folder so
   // it imports like any other backup. Uploading the archive as one object would
   // exceed the bucket's per-object size cap (413) for a real prod backup carrying
-  // media. The import reads the folder via readBackup(<name>).
+  // media.
   const source = Readable.fromWeb(
     backup.stream() as Parameters<typeof Readable.fromWeb>[0]
   );
@@ -115,19 +115,14 @@ export async function provisionCompanyData(
  * the dataset's pre-flight requires one. A failed enqueue is fatal rather than
  * silent, otherwise onboarding reports success over an empty company.
  */
-async function startCompanyTemplate(
+async function applyTemplate(
   companyId: string,
   userId: string,
   template: string | null
 ): Promise<void> {
   if (!template) return;
   try {
-    await trigger("company-template", {
-      companyId,
-      userId,
-      datasetKey: template,
-      templateRunId: nanoid()
-    });
+    await startCompanyTemplate({ companyId, userId, datasetKey: template });
   } catch (err) {
     logger.error("Failed to start company template", { error: err });
     throw new Error("Fatal: failed to start company template");
@@ -241,7 +236,7 @@ export async function provisionOnboardingCompany(
     // Re-entry still honours the template. The job snapshots the company and
     // then WIPES its business data before seeding (revertible from the
     // snapshot) — it no longer refuses a company that already has items.
-    await startCompanyTemplate(company.id!, userId, template);
+    await applyTemplate(company.id!, userId, template);
     return company.id!;
   }
 
@@ -296,7 +291,7 @@ export async function provisionOnboardingCompany(
   }
 
   // Deliberately after upsertLocation — the pre-flight needs that location.
-  await startCompanyTemplate(companyId, userId, template);
+  await applyTemplate(companyId, userId, template);
 
   return companyId;
 }

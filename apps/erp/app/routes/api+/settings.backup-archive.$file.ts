@@ -3,44 +3,44 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { createGzip } from "node:zlib";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { listBucketFilesRecursive } from "@carbon/jobs/backups";
+import { getCompanyPrivateBucket } from "@carbon/files";
+import { backupDir, listBucketFilesRecursive } from "@carbon/jobs/backups";
 import type { LoaderFunctionArgs } from "react-router";
 import { pack as tarPack } from "tar-stream";
-import { canManageBackups } from "~/modules/settings/settings.service";
+import {
+  isUserBackupName,
+  requireBackupAccess
+} from "~/modules/settings/settings.service";
 
 /** How many objects to download concurrently while packing the tar in order.
  *  Bounds memory to ~this many buffered files (NOT the whole backup). */
 const DOWNLOAD_CONCURRENCY = 6;
 
 /**
- * Stream a self-contained `.carbon.tar.gz` of a backup's `exports/<name>/` folder
+ * Stream a self-contained `.carbon.tar.gz` of a backup folder
  * (manifest, per-table files, assets) so a cross-environment import carries
  * everything. Objects are prefetched in a bounded window (overlapping downloads)
  * but packed in order, so memory stays bounded to ~DOWNLOAD_CONCURRENCY files.
  * Outer gzip is level 1 — the entries are already compressed — but stays a valid
- * gzip tar, which `backups-archive.server.ts` unpacks on re-import.
+ * gzip tar, which `unpackBackupArchive` unpacks on re-import.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    view: "settings"
-  });
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
+  const { companyId } = await requireBackupAccess(request);
 
   const name = params.file ?? "";
-  if (!name || name.includes("/")) {
+  if (!isUserBackupName(name)) {
     throw new Response("Invalid backup", { status: 400 });
   }
-  const dir = `exports/${name}`;
-  // Backup objects are service-role only; the checks above gate this route.
+  const dir = backupDir(name);
+  // Backup objects are service-role only; the gate above guards this route.
   const serviceRole = getCarbonServiceRole();
+  const bucket = getCompanyPrivateBucket(companyId);
 
   // Strict and paged: a listing cut short or failed would ship an archive
   // that looks complete without the files it left out.
   const relPaths = (
-    await listBucketFilesRecursive(serviceRole, companyId, dir, {
+    await listBucketFilesRecursive(serviceRole, bucket, dir, {
       strict: true
     })
   ).map((f) => f.path.slice(dir.length + 1));
@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // would still carry its manifest and import as if complete.
   const downloadAt = (i: number): Promise<Buffer> => {
     const download = serviceRole.storage
-      .from(companyId)
+      .from(bucket)
       .download(`${dir}/${relPaths[i]}`)
       .then((f) => {
         if (f.error || !f.data) {

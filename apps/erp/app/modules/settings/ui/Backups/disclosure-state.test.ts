@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { CompanyBackupSummary } from "../../backups.service";
+import type { CompanyBackupSummary } from "../../types";
 import { CONFIRM_WORD, disclosureState } from "./disclosure-state";
 
 type Finding = NonNullable<

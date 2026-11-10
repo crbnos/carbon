@@ -3,14 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Readable } from "node:stream";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  canManageBackups,
+  requireBackupAccess,
   unpackBackupArchive
 } from "~/modules/settings/settings.service";
 
@@ -23,15 +22,11 @@ const logger = getLogger("erp", "settings-backup-upload");
  *    straight to storage, so the bytes never pass through this function (a
  *    Vercel-hosted target caps the request body).
  * 2. `intent=unpack` — stream the staged archive back and unpack it into a fresh
- *    `exports/<name>/` so the normal restore/import finds it, then drop the
- *    staged object. Returns the folder name.
+ *    backup folder so the normal restore/import finds it, then drop the staged
+ *    object. Returns the folder name.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
-  });
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
+  const { companyId } = await requireBackupAccess(request);
   if (request.method !== "POST") {
     throw new Response("Method not allowed", { status: 405 });
   }
@@ -39,8 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   // Service role: `temp-staging` RLS only admits `${companyId}/models/...` and
-  // backup objects are service-role only; the permission checks above gate
-  // this route.
+  // backup objects are service-role only; the gate above guards this route.
   const serviceRole = getCarbonServiceRole();
   const staging = serviceRole.storage.from(TEMP_STAGING_BUCKET);
 

@@ -13,11 +13,12 @@ import type {
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
+  IS_LOCAL_DEV,
   SUPABASE_INTERNAL_URL,
   SUPABASE_URL,
   VERCEL_URL
 } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
+import { bustApiKeyCache, requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
@@ -218,13 +219,25 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { type Events, trigger } from "@carbon/jobs";
 import {
+  backupDir,
   compatibilityStatus,
+  EXPORT_INTEGRATION,
+  type ExportRunMeta,
   getCompanyTableCatalog,
+  isSnapshotName,
+  listBackups,
+  newBackupName,
   purgeScopeViolations,
+  RESTORE_INTEGRATION,
+  type RestoreRunMeta,
+  removeBucketPrefix,
   reportBackupCompatibility,
-  selectExportableTables
+  selectExportableTables,
+  TEMPLATE_INTEGRATION,
+  type TemplateRunMeta
 } from "@carbon/jobs/backups";
 import { packBySize } from "@carbon/jobs/events";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
@@ -297,6 +310,10 @@ import {
   getQuoteLines
 } from "~/modules/sales/sales.utils";
 import type {
+  CompanyBackupSummary,
+  CompanyExportRun,
+  CompanyRestoreRun,
+  CompanyTemplateRun,
   Integration,
   JobMissingStorageUnit,
   MethodMissingPullFrom
@@ -304,16 +321,11 @@ import type {
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
-import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import {
-  type CompanyBackupSummary,
-  listCompanyBackupFolders
-} from "./backups.service";
 import type {
   IntegrationErrorCode,
   SharedIntegrationErrorCode
@@ -1521,23 +1533,56 @@ export async function upsertItemPostingGroupResponsibility(
     })
     .select("id");
 }
+// Backups: a Business/Enterprise feature. Export, restore and the demo-data
+// templates run as `@carbon/jobs` jobs that keep their state in a marker row;
+// these read the markers and the backup folders, and start or resolve the jobs.
+
+const log = getLogger("erp", "backups");
+
+/** Backups are a Business/Enterprise feature (`BACKUPS`), open to internal staff and local dev. */
+export async function canManageBackups(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  email: string | null | undefined
+): Promise<boolean> {
+  if (IS_LOCAL_DEV || isInternalEmail(email)) return true;
+  return companyHasFeature(client, companyId, { feature: "BACKUPS" });
+}
+
 /**
- * Unpack a `.carbon.tar.gz` (a whole backup folder) into a fresh
- * `exports/<name>/` so restore/import can read it. Streams entry-by-entry — every
- * file is small and under the bucket size cap — so a multi-GB prod backup is
- * never uploaded as one (over-cap) object. Returns the folder name.
+ * The gate every backup route takes: settings update, and the backups feature.
+ * A backup holds the whole company's data, so viewing settings is not enough.
+ */
+export async function requireBackupAccess(request: Request) {
+  const auth = await requirePermissions(request, { update: "settings" });
+  if (!(await canManageBackups(auth.client, auth.companyId, auth.email))) {
+    throw new Response("Not found", { status: 404 });
+  }
+  return auth;
+}
+
+/** A name the user may restore, download or delete: one of their own backups,
+ *  never a path, never a restore's or template's snapshot. */
+export function isUserBackupName(name: string): boolean {
+  return name.length > 0 && !name.includes("/") && !isSnapshotName(name);
+}
+
+/**
+ * Unpack a `.carbon.tar.gz` (a whole backup folder) into a fresh backup folder
+ * so restore/import can read it. Streams entry-by-entry — every file is small
+ * and under the bucket size cap — so a multi-GB prod backup is never uploaded
+ * as one (over-cap) object. Returns the folder name.
  *
- * Server-only (tar-stream + zlib). Shared by the Settings upload route and the
- * onboarding "restore from a backup" flow.
+ * Shared by the Settings upload route and the onboarding "restore from a
+ * backup" flow.
  */
 export async function unpackBackupArchive(
   client: SupabaseClient<Database>,
   companyId: string,
   source: Readable
 ): Promise<{ name: string; assetErrors: number }> {
-  const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  const name = `${ts}_uploaded`;
-  const dir = `exports/${name}`;
+  const name = newBackupName(datetime.timestamp(), "uploaded");
+  const dir = backupDir(name);
   let manifestSeen = false;
   // Split critical (manifest + table) failures from asset failures: a missing
   // table breaks the load, but assets are best-effort downstream (the restore
@@ -1560,11 +1605,12 @@ export async function unpackBackupArchive(
           const rel = header.name;
           // Reject path traversal; only land files inside this backup's folder.
           if (rel.includes("..") || rel.startsWith("/")) {
+            criticalErrors++;
             next();
             return;
           }
           const up = await client.storage
-            .from(companyId)
+            .from(getCompanyPrivateBucket(companyId))
             .upload(`${dir}/${rel}`, Buffer.concat(chunks), { upsert: true });
           if (up.error) {
             if (rel.startsWith("assets/")) assetErrors++;
@@ -1590,57 +1636,33 @@ export async function unpackBackupArchive(
     throw new Error("Archive is missing manifest.json");
   }
   if (criticalErrors > 0) {
-    // A manifest or table file failed to land — the folder is unrestorable.
-    // Surface it rather than return a name a restore would later fail on with
-    // an opaque "manifest not found".
     throw new Error(
       `${criticalErrors} critical file(s) failed to upload — the backup is incomplete. Retry the upload.`
     );
   }
   return { name, assetErrors };
 }
-const log = getLogger("erp", "backups");
 
 /**
- * Backups are a Business/Enterprise feature (`BACKUPS`), plus an escape hatch for
- * internal staff and local dev (`canAccessBackups`). Community/Starter cannot
- * reach them. Shared by every backup route gate so they can never diverge.
- */
-export async function canManageBackups(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  email: string | null | undefined
-): Promise<boolean> {
-  if (canAccessBackups(email)) return true;
-  return companyHasFeature(client, companyId, { feature: "BACKUPS" });
-}
-
-// Server-only: enqueues the in-place restore inngest jobs and computes the
-// live compatibility verdict. Kept out of the route module so `@carbon/jobs`
-// (which pulls Node `Buffer` via the Inngest client) never lands in the
-// browser bundle.
-
-/**
- * The Backups loader's list: each ready backup's manifest diffed against
+ * The Backups loader's list: each backup's manifest, with its verdict against
  * TODAY's schema, so the badge and the restore disclosure describe what a
- * restore would actually do right now. Computed on every load rather than
- * stored — a verdict written at export time compares the manifest against the
- * very schema it was projected from and can only ever say "ready".
+ * restore would do right now. Computed on every load rather than stored — a
+ * verdict written at export time compares the manifest against the very schema
+ * it was projected from and can only ever say "ready".
  */
 export async function getCompanyBackups(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   companyId: string
-): Promise<{ data: CompanyBackupSummary[] | null; error: Error | null }> {
-  const { data, error } = await listCompanyBackupFolders(client, companyId);
-  if (error || !data) return { data: null, error };
+): Promise<CompanyBackupSummary[]> {
+  const backups = await listBackups(client, companyId);
 
   // One schema read per page load, shared by every row. A failure here must
   // NOT take the page down: listing, downloading and deleting backups all work
   // without a verdict, and the restore has its own gate. So a database that is
   // unreachable or out of connections costs the badges, not the screen.
   let catalog: Awaited<ReturnType<typeof getCompanyTableCatalog>> | null = null;
-  if (data.some((b) => b.manifest)) {
+  if (backups.some((b) => b.manifest)) {
     try {
       catalog = await getCompanyTableCatalog(db);
     } catch (err) {
@@ -1651,29 +1673,161 @@ export async function getCompanyBackups(
     }
   }
 
-  return {
-    data: data.map(({ manifest, ...summary }) => {
-      // No catalog (schema unreadable) or no manifest (incomplete export) →
-      // `compatibility` stays null: "not checked", never a green "ready".
-      if (!catalog || !manifest) return summary;
-      const report = reportBackupCompatibility(catalog, manifest);
+  return backups
+    .map(({ name, manifest: m }): CompanyBackupSummary => {
+      if (!m) {
+        return {
+          name,
+          status: "pending",
+          exportedAt: null,
+          label: null,
+          rows: 0,
+          sizeBytes: 0,
+          compatibility: null,
+          excludedRows: [],
+          excludedRowsByTable: []
+        };
+      }
+      const report = catalog ? reportBackupCompatibility(catalog, m) : null;
       return {
-        ...summary,
-        compatibility: {
-          status: compatibilityStatus(report),
-          findings: report.findings
-        }
+        name,
+        status: "ready",
+        exportedAt: m.exportedAt ?? null,
+        label: m.label ?? null,
+        rows: (m.tables ?? []).reduce((sum, t) => sum + (t.rows ?? 0), 0),
+        sizeBytes: (m.storage ?? [])
+          .filter((x) => x.included)
+          .reduce((sum, x) => sum + (x.size ?? 0), 0),
+        // No catalog (schema unreadable) → null: "not checked", never "ready".
+        compatibility: report
+          ? { status: compatibilityStatus(report), findings: report.findings }
+          : null,
+        excludedRows: m.excludedRows ?? [],
+        excludedRowsByTable: m.excludedRowsByTable ?? []
       };
-    }),
-    error: null
+    })
+    .sort((a, b) => (b.exportedAt ?? "").localeCompare(a.exportedAt ?? ""));
+}
+
+/** Delete one of the user's backups: the whole folder (data, manifest, assets). */
+export async function deleteCompanyBackup(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string
+): Promise<void> {
+  await removeBucketPrefix(client, companyId, backupDir(name), {
+    strict: true
+  });
+}
+
+/** The marker rows of one backup job, newest first. */
+async function readMarkers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integration: string
+) {
+  const markers = await client
+    .from("externalIntegrationMapping")
+    .select("entityId, metadata, createdAt")
+    .eq("integration", integration)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+  if (markers.error) throw markers.error;
+  return markers.data ?? [];
+}
+
+/** The marker fields every backup job writes, with their defaults. */
+function runView(
+  meta: Partial<
+    Pick<
+      RestoreRunMeta,
+      | "progress"
+      | "startedAt"
+      | "error"
+      | "reason"
+      | "violations"
+      | "violationRowsByTable"
+    >
+  >,
+  createdAt: string
+) {
+  return {
+    progress: meta.progress ?? null,
+    startedAt: meta.startedAt ?? createdAt,
+    error: meta.error ?? null,
+    reason: meta.reason ?? null,
+    violations: meta.violations ?? [],
+    violationRowsByTable: meta.violationRowsByTable ?? []
+  };
+}
+
+/** Restores that are running, failed, or waiting on keep or revert. */
+export async function getCompanyRestoreRuns(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<CompanyRestoreRun[]> {
+  return (await readMarkers(client, companyId, RESTORE_INTEGRATION)).map(
+    (m) => {
+      const meta = (m.metadata ?? {}) as Partial<RestoreRunMeta>;
+      return {
+        ...runView(meta, m.createdAt),
+        restoreRunId: meta.restoreRunId ?? m.entityId,
+        status: meta.status ?? "running",
+        rows: meta.rows ?? 0,
+        label: meta.label ?? null,
+        filePath: meta.filePath ?? null,
+        includeStorage: meta.includeStorage ?? null
+      };
+    }
+  );
+}
+
+/**
+ * The current export, or null when none: absent = not running (the new backup
+ * appearing in the list is what signals completion), "running" = in flight,
+ * "failed" = the last export died and the user hasn't dismissed it yet.
+ */
+export async function getCompanyExportRun(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<CompanyExportRun | null> {
+  const [m] = await readMarkers(client, companyId, EXPORT_INTEGRATION);
+  if (!m) return null;
+  const meta = (m.metadata ?? {}) as Partial<ExportRunMeta>;
+  return {
+    ...runView(meta, m.createdAt),
+    status: meta.status ?? "running",
+    label: meta.label ?? null,
+    includeStorage: meta.includeStorage ?? null
   };
 }
 
 /**
- * Kick off an in-place restore of `filePath` (one of this company's own
- * backups). The job snapshots the current state, wipes the company's data and
- * loads the backup. Returns the restore run id used to poll status and to
- * keep/revert the result.
+ * The current demo-template run, or null when none: "running" = in flight,
+ * "ready" = applied and waiting on keep or revert, "reverting" = the undo is in
+ * flight, "failed" = it did not land and the user hasn't dismissed it yet.
+ */
+export async function getCompanyTemplateRun(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<CompanyTemplateRun | null> {
+  const [m] = await readMarkers(client, companyId, TEMPLATE_INTEGRATION);
+  if (!m) return null;
+  const meta = (m.metadata ?? {}) as Partial<TemplateRunMeta>;
+  // Only whether a snapshot EXISTS, never where: the job owns its lifecycle.
+  return {
+    ...runView(meta, m.createdAt),
+    templateRunId: meta.templateRunId ?? "",
+    status: meta.status ?? "running",
+    datasetKey: meta.datasetKey ?? null,
+    hasSnapshot: Boolean(meta.snapshotPath)
+  };
+}
+
+/**
+ * Kick off an in-place restore of one of this company's own backups. The job
+ * snapshots the current data, wipes it and loads the backup. Returns the run id
+ * used to poll status and to keep/revert the result.
  */
 export async function startCompanyRestore(args: {
   companyId: string;
@@ -1687,45 +1841,58 @@ export async function startCompanyRestore(args: {
   return restoreRunId;
 }
 
-/** Keep a restore — drop the pre-restore snapshot + marker. */
-export async function finalizeCompanyRestore(args: {
+/**
+ * Apply a demo dataset to this company. The job snapshots first, so the result
+ * is revertible. Returns the run id used to poll status and to keep/revert it.
+ */
+export async function startCompanyTemplate(args: {
   companyId: string;
-  restoreRunId: string;
-}): Promise<void> {
-  await trigger("company-restore-finalize", args);
+  userId: string;
+  datasetKey: string;
+}): Promise<string> {
+  const templateRunId = nanoid();
+  await trigger("company-template", { ...args, templateRunId });
+  return templateRunId;
 }
 
-/** Undo a restore — wipe again and reload the pre-restore snapshot. */
-export async function revertCompanyRestore(args: {
+/** Starts a company backup export (`carbon/company-export`). */
+export async function exportCompanyBackup(args: {
   companyId: string;
-  restoreRunId: string;
+  userId: string;
+  label?: string;
+  includeStorage?: "none" | "all";
+  /** Opt-in recovery: leave out rows whose links escape company scope. */
+  skipCorrupted?: boolean;
 }): Promise<void> {
-  await trigger("company-restore-revert", args);
+  await trigger("company-export", {
+    companyId: args.companyId,
+    userId: args.userId,
+    label: args.label?.slice(0, 80),
+    includeStorage: args.includeStorage ?? "none",
+    skipCorrupted: args.skipCorrupted === true
+  });
 }
 
 /**
- * Clear the failed-export marker once the user has acknowledged it. Service
- * role: `externalIntegrationMapping` has no DELETE policy, and the marker is
- * written by the export job (see EXPORT_INTEGRATION in
- * packages/jobs/src/inngest/functions/tasks/company-export.ts).
+ * Clear the export marker once the user has acknowledged its failure. Service
+ * role: `externalIntegrationMapping` has no DELETE policy.
  */
 export async function dismissCompanyExportFailure(
   companyId: string
 ): Promise<void> {
-  const serviceRole = getCarbonServiceRole();
-  await serviceRole
+  const { error } = await getCarbonServiceRole()
     .from("externalIntegrationMapping")
     .delete()
-    .eq("integration", "company-export")
+    .eq("integration", EXPORT_INTEGRATION)
     .eq("companyId", companyId);
+  if (error) throw error;
 }
 
 /**
  * Permanently delete this company's rows whose NOT-NULL FK escapes company scope
  * (and rows depending on them) — the data the export guard refuses on, and the
- * reason a restore's pre-restore snapshot fails on a company with them. Only
- * ever called from the user-confirmed "Remove corrupted data and restore"
- * action. One transaction; children first (see `purgeScopeViolations`).
+ * reason a restore's or template's snapshot fails on a company with them.
+ * One transaction; children first (see `purgeScopeViolations`).
  */
 export async function purgeCorruptedRows(
   db: Kysely<KyselyDatabase>,
@@ -1753,7 +1920,7 @@ export async function purgeCorruptedRows(
         company.data.companyGroupId ?? null
       )
     );
-  log.warn("Backups: purged out-of-scope rows before restore", {
+  log.warn("Backups: purged out-of-scope rows", {
     companyId,
     deleted: result.deleted
   });
@@ -1761,75 +1928,58 @@ export async function purgeCorruptedRows(
 }
 
 /**
- * Starts a company backup export (`carbon/company-export`). The caller has
- * already checked `update: settings` and `canManageBackups`; the job itself
- * enforces the BACKUPS entitlement.
+ * Retry a run that failed on corrupted live data: delete those rows (the user
+ * confirmed it), then start the run again. Two steps, not one transaction — the
+ * second is a job trigger — so the message says WHICH half happened: "couldn't
+ * remove the rows" and "removed the rows but it didn't start" call for opposite
+ * next actions.
  */
-export async function exportCompanyBackup(args: {
-  companyId: string;
-  userId: string;
-  label?: string;
-  includeStorage?: "none" | "all";
-  /** Opt-in recovery: leave out rows whose links escape company scope. */
-  skipCorrupted?: boolean;
-}): Promise<{ error: Error | null }> {
+export async function purgeAndRetry(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  run: { doing: string; name: string; start: () => Promise<string> }
+): Promise<
+  | {
+      success: true;
+      message: string;
+      runId: string;
+      deleted: Array<{ table: string; rows: number }>;
+    }
+  | { success: false; message: string }
+> {
+  let deleted: Array<{ table: string; rows: number }>;
   try {
-    await trigger("company-export", {
-      companyId: args.companyId,
-      userId: args.userId,
-      label: args.label?.slice(0, 80),
-      includeStorage: args.includeStorage ?? "none",
-      skipCorrupted: args.skipCorrupted === true
-    });
-    return { error: null };
-  } catch (error) {
-    log.error("Failed to start backup export", {
-      companyId: args.companyId,
-      error
-    });
-    return { error: error as Error };
+    ({ deleted } = await purgeCorruptedRows(db, companyId));
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error
+          ? err.message
+          : "Failed to remove corrupted data — nothing was deleted"
+    };
+  }
+
+  const rows = deleted.reduce((sum, d) => sum + d.rows, 0);
+  const removed = `Removed ${rows} row${rows === 1 ? "" : "s"}`;
+  try {
+    const runId = await run.start();
+    return {
+      success: true,
+      message: `${removed} — ${run.doing}`,
+      runId,
+      deleted
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: `${removed}, but ${run.name} did not start — start it again. (${
+        err instanceof Error ? err.message : "unknown error"
+      })`
+    };
   }
 }
-// Server-only: enqueues the demo-template inngest jobs. Kept out of the route
-// module so `@carbon/jobs` (which pulls Node `Buffer` via the Inngest client)
-// never lands in the browser bundle.
 
-/**
- * Apply a demo dataset to this company. The job snapshots first, so the result
- * is revertible. Returns the run id used to poll status and to keep/revert it.
- */
-export async function startCompanyTemplate(args: {
-  companyId: string;
-  userId: string;
-  datasetKey: string;
-}): Promise<string> {
-  const templateRunId = nanoid();
-  await trigger("company-template", { ...args, templateRunId });
-  return templateRunId;
-}
-
-/**
- * Resolve a settled template run — drop the pre-apply snapshot, then the marker.
- * Backs both "Keep" (on a ready run) and "Dismiss" (on a failed one): they are
- * the same operation. Deleting the marker row from here instead would strand the
- * snapshot folder in storage, since a failed revert keeps its `snapshotPath` so
- * the user can retry.
- */
-export async function finalizeCompanyTemplate(args: {
-  companyId: string;
-  templateRunId: string;
-}): Promise<void> {
-  await trigger("company-template-finalize", args);
-}
-
-/** Undo an applied template — wipe again and reload the pre-apply snapshot. */
-export async function revertCompanyTemplate(args: {
-  companyId: string;
-  userId: string;
-  templateRunId: string;
-}): Promise<void> {
-  await trigger("company-template-revert", args);
-}
 type Client = SupabaseClient<Database>;
 
 export interface PreviewEntity {

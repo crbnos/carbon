@@ -15,10 +15,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import { LuCircleAlert, LuInfo, LuTriangleAlert } from "react-icons/lu";
 import { areaLabel, tableArea } from "../../backups.areas";
-import type { CompanyBackupSummary } from "../../backups.service";
+import type { CompanyBackupSummary } from "../../types";
 import { CONFIRM_WORD, disclosureState } from "./disclosure-state";
 import { formatBackupDate, formatBackupName } from "./format";
 
@@ -43,13 +44,14 @@ export function RestoreDisclosure({
   onConfirm: (values: { source: string; includeStorage: string }) => void;
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const [source] = useControlField<string>("source");
   const [includeStorage] = useControlField<string>("includeStorage");
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
 
   const backup = useMemo(
-    () => backups.find((b) => `backup:${b.name}` === source),
+    () => backups.find((b) => b.name === source),
     [backups, source]
   );
 
@@ -91,7 +93,7 @@ export function RestoreDisclosure({
                 <p className="text-sm text-muted-foreground">
                   {backup.label || formatBackupName(backup.name)}
                   {backup.exportedAt
-                    ? ` · ${formatBackupDate(backup.exportedAt)}`
+                    ? ` · ${formatBackupDate(backup.exportedAt, locale)}`
                     : ""}
                 </p>
               ) : null}

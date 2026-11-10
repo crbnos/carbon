@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 import { createGunzip, createGzip } from "node:zlib";
@@ -49,7 +53,7 @@ export type Manifest = {
   excludedRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
-const EXPORTS_PREFIX = "exports";
+export const EXPORTS_PREFIX = "exports";
 
 export type CompanyBackup = {
   manifest: Manifest;
@@ -76,6 +80,17 @@ export function backupTablePath(name: string, table: string): string {
 
 export function backupAssetsDir(name: string): string {
   return `${EXPORTS_PREFIX}/${name}/assets`;
+}
+
+/** A new backup's folder name: when it was taken, then a slug of its label. */
+export function newBackupName(takenAt: string, label?: string | null): string {
+  const slug = label
+    ? `_${label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .slice(0, 40)}`
+    : "";
+  return `${takenAt.replace(/[:.]/g, "-")}${slug}`;
 }
 
 /** The hidden backup a restore or template run takes before it loads, for a revert. */

@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getCompanyPrivateBucket } from "@carbon/files";
+import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { chunkArray } from "@carbon/utils";
+import { async, chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
+import { TABLE_CONCURRENCY } from "./concurrency";
 import {
   BACKUP_KIND,
   backupAssetsDir,
@@ -14,6 +14,8 @@ import {
   backupTablePath,
   type CompanyBackup,
   deserializeTable,
+  EXPORTS_PREFIX,
+  isSnapshotName,
   type Manifest
 } from "./format";
 import { rewriteStoragePath } from "./remap";
@@ -92,20 +94,69 @@ export async function readBackup(
   }
 
   const data: CompanyBackup["data"] = {};
-  await mapWithConcurrency(manifest.tables, TABLE_CONCURRENCY, async (t) => {
-    const f = await client.storage
-      .from(getCompanyPrivateBucket(companyId))
-      .download(backupTablePath(name, t.name));
-    if (f.error || !f.data) {
-      throw new Error(
-        `Failed to download table ${t.name} for ${name}: ${
-          f.error?.message || JSON.stringify(f.error) || "not found"
-        }`
-      );
-    }
-    data[t.name] = await deserializeTable(await f.data.arrayBuffer());
-  });
+  await async.map(
+    manifest.tables,
+    async (t) => {
+      const f = await client.storage
+        .from(getCompanyPrivateBucket(companyId))
+        .download(backupTablePath(name, t.name));
+      if (f.error || !f.data) {
+        throw new Error(
+          `Failed to download table ${t.name} for ${name}: ${
+            f.error?.message || JSON.stringify(f.error) || "not found"
+          }`
+        );
+      }
+      data[t.name] = await deserializeTable(await f.data.arrayBuffer());
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
   return { manifest, data };
+}
+
+/**
+ * The company's backups, newest first, each with its manifest: null while the
+ * export is still writing the folder, or when the manifest is unreadable, so it
+ * still lists and can be deleted. Snapshots are left out. A failed download
+ * other than "not found" throws, so a good backup is never shown as unfinished.
+ */
+export async function listBackups(
+  client: SupabaseClient,
+  companyId: string
+): Promise<Array<{ name: string; manifest: Manifest | null }>> {
+  const bucket = client.storage.from(getCompanyPrivateBucket(companyId));
+  const names: string[] = [];
+  for (let offset = 0; ; offset += LIST_PAGE) {
+    const { data, error } = await bucket.list(EXPORTS_PREFIX, {
+      limit: LIST_PAGE,
+      offset,
+      sortBy: { column: "name", order: "desc" }
+    });
+    if (error) throw error;
+    for (const entry of data ?? []) {
+      if (entry.id === null && !isSnapshotName(entry.name)) {
+        names.push(entry.name);
+      }
+    }
+    if ((data?.length ?? 0) < LIST_PAGE) break;
+  }
+
+  return async.map(
+    names,
+    async (name) => {
+      const mf = await bucket.download(backupManifestPath(name));
+      if (mf.error) {
+        if (await isStorageNotFound(mf.error)) return { name, manifest: null };
+        throw mf.error;
+      }
+      try {
+        return { name, manifest: JSON.parse(await mf.data.text()) as Manifest };
+      } catch {
+        return { name, manifest: null };
+      }
+    },
+    { concurrency: ASSET_COPY_CONCURRENCY }
+  );
 }
 
 /** Upload one table file of a backup being written. */
@@ -227,9 +278,8 @@ export async function copyAssetsToBackup(
   let copied = 0;
   let failed = 0;
   let done = 0;
-  await mapWithConcurrency(
+  await async.map(
     sourcePaths,
-    ASSET_COPY_CONCURRENCY,
     async (path) => {
       // The bucket comes from the company, never from the path: a path naming
       // another company would otherwise read that company's bucket.
@@ -246,7 +296,8 @@ export async function copyAssetsToBackup(
         log.warning("Failed to copy backup asset", { path, error });
       }
       await onProgress?.(++done, total);
-    }
+    },
+    { concurrency: ASSET_COPY_CONCURRENCY }
   );
   return { copied, failed };
 }
@@ -277,38 +328,42 @@ export async function restoreAssetsFromBackup(
   let copied = 0;
   let failed = 0;
   let done = 0;
-  await mapWithConcurrency(included, ASSET_COPY_CONCURRENCY, async (file) => {
-    const targetPath = rewriteStoragePath(
-      file.path,
-      sourceCompanyId,
-      companyId,
-      idRewrite
-    );
-    if (!targetPath.startsWith(`${companyId}/`)) {
-      log.warning("Skipping backup asset outside target company prefix", {
-        path: file.path,
-        targetPath
+  await async.map(
+    included,
+    async (file) => {
+      const targetPath = rewriteStoragePath(
+        file.path,
+        sourceCompanyId,
+        companyId,
+        idRewrite
+      );
+      if (!targetPath.startsWith(`${companyId}/`)) {
+        log.warning("Skipping backup asset outside target company prefix", {
+          path: file.path,
+          targetPath
+        });
+        await onProgress?.(++done, total);
+        return;
+      }
+      const { ok, error } = await copyStorageObject(client, {
+        srcBucket: bucket,
+        srcPath: `${backupAssetsDir(name)}/${file.path}`,
+        destBucket: bucket,
+        destPath: targetPath
       });
+      if (ok) {
+        copied++;
+      } else {
+        failed++;
+        log.warning("Failed to restore backup asset", {
+          path: file.path,
+          targetPath,
+          error
+        });
+      }
       await onProgress?.(++done, total);
-      return;
-    }
-    const { ok, error } = await copyStorageObject(client, {
-      srcBucket: bucket,
-      srcPath: `${backupAssetsDir(name)}/${file.path}`,
-      destBucket: bucket,
-      destPath: targetPath
-    });
-    if (ok) {
-      copied++;
-    } else {
-      failed++;
-      log.warning("Failed to restore backup asset", {
-        path: file.path,
-        targetPath,
-        error
-      });
-    }
-    await onProgress?.(++done, total);
-  });
+    },
+    { concurrency: ASSET_COPY_CONCURRENCY }
+  );
   return { copied, failed };
 }

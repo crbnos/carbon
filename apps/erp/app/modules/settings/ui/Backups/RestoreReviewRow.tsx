@@ -6,29 +6,9 @@ import { Button, HStack, VStack } from "@carbon/react";
 import { Plural, Trans } from "@lingui/react/macro";
 import { LuLoaderCircle } from "react-icons/lu";
 import { DateTime } from "~/components";
-import { totalScopeRows } from "../../settings.utils";
+import type { CompanyRestoreRun } from "../../types";
 import { ExcludedRowsInfo } from "./ExcludedRowsInfo";
-
-export type RestoreRun = {
-  restoreRunId: string;
-  status: "running" | "ready" | "failed" | "reverting";
-  rows: number;
-  label: string | null;
-  error: string | null;
-  startedAt: string;
-  /** "scope-violations" = the pre-restore snapshot refused because the LIVE
-   *  data has rows escaping company scope — the one failure with a recovery. */
-  reason: "scope-violations" | null;
-  /** Per FK edge — the breakdown shown in the popover. Never summed. */
-  violations: Array<{
-    table: string;
-    column: string;
-    refTable: string;
-    rows: number;
-  }>;
-  /** DISTINCT rows per table — the basis for any count a person reads. */
-  violationRowsByTable: Array<{ table: string; rows: number }>;
-};
+import { totalScopeRows } from "./format";
 
 // One row in the "Restored — review" card, branching on the run's status.
 export function RestoreReviewRow({
@@ -38,7 +18,7 @@ export function RestoreReviewRow({
   onDismiss,
   onPurgeAndRestore
 }: {
-  run: RestoreRun;
+  run: CompanyRestoreRun;
   onKeep: () => void;
   onRevert: () => void;
   onDismiss: () => void;

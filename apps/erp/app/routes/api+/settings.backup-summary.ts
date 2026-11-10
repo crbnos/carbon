@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { BACKUP_SUMMARY_GROUPS } from "~/modules/settings/backups.areas";
-import { canManageBackups } from "~/modules/settings/settings.service";
+import { requireBackupAccess } from "~/modules/settings/settings.service";
 
 async function countEntity(
   client: SupabaseClient,
@@ -15,26 +14,19 @@ async function countEntity(
   value: string | null
 ): Promise<number> {
   if (!value) return 0;
-  try {
-    const { count } = await client
-      .from(table)
-      .select("*", { count: "exact", head: true })
-      .eq(column, value);
-    return count ?? 0;
-  } catch {
-    return 0;
-  }
+  const { count, error } = await client
+    .from(table)
+    .select("*", { count: "exact", head: true })
+    .eq(column, value);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // Lazy-loaded by the backup-contents popover (only when opened). Returns a
 // headline row count per entity, grouped, plus a grand total.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId, email } = await requirePermissions(
-    request,
-    { view: "settings" }
-  );
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
+  const { client, companyId, companyGroupId } =
+    await requireBackupAccess(request);
 
   // Keys and counts only — the popover owns the labels (msg descriptors it
   // resolves client-side), so no display copy crosses the wire.

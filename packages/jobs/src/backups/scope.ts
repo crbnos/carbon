@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { async } from "@carbon/utils";
 import { type Kysely, type RawBuilder, sql } from "kysely";
 import type { TableInfo } from "./catalog";
-import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
+import { TABLE_CONCURRENCY } from "./concurrency";
 import { RETAINED_REF_TABLES } from "./policy";
 
 /**
@@ -209,41 +210,49 @@ export async function findExportScopeViolations(
   }
 
   const violations: ScopeViolation[] = [];
-  await mapWithConcurrency(checks, TABLE_CONCURRENCY, async (c) => {
-    const r = await c.query.execute(db);
-    const n = Number(r.rows[0]?.n ?? 0);
-    if (n > 0) {
-      violations.push({
-        table: c.edge.table.name,
-        column: c.edge.column,
-        refTable: c.edge.parent.name,
-        rows: n
-      });
-    }
-  });
+  await async.map(
+    checks,
+    async (c) => {
+      const r = await c.query.execute(db);
+      const n = Number(r.rows[0]?.n ?? 0);
+      if (n > 0) {
+        violations.push({
+          table: c.edge.table.name,
+          column: c.edge.column,
+          refTable: c.edge.parent.name,
+          rows: n
+        });
+      }
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
 
   // One distinct-row count per offending table — the OR of its violating edges,
   // so a row counts once however many of its FKs escaped.
   const offending = [...new Set(violations.map((v) => v.table))];
   const rowsByTable: Array<{ table: string; rows: number }> = [];
-  await mapWithConcurrency(offending, TABLE_CONCURRENCY, async (name) => {
-    const t = byName.get(name);
-    if (!t) return;
-    const edges = scopeEdges(t, exportableNames, byName).filter((e) =>
-      violations.some((v) => v.table === name && v.column === e.column)
-    );
-    if (edges.length === 0) return;
-    const anyEdge = sql.join(
-      edges.map((e) => violationTerm(e, byName, companyId, companyGroupId)),
-      sql` OR `
-    );
-    const r = await sql<{ n: string }>`
+  await async.map(
+    offending,
+    async (name) => {
+      const t = byName.get(name);
+      if (!t) return;
+      const edges = scopeEdges(t, exportableNames, byName).filter((e) =>
+        violations.some((v) => v.table === name && v.column === e.column)
+      );
+      if (edges.length === 0) return;
+      const anyEdge = sql.join(
+        edges.map((e) => violationTerm(e, byName, companyId, companyGroupId)),
+        sql` OR `
+      );
+      const r = await sql<{ n: string }>`
       SELECT count(*)::text AS n
       FROM ${sql.id(name)}
       WHERE ${buildScopeFilter(t, byName, companyId, companyGroupId)}
         AND (${anyEdge})`.execute(db);
-    rowsByTable.push({ table: name, rows: Number(r.rows[0]?.n ?? 0) });
-  });
+      rowsByTable.push({ table: name, rows: Number(r.rows[0]?.n ?? 0) });
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
 
   return { violations, rowsByTable };
 }

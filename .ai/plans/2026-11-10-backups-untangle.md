@@ -183,3 +183,12 @@ Solves: ERP audit hidden/needless links, `_pre-template-` listed (BUG), view-onl
 ## F3 notes (2026-11-10)
 - Removed: `backupNameFromSource` (every sender passes the folder name), `totalExcludedRows`, the `findExportScopeViolations` wrapper (the detailed one took its name), the `externalIntegrationMapping` id-ref (that table never loads), needless `export`s.
 - Out of scope, left as they are: `packages/lib/src/trigger.ts` task→event map and `tasks/index.ts` barrel serve every job in the repo, not only backups.
+
+## F4 decisions (2026-11-10)
+- Placement changed from the plan: the backup building blocks fold INTO `settings.service.ts` (one section) and `backups.service.ts` is deleted, because the `module-shape` check allows one service file per module and listed it as a baseline exemption. UI-facing types live in `settings/types.ts`, built from `@carbon/jobs/backups` contracts.
+- BUG fixed: archive download and backup summary only needed `view: settings`. Every backup route now takes `requireBackupAccess` (`update: settings` + BACKUPS).
+- BUG fixed: `_pre-template-*` snapshots listed as normal backups (restorable, deletable). Listing (`listBackups` in the engine), restore, delete and archive all use `isSnapshotName`.
+- Errors no longer read as empty: list/marker read errors throw (loaders) or answer "unreadable" (the polled status routes, so a blip never reads as "reverted"); a failed manifest download other than not-found throws instead of listing as Incomplete; summary counts throw instead of 0; dismiss/delete errors surface.
+- Engine owns the layout: `listBackups`, `newBackupName`, `backupDir`, `isSnapshotName`. `mapWithConcurrency` replaced by `@carbon/utils` `async.map` (the drift check never loads those modules).
+- Removed: `backup:` source prefix, `utils/backups.ts`, the Backups/DemoData UI barrels, finalize/revert trigger wrappers, onboarding's copy of `startCompanyTemplate`, `RestoreRun` re-declaration. `purgeAndRetry` is the one purge-then-start for restore and template. URLs via `path.to.api.backup*`; dates via `formatDate`.
+- Not changed (auth, ask first): internal staff pass the ERP gate via `isInternalEmail`, but the jobs' `requireBackupsEntitlement` only exempts local dev, so a job started by staff on a company without BACKUPS fails.

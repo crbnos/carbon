@@ -22,17 +22,6 @@ import {
 } from "~/modules/sales/sales.models";
 
 /** DISTINCT rows per table. The ONLY shape a user-facing total may be summed from. */
-export type RowsByTable = { table: string; rows: number };
-
-/**
- * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
- * EDGE — a row escaping scope through three of its foreign keys appears three
- * times there — so totals must come from the per-table distinct counts.
- */
-export function totalScopeRows(rowsByTable: RowsByTable[]): number {
-  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
-}
-
 /**
  * Where each editable document lives: the record it prints, its readable number,
  * the record's own lock, the module whose update permission edits it, and the

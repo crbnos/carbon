@@ -16,14 +16,12 @@ import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
-import type { CompanyTemplateRun } from "~/modules/settings/backups.service";
-import {
-  ExcludedRowsInfo,
-  PurgeCorruptedRowsModal
-} from "~/modules/settings/ui/Backups";
+import type { CompanyTemplateRun } from "~/modules/settings/types";
+import { ExcludedRowsInfo } from "~/modules/settings/ui/Backups/ExcludedRowsInfo";
 import { formatElapsed } from "~/modules/settings/ui/Backups/format";
+import { PurgeCorruptedRowsModal } from "~/modules/settings/ui/Backups/PurgeCorruptedRowsModal";
 import { path } from "~/utils/path";
-import { totalScopeRows } from "../../settings.utils";
+import { totalScopeRows } from "../Backups/format";
 import { KeepDemoDataModal } from "./KeepDemoDataModal";
 
 /** A run with no completion after this long is treated as stalled, and offered a

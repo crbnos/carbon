@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RowsByTable } from "@carbon/jobs/backups";
+import { formatDate } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
@@ -83,15 +85,26 @@ export function backupStatusVariant(
   }
 }
 
+/** A backup's timestamp for display, in the viewer's `locale`. */
 export function formatBackupDate(
   iso: string | null | undefined,
+  locale: string,
   withTime = true
 ): string {
-  if (!iso) return "";
-  return new Date(iso).toLocaleString(
-    undefined,
+  return formatDate(
+    iso,
     withTime
       ? { dateStyle: "medium", timeStyle: "short" }
-      : { dateStyle: "medium" }
+      : { dateStyle: "medium" },
+    locale
   );
+}
+
+/**
+ * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
+ * EDGE — a row escaping scope through three of its foreign keys appears three
+ * times there — so totals must come from the per-table distinct counts.
+ */
+export function totalScopeRows(rowsByTable: RowsByTable): number {
+  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
 }

@@ -5,6 +5,7 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { async, datetime } from "@carbon/utils";
 import { sql } from "kysely";
 import type { JobDatabase } from "../db";
 import {
@@ -12,12 +13,13 @@ import {
   getCompanyTableCatalog,
   selectExportableTables
 } from "./catalog";
-import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
+import { TABLE_CONCURRENCY } from "./concurrency";
 import {
   BACKUP_KIND,
   BACKUP_VERSION,
   encodeValue,
   type Manifest,
+  newBackupName,
   serializeTable
 } from "./format";
 import type { JobProgress } from "./runs";
@@ -107,14 +109,8 @@ export async function writeCompanyBackup(
     );
   }
 
-  const exportedAt = new Date().toISOString();
-  const slug = label
-    ? `_${label
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .slice(0, 40)}`
-    : "";
-  const name = opts.name ?? `${exportedAt.replace(/[:.]/g, "-")}${slug}`;
+  const exportedAt = datetime.timestamp();
+  const name = opts.name ?? newBackupName(exportedAt, label);
 
   const catalog = await getCompanyTableCatalog(db);
   // Secrets (credentials/tokens) never travel — they belong to the source
@@ -176,52 +172,56 @@ export async function writeCompanyBackup(
   // Dump each non-empty table to its own `tables/<table>.ndjson.gz`, in parallel.
   const tableManifest: Manifest["tables"] = [];
   let dumped = 0; // incremented as each table completes (single-threaded → safe)
-  await mapWithConcurrency(exportable, TABLE_CONCURRENCY, async (table) => {
-    const columns = exportableColumns(table);
-    // A skipCorrupted export leaves out the rows computeScopeExclusions decided on.
-    const exclusion = exclusions?.predicates.get(table.name);
-    const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
-    // Direct-scoped tables filter by their companyId/companyGroupId column;
-    // transitively-scoped child tables (contacts, line prices, …) filter through
-    // their parent FK — see buildScopeFilter.
-    const result = await sql<Record<string, unknown>>`
+  await async.map(
+    exportable,
+    async (table) => {
+      const columns = exportableColumns(table);
+      // A skipCorrupted export leaves out the rows computeScopeExclusions decided on.
+      const exclusion = exclusions?.predicates.get(table.name);
+      const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
+      // Direct-scoped tables filter by their companyId/companyGroupId column;
+      // transitively-scoped child tables (contacts, line prices, …) filter through
+      // their parent FK — see buildScopeFilter.
+      const result = await sql<Record<string, unknown>>`
       SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
       FROM ${sql.id(table.name)}
       WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${exclusionFilter}
     `.execute(db);
 
-    if (result.rows.length === 0) {
+      if (result.rows.length === 0) {
+        dumped++;
+        await opts.onProgress?.({
+          phase: "tables",
+          done: dumped,
+          total: exportable.length
+        });
+        return; // empty tables get no file
+      }
+
+      const rows = result.rows.map((row) => {
+        const encoded: Record<string, unknown> = {};
+        for (const col of columns) {
+          encoded[col.name] = encodeValue(row[col.name], col);
+        }
+        return encoded;
+      });
+      const buf = await serializeTable(rows);
+      await writeBackupTable(client, companyId, name, table.name, buf);
+
+      tableManifest.push({
+        name: table.name,
+        rows: result.rows.length,
+        columns: columns.map((c) => c.name)
+      });
       dumped++;
       await opts.onProgress?.({
         phase: "tables",
         done: dumped,
         total: exportable.length
       });
-      return; // empty tables get no file
-    }
-
-    const rows = result.rows.map((row) => {
-      const encoded: Record<string, unknown> = {};
-      for (const col of columns) {
-        encoded[col.name] = encodeValue(row[col.name], col);
-      }
-      return encoded;
-    });
-    const buf = await serializeTable(rows);
-    await writeBackupTable(client, companyId, name, table.name, buf);
-
-    tableManifest.push({
-      name: table.name,
-      rows: result.rows.length,
-      columns: columns.map((c) => c.name)
-    });
-    dumped++;
-    await opts.onProgress?.({
-      phase: "tables",
-      done: dumped,
-      total: exportable.length
-    });
-  });
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
 
   // The company's storage files under its `{companyId}/` prefix (3D models,
   // item thumbnails, attachments), up to the total size guard.

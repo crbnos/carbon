@@ -7,6 +7,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuInfo, LuLoaderCircle } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { path } from "~/utils/path";
 import { AREA_LABELS, BACKUP_SUMMARY_GROUPS } from "../../backups.areas";
 
 // "i" popover with a compact table of how much of what a backup carries.
@@ -33,7 +34,7 @@ export function BackupContentsInfo() {
       onOpenChange={(o) => {
         setOpen(o);
         if (o && !loaded && summary.state === "idle") {
-          summary.load("/api/settings/backup-summary");
+          summary.load(path.to.api.backupSummary);
         }
       }}
     >

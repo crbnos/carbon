@@ -12,10 +12,11 @@ import {
   rewriteValueEditRowKeys,
   type ValueEdits
 } from "@carbon/documents/template";
+import { async } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { Catalog, ColumnInfo, TableInfo } from "./catalog";
-import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
+import { TABLE_CONCURRENCY } from "./concurrency";
 import type { CompanyBackup } from "./format";
 import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "./id-refs";
 import {
@@ -209,9 +210,8 @@ export async function loadSubstrateIds(
   }
 
   const result = new Map<string, Set<unknown>>();
-  await mapWithConcurrency(
+  await async.map(
     [...wanted.keys()],
-    TABLE_CONCURRENCY,
     async (refTable) => {
       const { scopeColumn, ids } = wanted.get(refTable)!;
       const idList = [...ids];
@@ -223,7 +223,8 @@ export async function loadSubstrateIds(
         AND ${sql.id("id")} IN (${sql.join(idList.map((v) => sql`${v}`))})
     `.execute(db);
       result.set(refTable, new Set(present.rows.map((r) => r.id)));
-    }
+    },
+    { concurrency: TABLE_CONCURRENCY }
   );
   return result;
 }

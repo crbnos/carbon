@@ -43,7 +43,6 @@
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_ELEMENT_LIST_COLUMNS has no PROJECT_ELEMENT_PAGING",
   "list-select-covers-columns::apps/erp/app/modules/service/service.service.ts::SERVICE_JOB_LIST_COLUMNS",
   "list-select-covers-columns::apps/erp/app/modules/service/service.service.ts::SERVICE_JOB_LIST_COLUMNS has no SERVICE_JOB_PAGING",
-  "module-shape::settings::extra-service:backups.service.ts",
   "module-shape::shared::extra-models:imports.models.ts",
   "module-shape::shared::missing:ui",
   "no-derived-percent-column::20241210214820_purchasing-redux.sql::ALTER TABLE \"purchaseInvoiceLine\" ADD COLUMN \"taxPercent\" NUMERIC(10,5) GENERATED ALWAYS AS (",

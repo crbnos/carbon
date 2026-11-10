@@ -2,28 +2,33 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompanyExportRun } from "~/modules/settings/backups.service";
-import { canManageBackups } from "~/modules/settings/settings.service";
+import {
+  getCompanyExportRun,
+  requireBackupAccess
+} from "~/modules/settings/settings.service";
 
-// Polled by the export progress modal (and the in-progress list row) for live
-// phase/done/total. One marker per company: the export job writes it while
-// running, clears it on success and flips it to "failed" on error — so a null
-// `status` means the run hasn't written its first heartbeat yet OR has finished;
-// the modal uses the backup list appearing to confirm completion.
+// Polled by the export progress modal for live phase/done/total. The job writes
+// one marker per company while running, clears it on success and flips it to
+// "failed" on error, so a null `status` means no heartbeat yet OR finished; the
+// modal uses the backup appearing in the list to confirm completion. A read
+// error answers "unreadable", which the modal treats as "keep polling".
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
-    update: "settings"
-  });
-  if (!(await canManageBackups(client, companyId, email)))
-    throw new Response("Not found", { status: 404 });
-
-  const run = await getCompanyExportRun(client, companyId);
-  return {
-    status: run.data?.status ?? null,
-    progress: run.data?.progress ?? null,
-    startedAt: run.data?.startedAt ?? null,
-    error: run.data?.error ?? null
-  };
+  const { client, companyId } = await requireBackupAccess(request);
+  try {
+    const run = await getCompanyExportRun(client, companyId);
+    return {
+      status: run?.status ?? null,
+      progress: run?.progress ?? null,
+      startedAt: run?.startedAt ?? null,
+      error: run?.error ?? null
+    };
+  } catch {
+    return {
+      status: "unreadable" as const,
+      progress: null,
+      startedAt: null,
+      error: null
+    };
+  }
 }

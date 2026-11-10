@@ -19,6 +19,7 @@ import {
   toast
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ChangeEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -28,6 +29,7 @@ import {
   LuUpload
 } from "react-icons/lu";
 import { UploadProgress } from "~/components/UploadProgress";
+import { path } from "~/utils/path";
 import { uploadToSignedUrlWithProgress } from "~/utils/signed-upload";
 import { formatBackupDate, formatBackupName } from "./format";
 
@@ -47,6 +49,7 @@ export function BackupSourcePicker({
   backups: { name: string; label: string | null; exportedAt: string | null }[];
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const revalidator = useRevalidator();
   const [value, setValue] = useControlField<string>("source");
   const [open, setOpen] = useState(false);
@@ -56,11 +59,9 @@ export function BackupSourcePicker({
   const current = value ?? "";
 
   const label = useMemo(() => {
-    if (current.startsWith("backup:")) {
-      const match = backups.find((b) => `backup:${b.name}` === current);
-      return match ? match.label || formatBackupName(match.name) : t`Backup`;
-    }
-    return "";
+    if (!current) return "";
+    const match = backups.find((b) => b.name === current);
+    return match ? match.label || formatBackupName(match.name) : t`Backup`;
   }, [current, backups, t]);
 
   const onUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +93,7 @@ export function BackupSourcePicker({
         intent: "unpack",
         path
       });
-      setValue(`backup:${name}`);
+      setValue(name);
       toast.success(t`Backup uploaded`);
       revalidator.revalidate();
     } catch (err) {
@@ -141,7 +142,7 @@ export function BackupSourcePicker({
                       key={b.name}
                       value={`backup ${b.name}`}
                       onSelect={() => {
-                        setValue(`backup:${b.name}`);
+                        setValue(b.name);
                         setOpen(false);
                       }}
                     >
@@ -149,7 +150,7 @@ export function BackupSourcePicker({
                       <span className="flex flex-col">
                         <span>{b.label || formatBackupName(b.name)}</span>
                         <span className="text-xs text-muted-foreground">
-                          {formatBackupDate(b.exportedAt, false)}
+                          {formatBackupDate(b.exportedAt, locale, false)}
                         </span>
                       </span>
                     </CommandItem>
@@ -199,7 +200,7 @@ async function postUploadIntent<T>(fields: Record<string, string>): Promise<T> {
   for (const [key, value] of Object.entries(fields)) {
     formData.append(key, value);
   }
-  const res = await fetch("/api/settings/backup-upload", {
+  const res = await fetch(path.to.api.backupUpload, {
     method: "POST",
     body: formData
   });

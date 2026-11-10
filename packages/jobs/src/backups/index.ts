@@ -11,6 +11,26 @@ export {
   reportBackupCompatibility
 } from "./compatibility";
 export { rebuildDerivedGroups } from "./derived-groups";
-export type { Manifest } from "./format";
-export { purgeScopeViolations } from "./scope";
-export { listBucketFilesRecursive, removeBucketPrefix } from "./storage";
+export {
+  backupDir,
+  isSnapshotName,
+  type Manifest,
+  newBackupName
+} from "./format";
+export {
+  EXPORT_INTEGRATION,
+  type ExportRunMeta,
+  type JobProgress,
+  RESTORE_INTEGRATION,
+  type RestoreRunMeta,
+  type RowsByTable,
+  type RunStatus,
+  TEMPLATE_INTEGRATION,
+  type TemplateRunMeta
+} from "./runs";
+export { purgeScopeViolations, type ScopeViolation } from "./scope";
+export {
+  listBackups,
+  listBucketFilesRecursive,
+  removeBucketPrefix
+} from "./storage";
