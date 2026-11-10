@@ -857,6 +857,9 @@ msgstr "विवरण"
 msgid "Details"
 msgstr "विवरण"
 
+msgid "Discard"
+msgstr "त्यागें"
+
 msgid "Dismiss"
 msgstr "खारिज करें"
 

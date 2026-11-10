@@ -857,6 +857,9 @@ msgstr "설명"
 msgid "Details"
 msgstr "상세 정보"
 
+msgid "Discard"
+msgstr "폐기"
+
 msgid "Dismiss"
 msgstr "닫기"
 

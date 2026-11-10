@@ -78,6 +78,9 @@ const ModalOverlay = forwardRef<
       // Content marked `data-instant` (opened by a keyboard shortcut) opens
       // and closes with no fade on desktop, and so does its backdrop.
       "md:[&:has(>[data-instant])]:!animate-none",
+      // Content marked `data-clear-backdrop` leaves the page behind it
+      // undimmed (a settings pane that previews the page's look).
+      "[&:has(>[data-clear-backdrop])]:bg-transparent [&:has(>[data-clear-backdrop])]:backdrop-blur-none",
 
       className
     )}

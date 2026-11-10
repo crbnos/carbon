@@ -857,6 +857,9 @@ msgstr "Opis"
 msgid "Details"
 msgstr "Szczegóły"
 
+msgid "Discard"
+msgstr "Odrzuć"
+
 msgid "Dismiss"
 msgstr "Odrzuć"
 

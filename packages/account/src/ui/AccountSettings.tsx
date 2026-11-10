@@ -93,6 +93,8 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
       <ModalContent
         size="xxlarge"
         aria-describedby={undefined}
+        // Appearance previews a theme on the page, so the page stays clear.
+        data-clear-backdrop={tab === "appearance" ? "" : undefined}
         // Start on the pane it opened to, not the first tab (Profile).
         onOpenAutoFocus={(event) => {
           if (event.defaultPrevented) return;
