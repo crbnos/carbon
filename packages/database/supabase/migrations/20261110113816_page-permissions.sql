@@ -2514,6 +2514,21 @@ CREATE POLICY "INSERT" ON "public"."inspectionDocument" FOR INSERT WITH CHECK ("
 CREATE POLICY "UPDATE" ON "public"."inspectionDocument" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inspectionDocument" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_delete'))::text[]));
 
+-- inspectionDocumentParameter
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'inspectionDocumentParameter' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'inspectionDocumentParameter');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."inspectionDocumentParameter" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."inspectionDocumentParameter" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."inspectionDocumentParameter" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."inspectionDocumentParameter" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."inspectionDocumentParameter" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_delete'))::text[]));
+
 -- inspectionFeature
 DO $authz$
 DECLARE p record;
@@ -2586,6 +2601,21 @@ CREATE POLICY "SELECT" ON "public"."inspectionSamplingPlan" FOR SELECT USING ("c
 CREATE POLICY "INSERT" ON "public"."inspectionSamplingPlan" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_create'))::text[]));
 CREATE POLICY "UPDATE" ON "public"."inspectionSamplingPlan" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."inspectionSamplingPlan" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspectionPlans_delete'))::text[]));
+
+-- inspectionTrackedEntity
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'inspectionTrackedEntity' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'inspectionTrackedEntity');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."inspectionTrackedEntity" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."inspectionTrackedEntity" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['quality']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."inspectionTrackedEntity" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."inspectionTrackedEntity" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."inspectionTrackedEntity" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('quality.inspections_delete'))::text[]));
 
 -- integrationConnection
 DO $authz$

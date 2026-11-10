@@ -211,6 +211,16 @@ import {
   InputOTPSeparator,
   InputOTPSlot
 } from "./InputOTP";
+import type {
+  InspectionParameter,
+  InspectionPlanTab
+} from "./InspectionPlanPanes";
+import {
+  hasWorkInstruction,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs
+} from "./InspectionPlanPanes";
 import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
@@ -442,6 +452,8 @@ export type {
   DateTimeProps,
   ExpiredEntityPolicy,
   InputProps,
+  InspectionParameter,
+  InspectionPlanTab,
   JSONContent,
   MenuItemShortcut,
   Modifier,
@@ -614,6 +626,7 @@ export {
   HStack,
   HTML,
   hasOpenDialog,
+  hasWorkInstruction,
   IconButton,
   Input,
   InputGroup,
@@ -625,6 +638,9 @@ export {
   InputOTPSlot,
   InputRightAddon,
   InputRightElement,
+  InspectionPlanInstructions,
+  InspectionPlanParameters,
+  InspectionPlanTabs,
   isBareKeyForAnotherControl,
   isEditableTarget,
   isInsideTopmostDialog,

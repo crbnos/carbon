@@ -1415,6 +1415,8 @@
   "20261106195705_legacy-deposit-refund-lock-order.sql",
   "20261106203716_supplier-prepayment-refund-currencies.sql",
   "20261106213428_backflush-skips-non-inventory.sql",
+  "20261109184914_manual-inspection-rls.sql",
+  "20261109200419_inspection-plan-parameters-rls.sql",
   "20261109234253_item-tracking-type-change.sql",
   "20261110041000_inspection-hold-enums.sql",
   "20261110041024_inspection-hold.sql",

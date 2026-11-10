@@ -335,6 +335,14 @@ export const CUSTOMER_CONTACTS = [
     lastName: "Boone",
     email: "tboone@wabashindustrial.com",
     title: "Category Buyer"
+  },
+  {
+    customer: "Wabash Industrial Supply",
+    firstName: "Nina",
+    lastName: "Castellano",
+    email: "ncastellano@wabashindustrial.com",
+    title: "Plant Engineer",
+    sharesLocation: true as const
   }
 ];
 

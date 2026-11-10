@@ -54,7 +54,7 @@ import {
   setInspectionRelease,
   withInspectionRelease
 } from "@carbon/database/quality";
-import { inOrder, many, single } from "@carbon/database/rows";
+import { inOrder, many, newIds, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { trigger } from "@carbon/jobs";
@@ -85,6 +85,7 @@ import type {
   gaugeCalibrationStatus,
   gaugeRole,
   gaugeTypeValidator,
+  InspectionDocumentStatus,
   inspectionDocumentSamplingValidator,
   inspectionDocumentValidator,
   issueTypeValidator,
@@ -2433,7 +2434,9 @@ export async function getInspections(
   let query = client
     .from("inspection")
     .select(
-      "*, item(readableId, name), supplier(name), inspectionSample(status)",
+      // The measurement count lets the row menu offer Delete only on a lot
+      // that recorded nothing, as the server requires.
+      "*, item(readableId, name), supplier(name), workCenter(name), inspectionSample(status), inspectionMeasurement(count)",
       { count: listCount(args) }
     )
     .eq("companyId", companyId);
@@ -2513,6 +2516,46 @@ export async function getInspectionTrackedEntities(
     .from("trackedEntity")
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
+    .eq("companyId", companyId);
+}
+
+// The tracked entities of an item a manual inspection may take: Available or
+// On Hold (a manual inspection holds what it inspects, and releases or rejects
+// it at the verdict).
+// Every unit, not the first 1,000: the New Inspection drawer searches them in
+// the browser, so a cut list would hide units with no sign of it. Paged in
+// `readableId, id` order so the pages neither overlap nor skip a row.
+export async function getInspectableTrackedEntities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return fetchAllFromTable<{
+    id: string;
+    readableId: string | null;
+    quantity: number;
+    status: Database["public"]["Enums"]["trackedEntityStatus"];
+  }>(client, "trackedEntity", "id, readableId, quantity, status", (query) =>
+    query
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .in("status", ["Available", "On Hold"])
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+  );
+}
+
+// The tracked entities a manual inspection covers (Receipt lots find theirs
+// through the receipt line: getInspectionTrackedEntities).
+export async function getManualInspectionTrackedEntities(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionTrackedEntity")
+    .select("trackedEntity(*)")
+    .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
 }
 
@@ -2675,18 +2718,22 @@ function fileNameFromPath(storagePath?: string | null) {
 }
 
 function mapInspectionDocument(row: Record<string, unknown>) {
-  const drawingNumber = (row.drawingNumber as string | null) ?? null;
+  const planName = (row.name as string | null) ?? null;
   return {
     id: String(row.id),
-    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
+    name: String(planName ?? row.fileName ?? "Untitled Diagram"),
     companyId: String(row.companyId),
     partId: (row.partId as string | null) ?? null,
+    version: Number(row.version ?? 0),
+    status: (row.status as InspectionDocumentStatus | null) ?? "Draft",
+    rootInspectionDocumentId:
+      (row.rootInspectionDocumentId as string | null) ?? null,
     createdBy: String(row.createdBy),
     updatedBy: (row.updatedBy as string | null) ?? null,
     createdAt: String(row.createdAt),
     updatedAt: (row.updatedAt as string | null) ?? null,
     content: {
-      drawingNumber,
+      name: planName,
       pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
       annotations: [],
       features: []
@@ -2713,12 +2760,14 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       samplingInspectionLevel:
         (row.samplingInspectionLevel as string | null) ?? null,
       samplingSeverity: (row.samplingSeverity as string | null) ?? null
-    }
+    },
+    // Rich text (Tiptap JSON) the inspector reads on every lot of the plan.
+    workInstruction: (row.workInstruction as Json | null) ?? null
   };
 }
 
 export const INSPECTION_DOCUMENTS_PAGING: Paging = {
-  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+  defaultSorts: [{ column: "name", ascending: true }]
 };
 
 export async function getInspectionDocuments(
@@ -2733,7 +2782,7 @@ export async function getInspectionDocuments(
 
   if (args?.search) {
     query = query.or(
-      searchFilter(["drawingNumber", "fileName", "partReadableId"], args.search)
+      searchFilter(["name", "fileName", "partReadableId"], args.search)
     );
   }
 
@@ -2744,10 +2793,11 @@ export async function getInspectionDocuments(
   const result = await query;
 
   return {
-    // The cursor reads the default sort column from the row.
+    // The cursor reads the default sort column from the row, so `name` is the
+    // stored value here, not mapInspectionDocument's file-name fallback.
     data: (result.data ?? []).map((row: Record<string, unknown>) => ({
       ...mapInspectionDocument(row),
-      drawingNumber: (row.drawingNumber as string | null) ?? null
+      name: (row.name as string | null) ?? null
     })),
     count: result.count ?? 0,
     error: result.error
@@ -2758,11 +2808,19 @@ export const INSPECTION_PLAN_PARTS_PAGING: Paging = {
   defaultSorts: [{ column: "partReadableId", ascending: true }]
 };
 
-/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view). */
+/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view): its
+ *  latest version, with every version of the plan. */
 export type InspectionPlanSummary = {
   id: string;
   name: string | null;
   modelUploadId: string | null;
+  version: number;
+  status: InspectionDocumentStatus;
+  versions: Array<{
+    id: string;
+    version: number;
+    status: InspectionDocumentStatus;
+  }>;
   createdBy: string;
   createdAt: string;
 };
@@ -2807,10 +2865,11 @@ export async function getInspectionDocumentsForItem(
 ) {
   return client
     .from("inspectionDocument")
-    .select("id, fileName, drawingNumber, version")
+    .select("id, fileName, name, version, status")
     .eq("companyId", companyId)
     .eq("partId", itemId)
-    .order("updatedAt", { ascending: false, nullsFirst: false });
+    .order("name", { ascending: true })
+    .order("version", { ascending: false });
 }
 
 export async function getInspectionDocument(
@@ -2977,11 +3036,11 @@ const readKey = (value: unknown) =>
   );
 
 /**
- * When an inspection plan is created without a drawing number, fall back to the
- * part's readableIdWithRevision. If a plan with that drawing number already
- * exists for the company, append " (1)", " (2)", etc. until it is unique.
+ * When an inspection plan is created without a name, fall back to the part's
+ * readableIdWithRevision. If a plan with that name already exists for the
+ * company, append " (1)", " (2)", etc. until it is unique.
  */
-async function resolveInspectionDocumentDrawingNumber(
+async function resolveInspectionDocumentName(
   client: SupabaseClient<Database>,
   companyId: string,
   partId: string
@@ -2998,13 +3057,13 @@ async function resolveInspectionDocumentDrawingNumber(
 
   const existingResult = await client
     .from("inspectionDocument")
-    .select("drawingNumber")
+    .select("name")
     .eq("companyId", companyId)
-    .not("drawingNumber", "is", null);
+    .not("name", "is", null);
 
   const taken = new Set(
     (existingResult.data ?? [])
-      .map((row) => row.drawingNumber)
+      .map((row) => row.name)
       .filter((value): value is string => Boolean(value))
   );
 
@@ -3042,7 +3101,7 @@ export async function upsertInspectionDocument(
   const {
     id,
     partId,
-    drawingNumber,
+    name,
     pdfUrl,
     pageCount,
     defaultPageWidth,
@@ -3083,8 +3142,8 @@ export async function upsertInspectionDocument(
         updatedBy: updatedBy ?? createdBy,
         updatedAt: datetime.timestamp()
       };
-    if (drawingNumber !== undefined) {
-      updatePayload.drawingNumber = drawingNumber ?? null;
+    if (name !== undefined) {
+      updatePayload.name = name ?? null;
     }
     if (partId !== undefined) {
       updatePayload.partId = partId;
@@ -3104,13 +3163,16 @@ export async function upsertInspectionDocument(
       updatePayload.defaultPageHeight = defaultPageHeight;
     }
 
+    // Only a Draft version is editable; a locked one matches no row and
+    // comes back as no data.
     return client
       .from("inspectionDocument")
       .update(updatePayload)
       .eq("id", id)
       .eq("companyId", companyId)
+      .eq("status", "Draft")
       .select("id")
-      .single();
+      .maybeSingle();
   }
 
   if (!companyId) {
@@ -3120,16 +3182,16 @@ export async function upsertInspectionDocument(
     };
   }
 
-  const resolvedDrawingNumber = drawingNumber?.trim()
-    ? drawingNumber.trim()
-    : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
+  const resolvedName = name?.trim()
+    ? name.trim()
+    : await resolveInspectionDocumentName(client, companyId, partId);
 
   return client
     .from("inspectionDocument")
     .insert({
       companyId,
       partId,
-      drawingNumber: resolvedDrawingNumber ?? null,
+      name: resolvedName ?? null,
       version: 0,
       ...(storagePath
         ? {
@@ -3149,45 +3211,460 @@ export async function upsertInspectionDocument(
     .single();
 }
 
+/**
+ * Deletes one version of an inspection plan, in one transaction. Refused
+ * (`refused`, nothing deleted) when a lot was inspected against the version:
+ * the delete would cascade to the lot's characteristics and recorded
+ * readings. When it is the first version, its lowest remaining version
+ * becomes the plan's root so the others stay one plan. Returns the drawing's
+ * storage path only when no other version holds the same file, so the caller
+ * never removes a PDF that another version still shows.
+ */
 export async function deleteInspectionDocument(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
-) {
-  const existingResult = await client
-    .from("inspectionDocument")
-    .select("*")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
+): Promise<{ storagePath: string | null } | { refused: string } | null> {
+  return withTransaction(db, async (trx) => {
+    const plan = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "storagePath", "rootInspectionDocumentId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!plan) return null;
 
-  if (!existingResult.data) {
-    return {
-      data: null,
-      error: { message: "Inspection plan not found" }
-    };
-  }
-
-  const storagePath =
-    (existingResult.data.storagePath as string | null) ?? null;
-
-  const deleteResult = await requireAffected(
-    client
-      .from("inspectionDocument")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId)
+    // The row lock above conflicts with the key-share lock a new lot's
+    // foreign key takes, so no lot can name the version before the delete.
+    const inspected = await trx
+      .selectFrom("inspection")
       .select("id")
-  );
+      .where("inspectionDocumentId", "=", id)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst();
+    if (inspected) {
+      return {
+        refused:
+          "This plan version has inspections, so it cannot be deleted. Publish a new version to replace it."
+      };
+    }
 
-  if (deleteResult.error) {
-    return { data: null, error: deleteResult.error };
+    if (plan.rootInspectionDocumentId === null) {
+      const next = await trx
+        .selectFrom("inspectionDocument")
+        .select("id")
+        .where("rootInspectionDocumentId", "=", id)
+        .where("companyId", "=", companyId)
+        .orderBy("version", "asc")
+        .orderBy("createdAt", "asc")
+        .limit(1)
+        .executeTakeFirst();
+      if (next) {
+        await trx
+          .updateTable("inspectionDocument")
+          .set({ rootInspectionDocumentId: next.id })
+          .where("rootInspectionDocumentId", "=", id)
+          .where("id", "!=", next.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .updateTable("inspectionDocument")
+          .set({ rootInspectionDocumentId: null })
+          .where("id", "=", next.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+
+    await trx
+      .deleteFrom("inspectionDocument")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    if (!plan.storagePath) return { storagePath: null };
+    const shared = await trx
+      .selectFrom("inspectionDocument")
+      .select("id")
+      .where("storagePath", "=", plan.storagePath)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst();
+    return { storagePath: shared ? null : plan.storagePath };
+  });
+}
+
+/** Every version of the plan `id` belongs to, newest first. */
+export async function getInspectionDocumentVersions(
+  client: SupabaseClient<Database>,
+  plan: { id: string; rootInspectionDocumentId: string | null },
+  companyId: string
+) {
+  const root = plan.rootInspectionDocumentId ?? plan.id;
+  return client
+    .from("inspectionDocument")
+    .select("id, name, fileName, version, status")
+    .eq("companyId", companyId)
+    .or(`id.eq.${root},rootInspectionDocumentId.eq.${root}`)
+    .order("version", { ascending: false });
+}
+
+/**
+ * The refusal for a write to an inspection plan version that is not a Draft,
+ * else null. Active and Archived versions are what lots were inspected
+ * against, so they never change: a change is a new version.
+ */
+export async function inspectionDocumentLockRefusal(
+  ctx: ServiceContext,
+  id: string
+) {
+  const plan = await ctx.asSystem.pg
+    .selectFrom("inspectionDocument")
+    .select("status")
+    .where("id", "=", id)
+    .where("companyId", "=", ctx.company.id)
+    .executeTakeFirst();
+  if (!plan) {
+    return ctx.error("notFound", "The inspection plan could not be found");
   }
+  if (plan.status !== "Draft") {
+    return ctx.error(
+      "rule",
+      `This inspection plan version is ${plan.status}. Make a new version to change it.`
+    );
+  }
+  return null;
+}
 
-  return {
-    data: { storagePath },
-    error: null
-  };
+/**
+ * Why a write of plan `id` guarded on `status = 'Draft'` changed no row: the
+ * version's lock refusal, else that it changed under the caller.
+ */
+export async function inspectionDocumentWriteRefusal(
+  ctx: ServiceContext,
+  id: string
+) {
+  return (
+    (await inspectionDocumentLockRefusal(ctx, id)) ??
+    ctx.error(
+      "conflict",
+      "The inspection plan changed. Reload it and try again."
+    )
+  );
+}
+
+/**
+ * Records a staged model and makes it the model of plan `id`, in one
+ * transaction: the plan is locked and checked (a Draft with no drawing and no
+ * model) before the `modelUpload` row goes in, so a concurrent attach or a
+ * version locked since rolls the row back. The row's insert queues
+ * `model-optimize` (`queue_model_pipeline`), which goes out at commit only, so
+ * a refused attach starts no job. The row is linked to no item: the model
+ * belongs to the plan.
+ */
+export async function attachModelToInspectionDocument(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    modelId: string;
+    path: string;
+    name: string;
+    size: number;
+  }
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "hasDrawing" }
+  | { ok: false; reason: "locked"; status: string }
+> {
+  const { id, companyId, userId, modelId, path, name, size } = args;
+  return withTransaction(db, async (trx) => {
+    const plan = await trx
+      .selectFrom("inspectionDocument")
+      .select(["status", "storagePath", "modelUploadId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!plan) return { ok: false, reason: "notFound" } as const;
+    if (plan.status !== "Draft") {
+      return { ok: false, reason: "locked", status: plan.status } as const;
+    }
+    if (plan.storagePath || plan.modelUploadId) {
+      return { ok: false, reason: "hasDrawing" } as const;
+    }
+
+    await trx
+      .insertInto("modelUpload")
+      .values({
+        id: modelId,
+        modelPath: path,
+        name,
+        size,
+        // As `insertModelUpload`: the as-uploaded size and path stay fixed
+        // while the optimiser repoints `size` and `modelPath`.
+        originalSize: size,
+        originalPath: path,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    await trx
+      .updateTable("inspectionDocument")
+      .set({
+        modelUploadId: modelId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { ok: true } as const;
+  });
+}
+
+/**
+ * Makes a new Draft version of an inspection plan as a copy of `copyFromId`,
+ * in one transaction: the plan row (numbered one past the plan's highest
+ * version), its characteristics, balloons and parameters. The copy shares the
+ * drawing file and the model. Returns the new version's id.
+ */
+export async function copyInspectionDocumentAsVersion(
+  db: Kysely<KyselyDatabase>,
+  args: { copyFromId: string; companyId: string; userId: string }
+): Promise<{ id: string; version: number } | null> {
+  const { copyFromId, companyId, userId } = args;
+  return withTransaction(db, async (trx) => {
+    const source = await trx
+      .selectFrom("inspectionDocument")
+      .selectAll()
+      .where("id", "=", copyFromId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!source) return null;
+
+    const root = source.rootInspectionDocumentId ?? source.id;
+    // The root's lock numbers concurrent copies one after the other.
+    await trx
+      .selectFrom("inspectionDocument")
+      .select("id")
+      .where("id", "=", root)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    const highest = await trx
+      .selectFrom("inspectionDocument")
+      .select((eb) => eb.fn.max("version").as("version"))
+      .where("companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([eb("id", "=", root), eb("rootInspectionDocumentId", "=", root)])
+      )
+      .executeTakeFirst();
+    const version = Number(highest?.version ?? source.version) + 1;
+
+    const [planId] = await newIds(trx, "idc", 1);
+    await trx
+      .insertInto("inspectionDocument")
+      .values({
+        id: planId!,
+        companyId,
+        partId: source.partId,
+        name: source.name,
+        version,
+        status: "Draft",
+        rootInspectionDocumentId: root,
+        fileName: source.fileName,
+        storagePath: source.storagePath,
+        pageCount: source.pageCount,
+        defaultPageWidth: source.defaultPageWidth,
+        defaultPageHeight: source.defaultPageHeight,
+        modelUploadId: source.modelUploadId,
+        uploadedBy: source.uploadedBy,
+        samplingPlanType: source.samplingPlanType,
+        samplingSampleSize: source.samplingSampleSize,
+        samplingPercentage: source.samplingPercentage,
+        samplingAql: source.samplingAql,
+        samplingInspectionLevel: source.samplingInspectionLevel,
+        samplingSeverity: source.samplingSeverity,
+        workInstruction: source.workInstruction,
+        createdBy: userId
+      })
+      .execute();
+
+    const [features, balloons, parameters] = await Promise.all([
+      trx
+        .selectFrom("inspectionFeature")
+        .selectAll()
+        .where("inspectionDocumentId", "=", copyFromId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("balloon")
+        .selectAll()
+        .where("inspectionDocumentId", "=", copyFromId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("inspectionDocumentParameter")
+        .selectAll()
+        .where("inspectionDocumentId", "=", copyFromId)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+
+    const featureIds = await newIds(trx, "ift", features.length);
+    const featureIdMap = new Map(
+      features.map((feature, index) => [feature.id, featureIds[index]!])
+    );
+    if (features.length > 0) {
+      await trx
+        .insertInto("inspectionFeature")
+        .values(
+          features.map(
+            ({ id, createdAt, updatedAt, updatedBy, createdBy, ...rest }) => ({
+              ...rest,
+              id: featureIdMap.get(id)!,
+              inspectionDocumentId: planId!,
+              companyId,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+    }
+
+    const balloonIds = await newIds(trx, "bbn", balloons.length);
+    if (balloons.length > 0) {
+      await trx
+        .insertInto("balloon")
+        .values(
+          balloons.map(
+            (
+              { id, createdAt, updatedAt, updatedBy, createdBy, ...rest },
+              index
+            ) => ({
+              ...rest,
+              id: balloonIds[index]!,
+              inspectionDocumentId: planId!,
+              // A balloon belongs to its characteristic, copied above.
+              inspectionFeatureId: featureIdMap.get(rest.inspectionFeatureId)!,
+              companyId,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+    }
+
+    const parameterIds = await newIds(trx, "idp", parameters.length);
+    if (parameters.length > 0) {
+      await trx
+        .insertInto("inspectionDocumentParameter")
+        .values(
+          parameters.map(
+            (
+              { id, createdAt, updatedAt, updatedBy, createdBy, ...rest },
+              index
+            ) => ({
+              ...rest,
+              id: parameterIds[index]!,
+              inspectionDocumentId: planId!,
+              companyId,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+    }
+
+    return { id: planId!, version };
+  });
+}
+
+/**
+ * Makes a version the plan's Active one, in one transaction: archives the
+ * version that was Active, activates this one, and moves the item Receipt
+ * assignments and method operations that name another version of the plan
+ * to it. Job operations, quote operations and lots keep their version.
+ */
+export async function activateInspectionDocumentVersion(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<{
+  id: string;
+  archivedIds: string[];
+  assignments: number;
+  methodOperations: number;
+} | null> {
+  const { id, companyId, userId } = args;
+  return withTransaction(db, async (trx) => {
+    const target = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "rootInspectionDocumentId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!target) return null;
+
+    const root = target.rootInspectionDocumentId ?? target.id;
+    const group = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "status"])
+      .where("companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([eb("id", "=", root), eb("rootInspectionDocumentId", "=", root)])
+      )
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+
+    const now = datetime.timestamp();
+    const otherIds = group.map((v) => v.id).filter((vId) => vId !== id);
+    const archivedIds = group
+      .filter((v) => v.id !== id && v.status === "Active")
+      .map((v) => v.id);
+
+    if (archivedIds.length > 0) {
+      await trx
+        .updateTable("inspectionDocument")
+        .set({ status: "Archived", updatedBy: userId, updatedAt: now })
+        .where("id", "in", archivedIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await trx
+      .updateTable("inspectionDocument")
+      .set({ status: "Active", updatedBy: userId, updatedAt: now })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    let assignments = 0;
+    let methodOperations = 0;
+    if (otherIds.length > 0) {
+      const movedAssignments = await trx
+        .updateTable("itemInspectionDocumentAssignment")
+        .set({ inspectionDocumentId: id, updatedBy: userId, updatedAt: now })
+        .where("inspectionDocumentId", "in", otherIds)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      assignments = Number(movedAssignments.numUpdatedRows);
+      const movedOperations = await trx
+        .updateTable("methodOperation")
+        .set({ inspectionDocumentId: id })
+        .where("inspectionDocumentId", "in", otherIds)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      methodOperations = Number(movedOperations.numUpdatedRows);
+    }
+
+    return { id, archivedIds, assignments, methodOperations };
+  });
 }
 
 function mapInspectionFeature(row: Record<string, unknown>) {
@@ -3359,6 +3836,106 @@ export async function getInspectionPlan(
   };
 }
 
+export async function getInspectionDocumentParameters(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocumentParameter")
+    .select("id, key, value, sortOrder")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .eq("companyId", companyId)
+    .order("sortOrder")
+    .order("id");
+}
+
+/**
+ * Make a plan's parameters exactly `parameters`, in that order: rows not sent
+ * are deleted, the rest upserted by the ids the editor minted. An id that is
+ * another plan's row is refused, so the whole save rolls back. Returns null,
+ * writing nothing, when the plan is not a Draft.
+ */
+export async function replaceInspectionDocumentParameters(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    parameters: { id: string; key: string; value: string }[];
+  }
+) {
+  const { inspectionDocumentId, companyId, userId, parameters } = args;
+  return withTransaction(db, async (trx) => {
+    // Locks the plan, so two saves of its parameters run one after the other
+    // and a publish cannot land between the status read and the writes.
+    const document = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "status"])
+      .where("id", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!document) throw new Error("Inspection plan not found");
+    if (document.status !== "Draft") return null;
+
+    const ids = parameters.map((p) => p.id);
+    let deletion = trx
+      .deleteFrom("inspectionDocumentParameter")
+      .where("inspectionDocumentId", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId);
+    if (ids.length > 0) deletion = deletion.where("id", "not in", ids);
+    await deletion.execute();
+
+    if (parameters.length > 0) {
+      const now = datetime.timestamp();
+      const written = await trx
+        .insertInto("inspectionDocumentParameter")
+        .values(
+          parameters.map((p, sortOrder) => ({
+            id: p.id,
+            inspectionDocumentId,
+            companyId,
+            key: p.key,
+            value: p.value,
+            sortOrder,
+            createdBy: userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns(["id", "companyId"])
+            .doUpdateSet((eb) => ({
+              key: eb.ref("excluded.key"),
+              value: eb.ref("excluded.value"),
+              sortOrder: eb.ref("excluded.sortOrder"),
+              updatedBy: userId,
+              updatedAt: now
+            }))
+            .where(
+              "inspectionDocumentParameter.inspectionDocumentId",
+              "=",
+              inspectionDocumentId
+            )
+        )
+        .returning("id")
+        .execute();
+      if (written.length !== parameters.length) {
+        throw new Error("A parameter id belongs to another inspection plan");
+      }
+    }
+
+    return trx
+      .selectFrom("inspectionDocumentParameter")
+      .select(["id", "key", "value", "sortOrder"])
+      .where("inspectionDocumentId", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId)
+      .orderBy("sortOrder")
+      .orderBy("id")
+      .execute();
+  });
+}
+
 export async function updateInspectionDocumentSampling(
   client: SupabaseClient<Database>,
   args: z.infer<typeof inspectionDocumentSamplingValidator> & {
@@ -3378,6 +3955,8 @@ export async function updateInspectionDocumentSampling(
       })
       .eq("id", inspectionDocumentId)
       .eq("companyId", companyId)
+      // Only a Draft version is editable: a locked one is not applied.
+      .eq("status", "Draft")
       .select("id")
   );
 }
@@ -6816,6 +7395,8 @@ export async function openInspectionNcr(
     );
   }
 
+  // A manual lot has no supplier or receipt line: it inspects stock on hand.
+  const isManual = insp.sourceDocument === "Manual";
   const supplierName = insp.supplier?.name ?? "supplier";
   const sourceReadableId = insp.sourceDocumentReadableId ?? "";
   const itemReadableId =
@@ -6841,7 +7422,7 @@ export async function openInspectionNcr(
 
   const created = await insertIssue(serviceRole, {
     name: issueTitle,
-    description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
+    description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${isManual ? "" : ` Supplier: ${supplierName}.`}${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
     priority: "Medium",
     source: "Internal",
     locationId,
@@ -6898,11 +7479,19 @@ export async function openInspectionNcr(
     .filter((id): id is string => Boolean(id));
   let lotEntityIds = args.trackedEntityIds;
   if (!lotEntityIds) {
-    const receiptLineEntities = await serviceRole
-      .from("trackedEntity")
-      .select("id")
-      .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
-      .eq("companyId", companyId);
+    // A receipt lot's entities hang off its receipt line; a manual lot lists
+    // its own.
+    const receiptLineEntities = isManual
+      ? await serviceRole
+          .from("inspectionTrackedEntity")
+          .select("id:trackedEntityId")
+          .eq("inspectionId", id)
+          .eq("companyId", companyId)
+      : await serviceRole
+          .from("trackedEntity")
+          .select("id")
+          .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+          .eq("companyId", companyId);
     if (receiptLineEntities.error) {
       return abandon(
         `${args.outcome}, but failed to read the lot for the NCR`,
@@ -7064,7 +7653,7 @@ export async function openInspectionNcr(
           id: issueId,
           nonConformanceId,
           title: issueTitle,
-          description: `Auto-created from inbound inspection ${inspectionReadableId || id}`,
+          description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId || id}`,
           severity: "Medium"
         }
       }),

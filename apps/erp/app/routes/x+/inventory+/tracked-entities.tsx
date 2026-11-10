@@ -6,6 +6,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { getBatchPropertyColumns } from "~/modules/inventory/inventory.service";
 import TrackedEntitiesTable from "~/modules/inventory/ui/Traceability/TrackedEntitiesTable";
 import type { Handle } from "~/utils/handle";
 import { trackedEntitiesList } from "~/utils/list-registry/inventory.server";
@@ -21,13 +22,18 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, trackedEntitiesList, {
     dataKey: "trackedEntities",
-    firstPage: async ({ api }) => {
-      const companySettings = await api.settings.getCompanySettings({});
+    firstPage: async ({ api, client, companyId }) => {
+      const [companySettings, batchPropertyColumns] = await Promise.all([
+        api.settings.getCompanySettings({}),
+        getBatchPropertyColumns(client, companyId)
+      ]);
       const inventoryShelfLife = companySettings.data?.inventoryShelfLife as {
         nearExpiryWarningDays?: number | null;
       } | null;
       return {
-        nearExpiryWarningDays: inventoryShelfLife?.nearExpiryWarningDays ?? null
+        nearExpiryWarningDays:
+          inventoryShelfLife?.nearExpiryWarningDays ?? null,
+        batchPropertyColumns: batchPropertyColumns.data ?? []
       };
     },
     // The shelf-life policy of each row's item, so the Expiry trace popover
@@ -70,8 +76,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function TraceabilityRoute() {
-  const { trackedEntities, count, infinite, nearExpiryWarningDays } =
-    useLoaderData<typeof loader>();
+  const {
+    trackedEntities,
+    count,
+    infinite,
+    nearExpiryWarningDays,
+    batchPropertyColumns
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -80,6 +91,7 @@ export default function TraceabilityRoute() {
         count={count}
         infinite={infinite}
         nearExpiryWarningDays={nearExpiryWarningDays ?? null}
+        batchPropertyColumns={batchPropertyColumns ?? []}
       />
     </VStack>
   );

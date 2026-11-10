@@ -610,13 +610,14 @@ function printSummary(ctx: Ctx, apps: AppId[], size: StackSize) {
     db: ctx.db,
     shared: ctx.mode === "shared"
   });
-  // Some non-interactive terminals (Conductor's run pane) report a width of
-  // 0, for which clack's box computes a negative repeat count and throws.
-  if (process.stdout.columns === 0) {
-    log.info(`Carbon dev — ${ctx.slug}`);
+  const title = `Carbon dev — ${ctx.slug}`;
+  // A terminal narrower than the title (Conductor's run pane can report 0 or a
+  // few columns) makes clack's box compute a negative repeat count and throw.
+  if ((process.stdout.columns ?? 80) < title.length + 8) {
+    log.info(title);
     for (const line of summary) log.message(line);
   } else {
-    box(summary.join("\n"), `Carbon dev — ${ctx.slug}`);
+    box(summary.join("\n"), title);
   }
 }
 

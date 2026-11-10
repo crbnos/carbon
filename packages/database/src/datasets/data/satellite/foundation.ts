@@ -302,6 +302,14 @@ export const CUSTOMER_CONTACTS = [
     lastName: "Lindqvist",
     email: "sofia@polarview.io",
     title: "CTO"
+  },
+  {
+    customer: "Apex Space Research",
+    firstName: "Lena",
+    lastName: "Marsh",
+    email: "lmarsh@apexresearch.edu",
+    title: "Integration Lab Manager",
+    sharesLocation: true as const
   }
 ];
 

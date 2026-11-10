@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110113817",
+  "schemaVersion": "20261110133830",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T12:55:47.122Z",
+  "exportedAt": "2026-11-10T19:30:00.926Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -2876,7 +2876,7 @@
         "id",
         "companyId",
         "partId",
-        "drawingNumber",
+        "name",
         "version",
         "storagePath",
         "fileName",
@@ -2894,7 +2894,26 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "modelUploadId"
+        "modelUploadId",
+        "status",
+        "rootInspectionDocumentId",
+        "workInstruction"
+      ]
+    },
+    {
+      "name": "inspectionDocumentParameter",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectionDocumentId",
+        "companyId",
+        "key",
+        "value",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3781,6 +3800,21 @@
         "createdAt",
         "updatedBy",
         "updatedAt"
+      ]
+    },
+    {
+      "name": "inspectionTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectionId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "previousStatus"
       ]
     },
     {
@@ -5539,7 +5573,9 @@
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
         "storageUnitId",
-        "acceptedQuantity"
+        "acceptedQuantity",
+        "workCenterId",
+        "assignee"
       ]
     },
     {

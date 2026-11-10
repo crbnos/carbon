@@ -2,45 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { storage } from "@carbon/files";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteInspectionDocument } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await authorize(request, {
-    "quality.inspectionPlans": "Full"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.quality.deleteInspectionDocument({
+    id: input.params.id
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const result = await deleteInspectionDocument(client, id, companyId);
-
-  if (result.error) {
-    throw redirect(
-      path.to.inspectionDocuments,
-      await flash(
-        request,
-        error(result.error, "Failed to delete inspection plan")
-      )
-    );
-  }
-
-  const storagePath = result.data?.storagePath;
-  if (storagePath) {
-    const serviceRole = await getCarbonServiceRole();
-    await storage(serviceRole).company(companyId).remove([storagePath]);
-  }
-
-  throw redirect(
-    path.to.inspectionDocuments,
-    await flash(request, success("Inspection plan deleted"))
-  );
+  return respond(args.request, result).redirect(path.to.inspectionDocuments, {
+    message: "Inspection plan deleted",
+    onError: path.to.inspectionDocument(input.params.id)
+  });
 }

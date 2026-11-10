@@ -10,6 +10,7 @@ import type {
   ContractSpec,
   CustomerAssetSpec,
   PriceBreak,
+  RentalAgreementSpec,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
@@ -1230,6 +1231,65 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
   }
 ];
 
+// Rental agreements over the fleet units (accounting FIXED_ASSETS "fleet-*").
+// The Active one is open-ended, so every line classifies as a Rental.
+export const RENTAL_AGREEMENTS: RentalAgreementSpec[] = [
+  {
+    key: "active",
+    customer: "Alpine Research Institute",
+    primaryContact: "Rahn",
+    contacts: [{ contact: "Weber", role: "Site contact" }],
+    status: "Active",
+    startOffset: -45,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-1",
+        rateUnit: "Month",
+        rate: 1450,
+        fairValue: 31900,
+        economicLifeMonths: 60,
+        deliveredOffset: -40
+      },
+      {
+        fixedAsset: "fleet-2",
+        rateUnit: "Month",
+        rate: 1450,
+        fairValue: 31900,
+        economicLifeMonths: 60
+      }
+    ],
+    charges: [
+      {
+        line: 1,
+        description: "Delivery and cell commissioning",
+        amount: 850,
+        dateOffset: -40
+      }
+    ]
+  },
+  {
+    key: "draft",
+    customer: "Cascade Integration Group",
+    primaryContact: "Aguilar",
+    status: "Draft",
+    startOffset: 14,
+    endOffset: 379,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-3",
+        rateUnit: "Month",
+        rate: 1450,
+        fairValue: 31900,
+        economicLifeMonths: 60
+      }
+    ]
+  }
+];
+
 export const roboticsSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1283,5 +1343,6 @@ export const roboticsSales: SalesData = {
   ],
   customerAssets: CUSTOMER_ASSETS,
   serviceLaborRates: { cost: 72, bill: 165 },
-  serviceJobs: SERVICE_JOBS
+  serviceJobs: SERVICE_JOBS,
+  rentalAgreements: RENTAL_AGREEMENTS
 };

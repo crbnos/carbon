@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import type { JSONContent } from "@carbon/react";
 import { ClientOnly, Spinner } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -19,6 +20,7 @@ import { useLoaderData } from "react-router";
 import {
   getBalloons,
   getInspectionDocument,
+  getInspectionDocumentParameters,
   getInspectionFeatures
 } from "~/modules/quality/quality.service";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
@@ -70,14 +72,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     balloonsResult,
     unitOfMeasuresResult,
     gaugeTypesResult,
-    companySettings
+    companySettings,
+    parametersResult
   ] = await Promise.all([
     getInspectionDocument(serviceRole, id, companyId),
     getInspectionFeatures(serviceRole, id),
     getBalloons(serviceRole, id),
     api.items.getUnitOfMeasuresList({}),
     api.quality.getGaugeTypesList({}),
-    api.settings.getCompanySettings({})
+    api.settings.getCompanySettings({}),
+    getInspectionDocumentParameters(serviceRole, id, companyId)
   ]);
 
   if (diagram.error) {
@@ -98,6 +102,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.inspectionDocuments);
   }
 
+  const versions = await api.quality.getInspectionDocumentVersions({ id });
+
   const features = featuresResult.data ?? [];
   const balloons = balloonsResult.data ?? [];
 
@@ -109,6 +115,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     balloons,
     unitOfMeasures,
     gaugeTypes: gaugeTypesResult.data ?? [],
+    parameters: parametersResult.data ?? [],
+    versions: versions.data ?? [],
     samplingStandard:
       ((companySettings.data as any)?.samplingStandard as
         | "ANSI_Z1_4"
@@ -123,6 +131,8 @@ export default function BalloonDetailRoute() {
     balloons,
     unitOfMeasures,
     gaugeTypes,
+    parameters,
+    versions,
     samplingStandard
   } = useLoaderData<typeof loader>();
   const content = diagram.content as InspectionDocumentContent | null;
@@ -154,9 +164,16 @@ export default function BalloonDetailRoute() {
               balloons={balloons}
               unitOfMeasures={unitOfMeasures}
               gaugeTypes={gaugeTypes}
+              parameters={parameters}
+              workInstruction={
+                (diagram.workInstruction as JSONContent | null) ?? null
+              }
               sampling={(diagram.sampling as SamplingRule | null) ?? null}
               samplingStandard={samplingStandard}
               model={diagram.model}
+              version={diagram.version}
+              status={diagram.status}
+              versions={versions}
             />
           </Suspense>
         )}

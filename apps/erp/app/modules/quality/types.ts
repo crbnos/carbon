@@ -232,6 +232,6 @@ export type BalloonFeature = {
 
 export type InspectionDocumentContent = {
   pdfUrl: string | null;
-  drawingNumber: string | null;
+  name: string | null;
   features: BalloonFeature[];
 };

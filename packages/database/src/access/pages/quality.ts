@@ -69,7 +69,8 @@ export const PAGES = [
       "inspection",
       "inspectionHistory",
       "inspectionMeasurement",
-      "inspectionSample"
+      "inspectionSample",
+      "inspectionTrackedEntity"
     ],
     paths: ["/x/quality/inspections", "/x/inspection/"]
   },
@@ -79,6 +80,7 @@ export const PAGES = [
     maxLevel: "Full",
     tables: [
       "inspectionDocument",
+      "inspectionDocumentParameter",
       "inspectionFeature",
       "inspectionSamplingPlan",
       "itemInspectionDocumentAssignment",

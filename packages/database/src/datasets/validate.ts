@@ -792,6 +792,9 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
   for (const asset of a.fixedAssets) {
     register("accounting.fixedAssets", `fixedAsset:${asset.key}`);
   }
+  for (const spec of dataset.sales.rentalAgreements) {
+    register("sales.rentalAgreements", `ra:${spec.key}`);
+  }
   seenBy.workflowRuns = count;
 
   register("planning.demandOrder", dataset.planning.demandOrder.ref);
@@ -1327,6 +1330,7 @@ export function foundation(ctx: ValidationCtx): void {
     ["sales.releasedOrders", dataset.sales.releasedOrders],
     ["sales.salesReturns", dataset.sales.salesReturns],
     ["sales.contracts", dataset.sales.contracts],
+    ["sales.rentalAgreements", dataset.sales.rentalAgreements],
     ["purchasing.rfqLines", dataset.purchasing.rfqLines],
     ["purchasing.rfqQuotes", dataset.purchasing.rfqQuotes],
     ["purchasing.lifecycleRfqs", dataset.purchasing.lifecycleRfqs],
@@ -2747,6 +2751,106 @@ function serviceJobs(ctx: ValidationCtx): void {
   }
 
   checkCoverage(fail, { serviceJob: statuses });
+}
+
+/** Rental agreements and their fleet units, by activation's own rules (ERP
+ *  `sales.service.ts`): fleet units only, one live line per unit, rate above 0. */
+export function rentals(ctx: ValidationCtx): void {
+  const { dataset, ix, fail, need, needCustomer } = ctx;
+  const fleet = new Map(
+    dataset.accounting.fixedAssets
+      .filter((asset) => asset.fleet !== undefined)
+      .map((asset) => [asset.key, asset])
+  );
+  const serials = new Set(
+    dataset.sales.customerAssets.map((a) => `${a.item}|${a.serial}`)
+  );
+  for (const asset of fleet.values()) {
+    const where = `accounting.fixedAssets "${asset.key}"`;
+    const unit = asset.fleet!;
+    need("item", where, unit.item);
+    if (ix.trackingByItem.get(unit.item) !== "Serial") {
+      fail(`${where}: fleet item "${unit.item}" is not serial-tracked`);
+    }
+    const serialKey = `${unit.item}|${unit.serial}`;
+    if (serials.has(serialKey)) fail(`${where}: duplicate serial`);
+    serials.add(serialKey);
+    if (asset.className !== "Rental Fleet") {
+      fail(`${where}: a fleet unit is in the "Rental Fleet" class`);
+    }
+    if (asset.status !== "Active") {
+      fail(`${where}: a fleet unit to rent is Active`);
+    }
+  }
+
+  const contactsOf = new Map<string, Set<string>>();
+  for (const cc of dataset.foundation.customerContacts) {
+    const names = contactsOf.get(cc.customer) ?? new Set<string>();
+    names.add(cc.lastName);
+    contactsOf.set(cc.customer, names);
+  }
+  const statuses = new Set<string>();
+  const rentedUnits = new Set<string>();
+  for (const spec of dataset.sales.rentalAgreements) {
+    const where = `sales.rentalAgreements "${spec.key}"`;
+    statuses.add(spec.status);
+    needCustomer(where, spec.customer);
+    const names = contactsOf.get(spec.customer) ?? new Set<string>();
+    const others = (spec.contacts ?? []).map((c) => c.contact);
+    for (const name of [spec.primaryContact, ...others]) {
+      if (!names.has(name)) {
+        fail(`${where}: "${name}" is no contact of "${spec.customer}"`);
+      }
+    }
+    if (others.includes(spec.primaryContact)) {
+      fail(`${where}: the primary contact is also in contacts`);
+    }
+    if (new Set(others).size !== others.length) {
+      fail(`${where}: a contact is listed twice`);
+    }
+    if (spec.endOffset !== undefined && spec.endOffset <= spec.startOffset) {
+      fail(`${where}: endOffset is not after startOffset`);
+    }
+    if (spec.lines.length === 0) fail(`${where}: no lines`);
+    for (const line of spec.lines) {
+      const lineWhere = `${where} line "${line.fixedAsset}"`;
+      if (!fleet.has(line.fixedAsset)) {
+        fail(`${lineWhere}: not a fleet unit (a fixed asset with fleet)`);
+      }
+      if (rentedUnits.has(line.fixedAsset)) {
+        fail(`${lineWhere}: the unit is on another live line`);
+      }
+      rentedUnits.add(line.fixedAsset);
+      if (line.rate <= 0) fail(`${lineWhere}: rate must be above 0`);
+      if (line.fairValue <= 0 || line.economicLifeMonths <= 0) {
+        fail(`${lineWhere}: fairValue and economicLifeMonths must be above 0`);
+      }
+      if (line.deliveredOffset !== undefined) {
+        if (spec.status !== "Active") {
+          fail(`${lineWhere}: only an Active agreement delivers a unit`);
+        }
+        if (
+          line.deliveredOffset < spec.startOffset ||
+          line.deliveredOffset > 0
+        ) {
+          fail(`${lineWhere}: delivered before the start or in the future`);
+        }
+      }
+    }
+    for (const charge of spec.charges ?? []) {
+      if (charge.line < 1 || charge.line > spec.lines.length) {
+        fail(
+          `${where}: a charge names line ${charge.line}, which does not exist`
+        );
+      }
+      if (charge.amount <= 0) fail(`${where}: a charge amount must be above 0`);
+    }
+  }
+  for (const status of ["Draft", "Active"]) {
+    if (!statuses.has(status)) {
+      fail(`sales.rentalAgreements: no "${status}" agreement`);
+    }
+  }
 }
 
 /**
@@ -4925,10 +5029,22 @@ export function inspections(ctx: ValidationCtx): void {
   const receiptPlanByItem = new Map<string, string>();
   const receiptLines = new Set<string>();
   const inspectedJobs = new Set<string>();
+  const manualEntities = new Set<string>();
+  const onHandEntity = new Map(
+    dataset.inventory.onHandTracked.flatMap((stock) =>
+      stock.entities.map(
+        (entity) =>
+          [entity.readableId, { ...entity, item: stock.item }] as const
+      )
+    )
+  );
   for (const insp of q.inspections) {
     const where = `quality.inspections "${insp.ref}"`;
     seenInspection.status.add(insp.status);
     seenInspection.source.add(insp.source);
+    if (insp.status === "Cancelled" && insp.source !== "Manual") {
+      fail(`${where}: only a manual lot can be Cancelled`);
+    }
 
     let features: InspectionFeatureSpec[] = [];
     let lotSize: number | undefined;
@@ -4943,11 +5059,7 @@ export function inspections(ctx: ValidationCtx): void {
         fail(`${where}: a second lot on the same receipt line`);
       }
       receiptLines.add(lineKey);
-      const plan = JSON.stringify([
-        insp.drawingNumber,
-        insp.aql,
-        insp.features
-      ]);
+      const plan = JSON.stringify([insp.name, insp.aql, insp.features]);
       const other = receiptPlanByItem.get(insp.item);
       if (other !== undefined && other !== plan) {
         fail(
@@ -4985,6 +5097,47 @@ export function inspections(ctx: ValidationCtx): void {
       }
       if (insp.features.length < 2) {
         fail(`${where}: needs at least 2 features`);
+      }
+    } else if (insp.source === "Manual") {
+      // Mirrors createManualInspection: entities of one item, none in another
+      // open lot. Seeded open, over entities already On Hold, so no other
+      // tier's view of their status changes.
+      if (insp.trackedEntities.length === 0) {
+        fail(`${where}: names no tracked entities`);
+      }
+      if (insp.samples.length > 0) {
+        fail(`${where}: a Pending lot has no recorded samples`);
+      }
+      const lotItems = new Set<string>();
+      for (const readableId of insp.trackedEntities) {
+        const entity = onHandEntity.get(readableId);
+        if (!entity) {
+          fail(`${where}: unknown onHandTracked entity "${readableId}"`);
+          continue;
+        }
+        lotItems.add(entity.item);
+        if ((entity.status ?? "Available") !== "On Hold") {
+          fail(
+            `${where}: "${readableId}" is ${entity.status ?? "Available"}, not On Hold`
+          );
+        }
+        // A cancelled lot no longer holds its entities.
+        if (insp.status === "Cancelled") continue;
+        if (manualEntities.has(readableId)) {
+          fail(`${where}: "${readableId}" is in a second open manual lot`);
+        }
+        manualEntities.add(readableId);
+      }
+      if (lotItems.size > 1) {
+        fail(`${where}: tracked entities of more than one item`);
+      }
+      if (
+        insp.workCenter !== undefined &&
+        !dataset.foundation.workCenters.some(
+          (wc) => wc.name === insp.workCenter
+        )
+      ) {
+        fail(`${where}: unknown work center "${insp.workCenter}"`);
       }
     } else {
       if (inspectedJobs.has(insp.job)) {
@@ -7908,6 +8061,7 @@ const RULES: Rule[] = [
   uniqueDocumentRefs,
   sales,
   fieldService,
+  rentals,
   purchasing,
   jobs,
   floor,

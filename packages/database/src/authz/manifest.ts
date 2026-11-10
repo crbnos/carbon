@@ -699,6 +699,7 @@ export const manifest = {
   industry: policies({ select: authenticated }),
   inspection: company(),
   inspectionDocument: company({ read: "employee" }),
+  inspectionDocumentParameter: company({ read: "employee" }),
   inspectionFeature: company({ read: "employee" }),
   inspectionHistory: company({
     update: false,
@@ -707,6 +708,7 @@ export const manifest = {
   inspectionMeasurement: company(),
   inspectionSample: company(),
   inspectionSamplingPlan: company(),
+  inspectionTrackedEntity: company(),
   integration: policies({ select: authenticated }),
   // Read-only to API roles: a user-written row could claim another company's Slack
   // team_id or point secretRef at someone else's vault secret. The server writes it

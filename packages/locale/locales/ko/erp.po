@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# 테스트} other {# 테스트}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# 공구} other {# 공구}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# 버전} other {# 버전}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#주}}"
@@ -1201,6 +1205,9 @@ msgstr "총 {total}개 자산 중 {passing}개"
 msgid "{percent} picked"
 msgstr "{percent} 피킹 완료"
 
+msgid "{percentage}%"
+msgstr "{percentage}%"
+
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
 
@@ -1977,7 +1984,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "부적합 작업으로 다른 곳에서 문제 재발을 방지합니다 — 시정 수정 및 격리와는 구별됩니다."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "숫자 바로 옆의 부호나 기호는 그 의미를 바꿉니다. 사이에 단어를 넣으세요."
 
 msgid "A part"
 msgstr "부품"
@@ -1987,6 +1994,9 @@ msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에
 
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "이 단계에서 부품이 배치되면 넘어질 수 있습니다. 지그나 추가 작업자를 고려하세요."
+
+msgid "A PDF drawing to balloon, or a STEP model. Click to choose a file."
+msgstr "번호 풍선을 붙일 PDF 도면 또는 STEP 모델입니다. 클릭하여 파일을 선택하세요."
 
 msgid "A photo or PDF the operator sees on this step"
 msgstr "작업자가 이 단계에서 보는 사진 또는 PDF"
@@ -2775,6 +2785,10 @@ msgstr "조치 유형"
 
 msgid "Actions"
 msgstr "작업"
+
+#. placeholder {0}: inspection.inspectionId
+msgid "Actions for {0}"
+msgstr "{0} 작업"
 
 msgid "Actions for {attributeName}"
 msgstr "{attributeName} 작업"
@@ -5317,6 +5331,9 @@ msgstr "{plan} 요금제에서 사용 가능"
 msgid "Available on the Business plan"
 msgstr "Business 플랜에서 사용 가능"
 
+msgid "Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned."
+msgstr "가용 또는 보류 상태의 시리얼 및 배치입니다. 가용 상태의 항목은 검사 처리가 끝날 때까지 보류 상태가 됩니다."
+
 msgid "Avatar style"
 msgstr "아바타 스타일"
 
@@ -6251,6 +6268,9 @@ msgstr "취소"
 msgid "Cancel {0}"
 msgstr "{0} 취소"
 
+msgid "Cancel {name}?"
+msgstr "{name}을(를) 취소하시겠습니까?"
+
 msgid "Cancel {readableId}"
 msgstr "{readableId} 취소"
 
@@ -6265,6 +6285,9 @@ msgstr "변경 통지 취소"
 
 msgid "Cancel Contract"
 msgstr "계약 취소"
+
+msgid "Cancel Inspection"
+msgstr "검사 취소"
 
 msgid "Cancel Job"
 msgstr "작업 취소"
@@ -7059,9 +7082,6 @@ msgstr "클릭하거나 드래그하여 교체"
 
 msgid "Click to rename"
 msgstr "클릭하여 이름 바꾸기"
-
-msgid "Click to upload a PDF drawing"
-msgstr "클릭하여 PDF 도면을 업로드하세요"
 
 msgid "CLIN"
 msgstr "CLIN"
@@ -8822,6 +8842,10 @@ msgstr "생성됨 <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "생성됨 <0/> <1/>에 의해"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "<0>{0}</0> 생성됨"
+
 msgid "Created account"
 msgstr "계정 생성됨"
 
@@ -10028,6 +10052,9 @@ msgstr "그룹 삭제"
 msgid "Delete Holiday"
 msgstr "휴일 삭제"
 
+msgid "Delete Inspection"
+msgstr "검사 삭제"
+
 msgid "Delete Inspection Plan"
 msgstr "검사 계획 삭제"
 
@@ -10090,6 +10117,10 @@ msgstr "메모 삭제"
 
 msgid "Delete Month"
 msgstr "월 삭제"
+
+#. placeholder {0}: row.original.key
+msgid "Delete parameter {0}"
+msgstr "파라미터 {0} 삭제"
 
 msgid "Delete Part"
 msgstr "품목 삭제"
@@ -10991,11 +11022,14 @@ msgstr "그리거나 이미지를 업로드하세요."
 msgid "Drawing"
 msgstr "도면"
 
-msgid "Drawing Number"
-msgstr "도면 번호"
-
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "도면이 교체되었습니다. 풍선 배치가 제거되었으며 특성 행은 변경되지 않았습니다."
+
+msgid "Drop a drawing or model"
+msgstr "도면이나 모델을 끌어다 놓으세요"
+
+msgid "Drop a PDF drawing or a STEP model"
+msgstr "PDF 도면이나 STEP 모델을 끌어다 놓으세요"
 
 msgid "Drop an image of your signature"
 msgstr "서명 이미지를 드래그하세요"
@@ -11143,9 +11177,6 @@ msgstr "예: Acme Manufacturing"
 msgid "e.g. Detroit"
 msgstr "예: Detroit"
 
-msgid "e.g. DWG-1234"
-msgstr "예: DWG-1234"
-
 msgid "e.g. GB123456789"
 msgstr "예: GB123456789"
 
@@ -11160,6 +11191,9 @@ msgstr "예: Marco + 담당 지역 리더들"
 
 msgid "e.g. MI"
 msgstr "예: MI"
+
+msgid "e.g. R1234 Receipt"
+msgstr "예: R1234 입고"
 
 msgid "e.g. Suite 200"
 msgstr "예: Suite 200"
@@ -11646,6 +11680,9 @@ msgstr "생산 수량 편집"
 
 msgid "Edit Project"
 msgstr "프로젝트 편집"
+
+msgid "Edit Properties"
+msgstr "속성 편집"
 
 msgid "Edit purchase order line type"
 msgstr "발주서 라인 유형 편집"
@@ -13291,6 +13328,9 @@ msgstr "PDF를 업로드하지 못했습니다"
 msgid "Failed to upload signature"
 msgstr "서명 업로드 실패"
 
+msgid "Failed to upload the model"
+msgstr "모델 업로드에 실패했습니다"
+
 msgid "Failed to upload thumbnail"
 msgstr "썸네일을 업로드하지 못했습니다"
 
@@ -13517,6 +13557,9 @@ msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "견적 라인, 수주 라인 및 매출 송장 라인에서 실행합니다."
+
+msgid "First {count}"
+msgstr "처음 {count}"
 
 msgid "First invoice"
 msgstr "첫 번째 송장"
@@ -14446,7 +14489,7 @@ msgstr "다시 숨기기"
 
 #. placeholder {0}: group.name
 msgid "Hide all in {0}"
-msgstr ""
+msgstr "{0} 전체 숨기기"
 
 msgid "Hide block"
 msgstr "블록 숨기기"
@@ -15281,6 +15324,9 @@ msgstr "처음 N개 검사"
 msgid "Inspect Item"
 msgstr "품목 검사"
 
+msgid "Inspected by"
+msgstr "검사자"
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "받은 품목을 검사하면 경고가 표시됩니다."
 
@@ -15321,6 +15367,9 @@ msgstr "검사 작업"
 
 msgid "Inspection Level"
 msgstr "검사 수준"
+
+msgid "Inspection Name"
+msgstr "검사 이름"
 
 msgid "Inspection Passed"
 msgstr "검사 통과"
@@ -16185,6 +16234,9 @@ msgstr "칸반 산출물"
 msgid "Kanban output setting updated"
 msgstr "칸반 출력 설정 업데이트"
 
+msgid "Kanban QR code"
+msgstr "칸반 QR 코드"
+
 msgid "Kanbans"
 msgstr "칸반"
 
@@ -16213,13 +16265,13 @@ msgid "Keep matching items"
 msgstr "일치하는 품목 유지"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "내 변경 사항 유지"
 
 msgid "Keep navigation open"
 msgstr "탐색 열어 두기"
 
 msgid "Keep one, or hide {moduleName} itself"
-msgstr ""
+msgstr "하나는 유지하거나 {moduleName} 자체를 숨기기"
 
 msgid "Keep only items where…"
 msgstr "...인 항목만 유지"
@@ -16961,7 +17013,7 @@ msgid "Linked Record"
 msgstr "연결된 레코드"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "공유 섹션에 연결되어 있습니다. 라이브러리에서 편집하면 모든 곳에 업데이트됩니다."
 
 msgid "Links"
 msgstr "링크"
@@ -17348,6 +17400,9 @@ msgstr "사내 생산 {amount}({date}용)"
 msgid "Make {quantity}"
 msgstr "{quantity} 제조"
 
+msgid "Make a new version to change this plan"
+msgstr "이 계획을 변경하려면 새 버전을 만드세요"
+
 msgid "Make Active"
 msgstr "활성으로 설정"
 
@@ -17411,6 +17466,9 @@ msgstr "이 문서를 다시 활성 상태로 만듭니다."
 
 msgid "Makes this document active and visible."
 msgstr "이 문서를 활성 상태로 만들고 표시합니다."
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "이 버전을 다시 활성으로 설정하고 현재 활성 버전은 보관합니다."
 
 msgid "Manage"
 msgstr "관리"
@@ -18659,6 +18717,9 @@ msgstr "신규 휴일"
 
 msgid "New IC Transaction"
 msgstr "신규 IC 거래"
+
+msgid "New Inspection"
+msgstr "새 검사"
 
 msgid "New Inspection Plan"
 msgstr "새 검사 계획"
@@ -20069,7 +20130,7 @@ msgid "No values available"
 msgstr "사용 가능한 값이 없습니다."
 
 msgid "No values found"
-msgstr ""
+msgstr "값을 찾을 수 없습니다"
 
 msgid "No variable matches {query}"
 msgstr "{query}와 일치하는 변수가 없습니다"
@@ -20568,6 +20629,10 @@ msgstr "보유수량: {before}에서 {after}(으)로"
 
 msgid "On Hold"
 msgstr "보류"
+
+#. placeholder {0}: entity.quantity
+msgid "On Hold · {0}"
+msgstr "보류 · {0}"
 
 msgid "On its side"
 msgstr "옆으로 눕힘"
@@ -22363,7 +22428,7 @@ msgid "Playback"
 msgstr "재생"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "<0>변경해 주세요</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "감사 로깅을 활성화하려면 관리자에게 문의하십시오."
@@ -23088,6 +23153,9 @@ msgstr "약속일"
 msgid "Properties"
 msgstr "속성"
 
+msgid "Properties (apply to all serials on this line)"
+msgstr "속성 (이 라인의 모든 시리얼에 적용)"
+
 msgid "Property"
 msgstr "속성"
 
@@ -23150,6 +23218,9 @@ msgstr "공개"
 
 msgid "Publish"
 msgstr "게시"
+
+msgid "Publish once your changes are saved."
+msgstr "변경 사항을 저장한 후 게시하세요."
 
 msgid "Publish Training"
 msgstr "교육 발행"
@@ -24006,14 +24077,8 @@ msgstr "수령됨"
 msgid "Received {0} of {1}"
 msgstr "{1} 중 {0} 입고됨"
 
-msgid "Received At"
-msgstr "입고 일시"
-
-msgid "Received By"
-msgstr "입고 담당자"
-
 msgid "Received Date"
-msgstr ""
+msgstr "입고일"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
@@ -24522,7 +24587,7 @@ msgid "Remove authenticator app"
 msgstr "인증 앱 제거"
 
 msgid "Remove block"
-msgstr ""
+msgstr "블록 제거"
 
 msgid "Remove clause"
 msgstr "절 제거"
@@ -24914,7 +24979,7 @@ msgid "Request date"
 msgstr "요청 날짜"
 
 msgid "Requested"
-msgstr ""
+msgstr "요청됨"
 
 msgid "Requested By"
 msgstr "요청한 사람"
@@ -27365,7 +27430,7 @@ msgid "Shared channel"
 msgstr "공유 채널"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "공유 섹션 (삭제됨)"
 
 msgid "Shared Sections"
 msgstr "공유 섹션"
@@ -27670,7 +27735,7 @@ msgstr "이 단계에서 모두 숨김 표시"
 
 #. placeholder {0}: group.name
 msgid "Show all in {0}"
-msgstr ""
+msgstr "{0} 전체 표시"
 
 msgid "Show available batch numbers"
 msgstr "가용 배치 번호 표시"
@@ -28013,7 +28078,7 @@ msgid "Someone"
 msgstr "누군가"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "다른 사용자가 방금 이 템플릿을 저장했습니다. 새로 고침하여 그 버전을 불러오거나, 계속 편집하여 저장할 때 덮어쓰세요."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "회계를 업데이트할 수 있는 사용자가 자산을 자본화하기 전에 사내 생산 원가를 입력해야 합니다."
@@ -28053,6 +28118,12 @@ msgstr "가장 이른 순서로 정렬"
 
 msgid "Sort latest first"
 msgstr "가장 최근 순서로 정렬"
+
+msgid "Sorted by activity date, newest first"
+msgstr "활동 날짜순 정렬, 최신순"
+
+msgid "Sorted by activity date, oldest first"
+msgstr "활동 날짜순 정렬, 오래된 순"
 
 msgid "Source"
 msgstr "소스"
@@ -28651,7 +28722,7 @@ msgstr "하위 부서"
 
 #. placeholder {0}: module.name
 msgid "Sub-modules of {0}"
-msgstr ""
+msgstr "{0}의 하위 모듈"
 
 msgid "Subassembly"
 msgstr "서브어셈블리"
@@ -30007,7 +30078,7 @@ msgid "The document could not be downloaded."
 msgstr "문서를 다운로드할 수 없습니다."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "문서를 열 수 없습니다."
 
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."
@@ -30029,9 +30100,6 @@ msgstr "고객에게 견적을 제시하고 지불을 수령하는 데까지의 
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "테이블이 업데이트될 때 변경된 데이터를 담은 POST 요청을 수신하는 엔드포인트"
-
-msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "이 검사 계획이 연결된 엔지니어링 드로잉입니다. 이 부품에 대해 기록된 검사는 이 드로잉을 참조합니다."
 
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "입력 창, 타임카드 확인, 희석 및 직원이 제출할 때 서명하는 인증. DCAA는 설정 → 프로젝트에서 켜지고 꺼집니다."
@@ -30185,6 +30253,12 @@ msgstr "이 고객으로의 출하에서 운송비 지불자, 리스크 부담�
 
 msgid "The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted."
 msgstr "풀의 요율이 프로젝트에 부과하는 간접 원가: 요율 × 프로젝트의 기준, 프로젝트 원장에 부담 행으로 전기됨, 연초부터 현재까지에서 이전 실행이 전기한 것을 뺌."
+
+msgid "The inspection is deleted and its tracked entities return to the status they had before it."
+msgstr "검사가 삭제되고, 추적 대상 항목은 검사 이전의 상태로 돌아갑니다."
+
+msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
+msgstr "검사는 판정 없이 현장을 떠납니다. 기록된 내용은 유지되며, 보류된 추적 대상 항목은 검사 이전의 상태로 돌아갑니다."
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "통합이 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
@@ -30577,7 +30651,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "이 이슈에 적용되는 사전 정의된 작업 및 승인 요구사항 묶음입니다. 설정 시 이슈 유형의 기본 워크플로를 재정의합니다."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "미리보기를 생성할 수 없습니다. 마지막으로 성공한 미리보기를 표시합니다."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "시간 및 자재 라인의 시간 가격: 직원을 위한 라인의 요율, 그렇지 않으면 노무 범주를 위한, 그렇지 않으면 노무 범주의 기본 청구 요율, 그 날 유효합니다."
@@ -31283,8 +31357,17 @@ msgstr "이 정보는 문서 헤더에 사용됩니다"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "이 정보는 모든 사용자에게 표시되므로 공유할 내용을 신중하게 선택하세요."
 
+msgid "this inspection"
+msgstr "이 검사"
+
 msgid "this inspection plan"
 msgstr "이 검사 계획"
+
+msgid "This inspection plan has no parameters."
+msgstr "이 검사 계획에는 파라미터가 없습니다."
+
+msgid "This inspection plan has no work instructions."
+msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "이 Carbon 인스턴스에서는 이 연동을 연결할 수 없습니다."
@@ -31436,7 +31519,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 모드를 종료할 때 필요합니다."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "숫자 옆의 텍스트가 그 의미를 바꾸고 있어 이 미리보기는 일시 중지되었습니다."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "이 가격은 수동으로 입력되었으므로 가격 규칙이 적용되지 않았습니다."
@@ -31502,7 +31585,7 @@ msgid "This serial"
 msgstr "이 일련번호"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "이 공유 섹션은 더 이상 존재하지 않습니다. 블록을 제거하거나 섹션을 다시 만드세요."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "이 작업장은 역량 게이트 작업을 실행합니다 — 자격 있는 작업자가 교대조에 있을 때만 실행됩니다; 인력 배치표에 할당된 작업자는 가용 노무를 더욱 형성합니다."
@@ -31553,6 +31636,9 @@ msgstr "이 버전은 변경 통지 <0>{0}</0>에 속합니다. 거기서 편집
 
 msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
+
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "이 버전은 초안입니다. 게시하면 활성 상태가 되고 현재 활성 버전은 보관됩니다."
 
 msgid "This version is published"
 msgstr "이 버전은 게시됨입니다."
@@ -32964,6 +33050,9 @@ msgstr "서명 업로드됨"
 msgid "Uploaded: {0}"
 msgstr "업로드됨: {0}"
 
+msgid "Uploading"
+msgstr "업로드 중"
+
 #. placeholder {0}: avatarFile.name
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
@@ -33308,6 +33397,9 @@ msgstr "버전 {0}"
 msgid "Version {0} is published now and will be replaced."
 msgstr "버전 {0}이 지금 게시되었으며 교체될 예정입니다."
 
+msgid "Version published"
+msgstr "버전이 게시되었습니다"
+
 msgid "Version:"
 msgstr "버전:"
 
@@ -33407,6 +33499,9 @@ msgstr "새 탭에서 보기"
 
 msgid "View in project plan"
 msgstr "프로젝트 계획에서 보기"
+
+msgid "View Inspection"
+msgstr "검사 보기"
 
 msgid "View Issue"
 msgstr "이슈 보기"
@@ -33930,6 +34025,9 @@ msgstr "이 행들의 의미"
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "변경 전 이 필드가 보유한 내용입니다. 아무것도 없으면 비워두세요."
 
+msgid "What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation."
+msgstr "이 검사 계획의 이름입니다(예: R1234 입고). 부품의 입고 또는 검사 공정에서 이 계획을 선택하는 기준이 됩니다."
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "이 입고가 충족하는 것 — 발주서, 반품, 입고 이송, 또는 상위가 없는 수동 입고."
 
@@ -34027,10 +34125,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "구매 담당자가 물품을 요청한 날짜입니다. 공급업체는 입고 약속일에 다른 날짜를 약속할 수 있으며, 납기일에도 또 다른 날짜를 입력할 수 있습니다."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "구매 담당자가 이 라인의 물품을 하역장에서 받기를 원하는 날짜입니다. 새 라인은 주문의 입고 요청일로 시작되며, 계획은 이 날짜를 재고 가용성과 외주 공정 일정 계산에 사용합니다."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "계약이 실행되는 시간과 완료되면 어떻게 되는가"

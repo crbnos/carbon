@@ -17,7 +17,7 @@ import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import {
-  enrichActivityBinNames,
+  enrichLineagePayload,
   fetchContainmentsForEntities,
   fetchJobScopedLineage,
   fetchLineageSubgraph,
@@ -120,7 +120,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyId
     );
     return {
-      ...(await enrichActivityBinNames(client, payload, companyId)),
+      ...(await enrichLineagePayload(client, payload, companyId)),
       containments,
       rootId: trackedEntityId,
       rootType: "entity" as const,
@@ -136,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       jobReadableId
     );
     return {
-      ...(await enrichActivityBinNames(client, payload, companyId)),
+      ...(await enrichLineagePayload(client, payload, companyId)),
       rootId: jobId,
       rootType: "job" as const,
       depth
@@ -218,7 +218,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   return {
-    ...(await enrichActivityBinNames(
+    ...(await enrichLineagePayload(
       client,
       {
         entities: allEntities,

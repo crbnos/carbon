@@ -135,6 +135,9 @@ msgstr "{columns} ne correspond pas à un « {target} » existant."
 msgid "{columns} does not match an existing record."
 msgstr "{columns} ne correspond pas à un enregistrement existant."
 
+msgid "{companyName} logo"
+msgstr "Logo de {companyName}"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} sur {quantity}"
 
@@ -226,8 +229,14 @@ msgstr "À propos de ce champ"
 msgid "Above the upper limit"
 msgstr "Au-dessus de la limite supérieure"
 
+msgid "Ac"
+msgstr "Ac"
+
 msgid "Accept"
 msgstr "Accepter"
+
+msgid "Accept inspection?"
+msgstr "Accepter le contrôle ?"
 
 msgid "Accept Lot"
 msgstr "Accepter lot"
@@ -372,6 +381,12 @@ msgstr "Appliquer le lien"
 
 msgid "Approvals"
 msgstr "Approbations"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Niv. {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourrez plus l'utiliser pour vous connecter."
@@ -857,6 +872,9 @@ msgstr "Description"
 msgid "Details"
 msgstr "Détails"
 
+msgid "Discard"
+msgstr "Rejeter"
+
 msgid "Dismiss"
 msgstr "Fermer"
 
@@ -1142,6 +1160,9 @@ msgstr "Terminez la configuration de votre compte"
 msgid "Finish with material unpicked?"
 msgstr "Terminer avec du matériel non prélevé?"
 
+msgid "First"
+msgstr "Premier"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Première échéance {0}"
@@ -1277,6 +1298,9 @@ msgstr "Inspecter l'article"
 msgid "inspected"
 msgstr "inspecté"
 
+msgid "Inspections"
+msgstr "Contrôles"
+
 msgid "Instructions"
 msgstr "Instructions"
 
@@ -1351,6 +1375,9 @@ msgstr "Détails de l'ordre de fabrication"
 
 msgid "Job due"
 msgstr "Ordre de fabrication à échéance"
+
+msgid "Job Operation"
+msgstr "Opération d'OF"
 
 msgid "Job Traveler"
 msgstr "Fiche suiveuse"
@@ -1461,7 +1488,7 @@ msgid "Location"
 msgstr "Emplacement"
 
 msgid "Locations"
-msgstr ""
+msgstr "Sites"
 
 msgid "Log completed"
 msgstr "Enregistrer comme terminé"
@@ -1522,6 +1549,9 @@ msgstr "Effectuer un remplacement"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Gérez comment vous vous connectez à Carbon."
+
+msgid "Manual"
+msgstr "Manuel"
 
 msgid "Manually add items to inventory"
 msgstr "Ajouter manuellement des articles au stock"
@@ -1704,6 +1734,12 @@ msgstr "Aucun instrument de mesure trouvé."
 msgid "No Impact"
 msgstr "Aucun impact"
 
+msgid "No inspection plan"
+msgstr "Aucun plan de contrôle"
+
+msgid "No inspections assigned to you"
+msgstr "Aucun contrôle ne vous est attribué"
+
 msgid "No issue types configured"
 msgstr "Aucun type de problème configuré"
 
@@ -1730,6 +1766,9 @@ msgstr "Aucun matériau"
 
 msgid "No materials on this batch."
 msgstr "Aucune matière sur ce lot de production."
+
+msgid "No open inspections"
+msgstr "Aucun contrôle ouvert"
 
 msgid "No open jobs"
 msgstr "Aucun ordre de fabrication ouvert"
@@ -1821,6 +1860,9 @@ msgstr "Aucune unité"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
 
+msgid "No work center"
+msgstr "Aucun poste de travail"
+
 msgid "No Work Center"
 msgstr "Sans poste de travail"
 
@@ -1836,6 +1878,9 @@ msgstr "Exclu du calcul des besoins"
 msgid "None"
 msgstr "Aucun"
 
+msgid "Normal"
+msgstr "Normal"
+
 msgid "Not scheduled"
 msgstr "Non planifié"
 
@@ -1847,6 +1892,10 @@ msgstr "Stock non utilisable. Le MRP et la planification ne le comptent pas, et 
 
 msgid "Notes"
 msgstr "Notes"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Aucun échec pour l'instant, indiquez donc pourquoi les unités sont rejetées. Les {0} unité(s) seront Rejetées."
 
 msgid "Nothing matches your search."
 msgstr "Rien ne correspond à votre recherche."
@@ -2002,6 +2051,9 @@ msgstr "Conforme"
 msgid "Pass all empty cells of {0}"
 msgstr "Marquer toutes les cellules vides de {0} comme conformes"
 
+msgid "Passed"
+msgstr "Réussi"
+
 msgid "Passed inspection"
 msgstr "Contrôle réussi"
 
@@ -2035,6 +2087,12 @@ msgstr "Mettre en pause le chronomètre {workTypeLabel}"
 
 msgid "Pause maintenance"
 msgstr "Mettre la maintenance en pause"
+
+msgid "Pending"
+msgstr "En attente"
+
+msgid "Percentage"
+msgstr "Pourcentage"
 
 msgid "Phone"
 msgstr "Téléphone"
@@ -2237,6 +2295,18 @@ msgstr "File d'attente vide"
 msgid "Quotes"
 msgstr "Devis"
 
+msgid "Re"
+msgstr "Re"
+
+msgid "Reason"
+msgstr "Motif"
+
+msgid "Reason (optional)"
+msgstr "Motif (facultatif)"
+
+msgid "Reason (required)"
+msgstr "Motif (obligatoire)"
+
 msgid "Reason for change"
 msgstr "Raison du changement"
 
@@ -2248,6 +2318,12 @@ msgstr "Raison de l'entrée tardive"
 
 msgid "Reason for rework"
 msgstr "Raison de la retouche"
+
+msgid "Receipt"
+msgstr "Réception"
+
+msgid "Receipt voided"
+msgstr "Réception invalidée"
 
 msgid "Recent"
 msgstr "Récent"
@@ -2281,6 +2357,9 @@ msgstr "Sections de l'enregistrement"
 msgid "Recorded"
 msgstr "Enregistré"
 
+msgid "Reduced"
+msgstr "Réduit"
+
 msgid "Reference image"
 msgstr "Image de référence"
 
@@ -2289,6 +2368,9 @@ msgstr "L'inscription a échoué"
 
 msgid "Reject"
 msgstr "Rejeter"
+
+msgid "Reject inspection?"
+msgstr "Rejeter le contrôle ?"
 
 msgid "Reject Lot"
 msgstr "Rejeter lot"
@@ -2912,6 +2994,16 @@ msgstr "La date est antérieure à la fenêtre de saisie. La raison est conserv�
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "Le lot entier de {0} sera rejeté comme non-conforme — {passes} prélèvement(s) conforme(s) et {fails} défaut(s) jusqu'à présent. Acheminer les unités ci-dessous vers le rebut ou la retouche, ou enregistrer seulement le verdict."
 
+#. placeholder {0}: inspection.lotSize
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "Le contrôle a échoué : {passes} échantillon(s) réussi(s) et {fails} en échec. Les {0} unité(s) seront Rejetées."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "Le contrôle sera marqué Réussi et ses unités passeront à Disponible."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "Le contrôle sera marqué Réussi. Ses unités passeront à Disponible, sauf les {fails} ayant échoué à un échantillon, qui restent Rejetées."
+
 msgid "The job is closed"
 msgstr "L'ordre est clôturé."
 
@@ -2967,6 +3059,12 @@ msgstr "Ce lot de production n'a pas de modes opératoires."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Ces informations seront visibles par tous les utilisateurs, soyez prudent quant à ce que vous partagez."
 
+msgid "This inspection plan has no parameters."
+msgstr "Ce plan de contrôle ne comporte aucun paramètre."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Ce plan de contrôle ne comporte aucun mode opératoire."
+
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Ceci est un contrôle conforme / non conforme. Appuyez sur P ou F."
 
@@ -3005,6 +3103,9 @@ msgstr "Miniature"
 
 msgid "Tick the jobs this was done for."
 msgstr "Cochez les ordres de fabrication pour lesquels c'est effectué."
+
+msgid "Tightened"
+msgstr "Renforcé"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Disposition plus serrée ou plus spacieuse. Le texte reste à sa place."

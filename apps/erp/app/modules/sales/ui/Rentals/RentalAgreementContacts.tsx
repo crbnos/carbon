@@ -2,17 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ValidatedForm } from "@carbon/form";
 import { toastServiceError } from "@carbon/query";
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
+import { z } from "zod";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import RentalContactsEditor, {
   type RentalContactsValue
 } from "./RentalContactsEditor";
 import type { RentalAgreement, RentalAgreementContact } from "./types";
+
+const contactPickerValidator = z.object({ contactToAdd: z.any() });
 
 type RentalAgreementContactsProps = {
   rentalAgreement: RentalAgreement;
@@ -78,16 +82,23 @@ const RentalAgreementContacts = ({
     );
   }
 
+  // The contact picker is a form field; the form never submits, each change saves.
   return (
-    <RentalContactsEditor
-      customerId={rentalAgreement.customerId ?? ""}
-      value={value}
-      onChange={save}
-      isReadOnly={isReadOnly}
-      // One save at a time: each sends the whole list, so a slower earlier
-      // save must not land after a newer one.
-      isBusy={fetcher.state !== "idle"}
-    />
+    <ValidatedForm
+      validator={contactPickerValidator}
+      defaultValues={{ contactToAdd: "" }}
+      onSubmit={(_, event) => event.preventDefault()}
+    >
+      <RentalContactsEditor
+        customerId={rentalAgreement.customerId ?? ""}
+        value={value}
+        onChange={save}
+        isReadOnly={isReadOnly}
+        // One save at a time: each sends the whole list, so a slower earlier
+        // save must not land after a newer one.
+        isBusy={fetcher.state !== "idle"}
+      />
+    </ValidatedForm>
   );
 };
 

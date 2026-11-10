@@ -20,7 +20,8 @@ const save = z.object({
   features: zfd.json(shape.features),
   balloons: zfd.json(shape.balloons),
   anchors: zfd.json(shape.anchors),
-  samplingDefault: zfd.json(shape.samplingDefault)
+  samplingDefault: zfd.json(shape.samplingDefault),
+  parameters: zfd.json(shape.parameters)
 });
 
 export async function action(args: ActionFunctionArgs) {

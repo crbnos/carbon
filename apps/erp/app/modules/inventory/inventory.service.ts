@@ -290,6 +290,12 @@ import {
   shippingCarrierType
 } from "./inventory.models";
 import {
+  BATCH_PROPERTY_COLUMN_PREFIX,
+  type BatchPropertyColumn,
+  type BatchPropertyDataType,
+  batchPropertyColumns,
+  batchPropertyFilter,
+  batchPropertyValue,
   clampDepth,
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
@@ -1181,6 +1187,30 @@ export type ReceiptSerialBoxResult =
   | { ok: false; reason: "notFound" | "locked" | "box" | "unit" };
 
 /**
+ * The item's batch properties out of `values` — the keys that are one of its
+ * `batchProperty` ids. Receipt, supplier and other attributes are dropped.
+ */
+async function itemBatchProperties(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemId: string,
+  values: Record<string, unknown>
+): Promise<{ ids: string[]; values: Record<string, unknown> }> {
+  const rows = await db
+    .selectFrom("batchProperty")
+    .select("id")
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .execute();
+  const ids = rows.map((row) => row.id);
+  const picked: Record<string, unknown> = {};
+  for (const id of ids) {
+    if (id in values) picked[id] = values[id];
+  }
+  return { ids, values: picked };
+}
+
+/**
  * Saves one serial box of a receipt line (`planSerialBoxWrite`) in one
  * transaction: an empty serial clears it, a refused one empties it.
  */
@@ -1194,6 +1224,8 @@ export async function saveReceiptSerialBox(
     index: number;
     serialNumber: string;
     expiryDate?: string | null;
+    /** The line's batch properties; without them the box keeps its own. */
+    properties?: Record<string, unknown>;
   }
 ): Promise<ReceiptSerialBoxResult> {
   const { companyId, receiptId, receiptLineId, itemId, index, serialNumber } =
@@ -1265,6 +1297,20 @@ export async function saveReceiptSerialBox(
     });
 
     if (plan.kind === "write") {
+      // The function rewrites the unit's attributes, so the properties it
+      // carried (or the line's, when given) are put back after it.
+      const properties = await itemBatchProperties(
+        trx,
+        companyId,
+        itemId,
+        args.properties ??
+          (await lineSerialProperties(trx, {
+            companyId,
+            receiptLineId,
+            index
+          }))
+      );
+
       await sql`SELECT update_receipt_line_serial_tracking(
         p_receipt_line_id => ${receiptLineId},
         p_receipt_id => ${receiptId},
@@ -1287,6 +1333,22 @@ export async function saveReceiptSerialBox(
           .where("companyId", "=", companyId)
           .execute();
       }
+
+      if (Object.keys(properties.values).length > 0) {
+        await trx
+          .updateTable("trackedEntity")
+          .set({
+            attributes: sql`COALESCE(attributes, '{}'::jsonb) || ${JSON.stringify(properties.values)}::jsonb`
+          })
+          .where("companyId", "=", companyId)
+          .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+          .where(
+            sql<string>`attributes->>'Receipt Line Index'`,
+            "=",
+            String(index)
+          )
+          .execute();
+      }
     }
 
     await releaseReceiptSerialEntities(trx, companyId, plan.releaseIds);
@@ -1294,6 +1356,99 @@ export async function saveReceiptSerialBox(
     return plan.kind === "taken"
       ? { ok: false, reason: plan.reason }
       : { ok: true };
+  });
+}
+
+/**
+ * The attributes a box's serial should carry over: the box's own unit first,
+ * else another unit on the line (the line's properties are shared).
+ */
+async function lineSerialProperties(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; receiptLineId: string; index: number }
+): Promise<Record<string, unknown>> {
+  const units = await db
+    .selectFrom("trackedEntity")
+    .select("attributes")
+    .where("companyId", "=", args.companyId)
+    .where(sql<string>`attributes->>'Receipt Line'`, "=", args.receiptLineId)
+    .execute();
+  const attributes = units.map(
+    (unit) => (unit.attributes ?? {}) as Record<string, unknown>
+  );
+  return (
+    attributes.find(
+      (a) => String(a["Receipt Line Index"]) === String(args.index)
+    ) ??
+    attributes[0] ??
+    {}
+  );
+}
+
+/**
+ * Sets the batch properties of every serial on a receipt line. Each unit's
+ * previous property values are replaced; its other attributes stay. The
+ * values live on the units, so a line with no serial yet is refused
+ * (`noUnits`), as is a line that is not serial-tracked (`notSerial`).
+ */
+export async function saveReceiptSerialProperties(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    receiptId: string;
+    receiptLineId: string;
+    itemId: string;
+    properties: Record<string, unknown>;
+  }
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "locked" | "notSerial" | "noUnits" }
+> {
+  const { companyId, receiptId, receiptLineId, itemId } = args;
+  return db.transaction().execute(async (trx) => {
+    await lockReceiptLine(trx, companyId, receiptLineId);
+    const receipt = await trx
+      .selectFrom("receipt")
+      .select("status")
+      .where("id", "=", receiptId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const line = await trx
+      .selectFrom("receiptLine")
+      .select("requiresSerialTracking")
+      .where("id", "=", receiptLineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!receipt || !line) return { ok: false, reason: "notFound" };
+    if (receipt.status !== "Draft") return { ok: false, reason: "locked" };
+    if (!line.requiresSerialTracking) return { ok: false, reason: "notSerial" };
+
+    const unit = await trx
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+      .limit(1)
+      .executeTakeFirst();
+    if (!unit) return { ok: false, reason: "noUnits" };
+
+    const properties = await itemBatchProperties(
+      trx,
+      companyId,
+      itemId,
+      args.properties
+    );
+    if (properties.ids.length === 0) return { ok: true };
+
+    await trx
+      .updateTable("trackedEntity")
+      .set({
+        attributes: sql`(COALESCE(attributes, '{}'::jsonb) - ${properties.ids}::text[]) || ${JSON.stringify(properties.values)}::jsonb`
+      })
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+      .execute();
+    return { ok: true };
   });
 }
 
@@ -2141,8 +2296,111 @@ export async function getTrackedEntities(
     );
   }
 
-  query = setGenericQueryFilters(query, args, TRACKED_ENTITIES_PAGING);
+  // A batch property column (`property.<label>`) is no column of the table:
+  // it filters the property's value on every item that has the label.
+  const propertyFilters =
+    args.filters?.filter(
+      (filter) =>
+        filter.value && filter.column.startsWith(BATCH_PROPERTY_COLUMN_PREFIX)
+    ) ?? [];
+  if (propertyFilters.length > 0) {
+    const columns = await getBatchPropertyColumns(client, companyId);
+    if (columns.error) {
+      logger.error("Failed to load batch properties for a filter", {
+        companyId,
+        error: columns.error
+      });
+    }
+    // A label no item has (or properties that did not load) matches nothing.
+    const columnByKey = new Map((columns.data ?? []).map((c) => [c.key, c]));
+    for (const filter of propertyFilters) {
+      const column = columnByKey.get(filter.column);
+      query = column
+        ? query.or(
+            batchPropertyFilter(column, filter.operator, filter.value ?? "")
+          )
+        : query.in("id", []);
+    }
+  }
+
+  query = setGenericQueryFilters(
+    query,
+    {
+      ...args,
+      filters: args.filters?.filter(
+        (filter) => !filter.column.startsWith(BATCH_PROPERTY_COLUMN_PREFIX)
+      )
+    },
+    TRACKED_ENTITIES_PAGING
+  );
   return query;
+}
+
+/** The company's batch properties as tracked-entity list columns, by label. */
+export async function getBatchPropertyColumns(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<
+  | { data: BatchPropertyColumn[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  // Every item's properties, past PostgREST's 1,000-row cap.
+  const properties = await fetchAllFromTable<{
+    id: string;
+    itemId: string;
+    label: string;
+    dataType: BatchPropertyDataType;
+    listOptions: string[] | null;
+  }>(
+    client,
+    "batchProperty",
+    "id, itemId, label, dataType, listOptions",
+    (query) => query.eq("companyId", companyId).order("sortOrder").order("id")
+  );
+  if (properties.error) return { data: null, error: properties.error };
+  return { data: batchPropertyColumns(properties.data), error: null };
+}
+
+/**
+ * The values tracked entities hold for a property column, for its filter.
+ * Reads the most recent 1,000 entities that hold one.
+ */
+export async function getBatchPropertyValues(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  key: string
+) {
+  const columns = await getBatchPropertyColumns(client, companyId);
+  if (columns.error) return { data: [], error: columns.error };
+  const column = columns.data.find((c) => c.key === key);
+  if (!column) return { data: [], error: null };
+
+  const entities = await client
+    .from("trackedEntity")
+    .select("itemId, attributes")
+    .eq("companyId", companyId)
+    .or(
+      column.properties
+        .map(({ id }) => `attributes->>${id}.not.is.null`)
+        .join(",")
+    )
+    .order("createdAt", { ascending: false })
+    .limit(1000);
+  if (entities.error) return { data: [], error: entities.error };
+
+  const values = new Set<string>();
+  for (const entity of entities.data) {
+    const value = batchPropertyValue(column, entity);
+    if (value !== undefined && value !== null && value !== "") {
+      values.add(String(value));
+    }
+  }
+  return {
+    data: Array.from(values)
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({ id: value, name: value })),
+    error: null
+  };
 }
 
 export async function getTrackedEntitiesByMakeMethodId(
@@ -9686,6 +9944,64 @@ export async function enrichActivityBinNames(
     })
   };
 }
+/** The display names a lineage payload's stored attribute ids resolve to. */
+export async function enrichLineagePayload(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload,
+  companyId: string
+): Promise<LineagePayload> {
+  return enrichEntityPropertyLabels(
+    client,
+    await enrichActivityBinNames(client, payload, companyId),
+    companyId
+  );
+}
+
+/**
+ * Rename the batch-property values tracked entities carry in their attributes
+ * — stored under the `batchProperty` id — to the property's label, so a
+ * batch's or serial's properties read as "Heat Number", not an id. A label
+ * that would overwrite another attribute keeps the id.
+ */
+export async function enrichEntityPropertyLabels(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload,
+  companyId: string
+): Promise<LineagePayload> {
+  const itemIds = pluckUnique(
+    payload.entities.filter((entity) => entity.itemId),
+    (entity) => entity.itemId!
+  );
+  if (itemIds.length === 0) return payload;
+
+  const properties = await client
+    .from("batchProperty")
+    .select("id, label")
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
+  if (properties.error || !properties.data?.length) return payload;
+
+  const labelById = indexByMapped(
+    properties.data,
+    (row) => row.id,
+    (row) => row.label
+  );
+
+  return {
+    ...payload,
+    entities: payload.entities.map((entity) => {
+      const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
+      if (!Object.keys(attrs).some((key) => labelById.has(key))) return entity;
+      const renamed: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(attrs)) {
+        const label = labelById.get(key);
+        renamed[label && !(label in attrs) ? label : key] = value;
+      }
+      return { ...entity, attributes: renamed as Json };
+    })
+  };
+}
+
 export const previewSerialUnitCostsInput = z.object({
   itemId: z.string().min(1),
   // Only the units on hand at this location; every location when absent.

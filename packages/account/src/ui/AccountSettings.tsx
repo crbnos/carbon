@@ -7,6 +7,7 @@ import {
   cn,
   Modal,
   ModalContent,
+  ModalHeader,
   ModalTitle,
   pulseNavIcon,
   Subheading
@@ -93,6 +94,8 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
       <ModalContent
         size="xxlarge"
         aria-describedby={undefined}
+        // Appearance previews a theme on the page, so the page stays clear.
+        data-clear-backdrop={tab === "appearance" ? "" : undefined}
         // Start on the pane it opened to, not the first tab (Profile).
         onOpenAutoFocus={(event) => {
           if (event.defaultPrevented) return;
@@ -105,15 +108,18 @@ function AccountSettingsModal({ tab }: { tab: AccountSettingsTab }) {
         }}
         className={cn(
           "gap-0 p-0 overflow-hidden max-w-5xl h-[min(760px,calc(100dvh-4rem))] md:flex-row",
-          "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:pt-4"
+          "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none"
         )}
       >
-        {/* The sidebar is the visible chrome; the title is for screen readers. */}
-        <ModalTitle className="sr-only">
-          <Trans>Account settings</Trans>
-        </ModalTitle>
+        {/* On desktop the sidebar is the visible chrome and the title is for
+            screen readers; on phones (a bottom sheet) it is the sheet's header. */}
+        <ModalHeader className="md:sr-only">
+          <ModalTitle>
+            <Trans>Account settings</Trans>
+          </ModalTitle>
+        </ModalHeader>
         <aside className="flex shrink-0 flex-col gap-4 border-border bg-muted/40 px-3 py-4 md:w-60 md:border-r max-md:border-b max-md:pb-2">
-          <div className="flex min-w-0 items-center gap-3 px-2 max-md:pr-12">
+          <div className="flex min-w-0 items-center gap-3 px-2">
             <AccountAvatar size="md" path={user.avatarUrl} name={name} />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{name}</p>
