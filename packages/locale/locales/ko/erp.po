@@ -4320,7 +4320,13 @@ msgstr "승인자"
 msgid "Approved On"
 msgstr "승인 날짜"
 
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
 msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -15926,7 +15932,7 @@ msgstr "곧 제공될 예정입니다. 회사에 설정하려면 Carbon에 문�
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」 레코드에서 아직 사용 중입니다. 먼저 제거하세요."
 
-msgid "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
 msgstr ""
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."

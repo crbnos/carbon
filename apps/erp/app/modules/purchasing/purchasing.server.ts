@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { InvalidInputError, raisedMessage } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -10,6 +11,7 @@ import {
   getCompanyTimeZone,
   type Json
 } from "@carbon/database";
+import { assertPostingStatusUnchanged } from "@carbon/database/journal-posting-status";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -55,6 +57,10 @@ import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  postReceipt,
+  RECEIPT_VOID_STOCK_MOVED_ERROR
+} from "~/modules/inventory/inventory.service";
+import {
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningActionsByIds,
@@ -75,6 +81,7 @@ import {
 import { incoterms, optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   invokePosting,
   isActiveCompanyEmployee,
   refuseUnlessOwned
@@ -107,6 +114,9 @@ import {
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteApprovalRefusal,
   purchaseOrderForceDeleteBlockerMessage,
+  purchaseOrderForceDeletePendingReceiptMessage,
+  purchaseOrderForceDeleteUnsupportedReceiptMessage,
+  purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
@@ -2391,6 +2401,64 @@ const NOT_ADMIN_FORCE_DELETE =
   "Only an Admin can force delete a purchase order";
 
 /**
+ * Why the order's receipts keep a force delete from going ahead (`refusal`),
+ * else the plan that reverses them. Refused for one
+ * still being posted, or one whose stock was since used or moved to another
+ * location (`planPurchaseOrderReceiptReversal`). After step 1's voids
+ * (`afterVoid`), a posted receipt left that an adjustment cannot stand in for
+ * is refused too.
+ */
+async function forceDeleteReceiptRefusal(
+  db: Parameters<typeof service.planPurchaseOrderReceiptReversal>[0],
+  {
+    companyId,
+    receipts,
+    afterVoid = false
+  }: {
+    companyId: string;
+    receipts: service.PurchaseOrderForceDeleteReceipt[];
+    afterVoid?: boolean;
+  }
+): Promise<
+  | { refusal: string; plan: null }
+  | {
+      refusal: null;
+      plan: Awaited<
+        ReturnType<typeof service.planPurchaseOrderReceiptReversal>
+      >;
+    }
+> {
+  const pending = receipts.filter((receipt) => receipt.status === "Pending");
+  if (pending.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeletePendingReceiptMessage(
+        pending.map((receipt) => receipt.readableId)
+      ),
+      plan: null
+    };
+  }
+  const plan = await service.planPurchaseOrderReceiptReversal(db, {
+    companyId,
+    receipts
+  });
+  if (plan.short.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUsedStockMessage(plan.short),
+      plan: null
+    };
+  }
+  if (afterVoid && plan.unsupported.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUnsupportedReceiptMessage(
+        plan.unsupported
+      ),
+      plan: null
+    };
+  }
+  return { refusal: null, plan };
+}
+
+/**
  * Ask to force delete a purchase order.
  *
  * @remarks
@@ -2399,10 +2467,11 @@ const NOT_ADMIN_FORCE_DELETE =
  * an Admin, give a reason and type the order's number. Nothing is deleted
  * here: the request and its `approvalRequest` (type
  * `purchaseOrderForceDelete`) are opened, and the other Admins are notified.
- * Another Admin approves it with `decidePurchaseOrderForceDelete`. Refused
- * while a receipt, shipment, invoice or prepayment still names the order
- * (`purchaseOrderForceDeleteBlockerMessage`): those carry journal lines and
- * are voided first. One open request per order.
+ * Another Admin approves it with `decidePurchaseOrderForceDelete`, which also
+ * reverses the order's receipts. Refused while a shipment, invoice or
+ * prepayment still names the order (`purchaseOrderForceDeleteBlockerMessage`),
+ * while a receipt is being posted, or when stock a receipt brought in was
+ * since used (it cannot be un-received). One open request per order.
  *
  * @returns `requestId`, the new request.
  */
@@ -2450,6 +2519,17 @@ export const requestPurchaseOrderForceDelete = defineServiceFn({
       })
     );
     if (blocked) return ctx.error("rule", blocked);
+
+    // What approving would refuse anyway, refused now.
+    const receipts = await service.getPurchaseOrderForceDeleteReceipts(db, {
+      companyId,
+      purchaseOrderId
+    });
+    const { refusal: receiptRefusal } = await forceDeleteReceiptRefusal(db, {
+      companyId,
+      receipts
+    });
+    if (receiptRefusal) return ctx.error("rule", receiptRefusal);
 
     let requestId: string;
     try {
@@ -2517,13 +2597,24 @@ export const requestPurchaseOrderForceDelete = defineServiceFn({
  * Approve or reject a purchase order force delete.
  *
  * @remarks
- * Admins only, and never the Admin who asked. Approving deletes the order in
- * the same transaction: the request and its approval are locked, the
- * receipts, shipments, invoices and prepayments are read again (a document
- * posted since the request refuses the approval), the approval and the
- * request are marked Approved / Executed, the order's own pending approval
- * requests are cancelled and the order and its lines are deleted. Rejecting
- * marks both Rejected. The requester is notified either way.
+ * Admins only, and never the Admin who asked. Approving reverses the order's
+ * receipts, then deletes the order:
+ *
+ * 1. Each posted receipt is voided (`postReceipt`), which reverses it exactly
+ *    at its own cost. A void refused because the stock was put away into
+ *    another bin, or because the receipt predates the accounting cutover, is
+ *    left for step 2; any other refusal stops the approval. Each void commits
+ *    on its own: if a later step refuses, those receipts stay voided and the
+ *    request stays Pending, so approving again picks up where it stopped.
+ * 2. One transaction: the request, its approval, the order and its receipts
+ *    are locked; the receipts left are reversed by adjusting their stock out
+ *    (`reverseReceiptsByAdjustment`) and Draft receipts are deleted; the
+ *    shipments, invoices and prepayments are read again (one posted since the
+ *    request refuses the approval); the approval and request are marked
+ *    Approved / Executed, the order's pending approval requests cancelled and
+ *    the order and its lines deleted.
+ *
+ * Rejecting marks both Rejected. The requester is notified either way.
  *
  * @returns `status`: Executed (the order was deleted) or Rejected.
  */
@@ -2544,6 +2635,69 @@ export const decidePurchaseOrderForceDelete = defineServiceFn({
       userId
     );
     if (!isAdmin) return ctx.error("forbidden", NOT_ADMIN_FORCE_DELETE);
+
+    // Step 1 (approve): void the receipts, each in its own posting. Checked
+    // first, so a caller who may not decide this request voids nothing; the
+    // transaction below checks again under lock.
+    let reversal: service.ForceDeleteReversalAccounting | null = null;
+    if (decision === "approve") {
+      const system = ctx.asSystem.pg;
+      const pending = await system
+        .selectFrom("purchaseOrderForceDeleteRequest")
+        .select(["status", "requestedBy", "purchaseOrderId"])
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!pending) {
+        return ctx.error("notFound", "Force delete request not found");
+      }
+      const refusal = purchaseOrderForceDeleteApprovalRefusal({
+        status: pending.status,
+        requestedBy: pending.requestedBy,
+        userId,
+        isAdmin
+      });
+      if (refusal) return ctx.error("rule", refusal);
+
+      if (pending.purchaseOrderId) {
+        const receipts = await service.getPurchaseOrderForceDeleteReceipts(
+          system,
+          { companyId, purchaseOrderId: pending.purchaseOrderId }
+        );
+        for (const receipt of receipts) {
+          if (receipt.status !== "Posted") continue;
+          const voided = await invokePosting(
+            ctx,
+            "post-receipt",
+            { type: "void" as const, receiptId: receipt.id },
+            postReceipt
+          );
+          if (!voided.error) continue;
+          // Reversed by adjusting the stock out, in step 2.
+          if (
+            voided.error.status < 500 &&
+            (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
+              voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
+          ) {
+            continue;
+          }
+          return voided.error.status < 500
+            ? ctx.error(
+                "rule",
+                `${receipt.readableId} could not be reversed: ${voided.error.message}`
+              )
+            : ctx.error(
+                "internal",
+                `Failed to reverse ${receipt.readableId}`,
+                voided.error
+              );
+        }
+      }
+      reversal = await service.resolveForceDeleteReversalAccounting(system, {
+        companyId,
+        userId
+      });
+    }
 
     const settled = await ctx.transaction(async (tx) => {
       const db = tx.asSystem.pg;
@@ -2603,6 +2757,64 @@ export const decidePurchaseOrderForceDelete = defineServiceFn({
         if (!purchaseOrderId || !order) {
           return ctx.error("conflict", "This purchase order no longer exists");
         }
+
+        // Step 2: reverse what the void left, and delete the drafts.
+        if (!reversal) throw new Error("Force delete accounting not resolved");
+        await assertPostingStatusUnchanged(
+          db,
+          companyId,
+          reversal.accounting.postingStatus
+        );
+        const receipts = await service.getPurchaseOrderForceDeleteReceipts(db, {
+          companyId,
+          purchaseOrderId,
+          lock: true
+        });
+        const reversible = await forceDeleteReceiptRefusal(db, {
+          companyId,
+          receipts,
+          afterVoid: true
+        });
+        if (reversible.refusal !== null) {
+          return ctx.error("rule", reversible.refusal);
+        }
+        const plan = reversible.plan;
+        try {
+          await service.reverseReceiptsByAdjustment(db, {
+            companyId,
+            userId,
+            purchaseOrderId,
+            purchaseOrderReadableId: request.purchaseOrderReadableId,
+            receipts: receipts.filter((receipt) => receipt.status === "Posted"),
+            removals: plan.removals,
+            reversal
+          });
+        } catch (error) {
+          // A stock rule raised by the database (held stock, a picked Put
+          // Away): a refusal in words for the person, as the void gives it.
+          const raised = raisedMessage(error);
+          if (raised) {
+            return ctx.error("rule", `Cannot force delete: ${raised}`);
+          }
+          if (error instanceof InvalidInputError) {
+            return ctx.error("rule", error.message);
+          }
+          throw error;
+        }
+        const drafts = receipts.filter((receipt) => receipt.status === "Draft");
+        if (drafts.length > 0) {
+          await db
+            .deleteFrom("receipt")
+            .where("companyId", "=", companyId)
+            .where(
+              "id",
+              "in",
+              drafts.map((receipt) => receipt.id)
+            )
+            .where("status", "=", "Draft")
+            .execute();
+        }
+
         const blocked = purchaseOrderForceDeleteBlockerMessage(
           await service.getPurchaseOrderForceDeleteBlockers(db, {
             companyId,

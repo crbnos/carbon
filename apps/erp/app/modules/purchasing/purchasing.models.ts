@@ -1571,10 +1571,11 @@ export const purchaseOrderForceDeleteDecisionValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-/** What still names an order and keeps it from being force deleted. */
+/**
+ * What still names an order and keeps it from being force deleted. Its
+ * receipts are not here: approving the force delete reverses them.
+ */
 export type PurchaseOrderForceDeleteBlockers = {
-  /** Receipts not Voided: Draft, Pending or Posted. */
-  receipts: { readableId: string; status: string }[];
   /** Shipments (outside processing) not Voided. */
   shipments: { readableId: string; status: string }[];
   /** Purchase invoices with a line on the order, in any status. */
@@ -1585,11 +1586,11 @@ export type PurchaseOrderForceDeleteBlockers = {
 
 /**
  * Why the order cannot be force deleted yet, or null. The override skips the
- * status and approval rules of a normal delete, never the ledger: a posted
- * receipt, shipment, invoice or payment has journal lines for this order, so
- * it is voided first (or, before the accounting cutover, corrected with a
- * return, adjustment or debit memo). An invoice line holds the order line by
- * a foreign key, so even a voided invoice keeps the order.
+ * status and approval rules of a normal delete and reverses the order's
+ * receipts, but a shipment, invoice or payment is the supplier's side of the
+ * books: it is voided first (or, before the accounting cutover, corrected
+ * with a debit memo). An invoice line holds the order line by a foreign key,
+ * so even a voided invoice keeps the order.
  */
 export function purchaseOrderForceDeleteBlockerMessage(
   blockers: PurchaseOrderForceDeleteBlockers
@@ -1597,9 +1598,6 @@ export function purchaseOrderForceDeleteBlockerMessage(
   const list = (docs: { readableId: string; status: string }[]) =>
     docs.map((d) => `${d.readableId} (${d.status})`).join(", ");
   const parts: string[] = [];
-  if (blockers.receipts.length > 0) {
-    parts.push(`void or delete its receipts: ${list(blockers.receipts)}`);
-  }
   if (blockers.shipments.length > 0) {
     parts.push(`void or delete its shipments: ${list(blockers.shipments)}`);
   }
@@ -1613,6 +1611,126 @@ export function purchaseOrderForceDeleteBlockerMessage(
   }
   if (parts.length === 0) return null;
   return `This purchase order cannot be force deleted until you ${parts.join("; ")}.`;
+}
+
+/** A stock position: an item at a location, storage unit, unit and stripe. */
+export type ForceDeleteStockPosition = {
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  trackedEntityId: string | null;
+  /** The stock stripe: a project id, or null for common stock. */
+  projectId: string | null;
+};
+
+/** What a receipt put on hand (its Purchase Receipt item ledger rows). */
+export type ReceiptReceivedStock = ForceDeleteStockPosition & {
+  receiptId: string;
+  receiptReadableId: string;
+  quantity: number;
+};
+
+/** One removal a force delete books (a Negative Adjmt. of `quantity`). */
+export type ReceiptStockRemoval = ForceDeleteStockPosition & {
+  receiptId: string;
+  /** Positive: how much leaves this position. */
+  quantity: number;
+};
+
+/**
+ * Where to take back what the order's receipts put on hand, from the stock
+ * there is now. A receipt the void refuses (stock put away into another bin,
+ * or received before the accounting cutover) is reversed by adjusting this
+ * stock out instead.
+ *
+ * Stock is looked for at the receipt's location and stripe only. A serial or
+ * batch is taken wherever it now is; untracked stock from the storage unit it
+ * was received into first, then from the units with the most. Receipts share
+ * the stock, in order, so two receipts of one item cannot both count the same
+ * units. A receipt whose stock is no longer all there is `short`: it was used,
+ * and what was used cannot be un-received.
+ */
+export function planReceiptReversal(
+  received: ReceiptReceivedStock[],
+  onHand: (ForceDeleteStockPosition & { quantity: number })[]
+): { removals: ReceiptStockRemoval[]; short: string[] } {
+  const available = onHand
+    .filter((row) => row.quantity > EPSILON)
+    .map((row) => ({ ...row }));
+  const removals: ReceiptStockRemoval[] = [];
+  const short: string[] = [];
+  const shortReceiptIds = new Set<string>();
+
+  for (const row of received) {
+    let needed = row.quantity;
+    if (needed <= EPSILON) continue;
+    const candidates = available
+      .filter(
+        (stock) =>
+          stock.itemId === row.itemId &&
+          stock.locationId === row.locationId &&
+          stock.projectId === row.projectId &&
+          stock.trackedEntityId === row.trackedEntityId &&
+          stock.quantity > EPSILON
+      )
+      .sort((a, b) => {
+        const aHome = a.storageUnitId === row.storageUnitId ? 0 : 1;
+        const bHome = b.storageUnitId === row.storageUnitId ? 0 : 1;
+        if (aHome !== bHome) return aHome - bHome;
+        if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+        return (a.storageUnitId ?? "").localeCompare(b.storageUnitId ?? "");
+      });
+    for (const stock of candidates) {
+      if (needed <= EPSILON) break;
+      const taken = Math.min(needed, stock.quantity);
+      stock.quantity -= taken;
+      needed -= taken;
+      removals.push({
+        receiptId: row.receiptId,
+        itemId: row.itemId,
+        locationId: stock.locationId,
+        storageUnitId: stock.storageUnitId,
+        trackedEntityId: stock.trackedEntityId,
+        projectId: stock.projectId,
+        quantity: taken
+      });
+    }
+    if (needed > EPSILON && !shortReceiptIds.has(row.receiptId)) {
+      shortReceiptIds.add(row.receiptId);
+      short.push(row.receiptReadableId);
+    }
+  }
+
+  return {
+    removals: removals.filter(
+      (removal) => !shortReceiptIds.has(removal.receiptId)
+    ),
+    short
+  };
+}
+
+/** The refusal for receipts still being posted: they are reversed once posted. */
+export function purchaseOrderForceDeletePendingReceiptMessage(
+  receiptReadableIds: string[]
+): string {
+  return `This purchase order cannot be force deleted while ${receiptReadableIds.join(", ")} is being posted. Try again when it has finished.`;
+}
+
+/**
+ * The refusal for receipts the void refused and an adjustment cannot stand
+ * in for: one that issued straight to a project, or received a fixed asset.
+ */
+export function purchaseOrderForceDeleteUnsupportedReceiptMessage(
+  receiptReadableIds: string[]
+): string {
+  return `This purchase order cannot be force deleted: ${receiptReadableIds.join(", ")} issued to a project or received a fixed asset, and its void was refused. Void it first.`;
+}
+
+/** The refusal for receipts whose stock was used since it was received. */
+export function purchaseOrderForceDeleteUsedStockMessage(
+  receiptReadableIds: string[]
+): string {
+  return `This purchase order cannot be force deleted: stock received on ${receiptReadableIds.join(", ")} was already used or moved to another location. Correct it with an inventory adjustment first.`;
 }
 
 /**

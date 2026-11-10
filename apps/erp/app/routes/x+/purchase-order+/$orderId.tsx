@@ -40,6 +40,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderApproval,
   getPurchaseOrderDelivery,
+  getPurchaseOrderForceDeleteReceipts,
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
@@ -176,7 +177,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     approval,
     currency,
     isAdmin,
-    forceDeleteRequest
+    forceDeleteRequest,
+    forceDeleteReceipts
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
       ? getSupplier(client, purchaseOrder.data.supplierId)
@@ -209,6 +211,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // The Admin force-delete override (`$orderId.force-delete.tsx`).
     isCompanyAdmin(serviceRole, companyId, userId),
     getPendingPurchaseOrderForceDeleteRequest(db, {
+      companyId,
+      purchaseOrderId: orderId
+    }),
+    // The receipts a force delete reverses, named in its modal and banner.
+    getPurchaseOrderForceDeleteReceipts(db, {
       companyId,
       purchaseOrderId: orderId
     })
@@ -340,6 +347,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canDelete,
     isAdmin,
     forceDeleteRequest,
+    forceDeleteReceipts: forceDeleteReceipts.map(
+      (receipt) => receipt.readableId
+    ),
     defaultCc,
     resolvedAttachments
   };

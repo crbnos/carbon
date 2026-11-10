@@ -4320,8 +4320,14 @@ msgstr "Approved By"
 msgid "Approved On"
 msgstr "Approved On"
 
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -15926,8 +15932,8 @@ msgstr "It is coming soon. Contact Carbon to have it set up for your company."
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "It is still used by a \"{table}\" record; remove that first."
 
-msgid "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
-msgstr "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
 msgstr "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."

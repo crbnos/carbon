@@ -36,8 +36,9 @@ import {
 } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
 import type { AccountClass } from "@carbon/database/ledger";
-import { toStoredAmount } from "@carbon/database/ledger";
+import { debit, toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, equals } from "@carbon/database/precision";
+import { withInspectionRelease } from "@carbon/database/quality";
 import {
   gte,
   inOrder,
@@ -139,6 +140,10 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
+import {
+  assertNoRejectedUntrackedLot,
+  removeUnpickedPutAways
+} from "~/modules/inventory/inventory.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
@@ -170,10 +175,15 @@ import { planningSegmentFilter } from "../production/ui/Planning/planning-action
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
+  attributesContain,
+  type BookAdjustmentArgs,
+  bookAdjustment,
   createAdjustmentJournal,
   currencyDecimals,
   cutLeasePaymentRows,
   fromServerFn,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
   getSupplierPartPriceConverter,
   insertNegatedJournal,
   invokePosting,
@@ -232,6 +242,7 @@ import {
   planningLineCurrencyCode,
   planningQuantityChange,
   planPurchaseOrderRestore,
+  planReceiptReversal,
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteNotificationId,
   purchaseOrderFundsRefusal,
@@ -240,6 +251,8 @@ import {
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
   purchaseOrderPromisedDateRefusal,
+  type ReceiptReceivedStock,
+  type ReceiptStockRemoval,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
@@ -8252,23 +8265,16 @@ export async function getCompanyAdminIds(
 
 /**
  * The documents that still name the order and keep a force delete from
- * running (`purchaseOrderForceDeleteBlockerMessage`). Runs on the caller's
- * connection, so the delete re-reads them inside its own transaction.
+ * running (`purchaseOrderForceDeleteBlockerMessage`). Its receipts are not
+ * among them: the force delete reverses those
+ * (`planPurchaseOrderReceiptReversal`). Runs on the caller's connection, so
+ * the delete re-reads them inside its own transaction.
  */
 export async function getPurchaseOrderForceDeleteBlockers(
   db: Kysely<KyselyDatabase>,
   { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
 ): Promise<PurchaseOrderForceDeleteBlockers> {
-  const [receipts, shipments, invoices, payments] = await Promise.all([
-    db
-      .selectFrom("receipt")
-      .select(["receiptId as readableId", "status"])
-      .where("companyId", "=", companyId)
-      .where("sourceDocument", "=", "Purchase Order")
-      .where("sourceDocumentId", "=", purchaseOrderId)
-      .where("status", "<>", "Voided")
-      .orderBy("receiptId")
-      .execute(),
+  const [shipments, invoices, payments] = await Promise.all([
     db
       .selectFrom("shipment")
       .select(["shipmentId as readableId", "status"])
@@ -8330,11 +8336,548 @@ export async function getPurchaseOrderForceDeleteBlockers(
       .execute()
   ]);
   return {
-    receipts: receipts.map((r) => ({ ...r, readableId: r.readableId ?? "" })),
     shipments: shipments.map((s) => ({ ...s, readableId: s.readableId ?? "" })),
     invoices: invoices.map((i) => ({ ...i, readableId: i.readableId ?? "" })),
     payments: payments.map((p) => ({ ...p, readableId: p.readableId ?? "" }))
   };
+}
+
+/** A receipt of the order that a force delete reverses (or deletes). */
+export type PurchaseOrderForceDeleteReceipt = {
+  id: string;
+  readableId: string;
+  status: Database["public"]["Enums"]["receiptStatus"];
+  postingDate: string | null;
+};
+
+/**
+ * The order's receipts that are not Voided, by number. `lock` takes them FOR
+ * UPDATE, so a receipt cannot be posted or voided under the force delete.
+ */
+export async function getPurchaseOrderForceDeleteReceipts(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    purchaseOrderId,
+    lock = false
+  }: { companyId: string; purchaseOrderId: string; lock?: boolean }
+): Promise<PurchaseOrderForceDeleteReceipt[]> {
+  const query = db
+    .selectFrom("receipt")
+    .select(["id", "receiptId", "status", "postingDate"])
+    .where("companyId", "=", companyId)
+    .where("sourceDocument", "=", "Purchase Order")
+    .where("sourceDocumentId", "=", purchaseOrderId)
+    .where("status", "<>", "Voided")
+    .orderBy("receiptId");
+  const rows = await (lock ? query.forUpdate() : query).execute();
+  return rows.map((row) => ({
+    id: row.id,
+    readableId: row.receiptId ?? row.id,
+    status: row.status,
+    postingDate: row.postingDate ? String(row.postingDate) : null
+  }));
+}
+
+/**
+ * Plans taking back what the posted receipts put on hand, from the stock
+ * there is now (`planReceiptReversal`). Read-only: the request runs it to
+ * refuse early, the approval again inside its transaction before it books.
+ *
+ * `unsupported` names receipts it cannot reverse: one that issued its stock
+ * straight to a project, or received a fixed asset. Those reverse only
+ * through their own void.
+ */
+export async function planPurchaseOrderReceiptReversal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    receipts
+  }: { companyId: string; receipts: PurchaseOrderForceDeleteReceipt[] }
+): Promise<{
+  removals: ReceiptStockRemoval[];
+  short: string[];
+  unsupported: string[];
+}> {
+  const posted = receipts.filter((receipt) => receipt.status === "Posted");
+  if (posted.length === 0) return { removals: [], short: [], unsupported: [] };
+  const receiptIds = posted.map((receipt) => receipt.id);
+
+  const [ledgerRows, assetLines] = await Promise.all([
+    db
+      .selectFrom("itemLedger")
+      .select([
+        "documentId",
+        "documentType",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "trackedEntityId",
+        "projectId",
+        "quantity"
+      ])
+      .where("companyId", "=", companyId)
+      .where("documentId", "in", receiptIds)
+      .where("documentType", "in", ["Purchase Receipt", "Project Issue"])
+      .execute(),
+    db
+      .selectFrom("receiptFixedAssetLine")
+      .select("receiptId")
+      .where("companyId", "=", companyId)
+      .where("receiptId", "in", receiptIds)
+      .where("received", "=", true)
+      .execute()
+  ]);
+
+  const unsupportedIds = new Set([
+    ...assetLines.map((line) => line.receiptId),
+    ...ledgerRows
+      .filter((row) => row.documentType === "Project Issue")
+      .map((row) => row.documentId as string)
+  ]);
+
+  // What each receipt put on hand, net, per position.
+  const received = new Map<string, ReceiptReceivedStock>();
+  for (const receipt of posted) {
+    if (unsupportedIds.has(receipt.id)) continue;
+    for (const row of ledgerRows) {
+      if (row.documentId !== receipt.id) continue;
+      const position = {
+        itemId: row.itemId,
+        locationId: row.locationId ?? null,
+        storageUnitId: row.storageUnitId ?? null,
+        trackedEntityId: row.trackedEntityId ?? null,
+        projectId: row.projectId ?? null
+      };
+      const key = [receipt.id, ...Object.values(position)].join("|");
+      const entry = received.get(key) ?? {
+        ...position,
+        receiptId: receipt.id,
+        receiptReadableId: receipt.readableId,
+        quantity: 0
+      };
+      entry.quantity += Number(row.quantity);
+      received.set(key, entry);
+    }
+  }
+
+  const receivedRows = [...received.values()];
+  const itemIds = [...new Set(receivedRows.map((row) => row.itemId))];
+  const locationIds = [
+    ...new Set(receivedRows.flatMap((row) => row.locationId ?? []))
+  ];
+  const withoutLocation = receivedRows.some((row) => row.locationId === null);
+  const onHand =
+    itemIds.length === 0
+      ? []
+      : await db
+          .selectFrom("itemLedger")
+          .select([
+            "itemId",
+            "locationId",
+            "storageUnitId",
+            "trackedEntityId",
+            "projectId",
+            (eb) => eb.fn.sum<number>("quantity").as("quantity")
+          ])
+          .where("companyId", "=", companyId)
+          .where("itemId", "in", itemIds)
+          .where((eb) =>
+            eb.or([
+              ...(locationIds.length > 0
+                ? [eb("locationId", "in", locationIds)]
+                : []),
+              ...(withoutLocation ? [eb("locationId", "is", null)] : [])
+            ])
+          )
+          .groupBy([
+            "itemId",
+            "locationId",
+            "storageUnitId",
+            "trackedEntityId",
+            "projectId"
+          ])
+          .execute();
+
+  const plan = planReceiptReversal(
+    receivedRows,
+    onHand.map((row) => ({
+      itemId: row.itemId,
+      locationId: row.locationId ?? null,
+      storageUnitId: row.storageUnitId ?? null,
+      trackedEntityId: row.trackedEntityId ?? null,
+      projectId: row.projectId ?? null,
+      quantity: Number(row.quantity ?? 0)
+    }))
+  );
+  return {
+    ...plan,
+    unsupported: posted
+      .filter((receipt) => unsupportedIds.has(receipt.id))
+      .map((receipt) => receipt.readableId)
+  };
+}
+
+/**
+ * The accounting an adjust-out reversal posts with, resolved before the
+ * transaction opens (`getCurrentAccountingPeriod` commits its own short
+ * transaction), as `postInventoryAdjustment` does.
+ */
+export type ForceDeleteReversalAccounting = {
+  today: string;
+  cutoverDate: string | null;
+  goodsReceivedNotInvoicedAccount: string;
+  accounting: Omit<
+    NonNullable<BookAdjustmentArgs["accounting"]>,
+    "description"
+  >;
+};
+
+export async function resolveForceDeleteReversalAccounting(
+  db: Kysely<KyselyDatabase>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<ForceDeleteReversalAccounting> {
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+  const postingStatus = await journalPostingStatus(db, companyId);
+  const cutoverDate = await readAccountingCutoverDate(db, companyId);
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const dimensions = await db
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", company.companyGroupId as string)
+    .where("active", "=", true)
+    .where("entityType", "in", ["Item", "ItemPostingGroup", "Location"])
+    .execute();
+  const dimensionMap: Record<string, string> = {};
+  for (const dim of dimensions) {
+    if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+  }
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, db, today)
+      : null;
+  return {
+    today,
+    cutoverDate: cutoverDate ? String(cutoverDate) : null,
+    goodsReceivedNotInvoicedAccount:
+      accountDefaults.data.goodsReceivedNotInvoicedAccount,
+    accounting: {
+      postingStatus,
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.data.inventoryAdjustmentVarianceAccount
+      },
+      userId,
+      dimensions: dimensionMap
+    }
+  };
+}
+
+/**
+ * Reverses receipts the void refused by adjusting their stock out
+ * (`planPurchaseOrderReceiptReversal`'s removals), inside the force delete's
+ * transaction, and marks them Voided.
+ *
+ * The offset is the account the receipt credited: Goods Received Not
+ * Invoiced, so the accrual it opened closes. A receipt from before the
+ * accounting cutover posted no ledger journal, and its stock came in through
+ * the opening balance, so its removal is a write-down to the inventory
+ * adjustment variance account. The receipt's serials and batches go to zero,
+ * as its void sets them.
+ */
+export async function reverseReceiptsByAdjustment(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    purchaseOrderReadableId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    removals: ReceiptStockRemoval[];
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<void> {
+  const { companyId, userId, receipts, removals, reversal } = args;
+  if (receipts.length === 0) return;
+  await withTransaction(db, async (trx) => {
+    const itemIds = [...new Set(removals.map((removal) => removal.itemId))];
+    const [items, itemCosts] =
+      itemIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            trx
+              .selectFrom("item")
+              .select(["id", "itemTrackingType", "replenishmentSystem"])
+              .where("companyId", "=", companyId)
+              .where("id", "in", itemIds)
+              .execute(),
+            trx
+              .selectFrom("itemCost")
+              .select([
+                "itemId",
+                "costingMethod",
+                "unitCost",
+                "standardCost",
+                "itemPostingGroupId"
+              ])
+              .where("companyId", "=", companyId)
+              .where("itemId", "in", itemIds)
+              .execute()
+          ]);
+
+    // What the void does before it moves stock, for every receipt first: their
+    // Put Aways go (refused when one has picked stock), a rejected lot refuses,
+    // and their open inspections are cancelled. Stock held for any of their
+    // inspections cannot move, so no receipt's stock moves until all of them
+    // have released theirs.
+    for (const receipt of receipts) {
+      await removeUnpickedPutAways(trx, companyId, receipt.id);
+      await assertNoRejectedUntrackedLot(trx, companyId, receipt.id);
+      await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("inspection")
+          .set({
+            status: "Cancelled",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("companyId", "=", companyId)
+          .where("sourceDocument", "=", "Receipt")
+          .where("sourceDocumentId", "=", receipt.id)
+          .where("status", "in", ["Pending", "In Progress"])
+          .execute()
+      );
+    }
+
+    for (const receipt of receipts) {
+      const beforeCutover = isBeforeCutover(
+        receipt.postingDate ?? reversal.today,
+        reversal.cutoverDate
+      );
+      const description = `Force delete of ${args.purchaseOrderReadableId}: reverses ${receipt.readableId}`;
+      for (const removal of removals) {
+        if (removal.receiptId !== receipt.id) continue;
+        const item = items.find((row) => row.id === removal.itemId);
+        const itemCost = itemCosts.find((row) => row.itemId === removal.itemId);
+        if (!item || !itemCost) {
+          throw new Error(`Item ${removal.itemId} has no item or cost record`);
+        }
+        await bookAdjustment(trx, {
+          ledger: {
+            postingDate: reversal.today,
+            itemId: removal.itemId,
+            quantity: -removal.quantity,
+            locationId: removal.locationId,
+            storageUnitId: removal.storageUnitId,
+            trackedEntityId: removal.trackedEntityId,
+            entryType: "Negative Adjmt.",
+            documentId: receipt.id,
+            comment: description,
+            projectId: removal.projectId,
+            companyId,
+            createdBy: userId
+          },
+          item: {
+            itemTrackingType: item.itemTrackingType,
+            replenishmentSystem: item.replenishmentSystem,
+            itemPostingGroupId: itemCost.itemPostingGroupId
+          },
+          itemCost: {
+            costingMethod: itemCost.costingMethod,
+            unitCost:
+              itemCost.unitCost === null ? null : Number(itemCost.unitCost),
+            standardCost:
+              itemCost.standardCost === null
+                ? null
+                : Number(itemCost.standardCost)
+          },
+          accounting: {
+            ...reversal.accounting,
+            offsetAccount: beforeCutover
+              ? null
+              : reversal.goodsReceivedNotInvoicedAccount,
+            // GR/IR is a liability: the reversal debits it, closing the
+            // accrual the receipt opened.
+            offsetAccountType: beforeCutover ? "expense" : "liability",
+            offsetDescription: beforeCutover
+              ? "Inventory Adjustment Variance Account"
+              : "Goods Received Not Invoiced Account",
+            description
+          }
+        });
+      }
+
+      // Stock leaves at its carrying value, which can differ from what the
+      // receipt booked (other layers, an average cost that moved). GR/IR is
+      // cleared at exactly the receipt's amount; the difference is a cost
+      // variance.
+      if (!beforeCutover) {
+        await trueUpGoodsReceivedNotInvoiced(trx, {
+          companyId,
+          receiptId: receipt.id,
+          reversal,
+          description
+        });
+      }
+
+      // The receipt's serials and batches, as its void leaves them.
+      const entities = await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity", "status"])
+        .where("companyId", "=", companyId)
+        .where(attributesContain({ Receipt: receipt.id }))
+        .execute();
+      if (entities.length > 0) {
+        const activity = await trx
+          .insertInto("trackedActivity")
+          .values({
+            type: "Void Receipt",
+            sourceDocument: "Receipt",
+            sourceDocumentId: receipt.id,
+            sourceDocumentReadableId: receipt.readableId,
+            attributes: {
+              "Purchase Order": args.purchaseOrderId,
+              Receipt: receipt.id,
+              Employee: userId
+            },
+            companyId,
+            createdBy: userId,
+            createdAt: reversal.today
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        for (const entity of entities) {
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              quantity: 0,
+              status:
+                entity.status === "Scrapped" || entity.status === "Rejected"
+                  ? entity.status
+                  : "Consumed"
+            })
+            .where("id", "=", entity.id)
+            .where("companyId", "=", companyId)
+            .execute();
+          await trx
+            .insertInto("trackedActivityInput")
+            .values({
+              trackedActivityId: activity.id,
+              trackedEntityId: entity.id,
+              quantity: Number(entity.quantity ?? 0),
+              companyId,
+              createdBy: userId,
+              createdAt: reversal.today
+            })
+            .execute();
+        }
+      }
+
+      await trx
+        .updateTable("receipt")
+        .set({
+          status: "Voided",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", receipt.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await sql`SELECT public.refresh_receipt_inspection_status(${receipt.id})`.execute(
+        trx
+      );
+    }
+  });
+}
+
+/**
+ * Clears what a reversed receipt left on Goods Received Not Invoiced: its own
+ * GR/IR lines and the reversal's net to zero, the difference against the
+ * inventory adjustment variance account. Signed by each account's type
+ * (GR/IR a liability, the variance an expense) and checked as balanced.
+ */
+async function trueUpGoodsReceivedNotInvoiced(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    receiptId: string;
+    reversal: ForceDeleteReversalAccounting;
+    description: string;
+  }
+): Promise<void> {
+  const { companyId, receiptId, reversal } = args;
+  const grir = reversal.goodsReceivedNotInvoicedAccount;
+  const net = await trx
+    .selectFrom("journalLine")
+    .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+    .where("companyId", "=", companyId)
+    .where("documentId", "=", receiptId)
+    .where("accountId", "=", grir)
+    .executeTakeFirst();
+  // Stored by natural sign: a liability's credit is positive.
+  const grirNet = round(Number(net?.amount ?? 0));
+  if (Math.abs(grirNet) < EPSILON) return;
+
+  const lines = [
+    {
+      accountId: grir,
+      description: "Goods Received Not Invoiced Account",
+      amount: round(-grirNet)
+    },
+    {
+      accountId:
+        reversal.accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+      description: "Inventory Adjustment Variance Account",
+      amount: round(-grirNet)
+    }
+  ];
+  // Debits = credits: each stored amount times its account's debit sign.
+  assertBalanced(
+    round(
+      lines[0]!.amount * debit("liability", 1) +
+        lines[1]!.amount * debit("expense", 1)
+    ),
+    0,
+    EPSILON,
+    "Force delete GR/IR true-up"
+  );
+
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId: reversal.accounting.accountingPeriodId,
+    status: reversal.accounting.postingStatus,
+    description: args.description,
+    postingDate: reversal.today,
+    userId: reversal.accounting.userId
+  });
+  const journalLineReference = nanoid();
+  await trx
+    .insertInto("journalLine")
+    .values(
+      lines.map((line) => ({
+        ...line,
+        journalId,
+        quantity: 0,
+        documentType: "Receipt" as const,
+        documentId: receiptId,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
 }
 
 export type PurchaseOrderForceDeleteRequest = {

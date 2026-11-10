@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-
+import type { ReceiptReceivedStock } from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderBulkDeletable,
@@ -23,11 +23,13 @@ import {
   lockedReturnLineField,
   orderItemSupplierFiles,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  planReceiptReversal,
   purchaseOrderDeleteRefusal,
   purchaseOrderForceDeleteApprovalRefusal,
   purchaseOrderForceDeleteBlockerMessage,
   purchaseOrderForceDeleteNotificationId,
   purchaseOrderForceDeleteRequestValidator,
+  purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
@@ -814,7 +816,6 @@ describe("supplierContactEmailRequiredValidator", () => {
 
 describe("purchase order force delete", () => {
   const noBlockers = {
-    receipts: [],
     shipments: [],
     invoices: [],
     payments: []
@@ -833,15 +834,127 @@ describe("purchase order force delete", () => {
 
     it("names every document that still holds the order", () => {
       const message = purchaseOrderForceDeleteBlockerMessage({
-        receipts: [{ readableId: "RE000001", status: "Posted" }],
         shipments: [{ readableId: "SHP000002", status: "Draft" }],
         invoices: [{ readableId: "PI000003", status: "Voided" }],
         payments: [{ readableId: "PAY000004", status: "Posted" }]
       });
-      expect(message).toContain("RE000001 (Posted)");
       expect(message).toContain("SHP000002 (Draft)");
       expect(message).toContain("PI000003 (Voided)");
       expect(message).toContain("PAY000004 (Posted)");
+    });
+  });
+
+  describe("planReceiptReversal", () => {
+    const at = {
+      itemId: "item-1",
+      locationId: "loc-1",
+      trackedEntityId: null,
+      projectId: null
+    };
+    const received = (
+      quantity: number,
+      over: Partial<ReceiptReceivedStock> = {}
+    ): ReceiptReceivedStock => ({
+      ...at,
+      storageUnitId: "bin-a",
+      receiptId: "rec-1",
+      receiptReadableId: "RE000001",
+      quantity,
+      ...over
+    });
+
+    it("takes the stock back from the bin it was received into", () => {
+      const plan = planReceiptReversal(
+        [received(4)],
+        [
+          { ...at, storageUnitId: "bin-a", quantity: 10 },
+          { ...at, storageUnitId: "bin-b", quantity: 50 }
+        ]
+      );
+      expect(plan.short).toEqual([]);
+      expect(plan.removals).toEqual([
+        { ...at, storageUnitId: "bin-a", receiptId: "rec-1", quantity: 4 }
+      ]);
+    });
+
+    it("follows stock put away into other bins, the fullest first", () => {
+      const plan = planReceiptReversal(
+        [received(10)],
+        [
+          { ...at, storageUnitId: "bin-a", quantity: 2 },
+          { ...at, storageUnitId: "bin-b", quantity: 3 },
+          { ...at, storageUnitId: "bin-c", quantity: 7 }
+        ]
+      );
+      expect(plan.short).toEqual([]);
+      expect(plan.removals.map((r) => [r.storageUnitId, r.quantity])).toEqual([
+        ["bin-a", 2],
+        ["bin-c", 7],
+        ["bin-b", 1]
+      ]);
+    });
+
+    it("takes a serial wherever it now is, and only that serial", () => {
+      const plan = planReceiptReversal(
+        [received(1, { trackedEntityId: "sn-1" })],
+        [
+          { ...at, storageUnitId: "bin-a", quantity: 5 },
+          {
+            ...at,
+            storageUnitId: "bin-z",
+            trackedEntityId: "sn-1",
+            quantity: 1
+          }
+        ]
+      );
+      expect(plan.removals).toEqual([
+        {
+          ...at,
+          storageUnitId: "bin-z",
+          trackedEntityId: "sn-1",
+          receiptId: "rec-1",
+          quantity: 1
+        }
+      ]);
+    });
+
+    it("never draws on another stripe or location", () => {
+      const plan = planReceiptReversal(
+        [received(3)],
+        [
+          { ...at, storageUnitId: "bin-a", projectId: "proj-1", quantity: 9 },
+          { ...at, locationId: "loc-2", storageUnitId: "bin-a", quantity: 9 }
+        ]
+      );
+      expect(plan.short).toEqual(["RE000001"]);
+      expect(plan.removals).toEqual([]);
+    });
+
+    it("refuses a receipt whose stock was used, and books none of it", () => {
+      const plan = planReceiptReversal(
+        [received(4)],
+        [{ ...at, storageUnitId: "bin-a", quantity: 1 }]
+      );
+      expect(plan.short).toEqual(["RE000001"]);
+      expect(plan.removals).toEqual([]);
+    });
+
+    it("does not let two receipts count the same units", () => {
+      const plan = planReceiptReversal(
+        [
+          received(3),
+          received(3, { receiptId: "rec-2", receiptReadableId: "RE000002" })
+        ],
+        [{ ...at, storageUnitId: "bin-a", quantity: 4 }]
+      );
+      expect(plan.short).toEqual(["RE000002"]);
+      expect(plan.removals.map((r) => r.receiptId)).toEqual(["rec-1"]);
+    });
+
+    it("names the receipts whose stock was used", () => {
+      expect(
+        purchaseOrderForceDeleteUsedStockMessage(["RE000001", "RE000002"])
+      ).toContain("RE000001, RE000002");
     });
   });
 

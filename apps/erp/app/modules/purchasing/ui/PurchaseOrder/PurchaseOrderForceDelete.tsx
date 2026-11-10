@@ -35,6 +35,8 @@ import type { PurchaseOrderForceDeleteRequest } from "../../purchasing.service";
 type ForceDeleteRouteData = {
   isAdmin: boolean;
   forceDeleteRequest: PurchaseOrderForceDeleteRequest | null;
+  /** The receipts approving reverses (not Voided), by number. */
+  forceDeleteReceipts: string[];
 };
 
 type PurchaseOrderForceDeleteModalProps = {
@@ -56,6 +58,10 @@ export function PurchaseOrderForceDeleteModal({
   if (!orderId) throw new Error("orderId not found");
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
+  const routeData = useRouteData<ForceDeleteRouteData>(
+    path.to.purchaseOrder(orderId)
+  );
+  const receipts = (routeData?.forceDeleteReceipts ?? []).join(", ");
 
   return (
     <Modal
@@ -107,10 +113,20 @@ export function PurchaseOrderForceDeleteModal({
                         them approves it.
                       </Trans>
                     </li>
+                    {receipts && (
+                      <li>
+                        <Trans>
+                          Approving also reverses its receipts {receipts}: the
+                          stock they brought in is removed and their postings
+                          are reversed. It is refused if that stock was used
+                          since.
+                        </Trans>
+                      </li>
+                    )}
                     <li>
                       <Trans>
-                        It never touches the ledger. Void or delete the order's
-                        receipts, shipments and prepayments first, and remove
+                        It never touches the supplier's side of the books. Void
+                        the order's shipments and prepayments first, and remove
                         its lines from purchase invoices. The request is refused
                         until you do.
                       </Trans>
@@ -170,6 +186,7 @@ export function PurchaseOrderForceDeleteBanner() {
   );
   const request = routeData?.forceDeleteRequest;
   if (!request) return null;
+  const receipts = (routeData?.forceDeleteReceipts ?? []).join(", ");
 
   const isAdmin = routeData?.isAdmin ?? false;
   const isRequester = request.requestedBy === user.id;
@@ -240,7 +257,11 @@ export function PurchaseOrderForceDeleteBanner() {
           action={path.to.purchaseOrderForceDelete(orderId)}
           isOpen={approveModal.isOpen}
           title={t`Approve and delete`}
-          text={t`Approving deletes the purchase order and all of its lines now. This cannot be undone.`}
+          text={
+            receipts
+              ? t`Approving reverses ${receipts}, then deletes the purchase order and all of its lines. This cannot be undone.`
+              : t`Approving deletes the purchase order and all of its lines now. This cannot be undone.`
+          }
           confirmText={t`Approve and Delete`}
           confirmVariant="destructive"
           cancelText={t`Back`}
