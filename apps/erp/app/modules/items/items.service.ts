@@ -10594,7 +10594,8 @@ export const syncMakeMethodPermission = {
  * (`loadMethodWriteRefusals`: a change notice's Draft, or a released revision
  * under `enforce`) keeps its BOM. A Draft is rewritten. An Active method is
  * never edited: the sync writes into a Draft of the item instead
- * (`pickSyncDraft`, else a new version).
+ * (`pickSyncDraft`, else a new version). An Archived method is frozen, as in
+ * the BOM editor, so it is refused.
  */
 export type SyncMethodChoice =
   | { action: "skip"; makeMethodId: string; reason: string }
@@ -10610,6 +10611,14 @@ export function chooseSyncMethod(
   }
   if (method.status === "Active") {
     return { action: "draftFromActive", activeMakeMethodId: method.id };
+  }
+  if (method.status !== "Draft") {
+    return {
+      action: "skip",
+      makeMethodId: method.id,
+      reason:
+        "its make method is archived. Sync the Active version or a Draft instead."
+    };
   }
   return { action: "write", makeMethodId: method.id };
 }

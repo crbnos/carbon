@@ -766,6 +766,12 @@ describe("chooseSyncMethod", () => {
       chooseSyncMethod({ id: "mm_active", status: "Active" }, null)
     ).toEqual({ action: "draftFromActive", activeMakeMethodId: "mm_active" });
   });
+
+  it("refuses an Archived method and keeps its id", () => {
+    expect(
+      chooseSyncMethod({ id: "mm_archived", status: "Archived" }, null)
+    ).toMatchObject({ action: "skip", makeMethodId: "mm_archived" });
+  });
 });
 
 describe("pickSyncDraft", () => {
