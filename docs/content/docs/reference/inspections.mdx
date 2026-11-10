@@ -203,8 +203,9 @@ An inspection plan has versions. The **Inspection Plans** list groups plans by p
 </StatusFlow>
 
 - **New Version** (in the version menu) copies the version you are on into a new Draft, numbered one past the plan's highest version: its characteristics, balloons, sampling, parameters and work instructions. The drawing or model file is shared, not copied.
-- **Publish** on a Draft makes it Active and archives the Active version. It also moves every item's **Receipt** assignment and every method operation that used another version of the plan onto this one. Job operations, quote operations and existing lots keep the version they had. **Reactivate** on an Archived version does the same.
+- **Publish** on a Draft makes it Active and archives the Active version. It needs no approval. It also moves every item's **Receipt** assignment and every method operation that used another version of the plan onto this one. Job operations, quote operations and existing lots keep the version they had. **Reactivate** on an Archived version does the same.
 - A lot reads its plan live, so locking Active and Archived versions is what keeps a lot's characteristics fixed. On a locked version the grids are read-only and the add buttons are hidden.
+- A Draft can be assigned to an item's **Receipt** slot or a method operation before it is published, so a plan can be tried on real lots while it is still being written. A lot reads its plan live, so edits to that Draft reach its open lots; Publish the Draft to fix the characteristics.
 - A version that any lot used cannot be deleted, because its characteristics hold the lots' measurements. Publish a new version to replace it.
 
 ### Parameters

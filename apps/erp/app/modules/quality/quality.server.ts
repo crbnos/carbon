@@ -1804,11 +1804,6 @@ export const saveInspectionDocument = defineServiceFn({
       );
     }
 
-    // The sampling and parameter writes refuse a locked version themselves;
-    // this read is what keeps the RPC off one.
-    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
-    if (locked) return locked;
-
     let features: InspectionSaveFeaturesPayload =
       input.features ?? emptyInspectionSave;
     let balloons: InspectionSaveBalloonsGeometryPayload = emptyInspectionSave;
@@ -1839,6 +1834,12 @@ export const saveInspectionDocument = defineServiceFn({
         translated.balloons
       );
     }
+
+    // Checked once the input is known to be valid. The sampling and parameter
+    // writes refuse a locked version themselves, and the RPC refuses one under
+    // the plan's row lock; this read refuses it before anything is written.
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
 
     features = await service.resolveInspectionFeaturePayloadIds(
       client,

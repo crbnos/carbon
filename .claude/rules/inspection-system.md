@@ -255,7 +255,11 @@ references).
   archives the Active version, activates this one, and moves
   `itemInspectionDocumentAssignment` and `methodOperation.inspectionDocumentId`
   from the other versions to it. Job operations, quote operations and lots keep
-  their version. An Archived version is reactivated the same way.
+  their version. An Archived version is reactivated the same way. Publish
+  takes no approval (decided 2026-11-10; quality documents do, plans do not).
+  A Draft may be assigned to an item's Receipt slot or a method operation
+  (decided 2026-11-10): the pickers list every version with its status, and a
+  lot on a Draft reads its edits live until it is published.
 - **Lock** — only a Draft is editable. The lock is part of each write: the
   name, work instruction, model, sampling and `upsertInspectionDocument`
   updates carry `status = 'Draft'` in the UPDATE, and a write that changes no
