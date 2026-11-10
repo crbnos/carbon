@@ -536,7 +536,8 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   then `insertReceiptPutAway` locks the receipt, reads `getReceiptPutAwayLines`
   and inserts one stock transfer (`stockTransfer.receiptId`, line
   `receiptLineId`) in one Kysely transaction, from the receipt line's own
-  storage unit. A line of
+  storage unit, to the part's nettable default (none when that default is the
+  received unit itself). A lot that records no unit is not offered. A line of
   a completed transfer counts only what it picked, so a putaway completed short
   offers the rest again. An untracked line is also capped by what is free in
   its unit: untracked on-hand less `inspection_held_quantity` less the unpicked

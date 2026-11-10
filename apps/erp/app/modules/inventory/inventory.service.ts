@@ -7426,9 +7426,11 @@ export type ReceiptPutAwayLine = {
 };
 
 /**
- * What a receipt's Put Away would move: per Passed or Partial lot, the passed
- * stock still in its received unit and on no linked transfer. To is the part's
- * nettable default storage unit at the location, else null (stores choose).
+ * What a receipt's Put Away would move: per Passed or Partial lot that records
+ * where it held its stock, the passed stock still in its received unit and on
+ * no linked transfer. To is the part's nettable default storage unit at the
+ * location, else null (stores choose); null too when that default is the
+ * received unit, which a nettable inspection unit can be.
  */
 export async function getReceiptPutAwayLines(
   db: Kysely<KyselyDatabase>,
@@ -7461,6 +7463,9 @@ export async function getReceiptPutAwayLines(
     .where("inspection.sourceDocument", "=", "Receipt")
     .where("inspection.sourceDocumentId", "=", receiptId)
     .where("inspection.status", "in", ["Passed", "Partial"])
+    // A lot that records no unit held nothing (from before the hold, in a
+    // pickable bin): the roll-up leaves it out, so Put Away does too.
+    .where("inspection.storageUnitId", "is not", null)
     .execute();
   const lines = lots.filter(
     (lot): lot is typeof lot & { storageUnitId: string; locationId: string } =>
@@ -7632,13 +7637,15 @@ export async function getReceiptPutAwayLines(
       if (quantity > EPSILON) free.set(key, round(available - quantity));
     }
     if (quantity <= EPSILON) continue;
+    const toStorageUnitId =
+      defaultUnit.get(`${line.itemId}::${line.locationId}`) ?? null;
     result.push({
       receiptLineId: line.receiptLineId,
       itemId: line.itemId,
       locationId: line.locationId,
       fromStorageUnitId: line.storageUnitId,
       toStorageUnitId:
-        defaultUnit.get(`${line.itemId}::${line.locationId}`) ?? null,
+        toStorageUnitId === line.storageUnitId ? null : toStorageUnitId,
       quantity,
       requiresSerialTracking: line.itemTrackingType === "Serial",
       requiresBatchTracking: line.itemTrackingType === "Batch"
