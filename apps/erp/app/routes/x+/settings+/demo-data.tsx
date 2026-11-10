@@ -142,8 +142,8 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: true, message: "Reverting demo data" };
     }
 
-    // No finalize first: apply overwrites a failed marker, and a snapshot-guard
-    // failure never recorded a snapshot.
+    // No `company-template-finalize` first: apply overwrites a failed marker,
+    // and a snapshot-guard failure never recorded a snapshot.
     case "purgeAndApply": {
       try {
         const failed = await getCompanyTemplateRun(client, companyId);

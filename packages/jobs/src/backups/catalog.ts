@@ -235,7 +235,6 @@ export async function getCompanyTableCatalog(
     WHERE con.contype = 'f' AND nsp.nspname = 'public'
   `.execute(db);
 
-  // FK graph for EVERY table so scope can be resolved transitively below.
   const allFksByTable = new Map<string, ForeignKey[]>();
   for (const f of foreignKeys.rows) {
     const list = allFksByTable.get(f.table_name) ?? [];
@@ -247,16 +246,12 @@ export async function getCompanyTableCatalog(
     allFksByTable.set(f.table_name, list);
   }
 
-  // A table with no scope column but a FK to an already-scoped table inherits
-  // that scope (nearest scoped parent wins — BFS by passes).
   const scope = new Map<string, Scope>();
   const scopeRoot = new Map<string, "companyId" | "companyGroupId">();
   for (const [name, column] of scopeByTable) {
     scope.set(name, { kind: "direct", column });
     scopeRoot.set(name, column);
   }
-  // Singletons are injected BEFORE via-resolution so a FK to a scoped table
-  // can't mis-scope them through it.
   const existingTables = new Set(columns.rows.map((c) => c.table_name));
   for (const name of COMPANY_SINGLETON_TABLES) {
     if (!existingTables.has(name) || scope.has(name)) continue;

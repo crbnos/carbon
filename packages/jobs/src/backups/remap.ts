@@ -178,8 +178,6 @@ export async function loadSubstrateIds(
   dataByTable: Record<string, Array<{ [col: string]: unknown }>>
 ): Promise<Map<string, Set<unknown>>> {
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
-  // Per ref table pointed at by a NOT-NULL FK from carried data: its scope column
-  // and the distinct ids referenced (so the probe only loads ids we actually need).
   const wanted = new Map<string, { scopeColumn: string; ids: Set<unknown> }>();
   for (const t of catalog.tables) {
     const rows = dataByTable[t.name];
@@ -190,9 +188,7 @@ export async function loadSubstrateIds(
       const ref = byName.get(fk.refTable);
       if (!ref || ref.scope.kind !== "direct") continue; // only directly-scoped tables hold global rows
       // A NOT-NULL scope column can't contain a `companyId IS NULL` row, so the
-      // probe would always be empty — skip it. (This is a sound optimization from
-      // the DB constraint, NOT a guess: a non-nullable column literally cannot
-      // hold the global rows we'd be looking for.)
+      // probe would always be empty.
       const refScopeCol = ref.columns.find((c) => c.name === ref.scope.column);
       if (!refScopeCol?.isNullable) continue;
       const col = colByName.get(fk.column);
@@ -364,8 +360,7 @@ type RowTransform = (value: unknown) => unknown;
  * (additive). Every id is remapped, companyId/companyGroupId point at the target,
  * FKs follow the id remap, user refs collapse to the importing user, and storage
  * paths are rewritten. For an OWN backup (remap=false) every column is identity.
- * Pure (no DB), so it lives here with the other catalog helpers and is
- * unit-tested directly. The optional `ctx` fields are the import/reseed-only
+ * The optional `ctx` fields are the import/reseed-only
  * policies; omit them and the behavior is the restore path's, unchanged.
  */
 export function buildRowTransforms(
@@ -415,7 +410,7 @@ export function buildRowTransforms(
       return (v) => (v === ctx.sourceCompanyId ? ctx.companyId : v);
     }
     // Only id-keyed tables with a text/uuid id get an idMap (int/serial ids reuse
-    // verbatim — see idMaps build). Gate on the map's presence, not `hasId`, or an
+    // verbatim — see `buildIdMaps`). Gate on the map's presence, not `hasId`, or an
     // int-id table dereferences an undefined map.
     const idMap = ctx.idMaps.get(table.name);
     if (col.name === "id" && idMap) {
@@ -476,7 +471,7 @@ export function buildRowTransforms(
           const mapped = map?.get(v as string);
           if (mapped) return mapped;
           if (substrate?.has(v)) return v;
-          if (!isTenantRef) return v; // global-reference id, stable across envs
+          if (!isTenantRef) return v;
           // A tenant row in neither the backup nor the target.
           if (nullable) return null;
           if (onUnresolvedRef) {
@@ -525,10 +520,10 @@ export function rewriteDocumentEditRowKeys(
 
 /**
  * Rewrite a storage path for the target company. Swaps the leading
- * `{sourceCompanyId}/` and any path segment whose id was remapped on reseed
+ * `{sourceCompanyId}/` and any path segment whose id was remapped
  * (e.g. `{co}/models/{modelId}.stl`, `{co}/thumbnails/{itemId}/{file}`). A
- * no-op for preserve-mode (same company, empty `idRewrite`). The same function
- * is applied to both the uploaded file path and the DB path columns so they
+ * no-op for an own load (same company, empty `idRewrite`). The same function
+ * is applied to both the copied file path and the DB path columns so they
  * stay consistent.
  */
 export function rewriteStoragePath(
@@ -560,8 +555,7 @@ export function rewriteStoragePath(
 /**
  * A fresh primary-key value for a table, matching its `id` column's type as the
  * schema defines it — a real UUID for `uuid` columns, otherwise a nanoid (what
- * the `id()` default produces). Used wherever reseed/restore remaps ids, so we
- * never feed a nanoid into a uuid column.
+ * the `id()` default produces), so a nanoid never goes into a uuid column.
  */
 function newIdForTable(table: TableInfo): string {
   const idCol = table.columns.find((c) => c.name === "id");

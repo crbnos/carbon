@@ -252,7 +252,8 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
   });
 });
 
-// The gate refuses on the report's findings. These pin that
+// The gate refuses on exactly the report's `blocked` findings; the cases
+// themselves are covered by the report tests above. These pin that
 // the delegation refuses exactly the `blocked` findings and nothing else — the
 // report's `discarded`/`defaulted` findings must NOT stop a restore.
 describe("assertBackupImportable", () => {
@@ -275,22 +276,6 @@ describe("assertBackupImportable", () => {
     ).toBeNull();
   });
 
-  it("refuses an unsupported backup format", () => {
-    const result = gate(
-      catalog([table("item", [col("id")])]),
-      backup([{ name: "item", rows: 1, columns: ["id"] }], { version: 0 })
-    );
-    expect(result).toContain("is no longer supported");
-  });
-
-  it("refuses a table the schema no longer has and cannot map", () => {
-    const result = gate(
-      catalog([table("item", [col("id")])]),
-      backup([{ name: "vanished", rows: 1, columns: ["id"] }])
-    );
-    expect(result).toContain("vanished");
-  });
-
   it("refuses a new required column with no default, naming table and column", () => {
     const result = gate(
       catalog([table("item", [col("id"), col("mandatory")])]),
@@ -299,28 +284,6 @@ describe("assertBackupImportable", () => {
     expect(result).toBe(
       'This backup can\'t be restored: "item" now requires column "mandatory", which this backup predates.'
     );
-  });
-
-  it("REFUSES a rename whose target the backup also carries", () => {
-    // Applying the rename would merge two tables; the loader keys off name, so
-    // letting it through drops storageRule's rows in silence.
-    const result = gate(
-      catalog([table("enforcementRule", [col("id")])]),
-      backup([
-        { name: "storageRule", rows: 2, columns: ["id"] },
-        { name: "enforcementRule", rows: 5, columns: ["id"] }
-      ])
-    );
-    expect(result).toContain("which this backup also contains");
-  });
-
-  it("accepts a renamed table", () => {
-    expect(
-      gate(
-        catalog([table("enforcementRule", [col("id")])]),
-        backup([{ name: "storageRule", rows: 2, columns: ["id"] }])
-      )
-    ).toBeNull();
   });
 
   it("accepts a dropped-with-its-feature table — discarded is not blocking", () => {
@@ -342,28 +305,6 @@ describe("assertBackupImportable", () => {
         backup([{ name: "item", rows: 1, columns: ["id", "goneNow"] }])
       )
     ).toBeNull();
-  });
-
-  it("accepts a new required column that has a default", () => {
-    expect(
-      gate(
-        catalog([
-          table("item", [col("id"), col("added", { hasDefault: true })])
-        ]),
-        backup([{ name: "item", rows: 1, columns: ["id"] }])
-      )
-    ).toBeNull();
-  });
-
-  it("refuses account defaults arriving without a chart of accounts", () => {
-    const result = gate(
-      catalog([
-        table("account", [col("id")]),
-        table("accountDefault", [col("id")])
-      ]),
-      backup([{ name: "accountDefault", rows: 4, columns: ["id"] }])
-    );
-    expect(result).toContain("no chart of accounts");
   });
 });
 

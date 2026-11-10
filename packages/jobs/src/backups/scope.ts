@@ -13,10 +13,6 @@ import { RETAINED_REF_TABLES } from "./policy";
  * Company-scope SQL for backups: the per-table scope predicate, the export
  * closure guard (`findExportScopeViolations`), and the opt-in exclusion/purge
  * of rows whose NOT-NULL FK escapes that scope.
- *
- * Keep this module free of runtime `@carbon/*` imports (type-only is fine) —
- * the ERP reaches it through `@carbon/jobs/backups`, and bare-`tsx` scripts
- * cannot named-import CJS workspace packages.
  */
 
 /**
@@ -174,7 +170,7 @@ function violationTerm(
  * restored. For each NOT-NULL FK from an exportable scoped table to another,
  * find this company's rows whose reference falls OUTSIDE the referenced table's
  * export scope (the child would be dumped but its parent would not). The export
- * mirror of the restore-side `assertReferentiallyClosed`.
+ * counterpart of the restore-side `assertReferentiallyClosed`.
  *
  * Returns the per-edge breakdown and the DISTINCT rows behind it, per table. A
  * row violating three of its FKs is three `violations` entries but one row —
@@ -442,8 +438,8 @@ export async function purgeScopeViolations(
   // shared with the sibling companies in the group, so deleting it reaches data
   // this company does not own — and the delete is irreversible. Refused
   // unconditionally rather than gated on the group having siblings today, since
-  // one can be added later. Mirrors `resolveRestoreScope`, which is why a restore
-  // refuses to touch group data unless the company is its group's only member.
+  // one can be added later. A restore follows the same rule: `resolveRestoreScope`
+  // lets it touch group data only when the company is its group's only member.
   const shared = [...exclusions.predicates.keys()].filter(
     (name) => byName.get(name)?.scopeColumn === "companyGroupId"
   );

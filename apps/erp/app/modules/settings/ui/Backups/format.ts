@@ -7,8 +7,8 @@ import { formatDate } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
-// Backup filenames are `{timestamp}_{label-slug}.carbon.json.gz`. Turn the slug
-// back into a readable title (the timestamp is shown separately as the date).
+// Backup folder names are `{timestamp}_{label-slug}`. Turn the slug back into a
+// readable title (the timestamp is shown separately as the date).
 const BACKUP_ACRONYMS = new Set([
   "oem",
   "amr",
@@ -22,9 +22,8 @@ const BACKUP_ACRONYMS = new Set([
 ]);
 
 export function formatBackupName(name: string): string {
-  const base = name.replace(/\.carbon\.json\.gz$/i, "");
-  const underscore = base.indexOf("_");
-  const slug = underscore >= 0 ? base.slice(underscore + 1) : "";
+  const underscore = name.indexOf("_");
+  const slug = underscore >= 0 ? name.slice(underscore + 1) : "";
   if (!slug) return "Untitled backup";
   return slug
     .split("-")

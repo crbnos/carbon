@@ -257,7 +257,7 @@ async function copyStorageObject(
 
 /**
  * Copy a company's storage assets (its own bucket, under `{companyId}/`) into
- * a backup's own `.assets/` folder in the same bucket. Server-side —
+ * a backup's own `assets/` folder in the same bucket. Server-side —
  * no bytes pass through this process, so a 200MB asset set costs no memory.
  * Best-effort: a per-file failure warns and continues, matching the
  * non-transactional storage semantics of restore/import.
@@ -304,8 +304,8 @@ export async function copyAssetsToBackup(
 
 /**
  * Copy a backup's stored assets back into the target company's own private
- * bucket, rewriting each path for a foreign/reseed restore (no-op for an own
- * restore). Server-side, best-effort. Every write is guarded to the target
+ * bucket, rewriting each path for a foreign restore or an import (no-op for an
+ * own restore). Server-side, best-effort. Every write is guarded to the target
  * company's own `{companyId}/` prefix so a malformed path can never land in
  * another tenant's space.
  */

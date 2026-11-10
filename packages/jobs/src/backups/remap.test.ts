@@ -5,30 +5,26 @@
 import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
-import type {
-  Catalog,
-  ColumnInfo,
-  ForeignKey,
-  TableInfo
-} from "../../../backups/catalog";
-import type { CompanyBackup } from "../../../backups/format";
+import type { Catalog, ColumnInfo, ForeignKey, TableInfo } from "./catalog";
+import type { CompanyBackup } from "./format";
 import {
   isUserScopedIdentityTable,
   READABLE_ID_TABLES,
   STORAGE_PATH_COLUMNS,
   selectWipeableTables
-} from "../../../backups/policy";
+} from "./policy";
 import {
   assertReferentiallyClosed,
   buildIdMaps,
   buildRowTransforms,
-  findDanglingReferences
-} from "../../../backups/remap";
+  findDanglingReferences,
+  rewriteDocumentEditRowKeys
+} from "./remap";
 import {
   mapCollidingRows,
   matchableUniqueGroups,
   referencedDroppedTables
-} from "../../../backups/reseed";
+} from "./reseed";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
 // The closure check is a pure function of (catalog, data), so these tests need
@@ -987,5 +983,47 @@ describe("cross-company restore invariants", () => {
       (c) => !STORAGE_PATH_COLUMNS.has(c)
     );
     expect(missing).toEqual([]);
+  });
+});
+
+describe("rewriteDocumentEditRowKeys", () => {
+  const rewrite = new Map([["old", "new"]]);
+  const settings = {
+    text: { title: "Order" },
+    valueEdits: {
+      document: { "order.date": "Soon" },
+      rows: {
+        "line:old": { "line.details": "One" },
+        "line:kept": { "line.details": "Two" }
+      }
+    }
+  };
+  const rewritten = {
+    ...settings,
+    valueEdits: {
+      ...settings.valueEdits,
+      rows: {
+        "line:new": { "line.details": "One" },
+        "line:kept": { "line.details": "Two" }
+      }
+    }
+  };
+
+  it("follows the restore's ids in a row's key", () => {
+    expect(rewriteDocumentEditRowKeys(settings, rewrite)).toEqual(rewritten);
+  });
+
+  it("keeps the shape it was given: a backup holds JSON as text", () => {
+    expect(
+      JSON.parse(
+        rewriteDocumentEditRowKeys(JSON.stringify(settings), rewrite) as string
+      )
+    ).toEqual(rewritten);
+  });
+
+  it("leaves settings with no changed row values alone", () => {
+    const plain = { text: { title: "Order" } };
+    expect(rewriteDocumentEditRowKeys(plain, rewrite)).toBe(plain);
+    expect(rewriteDocumentEditRowKeys(null, rewrite)).toBeNull();
   });
 });

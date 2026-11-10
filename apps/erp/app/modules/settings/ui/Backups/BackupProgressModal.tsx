@@ -164,7 +164,6 @@ export function JobProgressModal({
   const [ticks, setTicks] = useState(0);
   const slow = !done && ticks > 240;
 
-  // Elapsed clock — refresh once a second while the job runs.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (done || !startedAt) return;
@@ -182,7 +181,6 @@ export function JobProgressModal({
   }, [raw]);
   const stalled = mode === "restore" && !done && !sawMarker && ticks > 120;
 
-  // Poll the real job status (restore / revert only).
   const load = statusFetcher.load;
   useEffect(() => {
     if (isExport || !runId) return;
@@ -236,7 +234,6 @@ export function JobProgressModal({
       const detail = [counts, elapsed].filter(Boolean).join(" · ") || undefined;
       return { steps: labels, step: activeStep, fraction, detail };
     }
-    // No heartbeat yet: first phase active, bar empty, no fake advance.
     return {
       steps: labels,
       step: 0,

@@ -31,8 +31,9 @@ const log = getLogger("jobs", "backup-load");
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
 /**
- * Loading a backup into a company: the scoped wipe and the one transaction that
- * wipes and reloads it, used by restore, both reverts and the template revert.
+ * Loading a backup into a company: the scoped wipe, the insert loop and the one
+ * load transaction. Restore, import and revert load through here; the company
+ * purge reuses the wipe.
  */
 
 /**
@@ -57,10 +58,8 @@ export async function canSetReplicationRole(
 /**
  * Delete every row of the given tables for one company, in REVERSE topological
  * order (children before parents) so FK constraints hold by construction.
- * `tables` is expected in catalog (referenced-first) order; this reverses it.
- * Each table is scoped by its own column — companyId-scoped by `companyId`,
- * companyGroupId-scoped by `companyGroupId`. Run inside the caller's
- * transaction, ideally with `session_replication_role = 'replica'` set.
+ * `tables` is expected in catalog (referenced-first) order. Run inside the
+ * caller's transaction, ideally with `session_replication_role = 'replica'` set.
  */
 export async function wipeScopedData(
   trx: Kysely<KyselyDatabase>,
@@ -72,9 +71,8 @@ export async function wipeScopedData(
   const ordered = [...tables].reverse();
   for (let i = 0; i < ordered.length; i++) {
     const table = ordered[i]!;
-    // buildScopeFilter scopes by parent FK for `via` tables; a null
-    // companyGroupId yields `= NULL` (no match), so group data is left untouched
-    // when the company has no group.
+    // A null companyGroupId yields `= NULL` (no match), so group data is left
+    // untouched when the company has no group.
     await sql`
       DELETE FROM ${sql.id(table.name)}
       WHERE ${buildScopeFilter(table, byName, scope.companyId, scope.companyGroupId)}
@@ -283,7 +281,6 @@ export async function wipeAndLoad(
     onProgress
   } = opts;
 
-  // Refuse if the schema would let a kept row dangle once we wipe (drift guard).
   const safe = assertWipeSafe(catalog);
   if (!safe.ok) {
     throw new Error(`Restore is unsafe for this schema: ${safe.reason}.`);

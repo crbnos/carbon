@@ -4,7 +4,7 @@
 
 import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { deserializeTable, serializeTable } from "../../../backups/format";
+import { deserializeTable, serializeTable } from "./format";
 
 describe("serializeTable / deserializeTable", () => {
   it("round-trips text holding the Unicode line and paragraph separators", async () => {

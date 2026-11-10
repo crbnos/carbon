@@ -169,19 +169,14 @@ export async function writeCompanyBackup(
     }
   }
 
-  // Dump each non-empty table to its own `tables/<table>.ndjson.gz`, in parallel.
   const tableManifest: Manifest["tables"] = [];
   let dumped = 0; // incremented as each table completes (single-threaded → safe)
   await async.map(
     exportable,
     async (table) => {
       const columns = exportableColumns(table);
-      // A skipCorrupted export leaves out the rows computeScopeExclusions decided on.
       const exclusion = exclusions?.predicates.get(table.name);
       const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
-      // Direct-scoped tables filter by their companyId/companyGroupId column;
-      // transitively-scoped child tables (contacts, line prices, …) filter through
-      // their parent FK — see buildScopeFilter.
       const result = await sql<Record<string, unknown>>`
       SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
       FROM ${sql.id(table.name)}
@@ -195,7 +190,7 @@ export async function writeCompanyBackup(
           done: dumped,
           total: exportable.length
         });
-        return; // empty tables get no file
+        return;
       }
 
       const rows = result.rows.map((row) => {

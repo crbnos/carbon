@@ -71,8 +71,6 @@ export const companyImportFunction = inngest.createFunction(
         );
       }
 
-      // The target company's group receives the companyGroup-scoped data
-      // (chart of accounts, currencies, …).
       const targetGroupId = await getCompanyGroupId(client, companyId);
       const catalogTableNames = new Set(catalog.tables.map((t) => t.name));
 
@@ -113,7 +111,6 @@ export const companyImportFunction = inngest.createFunction(
         candidateTables.filter((t) => !keptNames.has(t.name))
       );
       const keep = new Set([...keptNames, ...readdedTables.map((t) => t.name)]);
-      // Filtered from candidateTables so topological (catalog) order holds.
       const importTables = candidateTables.filter((t) => keep.has(t.name));
 
       const idMaps = buildIdMaps(importTables, backup.data);
@@ -165,7 +162,6 @@ export const companyImportFunction = inngest.createFunction(
         for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
       }
 
-      // Group-scoped data needs a destination group on the target company.
       if (
         targetGroupId === null &&
         importTables.some((t) => t.scopeColumn === "companyGroupId")

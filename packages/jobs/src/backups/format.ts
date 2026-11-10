@@ -8,10 +8,11 @@ import { createGunzip, createGzip } from "node:zlib";
 import type { ColumnInfo } from "./catalog";
 
 /**
- * The backup format: a folder `exports/<name>/` holding `manifest.json`, one
- * `tables/<table>.ndjson.gz` per non-empty table and `assets/<path>` files.
- * Tables are written and read a line at a time, so a huge table never becomes
- * one string.
+ * The backup format: a folder `exports/<name>/` of small objects (each under the
+ * bucket size cap) holding `manifest.json`, one `tables/<table>.ndjson.gz` per
+ * non-empty table and `assets/<path>` files. Bundled as one `.carbon.tar.gz` for
+ * cross-environment download and upload. Tables are written and read a line at
+ * a time, so a huge table never becomes one string.
  */
 
 export const BACKUP_KIND = "carbon-company-backup";
@@ -59,12 +60,6 @@ export type CompanyBackup = {
   manifest: Manifest;
   data: Record<string, Record<string, unknown>[]>;
 };
-
-// ── File-per-table layout ──────────────────────────────────────────────────
-// A backup is a folder `exports/<name>/` of small objects (each under the bucket
-// size cap): `manifest.json`, one `tables/<table>.ndjson.gz` per non-empty table
-// (dumped + loaded in parallel), and `assets/<path>` files. Bundled as one
-// `.carbon.tar.gz` for cross-environment download / upload.
 
 export function backupDir(name: string): string {
   return `${EXPORTS_PREFIX}/${name}`;

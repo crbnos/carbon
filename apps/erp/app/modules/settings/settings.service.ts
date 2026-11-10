@@ -1539,7 +1539,6 @@ export async function upsertItemPostingGroupResponsibility(
 
 const log = getLogger("erp", "backups");
 
-/** Backups are a Business/Enterprise feature (`BACKUPS`), open to internal staff and local dev. */
 export async function canManageBackups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1720,7 +1719,6 @@ export async function deleteCompanyBackup(
   });
 }
 
-/** The marker rows of one backup job, newest first. */
 async function readMarkers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1736,7 +1734,6 @@ async function readMarkers(
   return markers.data ?? [];
 }
 
-/** The marker fields every backup job writes, with their defaults. */
 function runView(
   meta: Partial<
     Pick<
@@ -1855,7 +1852,6 @@ export async function startCompanyTemplate(args: {
   return templateRunId;
 }
 
-/** Starts a company backup export (`carbon/company-export`). */
 export async function exportCompanyBackup(args: {
   companyId: string;
   userId: string;

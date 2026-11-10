@@ -95,7 +95,7 @@ export const CATALOG_EXCLUDED_TABLES = new Set<string>([
  * these columns — so every `modelUpload` artifact is carried regardless, and a
  * column missing here silently survives the restore still pointing at the SOURCE
  * company. Add a new `modelUpload` path column here too; the coverage test in
- * `company-backup.closure.test.ts` fails to COMPILE otherwise — it derives the
+ * `remap.test.ts` fails to COMPILE otherwise — it derives the
  * column set from the generated `modelUpload` row type.
  */
 export const STORAGE_PATH_COLUMNS = new Set([
@@ -121,7 +121,7 @@ export const STORAGE_PATH_COLUMNS = new Set([
  * with the source company's live rows. The two sets must stay disjoint, and an
  * explicit list is required: the schema shape alone also matches ~65 tables
  * (`workflow`, `kanban`, …) that do need remapping. Both invariants are pinned
- * in `company-backup.closure.test.ts`.
+ * in `remap.test.ts`.
  */
 export const READABLE_ID_TABLES = new Set([
   "part",
@@ -159,24 +159,14 @@ export function isLeftAlone(name: string): boolean {
 }
 
 /**
- * The companyId-scoped tables an in-place restore may clear and reload: minus
- * the access/identity tables (kept, so the user isn't locked out) and secrets
- * (never travel). companyGroupId-scoped tables (chart of accounts, currencies)
- * are excluded — shared across the group, so a single company's restore must
- * not touch them. Returned in catalog (topological) order.
- *
- * The full set is WIPED (so a table empty in the backup ends up empty, matching
- * the snapshot exactly); only the subset with rows in the backup is reloaded.
- */
-/**
  * A table whose primary key is keyed by a `user`/`employee` FK (e.g. `employeeJob`,
  * `customerAccount`, `supplierAccount`, `userToCompany`) is per-source-user
  * identity. A foreign restore / reseed collapses every user FK onto the single
  * importing user, so all such rows would collide on whatever uniqueness constraint
  * the user column participates in — a composite PK like `(id, companyId)`, OR a
  * unique index like `trainingCompletion(trainingAssignmentId, employeeId, period)`.
- * They can never be meaningfully copied to another company — skip them on both load
- * paths (the source's belong to the source's users; the target keeps its own).
+ * They can never be meaningfully copied to another company, so neither a foreign
+ * restore nor an import loads them: the source's rows belong to the source's users.
  * Keys off every unique column (not just the PK) so a table that keys its user via
  * a unique index is covered automatically rather than silently colliding on load.
  */
@@ -196,6 +186,14 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
   );
 }
 
+/**
+ * The tables an in-place restore wipes, in catalog (topological) order: the
+ * companyId-scoped ones minus the kept and secret tables (`isLeftAlone`), plus
+ * the companyGroupId-scoped ones (chart of accounts, currencies) only with
+ * `includeGroup`, since those are shared across the group. The full set is
+ * wiped, so a table empty in the backup ends up empty; only the subset with
+ * rows in the backup is reloaded.
+ */
 export function selectWipeableTables(
   catalog: Catalog,
   opts: { includeGroup?: boolean } = {}

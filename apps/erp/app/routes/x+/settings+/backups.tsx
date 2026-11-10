@@ -412,9 +412,9 @@ export default function BackupsRoute() {
   // The in-progress export we're tracking this session. Set the instant the user
   // clicks "Create backup" (optimistic — before the job writes its first marker,
   // so the row shows immediately, Supabase-style) or adopted from the marker for
-  // a run started elsewhere (reload / another tab). `baseline` = the READY backups
-  // when tracking began; the run is complete once a ready backup outside it
-  // appears in the (revalidated) list.
+  // a run started elsewhere (reload / another tab). `baseline` = the backups
+  // listed when tracking began; the run is complete once a ready backup outside
+  // it appears in the (revalidated) list.
   const [runningExport, setRunningExport] = useState<{
     startedAt: string | null;
     baseline: Set<string>;
@@ -561,7 +561,6 @@ export default function BackupsRoute() {
           <Trans>Backups</Trans>
         </SettingsPageHeading>
 
-        {/* Create + Restore — equal-height cards, footers aligned. */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
           <Card className="flex flex-col">
             <ValidatedForm
@@ -783,8 +782,6 @@ export default function BackupsRoute() {
                               "exportSkipCorrupted"
                           }
                           onClick={() =>
-                            // Post the Create form's CURRENT values so the retry
-                            // is the backup the person just described.
                             fetcher.submit(
                               {
                                 intent: "exportSkipCorrupted",

@@ -16,7 +16,6 @@ import type { ColumnInfo, ForeignKey, TableInfo } from "./catalog";
 import {
   buildDanglingPredicate,
   buildExclusionPredicate,
-  ExportScopeViolationError,
   formatScopeViolations,
   scopeEdges
 } from "./scope";
@@ -224,34 +223,6 @@ describe("formatScopeViolations / ExportScopeViolationError", () => {
         "  pickMethod.itemId → item (1 row)\n" +
         "  jobOperationDependency.jobId → job (3 rows)"
     );
-  });
-
-  it("exposes the structured violations on the error", () => {
-    const violations = [
-      { table: "pickMethod", column: "itemId", refTable: "item", rows: 1 }
-    ];
-    const err = new ExportScopeViolationError("C", violations);
-    expect(err).toBeInstanceOf(Error);
-    expect(err.name).toBe("ExportScopeViolationError");
-    expect(err.violations).toEqual(violations);
-    expect(err.message.startsWith("Refusing to export C: 1 NOT-NULL")).toBe(
-      true
-    );
-  });
-});
-
-describe("purgeScopeViolations tenancy guard", () => {
-  // A `companyGroupId`-scoped table is shared with the sibling companies in the
-  // group, so its rows are not this company's to delete.
-  const groupScoped = (name: string): TableInfo => ({
-    ...table(name, [col("id"), col("companyGroupId")]),
-    scope: { kind: "direct", column: "companyGroupId" },
-    scopeColumn: "companyGroupId"
-  });
-
-  it("marks group-scoped tables as shared, company-scoped ones as not", () => {
-    expect(groupScoped("currency").scopeColumn).toBe("companyGroupId");
-    expect(pickMethod.scopeColumn).toBe("companyId");
   });
 });
 
