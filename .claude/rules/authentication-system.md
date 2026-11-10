@@ -422,7 +422,16 @@ calls `registerApi`). Two paths:
    - Claims are `{ role, permissions }` for ONE company. `get_claims(uid, company)`
      returns `{ role, admin, grants, portal }` (the `permission` rows of the user and
      their employee type); `makePermissionsFromClaims(claims, companyId)` expands them
-     per page with `expandClaims` (`@carbon/database/access`). Cached in a **Redis**
+     per page with `expandClaims` (`@carbon/database/access`).
+     TRANSITIONAL, both ways round for a rolling deploy: `get_claims` also returns the old
+     `"<module>_<action>": [company]` keys, built from the effective MODULE grants (person
+     beats role; Admin holds every action), so app pods from before page permissions keep
+     working on a migrated database; current code ignores them. And `claimsFromJson(json,
+     companyId)` reads the old shape (no `grants`: a database the permission migrations
+     have not reached) as module grants in `companyId`, never cached (`isLegacyClaims`), so
+     every caller must pass the company id or that window fails closed. Remove both once no
+     deployed app version predates page permissions (PR #1958; the TRANSITIONAL comment in
+     `packages/database/src/authz/helpers/get_claims.sql`). Cached in a **Redis**
      hash (`@carbon/kv`) at `getPermissionCacheKey(userId)` =
      `permissions:<REGISTRY_HASH>:<userId>`, one field per company, so
      `redis.del(getPermissionCacheKey(userId))` clears every company. On a miss it
@@ -549,7 +558,13 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - `user` / `userPermission` (`id`, `permissions` JSONB) — seeded by the
   `create_public_user()` trigger (`on_auth_user_created` on `auth.users`) — which
   SKIPS inserting when the email already belongs to a different `user` row (the
-  SSO duplicate case; the callback migration owns it).
+  SSO duplicate case; the callback migration owns it). `userPermission` now holds
+  only customer and supplier portal keys (`get_claims` → `portal`).
+- `permission` — every employee and API-key grant: one row per subject
+  (`employeeTypeId` = role, `userId` = person override, `apiKeyId` = key, exactly
+  one set) on a page or, with `page` NULL, a whole module, at a `level`
+  (None/View/Create/Edit/Full). Unique per (company, subject, module, page).
+  Written only through `replaceGrants` (`@carbon/database/access-write`).
 - `userToCompany` — junction, PK `(userId, companyId)`, `role` enum
   `'employee' | 'supplier' | 'customer'`.
 - `ssoConnection` — SAML SSO tenant binding (see the SSO section): PK

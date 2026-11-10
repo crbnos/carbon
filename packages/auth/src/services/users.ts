@@ -113,6 +113,6 @@ export function makePermissionsFromClaims(
 ) {
   if (typeof claims !== "object" || claims === null || Array.isArray(claims))
     return null;
-  const raw = claimsFromJson(claims);
+  const raw = claimsFromJson(claims, companyId);
   return { permissions: expandClaims(raw, companyId), role: raw.role };
 }

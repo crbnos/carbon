@@ -19,7 +19,7 @@ import {
   isSalesRfqLocked,
   salesRfqValidator
 } from "~/modules/sales/sales.models";
-import { getSalesRFQ, upsertSalesRFQ } from "~/modules/sales/sales.service";
+import { getSalesRFQ } from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   SalesRFQ,
@@ -72,7 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await authorize(request, { "sales.rfqs": "Edit" });
+  const { api } = await authorize(request, { "sales.rfqs": "Edit" });
 
   const formData = await request.formData();
   const validation = await validator(salesRfqValidator).validate(formData);
@@ -84,12 +84,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId, ...d } = validation.data;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const update = await upsertSalesRFQ(client, {
+  // The service function moves a new customer onto the opportunity (owned by
+  // Sales → Quotes) as the system, after its own RFQ permission.
+  const update = await api.sales.updateSalesRFQ({
     id,
     rfqId,
     ...d,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: setCustomFields(formData)
   });
   if (update.error) {
     throw redirect(

@@ -106,6 +106,26 @@ describe("logPermissionChange", () => {
 });
 
 describe("logRoleChange", () => {
+  it("records an employee's permission rows as before, after and revoked", () => {
+    const inventory = { module: "Inventory", page: null, level: "Edit" };
+    const quotes = { module: "Sales", page: "sales.quotes", level: "None" };
+    logRoleChange({
+      targetUserId: "usr_target",
+      companyId: COMPANY,
+      beforeRole: "employee",
+      afterRole: null,
+      grantsBefore: [inventory, quotes],
+      grantsAfter: [quotes],
+      reason: "deactivate"
+    });
+    const [, payload] = info.mock.calls[0]!;
+    expect(payload).toMatchObject({
+      before: [inventory, quotes],
+      after: [quotes],
+      revoked: [inventory]
+    });
+  });
+
   it("emits role_changed with role transition and revoked permissions on deactivation", () => {
     logRoleChange({
       actor: "usr_admin",

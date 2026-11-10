@@ -646,7 +646,7 @@ function QuoteLineItem({
                   shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   disabled={
-                    isDisabled || !permissions.has({ "sales.quotes": "Edit" })
+                    isDisabled || !permissions.has({ "sales.quotes": "Full" })
                   }
                   onClick={(e) => {
                     e.stopPropagation();

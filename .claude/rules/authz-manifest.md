@@ -78,7 +78,10 @@ note: policies({
 ## Page keys
 
 A rule names a module (`company("inventory")`), but `render()` writes the key of the
-page that owns the table in the access registry (`placeOf`, `@carbon/database/access`):
+page that owns the table in the access registry (`placeOf`, `@carbon/database/access`).
+The module must be that page's (for a shared or child table, one of its pages'):
+`render()` throws on a module key of any other module, so a rule never reads as one
+module while it checks another. To admit a page of another module, name its page key.
 
 - An owned table checks `<page>_<action>`, for example `inventory.receipts_update`.
 - A restricted read also admits every page that lists the table in `readers`
@@ -103,7 +106,9 @@ page that owns the table in the access registry (`placeOf`, `@carbon/database/ac
 (the text before the first dot), so a module grant covers every page. `registry.test.ts`
 fails when a policy checks a key that is not a page id. A managed function file or a hand-written
 migration names page keys too: `no-module-permission-key` (`@carbon/checks`) fails a
-`<module>_<action>` token there (migrations after `20261110050010`); portal keys
+`<module>_<action>` token there (every migration not in the frozen list
+`packages/checks/src/conformance/module-key-migrations.json`, the migrations that existed
+at the cutoff `20261110050010` — so a late-landing migration dated earlier is checked too); portal keys
 (`get_customer_ids_with_customer_permission('parts_view')`) are exempt.
 
 ## Shipping a change
@@ -227,6 +232,13 @@ The meaning equals its rule; the wording may not — production's `agentThread` 
 (`20261003223948_rls-caller-lookup-once.sql`).
 
 ## Gotchas
+
+- Moving a table to a page of another module takes access from every grant on the old
+  module. When the new page is essentially the table's own home, ship a hand-written
+  migration that gives each such grant a page grant on it
+  (`20261110101723_grants-for-moved-tables.sql`, `20261110050005` for Printing). When
+  the new page owns much more, a page grant would widen access: make the table's writes
+  also accept the page that wrote it before instead (`writesAlso` in `manifest.ts`).
 
 - A filtered `UPDATE … WHERE` also checks the new row against the SELECT policy, so a test of
   a missing WITH CHECK passes vacuously; test with an unfiltered UPDATE or `pg_temp.allows`.

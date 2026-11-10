@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
+import { holdsGate, ITEM_TYPE_PAGES } from "@carbon/database/access";
 import type { Feature } from "@carbon/ee/plan";
 import { RoundingMode, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -201,13 +201,75 @@ export function bulkStartFormResponse(start: BulkActionStart) {
  */
 export const ALL_MATCHING_RELEASE_LIMIT = 2_000;
 
+/** The item type each items list shows, so a bulk action on the list asks
+ *  for that type's page and acts on that type's items only. */
+export const ITEM_LIST_TYPES: Readonly<
+  Record<string, Database["public"]["Enums"]["itemType"]>
+> = {
+  parts: "Part",
+  materials: "Material",
+  tools: "Tool",
+  consumables: "Consumable",
+  services: "Service"
+};
+
+/** The item type of the items list `listKey`, or null for another list. */
+export function itemListType(
+  listKey: string | null | undefined
+): Database["public"]["Enums"]["itemType"] | null {
+  return listKey && Object.hasOwn(ITEM_LIST_TYPES, listKey)
+    ? ITEM_LIST_TYPES[listKey]!
+    : null;
+}
+
+/** The page of the items list `listKey` at `level`, or null when the key is
+ *  not an items list. */
+export function itemListPermission(
+  listKey: string,
+  level: "View" | "Create" | "Edit" | "Full"
+): ListPermission | null {
+  const type = itemListType(listKey);
+  const page = type ? ITEM_TYPE_PAGES[type] : undefined;
+  return page ? { gate: { [page]: level } } : null;
+}
+
+/** A bulk action's permission: one gate, or the gate of the list it runs on
+ *  (null for a list it does not serve). */
+export type BulkActionPermission =
+  | ListPermission
+  | ((listKey: string) => ListPermission | null);
+
+/** The permission a bulk action asks for on `listKey`. Null refuses. */
+export function bulkActionPermission(
+  action: Pick<BulkActionMeta, "lists" | "permission">,
+  listKey: string
+): ListPermission | null {
+  if (!action.lists.includes(listKey)) return null;
+  return typeof action.permission === "function"
+    ? action.permission(listKey)
+    : action.permission;
+}
+
+/**
+ * Who may run the items tables' Update in the background, and on which lists:
+ * Edit on the page of the list's item type, as `updateItems`' per-row item
+ * rule asks on the action route. The job runs as the system, which skips that
+ * rule, so a broader gate (any item page) would let Tools Edit update parts.
+ */
+export const ITEMS_BULK_UPDATE: Pick<BulkActionMeta, "lists" | "permission"> = {
+  lists: Object.keys(ITEM_LIST_TYPES),
+  permission: (listKey) => itemListPermission(listKey, "Edit")
+};
+
 export type BulkActionMeta = {
   /** The action's English name for the notification ("Release jobs"). */
   label: string;
   /** The list keys whose rows the action may act on. */
   lists: readonly string[];
-  /** The action route's permission check (the job adds the employee role). */
-  permission: ListPermission;
+  /** The action route's permission check (the job adds the employee role),
+   *  or a function of the list key when the route's check depends on the
+   *  list (the items lists: each asks for its own item type's page). */
+  permission: BulkActionPermission;
   /** The plan feature the action route requires, checked again by the job. */
   feature?: Feature;
   /** The most matching rows the action runs on (default 100,000). */

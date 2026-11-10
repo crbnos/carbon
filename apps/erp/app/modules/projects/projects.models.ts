@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { PageGate } from "@carbon/database/access";
+import type { Gate } from "@carbon/database/access";
 import {
   isPlanLayerField,
   PLAN_LAYER_FIELDS,
@@ -4122,7 +4122,7 @@ export function isProjectReportKey(value: string): value is ProjectReportKey {
  * The page gate a user must pass to run each report. The report page, its
  * CSV and the Reports list all read this one map.
  */
-export const projectReportPermissions: Record<ProjectReportKey, PageGate> = {
+export const projectReportPermissions: Record<ProjectReportKey, Gate> = {
   "late-entries": { "projects.reports": "View" },
   "missing-time": { "projects.reports": "View" },
   "labor-transfers": { "projects.reports": "View" },
@@ -4131,10 +4131,11 @@ export const projectReportPermissions: Record<ProjectReportKey, PageGate> = {
     "projects.reports": "View",
     "people.employees": "View"
   },
-  "cost-by-clin": {
-    "projects.reports": "View",
-    "sales.serviceContracts": "View"
-  },
+  // Either contracts list opens the contracts the report rolls up.
+  "cost-by-clin": [
+    { "projects.reports": "View", "sales.serviceContracts": "View" },
+    { "projects.reports": "View", "sales.projectContracts": "View" }
+  ],
   "rd-section-174a": {
     "projects.reports": "View",
     "accounting.reporting": "View"

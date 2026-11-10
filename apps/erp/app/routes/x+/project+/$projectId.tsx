@@ -7,7 +7,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
+import { anyOf, holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
@@ -250,7 +250,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     showBilling: project.data.costTreatment === "Contract",
     projectContracts: holdsGate(
       claims?.permissions ?? {},
-      { "sales.serviceContracts": "View" },
+      anyOf(["sales.serviceContracts", "sales.projectContracts"], "View"),
       companyId
     )
       ? projectContracts.data.map((contract) => ({

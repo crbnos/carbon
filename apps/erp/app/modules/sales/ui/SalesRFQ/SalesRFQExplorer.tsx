@@ -437,7 +437,7 @@ function SalesRFQLineItem({
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={
-                  isDisabled || !permissions.has({ "sales.rfqs": "Edit" })
+                  isDisabled || !permissions.has({ "sales.rfqs": "Full" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();

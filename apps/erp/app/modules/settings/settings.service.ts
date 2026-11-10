@@ -1240,16 +1240,27 @@ export async function insertSubsidiary(
 }
 
 /** Only the company fields: `updateSubsidiaryDetails` gates it and drops the cached time zone. */
+/**
+ * Writes a subsidiary's details. Bypasses row-level security when given the
+ * system client (Settings → Company owns `company`), so it is scoped to the
+ * caller's company group.
+ */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
+  companyGroupId: string,
   subsidiary: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
   }
 ) {
   const { id: _, ...data } = subsidiary;
   return requireAffected(
-    client.from("company").update(data).eq("id", id).select("id")
+    client
+      .from("company")
+      .update(data)
+      .eq("id", id)
+      .eq("companyGroupId", companyGroupId)
+      .select("id")
   );
 }
 
@@ -1463,9 +1474,9 @@ export async function setLocationResponsibleEmployee(
     userId: string;
   }
 ) {
-  // `location` belongs to Resources → Locations: without Edit there,
-  // row-level security matches no row and the update succeeds having changed nothing.
-  // Returning the row lets the caller tell the two apart.
+  // `location` belongs to Resources → Locations; the operation passes the
+  // system client, so the write is scoped to the company. Returning the row
+  // tells a location of another company (no row) from a written one.
   return client
     .from("location")
     .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
@@ -3524,7 +3535,12 @@ export function nothingSent(
     : null;
 }
 
-/** Writes the sent fields to the company's settings row, as the caller. */
+/**
+ * Writes the sent fields to the company's settings row. Bypasses row-level
+ * security: Settings → Company owns the row, and the calling settings page's
+ * operation permission is the gate. Call it only with that operation's
+ * validated fields.
+ */
 export async function saveCompanySettings(
   ctx: ServiceContext,
   fields: CompanySettingsUpdate,
@@ -3533,7 +3549,7 @@ export async function saveCompanySettings(
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
   const { error } = await requireAffected(
-    ctx.asCaller.supabase
+    ctx.asSystem.supabase
       .from("companySettings")
       .update(changes)
       .eq("id", ctx.company.id)

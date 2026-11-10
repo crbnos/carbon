@@ -73,7 +73,9 @@ export const createAbility = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
-    const gated = await client
+    // Resources → Processes owns the process: its gate is turned on as the
+    // system, after this page's permission, for this company's process only.
+    const gated = await ctx.asSystem.supabase
       .from("process")
       .update({ requiresAbility: true, updatedBy: ctx.auditUserId })
       .eq("id", processId)
@@ -351,7 +353,7 @@ export const createProcess = defineServiceFn({
         service.processNameTakenMessage(process.name, taken.data.active)
       );
     }
-    const insert = await service.insertProcess(client, {
+    const insert = await service.insertProcess(client, ctx.asSystem.supabase, {
       ...process,
       companyId,
       createdBy: ctx.auditUserId
@@ -369,13 +371,19 @@ export const createProcess = defineServiceFn({
     const id = insert.data.id;
 
     if (process.requiresAbility) {
-      const ability = await service.ensureProcessAbility(client, {
-        processId: id,
-        companyId,
-        userId: ctx.auditUserId
-      });
+      // Resources → Abilities owns the ability: written as the system, for
+      // the process just created.
+      const ability = await service.ensureProcessAbility(
+        ctx.asSystem.supabase,
+        {
+          processId: id,
+          companyId,
+          userId: ctx.auditUserId
+        }
+      );
       if (ability.error) {
-        await client
+        // A Create-level caller cannot update the process it made.
+        await ctx.asSystem.supabase
           .from("process")
           .update({ requiresAbility: false })
           .eq("id", id)
@@ -460,11 +468,16 @@ export const updateProcess = defineServiceFn({
 
     let abilityId: string | undefined;
     if (process.requiresAbility) {
-      const ability = await service.ensureProcessAbility(client, {
-        processId: id,
-        companyId,
-        userId: ctx.auditUserId
-      });
+      // Resources → Abilities owns the ability: written as the system, for
+      // this company's process (read above).
+      const ability = await service.ensureProcessAbility(
+        ctx.asSystem.supabase,
+        {
+          processId: id,
+          companyId,
+          userId: ctx.auditUserId
+        }
+      );
       if (ability.error) {
         await client
           .from("process")

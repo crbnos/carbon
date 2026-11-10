@@ -16,7 +16,6 @@ import { useLoaderData, useParams } from "react-router";
 import type z from "zod";
 import type { calibrationAttempt } from "~/modules/quality/quality.models";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
-import { upsertGaugeCalibrationRecord } from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -72,7 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "quality.records": "Create"
   });
 
@@ -93,12 +92,12 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const updateGauge = await upsertGaugeCalibrationRecord(client, {
+  // The service function moves the gauge (owned by Quality → Gauges) as the
+  // system, after its own records permission.
+  const updateGauge = await api.quality.updateGaugeCalibrationRecord({
     id,
     ...d,
     inspectionStatus,
-    companyId,
-    updatedBy: userId,
     customFields: setCustomFields(formData)
   });
 

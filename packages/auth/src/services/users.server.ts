@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { isLegacyClaims } from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -87,16 +88,19 @@ async function loadUserClaims(userId: string, companyId: string) {
       // store claims in redis — best-effort. A null/failed write (Redis down,
       // fail-soft via @carbon/kv withResilience) must not abort the in-flight
       // request; we already have the claims from the DB.
+      // Never claims in the old shape (no `grants`): the database has not run
+      // the permission migrations yet, and an hour of cache would outlive them.
       try {
-        await redis
-          .multi()
-          .hset(
-            getPermissionCacheKey(userId),
-            companyId,
-            JSON.stringify(claims)
-          )
-          .expire(getPermissionCacheKey(userId), PERMISSION_CACHE_TTL_SECONDS)
-          .exec();
+        if (!isLegacyClaims(rawClaims.data))
+          await redis
+            .multi()
+            .hset(
+              getPermissionCacheKey(userId),
+              companyId,
+              JSON.stringify(claims)
+            )
+            .expire(getPermissionCacheKey(userId), PERMISSION_CACHE_TTL_SECONDS)
+            .exec();
       } catch (e) {
         log.error("Failed to cache claims in redis", { error: e });
       }
@@ -240,6 +244,17 @@ export async function deactivateEmployee(
     {}
   );
 
+  // The person's own grants, which this deletes: the audit records them.
+  const personGrants = await serviceRole
+    .from("permission")
+    .select("module, page, level")
+    .eq("userId", userId)
+    .eq("companyId", companyId);
+
+  if (personGrants.error) {
+    return error(personGrants.error, "Failed to get the employee's access");
+  }
+
   const companyGroups = await serviceRole
     .from("group")
     .select("id")
@@ -313,8 +328,8 @@ export async function deactivateEmployee(
     companyId,
     beforeRole: "employee",
     afterRole: null,
-    before,
-    after: permissions,
+    grantsBefore: personGrants.data ?? [],
+    grantsAfter: [],
     ip,
     reason: "deactivate"
   });

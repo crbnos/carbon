@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import {
   contractFinancingRateValidator,
   contractFinancingTermsValidator,
@@ -37,9 +38,11 @@ const logger = getLogger("erp", "contract-financing");
 
 /** The contract's financing: its terms, rates, PBP events and requests. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 

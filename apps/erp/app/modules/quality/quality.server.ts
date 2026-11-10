@@ -3333,12 +3333,9 @@ export const createGaugeCalibrationRecord = defineServiceFn({
   }),
   permission: { "quality.records": "Create" },
   async run(ctx, input) {
-    return unwrap(
+    return await service.saveGaugeCalibration(
       ctx,
-      await service.upsertGaugeCalibrationRecord(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forCreate() as never
-      )
+      payload(ctx, input).forCreate() as never
     );
   }
 });
@@ -3379,12 +3376,9 @@ export const updateGaugeCalibrationRecord = defineServiceFn({
   // The route gated on create; the write runs under the update policy.
   permission: { "quality.records": "Edit" },
   async run(ctx, input) {
-    return unwrap(
+    return await service.saveGaugeCalibration(
       ctx,
-      await service.upsertGaugeCalibrationRecord(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      payload(ctx, input).forUpdate() as never
     );
   }
 });

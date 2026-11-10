@@ -6,6 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import { clearCompanyAccessCaches } from "../../../backups/access-cache";
 import {
   groupConflictClause,
   rebuildDerivedGroups
@@ -36,8 +37,7 @@ import {
   loadSubstrateIds,
   mapCollidingRows,
   matchableUniqueGroups,
-  referencedDroppedTables,
-  travelsToAnotherCompany
+  referencedDroppedTables
 } from "./company-backup.transforms";
 
 const INSERT_CHUNK_SIZE = 200;
@@ -334,11 +334,7 @@ export const companyImportFunction = inngest.createFunction(
             scrubEmail
           });
           const skips = collisionSkips.get(table.name);
-          const allRows = remap
-            ? backup.data[table.name]!.filter((row) =>
-                travelsToAnotherCompany(table.name, row)
-              )
-            : backup.data[table.name]!;
+          const allRows = backup.data[table.name]!;
           const originalRows = skips
             ? allRows.filter(
                 (row) => !(typeof row.id === "string" && skips.has(row.id))
@@ -441,6 +437,7 @@ export const companyImportFunction = inngest.createFunction(
         // no groups yet.
         await rebuildDerivedGroups(trx, companyId);
       });
+      await clearCompanyAccessCaches(db, companyId);
 
       if (unresolvedRefs.size > 0) {
         logger.warn(

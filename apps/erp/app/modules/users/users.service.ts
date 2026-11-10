@@ -15,6 +15,7 @@ import {
   ITAR_RIDER_VERSION
 } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
+import { logPermissionChange } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   deactivateCustomer,
@@ -27,6 +28,9 @@ import { fetchAllFromTable } from "@carbon/database";
 import {
   accessHolders,
   actionsGained,
+  claimKeys,
+  claimsFromJson,
+  expandClaims,
   type Grant,
   type Level,
   PAGES,
@@ -42,7 +46,10 @@ import { InviteEmail } from "@carbon/documents/email";
 import { replaceApiKeyGrants } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { replaceAccessGrants } from "@carbon/ee/permissions.server";
+import {
+  replaceAccessGrants,
+  updateEmployee
+} from "@carbon/ee/permissions.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
@@ -596,16 +603,6 @@ export async function resolveUserSelectIds(
       .eq("isIdentityGroup", false)
   ]);
   return { users, groups };
-}
-
-export async function getPermissionsByEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeTypeId: string
-) {
-  return client
-    .from("employeeTypePermission")
-    .select("view, create, update, delete, module")
-    .eq("employeeTypeId", employeeTypeId);
 }
 
 export async function getSuppliers(
@@ -2554,6 +2551,65 @@ export function readRoleGrants(ctx: ServiceContext) {
     .where("companyId", "=", ctx.company.id)
     .where("employeeTypeId", "is not", null)
     .execute();
+}
+
+/** A user's claims in the company as flat keys, for the audit log. Null when
+ *  they cannot be read. */
+async function auditedClaims(ctx: ServiceContext, userId: string) {
+  const claims = await getClaims(ctx.asSystem.supabase, userId, ctx.company.id);
+  if (claims.error || claims.data === null) return null;
+  return claimKeys(
+    expandClaims(claimsFromJson(claims.data, ctx.company.id), ctx.company.id)
+  );
+}
+
+/**
+ * Move an employee to another employee type of the company, with its own
+ * permission audit event.
+ *
+ * @remarks
+ * The person editor saves the type, then the person's grants
+ * (`saveAccessGrants`). The two cannot share a transaction: the grants write
+ * (`replaceAccessGrants`, `@carbon/ee`) commits its own and reads the audit
+ * claims outside it. So the move reads the claims before it writes and logs
+ * the move by itself; the grants write then logs from the moved state. The
+ * two events together give the whole change. A grants write that fails after
+ * the move leaves the move, which its own event records.
+ */
+export async function moveEmployeeType(
+  ctx: ServiceContext,
+  args: { id: string; employeeType: string; ip?: string }
+) {
+  const companyId = ctx.company.id;
+  const current = await ctx.asSystem.pg
+    .selectFrom("employee")
+    .select("employeeTypeId")
+    .where("id", "=", args.id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!current) return ctx.error("notFound", "Employee not found");
+  if (current.employeeTypeId === args.employeeType) return null;
+
+  const before = await auditedClaims(ctx, args.id);
+  const moved = await updateEmployee(ctx.asCaller.supabase, {
+    id: args.id,
+    employeeType: args.employeeType,
+    companyId
+  });
+  if (!moved.success) return permissionsWriteError(ctx, moved.message);
+
+  // The role's grants now apply: drop the cached claims.
+  await redis.del(getPermissionCacheKey(args.id));
+  logPermissionChange({
+    actor: ctx.auditUserId,
+    targetUserId: args.id,
+    companyId,
+    ip: args.ip,
+    before,
+    after: await auditedClaims(ctx, args.id),
+    reason: "Employee type changed"
+  });
+  return null;
 }
 
 /**

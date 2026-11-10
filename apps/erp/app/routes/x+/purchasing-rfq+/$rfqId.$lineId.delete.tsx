@@ -17,9 +17,6 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await authorize(request, {
-    "purchasing.rfqs": "View"
-  });
   const { client } = await authorize(request, { "purchasing.rfqs": "Full" });
 
   const { rfqId, lineId } = params;
@@ -30,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const rfq = await getPurchasingRFQ(viewClient, rfqId);
+  const rfq = await getPurchasingRFQ(client, rfqId);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),

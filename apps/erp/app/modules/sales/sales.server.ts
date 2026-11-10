@@ -1529,8 +1529,9 @@ export const attachQuoteFile = defineServiceFn({
         // A failed link is logged; the model is still optimised.
         const [lineUpdate] = await Promise.all([
           client.from("quoteLine").update({ modelUploadId }).eq("id", lineId),
+          // The item pages own the item, created above with the service role.
           partId
-            ? client
+            ? serviceRole
                 .from("item")
                 .update({ modelUploadId })
                 .eq("id", partId)
@@ -2201,18 +2202,22 @@ export const updateSalesOrderDetails = defineServiceFn({
       );
       if (blocked) return blocked;
     }
-    const result = await service.updateSalesOrder(ctx.asCaller.supabase, {
-      id,
-      status: order.status,
-      currencyCode: order.currencyCode,
-      orderDate: order.orderDate,
-      customerId: order.customerId,
-      customerContactId: order.customerContactId || null,
-      customerLocationId: order.customerLocationId || null,
-      notes: order.notes,
-      customFields: customFields as Json | undefined,
-      updatedBy: ctx.auditUserId
-    });
+    const result = await service.updateSalesOrder(
+      ctx.asCaller.supabase,
+      {
+        id,
+        status: order.status,
+        currencyCode: order.currencyCode,
+        orderDate: order.orderDate,
+        customerId: order.customerId,
+        customerContactId: order.customerContactId || null,
+        customerLocationId: order.customerLocationId || null,
+        notes: order.notes,
+        customFields: customFields as Json | undefined,
+        updatedBy: ctx.auditUserId
+      },
+      ctx.asSystem.supabase
+    );
     if (result.error) {
       return ctx.error("internal", "Failed to update order", result.error);
     }
@@ -9305,7 +9310,9 @@ export const updateSalesRFQ = defineServiceFn({
       ctx,
       await service.upsertSalesRFQ(
         ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
+        payload(ctx, input).forUpdate() as never,
+        // Sales → Quotes owns the opportunity a customer change follows to.
+        ctx.asSystem.supabase
       )
     );
   }
@@ -9938,7 +9945,8 @@ export const createReplacementSalesOrder = defineServiceFn({
       ctx,
       await service.createReplacementSalesOrder(
         ctx.asCaller.supabase,
-        payload(ctx, input).withGroup().withUser().forUpsert() as never
+        payload(ctx, input).withGroup().withUser().forUpsert() as never,
+        ctx.asSystem.supabase
       )
     );
   }

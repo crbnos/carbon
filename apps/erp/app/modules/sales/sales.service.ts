@@ -6346,7 +6346,9 @@ export async function updateSalesOrder(
     customerId?: string;
     notes?: string | null;
     customFields?: Json;
-  }
+  },
+  // Pass the system client once the caller's order permission has passed.
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -6380,14 +6382,7 @@ export async function updateSalesOrder(
     exchangeRateUpdatedAt = new Date().toISOString();
   }
 
-  if (updates.customerId && existing.data.opportunityId) {
-    await client
-      .from("opportunity")
-      .update({ customerId: updates.customerId })
-      .eq("id", existing.data.opportunityId);
-  }
-
-  return client
+  const updated = await client
     .from("salesOrder")
     .update({
       ...sanitize(updates),
@@ -6400,6 +6395,17 @@ export async function updateSalesOrder(
     .eq("id", id)
     .select("id")
     .single();
+
+  // A new customer follows to the opportunity (Sales → Quotes owns it), only
+  // once the caller's own order write went through.
+  if (!updated.error && updates.customerId && existing.data.opportunityId) {
+    await system
+      .from("opportunity")
+      .update({ customerId: updates.customerId })
+      .eq("id", existing.data.opportunityId)
+      .eq("companyId", existing.data.companyId);
+  }
+  return updated;
 }
 
 export const LIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
@@ -6908,7 +6914,10 @@ export async function upsertSalesRFQ(
         rfqId: string;
         updatedBy: string;
         customFields?: Json;
-      })
+      }),
+  // Sales → Quotes owns `opportunity`: pass the system client once the
+  // caller's RFQ permission has passed, so a customer change reaches it.
+  system: SupabaseClient<Database> = client
 ) {
   if ("createdBy" in rfq) {
     const opportunity = await client
@@ -6936,23 +6945,15 @@ export async function upsertSalesRFQ(
 
     return insert;
   } else {
-    // If customerId is being updated, also update the opportunity's customerId
-    if (rfq.customerId) {
-      const existingRfq = await client
-        .from("salesRfq")
-        .select("opportunityId")
-        .eq("id", rfq.id)
-        .single();
+    const existing = rfq.customerId
+      ? await client
+          .from("salesRfq")
+          .select("opportunityId, companyId")
+          .eq("id", rfq.id)
+          .maybeSingle()
+      : null;
 
-      if (existingRfq.data?.opportunityId) {
-        await client
-          .from("opportunity")
-          .update({ customerId: rfq.customerId })
-          .eq("id", existingRfq.data.opportunityId);
-      }
-    }
-
-    return requireAffected(
+    const updated = await requireAffected(
       client
         .from("salesRfq")
         .update({
@@ -6962,6 +6963,17 @@ export async function upsertSalesRFQ(
         .eq("id", rfq.id)
         .select("id")
     );
+    // A new customer follows to the opportunity, only once the caller's own
+    // RFQ write went through (so the system write is in the RFQ's company).
+    const opportunity = existing?.data;
+    if (!updated.error && rfq.customerId && opportunity?.opportunityId) {
+      await system
+        .from("opportunity")
+        .update({ customerId: rfq.customerId })
+        .eq("id", opportunity.opportunityId)
+        .eq("companyId", opportunity.companyId);
+    }
+    return updated;
   }
 }
 
@@ -8406,7 +8418,10 @@ export async function createReplacementSalesOrder(
     companyGroupId: string;
     userId: string;
     lineIds?: string[];
-  }
+  },
+  // Sales → Returns owns the return order: pass the system client once the
+  // caller's sales order permission has passed, so the link is written.
+  system: SupabaseClient<Database> = client
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const order = await client
     .from("salesReturnOrder")
@@ -8553,7 +8568,7 @@ export async function createReplacementSalesOrder(
 
   if (createdOrder && !existingReplacementId) {
     const link = await requireAffected(
-      client
+      system
         .from("salesReturnOrder")
         .update({
           replacementSalesOrderId: replacementId,

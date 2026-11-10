@@ -196,7 +196,9 @@ export const updateAccountingSettings = defineServiceFn({
       deferredTaxExpenseAccountId
     });
     if (Object.keys(accounts).length > 0) {
-      const { error } = await ctx.asCaller.supabase
+      // Accounting → Default Accounts owns the row: written as the system,
+      // after this page's permission, for this company only.
+      const { error } = await ctx.asSystem.supabase
         .from("accountDefault")
         .update({ ...accounts, updatedBy: ctx.auditUserId })
         .eq("companyId", ctx.company.id);
@@ -341,7 +343,8 @@ export const updateInvoicingSettings = defineServiceFn({
     if (saved) return saved;
 
     if (accountsReceivableBillingAddress) {
-      const { error } = await ctx.asCaller.supabase
+      // Settings → Company owns the address; this page's permission is the gate.
+      const { error } = await ctx.asSystem.supabase
         .from("companyAccountsReceivableBillingAddress")
         .upsert({
           id: ctx.company.id,
@@ -540,7 +543,8 @@ export const updatePurchasingSettings = defineServiceFn({
     if (saved) return saved;
 
     if (accountsPayableBillingAddress) {
-      const { error } = await ctx.asCaller.supabase
+      // Settings → Company owns the address; this page's permission is the gate.
+      const { error } = await ctx.asSystem.supabase
         .from("companyAccountsPayableBillingAddress")
         .update({
           ...service.sentFields(accountsPayableBillingAddress),
@@ -693,9 +697,10 @@ export const updateResourcesSettings = defineServiceFn({
     const { suggestionNotificationGroup, ...settings } = input;
 
     // The suggestion group lives on the company row, not its settings.
+    // Settings → Company owns that row: written as the system, this company's only.
     if (suggestionNotificationGroup) {
       const { error } = await requireAffected(
-        ctx.asCaller.supabase
+        ctx.asSystem.supabase
           .from("company")
           .update({ suggestionNotificationGroup })
           .eq("id", ctx.company.id)
@@ -968,8 +973,9 @@ export const updateSecuritySettings = defineServiceFn({
 
     let update: Awaited<ReturnType<typeof updateRequireMfaSetting>>;
     try {
+      // Settings → Company owns companySettings; this page's permission is the gate.
       update = await updateRequireMfaSetting(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         ctx.company.id,
         requireMfa
       );
@@ -1009,8 +1015,9 @@ const employeeOrNone = z.string().min(1).nullable();
  * ladder: the company default responsible employee, one location's
  * responsible employee, and one item group's at a location (null clears a
  * rung, so it inherits from the one above). Each employee must be an active
- * employee of the company. A location is a resources record: without the
- * resources update permission it is refused. Then whether purchase orders
+ * employee of the company. The location's owner is written for the company's
+ * own location only, so a settings admin without the locations permission
+ * can still set it. Then whether purchase orders
  * the planning pages raise skip approval, the reschedule tolerance in days,
  * the default planning horizon in days (null for no time fence), the forecast
  * consumption window in weekly periods back and forward, the time of day
@@ -1109,8 +1116,10 @@ export const updatePlanningSettings = defineServiceFn({
     if (saved) return saved;
 
     if (location) {
+      // Resources → Locations owns the row: the planning owner is written as
+      // the system, for this company's location only.
       const result = await service.setLocationResponsibleEmployee(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         {
           companyId: ctx.company.id,
           locationId: location.locationId,
@@ -1125,13 +1134,9 @@ export const updatePlanningSettings = defineServiceFn({
           result.error
         );
       }
-      // No row back: the location is not this company's, or the caller lacks
-      // Edit on Locations and row-level security matched nothing.
+      // No row back: the location is not this company's.
       if ((result.data?.length ?? 0) === 0) {
-        return ctx.error(
-          "forbidden",
-          "You do not have permission to change this location"
-        );
+        return ctx.error("notFound", "Location not found");
       }
     }
 
@@ -1373,10 +1378,14 @@ export const updateSubsidiaryDetails = defineServiceFn({
         return ctx.error("internal", "Failed to update subsidiary", error);
       }
     } else {
-      const result = await service.updateSubsidiary(ctx.asCaller.supabase, id, {
-        ...subsidiary,
-        updatedBy: ctx.auditUserId
-      });
+      // Settings → Company owns `company`: written as the system, in the
+      // caller's group only (checked above and in the write).
+      const result = await service.updateSubsidiary(
+        ctx.asSystem.supabase,
+        id,
+        ctx.company.groupId,
+        { ...subsidiary, updatedBy: ctx.auditUserId }
+      );
       if (result.error) {
         return ctx.error(
           "internal",
@@ -1557,7 +1566,8 @@ export const removePrinterRoute = defineServiceFn({
         assignments[locationId] = next;
       }
       if (dirty) {
-        await updatePrintingSettings(client, ctx.company.id, {
+        // Settings → Company owns companySettings; this page's permission is the gate.
+        await updatePrintingSettings(ctx.asSystem.supabase, ctx.company.id, {
           ...current,
           assignments
         });
@@ -1604,8 +1614,9 @@ export const assignPrinter = defineServiceFn({
       assignment.contextId
     );
 
+    // Settings → Company owns companySettings; this page's permission is the gate.
     const result = await updatePrintingSettings(
-      client,
+      ctx.asSystem.supabase,
       ctx.company.id,
       updated
     );
@@ -2030,12 +2041,8 @@ const apiKeyFields = {
  */
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
-  permission: { "settings.apiKeys": "Edit" },
+  permission: { "settings.apiKeys": "Create" },
   async run(ctx, { name, grants, expiresAt, rateLimit }) {
-    // The grants are written without RLS, which asks this of an apiKey write.
-    if (!ctx.can({ "settings.apiKeys": "Create" })) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
     const rawKey = `crbn_${nanoid()}`;
     let created: Awaited<ReturnType<typeof upsertApiKey>>;
     try {
@@ -2069,8 +2076,9 @@ export const createApiKey = defineServiceFn({
     ).catch((err) => ({ error: err as { message: string } }));
     if (granted.error) {
       // A key without its grants authorizes nothing; remove it rather than
-      // leave a key the person never saw.
-      await deleteApiKey(ctx.asCaller.supabase, apiKeyId);
+      // leave a key the person never saw. A Create-level caller cannot delete
+      // keys, so the cleanup of the key it just made runs as the system.
+      await deleteApiKey(ctx.asSystem.supabase, apiKeyId);
       return ctx.error(
         "internal",
         "Failed to save the API key's permissions",

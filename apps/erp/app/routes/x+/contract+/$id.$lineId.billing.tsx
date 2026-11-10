@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import {
   getContractRateCeilings,
   getIndirectPools
@@ -24,9 +25,11 @@ const logger = getLogger("erp", "contract-line-billing");
 /** The billing of one Time & Materials or Cost Plus line: funding on the
  *  company's today, bill rates and billable items. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, client, companyId } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { api, client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
 
   const { id, lineId } = params;
   if (!id) throw new Error("Could not find id");

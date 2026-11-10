@@ -1,5 +1,5 @@
 {
-  "totalTools": 1789,
+  "totalTools": 1788,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting.accountingPeriods:create+update+view","paginates":false},
@@ -1781,7 +1781,6 @@
     {"name":"users_getItarEntityCertification","classification":"READ","schema":"31b84d65b2ac","response":"c5ae95ca48db","permission":"none","paginates":false},
     {"name":"users_getModules","classification":"READ","schema":"31b84d65b2ac","response":"20bc2a0ea8cd","permission":"users:view one of users.accounts|users.operators|users.groups|users.employeeTypes","paginates":false},
     {"name":"users_getNotificationPreferences","classification":"READ","schema":"31b84d65b2ac","response":"0486649779fc","permission":"none","paginates":false},
-    {"name":"users_getPermissionsByEmployeeType","classification":"READ","schema":"dc48bc2dd76b","response":"4e518427fb60","permission":"users:view one of users.accounts|users.operators|users.groups|users.employeeTypes","paginates":false},
     {"name":"users_getSuppliers","classification":"READ","schema":"cd40ae40fad5","response":"c096e3fa1fac","permission":"users:view one of users.accounts|users.operators|users.groups|users.employeeTypes","paginates":true},
     {"name":"users_getUnrevokedInviteEmails","classification":"READ","schema":"31b84d65b2ac","response":"a6b0124b4410","permission":"users:view one of users.accounts|users.operators|users.groups|users.employeeTypes","paginates":false},
     {"name":"users_getUserSelectGroupMembers","classification":"READ","schema":"6624f3863074","response":"b754519017cb","permission":"users:view one of users.accounts|users.operators|users.groups|users.employeeTypes","paginates":false},

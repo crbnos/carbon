@@ -5,9 +5,10 @@
 // The authorization rules for every public table. `authz sync` makes a database match this
 // file; `authz migration` ships a change to databases that do not sync yet (see migration.ts).
 // A module key (`parts_update`) renders as the key of the page that owns the table
-// (access/registry.ts; rules.ts `render`). A page key (`purchasing.suppliers_create`) is a
-// grant to a page that does not own the table, and renders as written.
-import { ITEM_PAGES, pagesOf } from "../access/registry";
+// (access/registry.ts; rules.ts `render`), and must name that page's module: `render`
+// throws on any other. A page key (`purchasing.suppliers_create`) is a grant to a page
+// that does not own the table, and renders as written.
+import { ITEM_PAGES, type PageId, pagesOf } from "../access/registry";
 import {
   always,
   and,
@@ -23,6 +24,7 @@ import {
   isNotNull,
   isNull,
   type Manifest,
+  type Module,
   member,
   or,
   owner,
@@ -40,6 +42,27 @@ import {
 /** Any one item page at `action`: for a table no one item row decides. */
 const anyItemPage = (action: "create" | "update" | "delete") =>
   anyOf(...ITEM_PAGES.map((page) => `${page}_${action}` as const));
+
+/**
+ * Writes that need the owning page (the owner's module key) or one of `pages`:
+ * a table that moved to another module's page keeps the page that wrote it
+ * before, so its old writers do not need a grant on the whole new page
+ * (20261110101723_grants-for-moved-tables.sql).
+ */
+const writesAlso = (module: Module, pages: readonly PageId[]) => ({
+  create: anyOf(
+    `${module}_create`,
+    ...pages.map((page) => `${page}_create` as const)
+  ),
+  update: anyOf(
+    `${module}_update`,
+    ...pages.map((page) => `${page}_update` as const)
+  ),
+  delete: anyOf(
+    `${module}_delete`,
+    ...pages.map((page) => `${page}_delete` as const)
+  )
+});
 
 /** The payment and memo a settlement applies are both still Draft (or absent). */
 const draftSettlement = and(
@@ -147,7 +170,7 @@ const managedAttribute = through(
     "userAttributeCategoryId",
     "userAttributeCategory",
     "id",
-    inCompany("companyId", "resources_update")
+    inCompany("companyId", "people_update")
   )
 );
 
@@ -194,17 +217,15 @@ const projectTable = <T extends Table>(
   });
 
 export const manifest = {
-  ability: company("resources", {
-    read: anyOf("resources_view", "production_view")
-  }),
+  ability: company("resources", { read: "resources_view" }),
   account: group("accounting"),
   accountDefault: company("accounting", {
     read: "accounting_view",
     create: false,
     delete: false
   }),
-  accountingCutoverIgnoredInvoice: company("accounting", {
-    read: "accounting_view"
+  accountingCutoverIgnoredInvoice: company("settings", {
+    read: "settings_view"
   }),
   accountingPeriod: company("accounting", { read: "accounting_view" }),
   accountingPeriodBalance: company("accounting", {
@@ -283,11 +304,10 @@ export const manifest = {
   attributeDataType: policies({ select: authenticated }),
   auditLogArchive: serviceOnly(),
   balloon: company("quality"),
-  batchProperty: policies({
-    select: inCompany("companyId", anyOf("parts_view", "inventory_view")),
-    insert: inCompany("companyId", anyOf("parts_create", "inventory_create")),
-    update: inCompany("companyId", anyOf("parts_update", "inventory_update")),
-    delete: inCompany("companyId", anyOf("parts_delete", "inventory_delete"))
+  // Batch properties are also kept from Tracked Entities, which wrote them before.
+  batchProperty: company("parts", {
+    read: "parts_view",
+    ...writesAlso("parts", ["inventory.trackedEntities"])
   }),
   capacityReservation: company("production"),
   charge: policies({
@@ -386,7 +406,7 @@ export const manifest = {
   }),
   costCenter: company("accounting"),
   costLedger: policies({
-    select: inCompany("companyId", anyOf("accounting_view", "parts_view"))
+    select: inCompany("companyId", "accounting_view")
   }),
   country: policies({ select: authenticated }),
   currency: group("accounting"),
@@ -473,21 +493,21 @@ export const manifest = {
       )
     ),
     insert: or(
-      inCompany("companyId", "parts_create"),
+      inCompany("companyId", anyOf("parts_create", "sales.customers_create")),
       or(
         portal.customer("customerId", "sales_create"),
         portal.customer("customerId", "parts_create")
       )
     ),
     update: or(
-      inCompany("companyId", "parts_update"),
+      inCompany("companyId", anyOf("parts_update", "sales.customers_update")),
       or(
         portal.customer("customerId", "sales_update"),
         portal.customer("customerId", "parts_update")
       )
     ),
     delete: or(
-      inCompany("companyId", "parts_delete"),
+      inCompany("companyId", anyOf("parts_delete", "sales.customers_delete")),
       or(
         portal.customer("customerId", "sales_delete"),
         portal.customer("customerId", "parts_delete")
@@ -514,14 +534,14 @@ export const manifest = {
   customField: company("settings", { read: "member" }),
   customFieldTable: policies({ select: authenticated }),
   demandActual: company("production", { read: "production_view" }),
-  demandForecast: company("inventory", {
-    read: "inventory_view"
+  demandForecast: company("production", {
+    read: "production_view"
   }),
-  demandForecastSource: company("inventory", {
-    read: "inventory_view"
+  demandForecastSource: company("production", {
+    read: "production_view"
   }),
-  demandProjection: company("inventory", {
-    read: "inventory_view"
+  demandProjection: company("production", {
+    read: "production_view"
   }),
   department: company("people"),
   depreciationRun: company("accounting", { read: "accounting_view" }),
@@ -588,7 +608,46 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  enforcementRuleItemAssignment: company("inventory"),
+  // A storage rule's items are also assigned from the item pages, as before.
+  enforcementRuleItemAssignment: policies({
+    select: inCompany("companyId", "employee"),
+    insert: or(
+      inCompany("companyId", "inventory_create"),
+      exists(
+        "enforcementRule",
+        "ruleId",
+        and(
+          where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+          inCompany("companyId", anyItemPage("create"))
+        ),
+        { sameCompany: true }
+      )
+    ),
+    update: or(
+      inCompany("companyId", "inventory_update"),
+      exists(
+        "enforcementRule",
+        "ruleId",
+        and(
+          where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+          inCompany("companyId", anyItemPage("update"))
+        ),
+        { sameCompany: true }
+      )
+    ),
+    delete: or(
+      inCompany("companyId", "inventory_delete"),
+      exists(
+        "enforcementRule",
+        "ruleId",
+        and(
+          where<"enforcementRule">((eb) => eb("family", "=", "storage")),
+          inCompany("companyId", anyItemPage("delete"))
+        ),
+        { sameCompany: true }
+      )
+    )
+  }),
   enforcementRuleWorkCenterAssignment: policies({
     select: inCompany("companyId", "employee"),
     insert: and(
@@ -598,7 +657,10 @@ export const manifest = {
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "inventory_create")
+      inCompany(
+        "companyId",
+        anyOf("inventory_create", "resources.workCenters_create")
+      )
     ),
     update: and(
       exists(
@@ -607,11 +669,35 @@ export const manifest = {
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
         { sameCompany: true }
       ),
-      inCompany("companyId", "inventory_update")
+      inCompany(
+        "companyId",
+        anyOf("inventory_update", "resources.workCenters_update")
+      )
     ),
-    delete: inCompany("companyId", "inventory_delete")
+    delete: inCompany(
+      "companyId",
+      anyOf("inventory_delete", "resources.workCenters_delete")
+    )
   }),
-  eventSystemSubscription: company("settings"),
+  // Also written by the integrations and the audit log switch, from their
+  // Settings pages, as before. Audit Logs tops out at Edit.
+  eventSystemSubscription: company("workflows", {
+    create: anyOf(
+      "workflows_create",
+      "settings.integrations_create",
+      "settings.auditLogs_update"
+    ),
+    update: anyOf(
+      "workflows_update",
+      "settings.integrations_update",
+      "settings.auditLogs_update"
+    ),
+    delete: anyOf(
+      "workflows_delete",
+      "settings.integrations_delete",
+      "settings.auditLogs_update"
+    )
+  }),
   exchangeRate: policies({ select: always, to: "authenticated" }),
   exchangeRateOverride: company("accounting", {
     create: "accounting_update",
@@ -643,7 +729,7 @@ export const manifest = {
     )
   }),
   feedback: serviceOnly(),
-  fiscalYearSettings: company("settings", { read: "settings_view" }),
+  fiscalYearSettings: company("accounting", { read: "accounting_view" }),
   fixedAsset: company("accounting", { read: "accounting_view" }),
   fixedAssetCipCost: company("accounting", { read: "accounting_view" }),
   fixedAssetClass: company("accounting", { read: "accounting_view" }),
@@ -656,8 +742,8 @@ export const manifest = {
   fixedAssetUsageLog: company("accounting", { read: "accounting_view" }),
   fixture: serviceOnly(),
   fulfillment: company("sales", {
-    read: anyOf("inventory_view", "sales_view"),
-    create: anyOf("inventory_create", "sales_create")
+    read: "sales_view",
+    create: anyOf("sales_create", "inventory.shipments_create")
   }),
   gauge: company("quality"),
   gaugeCalibrationRecord: company("quality", { read: "quality_view" }),
@@ -822,14 +908,14 @@ export const manifest = {
     read: "quality_view"
   }),
   itemLedger: policies({
-    select: inCompany("companyId", anyOf("inventory_view", "accounting_view")),
+    select: inCompany("companyId", "inventory_view"),
     insert: inCompany(
       "companyId",
-      anyOf("inventory_create", "accounting_create")
+      anyOf("inventory_create", "accounting.journalEntries_create")
     )
   }),
   itemPlanning: company("parts", { read: "parts_view", delete: false }),
-  itemPostingGroup: company("accounting", { read: "accounting_view" }),
+  itemPostingGroup: company("parts", { read: "parts_view" }),
   itemPostingGroupResponsibility: company("settings", {
     create: "settings_update",
     update: "settings_update",
@@ -841,9 +927,7 @@ export const manifest = {
   itemShelfLife: company("parts", { read: "parts_view" }),
   itemStockQuantities: policies({ select: inCompany("companyId", "employee") }),
   itemSupersession: company("parts"),
-  itemUnitSalePrice: company("parts", {
-    read: anyOf("parts_view", "sales_view")
-  }),
+  itemUnitSalePrice: company("parts", { read: "parts_view" }),
   job: company("production"),
   jobFavorite: policies({
     select: owner("userId"),
@@ -1069,8 +1153,15 @@ export const manifest = {
   }),
   methodOperation: company("parts", { read: "parts_view" }),
   methodOperationParameter: company("parts"),
-  methodOperationStep: company("production"),
-  methodOperationStepSlide: company("production"),
+  // Operation steps are also edited by whoever edits job operations, as before.
+  methodOperationStep: company(
+    "parts",
+    writesAlso("parts", ["production.jobs"])
+  ),
+  methodOperationStepSlide: company(
+    "parts",
+    writesAlso("parts", ["production.jobs"])
+  ),
   methodOperationTool: company("parts", { read: "parts_view" }),
   methodOperationToolStep: policies({
     select: exists("methodOperationTool", "methodOperationToolId", "employee"),
@@ -1148,7 +1239,17 @@ export const manifest = {
   oauthClient: serviceOnly(),
   oauthCode: serviceOnly(),
   oauthToken: serviceOnly(),
-  opportunity: company("sales", { read: "sales_view", delete: false }),
+  // Quotes owns it, but a new RFQ and a new sales order each insert their
+  // opportunity as the caller.
+  opportunity: company("sales", {
+    read: "sales_view",
+    create: anyOf(
+      "sales.rfqs_create",
+      "sales.quotes_create",
+      "sales.salesOrders_create"
+    ),
+    delete: false
+  }),
   part: company("parts"),
   partner: company("resources"),
   passkeyCredential: policies({ all: owner("userId") }),
@@ -1161,9 +1262,7 @@ export const manifest = {
       inCompany("companyId", "invoicing_delete")
     )
   }),
-  paymentTerm: company("accounting", {
-    read: anyOf("accounting_view", "sales_view", "purchasing_view")
-  }),
+  paymentTerm: company("accounting", { read: "accounting_view" }),
   // Government contracting Phase 5a: payroll totals imported from CSV.
   payrollPeriodTotal: company("people", { read: "people_view" }),
   peopleAbsence: company("production"),
@@ -1197,15 +1296,15 @@ export const manifest = {
   planningAction: company("production", {
     // Read by the production AND purchasing planning pages with the user's
     // client; the row names a supplier, an open quantity and an assignee.
-    read: anyOf("production_view", "purchasing_view"),
+    read: "production_view",
     create: false,
     update: false,
     delete: false
   }),
   planningGroup: company("projects"),
   pricingRule: company("sales"),
-  printerRoute: company("printing", { read: "printing_view" }),
-  printJob: company("printing", { read: "printing_view" }),
+  printerRoute: company("settings", { read: "settings_view" }),
+  printJob: company("settings", { read: "settings_view" }),
   procedure: company("production"),
   procedureParameter: company("production"),
   procedureStep: company("production"),
@@ -1331,9 +1430,7 @@ export const manifest = {
   purchaseInvoiceStatusHistory: policies({
     select: viaParent("invoiceId", "purchaseInvoice", "invoicing_view")
   }),
-  purchaseOrder: company("purchasing", {
-    read: anyOf("purchasing_view", "inventory_view", "invoicing_view")
-  }),
+  purchaseOrder: company("purchasing", { read: "purchasing_view" }),
   purchaseOrderDelivery: company("purchasing", { read: "purchasing_view" }),
   purchaseOrderFavorite: policies({
     select: owner("userId"),
@@ -1385,7 +1482,10 @@ export const manifest = {
     delete: and(owner("userId"), member("companyId"))
   }),
   qualityDocument: company("quality"),
-  qualityDocumentStep: company("production"),
+  qualityDocumentStep: company(
+    "quality",
+    writesAlso("quality", ["production.procedures"])
+  ),
   quote: company("sales", { read: "sales_view" }),
   quoteFavorite: policies({
     select: owner("userId"),
@@ -1408,9 +1508,15 @@ export const manifest = {
     delete: exists("quoteMaterial", "quoteMaterialId", "sales_delete")
   }),
   quoteOperation: company("sales", { read: "sales_view" }),
-  quoteOperationParameter: company("parts"),
-  quoteOperationStep: company("production"),
-  quoteOperationStepSlide: company("production"),
+  quoteOperationParameter: company("sales", writesAlso("sales", ITEM_PAGES)),
+  quoteOperationStep: company(
+    "sales",
+    writesAlso("sales", ["production.jobs"])
+  ),
+  quoteOperationStepSlide: company(
+    "sales",
+    writesAlso("sales", ["production.jobs"])
+  ),
   quoteOperationTool: company("sales"),
   quoteOperationToolStep: policies({
     select: exists("quoteOperationTool", "quoteOperationToolId", "employee"),
@@ -1570,9 +1676,7 @@ export const manifest = {
     delete: false
   }),
   salesInvoiceShipment: company("invoicing", { read: "invoicing_view" }),
-  salesOrder: company("sales", {
-    read: anyOf("sales_view", "inventory_view", "invoicing_view")
-  }),
+  salesOrder: company("sales", { read: "sales_view" }),
   salesOrderFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
@@ -1647,13 +1751,13 @@ export const manifest = {
   serviceJobTime: company("service"),
   shift: company("people"),
   shipment: company("inventory", {
-    read: anyOf("inventory_view", "sales_view"),
-    create: anyOf("inventory_create", "sales_create")
+    read: "inventory_view",
+    create: anyOf("inventory_create", "sales.salesOrders_create")
   }),
   shipmentFixedAssetLine: company("inventory", { read: "inventory_view" }),
-  shipmentLine: company("sales", {
-    read: anyOf("inventory_view", "sales_view"),
-    create: anyOf("inventory_create", "sales_create")
+  shipmentLine: company("inventory", {
+    read: "inventory_view",
+    ...writesAlso("inventory", ["sales.salesOrders"])
   }),
   shippingMethod: company("inventory"),
   shippingTerm: company("inventory"),
@@ -1669,8 +1773,8 @@ export const manifest = {
   ssoReservedDomain: policies({ select: authenticated }),
   stockTransfer: company("inventory"),
   stockTransferLine: company("inventory"),
-  storageType: company("parts"),
-  storageUnit: company("parts"),
+  storageType: company("inventory"),
+  storageUnit: company("inventory"),
   suggestion: company("resources", {
     read: "resources_view",
     create: "employee"
@@ -1697,12 +1801,8 @@ export const manifest = {
     update: viaParent("supplierId", "supplier", "purchasing_update"),
     delete: viaParent("supplierId", "supplier", "purchasing_delete")
   }),
-  supplierPart: company("parts", {
-    read: anyOf("parts_view", "purchasing_view")
-  }),
-  supplierPartPrice: company("parts", {
-    read: anyOf("parts_view", "purchasing_view")
-  }),
+  supplierPart: company("parts", { read: "parts_view" }),
+  supplierPartPrice: company("parts", { read: "parts_view" }),
   supplierPayment: company("purchasing", {
     read: "purchasing_view",
     create: false,
@@ -1739,8 +1839,8 @@ export const manifest = {
   }),
   supplierType: company("purchasing", { read: "member" }),
   supplyActual: company("production", { read: "production_view" }),
-  supplyForecast: company("inventory", {
-    read: "inventory_view"
+  supplyForecast: company("production", {
+    read: "production_view"
   }),
   // Written by the log_*_changes triggers and read through table_changes_since,
   // which checks the caller's company itself. No API access.
@@ -1767,7 +1867,7 @@ export const manifest = {
     delete: "settings_update"
   }),
   terms: company("settings", {
-    read: anyOf("purchasing_view", "sales_view", "settings_view"),
+    read: "settings_view",
     create: false,
     delete: false,
     column: "id"
@@ -1843,17 +1943,17 @@ export const manifest = {
   trackedActivityOutput: company("inventory", { create: "employee" }),
   trackedEntity: company("inventory", { create: "employee" }),
   training: company("resources"),
-  trainingAssignment: company("people", { read: "people_view" }),
+  trainingAssignment: company("resources", { read: "resources_view" }),
   trainingCompletion: policies({
     select: inCompany("companyId", "resources_view"),
     insert: or(
-      inCompany("companyId", "people_create"),
+      inCompany("companyId", "resources_create"),
       and(owner("employeeId"), inCompany("companyId", "employee"))
     ),
     update: inCompany("companyId", "resources_update"),
     delete: inCompany("companyId", "resources_delete")
   }),
-  trainingQuestion: company("people"),
+  trainingQuestion: company("resources"),
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   unattributedMachineTime: policies({
@@ -1895,7 +1995,7 @@ export const manifest = {
         "userAttributeCategoryId",
         "userAttributeCategory",
         "id",
-        inCompany("companyId", "resources_view")
+        inCompany("companyId", "people_view")
       ),
       and(
         where<"userAttribute">((eb) => eb("canSelfManage", "=", true)),
@@ -1911,28 +2011,28 @@ export const manifest = {
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", "resources_create")
+      inCompany("companyId", "people_create")
     ),
     update: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", "resources_update")
+      inCompany("companyId", "people_update")
     ),
     delete: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", "resources_delete")
+      inCompany("companyId", "people_delete")
     )
   }),
   // Any employee reads the categories (names only): userAttribute's self-service read goes
   // through them, and they cannot look back at userAttribute without a policy cycle.
   userAttributeCategory: policies({
     select: inCompany("companyId", "employee"),
-    insert: inCompany("companyId", "resources_create"),
-    update: inCompany("companyId", "resources_update"),
-    delete: inCompany("companyId", "resources_delete")
+    insert: inCompany("companyId", "people_create"),
+    update: inCompany("companyId", "people_update"),
+    delete: inCompany("companyId", "people_delete")
   }),
   // A user reads, writes and clears their own values of self-managed attributes, in a
   // company they belong to; Attributes at Edit manages everyone's. (The imported "insert"

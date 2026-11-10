@@ -378,7 +378,7 @@ export function permissionsFromClaims(
   claims: unknown,
   companyId: string
 ): ModulePermissions {
-  return expandClaims(claimsFromJson(claims), companyId);
+  return expandClaims(claimsFromJson(claims, companyId), companyId);
 }
 
 /** Flat scopes (`<page>_<action>` → company ids) as permissions per page. */

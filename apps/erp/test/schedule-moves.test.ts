@@ -21,6 +21,7 @@ import {
 import {
   moveScheduleJob,
   reorderScheduleOperations,
+  reprioritizeBatch,
   setJobDeadline
 } from "../app/modules/production/production.server";
 import {
@@ -60,19 +61,23 @@ function callerWith(answers: Record<string, Answer>) {
   };
 }
 
-const contextWith = (client: unknown) =>
+const contextWith = (
+  client: unknown,
+  system: unknown = client,
+  permissions = pageClaims({
+    production: { view: [], create: [], update: ["c1"], delete: [] }
+  })
+) =>
   createServiceContext({
     actor: {
       type: "user",
       role: "employee",
       userId: "u1",
-      permissions: pageClaims({
-        production: { view: [], create: [], update: ["c1"], delete: [] }
-      })
+      permissions
     },
     company: { id: "c1", groupId: "g1" },
     caller: client as never,
-    system: () => ({}) as never,
+    system: () => system as never,
     pg: () => {
       throw new Error("refused moves never open a transaction");
     },
@@ -218,6 +223,79 @@ describe("moveScheduleJob", () => {
     trigger.mockRejectedValueOnce(new Error("event bus down"));
     const result = await move(callerWith({ job: { data: { id: "j1", deadlineType: "Soft Deadline" }, error: null } }));
     expect(result.error).toBeNull();
+  });
+});
+
+// A board page owns no tables: its move writes the Jobs page's rows as the
+// system, after the board's own permission.
+describe("a Priorities-only caller", () => {
+  const priorities = {
+    "production.priorities": { view: ["c1"], create: [], update: ["c1"], delete: [] }
+  };
+
+  it("moves a job on the dates board with the system client", async () => {
+    const caller = callerWith({
+      job: { data: { id: "j1", deadlineType: "Soft Deadline" }, error: null }
+    });
+    const system = callerWith({ job: { data: { id: "j1" }, error: null } });
+
+    const result = await moveScheduleJob(
+      contextWith(caller.client, system.client, priorities),
+      { id: "j1", locationId: "loc1", columnId: "2026-10-20", priority: -2 }
+    );
+
+    expect(result.error).toBeNull();
+    expect(caller.writes).toEqual([]);
+    expect(system.writes).toEqual(["job"]);
+  });
+
+  it("is refused without the board's permission", async () => {
+    const caller = callerWith({});
+    const system = callerWith({});
+
+    const result = await moveScheduleJob(
+      contextWith(caller.client, system.client, {}),
+      { id: "j1", locationId: "loc1", columnId: "2026-10-20", priority: -2 }
+    );
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(system.writes).toEqual([]);
+  });
+});
+
+describe("reprioritizeBatch", () => {
+  const batches = {
+    "production.batches": { view: ["c1"], create: [], update: ["c1"], delete: [] }
+  };
+  const reprioritize = (operations: Answer) => {
+    const caller = callerWith({
+      jobOperationBatch: { data: { status: "Ready" }, error: null }
+    });
+    const system = callerWith({ jobOperation: operations });
+    return reprioritizeBatch(
+      contextWith(caller.client, system.client, batches),
+      { batchId: "b1", priority: 3 }
+    ).then((result) => ({ result, caller, system }));
+  };
+
+  it("moves the batch's open operations with the system client", async () => {
+    const { result, caller, system } = await reprioritize({
+      data: [{ id: "op1" }],
+      error: null
+    });
+
+    expect(result.error).toBeNull();
+    expect(caller.writes).toEqual([]);
+    expect(system.writes).toEqual(["jobOperation"]);
+  });
+
+  it("reports a batch with no open operation to move", async () => {
+    const { result } = await reprioritize({ data: [], error: null });
+
+    expect(result.error).toMatchObject({
+      category: "rule",
+      message: "Batch unavailable"
+    });
   });
 });
 

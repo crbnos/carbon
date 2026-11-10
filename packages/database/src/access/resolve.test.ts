@@ -16,19 +16,33 @@ import {
   accessHolders,
   anyOf,
   claimKeys,
+  claimsFromJson,
   expandClaims,
   type Grant,
   holds,
   holdsAny,
   holdsGate,
+  isLegacyClaims,
   type RawClaims,
   resolveLevel,
   winningGrant
 } from "./resolve";
 
+// A case's grants and Admin type are in company "A" unless they name another,
+// and it asks about "A" unless `askCompany` names another. get_claims hands the
+// resolver one company's grants and its own Admin flag; this is that filter.
+type Case = (typeof cases)[number] & {
+  adminCompany?: string;
+  askCompany?: string;
+  grants: (Grant & { company?: string })[];
+};
+
 describe("resolveLevel", () => {
-  it.each(cases)("$name", ({ grants, admin, pageId, expected }) => {
-    expect(resolveLevel(grants as Grant[], pageId, { admin })).toBe(expected);
+  it.each(cases as Case[])("$name", (c) => {
+    const asked = c.askCompany ?? "A";
+    const grants = c.grants.filter((g) => (g.company ?? "A") === asked);
+    const admin = c.admin && (c.adminCompany ?? "A") === asked;
+    expect(resolveLevel(grants, c.pageId, { admin })).toBe(c.expected);
   });
 });
 
@@ -256,5 +270,70 @@ describe("actionsGained", () => {
     ]);
     expect(actionsGained("View", ["view"])).toEqual([]);
     expect(actionsGained("Edit", null)).toEqual([]);
+  });
+});
+
+describe("claimsFromJson", () => {
+  it("reads grants, admin and portal, and ignores the transitional old keys", () => {
+    const json = {
+      role: "employee",
+      admin: false,
+      grants: [{ subject: "role", module: "Sales", page: null, level: "View" }],
+      portal: {},
+      // What get_claims also emits for app versions from before pages.
+      inventory_view: ["co1"],
+      inventory_delete: ["co1"]
+    };
+    expect(isLegacyClaims(json)).toBe(false);
+    const raw = claimsFromJson(json, "co1");
+    expect(raw.grants).toEqual([
+      { subject: "role", module: "Sales", page: null, level: "View" }
+    ]);
+    const expanded = expandClaims(raw, "co1");
+    expect(holds(expanded, "inventory.receipts_view", "co1")).toBe(false);
+    expect(holds(expanded, "sales.quotes_view", "co1")).toBe(true);
+  });
+
+  // A database that has not run the permission migrations yet.
+  it("reads the old shape as module grants in the company", () => {
+    const json = {
+      role: "employee",
+      inventory_view: ["co1", "co2"],
+      inventory_update: ["co1"],
+      sales_delete: ["co1"],
+      parts_view: ["co2"],
+      "not-a-key": ["co1"]
+    };
+    expect(isLegacyClaims(json)).toBe(true);
+    const raw = claimsFromJson(json, "co1");
+    expect(raw).toEqual({
+      role: "employee",
+      admin: false,
+      grants: [
+        // view + update → Edit, the conversion's round-up
+        { subject: "person", module: "Inventory", page: null, level: "Edit" },
+        { subject: "person", module: "Sales", page: null, level: "Full" }
+      ],
+      portal: {}
+    });
+    expect(claimsFromJson(json, "co2").grants).toEqual([
+      { subject: "person", module: "Inventory", page: null, level: "View" },
+      { subject: "person", module: "Parts", page: null, level: "View" }
+    ]);
+  });
+
+  it("reads the old shape of a portal account as portal keys", () => {
+    const raw = claimsFromJson(
+      { role: "customer", sales_view: ["co1"], parts_view: ["co2"] },
+      "co1"
+    );
+    expect(raw.grants).toEqual([]);
+    expect(raw.portal).toEqual({ sales_view: ["co1"] });
+  });
+
+  it("grants nothing from the old shape without a company", () => {
+    expect(
+      claimsFromJson({ role: "employee", sales_view: ["co1"] }).grants
+    ).toEqual([]);
   });
 });

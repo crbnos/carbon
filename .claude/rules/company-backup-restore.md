@@ -25,8 +25,8 @@ from a committed demo template. **Inngest tasks, NOT edge functions** — the ol
 is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
 (kept deliberately impl-free — keep internals here, not there).
 
-User-facing rules of the feature: backups require `settings` update permission
-(no owner gate — the old `group.ownerId === userId` check was removed; the route
+User-facing rules of the feature: backups require Edit on the Settings → Backups
+page (no owner gate — the old `group.ownerId === userId` check was removed; the route
 sends `carbon/company-export` itself via `exportCompanyBackup` in
 `settings.service.ts`), exclude secrets, and a restore is
 reversible via an auto-snapshot.
@@ -114,9 +114,17 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
   `assertBackupImportable` also skips — an OLDER backup that still carries an
   excluded table is not schema drift, its rows are just ignored on load),
-  `RESEED_SKIPPED_TABLES` (memberships/invites/employee/externalIntegrationMapping
-  — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (access/identity
-  tables a restore must keep so the user isn't locked out).
+  `RESEED_SKIPPED_TABLES` (`userToCompany`, `employee`, `employeeType`,
+  `employeeTypePermission`, `permission`, `invite`, `externalIntegrationMapping`
+  — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (the same list:
+  access/identity tables a restore must keep so the user isn't locked out).
+  `permission` holds every grant — roles, people and API keys. A restore leaves
+  the company's live access as it was, and a reseed imports none of the source's
+  grants (its employee types, people and keys don't come along either). The
+  export still carries `permission`. After a load, `clearCompanyAccessCaches`
+  (`src/backups/access-cache.ts`, called by `wipeAndLoad` and the import) drops
+  the cached claims of every member and the cached record of every API key of
+  the company, so the app answers from the same rows as RLS.
 - User-scoped identity tables (`isUserScopedIdentityTable`: a `user`/`employee` FK
   column in a unique index, favourites, preferences, accounts, `productionEvent`)
   are wiped by every restore. An own restore and a revert reload them from the
@@ -204,12 +212,6 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   IS carried; a column missing from this set survives a cross-company restore
   still pointing at the SOURCE company's prefix (which is what left restored
   assemblies unable to load their model).
-- Grants into another company: `travelsToAnotherCompany` (`company-backup.transforms.ts`)
-  leaves out every `permission` row of a person or an API key on a remapped load
-  (restore into another company, import). People are identity and keys are secrets,
-  so neither travels, and every user ref is rewritten to the restoring user, which
-  would collide on `permission_unique`. Role grants travel with their remapped
-  `employeeType`. An own restore loads every grant.
 - FK-less id refs: `ID_REF_COLUMNS` (`src/backups/id-refs.ts`, per table) lists
   TEXT/TEXT[] columns that hold a tenant row's id with no FK — generic refs like
   `inspection.sourceDocumentId`/`sourceDocumentLineId` (receipt line OR job

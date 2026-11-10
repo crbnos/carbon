@@ -434,7 +434,7 @@ function SalesOrderLineItem({
                   destructive
                   disabled={
                     isDisabled ||
-                    !permissions.has({ "sales.salesOrders": "Edit" })
+                    !permissions.has({ "sales.salesOrders": "Full" })
                   }
                   onClick={(e) => {
                     e.stopPropagation();

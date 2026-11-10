@@ -8741,11 +8741,30 @@ export async function activateAssemblyInstructionVersion(
 
     const staleOpIds = (staleOps.data ?? []).map((o) => o.id);
     if (staleOpIds.length > 0) {
-      const repoint = await client
-        .from("jobOperation")
-        .update({ assemblyInstructionId: id })
-        .in("id", staleOpIds);
-      if (repoint.error) return repoint;
+      // Production → Jobs owns the operations: repointed on the system
+      // handle (the caller's assembly permission is the gate), this company's only.
+      try {
+        await db
+          .updateTable("jobOperation")
+          .set({ assemblyInstructionId: id })
+          .where("companyId", "=", companyId)
+          .where("id", "in", staleOpIds)
+          .execute();
+      } catch (error) {
+        return {
+          data: null,
+          error: {
+            name: "PostgrestError",
+            code: "",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to repoint job operations",
+            details: "",
+            hint: ""
+          } as PostgrestError
+        };
+      }
 
       // Migrate step markers v(old) -> v(new) by lineage group before syncing.
       // Without this the job's steps still point at the old version's step ids,

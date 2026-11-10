@@ -4369,8 +4369,8 @@ export const getTimesheetWeek = defineServiceFn({
  * Runs `save-timesheet-entry`: one cell of the grid (employee, date, charge
  * number, labor category), or a new entry in `add` mode. Saving never posts.
  * Left out, `employeeId` is the caller. Another employee's week can be
- * changed by their manager or by a user with Edit on Projects (in DCAA
- * mode the entry then waits in Pending Employee Review). An empty element,
+ * changed by a user with Edit on Approvals (in DCAA mode the entry then
+ * waits in Pending Employee Review). An empty element,
  * work location or R&D role is none. A budget overrun never refuses the
  * entry: it comes back as `warning`. An API key needs Edit on Projects.
  *
@@ -4389,29 +4389,23 @@ export const saveTimesheetEntry = defineServiceFn({
     jobId: z.string().nullable().optional(),
     jobOperationId: z.string().nullable().optional()
   }),
-  // Your own time needs company membership; another employee's is decided
-  // in the body (their manager, or Edit on Projects).
+  // Your own time needs company membership; another employee's needs Edit
+  // on Approvals, checked in the body.
   permission: "employee",
   async run(ctx, input) {
     const keyRefused = refuseKeyWithout(ctx, { "projects.projects": "Edit" });
     if (keyRefused) return keyRefused;
 
     const employeeId = input.employeeId ?? ctx.auditUserId;
+    // Changing a colleague's time is an Approvals action, as RLS on
+    // `timesheetEntry` has it; the posting writes as the system.
     if (
       employeeId !== ctx.auditUserId &&
-      !ctx.can({ "projects.projects": "Edit" }) &&
-      !(
-        ctx.can({ "projects.projects": "View" }) &&
-        (await service.managesEmployee(ctx.asCaller.supabase, {
-          companyId: ctx.company.id,
-          userId: ctx.auditUserId,
-          employeeId
-        }))
-      )
+      !ctx.can({ "projects.approvals": "Edit" })
     ) {
       return ctx.error(
         "forbidden",
-        "You can open the timesheet of an employee you manage only"
+        "Changing another employee's time needs Edit on Approvals"
       );
     }
 
@@ -5178,11 +5172,11 @@ export const getContractBillableItems = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0)
   }),
-  permission: {
-    "projects.approvals": "View",
-    "sales.serviceContracts": "View"
-  },
+  // Approvals and a contracts page, checked in the body.
+  permission: "employee",
   async run(ctx, input) {
+    const refused = service.refuseContractBilling(ctx, "View");
+    if (refused) return refused;
     return paged(
       ctx,
       await service.getContractBillableItems(
@@ -5204,11 +5198,11 @@ export const getContractBillableItems = defineServiceFn({
  */
 export const getContractBillingLines = defineServiceFn({
   input: z.object({ projectId: z.string().nullable().optional() }),
-  permission: {
-    "projects.approvals": "View",
-    "sales.serviceContracts": "View"
-  },
+  // Approvals and a contracts page, checked in the body.
+  permission: "employee",
   async run(ctx, { projectId }) {
+    const refused = service.refuseContractBilling(ctx, "View");
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.getContractBillingLines(ctx.asCaller.supabase, {
@@ -5238,12 +5232,12 @@ export const getContractBillingLines = defineServiceFn({
  */
 export const updateProjectBillableItems = defineServiceFn({
   input: billableItemActionValidator,
-  // Billing review is contract billing: it also needs the sales permission.
-  permission: {
-    "projects.approvals": "Edit",
-    "sales.serviceContracts": "View"
-  },
+  // Billing review is contract billing: Approvals Edit and a contracts
+  // page, checked in the body.
+  permission: "employee",
   async run(ctx, input) {
+    const refused = service.refuseContractBilling(ctx, "Edit");
+    if (refused) return refused;
     return unwrap(
       ctx,
       await service.updateProjectBillableItems(ctx.asCaller.supabase, {

@@ -10,8 +10,10 @@ import {
   type ColumnInfo,
   type CompanyBackup,
   type ForeignKey,
+  IN_PLACE_SKIPPED_TABLES,
   isUserScopedIdentityTable,
   READABLE_ID_TABLES,
+  RESEED_SKIPPED_TABLES,
   STORAGE_PATH_COLUMNS,
   selectWipeableTables,
   type TableInfo
@@ -23,8 +25,7 @@ import {
   findDanglingReferences,
   mapCollidingRows,
   matchableUniqueGroups,
-  referencedDroppedTables,
-  travelsToAnotherCompany
+  referencedDroppedTables
 } from "./company-backup.transforms";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
@@ -1005,21 +1006,32 @@ describe("cross-company restore invariants", () => {
   });
 });
 
-describe("travelsToAnotherCompany", () => {
-  it("keeps a role's grant and leaves out a person's or an API key's", () => {
-    const grant = { employeeTypeId: null, userId: null, apiKeyId: null };
-    expect(
-      travelsToAnotherCompany("permission", { ...grant, employeeTypeId: "et" })
-    ).toBe(true);
-    expect(
-      travelsToAnotherCompany("permission", { ...grant, userId: "u" })
-    ).toBe(false);
-    expect(
-      travelsToAnotherCompany("permission", { ...grant, apiKeyId: "k" })
-    ).toBe(false);
+describe("access grants on restore and import", () => {
+  const permission = table(
+    "permission",
+    [
+      col("id"),
+      col("companyId"),
+      col("employeeTypeId", { nullable: true }),
+      col("userId", { nullable: true }),
+      col("apiKeyId", { nullable: true })
+    ],
+    [
+      fk("employeeTypeId", "employeeType"),
+      fk("userId", "user"),
+      fk("apiKeyId", "apiKey")
+    ]
+  );
+
+  it("an in-place restore neither wipes nor reloads the company's grants", () => {
+    expect(IN_PLACE_SKIPPED_TABLES.has("permission")).toBe(true);
+    const wiped = selectWipeableTables(catalog([ITEM, permission]), {
+      includeGroup: true
+    }).map((t) => t.name);
+    expect(wiped).toEqual(["item"]);
   });
 
-  it("keeps every row of any other table", () => {
-    expect(travelsToAnotherCompany("item", { userId: "u" })).toBe(true);
+  it("a reseed into another company imports none of the source's grants", () => {
+    expect(RESEED_SKIPPED_TABLES).toContain("permission");
   });
 });

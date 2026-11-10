@@ -155,6 +155,31 @@ describe("getApiKeyRecord", () => {
     expect(kv.entries.size).toBe(0);
   });
 
+  // A database the permission migrations have not reached has no `permission`
+  // table to embed: the key's old scopes stand in, and nothing is cached.
+  it("reads the old scopes, uncached, when the database has no grants yet", async () => {
+    db.respond = () => {
+      if (db.reads === 1)
+        return json(
+          {
+            code: "PGRST200",
+            message: "no relationship apiKey → permission",
+            details: null,
+            hint: null
+          },
+          400
+        );
+      return json({
+        ...KEY_ROW,
+        scopes: { sales_view: ["c1"], parts_update: ["c2"] }
+      });
+    };
+
+    expect(await getApiKeyRecord(KEY)).toEqual(ROW);
+    expect(db.reads).toBe(2);
+    expect(kv.entries.size).toBe(0);
+  });
+
   it("falls through to the database when Redis is down", async () => {
     kv.down = true;
 

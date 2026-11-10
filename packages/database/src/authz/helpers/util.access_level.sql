@@ -12,7 +12,9 @@ AS $function$
     WHEN p_user IS NOT NULL AND EXISTS (
       SELECT 1
       FROM employee e
-      JOIN "employeeType" et ON et.id = e."employeeTypeId"
+      -- The type must be the company's own: an id pointing at another
+      -- company's Admin type grants nothing here.
+      JOIN "employeeType" et ON et.id = e."employeeTypeId" AND et."companyId" = e."companyId"
       WHERE e.id = p_user AND e."companyId" = p_company AND et."systemType" = 'Admin'
     ) THEN 'Full'::"permissionLevel"
     ELSE COALESCE((

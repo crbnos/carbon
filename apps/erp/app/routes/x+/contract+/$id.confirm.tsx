@@ -5,6 +5,7 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { anyOf } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getLinkedStripeCustomerId } from "@carbon/stripe/send-sales-invoice.server";
@@ -22,9 +23,11 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<{ stripeCustomerLinked: boolean }> {
-  const { companyId, api } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { companyId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");

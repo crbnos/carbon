@@ -4,7 +4,7 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import { getUserClaims } from "@carbon/auth/users.server";
-import { holdsGate } from "@carbon/database/access";
+import { anyOf, holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { datetime, EPSILON } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -50,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (await getUserClaims(userId, companyId))?.permissions ?? {};
   const canViewSales = holdsGate(
     permissions,
-    { "sales.serviceContracts": "View" },
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View"),
     companyId
   );
   const canReviewBilling =

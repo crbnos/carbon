@@ -57,6 +57,8 @@ import {
   updatePlanningSettings,
   updatePostingSync,
   updateProductionSettings,
+  updatePurchasingSettings,
+  updateResourcesSettings,
   updateSecuritySettings,
   updateSubsidiaryDetails
 } from "../app/modules/settings/settings.server";
@@ -161,6 +163,140 @@ describe("a settings page update", () => {
 
     expect(result.error?.category).toBe("forbidden");
     expect(db.writes).toEqual([]);
+  });
+});
+
+// Settings → Company owns the settings row, its billing addresses and the
+// company row; a module's settings page writes its own fields there as the
+// system, after its own permission.
+describe("a caller with one settings page only", () => {
+  function pageOnly(page: string, rows: Record<string, unknown> = {}) {
+    const caller = client(rows);
+    const system = client(rows);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: {
+          [page]: {
+            view: ["company-1"],
+            create: ["company-1"],
+            update: ["company-1"],
+            delete: []
+          }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => system as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    return { ctx, caller: caller.writes, system: system.writes };
+  }
+
+  it("saves Settings → Inventory with the system client", async () => {
+    const { ctx, caller, system } = pageOnly("settings.inventory");
+
+    const result = await updateInventorySettings(ctx, {
+      kanbanOutput: "label"
+    });
+
+    expect(result.error).toBeNull();
+    expect(caller).toEqual([]);
+    expect(system).toEqual([
+      {
+        table: "companySettings",
+        method: "update",
+        values: { kanbanOutput: "label" }
+      }
+    ]);
+  });
+
+  it("saves the payables billing address with the system client", async () => {
+    const { ctx, caller, system } = pageOnly("settings.purchasing");
+
+    const result = await updatePurchasingSettings(ctx, {
+      accountsPayableBillingAddress: { name: "Acme" }
+    });
+
+    expect(result.error).toBeNull();
+    expect(caller).toEqual([]);
+    expect(system).toEqual([
+      {
+        table: "companyAccountsPayableBillingAddress",
+        method: "update",
+        values: { name: "Acme", updatedBy: "user-1" }
+      }
+    ]);
+  });
+
+  it("moves the suggestion group on the company row with the system client", async () => {
+    const { ctx, caller, system } = pageOnly("settings.resources", {
+      company: [{ id: "company-1" }]
+    });
+
+    const result = await updateResourcesSettings(ctx, {
+      suggestionNotificationGroup: ["user-2"]
+    });
+
+    expect(result.error).toBeNull();
+    expect(caller).toEqual([]);
+    expect(system).toEqual([
+      {
+        table: "company",
+        method: "update",
+        values: { suggestionNotificationGroup: ["user-2"] }
+      }
+    ]);
+  });
+
+  it("sets a location's planning owner with the system client", async () => {
+    const { ctx, caller, system } = pageOnly("settings.planning", {
+      location: [{ id: "loc-1" }]
+    });
+
+    const result = await updatePlanningSettings(ctx, {
+      locationResponsibleEmployee: {
+        locationId: "loc-1",
+        responsibleEmployee: null
+      }
+    });
+
+    expect(result.error).toBeNull();
+    expect(caller).toEqual([]);
+    expect(system).toEqual([
+      {
+        table: "location",
+        method: "update",
+        values: { responsibleEmployee: null, updatedBy: "user-1" }
+      }
+    ]);
+  });
+
+  it("refuses a location that is not the company's", async () => {
+    const { ctx } = pageOnly("settings.planning", { location: [] });
+
+    const result = await updatePlanningSettings(ctx, {
+      locationResponsibleEmployee: {
+        locationId: "loc-9",
+        responsibleEmployee: null
+      }
+    });
+
+    expect(result.error?.category).toBe("notFound");
+  });
+
+  it("is refused on another settings page's operation", async () => {
+    const { ctx, system } = pageOnly("settings.inventory");
+
+    const result = await updatePurchasingSettings(ctx, {
+      requireSupplierContactEmail: true
+    });
+
+    expect(result.error?.category).toBe("forbidden");
+    expect(system).toEqual([]);
   });
 });
 

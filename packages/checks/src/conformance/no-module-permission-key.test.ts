@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   LAST_MODULE_KEY_MIGRATION,
+  MODULE_KEY_MIGRATIONS,
   noModulePermissionKey
 } from "./no-module-permission-key";
 
@@ -98,13 +99,36 @@ describe("no-module-permission-key — SQL", () => {
     ).toEqual(["settings_update"]);
   });
 
-  it("leaves older migrations alone", () => {
+  it("leaves the migrations that existed at the cutoff alone", () => {
     expect(
       scan(
         `SELECT get_companies_with_employee_permission('settings_update');`,
         `${LAST_MODULE_KEY_MIGRATION}_module-keys-to-pages.sql`
       )
     ).toEqual([]);
+    expect(
+      MODULE_KEY_MIGRATIONS.has("20260927224314_retire-legacy-rls-helpers.sql")
+    ).toBe(true);
+  });
+
+  // An open branch can land a migration dated before the cutoff after it.
+  it("flags a migration dated before the cutoff that was not there at the cutoff", () => {
+    expect(
+      scan(
+        `SELECT get_companies_with_employee_permission('settings_update');`,
+        "packages/database/supabase/migrations/20261001120000_late-branch.sql"
+      )
+    ).toEqual(["settings_update"]);
+  });
+
+  it("freezes the list at the migrations dated at or before the cutoff", () => {
+    const dates = [...MODULE_KEY_MIGRATIONS].map((name) => name.slice(0, 14));
+    expect(dates.every((date) => date <= LAST_MODULE_KEY_MIGRATION)).toBe(true);
+    expect(
+      MODULE_KEY_MIGRATIONS.has(
+        `${LAST_MODULE_KEY_MIGRATION}_module-keys-to-pages.sql`
+      )
+    ).toBe(true);
   });
 
   it("flags a managed function file whatever its age", () => {

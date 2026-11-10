@@ -34,8 +34,8 @@ export type Module = Lowercase<Public["Enums"]["module"]>;
 type Action = "view" | "create" | "update" | "delete";
 /**
  * A module key (`parts_update`) or a page key (`parts.tools_update`). A module
- * key renders as the key of the page that owns the table (see `render`); a page
- * key renders as written.
+ * key renders as the key of the page that owns the table (see `render`) and must
+ * name that page's module; a page key renders as written.
  */
 export type Permission = `${Module}_${Action}` | PermissionKey;
 
@@ -68,6 +68,8 @@ const isPred = (value: unknown): value is Pred =>
 
 // The table `render` is compiling. A module key in its rules resolves to the
 // page that owns the table (access/registry.ts), wherever in the rule it sits.
+// The key must name that page's module: `render` throws on any other module,
+// so a rule never reads as one module while checking another.
 let rendering: string | undefined;
 
 /** The action of a module key (`parts_update`); undefined for a page key. */
@@ -185,6 +187,15 @@ const belongsTo = (
       addKey(permission);
       continue;
     }
+    // A module key stands for the owning page only when it names that page's
+    // module. Naming another module is a grant on another page: write its key.
+    const module = permission.slice(0, permission.lastIndexOf("_"));
+    const owners =
+      place.kind === "page" ? [place.page] : place.branches.map((b) => b.page);
+    if (!owners.some((page) => moduleOf(page) === module))
+      throw new Error(
+        `authz: ${table} names ${permission}, but ${owners.join(", ")} owns it; name the module of the page that owns it, or a page key`
+      );
     if (place.kind === "page") {
       for (const key of pageKeys(place.page, action)) addKey(key);
     } else if (place.kind === "child" && action === "view") {
@@ -237,6 +248,10 @@ const groupKey = (permission: Permission) => {
     (action === "view" && readersOf(rendering).length)
   )
     throw new Error(`authz: group table ${rendering} needs one page`);
+  if (moduleOf(place.page) !== permission.slice(0, permission.lastIndexOf("_")))
+    throw new Error(
+      `authz: ${rendering} names ${permission}, but ${place.page} owns it; name the module of the page that owns it, or a page key`
+    );
   return `${place.page}_${action}`;
 };
 

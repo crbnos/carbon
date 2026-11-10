@@ -23,7 +23,9 @@ $fn$;
 
 DO $proof$
 DECLARE
-  group_a text; company_a text;
+  group_a text; company_a text; company_b text;
+  foreign_admin text := gen_random_uuid()::text;  -- employee of A whose type is B's Admin type
+  admin_type_b text; asked text;
   u text := gen_random_uuid()::text;  -- employee of A on an ordinary type
   a text := gen_random_uuid()::text;  -- employee of A on the Admin type
   c text := gen_random_uuid()::text;  -- customer-portal account of A
@@ -38,10 +40,15 @@ BEGIN
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
     VALUES ('Access A', group_a, 'USD', 'America/New_York') RETURNING id INTO company_a;
 
+  INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
+    VALUES ('Access B', group_a, 'USD', 'America/New_York') RETURNING id INTO company_b;
+
   INSERT INTO "user" (id, email) VALUES
-    (u, u || '@access.invalid'), (a, a || '@access.invalid'), (c, c || '@access.invalid');
+    (u, u || '@access.invalid'), (a, a || '@access.invalid'), (c, c || '@access.invalid'),
+    (foreign_admin, foreign_admin || '@access.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
-    (u, company_a, 'employee'), (a, company_a, 'employee'), (c, company_a, 'customer');
+    (u, company_a, 'employee'), (a, company_a, 'employee'), (c, company_a, 'customer'),
+    (foreign_admin, company_a, 'employee');
 
   -- The company's all-employees group, which the employeeType interceptor joins.
   INSERT INTO "group" (id, name, "companyId")
@@ -56,8 +63,22 @@ BEGIN
     INSERT INTO "employeeType" (name, "companyId", "systemType") VALUES ('Access admin', company_a, 'Admin')
       RETURNING id INTO admin_type;
   END IF;
+  INSERT INTO "group" (id, name, "companyId")
+  VALUES ('00000000-0000-' || substring(company_b, 1, 4) || '-' || substring(company_b, 5, 4) || '-' || substring(company_b, 9, 12),
+          'Access employees B', company_b)
+  ON CONFLICT (id) DO NOTHING;
+  SELECT id INTO admin_type_b FROM "employeeType"
+    WHERE "companyId" = company_b AND "systemType" = 'Admin';
+  IF admin_type_b IS NULL THEN
+    INSERT INTO "employeeType" (name, "companyId", "systemType") VALUES ('Access admin B', company_b, 'Admin')
+      RETURNING id INTO admin_type_b;
+  END IF;
   INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES
     (u, role_type, company_a, true), (a, admin_type, company_a, true);
+  -- Only a corrupt or forged row points at another company's type.
+  INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES
+    (foreign_admin, role_type, company_a, true);
+  UPDATE employee SET "employeeTypeId" = admin_type_b WHERE id = foreign_admin AND "companyId" = company_a;
 
   INSERT INTO "apiKey" (name, "keyHash", "companyId", "createdBy")
     VALUES ('Access key', encode(extensions.digest(raw_key::bytea, 'sha256'), 'hex'), company_a, 'system')
@@ -65,18 +86,24 @@ BEGIN
 
   -- 1. Every shared case, against util.access_level.
   FOR test_case IN SELECT jsonb_array_elements(doc) FROM access_cases LOOP
-    DELETE FROM permission WHERE "companyId" = company_a;
-    who := CASE WHEN (test_case->>'admin')::boolean THEN a ELSE u END;
+    DELETE FROM permission WHERE "companyId" IN (company_a, company_b);
+    -- Grants and the Admin type are in A unless the case names B; it asks about A
+    -- unless askCompany names B.
+    who := CASE
+      WHEN (test_case->>'admin')::boolean AND test_case->>'adminCompany' = 'B' THEN foreign_admin
+      WHEN (test_case->>'admin')::boolean THEN a
+      ELSE u END;
+    asked := CASE WHEN test_case->>'askCompany' = 'B' THEN company_b ELSE company_a END;
     only_key := jsonb_array_length(test_case->'grants') > 0 AND NOT EXISTS (
       SELECT 1 FROM jsonb_array_elements(test_case->'grants') x WHERE x->>'subject' <> 'key'
     );
     FOR g IN SELECT jsonb_array_elements(test_case->'grants') LOOP
       INSERT INTO permission ("companyId", "userId", "employeeTypeId", "apiKeyId", module, page, level, "createdBy")
       VALUES (
-        company_a,
+        CASE WHEN g->>'company' = 'B' THEN company_b ELSE company_a END,
         CASE WHEN g->>'subject' = 'person' THEN who END,
         CASE WHEN g->>'subject' = 'role' THEN
-          CASE WHEN (test_case->>'admin')::boolean THEN admin_type ELSE role_type END
+          CASE WHEN who = a THEN admin_type ELSE role_type END
         END,
         CASE WHEN g->>'subject' = 'key' THEN key_id END,
         (g->>'module')::module,
@@ -87,8 +114,8 @@ BEGIN
     END LOOP;
 
     actual := CASE WHEN only_key
-      THEN util.access_level(NULL, key_id, company_a, test_case->>'pageId')
-      ELSE util.access_level(who, NULL, company_a, test_case->>'pageId')
+      THEN util.access_level(NULL, key_id, asked, test_case->>'pageId')
+      ELSE util.access_level(who, NULL, asked, test_case->>'pageId')
     END;
     IF actual IS DISTINCT FROM test_case->>'expected' THEN
       failures := failures + 1;
@@ -98,7 +125,7 @@ BEGIN
   IF failures > 0 THEN
     RAISE EXCEPTION '% access_level case(s) failed', failures;
   END IF;
-  DELETE FROM permission WHERE "companyId" = company_a;
+  DELETE FROM permission WHERE "companyId" IN (company_a, company_b);
 
   -- 2. get_companies_with_employee_permission: a role grant, an override, a key.
   INSERT INTO permission ("companyId", "employeeTypeId", module, level, "createdBy") VALUES
@@ -181,9 +208,26 @@ BEGIN
     RAISE EXCEPTION 'unexpected employee claims: %', claims;
   END IF;
 
+  -- The transitional old keys, from the module grants: role Inventory Edit, and
+  -- a person Sales None over the role's Sales Full.
+  IF claims->'inventory_update' IS DISTINCT FROM jsonb_build_array(company_a)
+     OR claims ? 'inventory_delete' OR claims ? 'sales_view' THEN
+    RAISE EXCEPTION 'unexpected old claims keys: %', claims;
+  END IF;
+
   PERFORM pg_temp.act_as(a);
-  IF NOT (get_claims(a, company_a)->>'admin')::boolean THEN
+  claims := get_claims(a, company_a);
+  IF NOT (claims->>'admin')::boolean THEN
     RAISE EXCEPTION 'the Admin type must read admin: true';
+  END IF;
+  IF claims->'accounting_delete' IS DISTINCT FROM jsonb_build_array(company_a) THEN
+    RAISE EXCEPTION 'the Admin type must hold every old key: %', claims;
+  END IF;
+
+  PERFORM pg_temp.act_as(foreign_admin);
+  claims := get_claims(foreign_admin, company_a);
+  IF (claims->>'admin')::boolean OR claims ? 'accounting_view' THEN
+    RAISE EXCEPTION 'another company''s Admin type must not read admin: %', claims;
   END IF;
 
   PERFORM pg_temp.act_as(c);

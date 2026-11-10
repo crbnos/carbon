@@ -4,6 +4,7 @@
 
 import { randomInt } from "node:crypto";
 import type { Database } from "@carbon/database";
+import { type GrantInput, replaceGrants } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -118,6 +119,22 @@ export async function verifyEmployeePin(
 }
 
 /**
+ * What a new Console Operator type may do: the MES modules only, never ERP
+ * administration. Module grants, so every page of a module (the MES gates on
+ * `production.jobs`, `production.batches`, `quality.inspections`,
+ * `quality.issues`) is covered. Edit is view, create and update without delete
+ * — the checkboxes this type was created with before grants.
+ */
+export const CONSOLE_OPERATOR_GRANTS: readonly GrantInput[] = [
+  { module: "Production", page: null, level: "Edit" },
+  { module: "Inventory", page: null, level: "Edit" },
+  { module: "Quality", page: null, level: "Edit" },
+  { module: "Resources", page: null, level: "View" },
+  { module: "Items", page: null, level: "View" },
+  { module: "People", page: null, level: "View" }
+];
+
+/**
  * Commercial (Enterprise) console / kiosk mode. Enabling it provisions the
  * protected "Console Operator" employee type (MES-only permissions) and a PIN
  * for the enabling user — role provisioning, gated to the Business plan via the
@@ -167,85 +184,54 @@ export async function updateConsoleSetting(
   let generatedPin: string | null = null;
   let pinError: string | null = null;
 
-  // When enabling, create "Console Operator" employee type if it doesn't exist
+  // When enabling, create "Console Operator" employee type if it doesn't exist.
+  // Users → Employee Types owns `employeeType`: written over `db` (the system), after
+  // the caller's people-settings permission and the entitlement above, for
+  // this company only — as the grants are.
   if (consoleEnabled) {
-    const existing = await client
-      .from("employeeType")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("systemType", "Console Operator")
-      .maybeSingle();
-
-    if (!existing.data) {
-      const newType = await client
-        .from("employeeType")
-        .insert({
-          name: "Console Operator",
-          companyId,
-          protected: true,
-          systemType: "Console Operator"
-        })
+    let employeeTypeId: string | undefined;
+    try {
+      const existing = await db
+        .selectFrom("employeeType")
         .select("id")
-        .single();
+        .where("companyId", "=", companyId)
+        .where("systemType", "=", "Console Operator")
+        .executeTakeFirst();
 
-      // Create default permissions for the Console Operator type.
-      // Only grant what's needed for MES operations — not ERP modules.
-      if (newType.data) {
-        const mesModules = [
-          {
-            module: "Production",
-            create: true,
-            update: true,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Inventory",
-            create: true,
-            update: true,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Resources",
-            create: false,
-            update: false,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Items",
-            create: false,
-            update: false,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Quality",
-            create: true,
-            update: true,
-            delete: false,
-            view: true
-          },
-          {
-            module: "People",
-            create: false,
-            update: false,
-            delete: false,
-            view: true
-          }
-        ];
+      if (!existing) {
+        const created = await db
+          .insertInto("employeeType")
+          .values({
+            name: "Console Operator",
+            companyId,
+            protected: true,
+            systemType: "Console Operator"
+          })
+          .returning("id")
+          .executeTakeFirst();
+        employeeTypeId = created?.id;
+      }
+    } catch (err) {
+      logger.error("Failed to create the Console Operator type", {
+        companyId,
+        error: err
+      });
+    }
 
-        const permissions = mesModules.map((m) => ({
-          employeeTypeId: newType.data.id,
-          module: m.module as "Accounting",
-          create: m.create ? [companyId] : [],
-          update: m.update ? [companyId] : [],
-          delete: m.delete ? [companyId] : [],
-          view: m.view ? [companyId] : []
-        }));
-
-        await client.from("employeeTypePermission").insert(permissions);
+    if (employeeTypeId) {
+      try {
+        await replaceGrants(db, {
+          companyId,
+          subject: { employeeTypeId },
+          grants: CONSOLE_OPERATOR_GRANTS,
+          userId: userId ?? "system"
+        });
+      } catch (err) {
+        logger.error("Failed to grant the Console Operator type access", {
+          companyId,
+          employeeTypeId,
+          error: err
+        });
       }
     }
 

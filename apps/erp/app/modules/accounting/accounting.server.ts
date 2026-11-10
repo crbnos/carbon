@@ -251,11 +251,16 @@ export const postDepreciationRun = defineServiceFn({
     }
 
     // Each month posts in its own period (the run's when that month is Closed).
-    const periods = await service.resolveRunPostingPeriods(client, {
-      companyId,
-      monthEnds: lines.data.map(lineMonth),
-      runPeriodEnd: periodEnd
-    });
+    // Accounting → Periods owns the periods this may create: resolved as
+    // the system, for this company, after this run's permission.
+    const periods = await service.resolveRunPostingPeriods(
+      ctx.asSystem.supabase,
+      {
+        companyId,
+        monthEnds: lines.data.map(lineMonth),
+        runPeriodEnd: periodEnd
+      }
+    );
     if (!periods.data) {
       return ctx.error(
         "internal",
@@ -510,15 +515,20 @@ export const reverseDepreciationRun = defineServiceFn({
 
     // Each journal reverses on its own date, or today when that period is
     // Closed.
-    const periods = await service.resolveReversalPeriods(client, {
-      companyId,
-      postingDates: lines.data.flatMap((line) =>
-        [
-          line.journal?.postingDate,
-          line.deferredTaxJournal?.postingDate
-        ].filter((date): date is string => Boolean(date))
-      )
-    });
+    // Accounting → Periods owns the periods this may create: resolved as
+    // the system, for this company, after this run's permission.
+    const periods = await service.resolveReversalPeriods(
+      ctx.asSystem.supabase,
+      {
+        companyId,
+        postingDates: lines.data.flatMap((line) =>
+          [
+            line.journal?.postingDate,
+            line.deferredTaxJournal?.postingDate
+          ].filter((date): date is string => Boolean(date))
+        )
+      }
+    );
     if (!periods.data) {
       return ctx.error(
         "internal",
@@ -668,13 +678,18 @@ export const postRevenueRecognitionRun = defineServiceFn({
       );
     }
 
-    const periods = await service.resolveRunPostingPeriods(client, {
-      companyId,
-      monthEnds: scheduledLines.data.flatMap((line) =>
-        line.schedule ? [monthEndOf(line.schedule.scheduledDate)] : []
-      ),
-      runPeriodEnd: run.data.periodEnd
-    });
+    // Accounting → Periods owns the periods this may create: resolved as
+    // the system, for this company, after this run's permission.
+    const periods = await service.resolveRunPostingPeriods(
+      ctx.asSystem.supabase,
+      {
+        companyId,
+        monthEnds: scheduledLines.data.flatMap((line) =>
+          line.schedule ? [monthEndOf(line.schedule.scheduledDate)] : []
+        ),
+        runPeriodEnd: run.data.periodEnd
+      }
+    );
     if (!periods.data) {
       return ctx.error(
         "internal",
@@ -789,14 +804,19 @@ export const reverseRevenueRecognitionRun = defineServiceFn({
 
     // Each journal reverses on its own date, or today when that period is
     // Closed.
-    const periods = await service.resolveReversalPeriods(client, {
-      companyId,
-      postingDates: lines.data.flatMap((line) =>
-        line.schedule?.journal?.postingDate
-          ? [line.schedule.journal.postingDate]
-          : []
-      )
-    });
+    // Accounting → Periods owns the periods this may create: resolved as
+    // the system, for this company, after this run's permission.
+    const periods = await service.resolveReversalPeriods(
+      ctx.asSystem.supabase,
+      {
+        companyId,
+        postingDates: lines.data.flatMap((line) =>
+          line.schedule?.journal?.postingDate
+            ? [line.schedule.journal.postingDate]
+            : []
+        )
+      }
+    );
     if (!periods.data) {
       return ctx.error(
         "internal",
@@ -1682,8 +1702,10 @@ export const disposeFixedAsset = defineServiceFn({
     }
     const assetClass = asset.data.fixedAssetClass;
 
+    // Accounting → Periods owns the period: found or created as the system,
+    // for this company, after this page's permission.
     const period = await service.getOrCreateAccountingPeriod(
-      client,
+      ctx.asSystem.supabase,
       companyId,
       disposalDate,
       "accounting"
@@ -1819,8 +1841,10 @@ export const registerFixedAsset = defineServiceFn({
           locationDimensionId: dimensionId("Location"),
           assetClassDimensionId: dimensionId("FixedAssetClass"),
           resolveAccountingPeriodId: async (postingDate) => {
+            // Accounting → Periods owns the period: found or created as
+            // the system, for this company.
             const period = await service.getOrCreateAccountingPeriod(
-              client,
+              ctx.asSystem.supabase,
               companyId,
               postingDate,
               "accounting"

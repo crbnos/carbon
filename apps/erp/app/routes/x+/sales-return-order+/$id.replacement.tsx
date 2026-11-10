@@ -8,25 +8,20 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { createReplacementSalesOrder } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } = await authorize(
-    request,
-    { "sales.returns": "Create" }
-  );
+  const { api } = await authorize(request, { "sales.returns": "Create" });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  // Idempotent: re-invoking returns the existing replacement order's id.
-  const result = await createReplacementSalesOrder(client, {
-    salesReturnOrderId: id,
-    companyId,
-    companyGroupId,
-    userId
+  // Idempotent: re-invoking returns the existing replacement order's id. The
+  // service function checks the sales order permission and links the return
+  // to its replacement as the system, for this company only.
+  const result = await api.sales.createReplacementSalesOrder({
+    salesReturnOrderId: id
   });
 
   if (result.error || !result.data) {

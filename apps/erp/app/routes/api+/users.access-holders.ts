@@ -3,14 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import type { Level } from "@carbon/database/access";
+import { anyOf, type Level } from "@carbon/database/access";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // The role form's "Who has access" panel calls it too.
   const { api } = await authorize(
     request,
-    { "users.accounts": "View" },
+    anyOf(["users.accounts", "users.employeeTypes"], "View"),
     { role: "employee" }
   );
   const params = new URL(request.url).searchParams;

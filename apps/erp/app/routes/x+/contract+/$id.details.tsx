@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -27,9 +28,11 @@ const logger = getLogger("erp", "contract-details");
  *  there — including Create Contract on a sales order and every action that
  *  returns to the contract page. A viewer who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { client, companyId, userId, api } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   const setup = await draftContractSetupPath(client, {

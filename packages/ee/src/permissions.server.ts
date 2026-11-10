@@ -14,6 +14,7 @@ import {
   claimKeys,
   claimsFromJson,
   expandClaims,
+  holdsGate,
   LEVELS,
   type Level
 } from "@carbon/database/access";
@@ -157,7 +158,9 @@ async function isCompanyEmployee(
 async function auditedClaims(userId: string, companyId: string) {
   const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
   if (claims.error || claims.data === null) return null;
-  return claimKeys(expandClaims(claimsFromJson(claims.data), companyId));
+  return claimKeys(
+    expandClaims(claimsFromJson(claims.data, companyId), companyId)
+  );
 }
 
 /** What a save changes: one entry per module or page whose grant moves. */
@@ -318,10 +321,92 @@ export async function updateEmployee(
   return success("Employee updated");
 }
 
+type LeveledGrant = { module: string; page: string | null; level: Level };
+
+const findLevel = (
+  grants: readonly LeveledGrant[],
+  module: string,
+  page: string | null
+) => grants.find((g) => g.module === module && g.page === page)?.level;
+
 /**
- * The bulk edit: each chosen grant becomes an override on the person. A grant
- * whose level equals the role's stores no override. `addOnly` only raises a
- * level. The person's other grants are kept.
+ * A person's grants after a bulk edit. Each chosen grant becomes an override;
+ * one whose level equals what the row inherits stores nothing. A page row
+ * inherits the person's own module grant, else the role's page grant, else
+ * the role's module grant (Full on the Admin type) — the order the access grid
+ * shows. `addOnly` only raises a level above what the person holds today. The
+ * person's other grants are kept, page overrides inside an edited module too:
+ * the spec gives the bulk edit no "replace" meaning.
+ */
+export function bulkEditGrants({
+  chosen,
+  own,
+  role,
+  admin,
+  addOnly
+}: {
+  chosen: readonly LeveledGrant[];
+  own: readonly LeveledGrant[];
+  role: readonly LeveledGrant[];
+  admin: boolean;
+  addOnly: boolean;
+}): GrantInput[] {
+  const roleLevel = (module: string, page: string | null): Level =>
+    admin
+      ? "Full"
+      : (findLevel(role, module, page) ??
+        findLevel(role, module, null) ??
+        "None");
+  const inherited = (module: string, page: string | null): Level =>
+    page === null
+      ? roleLevel(module, null)
+      : (findLevel(own, module, null) ?? roleLevel(module, page));
+
+  const edited = new Map<string, GrantInput>();
+  for (const grant of chosen) {
+    const module = toModule(grant.module);
+    if (!module) continue;
+    const base = inherited(module, grant.page);
+    const level = addOnly
+      ? higher(grant.level, findLevel(own, module, grant.page) ?? base)
+      : grant.level;
+    edited.set(`${module}:${grant.page ?? ""}`, {
+      module,
+      page: grant.page,
+      level: level === base ? null : level
+    });
+  }
+
+  return [
+    ...own
+      .filter((g) => !edited.has(`${g.module}:${g.page ?? ""}`))
+      .map((g) => ({
+        module: g.module as GrantModule,
+        page: g.page,
+        level: g.level
+      })),
+    ...edited.values()
+  ];
+}
+
+/** Whether the user may edit people's access in the company, by their claims. */
+async function canEditAccounts(
+  userId: string,
+  companyId: string
+): Promise<boolean> {
+  const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
+  if (claims.error || claims.data === null) return false;
+  return holdsGate(
+    expandClaims(claimsFromJson(claims.data, companyId), companyId),
+    { "users.accounts": "Edit" },
+    companyId
+  );
+}
+
+/**
+ * The bulk edit (`bulkEditGrants`) for one person. Runs in the
+ * `carbon/update-permissions` job as the service role, so it authorizes the
+ * actor who queued it: they must hold Users → Accounts at Edit in the company.
  */
 export async function updatePermissions(
   client: SupabaseClient<Database>,
@@ -347,13 +432,11 @@ export async function updatePermissions(
     // error() logs the context when it is non-null.
     return error({ companyId, userId: id }, "Employee not found");
   }
-  const claimsAdmin = await client.rpc("is_claims_admin", {
-    company: companyId
-  });
-  if (claimsAdmin.error)
-    return error(claimsAdmin.error, "Failed to check claims admin");
-  if (claimsAdmin.data !== true) {
-    return error(null, "You do not have permission to update permissions");
+  if (!(await canEditAccounts(actorId, companyId))) {
+    return error(
+      { companyId, actorId },
+      "You do not have permission to update permissions"
+    );
   }
 
   const employee = await db
@@ -363,45 +446,19 @@ export async function updatePermissions(
     .where("employee.id", "=", id)
     .where("employee.companyId", "=", companyId)
     .executeTakeFirst();
-  const roleGrants = employee?.employeeTypeId
+  const role = employee?.employeeTypeId
     ? await readGrants(db, companyId, {
         employeeTypeId: employee.employeeTypeId
       })
     : [];
   const own = await readGrants(db, companyId, { userId: id });
-  const find = (
-    grants: readonly { module: string; page: string | null; level: Level }[],
-    module: string,
-    page: string | null
-  ) => grants.find((g) => g.module === module && g.page === page)?.level;
-  // What the person gets with no override: the role's page grant, else its
-  // module grant; Full on the Admin type.
-  const roleLevel = (module: string, page: string | null): Level =>
-    employee?.systemType === "Admin"
-      ? "Full"
-      : (find(roleGrants, module, page) ??
-        find(roleGrants, module, null) ??
-        "None");
-
-  const edited = new Map<string, GrantInput>();
-  for (const grant of chosen) {
-    const module = toModule(grant.module);
-    if (!module) continue;
-    const role = roleLevel(module, grant.page);
-    const level = addOnly
-      ? higher(grant.level, find(own, module, grant.page) ?? role)
-      : grant.level;
-    edited.set(`${module}:${grant.page ?? ""}`, {
-      module,
-      page: grant.page,
-      level: level === role ? null : level
-    });
-  }
-
-  const grants: GrantInput[] = [
-    ...own.filter((g) => !edited.has(`${g.module}:${g.page ?? ""}`)),
-    ...edited.values()
-  ];
+  const grants = bulkEditGrants({
+    chosen,
+    own: own as LeveledGrant[],
+    role: role as LeveledGrant[],
+    admin: employee?.systemType === "Admin",
+    addOnly
+  });
   return replaceAccessGrants(client, db, {
     companyId,
     subject: { userId: id },

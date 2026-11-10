@@ -10,7 +10,6 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { anyOf, ITEM_PAGES } from "@carbon/database/access";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { trigger } from "@carbon/jobs";
 import {
@@ -53,8 +52,11 @@ import {
   ALL_MATCHING_RELEASE_LIMIT,
   type BulkActionMeta,
   type BulkActionStart,
+  bulkActionPermission,
   bulkStartFormResponse,
   hasListPermission,
+  ITEMS_BULK_UPDATE,
+  itemListType,
   parseAllMatching,
   refreshingClientFactory,
   rowLimitRefusal,
@@ -161,7 +163,17 @@ type BulkActionRunContext = TableJobContext & {
   /** The user's client, signed again when its token is four minutes old:
    *  RLS applies as it does to the action route. */
   getClient: ReturnType<typeof userClientFactory>;
+  /** The list the run acts on (`LIST_KEY_PARAM`), null when the event has
+   *  none (a run started before the key rode along). */
+  listKey: string | null;
 };
+
+/**
+ * The params key the start path writes the run's list key under, so `run`
+ * knows it: the job hands `runBulkAction` the action, not the list. Set by
+ * `startBulkRun` only, over any value the route sent.
+ */
+const LIST_KEY_PARAM = "listKey";
 
 /**
  * A bulk action with a background path (spec "Which bulk actions get the
@@ -252,16 +264,35 @@ function userClientFactory(userId: string) {
 const BULK_ACTIONS = {
   "items.update": defineBulkAction({
     label: "Update items",
-    lists: ["parts", "materials", "tools", "consumables", "services"],
-    permission: { gate: anyOf(ITEM_PAGES, "Edit") },
+    ...ITEMS_BULK_UPDATE,
     params: itemBulkUpdateValidator,
     run: async (ids, change, context) => {
+      const type = itemListType(context.listKey);
+      if (!type)
+        throw new Error("The items list of the bulk action is unknown");
+      // Only the list's own type: the per-row rule the system context skips.
+      const client = await context.getClient();
+      const items = await client
+        .from("item")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", context.companyId)
+        .eq("type", type);
+      if (items.error) throw new Error("Failed to read the items");
+      const ofType = items.data.map((item) => item.id);
+      if (ofType.length === 0) {
+        return { done: 0, skipped: ids.length, failed: 0 };
+      }
       const result = await updateItems(await jobServiceContext(context), {
-        ids,
+        ids: ofType,
         change
       });
       if (result.error) throw new Error(result.error.message);
-      return { ...result.data, failed: 0 };
+      return {
+        done: result.data.done,
+        skipped: result.data.skipped + (ids.length - ofType.length),
+        failed: 0
+      };
     }
   }),
   "jobs.release": defineBulkAction({
@@ -495,14 +526,17 @@ async function canRunBulkAction(
 ): Promise<boolean> {
   const bulkAction = getBulkAction(action.key);
   const list = getListDefinition(listKey);
-  if (!bulkAction || !list || !bulkAction.lists.includes(listKey)) {
+  const permission = bulkAction
+    ? bulkActionPermission(bulkAction, listKey)
+    : null;
+  if (!bulkAction || !list || !permission) {
     return false;
   }
   const claims = await readClaims(context);
   if (!claims) return false;
   if (
     !hasListPermission(claims, list.permission, context.companyId) ||
-    !hasListPermission(claims, bulkAction.permission, context.companyId)
+    !hasListPermission(claims, permission, context.companyId)
   ) {
     return false;
   }
@@ -527,12 +561,17 @@ async function runBulkAction(
       `The params of the bulk action "${action.key}" are not valid`
     );
   }
+  const listKey = action.params[LIST_KEY_PARAM];
   return bulkAction.run(
     ids,
     params.data,
     {
       ...context,
-      getClient: userClientFactory(context.userId)
+      getClient: userClientFactory(context.userId),
+      listKey:
+        typeof listKey === "string" && bulkAction.lists.includes(listKey)
+          ? listKey
+          : null
     },
     carry
   );
@@ -673,21 +712,22 @@ export async function startBackgroundBulkAction<K extends TableBulkActionKey>(
     action.idsPerStep !== undefined && ids.length > action.idsPerStep;
   if (!allMatching && !tooManyIds) return null;
 
-  const { companyId, userId } = await authorize(
-    request,
-    action.permission.gate,
-    { role: action.permission.role }
-  );
+  // Selected rows come from the action's one list; the job reads no list
+  // pages for them.
+  const run = allMatching ?? { listKey: action.lists[0]!, search: "", ids };
+  const permission = bulkActionPermission(action, run.listKey);
+  if (!permission) {
+    return bulkStartFormResponse({
+      success: false,
+      message: "This action cannot run on this list",
+      refusal: { code: "not-supported" }
+    });
+  }
+  const { companyId, userId } = await authorize(request, permission.gate, {
+    role: permission.role
+  });
   return bulkStartFormResponse(
-    await startBulkRun({
-      companyId,
-      userId,
-      actionKey,
-      params,
-      // Selected rows come from the action's one list; the job reads no
-      // list pages for them.
-      ...(allMatching ?? { listKey: action.lists[0]!, search: "", ids })
-    })
+    await startBulkRun({ companyId, userId, actionKey, params, ...run })
   );
 }
 
@@ -794,7 +834,10 @@ async function startBulkRun({
         bulkActionId,
         actionKey,
         actionLabel: bulkAction.label,
-        params: parsedParams.data as TableBulkAction["params"],
+        params: {
+          ...(parsedParams.data as TableBulkAction["params"]),
+          [LIST_KEY_PARAM]: listKey
+        },
         listKey,
         search,
         ...(bulkAction.maxRows !== undefined

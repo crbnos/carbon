@@ -7,6 +7,7 @@ import {
   expandClaims,
   type Grant,
   type Level,
+  legacyGrants,
   REGISTRY_HASH
 } from "@carbon/database/access";
 import { redis } from "@carbon/kv";
@@ -84,6 +85,8 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   // as PGRST116; any other error also yields a null row, and caching THAT would
   // reject a valid key for the full TTL over a momentary outage.
   if (error && error.code !== NO_ROWS_FOUND) {
+    const legacy = await loadLegacyApiKeyRecord(keyHash);
+    if (legacy) return legacy;
     log.error("Failed to read api key record", { error });
     return null;
   }
@@ -102,6 +105,44 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   }
 
   return record;
+}
+
+/**
+ * The key's old `scopes` (`<module>_<action>: [companyIds]`) as module grants,
+ * for a database the permission migrations have not reached yet (no
+ * `permission` table to embed). Never cached: the next read after the
+ * migrations must see the grants.
+ */
+async function loadLegacyApiKeyRecord(
+  keyHash: string
+): Promise<ApiKeyRecord | null> {
+  const { data, error } = await getCarbonServiceRole()
+    .from("apiKey")
+    .select(
+      "id, companyId, ...company(companyGroupId), createdBy, rateLimit, rateLimitWindow, expiresAt, scopes"
+    )
+    .eq("keyHash", keyHash)
+    .single();
+  if (error || !data) return null;
+  const { scopes, ...key } = data;
+  const keys =
+    typeof scopes === "object" && scopes !== null && !Array.isArray(scopes)
+      ? (scopes as Record<string, unknown>)
+      : {};
+  return {
+    ...key,
+    companyGroupId: key.companyGroupId as string,
+    rateLimitWindow: key.rateLimitWindow as ApiKeyRecord["rateLimitWindow"],
+    permissions: expandClaims(
+      {
+        role: null,
+        admin: false,
+        grants: legacyGrants(keys, key.companyId, "key"),
+        portal: {}
+      },
+      key.companyId
+    )
+  };
 }
 
 function toApiKeyRecord(row: {

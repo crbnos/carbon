@@ -68,10 +68,10 @@ const ProjectBillableItemsTable = memo(
     const formatRate = useCurrencyFormatter({ rate: true });
     const formatQuantity = useQuantityFormatter();
     const { formatDate } = useDateFormatter();
-    const canUpdate = permissions.has({
-      "projects.approvals": "Edit",
-      "sales.serviceContracts": "View"
-    });
+    const canUpdate = permissions.has([
+      { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
+      { "projects.approvals": "Edit", "sales.projectContracts": "View" }
+    ]);
     const acting = useDrawerItem<{
       action: BillableItemAction;
       items: ContractBillableItem[];

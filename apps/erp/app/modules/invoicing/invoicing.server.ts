@@ -2879,7 +2879,10 @@ export const insertSalesInvoice = defineServiceFn({
       ctx,
       await service.insertSalesInvoice(
         ctx.asCaller.supabase,
-        payload(ctx, input).withGroup().forUpsert() as never
+        payload(ctx, input).withGroup().forUpsert() as never,
+        // Sales owns the invoice's opportunity: written as the system, after
+        // this function's permission, for this company only.
+        ctx.asSystem.supabase
       )
     );
   }

@@ -30,11 +30,11 @@ const logger = getLogger("erp", "project-billing");
 /** A project's contract billing: the lines that bill it with their funding,
  *  and its billable items. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  // Contract billing: the sales permission as well as the projects one.
-  const { api, client, companyId } = await authorize(request, {
-    "projects.projects": "View",
-    "sales.serviceContracts": "View"
-  });
+  // Contract billing: a contracts page as well as the projects one.
+  const { api, client, companyId } = await authorize(request, [
+    { "projects.projects": "View", "sales.serviceContracts": "View" },
+    { "projects.projects": "View", "sales.projectContracts": "View" }
+  ]);
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");

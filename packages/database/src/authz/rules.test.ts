@@ -174,15 +174,45 @@ const policy = (sql: string, command: string) =>
   sql.split("\n").find((line) => line.includes(`FOR ${command}`)) ?? "";
 
 describe("render: module keys become page keys", () => {
-  test("the page that owns the table decides, whatever module the rule names", () => {
-    const sql = render(company("parts"), "storageUnit");
+  test("a module key renders as the key of the page that owns the table", () => {
+    const sql = render(company("inventory"), "storageUnit");
     expect(policy(sql, "INSERT")).toContain(
       key("inventory.storageUnits_create")
     );
-    expect(sql).not.toContain("parts_");
+    expect(sql).not.toContain("inventory_");
     expect(policy(sql, "SELECT")).toContain(
       "get_companies_with_employee_role()"
     );
+  });
+
+  // Rendering it as the owner's key made a rule read as one module while it
+  // checked another, so grants on the module it names silently stopped applying.
+  test("a module key of another module than the owning page's throws", () => {
+    expect(() => render(company("parts"), "storageUnit")).toThrow(
+      /storageUnit names parts_create, but inventory\.storageUnits owns it/
+    );
+    expect(() =>
+      render(
+        company("sales", { read: anyOf("sales_view", "purchasing_view") }),
+        "address"
+      )
+    ).toThrow(/purchasing_view/);
+    expect(() =>
+      render(
+        company("parts", { read: anyOf("parts_view", "purchasing_view") }),
+        "supplierPart"
+      )
+    ).toThrow(/purchasing_view/);
+    // A page key of another module renders as written.
+    expect(
+      policy(
+        render(
+          company("inventory", { create: "purchasing.purchaseOrders_create" }),
+          "storageUnit"
+        ),
+        "INSERT"
+      )
+    ).toContain(key("purchasing.purchaseOrders_create"));
   });
 
   // A read admits View on any page of the owner's module, then its readers.
@@ -214,10 +244,12 @@ describe("render: module keys become page keys", () => {
     );
   });
 
-  test("module keys of two modules that resolve to one page render once", () => {
+  test("module keys that resolve to one page render once", () => {
     const select = policy(
       render(
-        company("sales", { read: anyOf("sales_view", "purchasing_view") }),
+        company("sales", {
+          read: anyOf("sales_view", "sales_view", "sales.customers_view")
+        }),
         "address"
       ),
       "SELECT"
@@ -264,10 +296,7 @@ describe("render: module keys become page keys", () => {
 
   test("a child read names no parent table: any page of its parent's module, plus readers", () => {
     const select = policy(
-      render(
-        company("parts", { read: anyOf("parts_view", "purchasing_view") }),
-        "supplierPart"
-      ),
+      render(company("parts", { read: "parts_view" }), "supplierPart"),
       "SELECT"
     );
     expect(select).not.toContain(`"public"."item"`);

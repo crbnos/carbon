@@ -1418,7 +1418,9 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("conflict", "Job unavailable or locked");
     }
 
-    const { data, error } = await ctx.asCaller.supabase
+    // Production → Jobs owns the job; this board's permission is the gate.
+    // Written as the system, for this company's unlocked job at the location.
+    const { data, error } = await ctx.asSystem.supabase
       .from("job")
       .update({
         dueDate,
@@ -3431,7 +3433,9 @@ export const reprioritizeBatch = defineServiceFn({
       return ctx.error("rule", "Batch unavailable", batch.error);
     }
 
-    const { error } = await client
+    // Production → Jobs owns the operations; this page's permission is the
+    // gate. Written as the system, for this company's batch only.
+    const { data, error } = await ctx.asSystem.supabase
       .from("jobOperation")
       .update({
         priority,
@@ -3440,8 +3444,10 @@ export const reprioritizeBatch = defineServiceFn({
       })
       .eq("jobOperationBatchId", batchId)
       .eq("companyId", companyId)
-      .not("status", "in", "(Done,Canceled)");
+      .not("status", "in", "(Done,Canceled)")
+      .select("id");
     if (error) return ctx.error("internal", error.message, error);
+    if (data.length === 0) return ctx.error("rule", "Batch unavailable");
     return { batchId };
   }
 });
@@ -5422,13 +5428,13 @@ export const createProductionQuantity = defineServiceFn({
  * Correct a recorded production quantity.
  *
  * @remarks
- * Needs accounting update, since the quantity feeds the job's costing. A
- * scrap reason is kept only on Scrap. Not published: a published operation
- * gates on its own module's permission.
+ * Needs Edit on the job's quantities (Production → Jobs) and accounting
+ * update, since the quantity feeds the job's costing. A scrap reason is kept
+ * only on Scrap. Not published: it needs two modules' permissions.
  */
 export const updateProductionQuantity = defineServiceFn({
   input: productionQuantityValidator.safeExtend({ id: z.string() }),
-  permission: { "accounting.reporting": "Edit" },
+  permission: { "production.jobs": "Edit", "accounting.reporting": "Edit" },
 
   async run(ctx, { id, ...quantity }) {
     const update = await service.upsertProductionQuantity(
@@ -5830,7 +5836,8 @@ export const cancelAssemblyJob = defineServiceFn({
     }
 
     if (kind === "convert") {
-      await client
+      // The item pages own the model: written as the system, this company's only.
+      await ctx.asSystem.supabase
         .from("modelUpload")
         .update({
           processingStatus: "Failed",
@@ -7967,8 +7974,10 @@ export const updateJobBatchNumber = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
+      // Inventory owns trackedEntity: written as the system, scoped to this
+      // company, as the job's batch route does.
       await service.updateJobBatchNumber(
-        ctx.asCaller.supabase,
+        ctx.asSystem.supabase,
         ctx.company.id,
         input.trackedEntityId as never,
         input.value as never
@@ -9903,10 +9912,13 @@ export const activateAssemblyInstructionVersion = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.activateAssemblyInstructionVersion(
-        ctx.asCaller.supabase,
-        payload(ctx, input).withUser().build() as never
-      )
+      await service.activateAssemblyInstructionVersion(ctx.asCaller.supabase, {
+        id: input.id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        // The system handle the operations' repoint and re-sync run on.
+        db: ctx.asSystem.pg
+      })
     );
   }
 });

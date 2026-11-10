@@ -101,6 +101,8 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 - `src/workflows/engine/log.ts` redacts secret/token/password/header values before persisting step input.
 - Bare `tsx` scripts cannot rely on Vite's CJS/ESM interop. Keep runtime imports from packages without `"type":"module"` out of script dependency chains; type-only imports are safe.
 - `src/demo-planning.ts` `planDemoCompany` runs MRP + `runLocationSchedule` over a company after a demo template commits; it never throws. Called by the `company-template` job's non-fatal `plan-template` step and by the `plan:company` script (`src/scripts/plan-company.ts`, spawned by `db:seed:dev`), which loads it through `createRequire` for the reason above. See `.claude/rules/onboarding-company-templates.md`.
+- `tasks/update-permissions.ts` runs as the service role: `updatePermissions` (`@carbon/ee/permissions.server`) authorizes the event's `actorId` by their claims (`users.accounts` at Edit), and an event without one writes nothing.
+- Restores and imports never wipe or load `permission` (`IN_PLACE_SKIPPED_TABLES`, `RESEED_SKIPPED_TABLES`), then clear the company's claims and API-key caches (`src/backups/access-cache.ts`). See `.claude/rules/company-backup-restore.md`.
 - `db:check:backups` is read-only when run directly. The pre-commit hook passes `--stage` and regenerates/stages `packages/jobs/manifests/schema.json` after a successful live-schema comparison.
 
 ## Cross-References

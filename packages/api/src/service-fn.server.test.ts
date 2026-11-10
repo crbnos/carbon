@@ -203,7 +203,7 @@ describe("the gate", () => {
     );
   });
 
-  it("requires company membership for an employee read", async () => {
+  it("admits any employee of the company to an employee read, grants or none", async () => {
     const open = defineServiceFn({
       input: z.object({}),
       permission: "employee",
@@ -211,10 +211,34 @@ describe("the gate", () => {
         return "ok";
       }
     });
-    expect((await open(contextWith({}, user()), {})).error?.category).toBe(
+    // The role is the user's role in this company: membership is proven.
+    expect((await open(contextWith({}, user()), {})).data).toBe("ok");
+    expect((await open(contextWith({}, user(productionView)), {})).data).toBe(
+      "ok"
+    );
+    const noRole: Actor = { ...user(productionView), role: null } as Actor;
+    expect((await open(contextWith({}, noRole), {})).error?.category).toBe(
       "forbidden"
     );
-    expect((await open(contextWith({}, user(productionView)), {})).data).toBe(
+  });
+
+  it("requires an API key to hold some grant for an employee read", async () => {
+    const open = defineServiceFn({
+      input: z.object({}),
+      permission: "employee",
+      async run() {
+        return "ok";
+      }
+    });
+    const key = (scopes = {}): Actor => ({
+      type: "apiKey",
+      createdBy: "user-1",
+      scopes
+    });
+    expect((await open(contextWith({}, key()), {})).error?.category).toBe(
+      "forbidden"
+    );
+    expect((await open(contextWith({}, key(productionView)), {})).data).toBe(
       "ok"
     );
   });

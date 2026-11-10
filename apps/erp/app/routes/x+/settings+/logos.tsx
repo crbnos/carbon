@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   Badge,
   Card,
@@ -48,7 +49,7 @@ const TARGET_UPDATERS = {
 type LogoTarget = keyof typeof TARGET_UPDATERS;
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
+  const { companyId } = await authorize(request, {
     "settings.logos": "Edit"
   });
 
@@ -60,8 +61,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid target" }, { status: 400 });
   }
 
+  // Settings → Company owns the company row: written as the system, after
+  // this page's permission, for this company only.
   const { error } = await TARGET_UPDATERS[target as LogoTarget](
-    client,
+    getCarbonServiceRole(),
     companyId,
     logoPath
   );

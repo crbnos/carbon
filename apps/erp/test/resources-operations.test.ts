@@ -42,6 +42,7 @@ import { pageClaims } from "./page-claims";
 // while shared.service's mock is being built binds the unmocked one.
 await import("../app/modules/resources/resources.service");
 const {
+  createAbility,
   createMaintenanceEvent,
   createProcess,
   createTrainingAssignment,
@@ -307,6 +308,86 @@ describe("creating a process that requires an ability", () => {
       "process",
       { requiresAbility: false }
     ]);
+  });
+});
+
+// Abilities, processes and work centers are separate pages: an operation
+// writes its sibling page's rows as the system, after its own permission.
+describe("sibling page writes", () => {
+  function pageOnly(page: string, answers: Record<string, unknown>) {
+    const caller = client(answers);
+    const system = client(answers);
+    const ctx = createServiceContext({
+      actor: {
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions: {
+          [page]: { view: ["company-1"], create: ["company-1"], update: [], delete: [] }
+        }
+      },
+      company: { id: "company-1", groupId: "group-1" },
+      caller: caller as never,
+      system: () => system as never,
+      pg: () => ({}) as never,
+      kv: () => ({}) as never
+    });
+    const tables = (writes: typeof caller.writes) =>
+      writes.map((w) => `${w.op}:${w.table}`);
+    return { ctx, caller: () => tables(caller.writes), system: () => tables(system.writes) };
+  }
+
+  it("creating an ability turns its process's gate on with the system client", async () => {
+    const { ctx, caller, system } = pageOnly("resources.abilities", {
+      process: [{ id: "proc-1" }],
+      "ability:read": null,
+      ability: { id: "ability-1" }
+    });
+
+    const result = await createAbility(ctx, { processId: "proc-1" });
+
+    expect(result.error).toBeNull();
+    expect(system()).toEqual(["update:process"]);
+    expect(caller()).toEqual(["insert:ability"]);
+  });
+
+  it("creating a process links its work centers and makes its ability with the system client", async () => {
+    const { ctx, caller, system } = pageOnly("resources.processes", {
+      "process:read": null,
+      process: { id: "proc-1" },
+      workCenter: [{ id: "wc-1" }],
+      "ability:read": null,
+      ability: { id: "ability-1" }
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: true,
+      workCenters: ["wc-1"]
+    });
+
+    expect(result.error).toBeNull();
+    expect(caller()).toEqual(["insert:process"]);
+    expect(system()).toEqual(["insert:workCenterProcess", "insert:ability"]);
+  });
+
+  it("refuses to link a work center that is not the company's", async () => {
+    const { ctx, system } = pageOnly("resources.processes", {
+      "process:read": null,
+      process: { id: "proc-1" },
+      workCenter: []
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: false,
+      workCenters: ["wc-9"]
+    });
+
+    expect(result.error?.category).toBe("internal");
+    expect(system()).toEqual([]);
   });
 });
 

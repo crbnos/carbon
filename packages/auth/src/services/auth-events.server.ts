@@ -163,6 +163,9 @@ export function logRoleAccessChange(fields: {
   });
 }
 
+/** One `permission` row as an audit event records it. */
+export type AuditGrant = { module: string; page: string | null; level: string };
+
 /**
  * Emit a `role_changed` audit event (NIST 800-171 3.3.1 / 3.3.2 / AC-2).
  *
@@ -182,6 +185,12 @@ export function logRoleChange(fields: {
   afterRole?: string | null;
   before?: Record<string, string[]> | null;
   after?: Record<string, string[]> | null;
+  /**
+   * An employee's own `permission` rows before and after, recorded instead of
+   * `before`/`after` (which read the legacy `userPermission` keys).
+   */
+  grantsBefore?: AuditGrant[];
+  grantsAfter?: AuditGrant[];
   /** Source IP of the request that made the change (AU-3 "source of event"). */
   ip?: string | null;
   reason?: string;
@@ -202,6 +211,16 @@ export function logRoleChange(fields: {
     payload.before = before;
     payload.after = after;
     payload.revoked = before.filter((key) => !after.includes(key));
+  }
+
+  if (fields.grantsBefore !== undefined || fields.grantsAfter !== undefined) {
+    const before = fields.grantsBefore ?? [];
+    const after = fields.grantsAfter ?? [];
+    const same = (a: AuditGrant, b: AuditGrant) =>
+      a.module === b.module && a.page === b.page && a.level === b.level;
+    payload.before = before;
+    payload.after = after;
+    payload.revoked = before.filter((g) => !after.some((a) => same(a, g)));
   }
 
   logAuthEvent("role_changed", payload);

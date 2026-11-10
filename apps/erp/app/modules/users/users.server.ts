@@ -12,7 +12,6 @@ import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import {
   insertEmployeeType,
-  updateEmployee,
   upsertEmployeeType
 } from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
@@ -486,13 +485,15 @@ export const updateEmployeePermissions = defineServiceFn({
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
-    const moved = await updateEmployee(ctx.asCaller.supabase, {
+    // The move reads the claims before it writes and audits itself; the
+    // grants write then audits from the moved state (`moveEmployeeType`
+    // says why the two cannot share a transaction).
+    const moveRefused = await service.moveEmployeeType(ctx, {
       id,
       employeeType,
-      companyId: ctx.company.id
+      ip
     });
-    if (!moved.success)
-      return service.permissionsWriteError(ctx, moved.message);
+    if (moveRefused) return moveRefused;
     const refused = await service.saveAccessGrants(ctx, {
       subjectType: "person",
       subjectId: id,
@@ -677,16 +678,28 @@ export const getPageAccessHolders = defineServiceFn({
       }),
     level: z.enum(LEVELS)
   }),
-  permission: { "users.accounts": "View" },
+  // The role form's "Who has access" panel shows it to a role editor too.
+  permission: {
+    anyOf: [{ "users.accounts": "View" }, { "users.employeeTypes": "View" }]
+  },
   async run(ctx, { page, level }) {
     return service.readPageAccessHolders(ctx, page, level);
   }
 });
 
-/** Every role's grants in the company. */
+/**
+ * Every role's grants in the company.
+ *
+ * @remarks
+ * The person access editor reads them too (what each employee type would
+ * give the person), so an Accounts viewer may read them without the
+ * Employee Types page.
+ */
 export const getRoleGrants = defineServiceFn({
   input: z.object({}),
-  permission: { "users.employeeTypes": "View" },
+  permission: {
+    anyOf: [{ "users.accounts": "View" }, { "users.employeeTypes": "View" }]
+  },
   async run(ctx) {
     return service.readRoleGrants(ctx);
   }
@@ -806,9 +819,7 @@ export const updateGroup = defineServiceFn({
     name: z.string().trim().min(1),
     selections: groupMembers
   }),
-  // The route has only ever required view; row-level security decides the
-  // write. Kept as it was, so this stays unpublished.
-  permission: { "users.groups": "View" },
+  permission: { "users.groups": "Edit" },
   async run(ctx, { id, name, selections }) {
     const client = ctx.asCaller.supabase;
     const [group, members] = await Promise.all([
@@ -1470,25 +1481,6 @@ export const resolveUserSelectIds = defineServiceFn({
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input.ids).build() as never
-    );
-  }
-});
-
-/**
- * Get permissions by employee type
- *
- * @mcp read
- */
-export const getPermissionsByEmployeeType = defineServiceFn({
-  input: z.looseObject({ employeeTypeId: z.string() }),
-  permission: { "users.employeeTypes": "View" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.getPermissionsByEmployeeType(
-        ctx.asCaller.supabase,
-        input.employeeTypeId as never
-      )
     );
   }
 });

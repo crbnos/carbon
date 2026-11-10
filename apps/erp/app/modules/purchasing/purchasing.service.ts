@@ -6353,7 +6353,10 @@ export async function createReplacementPurchaseOrder(
     companyId: string;
     companyGroupId: string;
     userId: string;
-  }
+  },
+  // Purchasing → Returns owns the return order: pass the system client once
+  // the caller's purchase order permission has passed, so the link is written.
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string } | null;
   error: PostgrestError | null;
@@ -6554,7 +6557,7 @@ export async function createReplacementPurchaseOrder(
   }
 
   const link = await requireAffected(
-    client
+    system
       .from("purchaseReturnOrder")
       .update({
         replacementPurchaseOrderId: purchaseOrderId,

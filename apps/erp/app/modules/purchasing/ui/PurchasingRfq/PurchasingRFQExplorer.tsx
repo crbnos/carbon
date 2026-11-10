@@ -298,7 +298,7 @@ function PurchasingRFQLineItem({
                 shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={
-                  isDisabled || !permissions.has({ "purchasing.rfqs": "Edit" })
+                  isDisabled || !permissions.has({ "purchasing.rfqs": "Full" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();

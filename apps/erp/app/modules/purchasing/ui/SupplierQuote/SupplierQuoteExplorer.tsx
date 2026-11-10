@@ -328,7 +328,7 @@ function SupplierQuoteLineItem({
                 destructive
                 disabled={
                   isDisabled ||
-                  !permissions.has({ "purchasing.supplierQuotes": "Edit" })
+                  !permissions.has({ "purchasing.supplierQuotes": "Full" })
                 }
                 onClick={(e) => {
                   e.stopPropagation();

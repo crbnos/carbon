@@ -297,7 +297,9 @@ export const cancelPurchasingRfq = defineServiceFn({
     const linked = await service.getLinkedSupplierQuotes(client, rfqId);
     const quoteIds = (linked.data ?? []).map((link) => link.supplierQuoteId);
     if (quoteIds.length > 0) {
-      const quotes = await client
+      // Purchasing → Supplier Quotes owns the quotes: cancelled as the
+      // system, after this page's permission, this company's only.
+      const quotes = await ctx.asSystem.supabase
         .from("supplierQuote")
         .update({ status: "Cancelled", updatedBy: ctx.auditUserId })
         .in("id", quoteIds)
@@ -7361,7 +7363,8 @@ export const createReplacementPurchaseOrder = defineServiceFn({
       ctx,
       await service.createReplacementPurchaseOrder(
         ctx.asCaller.supabase,
-        payload(ctx, input).withGroup().withUser().forUpsert() as never
+        payload(ctx, input).withGroup().withUser().forUpsert() as never,
+        ctx.asSystem.supabase
       )
     );
   }

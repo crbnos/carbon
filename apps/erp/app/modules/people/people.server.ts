@@ -152,9 +152,11 @@ export const updatePersonJob = defineServiceFn({
     return { employeeId };
   }
 });
-// The person timecard page has always let anyone with people view clock a
-// person in or out and edit their entries. That is kept as it was, so these
-// stay unpublished: an API key with view access must not write time.
+// The person timecard page lets anyone with Timecards view clock a person in
+// or out (row-level security still asks Create / Edit for someone else's
+// entry); adding, changing and deleting an entry state the level the write
+// needs. These stay unpublished: an API key with view access must not write
+// time.
 
 /** Clock a person in. Refused when they are already clocked in. */
 export const clockInPerson = defineServiceFn({
@@ -200,7 +202,7 @@ export const addPersonTimeCardEntry = defineServiceFn({
     clockIn: z.string().min(1),
     clockOut: z.string().optional()
   }),
-  permission: { "people.timecards": "View" },
+  permission: { "people.timecards": "Create" },
   async run(ctx, entry) {
     const created = await service.createTimeCardEntry(ctx.asCaller.supabase, {
       employeeId: entry.employeeId,
@@ -224,7 +226,7 @@ export const updatePersonTimeCardEntry = defineServiceFn({
     clockOut: z.string().optional(),
     note: z.string().optional()
   }),
-  permission: { "people.timecards": "View" },
+  permission: { "people.timecards": "Edit" },
   async run(ctx, entry) {
     const updated = await service.updateTimeCardEntry(ctx.asCaller.supabase, {
       entryId: entry.entryId,
@@ -243,7 +245,7 @@ export const updatePersonTimeCardEntry = defineServiceFn({
 /** Delete a time card entry. */
 export const deletePersonTimeCardEntry = defineServiceFn({
   input: z.object({ entryId: z.string().min(1) }),
-  permission: { "people.timecards": "View" },
+  permission: { "people.timecards": "Full" },
   async run(ctx, { entryId }) {
     const deleted = await service.deleteTimeCardEntry(
       ctx.asCaller.supabase,

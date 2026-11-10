@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { LabelWithHelp } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -33,9 +34,11 @@ const logger = getLogger("erp", "contract-billing-backup");
  *  billed, traced to its ledger row, or to its pool, fiscal year, rate and
  *  base for a burden item. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, client, companyId } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { api, client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
 
   const { id, invoiceId } = params;
   if (!id) throw new Error("Could not find id");

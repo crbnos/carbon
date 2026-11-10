@@ -146,7 +146,7 @@ const PurchasingRFQLineForm = ({
   };
 
   const deleteDisclosure = useDisclosure();
-  const canDelete = !isLocked && permissions.has({ "purchasing.rfqs": "Edit" });
+  const canDelete = !isLocked && permissions.has({ "purchasing.rfqs": "Full" });
   const canViewItem = !!itemData.itemId && itemTypes.includes(itemType);
 
   return (

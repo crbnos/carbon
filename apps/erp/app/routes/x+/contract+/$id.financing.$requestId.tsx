@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import {
   financingApproveValidator,
   financingOverrideValidator
@@ -32,9 +33,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "contract-financing-request");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
   const { id, requestId } = params;
   if (!id || !requestId) throw new Error("Could not find the request");
 

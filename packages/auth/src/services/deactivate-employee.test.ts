@@ -27,6 +27,18 @@ vi.mock("@carbon/kv", () => ({
   }
 }));
 
+// The audit log, captured at the logger.
+const audit = vi.hoisted(() => ({ calls: [] as unknown[] }));
+vi.mock("@carbon/logger", () => {
+  const log = {
+    info: (_message: string, fields: unknown) => audit.calls.push(fields),
+    warn: () => {},
+    error: () => {},
+    debug: () => {}
+  };
+  return { getLogger: () => log };
+});
+
 const USER = "usr_1";
 const COMPANY = "cmp_1";
 const OTHER_COMPANY = "cmp_2";
@@ -71,6 +83,7 @@ function makeClient(reads: Record<string, unknown>) {
 beforeEach(() => {
   ops = [];
   kv.clear();
+  audit.calls = [];
 });
 
 describe("deactivateEmployee", () => {
@@ -80,8 +93,35 @@ describe("deactivateEmployee", () => {
         data: { permissions: { parts_view: [COMPANY, OTHER_COMPANY] } },
         error: null
       },
-      group: { data: [{ id: "grp_1" }], error: null }
+      group: { data: [{ id: "grp_1" }], error: null },
+      permission: {
+        data: [
+          { module: "Inventory", page: null, level: "Edit" },
+          { module: "Sales", page: "sales.quotes", level: "None" }
+        ],
+        error: null
+      }
     }) as any;
+
+  it("records the person's grants it deletes in the audit event", async () => {
+    await deactivateEmployee(client(), USER, COMPANY, "usr_admin");
+
+    const grants = [
+      { module: "Inventory", page: null, level: "Edit" },
+      { module: "Sales", page: "sales.quotes", level: "None" }
+    ];
+    expect(audit.calls).toContainEqual(
+      expect.objectContaining({
+        authEvent: "role_changed",
+        actor: "usr_admin",
+        targetUserId: USER,
+        reason: "deactivate",
+        before: grants,
+        after: [],
+        revoked: grants
+      })
+    );
+  });
 
   it("keeps the employeeJob row so org placement survives", async () => {
     await deactivateEmployee(client(), USER, COMPANY);

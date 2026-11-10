@@ -330,10 +330,12 @@ function allows(
   if (required === "system") return false;
   const claims = actor.type === "user" ? actor.permissions : actor.scopes;
   if (required === "employee") {
-    return (
-      (actor.type === "apiKey" || actor.role === "employee") &&
-      hasPermissions(claims, companyId, {})
-    );
+    // A user's role is their userToCompany role in this company (get_claims),
+    // so "employee" is membership already: an employee with no grants is one.
+    // A key belongs to its company but must hold some grant there.
+    return actor.type === "user"
+      ? actor.role === "employee"
+      : hasPermissions(claims, companyId, {});
   }
   return meetsRequirement(claims, companyId, required);
 }

@@ -16,8 +16,7 @@ import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { salesInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import {
   createSalesInvoiceFromSalesOrder,
-  createSalesInvoiceFromShipment,
-  insertSalesInvoice
+  createSalesInvoiceFromShipment
 } from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
 import { getDatabaseClient } from "~/services/database.server";
@@ -107,10 +106,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } = await authorize(
-    request,
-    { "invoicing.salesInvoices": "Create" }
-  );
+  const { api } = await authorize(request, {
+    "invoicing.salesInvoices": "Create"
+  });
 
   const formData = await request.formData();
   const validation = await validator(salesInvoiceValidator).validate(formData);
@@ -121,12 +119,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const result = await insertSalesInvoice(client, {
+  // The service function writes the invoice's opportunity (owned by Sales) as
+  // the system, so an invoicing-only user can create one.
+  const result = await api.invoicing.insertSalesInvoice({
     ...d,
     invoiceId: d.invoiceId || undefined,
-    companyId,
-    companyGroupId,
-    createdBy: userId,
     customFields: setCustomFields(formData)
   });
 

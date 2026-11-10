@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { equals } from "@carbon/utils";
 import { Plural, Trans } from "@lingui/react/macro";
@@ -40,9 +41,11 @@ export async function loader({
   request,
   params
 }: LoaderFunctionArgs): Promise<ProjectContractReviewData> {
-  const { api, client, companyId } = await authorize(request, {
-    "sales.serviceContracts": "View"
-  });
+  const { api, client, companyId } = await authorize(
+    request,
+    // Both contract lists open the same contract page.
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 

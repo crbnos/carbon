@@ -9,7 +9,6 @@ import type {
   getEmployees,
   getEmployeeTypes,
   getModules,
-  getPermissionsByEmployeeType,
   getPublicAttributes,
   getSuppliers,
   getUsers
@@ -26,10 +25,6 @@ export type Employee = NonNullable<
 export type EmployeeInsert = Database["public"]["Tables"]["employee"]["Insert"];
 
 export type InviteInsert = Database["public"]["Tables"]["invite"]["Insert"];
-
-export type EmployeeTypePermission = NonNullable<
-  Awaited<ReturnType<typeof getPermissionsByEmployeeType>>["data"]
->[number];
 
 export type EmployeeType = NonNullable<
   Awaited<ReturnType<typeof getEmployeeTypes>>["data"]

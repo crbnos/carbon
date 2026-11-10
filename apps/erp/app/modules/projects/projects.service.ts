@@ -3861,30 +3861,6 @@ export async function timesheetApprovalRefusal(
 }
 
 /**
- * Whether `userId` is the employee's manager (`employeeJob.managerId`): who,
- * besides a user with Edit on Projects, may open and change another
- * employee's timesheet.
- */
-export async function managesEmployee(
-  client: Client,
-  args: { companyId: string; userId: string; employeeId: string }
-): Promise<boolean> {
-  const job = await client
-    .from("employeeJob")
-    .select("managerId")
-    .eq("id", args.employeeId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (job.error) {
-    logger.error("Failed to load the employee job", {
-      companyId: args.companyId,
-      error: job.error
-    });
-  }
-  return job.data?.managerId === args.userId;
-}
-
-/**
  * Corrects a Posted entry: a Submitted reversal of the original hours and,
  * when `hours` is not 0, a Submitted replacement. Both carry the reason.
  * A replacement on another charge number (`projectId`, `projectElementId`)
@@ -15311,7 +15287,10 @@ export async function getBillingReviewCountForUser(
     (await getUserClaims(args.userId, args.companyId))?.permissions ?? {};
   const canReview = holdsGate(
     permissions,
-    { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
+    [
+      { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
+      { "projects.approvals": "Edit", "sales.projectContracts": "View" }
+    ],
     args.companyId
   );
   if (!canReview) return 0;
@@ -15467,4 +15446,22 @@ export async function getProjectJobs(
     })),
     error: null
   };
+}
+
+/**
+ * The gate of contract billing: Approvals at `level`, and View on either
+ * contracts list (Service Contracts or Project Contracts), whose contracts it
+ * reads. Checked in the body: a published rule names one page per branch.
+ */
+export function refuseContractBilling(
+  ctx: ServiceContext,
+  level: "View" | "Edit"
+) {
+  const allowed =
+    ctx.can({ "projects.approvals": level }) &&
+    (ctx.can({ "sales.serviceContracts": "View" }) ||
+      ctx.can({ "sales.projectContracts": "View" }));
+  return allowed
+    ? null
+    : ctx.error("forbidden", "You do not have permission to do this");
 }

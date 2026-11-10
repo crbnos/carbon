@@ -15,10 +15,7 @@ import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
-import {
-  getQualityFiles,
-  upsertGaugeCalibrationRecord
-} from "~/modules/quality/quality.service";
+import { getQualityFiles } from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -48,7 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { api } = await authorize(request, {
     "quality.records": "Create"
   });
 
@@ -68,11 +65,11 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const createGauge = await upsertGaugeCalibrationRecord(client, {
+  // The service function moves the gauge (owned by Quality → Gauges) as the
+  // system, after its own records permission.
+  const createGauge = await api.quality.createGaugeCalibrationRecord({
     ...d,
     inspectionStatus,
-    companyId,
-    createdBy: userId,
     customFields: setCustomFields(formData)
   });
 

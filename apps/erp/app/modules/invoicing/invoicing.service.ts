@@ -1228,6 +1228,12 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+/**
+ * Inserts a sales invoice with its opportunity and shipment. Sales owns
+ * `opportunity`, so pass the system client as `system` once the caller's
+ * invoicing permission has passed: the opportunity is written with it,
+ * scoped to `input.companyId`.
+ */
 export async function insertSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1248,7 +1254,8 @@ export async function insertSalesInvoice(
     exchangeRate?: number;
     exchangeRateUpdatedAt?: string;
     customFields?: Json;
-  }
+  },
+  system: SupabaseClient<Database> = client
 ): Promise<{
   data: { id: string; invoiceId: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1276,7 +1283,7 @@ export async function insertSalesInvoice(
 
   const [opportunity, customerPayment, customerShipping, salesPerson] =
     await Promise.all([
-      client
+      system
         .from("opportunity")
         .insert({
           companyId: input.companyId,

@@ -135,4 +135,91 @@ BEGIN
 END;
 $proof$;
 
+-- Tables that moved module (20261110101723): the converted module grants follow
+-- the table to its new page. Twice: a second run changes nothing.
+\i packages/database/supabase/migrations/20261110101723_grants-for-moved-tables.sql
+\i packages/database/supabase/migrations/20261110101723_grants-for-moved-tables.sql
+
+CREATE FUNCTION pg_temp.allows(tbl text, command text, rec jsonb)
+RETURNS boolean LANGUAGE plpgsql AS $fn$
+DECLARE expr text; ok boolean;
+BEGIN
+  SELECT coalesce(with_check, qual) INTO expr
+  FROM pg_policies WHERE schemaname = 'public' AND tablename = tbl AND cmd = command;
+  IF expr IS NULL THEN RETURN false; END IF;
+  EXECUTE format('SELECT (%s) FROM jsonb_populate_record(NULL::public.%I, $1) AS %I', expr, tbl, tbl)
+    INTO ok USING rec;
+  RETURN coalesce(ok, false);
+END;
+$fn$;
+
+DO $moved$
+DECLARE
+  company_a text := current_setting('test.company');
+  got text;
+  n int;
+BEGIN
+  CREATE TEMP TABLE moved_expected (subject text, page text, level text) ON COMMIT DROP;
+  INSERT INTO moved_expected VALUES
+    -- Inventory Full: the planning pages, which own what moved. Nothing on the
+    -- item pages: batchProperty also accepts Tracked Entities instead.
+    ('role', 'production.materialPlanning', 'Full'),
+    ('role', 'production.demandForecasts', 'Full'),
+    -- The person None on Inventory stays an override on the planning pages.
+    ('differs', 'production.materialPlanning', 'None'),
+    ('differs', 'production.demandForecasts', 'None'),
+    -- The key's Parts Edit: storage types and units. Not Storage Rules or
+    -- Quotes: their moved tables accept the item pages instead.
+    ('key', 'inventory.storageTypes', 'Edit'), ('key', 'inventory.storageUnits', 'Edit');
+
+  CREATE TEMP TABLE moved_actual ON COMMIT DROP AS
+  SELECT CASE
+      WHEN p."employeeTypeId" = current_setting('test.role') THEN 'role'
+      WHEN p."userId" = current_setting('test.differs') THEN 'differs'
+      WHEN p."userId" = current_setting('test.same') THEN 'same'
+      WHEN p."apiKeyId" = current_setting('test.key') THEN 'key'
+      ELSE 'other'
+    END AS subject, p.page, p.level::text AS level
+  FROM permission p
+  WHERE p."companyId" = company_a AND p.page IS NOT NULL;
+
+  SELECT string_agg(format('%s %s %s', subject, page, level), '; ') INTO got
+  FROM (SELECT * FROM moved_expected EXCEPT SELECT * FROM moved_actual) missing;
+  IF got IS NOT NULL THEN RAISE EXCEPTION 'missing moved grants: %', got; END IF;
+  SELECT string_agg(format('%s %s %s', subject, page, level), '; ') INTO got
+  FROM (SELECT * FROM moved_actual EXCEPT SELECT * FROM moved_expected) extra;
+  IF got IS NOT NULL THEN RAISE EXCEPTION 'unexpected moved grants: %', got; END IF;
+  SELECT count(*) INTO n FROM permission WHERE "companyId" = company_a;
+  IF n <> 12 THEN RAISE EXCEPTION 'a second run must add nothing: % rows', n; END IF;
+
+  -- A converted Inventory-only role still writes demandForecast, through the
+  -- live policy; the None override still refuses it.
+  PERFORM set_config('request.jwt.claims',
+    jsonb_build_object('sub', current_setting('test.same'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.path', '/test', true);
+  IF NOT pg_temp.allows('demandForecast', 'INSERT', jsonb_build_object('companyId', company_a)) THEN
+    RAISE EXCEPTION 'an Inventory role must still write demandForecast';
+  END IF;
+  PERFORM set_config('request.jwt.claims',
+    jsonb_build_object('sub', current_setting('test.differs'), 'role', 'authenticated')::text, true);
+  IF pg_temp.allows('demandForecast', 'INSERT', jsonb_build_object('companyId', company_a)) THEN
+    RAISE EXCEPTION 'a person None on Inventory must not write demandForecast';
+  END IF;
+
+  -- batchProperty moved to the item pages, and also accepts the Tracked
+  -- Entities page that wrote it before: the Inventory role still writes it,
+  -- without gaining the items themselves.
+  PERFORM set_config('request.jwt.claims',
+    jsonb_build_object('sub', current_setting('test.same'), 'role', 'authenticated')::text, true);
+  IF NOT pg_temp.allows('batchProperty', 'INSERT', jsonb_build_object('companyId', company_a)) THEN
+    RAISE EXCEPTION 'an Inventory role must still write batchProperty';
+  END IF;
+  IF pg_temp.allows('item', 'UPDATE', jsonb_build_object('companyId', company_a, 'type', 'Part')) THEN
+    RAISE EXCEPTION 'an Inventory role must not update an item';
+  END IF;
+
+  RAISE NOTICE 'moved tables: 6 page grants, a no-op second run, demandForecast and batchProperty still writable, items not';
+END;
+$moved$;
+
 ROLLBACK;

@@ -2,6 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { MODULES, pageById } from "@carbon/database/access";
 import type { ConformanceCheck, Violation } from "../check";
 import { stripComments } from "./no-authz-ddl-in-migrations";
@@ -22,13 +25,17 @@ import { blankComments } from "./no-unscoped-kysely-write";
  *   whose permissions are `{ page, action }`). That covers `{ inventory:
  *   "Edit" }`, the old `{ view: "inventory" }` and `{ module: "inventory" }`.
  * In SQL (comments blanked), it fails a `<module>_<action>` token in a managed
- * function file and in a migration after `LAST_MODULE_KEY_MIGRATION`.
+ * function file and in every migration not in `module-key-migrations.json`:
+ * the frozen list of migrations that existed when the cutoff
+ * (`LAST_MODULE_KEY_MIGRATION`) was set. A list, not a date: a branch opened
+ * earlier can land a migration dated before the cutoff, and it is checked.
  *
  * It skips:
  * - `packages/database/src/authz/manifest.ts`, which is never scanned. Its
  *   rules name a module on purpose: `render()` writes the key of the page that
- *   owns each table, and `registry.test.ts` fails when a rendered policy checks
- *   a key that is not a page id.
+ *   owns each table (and throws when the module is not that page's), and
+ *   `registry.test.ts` fails when a rendered policy checks a key that is not a
+ *   page id.
  * - portal keys: `get_customer_ids_with_customer_permission('parts_view')` and
  *   its supplier twin read a portal account's own keys in `userPermission`,
  *   which keep their names (the generated authz migrations carry them).
@@ -46,6 +53,22 @@ const ACTIONS = "view|create|update|delete";
 
 /** The last migration that may name a module key: it renames the storage policies whose names held one. */
 export const LAST_MODULE_KEY_MIGRATION = "20261110050010";
+
+/**
+ * Every migration that existed when the cutoff was set (all dated at or before
+ * it): the only ones that may still name a module key. Never add to it.
+ */
+export const MODULE_KEY_MIGRATIONS: ReadonlySet<string> = new Set(
+  JSON.parse(
+    readFileSync(
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "module-key-migrations.json"
+      ),
+      "utf8"
+    )
+  ) as string[]
+);
 
 const TS_KEY = new RegExp(
   String.raw`(["'\`])(?:${NAMES})_(?:${ACTIONS})\1`,
@@ -122,9 +145,9 @@ function scanTypescript(file: string, contents: string): Violation[] {
 
 function scanSql(file: string, contents: string): Violation[] {
   const base = file.split("/").pop() ?? file;
-  const timestamp = /^(\d{14})_/.exec(base)?.[1];
-  if (timestamp && timestamp <= LAST_MODULE_KEY_MIGRATION) return [];
-  if (!timestamp && !file.startsWith("packages/database/src/")) return [];
+  const migration = /^\d{14}_/.test(base);
+  if (migration && MODULE_KEY_MIGRATIONS.has(base)) return [];
+  if (!migration && !file.startsWith("packages/database/src/")) return [];
   const sql = stripComments(contents).replace(PORTAL_CALL, (m) =>
     " ".repeat(m.length)
   );

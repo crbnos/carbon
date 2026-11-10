@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { anyOf } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { Tabs, TabsList, TabsTrigger, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -45,11 +46,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const tab: ApprovalsTab =
     searchParams.get("tab") === "billing" ? "billing" : "time";
 
-  // Billing review is contract billing: it also needs the sales permission.
+  // Billing review is contract billing: it also needs a contracts page.
   const { api, companyId } = await authorize(
     request,
     tab === "billing"
-      ? { "projects.approvals": "Edit", "sales.serviceContracts": "View" }
+      ? [
+          { "projects.approvals": "Edit", "sales.serviceContracts": "View" },
+          { "projects.approvals": "Edit", "sales.projectContracts": "View" }
+        ]
       : { "projects.approvals": "Edit" }
   );
 
@@ -187,9 +191,9 @@ export default function ProjectTimesheetApprovalsRoute() {
   const { tab, groups, billing } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
   const permissions = usePermissions();
-  const canReviewBilling = permissions.has({
-    "sales.serviceContracts": "View"
-  });
+  const canReviewBilling = permissions.has(
+    anyOf(["sales.serviceContracts", "sales.projectContracts"], "View")
+  );
 
   const projects = new Map<string, string>();
   for (const item of billing?.items ?? []) {

@@ -2,7 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ACTIONS, type Action, LEVELS, type Level, levelHolds } from "./levels";
+import {
+  ACTIONS,
+  type Action,
+  LEVELS,
+  type Level,
+  levelHolds,
+  roundUp
+} from "./levels";
 import { moduleOf, PAGES, type PageId } from "./registry";
 
 /** One row of the `permission` table, as the resolver reads it. */
@@ -89,13 +96,77 @@ export type RawClaims = {
 
 const LEVEL_SET = new Set<string>(LEVELS);
 const SUBJECTS = new Set<string>(["person", "role", "key"]);
+const LEGACY_KEY = /^([a-z]+)_(view|create|update|delete)$/;
 
-/** The `get_claims` jsonb as RawClaims; anything malformed is left out. */
-export function claimsFromJson(json: unknown): RawClaims {
-  const value =
-    typeof json === "object" && json !== null && !Array.isArray(json)
-      ? (json as Record<string, unknown>)
-      : {};
+const asObject = (json: unknown): Record<string, unknown> =>
+  typeof json === "object" && json !== null && !Array.isArray(json)
+    ? (json as Record<string, unknown>)
+    : {};
+
+/**
+ * `get_claims` from before page permissions: `{ role, "<module>_<action>":
+ * [companyIds] }`, with no `grants`. A database the permission migrations have
+ * not reached yet still answers in it (migrations and the app deploy apart).
+ */
+export function isLegacyClaims(json: unknown): boolean {
+  return !Array.isArray(asObject(json).grants);
+}
+
+/**
+ * Old `<module>_<action>: [companyIds]` keys as module grants in one company,
+ * each at the lowest level that holds every action listed for it there: the
+ * rule the conversion migration (20261110050003) applied.
+ */
+export function legacyGrants(
+  keys: Record<string, unknown>,
+  companyId: string,
+  subject: Grant["subject"]
+): Grant[] {
+  const flags = new Map<string, Partial<Record<Action, boolean>>>();
+  for (const [key, companies] of Object.entries(keys)) {
+    const match = LEGACY_KEY.exec(key);
+    if (!match || !Array.isArray(companies) || !companies.includes(companyId))
+      continue;
+    const [, module, action] = match as unknown as [string, string, Action];
+    flags.set(module, { ...flags.get(module), [action]: true });
+  }
+  return [...flags].map(([module, held]) => ({
+    subject,
+    module: module.charAt(0).toUpperCase() + module.slice(1),
+    page: null,
+    level: roundUp(held)
+  }));
+}
+
+/**
+ * The `get_claims` jsonb as RawClaims; anything malformed is left out. The
+ * legacy shape (no `grants`, see `isLegacyClaims`) is read as module grants in
+ * `companyId`, or as portal keys for a customer or supplier.
+ */
+export function claimsFromJson(json: unknown, companyId?: string): RawClaims {
+  const value = asObject(json);
+  const role = typeof value.role === "string" ? value.role : null;
+  if (isLegacyClaims(value)) {
+    if (!companyId) return { role, admin: false, grants: [], portal: {} };
+    if (role === "customer" || role === "supplier") {
+      const portal: Record<string, string[]> = {};
+      for (const [key, companies] of Object.entries(value))
+        if (
+          LEGACY_KEY.test(key) &&
+          Array.isArray(companies) &&
+          companies.includes(companyId)
+        )
+          portal[key] = [companyId];
+      return { role, admin: false, grants: [], portal };
+    }
+    return {
+      role,
+      admin: false,
+      grants:
+        role === "employee" ? legacyGrants(value, companyId, "person") : [],
+      portal: {}
+    };
+  }
   const grants = (Array.isArray(value.grants) ? value.grants : []).filter(
     (g): g is Grant =>
       typeof g === "object" &&
@@ -112,7 +183,7 @@ export function claimsFromJson(json: unknown): RawClaims {
       ? (value.portal as Record<string, string[]>)
       : {};
   return {
-    role: typeof value.role === "string" ? value.role : null,
+    role,
     admin: value.admin === true,
     grants,
     portal

@@ -160,6 +160,8 @@ export function rewriteStoragePath(
  * Additional tables skipped in `reseed` mode — memberships, invites and
  * integration state belong to the source company's users, not to a copy.
  * The importing company already has its admin membership from onboarding.
+ * `permission` is the source company's access — grants on its roles, people
+ * and API keys, none of which come along — so a copy grants nothing.
  * (Tables whose PK is keyed by a user/employee FK — employeeJob, customer/
  * supplierAccount — are skipped automatically via `isUserScopedIdentityTable`,
  * so they don't need listing here.)
@@ -169,6 +171,7 @@ export const RESEED_SKIPPED_TABLES = [
   "employee",
   "employeeType",
   "employeeTypePermission",
+  "permission",
   "invite",
   "externalIntegrationMapping"
 ];
@@ -177,12 +180,15 @@ export const RESEED_SKIPPED_TABLES = [
  * Tables an in-place restore must NOT wipe or reload — the caller's own access
  * and identity. Wiping these mid-restore would lock the user out of the company
  * they're restoring. The backup still carries them; they're simply left as-is.
+ * `permission` holds every grant (roles, people, API keys): a restore leaves
+ * the company's live access exactly as it was.
  */
 export const IN_PLACE_SKIPPED_TABLES = new Set([
   "userToCompany",
   "employee",
   "employeeType",
   "employeeTypePermission",
+  "permission",
   "invite",
   "externalIntegrationMapping"
 ]);

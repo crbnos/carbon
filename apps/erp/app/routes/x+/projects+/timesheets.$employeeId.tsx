@@ -2,17 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   type ActionFunctionArgs,
   data,
@@ -20,10 +15,7 @@ import {
   useLoaderData
 } from "react-router";
 import { timesheetCellValidator } from "~/modules/projects/projects.models";
-import {
-  getTimesheetWeekView,
-  managesEmployee
-} from "~/modules/projects/projects.service";
+import { getTimesheetWeekView } from "~/modules/projects/projects.service";
 import TimesheetGrid from "~/modules/projects/ui/Timesheet/TimesheetGrid";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -37,44 +29,16 @@ export const handle: Handle = {
   module: "projects"
 };
 
-const ACCESS_REFUSED =
-  "You can open the timesheet of an employee you manage only";
-
-/**
- * Whether the user may open the employee's timesheet: the employee's manager
- * (`employeeJob.managerId`), or a user with Edit on Projects.
- */
-async function canManageTimesheet(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; employeeId: string }
-) {
-  if (await managesEmployee(client, args)) return true;
-  return holdsGate(
-    (await getUserClaims(args.userId, args.companyId))?.permissions ?? {},
-    { "projects.projects": "Edit" },
-    args.companyId
-  );
-}
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  // Another employee's week is changed from Approvals: the same page
+  // `saveTimesheetEntry` and RLS on `timesheetEntry` ask for.
   const { client, companyId, userId } = await authorize(request, {
-    "projects.projects": "View"
+    "projects.approvals": "Edit"
   });
   const { employeeId } = params;
   if (!employeeId) throw new Error("Could not find employeeId");
   // Your own week is My Time, where you certify it.
   if (employeeId === userId) throw redirect(path.to.timesheet);
-
-  if (!(await canManageTimesheet(client, { companyId, userId, employeeId }))) {
-    logger.warn("Refused another employee's timesheet", {
-      companyId,
-      employeeId
-    });
-    throw redirect(
-      path.to.timesheet,
-      await flash(request, error(null, ACCESS_REFUSED))
-    );
-  }
 
   const url = new URL(request.url);
   const weekOffset = Number.parseInt(url.searchParams.get("week") ?? "0", 10);
@@ -89,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  // The days the employee is recorded absent: the only days a manager can
+  // The days the employee is recorded absent: the only days an approver can
   // create an entry for them (DCAA supervisor entry). Read after the access
   // check, so the people module's own read permission does not apply.
   const absences = await getDatabaseClient()
@@ -124,7 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 /**
- * Saves one cell of the employee's week as the manager
+ * Saves one cell of the employee's week as an approver
  * (`saveTimesheetEntry`, which checks who may change the week). The server
  * function needs a reason, sets the entry to Pending Employee Review, and
  * refuses a new entry on a day with no recorded absence. Answers `{ error }`,
