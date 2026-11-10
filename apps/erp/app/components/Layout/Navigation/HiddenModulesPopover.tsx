@@ -36,7 +36,7 @@ export function HiddenModulesPopover({
           <LuPlus className="absolute left-3 top-3 flex items-center justify-center" />
           <span
             className={cn(
-              "min-w-[128px] text-sm",
+              "min-w-[128px] text-left text-sm",
               "absolute left-7 group-data-[state=expanded]:left-12",
               "md:opacity-0 group-data-[state=expanded]:opacity-100"
             )}
