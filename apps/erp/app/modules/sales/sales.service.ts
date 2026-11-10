@@ -1237,7 +1237,7 @@ export async function getCustomerStatuses(
 ) {
   let query = client
     .from("customerStatus")
-    .select("id, name, customFields", {
+    .select("id, name, color, customFields", {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1259,7 +1259,7 @@ export async function getCustomerStatusesList(
 ) {
   return client
     .from("customerStatus")
-    .select("id, name")
+    .select("id, name, color")
     .eq("companyId", companyId)
     .order("name");
 }

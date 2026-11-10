@@ -21,6 +21,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
+  colorNames,
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
@@ -7918,6 +7919,7 @@ export const updatePricingRule = defineServiceFn({
 export const createCustomerStatus = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
+    color: z.enum(colorNames).nullish(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -7948,6 +7950,7 @@ export const updateCustomerStatus = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
+      color: z.enum(colorNames).nullish(),
       customFields: z.unknown().optional(),
       id: z
         .string()

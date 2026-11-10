@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import {
   bicMatchesCountry,
+  colorNames,
   conditionAstFormField,
   equals,
   getBankFieldConfig,
@@ -267,7 +268,9 @@ export const customerShippingValidator = z.object({
 
 export const customerStatusValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  /** Empty keeps the color derived from the name. */
+  color: zfd.text(z.enum(colorNames).optional())
 });
 
 export const customerTypeValidator = z.object({
