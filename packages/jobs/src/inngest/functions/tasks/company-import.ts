@@ -11,6 +11,11 @@ import {
 } from "../../../backups/catalog";
 import { assertBackupImportable } from "../../../backups/compatibility";
 import {
+  type CompanyBackup,
+  collectRows,
+  tableRows
+} from "../../../backups/format";
+import {
   bulkLoad,
   getCompanyGroupId,
   insertTables,
@@ -23,7 +28,8 @@ import {
 import {
   buildIdMaps,
   flattenIdMaps,
-  loadSubstrateIds
+  loadSubstrateIds,
+  scanBackup
 } from "../../../backups/remap";
 import {
   filterUnpopulated,
@@ -84,7 +90,7 @@ export const companyImportFunction = inngest.createFunction(
         (t) =>
           !skipped.has(t.name) &&
           !isUserScopedIdentityTable(t) &&
-          (backup.data[t.name]?.length ?? 0) > 0
+          tableRows(backup, t.name) > 0
       );
 
       // Never touch a table the target already populated itself — its identity
@@ -116,13 +122,14 @@ export const companyImportFunction = inngest.createFunction(
       const keep = new Set([...keptNames, ...readdedTables.map((t) => t.name)]);
       const importTables = candidateTables.filter((t) => keep.has(t.name));
 
-      const idMaps = buildIdMaps(importTables, backup.data);
+      const scan = await scanBackup(catalog, backup, { allIds: true });
+      const idMaps = buildIdMaps(importTables, scan);
 
       // Re-added tables are populated in the target BY DEFINITION, and unique
       // constraints stay enforced under replica mode — a backup row sharing a
       // unique key with an existing target row (both sides have a
       // "Headquarters" location) must map onto it, not be inserted against it.
-      const data = { ...backup.data };
+      const skippedByTable = new Map<string, Set<string>>();
       for (const table of readdedTables) {
         const idMap = idMaps.get(table.name);
         if (!idMap || table.scope.kind !== "direct") continue;
@@ -142,17 +149,14 @@ export const companyImportFunction = inngest.createFunction(
         `.execute(db);
         const { skippedSourceIds, overrides } = mapCollidingRows(
           groups,
-          backup.data[table.name] ?? [],
+          await collectRows(backup, table.name),
           existing.rows
         );
         for (const [sourceId, targetId] of overrides) {
           idMap.set(sourceId, targetId);
         }
         if (skippedSourceIds.size > 0) {
-          data[table.name] = (data[table.name] ?? []).filter(
-            (row) =>
-              !(typeof row.id === "string" && skippedSourceIds.has(row.id))
-          );
+          skippedByTable.set(table.name, skippedSourceIds);
         }
       }
 
@@ -183,27 +187,36 @@ export const companyImportFunction = inngest.createFunction(
       // Global substrate (companyId IS NULL) ids the backup omits but the target
       // holds by seed — a template's FK into a seeded global row resolves against
       // these instead of dangling.
-      const substrateIds = await loadSubstrateIds(db, catalog, backup.data);
+      const substrateIds = await loadSubstrateIds(db, catalog, scan);
+      // Rows mapped onto the target's own colliding rows are not inserted.
+      const toInsert: CompanyBackup = {
+        manifest: backup.manifest,
+        async *rows(table) {
+          const skip = skippedByTable.get(table);
+          for await (const batch of backup.rows(table)) {
+            yield skip
+              ? batch.filter(
+                  (row) => !(typeof row.id === "string" && skip.has(row.id))
+                )
+              : batch;
+          }
+        }
+      };
 
       const counts = await bulkLoad(db, companyId, (trx) =>
-        insertTables(
-          trx,
-          importTables,
-          { ...backup, data },
-          {
-            companyId,
-            userId,
-            targetGroupId,
-            sourceCompanyId,
-            idMaps,
-            idRewrite,
-            substrateIds,
-            skippedRefTables: skipped,
-            catalogTableNames,
-            onUnresolvedRef: (desc) => unresolvedRefs.add(desc),
-            scrubEmail: () => `import-${++scrubCounter}@example.test`
-          }
-        )
+        insertTables(trx, importTables, toInsert, {
+          companyId,
+          userId,
+          targetGroupId,
+          sourceCompanyId,
+          idMaps,
+          idRewrite,
+          substrateIds,
+          skippedRefTables: skipped,
+          catalogTableNames,
+          onUnresolvedRef: (desc) => unresolvedRefs.add(desc),
+          scrubEmail: () => `import-${++scrubCounter}@example.test`
+        })
       );
 
       if (unresolvedRefs.size > 0) {

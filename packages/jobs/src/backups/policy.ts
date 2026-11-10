@@ -87,28 +87,6 @@ export const CATALOG_EXCLUDED_TABLES = new Set<string>([
 ]);
 
 /**
- * TEXT columns holding a storage path (`{companyId}/…/{id}.ext`). A cross-company
- * restore changes both the companyId and the embedded ids, so these are rewritten
- * in lock-step with the files they point at (`rewriteStoragePath`).
- *
- * A backup collects assets by LISTING the bucket under `{companyId}/`, not from
- * these columns — so every `modelUpload` artifact is carried regardless, and a
- * column missing here silently survives the restore still pointing at the SOURCE
- * company. Add a new `modelUpload` path column here too; the coverage test in
- * `remap.test.ts` fails to COMPILE otherwise — it derives the
- * column set from the generated `modelUpload` row type.
- */
-export const STORAGE_PATH_COLUMNS = new Set([
-  "thumbnailPath",
-  "modelPath",
-  "originalPath",
-  "optimizedModelPath",
-  "glbPath",
-  "graphPath",
-  "pmiPath"
-]);
-
-/**
  * Item-child tables — one per `itemType` enum member — whose `id` is a
  * human-authored part number (`ADCS-001`), not an identifier. Rows match it by
  * VALUE against `item."readableId"` with no FK expressing the link, so

@@ -85,9 +85,9 @@ and nothing here imports a task file. App code imports the public surface,
 | File | Holds |
 |---|---|
 | `catalog.ts` | `getCompanyTableCatalog`, `TableInfo`, `selectExportableTables`, `exportableColumns` |
-| `policy.ts` | every per-table decision: secret / structural / transient / singleton lists, `KEPT_TABLES` + `isLeftAlone`, `isUserScopedIdentityTable`, `READABLE_ID_TABLES`, `STORAGE_PATH_COLUMNS`, `selectWipeableTables`, `assertWipeSafe` |
+| `policy.ts` | every per-table decision: secret / structural / transient / singleton lists, `KEPT_TABLES` + `isLeftAlone`, `isUserScopedIdentityTable`, `READABLE_ID_TABLES`, `selectWipeableTables`, `assertWipeSafe` |
 | `compatibility.ts` | `reportBackupCompatibility`, `compatibilityStatus`, the throwing gate `assertBackupImportable` |
-| `format.ts` | pure: `Manifest`, `BACKUP_VERSION`, folder paths, `newBackupName`, `snapshotName` / `isSnapshotName`, `serializeTable` / `deserializeTable`, value encode/bind |
+| `format.ts` | pure: `Manifest`, `BACKUP_VERSION`, folder paths, `newBackupName`, `snapshotName` / `isSnapshotName`, `CompanyBackup` (`manifest` + `rows(table)`), `tableWriter` / `readTableRows` (batched gzip NDJSON), `tableRows`, `backupFromRows`, value encode/bind |
 | `storage.ts` | all bucket I/O: `readBackup`, `listBackups`, `writeBackupTable` / `writeBackupManifest`, asset copies, `removeBucketPrefix`, `listBucketFilesRecursive` |
 | `dump.ts` | `writeCompanyBackup` — the export and both snapshots |
 | `load.ts` | `readBackupForLoad`, `wipeScopedData`, `insertTables`, `bulkLoad`, `wipeAndLoad`, `resolveRestoreScope`, `canSetReplicationRole` |
@@ -166,8 +166,9 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
 - Versioning: `BACKUP_VERSION` (currently **1**, single format, no legacy branch);
   `assertBackupImportable` rejects a backup whose version no longer matches or that
   lacks a now-required column.
-- Id minting: `newIdForTable(table)` → `randomUUID()` for uuid id columns else
-  `nanoid()`. `buildIdMaps` (`remap.ts`) decides WHICH rows get one, and both the
+- Id minting: `newIdForTable(table)` → `randomUUID()` for uuid id columns, else
+  the schema default's shape: `item_<22 base58>` for a column defaulting to
+  `id('item')` (`ColumnInfo.idPrefix`, read from `column_default` by the catalog). `buildIdMaps` (`remap.ts`) decides WHICH rows get one, and both the
   foreign restore and the import call it so they can't drift. It is **gated on
   having a text/uuid `id` COLUMN**, not on `hasId` (PK exactly `id`) — the ~25
   composite-PK tables are referenced by their `id` too, and five of them back that
@@ -201,14 +202,16 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   change to those must change it too. Tested in
   `apps/erp/test/database/rebuild-derived-groups.test.ts`.
 - Storage path rewriting: `rewriteStoragePath` (`remap.ts`; swap `{sourceCompanyId}/`
-  → `{targetCompanyId}/` + remapped id segments). `STORAGE_PATH_COLUMNS` =
-  `thumbnailPath`, `modelPath`, `originalPath`, `optimizedModelPath`, `glbPath`,
-  `graphPath`, `pmiPath` — every `modelUpload` artifact column; `remap.test.ts` fails
-  to compile when the generated `modelUpload` type gains one. A backup enumerates
-  assets by LISTING the bucket under `{companyId}/` (`writeCompanyBackup`), not by
-  reading these columns, so raw CAD IS carried; a column missing from this set
-  survives a cross-company restore still pointing at the SOURCE company's prefix
-  (which is what left restored assemblies unable to load their model).
+  → `{targetCompanyId}/` + remapped id segments). It applies to ANY text or text[]
+  value under `{sourceCompanyId}/`, whatever the column is called — about 30 columns
+  hold paths (`document.path`, `supplier.logo`, the slide images, signatures,
+  certificates, `supplierQuote.sharedFilePaths`, the `modelUpload` artifacts). A name
+  list missed most of them and left a cross-company restore pointing at the SOURCE
+  company. The files are copied with the same rewrite (`assetTargets`), so a path
+  and its file stay together.
+- File copies overwrite in place (`x-upsert` on `copy`), never remove-then-copy:
+  deleting a storage object fires `delete_orphaned_documents`, which drops the
+  `document` row for that path — the row a restore just loaded.
 - FK-less id refs: `ID_REF_COLUMNS` (`id-refs.ts`, per table) lists TEXT/TEXT[]
   columns that hold a tenant row's id with no FK — generic refs like
   `inspection.sourceDocumentId`/`sourceDocumentLineId` (receipt line OR job
@@ -516,9 +519,10 @@ Three Inngest fns over `runs.ts`: `companyRestoreFunction`,
 Forward flow, inside one `step.run`:
 1. Marker → `running` (with `filePath`, `label`, `includeStorage`, so a recovery can
    restart the same restore), then `requireBackupsEntitlement`.
-2. `readBackupForLoad` (`readBackup` + `applyTableRenames`): `manifest.json` first,
-   then each `tables/<table>.ndjson.gz` streamed through `deserializeTable`. Then
-   `assertBackupImportable` against the live catalog.
+2. `readBackupForLoad` (`readBackup` + `applyTableRenames`): `manifest.json` only.
+   Each `tables/<table>.ndjson.gz` is downloaded as a stream when a caller iterates
+   `backup.rows(table)`, and again on the next call. Then `assertBackupImportable`
+   against the live catalog (manifest only).
 3. `resolveRestoreScope` → `targetGroupId`, and `includeGroup` = this company is its
    group's sole member. A **foreign** backup (`manifest.sourceCompanyId !==
    companyId`) onto a shared group (`!includeGroup`) **throws** rather than rewrite
@@ -613,7 +617,11 @@ into the skipped row lands on the target's own row.
 - **`settings.service.ts`, Backups section** (no `backups.service.ts`: the
   `module-shape` check allows one service file per module): the gate,
   `isUserBackupName` (refuses paths and `_pre-*` snapshots), `unpackBackupArchive`
-  (`.carbon.tar.gz` → a fresh `exports/<name>/`; upload route and onboarding),
+  (`.carbon.tar.gz` → a fresh `exports/<name>/`), and the staged upload both
+  uploads share: `signBackupStaging` (a signed slot in `TEMP_STAGING_BUCKET`; the
+  browser PUTs the archive there, since Vercel caps a request body at 4.5 MB),
+  `isStagedBackupPath` and `unpackStagedBackupArchive` (streams it back, unpacks,
+  then always deletes the staged object),
   `getCompanyBackups`, `deleteCompanyBackup`, the run readers, the start functions
   (`startCompanyRestore` / `startCompanyTemplate` / `exportCompanyBackup`),
   `dismissCompanyExportFailure`, and `purgeAndRetry` (the one purge-then-start for
@@ -718,9 +726,13 @@ nothing is lost. Known gap.
 `routes/onboarding+/industry.tsx` → `dataChoice: "template" | "import" | "none"`
 ("Use a demo template" / "Restore from a backup" / "I don't need data"). Restore from
 a backup is internal-only (`isInternalEmail`); the template and a clean start are open
-to every signup. In `onboarding.server.ts`, `provisionCompanyData` unpacks an
-uploaded archive with `unpackBackupArchive` onto an identity-only seed and triggers
-`carbon/company-import`; `provisionOnboardingCompany` calls `startCompanyTemplate`
+to every signup. The archive is staged first (`api/onboarding/backup-upload`
+signs a slot under `onboarding/<userId>/`, internal-only); the step posts its
+`backupPath`, never the file. In `onboarding.server.ts`, `provisionCompanyData`
+unpacks it with `unpackStagedBackupArchive` onto an identity-only seed and triggers
+`carbon/company-import`. A re-entry (the company already exists) with a backup
+throws: the import needs a company that isn't set up, and ignoring the backup would
+report success over nothing. `provisionOnboardingCompany` calls `startCompanyTemplate`
 after the headquarters exists (the dataset pre-flight needs it). A failed enqueue is
 fatal, not silent.
 
@@ -742,3 +754,35 @@ shared size-1 pool behind `getJobDatabaseClient` runs the event drainer). A
 non-fatal `plan-template` step runs MRP and scheduling and records `planningError`.
 Keep and revert act only on a marker naming their `templateRunId`: one sent for an
 earlier run must not resolve a later one.
+
+
+## Memory and scale
+
+No stage holds a whole company. The export reads each table through a cursor
+(`DECLARE … FETCH 2000`) into a gzip stream and keeps only the compressed bytes. A
+restore reads the backup twice, a table at a time: `scanBackup` keeps only what the
+checks need (`BackupScan`: ids of referenced tables — every id-bearing table with
+`allIds` for a foreign load — the distinct values of each id FK with row counts, and
+the `group` rows), then `insertTables` streams each table in batches.
+`findDanglingReferences`, `loadSubstrateIds` and `buildIdMaps` take the scan;
+`scanRows` builds one from rows in memory for tests.
+
+Measured on 528k rows (2026-11-10, fresh process, 384 MB heap cap): export +310 MB
+peak RSS, restore +179 MB in 26 s. The code before this ran out of memory under the
+same cap. Not solved: a restore is one transaction in one `step.run`, so the
+function's time limit (800 s on Vercel Pro) caps the largest companies.
+
+## Revert removes the files its restore added
+
+Before copying files, the restore records in its marker (`addedFiles`) the target
+paths that did not exist yet, merged with an earlier attempt's. `revertRun` deletes
+exactly those (`removeCompanyPaths`) after the data is back, and never anything
+else. A failed delete is logged, not reported as a failed revert.
+
+## Table order and FK cycles
+
+`topologicalSort` breaks a cycle only among the cycle's own tables (Tarjan SCCs): a
+table that merely hangs off a cycle waits for it. The wipe runs this order backwards
+and filters a child through its parent, so a child sorted before its parent
+survived the wipe (`jobFavorite` before `job`: every restore of a company with a job
+favorite failed on `jobFavorites_pkey`).

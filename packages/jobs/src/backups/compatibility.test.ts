@@ -9,7 +9,12 @@ import {
   compatibilityStatus,
   reportBackupCompatibility
 } from "./compatibility";
-import { BACKUP_KIND, BACKUP_VERSION, type Manifest } from "./format";
+import {
+  BACKUP_KIND,
+  BACKUP_VERSION,
+  backupFromRows,
+  type Manifest
+} from "./format";
 
 // Rename cases use real entries from renames.ts: exchangeRateHistory was
 // dropped, storageRule became enforcementRule, cardTransaction became charge
@@ -260,7 +265,7 @@ describe("assertBackupImportable", () => {
   // The refusal message, or null when the backup may load.
   const gate = (cat: Catalog, mf: Manifest) => {
     try {
-      assertBackupImportable(cat, { manifest: mf, data: {} });
+      assertBackupImportable(cat, backupFromRows(mf, {}));
       return null;
     } catch (e) {
       return (e as Error).message;

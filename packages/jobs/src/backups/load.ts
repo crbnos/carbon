@@ -14,13 +14,18 @@ import { type Kysely, sql } from "kysely";
 import type { JobDatabase } from "../db";
 import type { Catalog, TableInfo } from "./catalog";
 import { groupConflictClause, rebuildDerivedGroups } from "./derived-groups";
-import { bindValue, type CompanyBackup } from "./format";
+import { bindValue, type CompanyBackup, tableRows } from "./format";
 import {
   assertWipeSafe,
   isUserScopedIdentityTable,
   selectWipeableTables
 } from "./policy";
-import { buildIdMaps, buildRowTransforms, flattenIdMaps } from "./remap";
+import {
+  type BackupScan,
+  buildIdMaps,
+  buildRowTransforms,
+  flattenIdMaps
+} from "./remap";
 import { applyTableRenames } from "./renames";
 import type { JobProgress } from "./runs";
 import { buildScopeFilter, deleteDanglingRows } from "./scope";
@@ -86,10 +91,11 @@ const INSERT_CHUNK_SIZE = 200;
 type RemapContext = Omit<Parameters<typeof buildRowTransforms>[2], "remap">;
 
 /**
- * Insert a backup's rows, table by table in the given (catalog) order. With no
- * `remap` the rows go in verbatim; with one, every value passes its column's
- * transform, and a table keyed by a user keeps the first of the rows that the
- * transform collapsed onto one user. Returns the rows inserted per table.
+ * Insert a backup's rows, table by table in the given (catalog) order, a batch
+ * at a time as they stream. With no `remap` the rows go in verbatim; with one,
+ * every value passes its column's transform, and a table keyed by a user keeps
+ * the first of the rows that the transform collapsed onto one user. Returns the
+ * rows inserted per table.
  */
 export async function insertTables(
   trx: Kysely<KyselyDatabase>,
@@ -104,65 +110,55 @@ export async function insertTables(
   const counts: Record<string, number> = {};
   for (let t = 0; t < tables.length; t++) {
     const table = tables[t]!;
-    const sourceRows = backup.data[table.name] ?? [];
-    const backupCols =
-      backupColumns.get(table.name) ??
-      new Set(Object.keys(sourceRows[0] ?? {}));
+    const backupCols = backupColumns.get(table.name);
+    if (!backupCols) continue;
     const columns = table.columns.filter(
       (c) => !c.isGenerated && backupCols.has(c.name)
     );
-    if (columns.length === 0 || sourceRows.length === 0) continue;
+    if (columns.length === 0) continue;
 
-    // Hot path: indexed loops, and `out` keys in a fixed column order so every
-    // row of a table shares one hidden class.
     const colCount = columns.length;
-    let rows: Record<string, unknown>[] = [];
-    if (remap) {
-      const transforms = buildRowTransforms(table, columns, remap);
-      for (let r = 0; r < sourceRows.length; r++) {
-        const row = sourceRows[r]!;
-        const out: Record<string, unknown> = {};
-        for (let c = 0; c < colCount; c++) {
-          out[columns[c]!.name] = transforms[c]!(row[columns[c]!.name]);
-        }
-        rows.push(out);
-      }
-      if (!table.hasId && table.pkColumns.length > 0) {
-        const seen = new Set<string>();
-        rows = rows.filter((row) => {
-          const key = JSON.stringify(table.pkColumns.map((c) => row[c]));
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-      }
-    } else {
+    const transforms = remap ? buildRowTransforms(table, columns, remap) : null;
+    const seen =
+      remap && !table.hasId && table.pkColumns.length > 0
+        ? new Set<string>()
+        : null;
+    let inserted = 0;
+    for await (const sourceRows of backup.rows(table.name)) {
+      // Hot path: indexed loops, and `out` keys in a fixed column order so every
+      // row of a table shares one hidden class.
+      const rows: Record<string, unknown>[] = [];
       for (let r = 0; r < sourceRows.length; r++) {
         const row = sourceRows[r]!;
         const out: Record<string, unknown> = {};
         for (let c = 0; c < colCount; c++) {
           const name = columns[c]!.name;
-          out[name] = row[name];
+          out[name] = transforms ? transforms[c]!(row[name]) : row[name];
+        }
+        if (seen) {
+          const key = JSON.stringify(table.pkColumns.map((col) => out[col]));
+          if (seen.has(key)) continue;
+          seen.add(key);
         }
         rows.push(out);
       }
+      for (const batch of chunkArray(rows, INSERT_CHUNK_SIZE)) {
+        await sql`
+          INSERT INTO ${sql.id(table.name)}
+            (${sql.join(columns.map((c) => sql.id(c.name)))})
+          VALUES ${sql.join(
+            batch.map(
+              (row) =>
+                sql`(${sql.join(
+                  columns.map((c) => sql`${bindValue(row[c.name], c)}`)
+                )})`
+            )
+          )}${groupConflictClause(table.name)}
+        `.execute(trx);
+      }
+      inserted += rows.length;
     }
-
-    for (const batch of chunkArray(rows, INSERT_CHUNK_SIZE)) {
-      await sql`
-        INSERT INTO ${sql.id(table.name)}
-          (${sql.join(columns.map((c) => sql.id(c.name)))})
-        VALUES ${sql.join(
-          batch.map(
-            (row) =>
-              sql`(${sql.join(
-                columns.map((c) => sql`${bindValue(row[c.name], c)}`)
-              )})`
-          )
-        )}${groupConflictClause(table.name)}
-      `.execute(trx);
-    }
-    counts[table.name] = rows.length;
+    if (inserted > 0) counts[table.name] = inserted;
     await onProgress?.(t + 1, tables.length);
   }
   return counts;
@@ -261,7 +257,12 @@ export async function wipeAndLoad(
     /** A foreign backup: the importing user, and the target's substrate ids
      *  (global rows the backup omits), so a FK into a seeded global row is kept
      *  verbatim instead of treated as a dangling gap. */
-    remap: { userId: string; substrateIds: Map<string, Set<unknown>> } | null;
+    remap: {
+      userId: string;
+      substrateIds: Map<string, Set<unknown>>;
+      /** From `scanBackup` with `allIds`. */
+      scan: BackupScan;
+    } | null;
     /** Live phase progress (`wipe` then `load`). Throttled by the caller. */
     onProgress?: (p: JobProgress) => Promise<void>;
   }
@@ -282,8 +283,7 @@ export async function wipeAndLoad(
   const wipeTables = selectWipeableTables(catalog, { includeGroup });
   const loadTables = wipeTables.filter(
     (t) =>
-      !(remap && isUserScopedIdentityTable(t)) &&
-      (backup.data[t.name]?.length ?? 0) > 0
+      !(remap && isUserScopedIdentityTable(t)) && tableRows(backup, t.name) > 0
   );
 
   // Foreign: assign a fresh id to every id-bearing row up front so FKs (and the
@@ -297,7 +297,7 @@ export async function wipeAndLoad(
         .execute()
     : [];
   const idMaps = remap
-    ? buildIdMaps(loadTables, backup.data, {
+    ? buildIdMaps(loadTables, remap.scan, {
         source: backup.manifest.sourceCompanyId,
         target: companyId,
         employeeTypeIdsByName: new Map(
@@ -325,7 +325,8 @@ export async function wipeAndLoad(
       backup,
       remap
         ? {
-            ...remap,
+            userId: remap.userId,
+            substrateIds: remap.substrateIds,
             companyId,
             targetGroupId,
             sourceCompanyId: backup.manifest.sourceCompanyId,

@@ -13,7 +13,8 @@ import {
 } from "../../../backups/load";
 import {
   assertReferentiallyClosed,
-  loadSubstrateIds
+  loadSubstrateIds,
+  scanBackup
 } from "../../../backups/remap";
 import {
   failRun,
@@ -27,7 +28,11 @@ import {
   startRun,
   takeSnapshot
 } from "../../../backups/runs";
-import { restoreAssetsFromBackup } from "../../../backups/storage";
+import {
+  assetTargets,
+  listCompanyFiles,
+  restoreAssetsFromBackup
+} from "../../../backups/storage";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -122,12 +127,9 @@ export const companyRestoreFunction = inngest.createFunction(
         // gap when the row exists in THIS target's seed — loadSubstrateIds probes
         // the live target for exactly those ids so the guard doesn't false-flag
         // them, while still catching a ref present in neither backup nor target.
-        const substrateIds = await loadSubstrateIds(db, catalog, backup.data);
-        const closure = assertReferentiallyClosed(
-          catalog,
-          backup,
-          substrateIds
-        );
+        const scan = await scanBackup(catalog, backup, { allIds: foreign });
+        const substrateIds = await loadSubstrateIds(db, catalog, scan);
+        const closure = assertReferentiallyClosed(catalog, scan, substrateIds);
         if (!closure.ok) {
           throw new Error(`This backup can't be restored: ${closure.reason}`);
         }
@@ -145,7 +147,7 @@ export const companyRestoreFunction = inngest.createFunction(
         // re-runs the wipe before the load, so it lands the same result.
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, backup, {
           companyId,
-          remap: foreign ? { userId, substrateIds } : null,
+          remap: foreign ? { userId, substrateIds, scan } : null,
           includeGroup,
           targetGroupId,
           onProgress: report
@@ -155,16 +157,31 @@ export const companyRestoreFunction = inngest.createFunction(
         // and the files are in place. The copy never throws (per-file warnings),
         // so a storage hiccup can't flip a committed restore to failed.
         if (includeStorage === "all") {
-          await restoreAssetsFromBackup(
-            client,
-            {
-              files: backup.manifest.storage,
-              name,
-              sourceCompanyId: backup.manifest.sourceCompanyId,
-              companyId,
-              idRewrite
-            },
-            (done, total) => report({ phase: "files", done, total })
+          const assets = {
+            files: backup.manifest.storage,
+            name,
+            sourceCompanyId: backup.manifest.sourceCompanyId,
+            companyId,
+            idRewrite
+          };
+          // Recorded before copying, so a revert can take back exactly the
+          // files this restore creates. A retry keeps an earlier attempt's.
+          const present = new Set(
+            (await listCompanyFiles(client, companyId, companyId)).map(
+              (f) => f.path
+            )
+          );
+          const addedFiles = [
+            ...new Set([
+              ...(existing?.addedFiles ?? []),
+              ...assetTargets(assets)
+                .map((t) => t.target)
+                .filter((p) => !present.has(p))
+            ])
+          ];
+          await marker.write({ addedFiles });
+          await restoreAssetsFromBackup(client, assets, (done, total) =>
+            report({ phase: "files", done, total })
           );
         }
 

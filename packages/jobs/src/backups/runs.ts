@@ -12,7 +12,11 @@ import { writeCompanyBackup } from "./dump";
 import { backupDir, snapshotName } from "./format";
 import { getCompanyGroupId, readBackupForLoad, wipeAndLoad } from "./load";
 import { ExportScopeViolationError, type ScopeViolation } from "./scope";
-import { deleteCompanyFiles, restoreAssetsFromBackup } from "./storage";
+import {
+  deleteCompanyFiles,
+  removeCompanyPaths,
+  restoreAssetsFromBackup
+} from "./storage";
 
 /**
  * The state of a long backup job, kept in a marker row for the Backups page to
@@ -75,6 +79,8 @@ type ReversibleRunMeta = RunMeta & {
   snapshotPath?: string | null;
   /** Whether the run covered group-scoped data, so a revert undoes exactly that. */
   includeGroup?: boolean;
+  /** Files the run wrote where none existed before: a revert deletes them. */
+  addedFiles?: string[];
 };
 
 export type RestoreRunMeta = ReversibleRunMeta & {
@@ -388,8 +394,16 @@ export async function revertRun(
       },
       (done, total) => report({ phase: "files", done, total })
     );
-    // The data is already back: a snapshot left behind is only logged, never
-    // reported as a failed revert.
+    // The data is already back: a file or a snapshot left behind is only
+    // logged, never reported as a failed revert.
+    await removeCompanyPaths(client, companyId, meta.addedFiles ?? []).catch(
+      (err) =>
+        log.error("Failed to delete files a reverted run added", {
+          companyId,
+          files: meta.addedFiles?.length,
+          error: err instanceof Error ? err.message : String(err)
+        })
+    );
     await deleteCompanyFiles(client, companyId, backupDir(snapshotPath)).catch(
       (err) =>
         log.error("Failed to delete a reverted run's snapshot", {

@@ -2,29 +2,45 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
 import type { Catalog, ColumnInfo, ForeignKey, TableInfo } from "./catalog";
-import type { CompanyBackup } from "./format";
+import type { Row } from "./format";
 import {
   isUserScopedIdentityTable,
   READABLE_ID_TABLES,
-  STORAGE_PATH_COLUMNS,
   selectWipeableTables
 } from "./policy";
 import {
-  assertReferentiallyClosed,
-  buildIdMaps,
+  assertReferentiallyClosed as assertScanClosed,
+  buildIdMaps as buildIdMapsFromScan,
   buildRowTransforms,
-  findDanglingReferences,
-  rewriteDocumentEditRowKeys
+  findDanglingReferences as findDanglingInScan,
+  rewriteDocumentEditRowKeys,
+  scanRows
 } from "./remap";
 import {
   mapCollidingRows,
   matchableUniqueGroups,
   referencedDroppedTables
 } from "./reseed";
+
+// The checks read a scan of the rows; these take the rows, as a restore sees them.
+const findDanglingReferences = (
+  cat: Catalog,
+  data: Record<string, Row[]>,
+  substrate?: Map<string, Set<unknown>>
+) => findDanglingInScan(cat, scanRows(cat.tables, data), substrate);
+const assertReferentiallyClosed = (
+  cat: Catalog,
+  data: Record<string, Row[]>,
+  substrate?: Map<string, Set<unknown>>
+) => assertScanClosed(cat, scanRows(cat.tables, data), substrate);
+const buildIdMaps = (
+  tables: TableInfo[],
+  data: Record<string, Row[]>,
+  companies?: Parameters<typeof buildIdMapsFromScan>[2]
+) => buildIdMapsFromScan(tables, scanRows(tables, data), companies);
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
 // The closure check is a pure function of (catalog, data), so these tests need
@@ -259,9 +275,7 @@ describe("findDanglingReferences", () => {
 });
 
 describe("assertReferentiallyClosed", () => {
-  const backup = (
-    data: Record<string, Array<Record<string, unknown>>>
-  ): CompanyBackup => ({ manifest: {} as CompanyBackup["manifest"], data });
+  const backup = (data: Record<string, Row[]>) => data;
 
   it("is ok for a self-contained backup", () => {
     const result = assertReferentiallyClosed(
@@ -332,6 +346,34 @@ describe("buildRowTransforms", () => {
     const idMaps = new Map([["item", new Map([["old", "new"]])]]);
     const out = apply(t, { id: "old", companyId: "src-co" }, ctx({ idMaps }));
     expect(out).toEqual({ id: "new", companyId: "target-co" });
+  });
+
+  it("rewrites a storage path whatever its column is called", () => {
+    // A name list missed `document.path`, `supplier.logo`, the slide images and
+    // more: a foreign restore left them pointing at the source company.
+    const t = table("document", [
+      col("id"),
+      col("path"),
+      { ...col("sharedFilePaths"), dataType: "ARRAY", udtName: "_text" },
+      col("description")
+    ]);
+    const idRewrite = new Map([["item_old", "item_new"]]);
+    const out = apply(
+      t,
+      {
+        id: "d1",
+        path: "src-co/parts/item_old/drawing.pdf",
+        sharedFilePaths: ["src-co/item_old.step", "_templates/shared.pdf"],
+        description: "see src-co/notes, not a path at the start"
+      },
+      ctx({ idRewrite })
+    );
+    expect(out.path).toBe("target-co/parts/item_new/drawing.pdf");
+    expect(out.sharedFilePaths).toEqual([
+      "target-co/item_new.step",
+      "_templates/shared.pdf"
+    ]);
+    expect(out.description).toBe("see src-co/notes, not a path at the start");
   });
 
   it("collapses a user/employee FK to the importing user", () => {
@@ -575,6 +617,19 @@ describe("buildIdMaps", () => {
     );
     expect(maps.get("changeOrderRequiredAction")?.get("cora_1")).not.toBe(
       "cora_1"
+    );
+  });
+
+  it("mints ids shaped like the schema's id() default", () => {
+    const t = table("item", [
+      { ...col("id"), idPrefix: "item" },
+      col("companyId")
+    ]);
+    const maps = buildIdMaps([t], {
+      item: [{ id: "item_4zQmbFDRZ6T97vHVeyGwDX", companyId: "src-co" }]
+    });
+    expect(maps.get("item")?.get("item_4zQmbFDRZ6T97vHVeyGwDX")).toMatch(
+      /^item_[1-9A-HJ-NP-Za-km-z]{22}$/
     );
   });
 
@@ -854,41 +909,6 @@ describe("cross-company restore invariants", () => {
     "inspectionFeature"
   ];
 
-  // Every `modelUpload` column whose name ends in `Path`, typed against the
-  // GENERATED row type: `satisfies` makes this list fail to COMPILE if a column
-  // is renamed or removed, and the `Exclude` below fails to compile if a new
-  // `*Path` column is added and not listed. The runtime assertion then checks
-  // STORAGE_PATH_COLUMNS covers them all.
-  type ModelUploadPathColumn = Extract<
-    keyof Database["public"]["Tables"]["modelUpload"]["Row"],
-    `${string}Path`
-  >;
-  const MODEL_UPLOAD_PATH_COLUMNS = [
-    "modelPath",
-    "thumbnailPath",
-    "originalPath",
-    "optimizedModelPath",
-    "glbPath",
-    "graphPath",
-    "pmiPath"
-  ] as const satisfies readonly ModelUploadPathColumn[];
-  // Fails to compile when a new `*Path` column exists that the list omits.
-  type _EveryPathColumnListed =
-    Exclude<
-      ModelUploadPathColumn,
-      (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
-    > extends never
-      ? true
-      : [
-          "unlisted modelUpload *Path column",
-          Exclude<
-            ModelUploadPathColumn,
-            (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
-          >
-        ];
-  const _pathColumnsExhaustive: _EveryPathColumnListed = true;
-  void _pathColumnsExhaustive;
-
   it("keeps a readable-id table out of the id maps, but maps a normal table", () => {
     const part = table("part", [col("id"), col("companyId"), col("name")], [], {
       pkColumns: ["id", "companyId"]
@@ -954,13 +974,6 @@ describe("cross-company restore invariants", () => {
       READABLE_ID_TABLES.has(t)
     );
     expect(overlap).toEqual([]);
-  });
-
-  it("covers every modelUpload artifact column in STORAGE_PATH_COLUMNS", () => {
-    const missing = MODEL_UPLOAD_PATH_COLUMNS.filter(
-      (c) => !STORAGE_PATH_COLUMNS.has(c)
-    );
-    expect(missing).toEqual([]);
   });
 });
 

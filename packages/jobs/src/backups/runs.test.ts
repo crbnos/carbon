@@ -61,7 +61,6 @@ function fakeClient(opts: { failWrites?: boolean } = {}) {
         const hit = rows.filter(matches(filters));
         return { data: hit[0] ?? null, error: null };
       },
-      // biome-ignore lint/suspicious/noThenProperty: a thenable like the client's builder
       then: (resolve: (v: unknown) => void) => resolve(run())
     };
     return q;
@@ -169,7 +168,7 @@ describe("progressWriter", () => {
 
   it("drops same-phase ticks in the window but never a phase change or the last tick", async () => {
     vi.useFakeTimers();
-    const write = vi.fn(async (_patch: object) => {});
+    const write = vi.fn(async (_patch: object) => undefined);
     const report = progressWriter({ read: vi.fn(), write, clear: vi.fn() });
     await report({ phase: "load", done: 1, total: 10 });
     await report({ phase: "load", done: 2, total: 10 });

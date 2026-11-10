@@ -14,16 +14,15 @@ import {
 } from "@carbon/documents/template";
 import { async } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import type { Catalog, ColumnInfo, TableInfo } from "./catalog";
 import { TABLE_CONCURRENCY } from "./concurrency";
-import type { CompanyBackup } from "./format";
+import { type CompanyBackup, type Row, tableRows } from "./format";
 import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "./id-refs";
 import {
   isSecretTable,
   READABLE_ID_TABLES,
   RETAINED_REF_TABLES,
-  STORAGE_PATH_COLUMNS,
   USER_REF_TABLES
 } from "./policy";
 
@@ -45,6 +44,91 @@ type DanglingRef = {
 };
 
 /**
+ * What the preflight and the id maps need from a backup, without its rows: the
+ * ids of each table, the distinct values of every id foreign key with how many
+ * rows hold each, and the small `group` table. Built while the rows stream.
+ */
+export type BackupScan = {
+  /** Tables the backup has rows for. */
+  tables: Set<string>;
+  ids: Map<string, Set<unknown>>;
+  /** `table.column` → value → rows holding it. */
+  refs: Map<string, Map<unknown, number>>;
+  groupRows: Row[];
+};
+
+/**
+ * Collects a scan from batches. Keeps the ids of every table a foreign key
+ * points at, or of every id-bearing table with `allIds` (a foreign load gives
+ * each row a new id). Secret tables are never loaded, so they are skipped.
+ */
+function scanCollector(tables: TableInfo[], opts: { allIds: boolean }) {
+  const referenced = new Set(
+    tables.flatMap((t) =>
+      t.foreignKeys.filter((f) => f.refColumn === "id").map((f) => f.refTable)
+    )
+  );
+  const scan: BackupScan = {
+    tables: new Set(),
+    ids: new Map(),
+    refs: new Map(),
+    groupRows: []
+  };
+  const add = (table: TableInfo, rows: Row[]) => {
+    if (rows.length === 0 || isSecretTable(table.name)) return;
+    scan.tables.add(table.name);
+    if (table.name === "group") scan.groupRows.push(...rows);
+    if (
+      (opts.allIds || referenced.has(table.name)) &&
+      table.columns.some((c) => c.name === "id")
+    ) {
+      const ids = scan.ids.get(table.name) ?? new Set<unknown>();
+      for (const row of rows) ids.add(row.id);
+      scan.ids.set(table.name, ids);
+    }
+    for (const fk of table.foreignKeys) {
+      if (fk.refColumn !== "id") continue;
+      const key = `${table.name}.${fk.column}`;
+      const counts = scan.refs.get(key) ?? new Map<unknown, number>();
+      for (const row of rows) {
+        const v = row[fk.column];
+        if (v != null) counts.set(v, (counts.get(v) ?? 0) + 1);
+      }
+      scan.refs.set(key, counts);
+    }
+  };
+  return { scan, add };
+}
+
+/** Scan a backup, one table at a time. */
+export async function scanBackup(
+  catalog: Catalog,
+  backup: CompanyBackup,
+  opts: { allIds: boolean }
+): Promise<BackupScan> {
+  const { scan, add } = scanCollector(catalog.tables, opts);
+  await async.map(
+    catalog.tables.filter((t) => tableRows(backup, t.name) > 0),
+    async (table) => {
+      for await (const batch of backup.rows(table.name)) add(table, batch);
+    },
+    { concurrency: TABLE_CONCURRENCY }
+  );
+  return scan;
+}
+
+/** Scan rows already in memory. */
+export function scanRows(
+  tables: TableInfo[],
+  dataByTable: Record<string, Row[]>,
+  opts: { allIds: boolean } = { allIds: true }
+): BackupScan {
+  const { scan, add } = scanCollector(tables, opts);
+  for (const table of tables) add(table, dataByTable[table.name] ?? []);
+  return scan;
+}
+
+/**
  * Find FK values that point at a scoped row the backup does NOT contain — the exact
  * gap that makes a restore dangle. A backup is "referentially closed" when this
  * returns no `fatal` entries. Pure, so the SAME check runs as a unit test AND as
@@ -60,35 +144,13 @@ type DanglingRef = {
  */
 export function findDanglingReferences(
   catalog: Catalog,
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>,
+  scan: BackupScan,
   knownSubstrateIds?: Map<string, Set<unknown>>
 ): DanglingRef[] {
   const catalogNames = new Set(catalog.tables.map((t) => t.name));
-  // Secret tables (credentials/tokens) are never written to a backup and never
-  // loaded on restore, so they can be neither a row source nor a resolvable ref
-  // target here. An OLDER backup made before a table joined SECRET_TABLES may
-  // still carry its rows (e.g. `apiKeyRateLimit` → the stripped `apiKey`) — those
-  // are ignored on load, so the preflight must ignore them too rather than report
-  // a gap that can't exist for the restore.
-  const idsByTable = new Map<string, Set<unknown>>();
-  for (const t of catalog.tables) {
-    // FKs are only ever checked against `refColumn === "id"` below, so any table
-    // with an `id` column can be a referenced parent — NOT only those whose PK is
-    // exactly `id` (`hasId`). Most Carbon tables key on `id` alone, but ~25 use a
-    // composite `("id", "companyId")` PK (stockTransfer, supplierPart, …); gating
-    // on `hasId` left those untracked, so every child row pointing at them was
-    // falsely reported as dangling and refused the restore.
-    if (!t.columns.some((c) => c.name === "id")) continue;
-    const ids = new Set<unknown>();
-    for (const row of dataByTable[t.name] ?? []) ids.add(row.id);
-    idsByTable.set(t.name, ids);
-  }
-
   const found = new Map<string, DanglingRef>();
   for (const t of catalog.tables) {
-    const rows = dataByTable[t.name];
-    if (!rows?.length) continue;
-    if (isSecretTable(t.name)) continue; // not loaded → its refs are moot
+    if (!scan.tables.has(t.name)) continue;
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
@@ -96,18 +158,17 @@ export function findDanglingReferences(
       if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
       if (!catalogNames.has(fk.refTable)) continue; // non-scoped global → stable ids
       const col = colByName.get(fk.column);
-      if (!col) continue;
-      const refIds = idsByTable.get(fk.refTable) ?? new Set();
+      const values = scan.refs.get(`${t.name}.${fk.column}`);
+      if (!col || !values) continue;
+      const refIds = scan.ids.get(fk.refTable) ?? new Set();
       const substrateIds = knownSubstrateIds?.get(fk.refTable);
-      for (const row of rows) {
-        const v = row[fk.column];
-        if (v == null) continue;
+      for (const [v, count] of values) {
         if (refIds.has(v)) continue;
         if (substrateIds?.has(v)) continue;
         const key = `${t.name}.${fk.column}->${fk.refTable}`;
         const existing = found.get(key);
         if (existing) {
-          existing.count++;
+          existing.count += count;
         } else {
           found.set(key, {
             table: t.name,
@@ -115,7 +176,7 @@ export function findDanglingReferences(
             refTable: fk.refTable,
             fatal: !col.isNullable,
             sampleValue: String(v),
-            count: 1
+            count
           });
         }
       }
@@ -132,14 +193,12 @@ export function findDanglingReferences(
  */
 export function assertReferentiallyClosed(
   catalog: Catalog,
-  backup: CompanyBackup,
+  scan: BackupScan,
   knownSubstrateIds?: Map<string, Set<unknown>>
 ): { ok: true } | { ok: false; reason: string } {
-  const fatal = findDanglingReferences(
-    catalog,
-    backup.data,
-    knownSubstrateIds
-  ).filter((d) => d.fatal);
+  const fatal = findDanglingReferences(catalog, scan, knownSubstrateIds).filter(
+    (d) => d.fatal
+  );
   if (fatal.length === 0) return { ok: true };
   const lines = fatal
     .map(
@@ -175,13 +234,12 @@ export function assertReferentiallyClosed(
 export async function loadSubstrateIds(
   db: Kysely<KyselyDatabase>,
   catalog: Catalog,
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>
+  scan: BackupScan
 ): Promise<Map<string, Set<unknown>>> {
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
   const wanted = new Map<string, { scopeColumn: string; ids: Set<unknown> }>();
   for (const t of catalog.tables) {
-    const rows = dataByTable[t.name];
-    if (!rows?.length) continue;
+    if (!scan.tables.has(t.name)) continue;
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
@@ -197,9 +255,8 @@ export async function loadSubstrateIds(
         scopeColumn: ref.scope.column,
         ids: new Set<unknown>()
       };
-      for (const row of rows) {
-        const v = row[fk.column];
-        if (v != null) entry.ids.add(v);
+      for (const v of scan.refs.get(`${t.name}.${fk.column}`)?.keys() ?? []) {
+        entry.ids.add(v);
       }
       wanted.set(fk.refTable, entry);
     }
@@ -234,7 +291,7 @@ export async function loadSubstrateIds(
  * Carbon tables key on `("id", "companyId")` yet still carry a global `UNIQUE (id)`
  * so children can FK to them, and gating on `hasId` left their source ids in place —
  * which collides with the source company's own live rows on a cross-company restore.
- * Int/serial ids are still skipped (a nanoid doesn't fit, and the table is wiped
+ * Int/serial ids are still skipped (a generated id doesn't fit, and the table is wiped
  * first so the original values are free to reuse verbatim).
  *
  * A 1:1 extension table keys itself BY its parent (`purchaseOrderDelivery.id ->
@@ -245,7 +302,7 @@ export async function loadSubstrateIds(
  */
 export function buildIdMaps(
   tables: TableInfo[],
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>,
+  scan: BackupScan,
   companies?: GroupRemap
 ): Map<string, Map<string, string>> {
   const idMaps = new Map<string, Map<string, string>>();
@@ -276,15 +333,15 @@ export function buildIdMaps(
       continue;
     }
     const map = new Map<string, string>();
-    for (const row of dataByTable[table.name] ?? []) {
-      if (typeof row.id === "string") map.set(row.id, newIdForTable(table));
+    for (const id of scan.ids.get(table.name) ?? []) {
+      if (typeof id === "string") map.set(id, newIdForTable(table));
     }
     idMaps.set(table.name, map);
   }
   if (groupTable) {
     idMaps.set(
       "group",
-      mapGroupIds(groupTable, dataByTable.group ?? [], idMaps, companies)
+      mapGroupIds(groupTable, scan.groupRows, idMaps, companies)
     );
   }
   return idMaps;
@@ -427,13 +484,6 @@ export function buildRowTransforms(
     }
     if (col.name === "companyId") return () => ctx.companyId;
     if (col.name === "companyGroupId") return () => ctx.targetGroupId;
-    if (STORAGE_PATH_COLUMNS.has(col.name)) {
-      const { sourceCompanyId, companyId, idRewrite } = ctx;
-      return (v) =>
-        typeof v === "string"
-          ? rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite)
-          : v;
-    }
     if (table.name === "documentEdit" && col.name === "settings") {
       return (v) => rewriteDocumentEditRowKeys(v, ctx.idRewrite);
     }
@@ -493,6 +543,19 @@ export function buildRowTransforms(
           );
         };
       }
+    }
+    // A storage path is any text value under the source company's folder,
+    // whatever the column is called (`document.path`, `supplier.logo`,
+    // `supplierQuote.sharedFilePaths`, …). The files are copied with the same
+    // rewrite, so path and file stay together.
+    if (col.udtName === "text" || col.udtName === "_text") {
+      const { sourceCompanyId, companyId, idRewrite } = ctx;
+      const prefix = `${sourceCompanyId}/`;
+      const rewrite = (v: unknown) =>
+        typeof v === "string" && v.startsWith(prefix)
+          ? rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite)
+          : v;
+      return (v) => (Array.isArray(v) ? v.map(rewrite) : rewrite(v));
     }
     return identity;
   };
@@ -561,12 +624,18 @@ export function rewriteStoragePath(
     .join("/");
 }
 
+/** Base58, as the SQL `id()` default writes ids (`projects.service.ts` copies do the same). */
+const base58Id = customAlphabet(
+  "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
+  22
+);
+
 /**
- * A fresh primary-key value for a table, matching its `id` column's type as the
- * schema defines it — a real UUID for `uuid` columns, otherwise a nanoid (what
- * the `id()` default produces), so a nanoid never goes into a uuid column.
+ * A fresh primary-key value shaped like the one the schema's default writes: a
+ * UUID for a `uuid` column, `item_<base58>` for one defaulting to `id('item')`.
  */
 function newIdForTable(table: TableInfo): string {
   const idCol = table.columns.find((c) => c.name === "id");
-  return idCol?.udtName === "uuid" ? randomUUID() : nanoid();
+  if (idCol?.udtName === "uuid") return randomUUID();
+  return idCol?.idPrefix ? `${idCol.idPrefix}_${base58Id()}` : base58Id();
 }

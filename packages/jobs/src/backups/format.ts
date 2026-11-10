@@ -56,10 +56,53 @@ export type Manifest = {
 
 export const EXPORTS_PREFIX = "exports";
 
+export type Row = Record<string, unknown>;
+
+/** Rows per batch when a table is read or written. */
+export const ROW_BATCH = 2000;
+
 export type CompanyBackup = {
   manifest: Manifest;
-  data: Record<string, Record<string, unknown>[]>;
+  /**
+   * One table's rows in batches, under today's table and column names. Each
+   * call reads the table again, so no caller holds a whole backup in memory.
+   */
+  rows(table: string): AsyncIterable<Row[]>;
 };
+
+/** A table's row count as the manifest records it: 0 when it has none. */
+export function tableRows(
+  backup: { manifest: Manifest },
+  table: string
+): number {
+  return backup.manifest.tables.find((t) => t.name === table)?.rows ?? 0;
+}
+
+/** A backup whose rows are already in memory (tests, and small sources). */
+export function backupFromRows(
+  manifest: Manifest,
+  data: Record<string, Row[]>
+): CompanyBackup {
+  return {
+    manifest,
+    async *rows(table) {
+      const rows = data[table];
+      if (rows?.length) yield rows;
+    }
+  };
+}
+
+/** Every row of one table. Only for tables known to be small. */
+export async function collectRows(
+  backup: CompanyBackup,
+  table: string
+): Promise<Row[]> {
+  const all: Row[] = [];
+  for await (const batch of backup.rows(table)) {
+    for (const row of batch) all.push(row);
+  }
+  return all;
+}
 
 export function backupDir(name: string): string {
   return `${EXPORTS_PREFIX}/${name}`;
@@ -99,12 +142,10 @@ export function isSnapshotName(name: string): boolean {
 }
 
 /**
- * Gzip one table's rows as NDJSON (one JSON object per line). Streamed, so a huge
- * table never builds a `>512MB` string.
+ * A table written as gzipped NDJSON, one batch of rows at a time. Only the
+ * compressed bytes are kept, never the rows or one big string.
  */
-export async function serializeTable(
-  rows: Record<string, unknown>[]
-): Promise<Buffer> {
+export function tableWriter() {
   const gzip = createGzip();
   const chunks: Buffer[] = [];
   gzip.on("data", (c: Buffer) => chunks.push(c));
@@ -112,45 +153,66 @@ export async function serializeTable(
     gzip.on("end", resolve);
     gzip.on("error", reject);
   });
-  for (const row of rows) {
-    // JSON.stringify leaves U+2028/U+2029 raw; escaped, every line-based
-    // reader sees one row per line.
-    const line = JSON.stringify(row)
-      .replaceAll("\u2028", "\\u2028")
-      .replaceAll("\u2029", "\\u2029");
-    await new Promise<void>((resolve, reject) => {
-      gzip.write(`${line}\n`, (err) => (err ? reject(err) : resolve()));
-    });
-  }
-  gzip.end();
-  await finished;
-  return Buffer.concat(chunks);
+  return {
+    async write(rows: Row[]) {
+      let text = "";
+      for (const row of rows) {
+        // JSON.stringify leaves U+2028/U+2029 raw; escaped, every line-based
+        // reader sees one row per line.
+        text += `${JSON.stringify(row)
+          .replaceAll("\u2028", "\\u2028")
+          .replaceAll("\u2029", "\\u2029")}\n`;
+      }
+      await new Promise<void>((resolve, reject) => {
+        gzip.write(text, (err) => (err ? reject(err) : resolve()));
+      });
+    },
+    async finish(): Promise<Buffer> {
+      gzip.end();
+      await finished;
+      return Buffer.concat(chunks);
+    }
+  };
 }
 
 /**
- * Parse a `tables/<table>.ndjson.gz` into rows. Streams the gunzip line by line,
- * so a huge table is never one giant string nor a single JSON.parse.
+ * Parse a gzipped NDJSON table in batches, as the bytes arrive.
  *
- * Splits on "\n" only, the one separator `serializeTable` writes. Not readline:
+ * Splits on "\n" only, the one separator `tableWriter` writes. Not readline:
  * from Node 24 it also ends a line at U+2028/U+2029, which JSON.stringify
  * leaves unescaped, so a row with pasted text was cut mid-string.
  */
-export async function deserializeTable(
-  bytes: ArrayBuffer
-): Promise<Record<string, unknown>[]> {
+export async function* readTableRows(
+  source: AsyncIterable<Uint8Array> | Iterable<Uint8Array>,
+  batchSize = ROW_BATCH
+): AsyncGenerator<Row[]> {
+  const input = Readable.from(source);
   const gunzip = createGunzip();
-  Readable.from(Buffer.from(bytes)).pipe(gunzip);
+  input.on("error", (err) => gunzip.destroy(err));
+  input.pipe(gunzip);
   const decoder = new StringDecoder("utf8");
-  const rows: Record<string, unknown>[] = [];
+  let batch: Row[] = [];
   let rest = "";
-  for await (const chunk of gunzip) {
-    const lines = (rest + decoder.write(chunk as Buffer)).split("\n");
-    rest = lines.pop() ?? "";
-    for (const line of lines) if (line) rows.push(JSON.parse(line));
+  try {
+    for await (const chunk of gunzip) {
+      const lines = (rest + decoder.write(chunk as Buffer)).split("\n");
+      rest = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line) continue;
+        batch.push(JSON.parse(line));
+        if (batch.length >= batchSize) {
+          yield batch;
+          batch = [];
+        }
+      }
+    }
+    rest += decoder.end();
+    if (rest) batch.push(JSON.parse(rest));
+    if (batch.length > 0) yield batch;
+  } finally {
+    input.destroy();
+    gunzip.destroy();
   }
-  rest += decoder.end();
-  if (rest) rows.push(JSON.parse(rest));
-  return rows;
 }
 
 /** Convert a pg-returned value into a JSON-safe backup value. */

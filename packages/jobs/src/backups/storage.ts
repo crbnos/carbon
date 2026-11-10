@@ -6,17 +6,16 @@ import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { async, chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { TABLE_CONCURRENCY } from "./concurrency";
 import {
   BACKUP_KIND,
   backupAssetsDir,
   backupManifestPath,
   backupTablePath,
   type CompanyBackup,
-  deserializeTable,
   EXPORTS_PREFIX,
   isSnapshotName,
-  type Manifest
+  type Manifest,
+  readTableRows
 } from "./format";
 import { rewriteStoragePath } from "./remap";
 
@@ -74,16 +73,17 @@ async function listFolder(
 }
 
 /**
- * Read a backup folder `exports/<name>/`: its manifest, then every table file in
- * parallel, into the in-memory `CompanyBackup` the load pipeline expects.
+ * Open a backup folder `exports/<name>/`: its manifest now, each table only when
+ * a caller asks for its rows, streamed straight from storage.
  */
 export async function readBackup(
   client: SupabaseClient,
   companyId: string,
   name: string
 ): Promise<CompanyBackup> {
+  const bucket = getCompanyPrivateBucket(companyId);
   const mf = await client.storage
-    .from(getCompanyPrivateBucket(companyId))
+    .from(bucket)
     .download(backupManifestPath(name));
   if (mf.error || !mf.data) {
     throw new Error(
@@ -96,26 +96,26 @@ export async function readBackup(
   if (manifest.kind !== BACKUP_KIND) {
     throw new Error("Not a Carbon company backup");
   }
+  const stored = new Set(manifest.tables.map((t) => t.name));
 
-  const data: CompanyBackup["data"] = {};
-  await async.map(
-    manifest.tables,
-    async (t) => {
+  return {
+    manifest,
+    async *rows(table) {
+      if (!stored.has(table)) return;
       const f = await client.storage
-        .from(getCompanyPrivateBucket(companyId))
-        .download(backupTablePath(name, t.name));
+        .from(bucket)
+        .download(backupTablePath(name, table))
+        .asStream();
       if (f.error || !f.data) {
         throw new Error(
-          `Failed to download table ${t.name} for ${name}: ${
+          `Failed to download table ${table} for ${name}: ${
             f.error?.message || JSON.stringify(f.error) || "not found"
           }`
         );
       }
-      data[t.name] = await deserializeTable(await f.data.arrayBuffer());
-    },
-    { concurrency: TABLE_CONCURRENCY }
-  );
-  return { manifest, data };
+      yield* readTableRows(f.data as unknown as AsyncIterable<Uint8Array>);
+    }
+  };
 }
 
 /**
@@ -211,15 +211,29 @@ export async function deleteCompanyFiles(
   companyId: string,
   prefix: string
 ): Promise<void> {
+  const files = await listFolder(
+    client,
+    getCompanyPrivateBucket(companyId),
+    prefix
+  );
+  await removeCompanyPaths(
+    client,
+    companyId,
+    files.map((f) => f.path)
+  );
+}
+
+/** Delete exactly these paths from the company's bucket. */
+export async function removeCompanyPaths(
+  client: SupabaseClient,
+  companyId: string,
+  paths: string[]
+): Promise<void> {
   const bucket = getCompanyPrivateBucket(companyId);
-  const files = await listFolder(client, bucket, prefix);
   // Small requests: storage deletes the rows and the objects in one statement
   // timeout, and each row fires `delete_orphaned_documents`.
-  for (const paths of chunkArray(
-    files.map((f) => f.path),
-    200
-  )) {
-    const { error } = await client.storage.from(bucket).remove(paths);
+  for (const batch of chunkArray(paths, 200)) {
+    const { error } = await client.storage.from(bucket).remove(batch);
     if (error) throw error;
   }
 }
@@ -229,9 +243,10 @@ export async function deleteCompanyFiles(
 const ASSET_COPY_CONCURRENCY = 8;
 
 /**
- * Copy one storage object server-side, overwriting the destination if it already
- * exists. `copy` has no upsert, so on a duplicate we remove the destination and
- * retry — the bytes never pass through this process either way.
+ * Copy one storage object server-side, overwriting the destination in place
+ * (`x-upsert`). Never remove-then-copy: deleting a storage object fires the
+ * `delete_orphaned_documents` trigger, which drops the `document` row for that
+ * path — the row a restore has just loaded.
  */
 async function copyStorageObject(
   client: SupabaseClient,
@@ -243,16 +258,10 @@ async function copyStorageObject(
   }
 ): Promise<{ ok: boolean; error?: string }> {
   const { srcBucket, srcPath, destBucket, destPath } = args;
-  const run = () =>
-    client.storage
-      .from(srcBucket)
-      .copy(srcPath, destPath, { destinationBucket: destBucket });
-
-  let { error } = await run();
-  if (error && /exist|duplicate|409/i.test(error.message)) {
-    await client.storage.from(destBucket).remove([destPath]);
-    ({ error } = await run());
-  }
+  const { error } = await client.storage
+    .from(srcBucket)
+    .setHeader("x-upsert", "true")
+    .copy(srcPath, destPath, { destinationBucket: destBucket });
   return { ok: !error, error: error?.message };
 }
 
@@ -310,6 +319,25 @@ export async function copyAssetsToBackup(
  * company's own `{companyId}/` prefix so a malformed path can never land in
  * another tenant's space.
  */
+/**
+ * Where a backup's included files land in the target company: the paths a
+ * restore writes (those outside `{companyId}/` it then skips).
+ */
+export function assetTargets(args: {
+  files: Array<{ path: string; included: boolean }>;
+  sourceCompanyId: string;
+  companyId: string;
+  idRewrite: Map<string, string>;
+}): Array<{ source: string; target: string }> {
+  const { files, sourceCompanyId, companyId, idRewrite } = args;
+  return files
+    .filter((f) => f.included)
+    .map((f) => ({
+      source: f.path,
+      target: rewriteStoragePath(f.path, sourceCompanyId, companyId, idRewrite)
+    }));
+}
+
 export async function restoreAssetsFromBackup(
   client: SupabaseClient,
   args: {
@@ -322,25 +350,19 @@ export async function restoreAssetsFromBackup(
   },
   onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
-  const { files, name, sourceCompanyId, companyId, idRewrite } = args;
+  const { name, companyId } = args;
   const bucket = getCompanyPrivateBucket(companyId);
-  const included = files.filter((f) => f.included);
-  const total = included.length;
+  const targets = assetTargets(args);
+  const total = targets.length;
   let copied = 0;
   let failed = 0;
   let done = 0;
   await async.map(
-    included,
-    async (file) => {
-      const targetPath = rewriteStoragePath(
-        file.path,
-        sourceCompanyId,
-        companyId,
-        idRewrite
-      );
+    targets,
+    async ({ source, target: targetPath }) => {
       if (!targetPath.startsWith(`${companyId}/`)) {
         log.warning("Skipping backup asset outside target company prefix", {
-          path: file.path,
+          path: source,
           targetPath
         });
         await onProgress?.(++done, total);
@@ -348,7 +370,7 @@ export async function restoreAssetsFromBackup(
       }
       const { ok, error } = await copyStorageObject(client, {
         srcBucket: bucket,
-        srcPath: `${backupAssetsDir(name)}/${file.path}`,
+        srcPath: `${backupAssetsDir(name)}/${source}`,
         destBucket: bucket,
         destPath: targetPath
       });
@@ -357,7 +379,7 @@ export async function restoreAssetsFromBackup(
       } else {
         failed++;
         log.warning("Failed to restore backup asset", {
-          path: file.path,
+          path: source,
           targetPath,
           error
         });

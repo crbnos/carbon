@@ -19,7 +19,8 @@ import {
   encodeValue,
   type Manifest,
   newBackupName,
-  serializeTable
+  ROW_BATCH,
+  tableWriter
 } from "./format";
 import type { JobProgress } from "./runs";
 import {
@@ -176,13 +177,36 @@ export async function writeCompanyBackup(
       const columns = exportableColumns(table);
       const exclusion = exclusions?.predicates.get(table.name);
       const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
-      const result = await sql<Record<string, unknown>>`
-      SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
-      FROM ${sql.id(table.name)}
-      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${exclusionFilter}
-    `.execute(db);
+      // A cursor, so a table of any size passes through a batch at a time and
+      // only its compressed bytes are kept.
+      const writer = tableWriter();
+      let rowCount = 0;
+      await db.transaction().execute(async (trx) => {
+        await sql`
+          DECLARE backup_rows NO SCROLL CURSOR FOR
+          SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
+          FROM ${sql.id(table.name)}
+          WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${exclusionFilter}
+        `.execute(trx);
+        for (;;) {
+          const { rows } = await sql<Record<string, unknown>>`
+            FETCH ${sql.raw(String(ROW_BATCH))} FROM backup_rows
+          `.execute(trx);
+          if (rows.length === 0) break;
+          await writer.write(
+            rows.map((row) => {
+              const encoded: Record<string, unknown> = {};
+              for (const col of columns) {
+                encoded[col.name] = encodeValue(row[col.name], col);
+              }
+              return encoded;
+            })
+          );
+          rowCount += rows.length;
+        }
+      });
 
-      if (result.rows.length === 0) {
+      if (rowCount === 0) {
         dumped++;
         await opts.onProgress?.({
           phase: "tables",
@@ -191,20 +215,17 @@ export async function writeCompanyBackup(
         });
         return;
       }
-
-      const rows = result.rows.map((row) => {
-        const encoded: Record<string, unknown> = {};
-        for (const col of columns) {
-          encoded[col.name] = encodeValue(row[col.name], col);
-        }
-        return encoded;
-      });
-      const buf = await serializeTable(rows);
-      await writeBackupTable(client, companyId, name, table.name, buf);
+      await writeBackupTable(
+        client,
+        companyId,
+        name,
+        table.name,
+        await writer.finish()
+      );
 
       tableManifest.push({
         name: table.name,
-        rows: result.rows.length,
+        rows: rowCount,
         columns: columns.map((c) => c.name)
       });
       dumped++;
