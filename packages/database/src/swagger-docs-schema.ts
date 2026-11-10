@@ -77539,6 +77539,33 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.serviceEndDate"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverriddenAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.deliveryDateOverrideReason"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
           },
           {
@@ -91654,6 +91681,30 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.salesReturnOrderLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverrideReason"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -91857,6 +91908,30 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.salesReturnOrderLineId"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverrideReason"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -92012,6 +92087,30 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.salesReturnOrderLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.requestedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateConstraint"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.earliestDeliveryDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateCheckedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverriddenAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.deliveryDateOverrideReason"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -96418,6 +96517,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -96549,6 +96651,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
           },
           {
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96632,6 +96737,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.allowCommonSupplyForProjects"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.deliveryDateControl"
           },
           {
             $ref: "#/parameters/body.itemPlanning"
@@ -117376,6 +117484,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -117714,6 +117825,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.deliveryDateControl"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -118004,6 +118118,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.deliveryDateControl"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -173347,6 +173464,46 @@ export default {
           format: "date",
           type: "string"
         },
+        salesReturnOrderLineId: {
+          format: "text",
+          type: "string"
+        },
+        requestedDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateStatus: {
+          enum: ["Met", "Missed"],
+          format: 'public."deliveryDateStatus"',
+          type: "string"
+        },
+        deliveryDateConstraint: {
+          enum: ["Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateConstraint"',
+          type: "string"
+        },
+        earliestDeliveryDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateCheckedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        deliveryDateOverriddenBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        deliveryDateOverriddenAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        deliveryDateOverrideReason: {
+          format: "text",
+          type: "string"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -180502,6 +180659,42 @@ export default {
         salesReturnOrderLineId: {
           format: "text",
           type: "string"
+        },
+        requestedDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateStatus: {
+          enum: ["Met", "Missed"],
+          format: 'public."deliveryDateStatus"',
+          type: "string"
+        },
+        deliveryDateConstraint: {
+          enum: ["Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateConstraint"',
+          type: "string"
+        },
+        earliestDeliveryDate: {
+          format: "date",
+          type: "string"
+        },
+        deliveryDateCheckedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        deliveryDateOverriddenBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        deliveryDateOverriddenAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        deliveryDateOverrideReason: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -182544,6 +182737,11 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean"
+        },
+        deliveryDateControl: {
+          enum: ["None", "Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateControl"',
+          type: "string"
         }
       },
       type: "object"
@@ -192751,7 +192949,8 @@ export default {
         "kanbanLabelSize",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
-        "includeSupplierPartFiles"
+        "includeSupplierPartFiles",
+        "deliveryDateControl"
       ],
       properties: {
         id: {
@@ -193248,6 +193447,12 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean"
+        },
+        deliveryDateControl: {
+          default: "None",
+          enum: ["None", "Lead Time", "Stock", "Capacity"],
+          format: 'public."deliveryDateControl"',
+          type: "string"
         }
       },
       type: "object"
@@ -234494,6 +234699,60 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLines.salesReturnOrderLineId": {
+      name: "salesReturnOrderLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.requestedDate": {
+      name: "requestedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateStatus": {
+      name: "deliveryDateStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateConstraint": {
+      name: "deliveryDateConstraint",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.earliestDeliveryDate": {
+      name: "earliestDeliveryDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateCheckedAt": {
+      name: "deliveryDateCheckedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateOverriddenBy": {
+      name: "deliveryDateOverriddenBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateOverriddenAt": {
+      name: "deliveryDateOverriddenAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLines.deliveryDateOverrideReason": {
+      name: "deliveryDateOverrideReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -242412,6 +242671,54 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLine.requestedDate": {
+      name: "requestedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateStatus": {
+      name: "deliveryDateStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateConstraint": {
+      name: "deliveryDateConstraint",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.earliestDeliveryDate": {
+      name: "earliestDeliveryDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateCheckedAt": {
+      name: "deliveryDateCheckedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateOverriddenBy": {
+      name: "deliveryDateOverriddenBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateOverriddenAt": {
+      name: "deliveryDateOverriddenAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.deliveryDateOverrideReason": {
+      name: "deliveryDateOverrideReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.purchaseOrderFavorite": {
       name: "purchaseOrderFavorite",
       description: "purchaseOrderFavorite",
@@ -244712,6 +245019,12 @@ export default {
     },
     "rowFilter.itemPlanning.allowCommonSupplyForProjects": {
       name: "allowCommonSupplyForProjects",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemPlanning.deliveryDateControl": {
+      name: "deliveryDateControl",
       required: false,
       in: "query",
       type: "string"
@@ -256643,6 +256956,12 @@ export default {
     },
     "rowFilter.companySettings.includeSupplierPartFiles": {
       name: "includeSupplierPartFiles",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.deliveryDateControl": {
+      name: "deliveryDateControl",
       required: false,
       in: "query",
       type: "string"
