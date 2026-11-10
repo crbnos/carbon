@@ -3293,6 +3293,7 @@ export async function getJobReceiptSnapshot(
           AND jmm."companyId" = "job"."companyId"
           AND jmm."parentMaterialId" IS NULL
           AND te.status = 'Consumed'
+          AND te.quantity = 1
           AND EXISTS (
             SELECT 1
             FROM "itemLedger" il

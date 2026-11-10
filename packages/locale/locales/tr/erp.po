@@ -15105,6 +15105,7 @@ msgstr "Pasif eylemler seçim listelerinde görünmeyecektir"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Pasif kategoriler yeni zaman için seçilemez"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -32347,10 +32348,11 @@ msgstr "Tekrar deneyin"
 msgid "Tuesday"
 msgstr "Salı"
 
-msgid "Turn On"
-msgstr "Aç"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "Aç"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Açın <0>Ayarlar → Muhasebe'de Kısa Vadeli Kiralama Muafiyeti</0> veya"

@@ -15105,6 +15105,7 @@ msgstr "無効なアクションは選択リストに表示されません。"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "無効なカテゴリは新しい時間に対してピックできません"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -32347,10 +32348,11 @@ msgstr "もう一度お試しください"
 msgid "Tuesday"
 msgstr "火曜日"
 
-msgid "Turn On"
-msgstr "オンにする"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "オンにする"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにしてください</0>、または"

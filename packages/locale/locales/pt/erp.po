@@ -15105,6 +15105,7 @@ msgstr "Ações inativas não aparecerão nas listas de seleção"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Categorias inativas não podem ser selecionadas para novo tempo"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -32347,10 +32348,11 @@ msgstr "Tente novamente"
 msgid "Tuesday"
 msgstr "Terça-feira"
 
-msgid "Turn On"
-msgstr "Ativar"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "Ativar"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Ative a <0>Isenção de Locação de Curto Prazo em Configurações → Contabilidade</0>, ou"

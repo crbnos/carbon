@@ -192,3 +192,48 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "leaves out an issued entity of more than one unit, which the completion never takes",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const job = await numberedSerialJob(f, "multi", ["SN-101", "SN-102"]);
+      const [multi, single] = await units(f, job.makeMethodId);
+
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("trackedEntity")
+          .set({ quantity: 2 })
+          .where("id", "=", multi!.id)
+          .execute();
+        await trx
+          .updateTable("trackedEntity")
+          .set({ status: "Consumed" })
+          .where("id", "in", [multi!.id, single!.id])
+          .execute();
+        await trx
+          .insertInto("itemLedger")
+          .values(
+            [multi!, single!].map((entity) => ({
+              entryType: "Consumption" as const,
+              documentType: "Job Consumption" as const,
+              documentId: `${f.prefix}-parent-job`,
+              itemId: f.assemblyId,
+              quantity: -1,
+              locationId: f.locationId,
+              trackedEntityId: entity.id,
+              companyId: f.companyId,
+              createdBy: USER
+            }))
+          )
+          .execute();
+      });
+
+      const snapshot = await getJobReceiptSnapshot(f.db, job.jobId, f.companyId);
+      expect(snapshot?.issuedTrackedEntityIds).toEqual([single!.id]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

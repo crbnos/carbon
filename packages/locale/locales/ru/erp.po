@@ -15105,6 +15105,7 @@ msgstr "Неактивные действия не будут отображат
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Неактивные категории не могут быть выбраны для новых отметок времени"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -32347,10 +32348,11 @@ msgstr "Повторить попытку"
 msgid "Tuesday"
 msgstr "Вторник"
 
-msgid "Turn On"
-msgstr "Включить"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "Включить"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Включите <0>упрощение для краткосрочной аренды в Настройках → Бухгалтерия</0>, или"

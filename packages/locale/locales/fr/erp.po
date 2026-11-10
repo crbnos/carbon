@@ -15105,6 +15105,7 @@ msgstr "Les actions inactives n'apparaîtront pas dans les listes de sélection"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Les catégories inactives ne peuvent pas être choisies pour le nouveau temps"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -32347,10 +32348,11 @@ msgstr "Réessayer"
 msgid "Tuesday"
 msgstr "Mardi"
 
-msgid "Turn On"
-msgstr "Activer"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "Activer"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Activez <0>l'option de simplification des baux à court terme dans Paramètres → Comptabilité</0>, ou"

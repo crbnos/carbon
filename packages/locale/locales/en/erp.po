@@ -15105,6 +15105,7 @@ msgstr "Inactive actions will not appear in selection lists"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Inactive categories cannot be picked for new time"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr "Inactive units are not offered when choosing a unit"
 

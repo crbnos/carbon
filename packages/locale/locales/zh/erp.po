@@ -15105,6 +15105,7 @@ msgstr "已停用的操作不会出现在选择列表中"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "已停用的分类无法为新工时选择"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -32347,10 +32348,11 @@ msgstr "重试"
 msgid "Tuesday"
 msgstr "星期二"
 
-msgid "Turn On"
-msgstr "打开"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "打开"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "启用<0>设置 → 会计中的短期租赁豁免</0>，或"
