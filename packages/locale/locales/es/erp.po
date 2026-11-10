@@ -1118,9 +1118,6 @@ msgstr "{name} termina {end} (fue abierto)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} está inactiva. Elija una unidad de almacenamiento activa."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} ahora es neteable. Elija una unidad de almacenamiento no neteable."
-
 msgid "{name} needs an account number."
 msgstr "{name} necesita un número de cuenta."
 
@@ -5927,9 +5924,6 @@ msgstr "Ambas pruebas pasan; considera No financiado (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Cuello de botella"
 
-msgid "Bottom of page"
-msgstr "Parte inferior de la página"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Crea una copia editable de esta versión que puedes cambiar y publicar."
 
@@ -6852,12 +6846,6 @@ msgstr "Elija un cliente"
 msgid "Choose a labor category or an employee"
 msgstr "Elegir una categoría de mano de obra o un empleado"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Elija una unidad de almacenamiento no neteable en esta ubicación para las piezas inspeccionadas."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Elija una unidad de almacenamiento no neteable en esta ubicación."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Selecciona una pieza que {itemReadableId} reemplaza. La regla se guarda en esa pieza con {itemReadableId} como su sucesor."
 
@@ -6872,6 +6860,12 @@ msgstr "Elegir un grupo"
 
 msgid "Choose a serial number"
 msgstr "Elige un número de serie"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Elija una unidad de almacenamiento en esta ubicación para las piezas inspeccionadas."
+
+msgid "Choose a storage unit at this location."
+msgstr "Elija una unidad de almacenamiento en esta ubicación."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -14438,6 +14432,7 @@ msgid "Hide"
 msgstr "Ocultar"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "Ocultar {0}"
 
@@ -14449,6 +14444,10 @@ msgstr "Ocultar número de cuenta"
 
 msgid "Hide Again"
 msgstr "Ocultar de nuevo"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "Ocultar todo en {0}"
 
 msgid "Hide block"
 msgstr "Ocultar bloque"
@@ -16225,6 +16224,9 @@ msgstr "Conservar la mía"
 
 msgid "Keep navigation open"
 msgstr "Mantener navegación abierta"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "Mantén uno u oculta el propio {moduleName}"
 
 msgid "Keep only items where…"
 msgstr "Mantener solo elementos donde..."
@@ -18209,6 +18211,7 @@ msgid "Move"
 msgstr "Mover"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "Mover {0}"
 
@@ -19630,9 +19633,6 @@ msgstr "No se encontraron módulos"
 msgid "No new notifications"
 msgstr "Sin notificaciones nuevas"
 
-msgid "No non-nettable storage units at this location"
-msgstr "No hay unidades de almacenamiento no neteables en esta ubicación"
-
 msgid "No notes"
 msgstr "Sin notas"
 
@@ -20002,6 +20002,9 @@ msgstr "Ninguna unidad de almacenamiento de esta ubicación contiene existencias
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "Ninguna unidad de almacenamiento presenta faltantes para órdenes de trabajo abiertas ni existencias negativas."
+
+msgid "No storage units at this location"
+msgstr "No hay unidades de almacenamiento en esta ubicación"
 
 msgid "No storage units or tracking numbers match."
 msgstr "No coinciden unidades de almacenamiento ni números de seguimiento."
@@ -24029,8 +24032,8 @@ msgstr "Fecha de recepción"
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Líneas recibidas de este proveedor con cantidad restante a devolver"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Las piezas recibidas que requieren inspección van a la unidad de almacenamiento de inspección. El stock rechazado pasa a la unidad de almacenamiento de rechazos. Ambas deben ser no neteables."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Las piezas recibidas que requieren inspección van a la unidad de almacenamiento de inspección. El stock rechazado pasa a la unidad de almacenamiento de rechazos. Para que su stock no cuente en la planificación, márquelas como no neteables en su propia configuración."
 
 msgid "Received Qty"
 msgstr "Cantidad Recibida"
@@ -27635,6 +27638,7 @@ msgid "Show"
 msgstr "Mostrar"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "Mostrar {0}"
 
@@ -27662,6 +27666,10 @@ msgstr "Mostrar todo"
 
 msgid "Show all hidden on this step"
 msgstr "Mostrar todo lo oculto en este paso"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "Mostrar todo en {0}"
 
 msgid "Show available batch numbers"
 msgstr "Muestra números de lote disponibles"
@@ -28645,6 +28653,10 @@ msgstr "Trayectoria del subensamble"
 
 msgid "Sub-Departments"
 msgstr "Sub-Departamentos"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "Submódulos de {0}"
 
 msgid "Subassembly"
 msgstr "Subensamble"

@@ -1118,9 +1118,6 @@ msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name}은(는) 비활성 상태입니다. 활성 보관 단위를 선택하세요."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name}은(는) 이제 MRP에 포함됩니다. MRP 제외 보관 단위를 선택하세요."
-
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
 
@@ -5927,9 +5924,6 @@ msgstr "두 테스트 모두 통과합니다. 미지원(§41(d)(4)(H)) 검토"
 msgid "Bottleneck"
 msgstr "병목"
 
-msgid "Bottom of page"
-msgstr "페이지 하단"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "이 버전의 편집 가능한 복사본을 분기하여 변경 및 게시할 수 있습니다."
 
@@ -6852,12 +6846,6 @@ msgstr "고객 선택"
 msgid "Choose a labor category or an employee"
 msgstr "노무 범주 또는 직원 선택"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "검사 대상 부품에는 이 위치의 MRP 제외 보관 단위를 선택하세요."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "이 위치의 MRP 제외 보관 단위를 선택하세요."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
@@ -6872,6 +6860,12 @@ msgstr "풀 선택"
 
 msgid "Choose a serial number"
 msgstr "시리얼 번호를 선택하십시오"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "검사 대상 부품에 대해 이 위치의 보관 단위를 선택하세요."
+
+msgid "Choose a storage unit at this location."
+msgstr "이 위치의 보관 단위를 선택하세요."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -14438,6 +14432,7 @@ msgid "Hide"
 msgstr "숨기기"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} 숨기기"
 
@@ -14449,6 +14444,10 @@ msgstr "계좌 번호 숨기기"
 
 msgid "Hide Again"
 msgstr "다시 숨기기"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "{0} 전체 숨기기"
 
 msgid "Hide block"
 msgstr "블록 숨기기"
@@ -16225,6 +16224,9 @@ msgstr "내 변경 사항 유지"
 
 msgid "Keep navigation open"
 msgstr "탐색 열어 두기"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "하나는 유지하거나 {moduleName} 자체를 숨기기"
 
 msgid "Keep only items where…"
 msgstr "...인 항목만 유지"
@@ -18209,6 +18211,7 @@ msgid "Move"
 msgstr "이동"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "{0} 이동"
 
@@ -19630,9 +19633,6 @@ msgstr "모듈이 없습니다"
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
-msgid "No non-nettable storage units at this location"
-msgstr "이 위치에 MRP 제외 보관 단위가 없습니다"
-
 msgid "No notes"
 msgstr "메모 없음"
 
@@ -20002,6 +20002,9 @@ msgstr "이 사업장의 보관 단위에는 재고가 없습니다."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "미결 작업 지시에 부족하거나 0 미만인 보관 단위가 없습니다."
+
+msgid "No storage units at this location"
+msgstr "이 위치에 보관 단위가 없습니다"
 
 msgid "No storage units or tracking numbers match."
 msgstr "일치하는 보관 단위 또는 추적 번호가 없습니다."
@@ -24029,8 +24032,8 @@ msgstr "입고일"
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "검사가 필요한 입고 부품은 검사 보관 단위로 갑니다. 반려된 재고는 반려품 보관 단위로 이동합니다. 둘 다 MRP 제외여야 합니다."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "검사가 필요한 입고 부품은 검사 보관 단위로 들어갑니다. 거부된 재고는 거부품 보관 단위로 이동합니다. 재고를 계획에서 제외하려면 각 보관 단위의 설정에서 MRP 제외로 지정하세요."
 
 msgid "Received Qty"
 msgstr "입고 수량"
@@ -27635,6 +27638,7 @@ msgid "Show"
 msgstr "표시"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0} 표시"
 
@@ -27662,6 +27666,10 @@ msgstr "모두 표시"
 
 msgid "Show all hidden on this step"
 msgstr "이 단계에서 모두 숨김 표시"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "{0} 전체 표시"
 
 msgid "Show available batch numbers"
 msgstr "가용 배치 번호 표시"
@@ -28645,6 +28653,10 @@ msgstr "소부조립품 경로"
 
 msgid "Sub-Departments"
 msgstr "하위 부서"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "{0}의 하위 모듈"
 
 msgid "Subassembly"
 msgstr "서브어셈블리"

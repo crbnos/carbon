@@ -1118,9 +1118,6 @@ msgstr "{name} ends {end} (was open-ended)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} is inactive. Choose an active storage unit."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} is nettable now. Choose a non-nettable storage unit."
-
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
 
@@ -5927,9 +5924,6 @@ msgstr "Both tests pass; consider Not funded (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Bottleneck"
 
-msgid "Bottom of page"
-msgstr "Bottom of page"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Branch an editable copy of this version that you can change and publish."
 
@@ -6852,12 +6846,6 @@ msgstr "Choose a customer"
 msgid "Choose a labor category or an employee"
 msgstr "Choose a labor category or an employee"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Choose a non-nettable storage unit at this location for inspected parts."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Choose a non-nettable storage unit at this location."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
@@ -6872,6 +6860,12 @@ msgstr "Choose a pool"
 
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Choose a storage unit at this location for inspected parts."
+
+msgid "Choose a storage unit at this location."
+msgstr "Choose a storage unit at this location."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -14438,6 +14432,7 @@ msgid "Hide"
 msgstr "Hide"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "Hide {0}"
 
@@ -14449,6 +14444,10 @@ msgstr "Hide account number"
 
 msgid "Hide Again"
 msgstr "Hide Again"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "Hide all in {0}"
 
 msgid "Hide block"
 msgstr "Hide block"
@@ -16225,6 +16224,9 @@ msgstr "Keep mine"
 
 msgid "Keep navigation open"
 msgstr "Keep navigation open"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "Keep one, or hide {moduleName} itself"
 
 msgid "Keep only items where…"
 msgstr "Keep only items where…"
@@ -18209,6 +18211,7 @@ msgid "Move"
 msgstr "Move"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "Move {0}"
 
@@ -19630,9 +19633,6 @@ msgstr "No modules found"
 msgid "No new notifications"
 msgstr "No new notifications"
 
-msgid "No non-nettable storage units at this location"
-msgstr "No non-nettable storage units at this location"
-
 msgid "No notes"
 msgstr "No notes"
 
@@ -20002,6 +20002,9 @@ msgstr "No storage unit at this location holds any stock."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "No storage unit is short for open jobs or below zero."
+
+msgid "No storage units at this location"
+msgstr "No storage units at this location"
 
 msgid "No storage units or tracking numbers match."
 msgstr "No storage units or tracking numbers match."
@@ -24029,8 +24032,8 @@ msgstr "Received Date"
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Received lines from this supplier with quantity remaining to return"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
 
 msgid "Received Qty"
 msgstr "Received Qty"
@@ -27635,6 +27638,7 @@ msgid "Show"
 msgstr "Show"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "Show {0}"
 
@@ -27662,6 +27666,10 @@ msgstr "Show All"
 
 msgid "Show all hidden on this step"
 msgstr "Show all hidden on this step"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "Show all in {0}"
 
 msgid "Show available batch numbers"
 msgstr "Show available batch numbers"
@@ -28645,6 +28653,10 @@ msgstr "Sub-assembly path"
 
 msgid "Sub-Departments"
 msgstr "Sub-Departments"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "Sub-modules of {0}"
 
 msgid "Subassembly"
 msgstr "Subassembly"

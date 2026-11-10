@@ -1118,9 +1118,6 @@ msgstr "{name} 在 {end} 结束（之前是开放式）"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} 已停用。请选择启用的存储单元。"
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} 现在计入MRP。请选择不计入MRP的存储单元。"
-
 msgid "{name} needs an account number."
 msgstr "{name} 需要账户编号。"
 
@@ -5927,9 +5924,6 @@ msgstr "两项测试都通过；考虑未资助 (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "瓶颈"
 
-msgid "Bottom of page"
-msgstr "页面底部"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "创建此版本的可编辑副本，您可以对其进行更改和发布。"
 
@@ -6852,12 +6846,6 @@ msgstr "选择客户"
 msgid "Choose a labor category or an employee"
 msgstr "选择人工类别或员工"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "请为需检验的零件选择此位置不计入MRP的存储单元。"
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "请选择此位置不计入MRP的存储单元。"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
@@ -6872,6 +6860,12 @@ msgstr "选择成本池"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "请为需检验的零件选择此地点的存储单元。"
+
+msgid "Choose a storage unit at this location."
+msgstr "请选择此地点的存储单元。"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -14438,6 +14432,7 @@ msgid "Hide"
 msgstr "隐藏"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "隐藏 {0}"
 
@@ -14449,6 +14444,10 @@ msgstr "隐藏账户号码"
 
 msgid "Hide Again"
 msgstr "再次隐藏"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "隐藏{0}中的全部"
 
 msgid "Hide block"
 msgstr "隐藏块"
@@ -16225,6 +16224,9 @@ msgstr "保留我的"
 
 msgid "Keep navigation open"
 msgstr "保持导航展开"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "至少保留一项，或隐藏{moduleName}本身"
 
 msgid "Keep only items where…"
 msgstr "仅保留满足以下条件的物料…"
@@ -18209,6 +18211,7 @@ msgid "Move"
 msgstr "移动"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "移动 {0}"
 
@@ -19630,9 +19633,6 @@ msgstr "未找到模块"
 msgid "No new notifications"
 msgstr "没有新通知"
 
-msgid "No non-nettable storage units at this location"
-msgstr "此位置没有不计入MRP的存储单元"
-
 msgid "No notes"
 msgstr "没有备注"
 
@@ -20002,6 +20002,9 @@ msgstr "此地点的存储单元中没有任何库存。"
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "没有存储单元因未结工单而缺料或库存为负。"
+
+msgid "No storage units at this location"
+msgstr "此地点没有存储单元"
 
 msgid "No storage units or tracking numbers match."
 msgstr "没有存储单元或追踪号与之匹配。"
@@ -24029,8 +24032,8 @@ msgstr "收货日期"
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "来自此供应商且还有数量待退货的已收行"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "需检验的收货零件进入检验存储单元。拒收库存移至拒收存储单元。两者都必须不计入MRP。"
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "需要检验的收货零件会进入检验存储单元。被拒收的库存会移至拒收存储单元。若不想让其库存计入计划，请在存储单元自身的设置中将其设为不计入MRP。"
 
 msgid "Received Qty"
 msgstr "已收货数量"
@@ -27635,6 +27638,7 @@ msgid "Show"
 msgstr "显示"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "显示 {0}"
 
@@ -27662,6 +27666,10 @@ msgstr "显示全部"
 
 msgid "Show all hidden on this step"
 msgstr "显示此步骤上隐藏的全部内容"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "显示{0}中的全部"
 
 msgid "Show available batch numbers"
 msgstr "显示可用批次号"
@@ -28645,6 +28653,10 @@ msgstr "子装配体路径"
 
 msgid "Sub-Departments"
 msgstr "子部门"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "{0}的子模块"
 
 msgid "Subassembly"
 msgstr "子装配件"

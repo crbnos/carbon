@@ -50167,6 +50167,12 @@ export default {
             $ref: "#/parameters/rowFilter.userModulePreference.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.userModulePreference.hiddenSubmodules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.submoduleOrder"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -50247,6 +50253,12 @@ export default {
             $ref: "#/parameters/rowFilter.userModulePreference.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.userModulePreference.hiddenSubmodules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.submoduleOrder"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -50279,6 +50291,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.userModulePreference.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.hiddenSubmodules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.submoduleOrder"
           },
           {
             $ref: "#/parameters/body.userModulePreference"
@@ -160833,7 +160851,9 @@ export default {
         "module",
         "position",
         "hidden",
-        "updatedAt"
+        "updatedAt",
+        "hiddenSubmodules",
+        "submoduleOrder"
       ],
       properties: {
         id: {
@@ -160871,6 +160891,20 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string"
+        },
+        hiddenSubmodules: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        submoduleOrder: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -220752,6 +220786,18 @@ export default {
     },
     "rowFilter.userModulePreference.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userModulePreference.hiddenSubmodules": {
+      name: "hiddenSubmodules",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userModulePreference.submoduleOrder": {
+      name: "submoduleOrder",
       required: false,
       in: "query",
       type: "string"

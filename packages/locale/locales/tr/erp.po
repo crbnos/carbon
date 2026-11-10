@@ -1118,9 +1118,6 @@ msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} pasif. Aktif bir depolama birimi seçin."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} artık MRP'ye dahil. MRP dışı bir depolama birimi seçin."
-
 msgid "{name} needs an account number."
 msgstr "{name} bir hesap numarasına ihtiyaç duyuyor."
 
@@ -5927,9 +5924,6 @@ msgstr "Her iki test geçti; Finansman sağlanmamış olduğunu düşünün (§4
 msgid "Bottleneck"
 msgstr "Darboğaz"
 
-msgid "Bottom of page"
-msgstr "Sayfa altı"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Bu sürümün düzenlenebilir bir kopyasını oluşturun, değiştirebilir ve yayınlayabilirsiniz."
 
@@ -6852,12 +6846,6 @@ msgstr "Müşteri seç"
 msgid "Choose a labor category or an employee"
 msgstr "Bir işçilik kategorisi veya bir çalışan seç"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Muayene edilen parçalar için bu konumda MRP dışı bir depolama birimi seçin."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Bu konumda MRP dışı bir depolama birimi seçin."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
@@ -6872,6 +6860,12 @@ msgstr "Bir havuz seç"
 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Muayene edilecek parçalar için bu konumda bir depolama birimi seçin."
+
+msgid "Choose a storage unit at this location."
+msgstr "Bu konumda bir depolama birimi seçin."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -14438,6 +14432,7 @@ msgid "Hide"
 msgstr "Gizle"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} Gizle"
 
@@ -14449,6 +14444,10 @@ msgstr "Hesap numarasını gizle"
 
 msgid "Hide Again"
 msgstr "Tekrar Gizle"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "{0} içindekilerin tümünü gizle"
 
 msgid "Hide block"
 msgstr "Bloğu gizle"
@@ -16225,6 +16224,9 @@ msgstr "Benimkini koru"
 
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "Birini tut veya {moduleName} modülünün kendisini gizle"
 
 msgid "Keep only items where…"
 msgstr "Yalnızca öğeleri sakla…"
@@ -18209,6 +18211,7 @@ msgid "Move"
 msgstr "Taşış"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "{0}'ı Taşı"
 
@@ -19630,9 +19633,6 @@ msgstr "Modül bulunamadı"
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
-msgid "No non-nettable storage units at this location"
-msgstr "Bu konumda MRP dışı depolama birimi yok"
-
 msgid "No notes"
 msgstr "Notlar yok"
 
@@ -20002,6 +20002,9 @@ msgstr "Bu lokasyondaki hiçbir depolama birimi stok tutmuyor."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "Açık iş emirleri için eksik olan veya sıfırın altına düşen depolama birimi yok."
+
+msgid "No storage units at this location"
+msgstr "Bu konumda depolama birimi yok"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Depolama birimleri veya takip numaraları eşleşmiyor."
@@ -24029,8 +24032,8 @@ msgstr "Mal kabul tarihi"
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Muayene gerektiren kabul edilen parçalar muayene depolama birimine gider. Reddedilen stok reddedilen depolama birimine taşınır. İkisi de MRP dışı olmalıdır."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Muayene gerektiren teslim alınan parçalar muayene depolama birimine gider. Reddedilen stok, ret depolama birimine taşınır. Stoklarının planlamaya girmemesi için onları kendi ayarlarında MRP dışı yapın."
 
 msgid "Received Qty"
 msgstr "Alınan Miktar"
@@ -27635,6 +27638,7 @@ msgid "Show"
 msgstr "Göster"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0}'ı göster"
 
@@ -27662,6 +27666,10 @@ msgstr "Tümünü göster"
 
 msgid "Show all hidden on this step"
 msgstr "Bu adımda gizli olanların tümünü göster"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "{0} içindekilerin tümünü göster"
 
 msgid "Show available batch numbers"
 msgstr "Kullanılabilir parti numaralarını göster"
@@ -28645,6 +28653,10 @@ msgstr "Alt-montaj yolu"
 
 msgid "Sub-Departments"
 msgstr "Alt Departmanlar"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "{0} alt modülleri"
 
 msgid "Subassembly"
 msgstr "Alt Montaj"
