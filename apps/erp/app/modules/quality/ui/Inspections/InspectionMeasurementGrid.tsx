@@ -9,9 +9,11 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   cn,
+  generateHTML,
   IconButton,
   Tabs,
   TabsList,
@@ -70,7 +72,14 @@ import InspectionGaugePicker from "./InspectionGaugePicker";
 /** A plan parameter: setup the inspector reads before measuring. */
 export type InspectionParameter = { id: string; key: string; value: string };
 
-type InspectionGridTab = "characteristics" | "parameters";
+type InspectionGridTab = "characteristics" | "parameters" | "instructions";
+
+// A document with nothing but empty paragraphs has no instructions to read.
+function hasWorkInstruction(doc: JSONContent | null | undefined) {
+  return (doc?.content ?? []).some(
+    (node) => node.type !== "paragraph" || (node.content?.length ?? 0) > 0
+  );
+}
 
 export type MeasurementSaveResult = {
   sampleId: string;
@@ -135,9 +144,13 @@ type InspectionMeasurementGridProps = {
   onActiveFeatureChange: (id: string | null) => void;
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
   primaryAction?: React.ReactNode;
-  // The plan's parameters (setup to read before measuring), shown on a
-  // Parameters tab beside the characteristics when the plan has any.
+  // The plan's parameters (setup to read before measuring), on a Parameters
+  // tab beside the characteristics. Passed only when the lot has a plan, so
+  // the tab is always there to find, empty or not.
   parameters?: InspectionParameter[];
+  // The plan's work instructions, on an Instructions tab. Passed with
+  // `parameters`, only when the lot has a plan.
+  workInstruction?: JSONContent | null;
   // Grid position -> sample id, owned by the view so it survives a remount
   // (Hide / Show drawing). A save still running in the old grid writes here,
   // so the new grid's next save reuses that sample instead of making another.
@@ -209,7 +222,8 @@ const InspectionMeasurementGrid = ({
   onActiveFeatureChange,
   onMeasurementSaved,
   primaryAction,
-  parameters = [],
+  parameters,
+  workInstruction,
   placementRef,
   onBusyChange
 }: InspectionMeasurementGridProps) => {
@@ -1240,8 +1254,8 @@ const InspectionMeasurementGrid = ({
     [cellValue, cellStatus, isFreedPosition, t]
   );
 
-  // Attribute pass/fail: a segmented, color-coded toggle. Each half is a
-  // full-height tap target (shop-floor friendly), green ✓ pass / red ✗ fail,
+  // Attribute pass/fail: the cell splits into two halves edge to edge, each a
+  // full-size tap target (shop-floor friendly), green ✓ pass / red ✗ fail,
   // filled when selected and tinted on hover otherwise. Shared by the display
   // cell AND the editable cell so opening a cell (keyboard nav / focus) keeps
   // the same buttons on screen instead of swapping them for an empty editor.
@@ -1291,49 +1305,51 @@ const InspectionMeasurementGrid = ({
           data-attribute
           data-feature-id={characteristic.featureId}
           data-sample-index={sampleIndex}
-          className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
+          className="-mx-4 -my-2 flex h-11 min-w-[88px] items-stretch"
         >
-          {/* h-9 + py-1 is the 44 px row height, the same as a reading's. */}
-          <div className="flex h-9 w-full min-w-[88px] max-w-[136px] items-stretch overflow-hidden rounded-md border border-border bg-card">
-            <button
-              type="button"
-              aria-label={t`Pass`}
-              aria-pressed={passed}
-              disabled={isReadOnly || bulkProgress !== null}
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                persistCell(characteristic, sampleIndex, { passed: "true" });
-              }}
-              className={cn(
-                "flex flex-1 items-center justify-center transition-[background-color,color,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
-                passed
-                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                  : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
-              )}
-            >
-              <LuCheck className="size-4" />
-            </button>
-            <button
-              type="button"
-              aria-label={t`Fail`}
-              aria-pressed={failed}
-              disabled={isReadOnly || bulkProgress !== null}
-              tabIndex={-1}
-              onClick={(e) => {
-                e.stopPropagation();
-                persistCell(characteristic, sampleIndex, { passed: "false" });
-              }}
-              className={cn(
-                "flex flex-1 items-center justify-center border-l border-border transition-[background-color,color,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
-                failed
-                  ? "bg-red-500/15 text-red-700 dark:text-red-400"
-                  : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
-              )}
-            >
-              <LuX className="size-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            aria-label={t`Pass`}
+            // Keep focus where it is: a press that focused the cell would
+            // select it and swap in its editor, unmounting this button before
+            // the click lands, so the first click recorded nothing.
+            onMouseDown={(e) => e.preventDefault()}
+            aria-pressed={passed}
+            disabled={isReadOnly || bulkProgress !== null}
+            tabIndex={-1}
+            onClick={(e) => {
+              e.stopPropagation();
+              persistCell(characteristic, sampleIndex, { passed: "true" });
+            }}
+            className={cn(
+              "flex flex-1 items-center justify-center transition-colors active:bg-accent/80 disabled:pointer-events-none disabled:opacity-50",
+              passed
+                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
+            )}
+          >
+            <LuCheck className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={t`Fail`}
+            onMouseDown={(e) => e.preventDefault()}
+            aria-pressed={failed}
+            disabled={isReadOnly || bulkProgress !== null}
+            tabIndex={-1}
+            onClick={(e) => {
+              e.stopPropagation();
+              persistCell(characteristic, sampleIndex, { passed: "false" });
+            }}
+            className={cn(
+              "flex flex-1 items-center justify-center border-l border-border transition-colors active:bg-accent/80 disabled:pointer-events-none disabled:opacity-50",
+              failed
+                ? "bg-red-500/15 text-red-700 dark:text-red-400"
+                : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
+            )}
+          >
+            <LuX className="size-4" />
+          </button>
         </div>
       );
     },
@@ -1907,11 +1923,9 @@ const InspectionMeasurementGrid = ({
     [isReadOnly, characteristics, persistCell, rowCount, t]
   );
 
-  const characteristicsTitle = hasFeatures
-    ? `${t`Characteristics`} (${characteristics.length})`
-    : t`Result`;
+  const characteristicsTitle = hasFeatures ? t`Characteristics` : t`Result`;
   const parameterTabs =
-    parameters.length > 0 ? (
+    parameters !== undefined ? (
       <Tabs
         value={tab}
         onValueChange={(value) => setTab(value as InspectionGridTab)}
@@ -1920,32 +1934,63 @@ const InspectionMeasurementGrid = ({
           <TabsTrigger value="characteristics">
             {characteristicsTitle}
           </TabsTrigger>
-          <TabsTrigger value="parameters">
-            {t`Parameters`} ({parameters.length})
-          </TabsTrigger>
+          <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
+          <TabsTrigger value="instructions">{t`Instructions`}</TabsTrigger>
         </TabsList>
       </Tabs>
     ) : null;
 
-  if (parameterTabs && tab === "parameters") {
+  if (parameters !== undefined && tab === "instructions") {
     return (
       <div className="flex h-full min-h-0 w-full flex-col">
         <div className="flex min-h-12 shrink-0 items-center px-4 py-2">
           {parameterTabs}
         </div>
-        <dl className="min-h-0 flex-1 divide-y divide-border overflow-auto border-t border-border">
-          {parameters.map((parameter) => (
+        {hasWorkInstruction(workInstruction) ? (
+          <div className="min-h-0 flex-1 overflow-auto border-t border-border px-4 py-4">
             <div
-              key={parameter.id}
-              className="flex items-baseline justify-between gap-4 px-4 py-2.5"
-            >
-              <dt className="text-sm text-muted-foreground">{parameter.key}</dt>
-              <dd className="text-right text-sm font-medium tabular-nums">
-                {parameter.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
+              className="prose max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(workInstruction as JSONContent)
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center border-t border-border p-8 text-center text-sm text-muted-foreground">
+            {t`This inspection plan has no work instructions.`}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (parameters !== undefined && tab === "parameters") {
+    return (
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <div className="flex min-h-12 shrink-0 items-center px-4 py-2">
+          {parameterTabs}
+        </div>
+        {parameters.length === 0 ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center border-t border-border p-8 text-center text-sm text-muted-foreground">
+            {t`This inspection plan has no parameters.`}
+          </div>
+        ) : (
+          <dl className="min-h-0 flex-1 divide-y divide-border overflow-auto border-t border-border">
+            {parameters.map((parameter) => (
+              <div
+                key={parameter.id}
+                className="flex items-baseline justify-between gap-4 px-4 py-2.5"
+              >
+                <dt className="text-sm text-muted-foreground">
+                  {parameter.key}
+                </dt>
+                <dd className="text-right text-sm font-medium tabular-nums">
+                  {parameter.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
     );
   }
@@ -1979,8 +2024,9 @@ const InspectionMeasurementGrid = ({
         if (featureId && hasFeatures) onActiveFeatureChange(featureId);
       }}
       // Header cells align to the top, so characteristic headers of
-      // different heights (a wrapped gauge chip) still line up.
-      className="flex h-full min-h-0 w-full flex-col [&_thead_th]:align-top"
+      // different heights (a wrapped gauge chip) still line up. The Table's
+      // last row (its empty footer) gets a bottom border to close the grid.
+      className="flex h-full min-h-0 w-full flex-col [&_thead_th]:align-top [&_tbody:last-of-type>tr:last-child]:border-b [&_tbody:last-of-type>tr:last-child]:border-border"
     >
       <Table<GridRow>
         // Pinning and the editor are per layout: remount on a switch.

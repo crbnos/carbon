@@ -1863,7 +1863,7 @@ msgstr "सेट नहीं"
 msgid "Notes"
 msgstr "नोट्स"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "अभी तक कुछ भी विफल नहीं हुआ है, इसलिए बताएँ कि इकाइयाँ अस्वीकृत क्यों हैं। सभी {0} इकाई(याँ) अस्वीकृत कर दी जाएँगी।"
 
@@ -1951,9 +1951,6 @@ msgstr "खुले जॉब"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "सब-असेंबली {0} खोलें: {1}"
-
-msgid "Opens in the ERP"
-msgstr "ERP में खुलता है"
 
 msgid "Operation due"
 msgstr "ऑपरेशन की नियत तिथि"
@@ -2285,6 +2282,9 @@ msgstr "पुनः कार्य का कारण"
 
 msgid "Receipt"
 msgstr "प्राप्ति"
+
+msgid "Receipt voided"
+msgstr "प्राप्ति अमान्य कर दी गई"
 
 msgid "Recent"
 msgstr "हाल ही में"
@@ -2952,7 +2952,7 @@ msgstr "तारीख प्रविष्टि विंडो से प�
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "पूरे {0} लॉट को गैर-अनुरूप के रूप में अस्वीकार कर दिया जाएगा — अब तक {passes} सैंपल किए गए उत्तीर्ण और {fails} विफलता(एं)। नीचे की इकाइयों को स्क्रैप या पुनः कार्य के लिए निर्देशित करें, या केवल निर्णय रिकॉर्ड करें।"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "निरीक्षण विफल रहा: {passes} नमूने उत्तीर्ण हुए और {fails} विफल रहे। सभी {0} इकाई(याँ) अस्वीकृत कर दी जाएँगी।"
 
@@ -3016,6 +3016,12 @@ msgstr "इस बैच के पास कोई कार्य निर्
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं के लिए दृश्यमान होगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
+
+msgid "This inspection plan has no parameters."
+msgstr "इस निरीक्षण योजना में कोई पैरामीटर नहीं है।"
+
+msgid "This inspection plan has no work instructions."
+msgstr "इस निरीक्षण योजना में कोई कार्य निर्देश नहीं है।"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "यह पास / फ़ेल जाँच है। P या F दबाएँ।"

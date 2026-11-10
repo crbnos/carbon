@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261106195705",
+  "schemaVersion": "20261109231722",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-06T20:16:26.878Z",
+  "exportedAt": "2026-11-10T05:54:24.886Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -3038,7 +3038,7 @@
         "id",
         "companyId",
         "partId",
-        "drawingNumber",
+        "name",
         "version",
         "storagePath",
         "fileName",
@@ -3056,7 +3056,26 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "modelUploadId"
+        "modelUploadId",
+        "status",
+        "rootInspectionDocumentId",
+        "workInstruction"
+      ]
+    },
+    {
+      "name": "inspectionDocumentParameter",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectionDocumentId",
+        "companyId",
+        "key",
+        "value",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -5334,7 +5353,9 @@
         "sourceDocument",
         "sourceDocumentId",
         "sourceDocumentLineId",
-        "sourceDocumentReadableId"
+        "sourceDocumentReadableId",
+        "workCenterId",
+        "assignee"
       ]
     },
     {
@@ -5393,6 +5414,21 @@
         "updatedAt",
         "gaugeId",
         "gaugeRecordedAt"
+      ]
+    },
+    {
+      "name": "inspectionTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectionId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "previousStatus"
       ]
     },
     {

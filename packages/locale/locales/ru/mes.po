@@ -1863,7 +1863,7 @@ msgstr "Не установлено"
 msgid "Notes"
 msgstr "Примечания"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Отказов пока нет, поэтому укажите причину, по которой единицы отклонены. Все единицы ({0}) будут отклонены."
 
@@ -1951,9 +1951,6 @@ msgstr "Открытые производственные заказы"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
-
-msgid "Opens in the ERP"
-msgstr "Откроется в ERP"
 
 msgid "Operation due"
 msgstr "Срок операции"
@@ -2285,6 +2282,9 @@ msgstr "Причина доработки"
 
 msgid "Receipt"
 msgstr "Поступление"
+
+msgid "Receipt voided"
+msgstr "Поступление аннулировано"
 
 msgid "Recent"
 msgstr "Недавние"
@@ -2952,7 +2952,7 @@ msgstr "Дата находится перед окном ввода. Причи
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "Вся партия {0} будет отклонена как несоответствующая — {passes} успешных прохождений и {fails} отказов до сих пор. Отправьте единицы ниже в брак или на доработку, или только запишите результат."
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "Контроль не пройден: прошли образцы — {passes}, не прошли — {fails}. Все единицы ({0}) будут отклонены."
 
@@ -3016,6 +3016,12 @@ msgstr "Эта серия не имеет рабочих инструкций."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
+
+msgid "This inspection plan has no parameters."
+msgstr "В этом плане контроля нет параметров."
+
+msgid "This inspection plan has no work instructions."
+msgstr "В этом плане контроля нет рабочих инструкций."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Это проверка «годен / не годен». Нажмите P или F."

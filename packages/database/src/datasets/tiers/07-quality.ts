@@ -476,6 +476,8 @@ async function insertPlanDocument(
   const documentId = await insertId(ctx, "inspectionDocument", {
     partId: itemId,
     name: spec.name,
+    // Receipts and jobs use it, so it is the plan's published version.
+    status: "Active",
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
     samplingInspectionLevel: rule.inspectionLevel,

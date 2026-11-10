@@ -6,6 +6,8 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { prefillInspectionSamples } from "@carbon/database/quality";
+import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
@@ -65,6 +67,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
   const { id } = params;
   invariant(id, "id is required");
+
+  // A serial lot whose plan inspects every unit gets every unit as a sample
+  // up front, so the inspector records results without scanning. Scoped to
+  // the company inside the engine; a lot of another company is left alone.
+  await prefillInspectionSamples(getDatabaseClient(), {
+    inspectionId: id,
+    companyId,
+    userId
+  });
 
   const [inspection, settings, issueTypes] = await Promise.all([
     getInspection(client, id),
@@ -166,6 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     name?: string | null;
     content?: { pdfUrl?: string | null };
     model?: { modelUploadId: string; modelPath: string | null } | null;
+    workInstruction?: JSONContent | null;
   } | null;
 
   return data({
@@ -194,6 +206,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })),
     documentName: doc?.name ?? null,
     parameters: parameters.data ?? [],
+    workInstruction: doc?.workInstruction ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,
     model: doc?.model ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
@@ -227,6 +240,7 @@ export default function InspectionExecutionRoute() {
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
       parameters={loaderData.parameters}
+      workInstruction={loaderData.workInstruction as JSONContent | null}
       pdfUrl={loaderData.pdfUrl}
       model={loaderData.model}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}

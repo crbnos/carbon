@@ -4,7 +4,9 @@
 
 import { useCarbon } from "@carbon/auth";
 import { serviceErrorMessage, useAction } from "@carbon/query";
+import type { JSONContent } from "@carbon/react";
 import {
+  Badge,
   Button,
   Combobox,
   cn,
@@ -13,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  generateHTML,
   HStack,
   IconButton,
   Input,
@@ -27,12 +30,16 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   toastError,
   useDebounce,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { Editor } from "@carbon/react/Editor";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -76,15 +83,25 @@ import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { useModelUpload, usePermissions, useUser } from "~/hooks";
+import { VersionMenu } from "~/components/VersionMenu";
+import {
+  useImageUpload,
+  useModelUpload,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
+import type {
+  BalloonRegionAnalysis,
+  InspectionDocumentStatus
+} from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
 import type { InspectionDocumentContent } from "~/modules/quality/types";
 import { procedureStepType } from "~/modules/shared/shared.models";
 import type { action as saveAction } from "~/routes/x+/inspection-document+/$id.save";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
+import QualityDocumentStatus from "../Documents/QualityDocumentStatus";
 import {
   AUTOSAVE_DELAY_MS,
   hasUnsavedRows,
@@ -167,6 +184,8 @@ type InspectionDocumentEditorProps = {
   gaugeTypes: Array<{ id: string; name: string }>;
   // Fixed key/value pairs the inspector reads on every lot of the plan.
   parameters: Array<{ id: string; key: string; value: string }>;
+  // Rich text the inspector reads on every lot of the plan.
+  workInstruction: JSONContent | null;
   // The document's default sampling rule (fallback for features without a
   // rule) and the company's sampling standard for previews.
   sampling: SamplingRule | null;
@@ -174,6 +193,16 @@ type InspectionDocumentEditorProps = {
   // A plan made from a model's PMI holds the model instead of a PDF: the top
   // pane shows the model and the PDF tools are hidden.
   model: { modelUploadId: string; modelPath: string | null } | null;
+  // Only a Draft version can be edited; the versions of the plan, newest first.
+  version: number;
+  status: InspectionDocumentStatus;
+  versions: Array<{
+    id: string;
+    name: string | null;
+    fileName: string | null;
+    version: number;
+    status: InspectionDocumentStatus;
+  }>;
 };
 
 type PdfMetrics = {
@@ -369,21 +398,6 @@ const featureTypeOptions = procedureStepType.map((t) => ({
 
 // Compact display of a sampling rule ("AQL 1 · II · Normal"); null = no rule
 // (a feature inherits the document default; the document falls back to All).
-function samplingRuleSummary(rule: SamplingRule): string | null {
-  switch (rule.samplingPlanType) {
-    case "All":
-      return "100%";
-    case "First":
-      return `First ${rule.samplingSampleSize ?? 1}`;
-    case "Percentage":
-      return `${rule.samplingPercentage ?? 100}%`;
-    case "AQL":
-      return `AQL ${rule.samplingAql ?? 1} · ${rule.samplingInspectionLevel ?? "II"} · ${rule.samplingSeverity ?? "Normal"}`;
-    default:
-      return null;
-  }
-}
-
 type FeatureMutationFn = (
   accessorKey: string,
   newValue: string,
@@ -667,13 +681,46 @@ export default function InspectionDocumentEditor({
   unitOfMeasures,
   gaugeTypes,
   parameters: initialParameters,
+  workInstruction,
   sampling,
   samplingStandard,
-  model
+  model,
+  version,
+  status,
+  versions
 }: InspectionDocumentEditorProps) {
   const { t } = useLingui();
+  // A sampling rule as the inspector would say it: "Inspect All", "First 2".
+  // Null when the rule is unset (a characteristic then inherits the plan's).
+  const samplingRuleSummary = useCallback(
+    (rule: SamplingRule): string | null => {
+      switch (rule.samplingPlanType) {
+        case "All":
+          return t`Inspect All`;
+        case "First": {
+          const count = rule.samplingSampleSize ?? 1;
+          return t`First ${count}`;
+        }
+        case "Percentage": {
+          const percentage = rule.samplingPercentage ?? 100;
+          return t`${percentage}%`;
+        }
+        case "AQL":
+          return `AQL ${rule.samplingAql ?? 1} · ${rule.samplingInspectionLevel ?? "II"} · ${rule.samplingSeverity ?? "Normal"}`;
+        default:
+          return null;
+      }
+    },
+    [t]
+  );
   const navigate = useNavigate();
   const permissions = usePermissions();
+  // Active and Archived versions are what lots were inspected against.
+  const isLocked = status !== "Draft";
+  const newVersionFetcher = useFetcher();
+  const activateFetcher = useAction({
+    onSuccess: () => toast.success(t`Version published`)
+  });
   const [items] = useItems();
   const deleteDisclosure = useDisclosure();
   // A model plan: the characteristic whose PMI item the model shows.
@@ -715,9 +762,30 @@ export default function InspectionDocumentEditor({
     () => JSON.stringify(sendableParameters(parameterRows)),
     [parameterRows]
   );
-  const [bottomTab, setBottomTab] = useState<"characteristics" | "parameters">(
-    "characteristics"
+  const [bottomTab, setBottomTab] = useState<
+    "characteristics" | "parameters" | "instructions"
+  >("characteristics");
+  // Saved on its own, debounced, like the name: the autosave carries the
+  // characteristics and balloons.
+  const workInstructionFetcher = useAction();
+  // What was typed here, so switching tabs does not drop an unsaved edit.
+  const [typedWorkInstruction, setTypedWorkInstruction] =
+    useState<JSONContent | null>(null);
+  const debouncedSaveWorkInstruction = useDebounce(
+    (content: JSONContent) => {
+      workInstructionFetcher.submit(
+        { workInstruction: content },
+        {
+          method: "post",
+          action: path.to.updateInspectionDocumentWorkInstruction(diagramId),
+          encType: "application/json"
+        }
+      );
+    },
+    1000,
+    true
   );
+  const onUploadImage = useImageUpload("inspection-documents");
   const [samplingTarget, setSamplingTarget] = useState<
     "document" | string | null
   >(null);
@@ -2347,7 +2415,7 @@ export default function InspectionDocumentEditor({
   // drag saves when it ends, and one save at a time: an edit made while a save
   // is in flight is picked up when it returns. Someone without update
   // permission can still look around, but nothing they change is saved.
-  const canUpdate = permissions.can("update", "quality");
+  const canUpdate = permissions.can("update", "quality") && !isLocked;
   const isSaving = fetcher.state !== "idle";
   const hasUnsavedChanges =
     canUpdate &&
@@ -2506,7 +2574,10 @@ export default function InspectionDocumentEditor({
 
   const hasPdf = pdfFile !== null || pdfUrl !== "";
   // Without a document the table has the page to itself.
-  const tableFillsPane = !hasDocument || featuresTableExpanded;
+  const onCharacteristics = bottomTab === "characteristics";
+  // Parameters and instructions have no drawing: they fill the pane.
+  const tableFillsPane =
+    !hasDocument || featuresTableExpanded || !onCharacteristics;
   const isPdfReady = hasPdf && (numPages > 0 || pdfMetrics !== null);
   const isOverlayReady = isPdfReady && containerWidth > 0 && overlayHeight > 0;
 
@@ -2750,22 +2821,23 @@ export default function InspectionDocumentEditor({
         id: "actions",
         header: t`Actions`,
         size: 80,
-        cell: ({ row }) => (
-          <IconButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={t`Delete parameter ${row.original.key}`}
-            icon={<LuTrash2 />}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteParameter(row.original.id);
-            }}
-          />
-        )
+        cell: ({ row }) =>
+          canUpdate && (
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={t`Delete parameter ${row.original.key}`}
+              icon={<LuTrash2 />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteParameter(row.original.id);
+              }}
+            />
+          )
       }
     ],
-    [handleDeleteParameter, t]
+    [canUpdate, handleDeleteParameter, t]
   );
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
@@ -2880,7 +2952,7 @@ export default function InspectionDocumentEditor({
                 {t`Show`}
               </Button>
             )}
-            {!model && !row.original.balloonId && (
+            {canUpdate && !model && !row.original.balloonId && (
               <Button
                 type="button"
                 variant="outline"
@@ -2895,40 +2967,43 @@ export default function InspectionDocumentEditor({
                 {t`Balloon`}
               </Button>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-label={t`More actions`}
-                  icon={<LuEllipsisVertical />}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {row.original.balloonId && (
+            {canUpdate && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={t`More actions`}
+                    icon={<LuEllipsisVertical />}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {row.original.balloonId && (
+                    <DropdownMenuItem
+                      onClick={() => handleUnballoon(row.original.featureId)}
+                    >
+                      <LuRectangleHorizontal className="mr-2 size-4" />
+                      {t`Unballoon`}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
-                    onClick={() => handleUnballoon(row.original.featureId)}
+                    destructive
+                    onClick={() => handleDeleteFeature(row.original.featureId)}
                   >
-                    <LuRectangleHorizontal className="mr-2 size-4" />
-                    {t`Unballoon`}
+                    <LuTrash2 className="mr-2 size-4" />
+                    {t`Delete`}
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  destructive
-                  onClick={() => handleDeleteFeature(row.original.featureId)}
-                >
-                  <LuTrash2 className="mr-2 size-4" />
-                  {t`Delete`}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </HStack>
         )
       }
     ],
     [
+      canUpdate,
       handleDeleteFeature,
       handlePlaceFeatureOnDrawing,
       handleUnballoon,
@@ -2937,6 +3012,7 @@ export default function InspectionDocumentEditor({
       modelFeatureId,
       uomCodeToName,
       gaugeTypeIdToName,
+      samplingRuleSummary,
       t
     ]
   );
@@ -3056,14 +3132,15 @@ export default function InspectionDocumentEditor({
       />
 
       {/* Header bar — min-height only so controls are not clipped when the row wraps */}
-      <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
+      <div className="grid min-h-[var(--header-height)] flex-shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
         <div className="flex min-w-0 items-center gap-1 pr-2">
           <Input
             aria-label={t`Diagram title`}
             borderless
             value={title}
             placeholder={t`Untitled Diagram`}
-            className="field-sizing-content min-w-[6rem] max-w-[28rem] font-semibold text-base truncate"
+            className="field-sizing-content w-auto min-w-[6rem] max-w-[28rem] font-semibold text-base truncate"
+            readOnly={!canUpdate}
             onChange={(e) => {
               setTitle(e.target.value);
               debouncedSaveName(e.target.value);
@@ -3094,7 +3171,7 @@ export default function InspectionDocumentEditor({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    disabled={uploading}
+                    disabled={uploading || !canUpdate}
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <LuUpload className="mr-2 size-4" />
@@ -3122,44 +3199,30 @@ export default function InspectionDocumentEditor({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Tabs
-            value={bottomTab}
-            onValueChange={(value) =>
-              setBottomTab(value as "characteristics" | "parameters")
-            }
-            className="ml-3"
-          >
-            <TabsList className="max-md:w-auto max-md:px-0">
-              <TabsTrigger value="characteristics">
-                {t`Characteristics`}
-              </TabsTrigger>
-              <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {hasDocument && (
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-expanded={featuresTableExpanded}
-              aria-label={
-                featuresTableExpanded
-                  ? t`Collapse characteristics table`
-                  : t`Expand characteristics table`
-              }
-              icon={
-                featuresTableExpanded ? (
-                  <LuChevronDown className="h-4 w-4" />
-                ) : (
-                  <LuChevronUp className="h-4 w-4" />
-                )
-              }
-              onClick={() => setFeaturesTableExpanded((v) => !v)}
-            />
-          )}
         </div>
-        <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
-          {!canUpdate ? (
+        <Tabs
+          value={bottomTab}
+          onValueChange={(value) =>
+            setBottomTab(
+              value as "characteristics" | "parameters" | "instructions"
+            )
+          }
+          className="justify-self-center"
+        >
+          <TabsList className="max-md:w-auto max-md:px-0">
+            <TabsTrigger value="characteristics">
+              {t`Characteristics`}
+            </TabsTrigger>
+            <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
+            <TabsTrigger value="instructions">{t`Instructions`}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <HStack spacing={2} className="justify-end justify-self-end">
+          {isLocked ? (
+            <span className="text-xs text-muted-foreground">
+              {t`Make a new version to change this plan`}
+            </span>
+          ) : !canUpdate ? (
             <span className="text-xs text-muted-foreground">
               {t`View only — changes are not saved`}
             </span>
@@ -3170,121 +3233,67 @@ export default function InspectionDocumentEditor({
           ) : hasSaved ? (
             <span className="text-xs text-muted-foreground">{t`Saved`}</span>
           ) : null}
-          {bottomTab === "characteristics" ? (
-            <Button
-              type="button"
+          <div className="flex shrink-0 items-center gap-1">
+            <VersionMenu
               variant="secondary"
-              leftIcon={<LuPlus className="h-4 w-4" />}
-              onClick={handleAddFeature}
-            >
-              {t`Add Characteristic`}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={<LuPlus className="h-4 w-4" />}
-              onClick={handleAddParameter}
-            >
-              {t`Add Parameter`}
-            </Button>
-          )}
-          {/* Selectors and zoom act on a drawing. */}
-          {hasPdf && (
-            <Button
-              variant={placing ? "primary" : "secondary"}
-              leftIcon={<LuRectangleHorizontal />}
-              onClick={() => {
-                setPlacing((v) => {
-                  const next = !v;
-                  if (next) {
-                    setPlacingAnnotation(false);
-                    setZoomBoxMode(false);
-                    setPlacingFeatureId(null);
-                  }
-                  return next;
-                });
-              }}
-              isDisabled={!isOverlayReady}
-            >
-              {placing ? t`Drag to place on drawing` : t`Add Selector`}
-            </Button>
-          )}
-          <Button
-            type="button"
-            variant="secondary"
-            leftIcon={<LuSlidersHorizontal className="h-4 w-4" />}
-            onClick={() => setSamplingTarget("document")}
-          >
-            {samplingRuleSummary(docSampling) ?? t`Sampling`}
-          </Button>
-          {hasPdf && (
-            <HStack
-              spacing={0}
-              className="ml-1 rounded-md border bg-background px-1 py-1"
-            >
-              <IconButton
-                type="button"
-                variant={zoomBoxMode ? "active" : "ghost"}
-                size="sm"
-                aria-label={zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
-                icon={<LuScan />}
-                isDisabled={!isOverlayReady}
-                onClick={() =>
-                  setZoomBoxMode((v) => {
-                    const next = !v;
-                    if (next) {
-                      setPlacing(false);
-                      setPlacingAnnotation(false);
+              label={`V${version}`}
+              versions={versions}
+              currentVersionId={diagramId}
+              getKey={(v) => v.id}
+              getHref={(v) => path.to.inspectionDocument(v.id)}
+              renderLabel={(v) => (
+                <>
+                  <Badge variant="outline">V{v.version}</Badge>
+                  <span>{v.name ?? v.fileName}</span>
+                </>
+              )}
+              renderStatus={(v) => <QualityDocumentStatus status={v.status} />}
+              isNewVersionDisabled={newVersionFetcher.state !== "idle"}
+              onNewVersion={
+                permissions.can("create", "quality")
+                  ? () =>
+                      newVersionFetcher.submit(
+                        {},
+                        {
+                          method: "post",
+                          action: path.to.inspectionDocumentVersion(diagramId)
+                        }
+                      )
+                  : undefined
+              }
+            />
+            {status !== "Draft" && <QualityDocumentStatus status={status} />}
+            {status !== "Active" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    isLoading={activateFetcher.state !== "idle"}
+                    isDisabled={
+                      !permissions.can("update", "quality") ||
+                      activateFetcher.state !== "idle"
                     }
-                    return next;
-                  })
-                }
-              />
-              <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
-              <IconButton
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label={t`Zoom out`}
-                icon={<LuMinus />}
-                onClick={() =>
-                  setZoomScale((z) =>
-                    Math.max(0.5, Number((z - 0.1).toFixed(2)))
-                  )
-                }
-              />
-              <span className="min-w-14 select-none text-center text-sm font-medium">
-                {Math.round(zoomScale * 100)}%
-              </span>
-              <IconButton
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label={t`Zoom in`}
-                icon={<LuPlus />}
-                onClick={() =>
-                  setZoomScale((z) => Math.min(3, Number((z + 0.1).toFixed(2))))
-                }
-              />
-              <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
-              <IconButton
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label={t`Reset view`}
-                icon={<LuMaximize />}
-                onClick={() => {
-                  setZoomScale(1);
-                  requestAnimationFrame(() => {
-                    if (!containerRef.current) return;
-                    containerRef.current.scrollLeft = 0;
-                    containerRef.current.scrollTop = 0;
-                  });
-                }}
-              />
-            </HStack>
-          )}
+                    onClick={() =>
+                      activateFetcher.submit(
+                        {},
+                        {
+                          method: "post",
+                          action: path.to.inspectionDocumentActivate(diagramId)
+                        }
+                      )
+                    }
+                  >
+                    {status === "Archived" ? t`Reactivate` : t`Publish`}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {status === "Archived"
+                    ? t`Makes this version Active again and archives the Active version.`
+                    : t`This version is a Draft. Publishing makes it Active and archives the Active version.`}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </HStack>
       </div>
 
@@ -3337,9 +3346,12 @@ export default function InspectionDocumentEditor({
           {/* PDF viewer — outer measures width, inner fills container */}
           {hasDocument && (
             <div
-              className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
-                featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1"
-              }`}
+              className={cn(
+                "flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted",
+                featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1",
+                // Kept mounted so the drawing keeps its zoom and scroll.
+                !onCharacteristics && "hidden"
+              )}
               style={{
                 ...(featuresTableExpanded
                   ? { height: pdfPaneHeightPx }
@@ -3347,37 +3359,146 @@ export default function InspectionDocumentEditor({
                 minWidth: "100%"
               }}
             >
-              {hasPdf && documentPageCount > 1 ? (
-                <div
-                  role="navigation"
-                  aria-label={t`PDF pages`}
-                  className="flex shrink-0 items-center justify-center gap-3 border-b border-border bg-card px-3 py-2.5 shadow-sm"
-                >
-                  <IconButton
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    aria-label={t`Previous page`}
-                    icon={<LuChevronLeft className="h-4 w-4" />}
-                    isDisabled={pdfViewPage <= 1}
-                    onClick={() => setPdfViewPage((p) => Math.max(1, p - 1))}
-                  />
-                  <span className="min-w-[8.5rem] select-none text-center text-sm font-medium tabular-nums text-foreground">
-                    {t`Page ${pdfViewPage} of ${documentPageCount}`}
-                  </span>
-                  <IconButton
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    aria-label={t`Next page`}
-                    icon={<LuChevronRight className="h-4 w-4" />}
-                    isDisabled={pdfViewPage >= documentPageCount}
-                    onClick={() =>
-                      setPdfViewPage((p) => Math.min(documentPageCount, p + 1))
-                    }
-                  />
+              {hasPdf && (
+                <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border bg-card px-2 py-1.5">
+                  <div className="flex items-center">
+                    {canUpdate && (
+                      <Button
+                        size="sm"
+                        variant={placing ? "primary" : "secondary"}
+                        leftIcon={<LuRectangleHorizontal />}
+                        onClick={() => {
+                          setPlacing((v) => {
+                            const next = !v;
+                            if (next) {
+                              setPlacingAnnotation(false);
+                              setZoomBoxMode(false);
+                              setPlacingFeatureId(null);
+                            }
+                            return next;
+                          });
+                        }}
+                        isDisabled={!isOverlayReady}
+                      >
+                        {placing
+                          ? t`Drag to place on drawing`
+                          : t`Add Selector`}
+                      </Button>
+                    )}
+                  </div>
+                  {documentPageCount > 1 ? (
+                    <nav
+                      aria-label={t`PDF pages`}
+                      className="flex items-center gap-2"
+                    >
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t`Previous page`}
+                        icon={<LuChevronLeft className="h-4 w-4" />}
+                        isDisabled={pdfViewPage <= 1}
+                        onClick={() =>
+                          setPdfViewPage((p) => Math.max(1, p - 1))
+                        }
+                      />
+                      <span className="min-w-[8.5rem] select-none text-center text-sm font-medium tabular-nums text-foreground">
+                        {t`Page ${pdfViewPage} of ${documentPageCount}`}
+                      </span>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t`Next page`}
+                        icon={<LuChevronRight className="h-4 w-4" />}
+                        isDisabled={pdfViewPage >= documentPageCount}
+                        onClick={() =>
+                          setPdfViewPage((p) =>
+                            Math.min(documentPageCount, p + 1)
+                          )
+                        }
+                      />
+                    </nav>
+                  ) : (
+                    <span />
+                  )}
+                  <div className="flex items-center justify-end">
+                    <HStack
+                      spacing={0}
+                      className="rounded-md border bg-background px-0.5 py-0.5"
+                    >
+                      <IconButton
+                        type="button"
+                        variant={zoomBoxMode ? "active" : "ghost"}
+                        size="sm"
+                        aria-label={zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
+                        icon={<LuScan />}
+                        isDisabled={!isOverlayReady}
+                        onClick={() =>
+                          setZoomBoxMode((v) => {
+                            const next = !v;
+                            if (next) {
+                              setPlacing(false);
+                              setPlacingAnnotation(false);
+                            }
+                            return next;
+                          })
+                        }
+                      />
+                      <span
+                        className="mx-0.5 h-4 w-px bg-border"
+                        aria-hidden="true"
+                      />
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t`Zoom out`}
+                        icon={<LuMinus />}
+                        onClick={() =>
+                          setZoomScale((z) =>
+                            Math.max(0.5, Number((z - 0.1).toFixed(2)))
+                          )
+                        }
+                      />
+                      <span className="min-w-14 select-none text-center text-sm font-medium tabular-nums">
+                        {Math.round(zoomScale * 100)}%
+                      </span>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t`Zoom in`}
+                        icon={<LuPlus />}
+                        onClick={() =>
+                          setZoomScale((z) =>
+                            Math.min(3, Number((z + 0.1).toFixed(2)))
+                          )
+                        }
+                      />
+                      <span
+                        className="mx-0.5 h-4 w-px bg-border"
+                        aria-hidden="true"
+                      />
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t`Reset view`}
+                        icon={<LuMaximize />}
+                        onClick={() => {
+                          setZoomScale(1);
+                          requestAnimationFrame(() => {
+                            if (!containerRef.current) return;
+                            containerRef.current.scrollLeft = 0;
+                            containerRef.current.scrollTop = 0;
+                          });
+                        }}
+                      />
+                    </HStack>
+                  </div>
                 </div>
-              ) : null}
+              )}
               <div
                 ref={containerRef}
                 className="relative min-h-0 min-w-full flex-1 overflow-auto"
@@ -3977,7 +4098,7 @@ export default function InspectionDocumentEditor({
             </div>
           )}
 
-          {hasDocument && featuresTableExpanded ? (
+          {onCharacteristics && hasDocument && featuresTableExpanded ? (
             <div
               role="separator"
               aria-orientation="horizontal"
@@ -4000,17 +4121,88 @@ export default function InspectionDocumentEditor({
               hasDocument && "rounded-lg"
             )}
             style={
-              hasDocument && featuresTableExpanded && editorStackHeightPx > 0
+              onCharacteristics &&
+              hasDocument &&
+              featuresTableExpanded &&
+              editorStackHeightPx > 0
                 ? { minHeight: editorStackHeightPx * 0.5 }
                 : undefined
             }
           >
+            {(onCharacteristics ||
+              (bottomTab === "parameters" && canUpdate)) && (
+              <div className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-1.5">
+                {onCharacteristics && hasDocument && (
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-expanded={featuresTableExpanded}
+                    aria-label={
+                      featuresTableExpanded
+                        ? t`Collapse characteristics table`
+                        : t`Expand characteristics table`
+                    }
+                    icon={
+                      featuresTableExpanded ? (
+                        <LuChevronDown className="h-4 w-4" />
+                      ) : (
+                        <LuChevronUp className="h-4 w-4" />
+                      )
+                    }
+                    onClick={() => setFeaturesTableExpanded((v) => !v)}
+                  />
+                )}
+                <div className="ml-auto flex items-center gap-2">
+                  {onCharacteristics ? (
+                    <>
+                      <Button
+                        size="sm"
+                        type="button"
+                        variant="secondary"
+                        leftIcon={<LuSlidersHorizontal className="h-4 w-4" />}
+                        isDisabled={!canUpdate}
+                        onClick={() => setSamplingTarget("document")}
+                      >
+                        {samplingRuleSummary(docSampling) ?? t`Inspect All`}
+                      </Button>
+                      {canUpdate && (
+                        <Button
+                          size="sm"
+                          type="button"
+                          variant="secondary"
+                          leftIcon={<LuPlus className="h-4 w-4" />}
+                          onClick={handleAddFeature}
+                        >
+                          {t`Add Characteristic`}
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    canUpdate && (
+                      <Button
+                        size="sm"
+                        type="button"
+                        variant="secondary"
+                        leftIcon={<LuPlus className="h-4 w-4" />}
+                        onClick={handleAddParameter}
+                      >
+                        {t`Add Parameter`}
+                      </Button>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
             <div
-              className={
+              className={cn(
                 tableFillsPane
                   ? "min-h-0 flex-1 overflow-auto"
-                  : "overflow-auto"
-              }
+                  : "overflow-auto",
+                // A flush grid has no frame, so its last row closes it.
+                !hasDocument &&
+                  "[&_tbody>tr:last-child]:border-b [&_tbody>tr:last-child]:border-border"
+              )}
             >
               {/* Keyed: Grid records its column order on mount, so one
                   instance reused across tabs would keep the other's order. */}
@@ -4020,9 +4212,10 @@ export default function InspectionDocumentEditor({
                   data={featureRows}
                   columns={featureColumns}
                   editableComponents={featureEditableComponents}
+                  canEdit={canUpdate}
                   contained={!hasDocument}
                 />
-              ) : (
+              ) : bottomTab === "parameters" ? (
                 <Grid<ParameterRow>
                   key="parameters"
                   data={parameterRows}
@@ -4031,11 +4224,36 @@ export default function InspectionDocumentEditor({
                   canEdit={canUpdate}
                   contained={!hasDocument}
                 />
+              ) : canUpdate ? (
+                <Editor
+                  key="instructions"
+                  initialValue={
+                    typedWorkInstruction ??
+                    workInstruction ??
+                    ({} as JSONContent)
+                  }
+                  onUpload={onUploadImage}
+                  onChange={(content) => {
+                    setTypedWorkInstruction(content);
+                    debouncedSaveWorkInstruction(content);
+                  }}
+                  // A toolbar flush with the pane's top and sides: pad the
+                  // text, not the editor around it.
+                  toolbar
+                  className="[&_.ProseMirror]:px-4 [&_.ProseMirror]:py-6"
+                />
+              ) : (
+                <div
+                  className="prose dark:prose-invert px-4 py-6"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(workInstruction ?? ({} as JSONContent))
+                  }}
+                />
               )}
             </div>
           </div>
         </div>
-        {!hasDocument && (
+        {!hasDocument && onCharacteristics && (
           <InspectionDocumentDropzone
             uploading={uploading || modelUpload.upload !== null}
             progress={modelUpload.upload}

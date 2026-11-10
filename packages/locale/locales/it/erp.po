@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# test} other {# test}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# utensile} other {# utensili}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# versione} other {# versioni}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# settimana} other {# settimane}}"
@@ -1173,6 +1177,9 @@ msgstr "{passing} di {total} beni"
 
 msgid "{percent} picked"
 msgstr "{percent} prelevato"
+
+msgid "{percentage}%"
+msgstr "{percentage}%"
 
 msgid "{position} of {total}"
 msgstr "{position} di {total}"
@@ -8768,6 +8775,10 @@ msgstr "Creato <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "Creato <0/> da <1/>"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "Creato <0>{0}</0>"
+
 msgid "Created account"
 msgstr "Account creato"
 
@@ -13477,6 +13488,9 @@ msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o marca
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Attiva su righe di offerta, righe di ordine di vendita e righe di fattura di vendita."
 
+msgid "First {count}"
+msgstr "Primi {count}"
+
 msgid "First invoice"
 msgstr "Prima fattura"
 
@@ -17266,6 +17280,9 @@ msgstr "Produci {amount} per {date}"
 msgid "Make {quantity}"
 msgstr "Produrre {quantity}"
 
+msgid "Make a new version to change this plan"
+msgstr "Crea una nuova versione per modificare questo piano di controllo"
+
 msgid "Make Active"
 msgstr "Rendi Attivo"
 
@@ -17329,6 +17346,9 @@ msgstr "Rende questo documento attivo di nuovo."
 
 msgid "Makes this document active and visible."
 msgstr "Rende questo documento attivo e visibile."
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "Rende di nuovo Attiva questa versione e archivia la versione Attiva."
 
 msgid "Manage"
 msgstr "Gestisci"
@@ -31131,6 +31151,12 @@ msgstr "questo controllo"
 msgid "this inspection plan"
 msgstr "questo piano di controllo"
 
+msgid "This inspection plan has no parameters."
+msgstr "Questo piano di controllo non ha parametri."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Questo piano di controllo non ha istruzioni di lavoro."
+
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "Questa integrazione non può essere connessa su questa istanza di Carbon."
 
@@ -31392,6 +31418,9 @@ msgstr "Questa versione appartiene all'avviso di modifica <0>{0}</0>. Modificalo
 
 msgid "This version cannot be opened"
 msgstr "Questa versione non può essere aperta"
+
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "Questa versione è una Bozza. Pubblicandola diventa Attiva e archivia la versione Attiva."
 
 msgid "This version is published"
 msgstr "Questa versione è pubblicata"
@@ -33146,6 +33175,9 @@ msgstr "Versione {0}"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "La versione {0} è ora pubblicata e sarà sostituita."
+
+msgid "Version published"
+msgstr "Versione pubblicata"
 
 msgid "Version:"
 msgstr "Versione:"

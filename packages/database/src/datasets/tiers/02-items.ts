@@ -26,6 +26,8 @@ async function seedInspectionPlan(
   const documentId = await insertId(ctx, "inspectionDocument", {
     partId: need(ctx.refs.items, spec.item).id,
     name: spec.name,
+    // Receipts and jobs use it, so it is the plan's published version.
+    status: "Active",
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
     samplingInspectionLevel: rule.inspectionLevel,

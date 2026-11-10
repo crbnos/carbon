@@ -114,7 +114,7 @@ export async function getInspectionDocumentWithBalloons(
     client
       .from("inspectionDocument")
       .select(
-        "id, name, fileName, storagePath, modelUploadId, modelUpload(modelPath)"
+        "id, name, fileName, storagePath, modelUploadId, workInstruction, modelUpload(modelPath)"
       )
       .eq("id", inspectionDocumentId)
       .single(),
@@ -149,6 +149,8 @@ export async function getInspectionDocumentWithBalloons(
       balloons: balloons.data ?? [],
       // Fixed key/value pairs the inspector reads before measuring.
       parameters: parameters.data ?? [],
+      // Rich text (Tiptap JSON) the inspector reads on every lot of the plan.
+      workInstruction: document.data?.workInstruction ?? null,
       // A plan made from a model's PMI holds the model instead of a PDF.
       model: document.data?.modelUploadId
         ? {
@@ -207,8 +209,22 @@ export async function getManualInspectionTrackedEntities(
   return client
     .from("inspectionTrackedEntity")
     .select(
-      "trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId)"
+      "...trackedEntity!inner(id, readableId, attributes, status, sourceDocumentReadableId)"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
+}
+
+/** The units a receipt lot inspects: the tracked entities of its receipt line. */
+export async function getReceiptInspectionTrackedEntities(
+  client: SupabaseClient<Database>,
+  receiptLineId: string,
+  companyId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("id, readableId, attributes, status, sourceDocumentReadableId")
+    .eq("attributes ->> Receipt Line", receiptLineId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
 }

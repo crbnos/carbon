@@ -9,9 +9,11 @@ import { flash } from "@carbon/auth/session.server";
 import {
   getOrCreateJobOperationInspection,
   getRecentInspectionGauges,
+  prefillInspectionSamples,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -143,6 +145,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // An "inspect all" serial lot gets every unit as a sample up front, so the
+  // operator records results without scanning each one.
+  await prefillInspectionSamples(getDatabaseClient(), {
+    inspectionId: lot.data.id,
+    companyId,
+    userId
+  });
+
   const inspectionResult = await getInspection(serviceRole, lot.data.id);
   if (inspectionResult.error || !inspectionResult.data) {
     throw redirect(
@@ -265,6 +275,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
     parameters: document?.data?.parameters ?? [],
+    workInstruction: (document?.data?.workInstruction ??
+      null) as JSONContent | null,
     pdfUrl: document?.data?.pdfUrl ?? null,
     model: document?.data?.model ?? null
   };

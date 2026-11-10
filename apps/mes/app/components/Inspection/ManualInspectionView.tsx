@@ -3,10 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useAction } from "@carbon/query";
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   Button,
+  Checkbox,
   ClientOnly,
+  cn,
   IconButton,
   Modal,
   ModalBody,
@@ -37,7 +40,7 @@ import {
   useRef,
   useState
 } from "react";
-import { LuCheck, LuEye, LuEyeOff, LuX } from "react-icons/lu";
+import { LuCheck, LuEye, LuEyeOff, LuScan, LuX } from "react-icons/lu";
 import { useSearchParams } from "react-router";
 import { useQueueTitles } from "~/components/AppSidebar";
 import { MesAppBar } from "~/components/MesAppBar";
@@ -53,10 +56,12 @@ import type {
 } from "~/services/types";
 import { OriginInput, readOrigin, useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
-import type { MeasurementSaveResult } from "./InspectionMeasurementMatrix";
+import type {
+  InspectionParameter,
+  MeasurementSaveResult
+} from "./InspectionMeasurementMatrix";
 import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
-import type { InspectionParameter } from "./InspectionParameters";
-import { InspectionParametersButton } from "./InspectionParameters";
+import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
 const ModelUploadPreview = lazy(
@@ -91,10 +96,13 @@ type ManualInspectionViewProps = {
   recentGaugeIds: string[];
   // The tracked entities the lot covers: the only units a sample may be.
   lotEntities: InspectionTrackedEntity[];
+  // A voided receipt closes its lot: the stock it inspects was never received.
+  receiptVoided?: boolean;
   workCenterName: string | null;
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   parameters: InspectionParameter[];
+  workInstruction: JSONContent | null;
   pdfUrl: string | null;
   model: { modelUploadId: string; modelPath: string | null } | null;
 };
@@ -113,10 +121,12 @@ export function ManualInspectionView({
   gauges,
   recentGaugeIds,
   lotEntities,
+  receiptVoided = false,
   workCenterName,
   balloons,
   documentName,
   parameters,
+  workInstruction,
   pdfUrl,
   model
 }: ManualInspectionViewProps) {
@@ -257,13 +267,39 @@ export function ManualInspectionView({
   const inspected = passes + fails;
 
   const isLocked =
+    receiptVoided ||
     inspection.status === "Passed" ||
     inspection.status === "Failed" ||
     inspection.status === "Partial" ||
     inspection.status === "Cancelled";
 
-  // No scanner: the serials picked when the inspection was created are its
-  // samples from the start, one column each.
+  // A manual lot's picked serials are its samples from the start. A serial
+  // receipt lot that samples some of its units scans them in; one that
+  // inspects them all was prefilled by the loader.
+  const isReceipt = inspection.sourceDocument === "Receipt";
+  const scannerDisclosure = useDisclosure();
+  const remaining = useMemo(() => {
+    const sampled = new Set(samples.map((sample) => sample.trackedEntityId));
+    return lotEntities.filter((entity) => !sampled.has(entity.id));
+  }, [lotEntities, samples]);
+  const canAddSample =
+    isReceipt &&
+    isSerial &&
+    !isLocked &&
+    remaining.some(
+      (entity) =>
+        !["Consumed", "Rejected", "Scrapped"].includes(entity.status ?? "")
+    );
+  // A fresh serial receipt lot opens the scanner, so the first scan is one
+  // tap away.
+  const hasAutoOpenedScanRef = useRef(false);
+  useEffect(() => {
+    if (hasAutoOpenedScanRef.current) return;
+    if (canAddSample && samples.length === 0) {
+      hasAutoOpenedScanRef.current = true;
+      scannerDisclosure.onOpen();
+    }
+  }, [canAddSample, samples.length, scannerDisclosure]);
 
   const maxSampleSize = hasFeatures
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
@@ -359,6 +395,8 @@ export function ManualInspectionView({
 
   const matrix = (toolbarActions?: React.ReactNode) => (
     <InspectionMeasurementMatrix
+      parameters={inspection.inspectionDocumentId ? parameters : undefined}
+      workInstruction={workInstruction}
       inspectionId={inspection.id}
       isReadOnly={isLocked}
       isSerial={isSerial}
@@ -387,6 +425,17 @@ export function ManualInspectionView({
         title={inspection.inspectionId}
         subtitle={back.label}
         back={{ to: back.to }}
+        actions={
+          canAddSample ? (
+            <IconButton
+              aria-label={t`Add Sample`}
+              variant="ghost"
+              size="lg"
+              icon={<LuScan />}
+              onClick={scannerDisclosure.onOpen}
+            />
+          ) : null
+        }
       />
       {!isPhone && (
         <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border max-md:hidden">
@@ -429,6 +478,22 @@ export function ManualInspectionView({
 
           <div className="flex-1" />
 
+          {canAddSample ? (
+            <button
+              type="button"
+              onClick={scannerDisclosure.onOpen}
+              className={cn(
+                "flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4",
+                samples.length < inspection.sampleSize && "text-primary"
+              )}
+            >
+              <LuScan className="size-4" />
+              <span className="hidden lg:inline">
+                <Trans>Add Sample</Trans>
+              </span>
+            </button>
+          ) : null}
+
           <button
             title={t`Reject`}
             aria-label={t`Reject`}
@@ -464,6 +529,11 @@ export function ManualInspectionView({
           <Badge variant={statusBadgeVariant} className="shrink-0 lg:hidden">
             {inspection.status}
           </Badge>
+          {receiptVoided ? (
+            <Badge variant="red" className="shrink-0">
+              <Trans>Receipt voided</Trans>
+            </Badge>
+          ) : null}
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
             {inspected} / {inspection.sampleSize} <Trans>inspected</Trans> · Ac{" "}
             {inspection.acceptanceNumber} · Re {inspection.rejectionNumber}
@@ -480,7 +550,6 @@ export function ManualInspectionView({
               {documentName}
             </span>
           ) : null}
-          <InspectionParametersButton parameters={parameters} />
           {inspection.notes ? (
             <span className="truncate text-xs text-muted-foreground max-md:max-w-full">
               {inspection.notes}
@@ -544,8 +613,9 @@ export function ManualInspectionView({
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:flex-none max-md:overflow-visible">
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card max-md:flex-initial">
+          // No drawing: the matrix runs edge to edge, no inset card.
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden max-md:flex-none max-md:overflow-visible">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card max-md:flex-initial">
               {matrix(
                 hasDrawing ? (
                   <IconButton
@@ -620,9 +690,22 @@ export function ManualInspectionView({
           failedFeatureLabels={failedFeatureLabels}
           description={
             failedStatistically
-              ? t`The inspection failed: ${passes} sample(s) passed and ${fails} failed. All ${lotEntities.length} unit(s) will be Rejected.`
-              : t`Nothing has failed yet, so say why the units are rejected. All ${lotEntities.length} unit(s) will be Rejected.`
+              ? t`The inspection failed: ${passes} sample(s) passed and ${fails} failed. All ${inspection.lotSize} unit(s) will be Rejected.`
+              : t`Nothing has failed yet, so say why the units are rejected. All ${inspection.lotSize} unit(s) will be Rejected.`
           }
+        />
+      )}
+
+      {scannerDisclosure.isOpen && (
+        <ScanInspectionSample
+          inspectionId={inspection.id}
+          isSerial={isSerial}
+          remaining={remaining}
+          inspected={inspected}
+          sampleSize={inspection.sampleSize}
+          fails={fails}
+          acceptanceNumber={inspection.acceptanceNumber}
+          onClose={scannerDisclosure.onClose}
         />
       )}
     </div>
@@ -646,6 +729,8 @@ function VerdictModal({
 }) {
   const { t } = useLingui();
   const [reason, setReason] = useState("");
+  // As the ERP's Reject Lot: an NCR for MRB disposition unless turned off.
+  const [createNcr, setCreateNcr] = useState(true);
   const fetcher = useAction<{}>({});
   const busy = fetcher.state !== "idle";
   const missingReason = requireReason && reason.trim().length === 0;
@@ -695,6 +780,20 @@ function VerdictModal({
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                 />
+              ) : null}
+              {decision === "Reject" ? (
+                <label className="flex w-full cursor-pointer items-center gap-2">
+                  <Checkbox
+                    isChecked={createNcr}
+                    onCheckedChange={(checked) => setCreateNcr(!!checked)}
+                  />
+                  <span className="text-sm font-medium">
+                    <Trans>Open an NCR for MRB disposition</Trans>
+                  </span>
+                  {createNcr ? (
+                    <input type="hidden" name="createNcr" value="on" />
+                  ) : null}
+                </label>
               ) : null}
             </VStack>
           </ModalBody>

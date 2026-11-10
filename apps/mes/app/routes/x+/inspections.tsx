@@ -275,19 +275,8 @@ function InspectionCard({ inspection }: { inspection: InspectionRow }) {
     </Card>
   );
 
-  // Receipt lots are dispositioned in the ERP: their Reject writes stock off
-  // and opens the NCR through ERP-only code.
-  if (inspection.sourceDocument === "Receipt") {
-    return (
-      <a href={path.to.erpInspection(inspection.id)}>
-        <span className="sr-only">
-          <Trans>Opens in the ERP</Trans>
-        </span>
-        {body}
-      </a>
-    );
-  }
-
+  // A job-operation lot opens around its operation; a receipt or manual lot
+  // opens on its own (its Reject still runs the ERP's write-off and NCR).
   const to =
     inspection.sourceDocument === "Job Operation" &&
     inspection.sourceDocumentLineId

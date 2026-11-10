@@ -284,6 +284,11 @@ import {
   shippingCarrierType
 } from "./inventory.models";
 import {
+  BATCH_PROPERTY_COLUMN_PREFIX,
+  type BatchPropertyColumn,
+  batchPropertyColumns,
+  batchPropertyFilter,
+  batchPropertyValue,
   clampDepth,
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
@@ -2243,8 +2248,103 @@ export async function getTrackedEntities(
     );
   }
 
-  query = setGenericQueryFilters(query, args, TRACKED_ENTITIES_PAGING);
+  // A batch property column (`property.<label>`) is no column of the table:
+  // it filters the property's value on every item that has the label.
+  const propertyFilters =
+    args.filters?.filter(
+      (filter) =>
+        filter.value && filter.column.startsWith(BATCH_PROPERTY_COLUMN_PREFIX)
+    ) ?? [];
+  if (propertyFilters.length > 0) {
+    const columns = await getBatchPropertyColumns(client, companyId);
+    if (columns.error) {
+      logger.error("Failed to load batch properties for a filter", {
+        companyId,
+        error: columns.error
+      });
+    }
+    // A label no item has (or properties that did not load) matches nothing.
+    const columnByKey = new Map((columns.data ?? []).map((c) => [c.key, c]));
+    for (const filter of propertyFilters) {
+      const column = columnByKey.get(filter.column);
+      query = column
+        ? query.or(
+            batchPropertyFilter(column, filter.operator, filter.value ?? "")
+          )
+        : query.in("id", []);
+    }
+  }
+
+  query = setGenericQueryFilters(
+    query,
+    {
+      ...args,
+      filters: args.filters?.filter(
+        (filter) => !filter.column.startsWith(BATCH_PROPERTY_COLUMN_PREFIX)
+      )
+    },
+    TRACKED_ENTITIES_PAGING
+  );
   return query;
+}
+
+/** The company's batch properties as tracked-entity list columns, by label. */
+export async function getBatchPropertyColumns(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<
+  | { data: BatchPropertyColumn[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const properties = await client
+    .from("batchProperty")
+    .select("id, itemId, label, dataType, listOptions")
+    .eq("companyId", companyId)
+    .order("sortOrder");
+  if (properties.error) return { data: null, error: properties.error };
+  return { data: batchPropertyColumns(properties.data), error: null };
+}
+
+/**
+ * The values tracked entities hold for a property column, for its filter.
+ * Reads the most recent 1,000 entities that hold one.
+ */
+export async function getBatchPropertyValues(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  key: string
+) {
+  const columns = await getBatchPropertyColumns(client, companyId);
+  if (columns.error) return { data: [], error: columns.error };
+  const column = columns.data.find((c) => c.key === key);
+  if (!column) return { data: [], error: null };
+
+  const entities = await client
+    .from("trackedEntity")
+    .select("itemId, attributes")
+    .eq("companyId", companyId)
+    .or(
+      column.properties
+        .map(({ id }) => `attributes->>${id}.not.is.null`)
+        .join(",")
+    )
+    .order("createdAt", { ascending: false })
+    .limit(1000);
+  if (entities.error) return { data: [], error: entities.error };
+
+  const values = new Set<string>();
+  for (const entity of entities.data) {
+    const value = batchPropertyValue(column, entity);
+    if (value !== undefined && value !== null && value !== "") {
+      values.add(String(value));
+    }
+  }
+  return {
+    data: Array.from(values)
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({ id: value, name: value })),
+    error: null
+  };
 }
 
 export async function getTrackedEntitiesByMakeMethodId(

@@ -89,6 +89,14 @@ export const nonConformanceAssociationType = [
 
 export const qualityDocumentStatus = ["Draft", "Active", "Archived"] as const;
 
+export const inspectionDocumentStatus = [
+  "Draft",
+  "Active",
+  "Archived"
+] as const;
+export type InspectionDocumentStatus =
+  (typeof inspectionDocumentStatus)[number];
+
 export const riskSource = [
   "Customer",
   "General",
@@ -487,7 +495,9 @@ export const manualInspectionValidator = z.object({
   trackedEntityIds: z
     .array(z.string().min(1))
     .min(1, { message: "Select at least one tracked entity" }),
-  inspectionDocumentId: zfd.text(z.string().optional()),
+  inspectionDocumentId: z
+    .string()
+    .min(1, { message: "Inspection plan is required" }),
   workCenterId: zfd.text(z.string().optional()),
   assignee: zfd.text(z.string().optional()),
   notes: zfd.text(z.string().optional())

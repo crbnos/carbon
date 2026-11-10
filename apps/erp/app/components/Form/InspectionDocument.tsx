@@ -8,6 +8,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { HStack } from "@carbon/react";
 import { useMemo } from "react";
 import type { getInspectionDocumentsForItem } from "~/modules/quality/quality.service";
+import QualityDocumentStatus from "~/modules/quality/ui/Documents/QualityDocumentStatus";
 import { path } from "~/utils/path";
 
 type InspectionDocumentSelectProps = Omit<ComboboxProps, "options"> & {
@@ -58,6 +59,7 @@ export const useInspectionDocuments = (args: { itemId?: string }) => {
                     v{c.version}
                   </span>
                 </HStack>
+                <QualityDocumentStatus status={c.status} />
               </div>
             )
           }))

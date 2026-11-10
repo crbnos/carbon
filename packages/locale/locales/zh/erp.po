@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# 测试} other {# 测试}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# 刀具} other {# 刀具}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# 个版本} other {# 个版本}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#周}}"
@@ -1173,6 +1177,9 @@ msgstr "{passing} 项，共 {total} 项资产"
 
 msgid "{percent} picked"
 msgstr "{percent}已拣货"
+
+msgid "{percentage}%"
+msgstr "{percentage}%"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
@@ -8768,6 +8775,10 @@ msgstr "已创建 <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "由 <1/> 创建于 <0/>"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "已创建 <0>{0}</0>"
+
 msgid "Created account"
 msgstr "已创建账户"
 
@@ -13477,6 +13488,9 @@ msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "在报价行、销售订单行和销售发票行上触发。"
 
+msgid "First {count}"
+msgstr "前 {count} 个"
+
 msgid "First invoice"
 msgstr "第一份发票"
 
@@ -17266,6 +17280,9 @@ msgstr "自制 {amount} 件至 {date}"
 msgid "Make {quantity}"
 msgstr "制造 {quantity}"
 
+msgid "Make a new version to change this plan"
+msgstr "如需修改此计划，请创建新版本"
+
 msgid "Make Active"
 msgstr "启用"
 
@@ -17329,6 +17346,9 @@ msgstr "再次启用此文件。"
 
 msgid "Makes this document active and visible."
 msgstr "启用此文件并使其可见。"
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "将此版本重新设为启用，并归档当前启用的版本。"
 
 msgid "Manage"
 msgstr "管理"
@@ -31131,6 +31151,12 @@ msgstr "此检验"
 msgid "this inspection plan"
 msgstr "这个检验计划"
 
+msgid "This inspection plan has no parameters."
+msgstr "此检验计划没有参数。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "此检验计划没有作业指导书。"
+
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "此集成无法在此 Carbon 实例上连接。"
 
@@ -31392,6 +31418,9 @@ msgstr "此版本属于变更通知<0>{0}</0>。请在那里编辑。"
 
 msgid "This version cannot be opened"
 msgstr "无法打开此版本"
+
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "此版本为草稿。发布后将其设为启用，并归档当前启用的版本。"
 
 msgid "This version is published"
 msgstr "此版本已发布"
@@ -33146,6 +33175,9 @@ msgstr "版本 {0}"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "版本{0}现已发布，将被替换。"
+
+msgid "Version published"
+msgstr "版本已发布"
 
 msgid "Version:"
 msgstr "版本："

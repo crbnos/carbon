@@ -8,9 +8,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getRecentInspectionGauges,
+  prefillInspectionSamples,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
@@ -22,7 +24,8 @@ import {
   getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
-  getManualInspectionTrackedEntities
+  getManualInspectionTrackedEntities,
+  getReceiptInspectionTrackedEntities
 } from "~/services/quality.service";
 import type {
   InspectionSample,
@@ -48,7 +51,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Inspection ID is required");
@@ -58,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const scoped = await serviceRole
     .from("inspection")
-    .select("id, sourceDocument, sourceDocumentLineId")
+    .select("id, sourceDocument, sourceDocumentId, sourceDocumentLineId")
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -74,9 +77,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Only manual lots execute here: a job-operation lot has its own view, and
-  // a receipt lot is dispositioned in the ERP.
-  if (scoped.data.sourceDocument !== "Manual") {
+  // Receipt and manual lots execute here (hold, then release or reject); a
+  // job-operation lot has its own view around its operation.
+  const isReceipt = scoped.data.sourceDocument === "Receipt";
+  if (!isReceipt && scoped.data.sourceDocument !== "Manual") {
     if (
       scoped.data.sourceDocument === "Job Operation" &&
       scoped.data.sourceDocumentLineId
@@ -84,6 +88,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       throw redirect(path.to.inspection(scoped.data.sourceDocumentLineId));
     }
     throw redirect(path.to.inspections);
+  }
+
+  // A serial receipt lot that inspects every unit has nothing to choose: each
+  // unit is a sample from the start (idempotent). One sampling a subset is
+  // left to the scanner. A manual lot made its samples at create.
+  if (isReceipt) {
+    await prefillInspectionSamples(getDatabaseClient(), {
+      inspectionId: id,
+      companyId,
+      userId
+    });
   }
 
   const inspectionResult = await getInspection(serviceRole, id);
@@ -111,11 +126,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     document,
     gauges,
     recentGauges,
-    workCenter
+    workCenter,
+    receipt
   ] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, id, companyId),
     getInspectionMeasurements(serviceRole, id, companyId),
-    getManualInspectionTrackedEntities(serviceRole, id, companyId),
+    // A receipt lot's units hang off its receipt line; a manual lot lists its own.
+    isReceipt
+      ? getReceiptInspectionTrackedEntities(
+          serviceRole,
+          scoped.data.sourceDocumentLineId ?? "",
+          companyId
+        )
+      : getManualInspectionTrackedEntities(serviceRole, id, companyId),
     inspection.inspectionDocumentId
       ? getInspectionDocumentWithBalloons(
           serviceRole,
@@ -132,6 +155,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .from("workCenter")
           .select("name")
           .eq("id", inspection.workCenterId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // A voided receipt closes its lot: the stock it inspects was never received.
+    isReceipt
+      ? serviceRole
+          .from("receipt")
+          .select("status")
+          .eq("id", scoped.data.sourceDocumentId)
           .eq("companyId", companyId)
           .maybeSingle()
       : Promise.resolve({ data: null })
@@ -154,13 +186,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     measurements: measurements.data ?? [],
     gauges: gauges.data ?? [],
     recentGaugeIds: recentGauges.data ?? [],
-    lotEntities: (lotEntities.data ?? [])
-      .map((row) => row.trackedEntity)
-      .filter((entity): entity is InspectionTrackedEntity => Boolean(entity)),
+    lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
+    receiptVoided: receipt.data?.status === "Voided",
     workCenterName: workCenter.data?.name ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
     parameters: document?.data?.parameters ?? [],
+    workInstruction: (document?.data?.workInstruction ??
+      null) as JSONContent | null,
     pdfUrl: document?.data?.pdfUrl ?? null,
     model: document?.data?.model ?? null
   };

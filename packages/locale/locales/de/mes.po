@@ -1863,7 +1863,7 @@ msgstr "Nicht gesetzt"
 msgid "Notes"
 msgstr "Notizen"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Noch nichts ist fehlgeschlagen, daher begründen Sie, warum die Einheiten abgelehnt werden. Alle {0} Einheit(en) werden abgelehnt."
 
@@ -1951,9 +1951,6 @@ msgstr "Offene Fertigungsaufträge"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Untergruppe {0} öffnen: {1}"
-
-msgid "Opens in the ERP"
-msgstr "Öffnet im ERP"
 
 msgid "Operation due"
 msgstr "Arbeitsgang fällig"
@@ -2285,6 +2282,9 @@ msgstr "Grund für Nacharbeit"
 
 msgid "Receipt"
 msgstr "Wareneingang"
+
+msgid "Receipt voided"
+msgstr "Wareneingang storniert"
 
 msgid "Recent"
 msgstr "Zuletzt"
@@ -2952,7 +2952,7 @@ msgstr "Das Datum liegt vor dem Eingabefenster. Der Grund wird mit dem Eintrag g
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "Die gesamte Charge von {0} wird als fehlerhaft abgelehnt — {passes} Bestandene und {fails} Fehler bisher. Leiten Sie die Einheiten unten zum Ausschuss oder zur Nacharbeit um, oder erfassen Sie nur das Ergebnis."
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "Die Prüfung ist fehlgeschlagen: {passes} Stichprobe(n) bestanden und {fails} fehlgeschlagen. Alle {0} Einheit(en) werden abgelehnt."
 
@@ -3016,6 +3016,12 @@ msgstr "Dieses Los hat keine Arbeitsanweisung."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Diese Informationen sind für alle Benutzer sichtbar, seien Sie also vorsichtig, was Sie teilen."
+
+msgid "This inspection plan has no parameters."
+msgstr "Dieser Prüfplan hat keine Parameter."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Dieser Prüfplan hat keine Arbeitsanweisungen."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."

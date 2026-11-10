@@ -1863,7 +1863,7 @@ msgstr "설정되지 않음"
 msgid "Notes"
 msgstr "메모"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "아직 실패한 항목이 없으므로 단위를 거부하는 사유를 입력하세요. 모든 {0}개 단위가 거부됨 상태로 처리됩니다."
 
@@ -1951,9 +1951,6 @@ msgstr "미결 작업 지시"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "하위 조립체 {0} 열기: {1}"
-
-msgid "Opens in the ERP"
-msgstr "ERP에서 열립니다"
 
 msgid "Operation due"
 msgstr "공정 마감"
@@ -2285,6 +2282,9 @@ msgstr "재작업 사유"
 
 msgid "Receipt"
 msgstr "입고"
+
+msgid "Receipt voided"
+msgstr "입고 무효 처리됨"
 
 msgid "Recent"
 msgstr "최근"
@@ -2952,7 +2952,7 @@ msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 �
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "{0}개의 전체 로트는 부적합으로 거부됨될 예정입니다 — {passes}개 샘플링된 합격 및 {fails}개 실패(현재까지). 아래 개를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "검사 실패: {passes}개 샘플 통과, {fails}개 샘플 실패. 모든 {0}개 단위가 거부됨 상태로 처리됩니다."
 
@@ -3016,6 +3016,12 @@ msgstr "이 배치는 작업 표준서가 없습니다."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "이 정보는 모든 사용자에게 표시되므로 공유 내용을 주의하십시오."
+
+msgid "This inspection plan has no parameters."
+msgstr "이 검사 계획에는 검사 항목이 없습니다."
+
+msgid "This inspection plan has no work instructions."
+msgstr "이 검사 계획에는 작업 표준서가 없습니다."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "합격 / 불합격 검사입니다. P 또는 F를 누르세요."

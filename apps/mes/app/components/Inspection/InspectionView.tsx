@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useAction } from "@carbon/query";
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   BottomSheet,
@@ -83,10 +84,11 @@ import { OriginInput, useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import type { AllocatableUnit, FailedFeatureSummary } from "./DispositionModal";
 import DispositionModal from "./DispositionModal";
-import type { MeasurementSaveResult } from "./InspectionMeasurementMatrix";
+import type {
+  InspectionParameter,
+  MeasurementSaveResult
+} from "./InspectionMeasurementMatrix";
 import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
-import type { InspectionParameter } from "./InspectionParameters";
-import { InspectionParametersButton } from "./InspectionParameters";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
@@ -151,6 +153,7 @@ type InspectionViewProps = {
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   parameters: InspectionParameter[];
+  workInstruction: JSONContent | null;
   pdfUrl: string | null;
   /** A plan made from a model's PMI: the drawing pane shows the model. */
   model: { modelUploadId: string; modelPath: string | null } | null;
@@ -186,6 +189,7 @@ export function InspectionView({
   balloons,
   documentName,
   parameters,
+  workInstruction,
   pdfUrl,
   model,
   issueTypes,
@@ -420,6 +424,13 @@ export function InspectionView({
     () => trackedEntities.filter((e) => !sampledIds.has(e.id)),
     [trackedEntities, sampledIds]
   );
+  // Add Sample only while a unit the lot can still sample has no column: an
+  // "inspect all" lot starts with every one sampled (prefillInspectionSamples).
+  const canAddSample =
+    isSerial &&
+    remaining.some(
+      (e) => !["Consumed", "Rejected", "Scrapped"].includes(e.status ?? "")
+    );
 
   const lotClosed =
     inspection.dispositionedAt != null &&
@@ -759,7 +770,7 @@ export function InspectionView({
 
           <div className="flex-1" />
 
-          {isSerial && !isLocked ? (
+          {canAddSample && !isLocked ? (
             <button
               type="button"
               onClick={scannerDisclosure.onOpen}
@@ -873,7 +884,6 @@ export function InspectionView({
               {documentName}
             </span>
           ) : null}
-          <InspectionParametersButton parameters={parameters} />
           <div className="flex-1 max-md:hidden" />
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums max-md:order-first">
             <Trans>Completed</Trans> {productionQuantities.production} ·{" "}
@@ -967,6 +977,10 @@ export function InspectionView({
                 }
               >
                 <InspectionMeasurementMatrix
+                  parameters={
+                    inspection.inspectionDocumentId ? parameters : undefined
+                  }
+                  workInstruction={workInstruction}
                   inspectionId={inspection.id}
                   isReadOnly={isLocked}
                   isSerial={isSerial}
@@ -1020,9 +1034,14 @@ export function InspectionView({
             </div>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:flex-none max-md:overflow-visible">
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card max-md:flex-initial">
+          // No drawing: the matrix runs edge to edge, no inset card.
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden max-md:flex-none max-md:overflow-visible">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card max-md:flex-initial">
               <InspectionMeasurementMatrix
+                parameters={
+                  inspection.inspectionDocumentId ? parameters : undefined
+                }
+                workInstruction={workInstruction}
                 inspectionId={inspection.id}
                 isReadOnly={isLocked}
                 isSerial={isSerial}
@@ -1278,7 +1297,7 @@ export function InspectionView({
                   qualityModal.onOpen();
                 }}
               />
-              {isSerial && !isLocked ? (
+              {canAddSample && !isLocked ? (
                 <ActionSheetButton
                   icon={<LuScan className="size-4 shrink-0" />}
                   label={t`Add Sample`}

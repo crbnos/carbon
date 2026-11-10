@@ -1863,7 +1863,7 @@ msgstr "未設定"
 msgid "Notes"
 msgstr "メモ"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "まだ不合格はありません。個体を却下する理由を入力してください。全{0}個が却下済になります。"
 
@@ -1951,9 +1951,6 @@ msgstr "オープン製造指図"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "サブアセンブリ {0} を開く: {1}"
-
-msgid "Opens in the ERP"
-msgstr "ERPで開きます"
 
 msgid "Operation due"
 msgstr "工程の納期"
@@ -2285,6 +2282,9 @@ msgstr "手直しの理由"
 
 msgid "Receipt"
 msgstr "入荷"
+
+msgid "Receipt voided"
+msgstr "入荷取消済"
 
 msgid "Recent"
 msgstr "最近"
@@ -2952,7 +2952,7 @@ msgstr "日付がエントリー期間前です。理由はエントリーと共
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "ロット全体{0}は不適合として却下されます—{passes}サンプル合格と{fails}不合格があります。以下のユニットをスクラップまたは手直しにルーティングするか、判決のみを記録してください。"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "検査は不合格です：{passes}件のサンプルが合格、{fails}件が不合格でした。全{0}個が却下済になります。"
 
@@ -3016,6 +3016,12 @@ msgstr "このバッチには作業手順書がありません。"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
+
+msgid "This inspection plan has no parameters."
+msgstr "この検査計画にはパラメータがありません。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "この検査計画には作業手順書がありません。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"

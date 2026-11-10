@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# テスト} other {# テスト}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# 工具} other {# 工具}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# バージョン} other {# バージョン}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#週}}"
@@ -1173,6 +1177,9 @@ msgstr "{passing}/{total}の資産"
 
 msgid "{percent} picked"
 msgstr "{percent}ピッキング済"
+
+msgid "{percentage}%"
+msgstr "{percentage}%"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
@@ -8768,6 +8775,10 @@ msgstr "作成済み <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "<0/>は<1/>により作成"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "<0>{0}</0> で作成"
+
 msgid "Created account"
 msgstr "アカウントを作成しました"
 
@@ -13477,6 +13488,9 @@ msgstr "すべてのラインがピックされるか「短い」とマークさ
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "見積明細、受注明細、売上請求書明細で発動します。"
 
+msgid "First {count}"
+msgstr "最初の {count} 件"
+
 msgid "First invoice"
 msgstr "最初の請求書"
 
@@ -17266,6 +17280,9 @@ msgstr "{date}に{amount}を内製"
 msgid "Make {quantity}"
 msgstr "{quantity} を製造"
 
+msgid "Make a new version to change this plan"
+msgstr "この計画を変更するには新しいバージョンを作成してください"
+
 msgid "Make Active"
 msgstr "アクティブにする"
 
@@ -17329,6 +17346,9 @@ msgstr "この文書を再度有効にします。"
 
 msgid "Makes this document active and visible."
 msgstr "この文書を有効にして表示します。"
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "このバージョンを再び有効にし、有効なバージョンをアーカイブします。"
 
 msgid "Manage"
 msgstr "管理"
@@ -31131,6 +31151,12 @@ msgstr "この検査"
 msgid "this inspection plan"
 msgstr "この検査計画"
 
+msgid "This inspection plan has no parameters."
+msgstr "この検査計画にはパラメータがありません。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "この検査計画には作業手順書がありません。"
+
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "この連携はこのCarbonインスタンスでは接続できません。"
 
@@ -31393,8 +31419,11 @@ msgstr "このバージョンは変更通知<0>{0}</0>に属しています。�
 msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "このバージョンは下書きです。公開すると有効になり、有効なバージョンはアーカイブされます。"
+
 msgid "This version is published"
-msgstr "このバージョンは公開されています"
+msgstr "このバージョンは公開済です"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
@@ -33146,6 +33175,9 @@ msgstr "バージョン {0}"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "バージョン {0} は現在公開済であり、置き換えられます。"
+
+msgid "Version published"
+msgstr "バージョンを公開済にしました"
 
 msgid "Version:"
 msgstr "バージョン:"

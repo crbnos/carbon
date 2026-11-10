@@ -1076,3 +1076,20 @@ export function formatQuantity(q: number): string {
   if (Number.isInteger(q)) return String(q);
   return q.toFixed(1);
 }
+
+export type ActivityOrder = "newest" | "oldest";
+
+/**
+ * Compares two activity dates (ISO timestamps, which compare as strings) for
+ * the traceability table. An activity with no date goes last either way.
+ */
+export function compareActivityDates(
+  a: string | null | undefined,
+  b: string | null | undefined,
+  order: ActivityOrder
+): number {
+  if (!a || !b) return a ? -1 : b ? 1 : 0;
+  if (a === b) return 0;
+  const ascending = a < b ? -1 : 1;
+  return order === "newest" ? -ascending : ascending;
+}

@@ -24958,6 +24958,7 @@ export type Database = {
           name: string | null
           pageCount: number | null
           partId: string
+          rootInspectionDocumentId: string | null
           samplingAql: number | null
           samplingInspectionLevel:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -24970,11 +24971,13 @@ export type Database = {
           samplingSeverity:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          status: Database["public"]["Enums"]["inspectionDocumentStatus"]
           storagePath: string | null
           updatedAt: string | null
           updatedBy: string | null
           uploadedBy: string | null
           version: number
+          workInstruction: Json | null
         }
         Insert: {
           companyId: string
@@ -24988,6 +24991,7 @@ export type Database = {
           name?: string | null
           pageCount?: number | null
           partId: string
+          rootInspectionDocumentId?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -25000,11 +25004,13 @@ export type Database = {
           samplingSeverity?:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          status?: Database["public"]["Enums"]["inspectionDocumentStatus"]
           storagePath?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
           uploadedBy?: string | null
           version?: number
+          workInstruction?: Json | null
         }
         Update: {
           companyId?: string
@@ -25018,6 +25024,7 @@ export type Database = {
           name?: string | null
           pageCount?: number | null
           partId?: string
+          rootInspectionDocumentId?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -25030,11 +25037,13 @@ export type Database = {
           samplingSeverity?:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          status?: Database["public"]["Enums"]["inspectionDocumentStatus"]
           storagePath?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
           uploadedBy?: string | null
           version?: number
+          workInstruction?: Json | null
         }
         Relationships: [
           {
@@ -25162,6 +25171,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_rootInspectionDocumentId_fkey"
+            columns: ["rootInspectionDocumentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_rootInspectionDocumentId_fkey"
+            columns: ["rootInspectionDocumentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "inspectionDocument_updatedBy_fkey"
@@ -89694,6 +89717,7 @@ export type Database = {
           pageCount: number | null
           partId: string | null
           partReadableId: string | null
+          rootInspectionDocumentId: string | null
           samplingAql: number | null
           samplingInspectionLevel:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -89706,6 +89730,7 @@ export type Database = {
           samplingSeverity:
             | Database["public"]["Enums"]["inspectionSeverity"]
             | null
+          status: Database["public"]["Enums"]["inspectionDocumentStatus"] | null
           storagePath: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -89838,6 +89863,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_rootInspectionDocumentId_fkey"
+            columns: ["rootInspectionDocumentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocument"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inspectionDocument_rootInspectionDocumentId_fkey"
+            columns: ["rootInspectionDocumentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "inspectionDocuments"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "inspectionDocument_updatedBy_fkey"
@@ -109448,6 +109487,7 @@ export type Database = {
         | "G&A"
         | "Service Center"
       indirectRateType: "Provisional" | "Target" | "Actual" | "Final"
+      inspectionDocumentStatus: "Draft" | "Active" | "Archived"
       inspectionDocumentUsage: "Receipt"
       inspectionLevel: "I" | "II" | "III" | "S1" | "S2" | "S3" | "S4"
       inspectionSampleStatusType: "Pending" | "Passed" | "Failed"

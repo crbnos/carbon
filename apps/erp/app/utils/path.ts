@@ -114,6 +114,8 @@ export const path = {
         ),
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
+      batchPropertyValues: (key: string) =>
+        `${api}/inventory/batch-property-values?${new URLSearchParams({ key })}`,
       batchReleaseReadiness: (
         target: { batchId: string } | { jobIds: string[] }
       ) =>
@@ -1522,9 +1524,13 @@ export const path = {
       generatePath(`${x}/inspection/${id}/delete`),
     inspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}`),
+    inspectionDocumentActivate: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/activate`),
     inspectionDocumentModel: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/model`),
     inspectionDocuments: `${x}/quality/inspection-plans`,
+    inspectionDocumentVersion: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/version`),
     inspectionGauge: (id: string) =>
       generatePath(`${x}/inspection/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
@@ -2896,6 +2902,8 @@ export const path = {
     updateChangeNotice: `${x}/items/change-notice/update`,
     updateInspectionDocumentName: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/update-name`),
+    updateInspectionDocumentWorkInstruction: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/update-work-instruction`),
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,

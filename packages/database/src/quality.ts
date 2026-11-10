@@ -1504,7 +1504,7 @@ const MANUAL_INSPECTION_ENTITY_STATUSES = ["Available", "On Hold"] as const;
 export async function createManualInspection(
   db: Kysely<KyselyDatabase>,
   args: ManualInspectionInput
-): Promise<Result<{ id: string }>> {
+): Promise<Result<{ id: string; inspectionId: string }>> {
   const trackedEntityIds = [...new Set(args.trackedEntityIds.filter(Boolean))];
   if (trackedEntityIds.length === 0) {
     return errResult("Select at least one tracked entity");
@@ -1749,7 +1749,7 @@ export async function createManualInspection(
         userId: args.userId
       });
 
-      return { id };
+      return { id, inspectionId: readableInspectionId };
     });
 
     return { data: result, error: null };
@@ -1898,6 +1898,147 @@ export async function cancelManualInspection(
   } catch (err) {
     return errResult(
       err instanceof Error ? err.message : "Failed to cancel inspection"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// Prefilled samples
+// -------------------------------------------------------------
+// When a serial lot's plan inspects every unit there is nothing to choose, so
+// every unit is a sample from the start (Pending, no verdict) and the
+// inspector records results without scanning. A lot that samples some of its
+// units keeps the scanner: which units is the inspector's choice. The units
+// are the source's: a receipt line's, a job make method's (not Consumed,
+// Rejected or Scrapped), a manual lot's own. Idempotent: a unit already
+// sampled is left alone, and a concurrent call loses on the unique
+// (inspectionId, trackedEntityId) index.
+
+const PREFILL_EXCLUDED_STATUSES = ["Consumed", "Rejected", "Scrapped"] as const;
+
+export async function prefillInspectionSamples(
+  db: Kysely<KyselyDatabase>,
+  args: { inspectionId: string; companyId: string; userId: string }
+): Promise<Result<{ added: number }>> {
+  try {
+    const result = await db.transaction().execute(async (trx) => {
+      const lot = await trx
+        .selectFrom("inspection")
+        .innerJoin("item", "item.id", "inspection.itemId")
+        .select([
+          "inspection.id",
+          "inspection.status",
+          "inspection.sourceDocument",
+          "inspection.sourceDocumentLineId",
+          "inspection.sampleSize",
+          "item.itemTrackingType"
+        ])
+        .where("inspection.id", "=", args.inspectionId)
+        .where("inspection.companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (
+        !lot ||
+        lot.itemTrackingType !== "Serial" ||
+        isInspectionClosed(lot.status)
+      ) {
+        return { added: 0 };
+      }
+
+      let units: { id: string; readableId: string | null }[] = [];
+      if (lot.sourceDocument === "Manual") {
+        units = await trx
+          .selectFrom("inspectionTrackedEntity as ite")
+          .innerJoin("trackedEntity", "trackedEntity.id", "ite.trackedEntityId")
+          .select(["trackedEntity.id", "trackedEntity.readableId"])
+          .where("ite.inspectionId", "=", lot.id)
+          .where("ite.companyId", "=", args.companyId)
+          .execute();
+      } else if (lot.sourceDocumentLineId) {
+        let makeMethodId: string | null = null;
+        if (lot.sourceDocument === "Job Operation") {
+          const operation = await trx
+            .selectFrom("jobOperation")
+            .select(["jobMakeMethodId"])
+            .where("id", "=", lot.sourceDocumentLineId)
+            .where("companyId", "=", args.companyId)
+            .executeTakeFirst();
+          makeMethodId = operation?.jobMakeMethodId ?? null;
+          if (!makeMethodId) return { added: 0 };
+        }
+        units = await trx
+          .selectFrom("trackedEntity")
+          .select(["id", "readableId"])
+          .where(
+            lot.sourceDocument === "Receipt"
+              ? sql<string>`attributes ->> 'Receipt Line'`
+              : sql<string>`attributes ->> 'Job Make Method'`,
+            "=",
+            lot.sourceDocument === "Receipt"
+              ? lot.sourceDocumentLineId
+              : makeMethodId!
+          )
+          .where("status", "not in", [...PREFILL_EXCLUDED_STATUSES])
+          .where("companyId", "=", args.companyId)
+          .execute();
+      }
+
+      // Only when the plan inspects every unit.
+      if (units.length === 0 || units.length > lot.sampleSize) {
+        return { added: 0 };
+      }
+
+      const sampled = await trx
+        .selectFrom("inspectionSample")
+        .select(["trackedEntityId"])
+        .where("inspectionId", "=", lot.id)
+        .where("companyId", "=", args.companyId)
+        .where("trackedEntityId", "is not", null)
+        .execute();
+      const sampledIds = new Set(sampled.map((s) => s.trackedEntityId));
+      const missing = units
+        .filter((unit) => !sampledIds.has(unit.id))
+        .sort((a, b) =>
+          (a.readableId ?? a.id).localeCompare(
+            b.readableId ?? b.id,
+            undefined,
+            {
+              numeric: true
+            }
+          )
+        );
+      if (missing.length === 0) return { added: 0 };
+
+      // The grid orders samples by createdAt, then id; one statement shares
+      // one now(), so each row is a microsecond later to keep serial order.
+      const inserted = await trx
+        .insertInto("inspectionSample")
+        .values(
+          missing.map((unit, index) => ({
+            inspectionId: lot.id,
+            trackedEntityId: unit.id,
+            status: "Pending" as const,
+            companyId: args.companyId,
+            createdBy: args.userId,
+            createdAt: sql<string>`now() + make_interval(secs => ${index} * 0.000001)`
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns(["inspectionId", "trackedEntityId"])
+            .where("trackedEntityId", "is not", null)
+            .doNothing()
+        )
+        .returning(["id"])
+        .execute();
+
+      return { added: inserted.length };
+    });
+    return { data: result, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error
+        ? err.message
+        : "Failed to prefill inspection samples"
     );
   }
 }
@@ -2168,7 +2309,12 @@ export async function createPmiInspectionPlan(
     .onConflict((oc) =>
       oc
         .columns(["companyId", "partId", "modelUploadId"])
-        .where("modelUploadId", "is not", null)
+        .where((eb) =>
+          eb.and([
+            eb("modelUploadId", "is not", null),
+            eb("rootInspectionDocumentId", "is", null)
+          ])
+        )
         .doNothing()
     )
     .returning(["id"])

@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# test} other {# tests}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# outil} other {# outils}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# version} other {# versions}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# semaine} other {# semaines}}"
@@ -1173,6 +1177,9 @@ msgstr "{passing} sur {total} actifs"
 
 msgid "{percent} picked"
 msgstr "{percent} prélevé"
+
+msgid "{percentage}%"
+msgstr "{percentage} %"
 
 msgid "{position} of {total}"
 msgstr "{position} sur {total}"
@@ -8768,6 +8775,10 @@ msgstr "Créé <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "Créé <0/> par <1/>"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "Créé <0>{0}</0>"
+
 msgid "Created account"
 msgstr "Compte créé"
 
@@ -13477,6 +13488,9 @@ msgstr "La fermeture est refusée jusqu'à ce que chaque ligne soit prélevée o
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Déclencher sur les lignes de devis, les lignes de commande client et les lignes de facture de vente."
 
+msgid "First {count}"
+msgstr "Premiers {count}"
+
 msgid "First invoice"
 msgstr "Première facture"
 
@@ -17266,6 +17280,9 @@ msgstr "Fabrication de {amount} pour le {date}"
 msgid "Make {quantity}"
 msgstr "Fabriquer {quantity}"
 
+msgid "Make a new version to change this plan"
+msgstr "Créez une nouvelle version pour modifier ce plan"
+
 msgid "Make Active"
 msgstr "Rendre actif"
 
@@ -17329,6 +17346,9 @@ msgstr "Rend ce document actif à nouveau."
 
 msgid "Makes this document active and visible."
 msgstr "Rend ce document actif et visible."
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "Rend cette version de nouveau active et archive la version active."
 
 msgid "Manage"
 msgstr "Gérer"
@@ -31131,6 +31151,12 @@ msgstr "ce contrôle"
 msgid "this inspection plan"
 msgstr "ce plan de contrôle"
 
+msgid "This inspection plan has no parameters."
+msgstr "Ce plan de contrôle ne comporte aucun paramètre."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Ce plan de contrôle ne comporte aucun mode opératoire."
+
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "Cette intégration ne peut pas être connectée sur cette instance Carbon."
 
@@ -31392,6 +31418,9 @@ msgstr "Cette version appartient à l'avis de modification <0>{0}</0>. Modifiez-
 
 msgid "This version cannot be opened"
 msgstr "Cette version ne peut pas être ouverte"
+
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "Cette version est un brouillon. La publier la rend active et archive la version active."
 
 msgid "This version is published"
 msgstr "Cette version est publiée"
@@ -33146,6 +33175,9 @@ msgstr "Version {0}"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "La version {0} est publiée maintenant et sera remplacée."
+
+msgid "Version published"
+msgstr "Version publiée"
 
 msgid "Version:"
 msgstr "Version :"

@@ -72508,6 +72508,15 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.rootInspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.workInstruction"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -72633,6 +72642,15 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.rootInspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.workInstruction"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -72710,6 +72728,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.rootInspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.workInstruction"
           },
           {
             $ref: "#/parameters/body.inspectionDocument"
@@ -108095,6 +108122,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocuments.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.rootInspectionDocumentId"
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocuments.partReadableId"
@@ -170520,7 +170553,8 @@ export default {
         "partId",
         "version",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "status"
       ],
       properties: {
         id: {
@@ -170629,6 +170663,19 @@ export default {
             "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."inspectionDocumentStatus"',
+          type: "string"
+        },
+        rootInspectionDocumentId: {
+          format: "text",
+          type: "string"
+        },
+        workInstruction: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -187754,6 +187801,15 @@ export default {
         modelUploadId: {
           description:
             "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."inspectionDocumentStatus"',
+          type: "string"
+        },
+        rootInspectionDocumentId: {
           format: "text",
           type: "string"
         },
@@ -231628,6 +231684,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspectionDocument.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.rootInspectionDocumentId": {
+      name: "rootInspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.workInstruction": {
+      name: "workInstruction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierQuote": {
       name: "supplierQuote",
       description: "supplierQuote",
@@ -250710,6 +250784,18 @@ export default {
     },
     "rowFilter.inspectionDocuments.modelUploadId": {
       name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.rootInspectionDocumentId": {
+      name: "rootInspectionDocumentId",
       required: false,
       in: "query",
       type: "string"

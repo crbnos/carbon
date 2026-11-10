@@ -4,23 +4,29 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { inspectionVerdictValidator } from "~/services/models";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
-// Accept or Reject a manual inspection. The engine moves the lot's tracked
-// entities (Accept → Available, failed units stay Rejected; Reject → all
-// Rejected) and records the verdict; there is no production posting. Manual
-// lots only, and one-shot, like every MES disposition.
+const logger = getLogger("mes", "inspection-verdict");
+
+// Accept or Reject a receipt or manual inspection. Accept releases the lot's
+// tracked entities in the engine, one-shot like every MES disposition. Reject
+// is the ERP's own Reject Lot, sent as the `reject-inspection` posting: it
+// also writes off an untracked Inventory item and opens the NCR, which are
+// ERP code. Neither carries a production posting.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
   const { id } = params;
@@ -32,32 +38,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const { decision, reason } = validation.data;
+  const { decision, reason, createNcr } = validation.data;
   const origin = readOrigin(formData);
+  const back = withOrigin(path.to.manualInspection(id), origin);
 
-  const result = await dispositionInspection(getDatabaseClient(), {
-    id,
-    decision,
-    reason,
-    companyId,
-    dispositionedBy: userId,
-    requireSource: "Manual",
-    requireOpen: true
-  });
-
-  if (result.error) {
+  if (decision === "Accept") {
+    const result = await dispositionInspection(getDatabaseClient(), {
+      id,
+      decision,
+      reason,
+      companyId,
+      dispositionedBy: userId,
+      requireSource: ["Receipt", "Manual"],
+      requireOpen: true
+    });
+    if (result.error) {
+      throw redirect(
+        back,
+        await flash(request, error(result.error, "Failed to accept inspection"))
+      );
+    }
     throw redirect(
-      withOrigin(path.to.manualInspection(id), origin),
-      await flash(
-        request,
-        error(
-          result.error,
-          decision === "Accept"
-            ? "Failed to accept inspection"
-            : "Failed to reject inspection"
-        )
-      )
+      origin ?? path.to.inspections,
+      await flash(request, success("Inspection accepted"))
     );
+  }
+
+  const rejected = await erpPosting(
+    "reject-inspection",
+    { companyId, userId, client },
+    { id, reason: reason || null, createNcr }
+  );
+  if (rejected.error) {
+    logger.error("Failed to reject inspection", {
+      companyId,
+      inspectionId: id,
+      error: rejected.error
+    });
+    // The ERP rejects the lot first, then writes stock off and opens the NCR.
+    // A failure after the verdict leaves a Failed lot: say what is left.
+    const lot = await getCarbonServiceRole()
+      .from("inspection")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    const message =
+      lot.data?.status === "Failed"
+        ? "Inspection rejected, but its write-off or NCR failed. Finish it from the inspection in the ERP."
+        : rejected.error.message || "Failed to reject inspection";
+    throw redirect(back, await flash(request, error(rejected.error, message)));
   }
 
   throw redirect(
@@ -65,7 +95,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await flash(
       request,
       success(
-        decision === "Accept" ? "Inspection accepted" : "Inspection rejected"
+        rejected.data.issueId
+          ? "Inspection rejected and NCR opened"
+          : "Inspection rejected"
       )
     )
   );

@@ -14,10 +14,12 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
+  toast,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import type { z } from "zod";
 import {
   Employee,
@@ -45,8 +47,26 @@ const ManualInspectionForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   // A refusal (an entity already being inspected, the wrong status) keeps the
-  // drawer open with the picks; success redirects to the new inspection.
-  const fetcher = useAction();
+  // drawer open with the picks; success links to the new inspection and closes.
+  const fetcher = useAction<{
+    data: { id: string; inspectionId: string } | null;
+  }>({
+    onSuccess: ({ data: created }) => {
+      if (created) {
+        toast.success(
+          <span>
+            <Trans>
+              Created{" "}
+              <Link className="underline" to={path.to.inspection(created.id)}>
+                {created.inspectionId}
+              </Link>
+            </Trans>
+          </span>
+        );
+      }
+      onClose();
+    }
+  });
   const [itemId, setItemId] = useState(initialValues.itemId);
 
   const entities = useLoaderQuery<
@@ -108,6 +128,7 @@ const ManualInspectionForm = ({
                   name="inspectionDocumentId"
                   label={t`Inspection Plan`}
                   itemId={itemId || undefined}
+                  isOptional={false}
                 />
                 <WorkCenter
                   name="workCenterId"

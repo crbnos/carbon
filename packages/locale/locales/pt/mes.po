@@ -1863,7 +1863,7 @@ msgstr "Não definido"
 msgid "Notes"
 msgstr "Observações"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "Nada foi reprovado ainda, então informe o motivo da rejeição das unidades. Todas as {0} unidade(s) serão Rejeitadas."
 
@@ -1951,9 +1951,6 @@ msgstr "Ordens de Produção Abertas"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "Abrir sub-montagem {0}: {1}"
-
-msgid "Opens in the ERP"
-msgstr "Abre no ERP"
 
 msgid "Operation due"
 msgstr "Prazo da operação"
@@ -2285,6 +2282,9 @@ msgstr "Motivo da retrabalhação"
 
 msgid "Receipt"
 msgstr "Recebimento"
+
+msgid "Receipt voided"
+msgstr "Recebimento anulado"
 
 msgid "Recent"
 msgstr "Recente"
@@ -2952,7 +2952,7 @@ msgstr "A data é anterior à janela de entrada. A razão é mantida com a entra
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "O lote inteiro de {0} será rejeitado como não-conformado — {passes} aprovação(ções) amostrada(s) e {fails} falha(s) até agora. Encaminhe as unidades abaixo para refugo ou retrabalho, ou registre apenas o veredicto."
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "A inspeção foi reprovada: {passes} amostra(s) aprovada(s) e {fails} reprovada(s). Todas as {0} unidade(s) serão Rejeitadas."
 
@@ -3016,6 +3016,12 @@ msgstr "Este lote de produção não possui instruções de trabalho."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Essas informações serão visíveis para todos os usuários, portanto, tenha cuidado com o que você compartilha."
+
+msgid "This inspection plan has no parameters."
+msgstr "Este plano de inspeção não tem parâmetros."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Este plano de inspeção não tem instruções de trabalho."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Esta é uma verificação de aprovado / reprovado. Pressione P ou F."

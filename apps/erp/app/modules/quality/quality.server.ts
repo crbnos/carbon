@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { rejectInspectionInput } from "@carbon/api/postings";
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -17,7 +18,7 @@ import {
   notifyIssueStatusChanged,
   notifyTaskStatusChanged
 } from "@carbon/ee/notifications";
-import { isUnsafeStoragePath } from "@carbon/files";
+import { isUnsafeStoragePath, storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -1338,7 +1339,7 @@ export const createManualInspection = defineServiceFn({
     if (created.error) {
       return ctx.error("rule", created.error.message, created.error);
     }
-    return { id: created.data.id };
+    return { id: created.data.id, inspectionId: created.data.inspectionId };
   }
 });
 
@@ -1421,12 +1422,8 @@ export const cancelManualInspection = defineServiceFn({
  * @mcp
  */
 export const rejectInspection = defineServiceFn({
-  input: z.object({
-    id: z.string(),
-    nonConformanceTypeId: z.string().nullish(),
-    createNcr: z.boolean().default(true),
-    reason: z.string().trim().max(2000).nullish()
-  }),
+  // Shared with the `reject-inspection` posting MES sends.
+  input: rejectInspectionInput,
   permission: { update: "quality" },
 
   async run(ctx, { id, nonConformanceTypeId, createNcr, reason }) {
@@ -1768,6 +1765,8 @@ export const saveInspectionDocument = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const id = input.inspectionDocumentId;
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
 
     // The drawing is read back through the private bucket, so it must be a
     // file in this company's folder (the editor sends its preview URL).
@@ -1903,6 +1902,9 @@ export const setInspectionDocumentName = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, name }) {
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
+
     const { error } = await requireAffected(
       ctx.asCaller.supabase
         .from("inspectionDocument")
@@ -1919,6 +1921,46 @@ export const setInspectionDocumentName = defineServiceFn({
       return ctx.error(
         "internal",
         "Failed to update the inspection name",
+        error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Set an inspection plan's work instructions: the rich text the inspector
+ * reads on every lot of the plan.
+ *
+ * @param workInstruction - Markdown or a Tiptap document; `{}` or an empty
+ * string clears it.
+ *
+ * @mcp
+ */
+export const setInspectionDocumentWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string(), workInstruction: optionalTiptapDoc }),
+  permission: { update: "quality" },
+
+  async run(ctx, { id, workInstruction }) {
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
+
+    const { error } = await requireAffected(
+      ctx.asCaller.supabase
+        .from("inspectionDocument")
+        .update({
+          workInstruction: workInstruction ?? null,
+          updatedBy: ctx.auditUserId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
+    if (error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the work instructions",
         error
       );
     }
@@ -1952,6 +1994,9 @@ export const attachInspectionDocumentModel = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, modelId, path, name, size }) {
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
+
     const plan = await ctx.asCaller.supabase
       .from("inspectionDocument")
       .select("id, storagePath, modelUploadId")
@@ -4274,6 +4319,10 @@ export const upsertInspectionDocument = defineServiceFn({
   }),
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
+    if (input.id) {
+      const locked = await service.inspectionDocumentLockRefusal(ctx, input.id);
+      if (locked) return locked;
+    }
     return unwrap(
       ctx,
       await service.upsertInspectionDocument(
@@ -4285,7 +4334,12 @@ export const upsertInspectionDocument = defineServiceFn({
 });
 
 /**
- * Delete inspection document
+ * Delete one version of an inspection plan.
+ *
+ * @remarks
+ * Deleting the first version makes its lowest remaining version the plan's
+ * first, so the other versions stay one plan. The drawing file is removed
+ * only when no other version holds it.
  *
  * @mcp destructive
  */
@@ -4293,14 +4347,138 @@ export const deleteInspectionDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
+    let deleted: Awaited<ReturnType<typeof service.deleteInspectionDocument>>;
+    try {
+      deleted = await service.deleteInspectionDocument(
+        ctx.asSystem.pg,
+        input.id,
+        ctx.company.id
+      );
+    } catch (err) {
+      return ctx.error("rule", "Failed to delete inspection plan", err);
+    }
+    if (!deleted) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
+    if (deleted.storagePath) {
+      const removed = await storage(ctx.asSystem.supabase)
+        .company(ctx.company.id)
+        .remove([deleted.storagePath]);
+      if (removed.error) {
+        logger.error("Failed to remove an inspection plan drawing", {
+          companyId: ctx.company.id,
+          storagePath: deleted.storagePath,
+          error: removed.error
+        });
+      }
+    }
+    return { id: input.id };
+  }
+});
+
+/**
+ * Get the versions of an inspection plan
+ *
+ * @remarks
+ * Every version of the plan the id belongs to, newest first, with its status.
+ *
+ * @mcp read
+ */
+export const getInspectionDocumentVersions = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    const plan = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .select("id, rootInspectionDocumentId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (plan.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the inspection plan",
+        plan.error
+      );
+    }
+    if (!plan.data) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
     return unwrap(
       ctx,
-      await service.deleteInspectionDocument(
+      await service.getInspectionDocumentVersions(
         ctx.asCaller.supabase,
-        input.id as never,
+        plan.data,
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Create a new version of an inspection plan
+ *
+ * @remarks
+ * Copies the version `copyFromId` (its characteristics, balloons, parameters,
+ * sampling default, drawing and model) into a new Draft numbered one past the
+ * plan's highest version. Only a Draft can be edited, so a change to an Active
+ * plan starts here; publish the Draft to use it.
+ *
+ * @mcp
+ */
+export const createInspectionDocumentVersion = defineServiceFn({
+  input: z.object({ copyFromId: z.string() }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    let created: Awaited<
+      ReturnType<typeof service.copyInspectionDocumentAsVersion>
+    >;
+    try {
+      created = await service.copyInspectionDocumentAsVersion(ctx.asSystem.pg, {
+        copyFromId: input.copyFromId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to create a new version", err);
+    }
+    if (!created) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
+    return created;
+  }
+});
+
+/**
+ * Publish a version of an inspection plan
+ *
+ * @remarks
+ * Makes the version Active and archives the version that was Active. Item
+ * receipt assignments and method operations that name another version of the
+ * plan move to this one, so the next receipt and new jobs inspect against it.
+ * Job operations already made and existing inspections keep their version.
+ *
+ * @mcp
+ */
+export const activateInspectionDocumentVersion = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    let activated: Awaited<
+      ReturnType<typeof service.activateInspectionDocumentVersion>
+    >;
+    try {
+      activated = await service.activateInspectionDocumentVersion(
+        ctx.asSystem.pg,
+        { id: input.id, companyId: ctx.company.id, userId: ctx.auditUserId }
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to publish the version", err);
+    }
+    if (!activated) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
+    return activated;
   }
 });
 
@@ -4380,6 +4558,12 @@ export const updateInspectionDocumentSampling = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
+    const locked = await service.inspectionDocumentLockRefusal(
+      ctx,
+      input.inspectionDocumentId
+    );
+    if (locked) return locked;
+
     return unwrap(
       ctx,
       await service.updateInspectionDocumentSampling(
@@ -4407,6 +4591,12 @@ export const saveInspectionDocumentAtomic = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
+    const locked = await service.inspectionDocumentLockRefusal(
+      ctx,
+      input.inspectionDocumentId
+    );
+    if (locked) return locked;
+
     return unwrap(
       ctx,
       await service.saveInspectionDocumentAtomic(

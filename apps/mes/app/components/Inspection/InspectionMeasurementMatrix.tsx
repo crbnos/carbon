@@ -9,10 +9,15 @@ import {
   toleranceLimits,
   valuateMeasurement
 } from "@carbon/database/inspection-verdict";
+import type { JSONContent } from "@carbon/react";
 import {
   Badge,
   cn,
+  generateHTML,
   IconButton,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   ToggleGroup,
   ToggleGroupItem,
   toast
@@ -107,6 +112,17 @@ type Characteristic = {
 
 type CellPayload = { value?: string; passed?: "true" | "false" };
 
+type MatrixTab = "characteristics" | "parameters" | "instructions";
+
+// A document with nothing but empty paragraphs has no instructions to read.
+function hasWorkInstruction(doc: JSONContent | null | undefined) {
+  return (doc?.content ?? []).some(
+    (node) => node.type !== "paragraph" || (node.content?.length ?? 0) > 0
+  );
+}
+
+export type InspectionParameter = { id: string; key: string; value: string };
+
 type InspectionMeasurementMatrixProps = {
   inspectionId: string;
   isReadOnly: boolean;
@@ -129,6 +145,13 @@ type InspectionMeasurementMatrixProps = {
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
   // Buttons for the toolbar's end: the drawing and collapse toggles.
   toolbarActions?: ReactNode;
+  // The plan's parameters (setup to read before measuring), on a Parameters
+  // tab beside the characteristics. Passed only when the lot has a plan, so
+  // the tab is always there to find, empty or not.
+  parameters?: InspectionParameter[];
+  // The plan's work instructions, on an Instructions tab. Passed with
+  // `parameters`, only when the lot has a plan.
+  workInstruction?: JSONContent | null;
   // Matrix position -> sample id, owned by the view so it survives a remount
   // (Hide / Show drawing). A save still running in the old matrix writes
   // here, so the new matrix's next save reuses that sample.
@@ -170,9 +193,12 @@ const InspectionMeasurementMatrix = ({
   onActiveFeatureChange,
   onMeasurementSaved,
   toolbarActions,
+  parameters,
+  workInstruction,
   placementRef,
   onBusyChange
 }: InspectionMeasurementMatrixProps) => {
+  const [tab, setTab] = useState<MatrixTab>("characteristics");
   const { t } = useLingui();
 
   // The matrix ignores plan rows whose live feature was deleted from the document.
@@ -1275,14 +1301,32 @@ const InspectionMeasurementMatrix = ({
   }, [isBusy, onBusyChange]);
   useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
 
+  const characteristicsTitle = hasFeatures ? t`Characteristics` : t`Result`;
+  const showingParameters = parameters !== undefined && tab === "parameters";
+  const showingInstructions =
+    parameters !== undefined && tab === "instructions";
+
   const toolbar = (
     <div className="flex min-h-10 flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
       <span className="flex min-w-0 items-center gap-2">
-        <span className="truncate text-sm font-medium text-foreground">
-          {hasFeatures
-            ? `${t`Characteristics`} (${characteristics.length})`
-            : t`Result`}
-        </span>
+        {parameters !== undefined ? (
+          <Tabs
+            value={tab}
+            onValueChange={(value) => setTab(value as MatrixTab)}
+          >
+            <TabsList className="max-md:w-auto max-md:px-0">
+              <TabsTrigger value="characteristics">
+                {characteristicsTitle}
+              </TabsTrigger>
+              <TabsTrigger value="parameters">{t`Parameters`}</TabsTrigger>
+              <TabsTrigger value="instructions">{t`Instructions`}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <span className="truncate text-sm font-medium text-foreground">
+            {characteristicsTitle}
+          </span>
+        )}
         {failedReadings > 0 && (
           <Badge variant="red" className="tabular-nums">
             {t`${failedReadings} failed`}
@@ -1295,7 +1339,7 @@ const InspectionMeasurementMatrix = ({
         )}
       </span>
       <span className="flex items-center gap-1">
-        {columnCount > 0 && (
+        {columnCount > 0 && !showingParameters && !showingInstructions && (
           <ToggleGroup
             type="single"
             size="sm"
@@ -1317,6 +1361,64 @@ const InspectionMeasurementMatrix = ({
       </span>
     </div>
   );
+
+  if (showingInstructions) {
+    return (
+      <>
+        {toolbar}
+        {hasWorkInstruction(workInstruction) ? (
+          <div className="min-h-0 flex-1 overflow-auto p-4">
+            <div
+              className="prose max-w-none dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(workInstruction as JSONContent)
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
+            {t`This inspection plan has no work instructions.`}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (showingParameters) {
+    return (
+      <>
+        {toolbar}
+        {parameters.length === 0 ? (
+          <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
+            {t`This inspection plan has no parameters.`}
+          </div>
+        ) : (
+          <dl className="min-h-0 flex-1 divide-y divide-border overflow-auto">
+            {parameters.map((parameter) => (
+              <div
+                key={parameter.id}
+                className="flex min-h-14 items-center justify-between gap-4 px-4 py-2"
+              >
+                <dt className="text-sm text-muted-foreground">
+                  {parameter.key}
+                </dt>
+                <dd
+                  className={cn(
+                    "text-right text-foreground",
+                    parameter.value.length > 8
+                      ? "text-sm font-medium"
+                      : "text-xl font-semibold tabular-nums tracking-tight"
+                  )}
+                >
+                  {parameter.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </>
+    );
+  }
 
   if (columnCount === 0) {
     return (

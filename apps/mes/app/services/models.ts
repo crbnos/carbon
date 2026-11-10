@@ -447,7 +447,9 @@ export const inspectionVerdictValidator = z.object({
   decision: z.enum(["Accept", "Reject"], {
     error: "Decision is required"
   }),
-  reason: zfd.text(z.string().optional())
+  reason: zfd.text(z.string().optional()),
+  // A reject opens an NCR unless the inspector turns it off, as in the ERP.
+  createNcr: zfd.checkbox()
 });
 
 export const inspectionDispositionValidator = z

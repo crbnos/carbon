@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLoaderQuery } from "@carbon/query";
+import type { JSONContent } from "@carbon/react";
 import {
   Alert,
   AlertDescription,
@@ -153,6 +154,8 @@ export type InspectionViewProps = {
   documentName: string | null;
   /** The plan's parameters, read live from the plan. */
   parameters: InspectionParameter[];
+  /** The plan's work instructions (Tiptap JSON), read live from the plan. */
+  workInstruction: JSONContent | null;
   pdfUrl: string | null;
   /** A plan made from a model's PMI: the drawing pane shows the model. */
   model: { modelUploadId: string; modelPath: string | null } | null;
@@ -185,6 +188,7 @@ const InspectionView = ({
   balloons,
   documentName,
   parameters,
+  workInstruction,
   pdfUrl,
   model,
   lotEntities,
@@ -428,7 +432,9 @@ const InspectionView = ({
   const remaining = lotEntities.filter((e) => !sampledIds.has(e.id));
   // A manual lot starts with every serial sampled; Add Sample only returns
   // when one of its serials has no column (a sample removed since).
-  const canAddSample = isSerial && (scansSamples || remaining.length > 0);
+  // Add Sample only while some unit has no sample: an "inspect all" lot and a
+  // manual lot start with every unit sampled (prefillInspectionSamples).
+  const canAddSample = isSerial && remaining.length > 0;
 
   // Item display id from the live items store (snapshot may be stale).
   const item = items.find((i) => i.id === inspection.itemId);
@@ -716,16 +722,23 @@ const InspectionView = ({
             </RecordAction>
           )}
           <RecordAction slot="overflow">
-            <Button
-              variant="secondary"
-              leftIcon={<LuShieldAlert />}
-              asChild
-              isDisabled={failedTrackedEntityIds.length === 0}
-            >
-              <a href={newIssueHref} target="_blank" rel="noreferrer">
+            {/* A disabled link still navigates, so with nothing failed the
+                button is a real disabled button, not a link. */}
+            {failedTrackedEntityIds.length === 0 ? (
+              <Button
+                variant="secondary"
+                leftIcon={<LuShieldAlert />}
+                isDisabled
+              >
                 <Trans>Create Issue</Trans>
-              </a>
-            </Button>
+              </Button>
+            ) : (
+              <Button variant="secondary" leftIcon={<LuShieldAlert />} asChild>
+                <a href={newIssueHref} target="_blank" rel="noreferrer">
+                  <Trans>Create Issue</Trans>
+                </a>
+              </Button>
+            )}
           </RecordAction>
           {canAddSample && !lotClosed && (
             <RecordAction slot={hasErpDisposition ? "overflow" : "primary"}>
@@ -873,7 +886,10 @@ const InspectionView = ({
                 }
               >
                 <InspectionMeasurementGrid
-                  parameters={parameters}
+                  parameters={
+                    inspection.inspectionDocumentId ? parameters : undefined
+                  }
+                  workInstruction={workInstruction}
                   inspectionId={inspection.id}
                   isReadOnly={!canUpdate || lotClosed}
                   isSerial={isSerial}
@@ -930,14 +946,17 @@ const InspectionView = ({
           </div>
         </div>
       ) : (
-        // No drawing: the grid takes the full body. Feature-driven lots still
-        // render their features; lots without a document collapse to the
-        // single "Overall result" row inside the same grid.
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:px-0">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card">
+        // No drawing: the grid takes the full body, edge to edge with no inset
+        // card. Feature-driven lots still render their features; lots without
+        // a document collapse to the single "Overall result" row.
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card">
             <div className="min-h-0 flex-1 overflow-auto">
               <InspectionMeasurementGrid
-                parameters={parameters}
+                parameters={
+                  inspection.inspectionDocumentId ? parameters : undefined
+                }
+                workInstruction={workInstruction}
                 inspectionId={inspection.id}
                 isReadOnly={!canUpdate || lotClosed}
                 isSerial={isSerial}

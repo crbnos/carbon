@@ -1863,7 +1863,7 @@ msgstr "未设置"
 msgid "Notes"
 msgstr "备注"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
 msgstr "尚无失败项，因此请说明这些件被拒绝的原因。全部 {0} 件将被标记为已拒绝。"
 
@@ -1951,9 +1951,6 @@ msgstr "未结工单"
 #. placeholder {1}: subAssemblyTitle(item.headerId)
 msgid "Open sub-assembly {0}: {1}"
 msgstr "打开子装配体 {0}: {1}"
-
-msgid "Opens in the ERP"
-msgstr "在 ERP 中打开"
 
 msgid "Operation due"
 msgstr "工序到期"
@@ -2285,6 +2282,9 @@ msgstr "返工原因"
 
 msgid "Receipt"
 msgstr "收货"
+
+msgid "Receipt voided"
+msgstr "收货已作废"
 
 msgid "Recent"
 msgstr "最近"
@@ -2952,7 +2952,7 @@ msgstr "日期在输入窗口之前。原因与条目一起保存。"
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "整个{0}批次将作为不符合规范进行拒绝——目前有{passes}个样品合格和{fails}个故障。将下面的件路由到报废或返工，或仅记录判定结果。"
 
-#. placeholder {0}: lotEntities.length
+#. placeholder {0}: inspection.lotSize
 msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
 msgstr "检验未通过：{passes} 个样本已通过，{fails} 个样本未通过。全部 {0} 件将被标记为已拒绝。"
 
@@ -3016,6 +3016,12 @@ msgstr "此生产批次没有作业指导书。"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
+
+msgid "This inspection plan has no parameters."
+msgstr "此检验计划没有参数。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "此检验计划没有作业指导书。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "这是合格 / 不合格检查。请按 P 或 F。"

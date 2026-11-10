@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# परीक्षण} other {# परीक्षण
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# टूल} other {# टूल}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# संस्करण} other {# संस्करण}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
@@ -1173,6 +1177,9 @@ msgstr "{total} संपत्तियों में से {passing}"
 
 msgid "{percent} picked"
 msgstr "{percent} पिक किया गया"
+
+msgid "{percentage}%"
+msgstr "{percentage}%"
 
 msgid "{position} of {total}"
 msgstr "{position} में से {total}"
@@ -8768,6 +8775,10 @@ msgstr "<0/> बनाया गया"
 msgid "Created <0/> by <1/>"
 msgstr "<1/> द्वारा <0/> बनाया गया"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "<0>{0}</0> बनाया गया"
+
 msgid "Created account"
 msgstr "खाता बनाया गया"
 
@@ -13477,6 +13488,9 @@ msgstr "जब तक हर पंक्ति को चुना नहीं
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "कोटेशन पंक्तियों, विक्रय आदेश पंक्तियों और विक्रय चालान पंक्तियों पर सक्रिय होता है।"
 
+msgid "First {count}"
+msgstr "पहले {count}"
+
 msgid "First invoice"
 msgstr "पहला चालान"
 
@@ -17266,6 +17280,9 @@ msgstr "{date} के लिए {amount} का निर्माण करे�
 msgid "Make {quantity}"
 msgstr "{quantity} बनाएं"
 
+msgid "Make a new version to change this plan"
+msgstr "इस योजना को बदलने के लिए नया संस्करण बनाएं"
+
 msgid "Make Active"
 msgstr "सक्रिय करें"
 
@@ -17329,6 +17346,9 @@ msgstr "यह दस्तावेज़ फिर से सक्रिय �
 
 msgid "Makes this document active and visible."
 msgstr "यह दस्तावेज़ सक्रिय और दृश्यमान बनाता है।"
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "इस संस्करण को फिर से सक्रिय करता है और सक्रिय संस्करण को संग्रहीत कर देता है।"
 
 msgid "Manage"
 msgstr "प्रबंधित करें"
@@ -31131,6 +31151,12 @@ msgstr "यह निरीक्षण"
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
 
+msgid "This inspection plan has no parameters."
+msgstr "इस निरीक्षण योजना में कोई पैरामीटर नहीं है।"
+
+msgid "This inspection plan has no work instructions."
+msgstr "इस निरीक्षण योजना में कोई कार्य निर्देश नहीं है।"
+
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "यह एकीकरण इस Carbon इंस्टेंस पर कनेक्ट नहीं किया जा सकता।"
 
@@ -31392,6 +31418,9 @@ msgstr "यह संस्करण परिवर्तन सूचना <0
 
 msgid "This version cannot be opened"
 msgstr "यह version खोला नहीं जा सकता"
+
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "यह संस्करण एक ड्राफ्ट है। प्रकाशित करने पर यह सक्रिय हो जाता है और सक्रिय संस्करण संग्रहीत कर दिया जाता है।"
 
 msgid "This version is published"
 msgstr "यह संस्करण प्रकाशित है"
@@ -33146,6 +33175,9 @@ msgstr "संस्करण {0}"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "संस्करण {0} अभी प्रकाशित है और प्रतिस्थापित किया जाएगा।"
+
+msgid "Version published"
+msgstr "संस्करण प्रकाशित हुआ"
 
 msgid "Version:"
 msgstr "संस्करण:"

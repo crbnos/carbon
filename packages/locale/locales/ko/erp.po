@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# 테스트} other {# 테스트}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# 공구} other {# 공구}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# 버전} other {# 버전}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#주}}"
@@ -1173,6 +1177,9 @@ msgstr "총 {total}개 자산 중 {passing}개"
 
 msgid "{percent} picked"
 msgstr "{percent} 피킹 완료"
+
+msgid "{percentage}%"
+msgstr "{percentage}%"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
@@ -8768,6 +8775,10 @@ msgstr "생성됨 <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "생성됨 <0/> <1/>에 의해"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "<0>{0}</0> 생성됨"
+
 msgid "Created account"
 msgstr "계정 생성됨"
 
@@ -13477,6 +13488,9 @@ msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "견적 라인, 수주 라인 및 매출 송장 라인에서 실행합니다."
 
+msgid "First {count}"
+msgstr "처음 {count}"
+
 msgid "First invoice"
 msgstr "첫 번째 송장"
 
@@ -17266,6 +17280,9 @@ msgstr "사내 생산 {amount}({date}용)"
 msgid "Make {quantity}"
 msgstr "{quantity} 제조"
 
+msgid "Make a new version to change this plan"
+msgstr "이 계획을 변경하려면 새 버전을 만드세요"
+
 msgid "Make Active"
 msgstr "활성으로 설정"
 
@@ -17329,6 +17346,9 @@ msgstr "이 문서를 다시 활성 상태로 만듭니다."
 
 msgid "Makes this document active and visible."
 msgstr "이 문서를 활성 상태로 만들고 표시합니다."
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "이 버전을 다시 활성으로 설정하고 현재 활성 버전은 보관합니다."
 
 msgid "Manage"
 msgstr "관리"
@@ -31131,6 +31151,12 @@ msgstr "이 검사"
 msgid "this inspection plan"
 msgstr "이 검사 계획"
 
+msgid "This inspection plan has no parameters."
+msgstr "이 검사 계획에는 파라미터가 없습니다."
+
+msgid "This inspection plan has no work instructions."
+msgstr "이 검사 계획에는 작업 표준서가 없습니다."
+
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "이 Carbon 인스턴스에서는 이 연동을 연결할 수 없습니다."
 
@@ -31392,6 +31418,9 @@ msgstr "이 버전은 변경 통지 <0>{0}</0>에 속합니다. 거기서 편집
 
 msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
+
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "이 버전은 초안입니다. 게시하면 활성 상태가 되고 현재 활성 버전은 보관됩니다."
 
 msgid "This version is published"
 msgstr "이 버전은 게시됨입니다."
@@ -33146,6 +33175,9 @@ msgstr "버전 {0}"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "버전 {0}이 지금 게시되었으며 교체될 예정입니다."
+
+msgid "Version published"
+msgstr "버전이 게시되었습니다"
 
 msgid "Version:"
 msgstr "버전:"
