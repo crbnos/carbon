@@ -11,7 +11,7 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { clearClaims, getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import { admits, userActor } from "@carbon/database/access";
 import {
@@ -24,6 +24,7 @@ import { getClientIp } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   type PanelSession,
+  panelSessionForCompany,
   panelSessionFromAuthSession,
   panelSessionRefusal,
   panelSessionTtlSeconds
@@ -31,7 +32,9 @@ import {
 
 export {
   PANEL_SESSION_TTL_SECONDS,
-  type PanelSession
+  type PanelCompanyChoice,
+  type PanelSession,
+  panelCompanyChoices
 } from "./session-policy";
 
 /**
@@ -48,6 +51,10 @@ const TOKEN_PATTERN = /^cps_[A-Za-z0-9_-]{32}$/;
 
 function keyFor(token: string) {
   return `panel-session:${token}`;
+}
+
+function mintToken() {
+  return `${TOKEN_PREFIX}${randomBytes(24).toString("base64url")}`;
 }
 
 export function isPanelSessionToken(value: unknown): value is string {
@@ -74,7 +81,7 @@ export async function createPanelSession(
   });
   if (ttl <= 0) return null;
 
-  const token = `${TOKEN_PREFIX}${randomBytes(24).toString("base64url")}`;
+  const token = mintToken();
   const stored = await redis.set(
     keyFor(token),
     JSON.stringify(session),
@@ -115,6 +122,36 @@ async function stampActivity(token: string, session: PanelSession) {
 
 export async function deletePanelSession(token: string): Promise<void> {
   await redis.del(keyFor(token));
+}
+
+/**
+ * Moves a session to a new token in another company, keeping its expiry.
+ * Never in place: `stampActivity` would write the old company back, and a
+ * tab sharing the token would push to a company it does not show.
+ */
+export async function switchPanelSessionCompany(
+  token: string,
+  target: { companyId: string; companyGroupId: string }
+): Promise<string | null> {
+  const session = await loadPanelSession(token);
+  if (!session) return null;
+
+  const remainingMs = await redis.pttl(keyFor(token));
+  if (!(remainingMs > 0)) return null;
+
+  const next = mintToken();
+  const stored = await redis.set(
+    keyFor(next),
+    JSON.stringify(panelSessionForCompany(session, target, Date.now())),
+    "PX",
+    remainingMs
+  );
+  if (stored !== "OK") return null;
+
+  await deletePanelSession(token);
+  // The cached role is the old company's; the cookie switch drops it too.
+  await clearClaims([session.userId]);
+  return next;
 }
 
 /**
@@ -168,6 +205,8 @@ async function panelCaller(
   email: string;
   userId: string;
   sessionUserId: string;
+  /** Set on an SSO sign-in, where the identity provider owns MFA. */
+  ssoProviderId?: string;
   consoleMode: boolean;
   caller: "session";
   permissions: Awaited<ReturnType<typeof getUserClaims>>["permissions"];
@@ -219,6 +258,7 @@ async function panelCaller(
     email,
     userId,
     sessionUserId: userId,
+    ssoProviderId: session.ssoProviderId,
     consoleMode: false,
     caller: "session",
     permissions: myClaims.permissions,

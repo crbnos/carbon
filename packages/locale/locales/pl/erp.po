@@ -4103,6 +4103,9 @@ msgstr "Dowolny"
 msgid "Any day in the month adds that month"
 msgstr "Każdy dzień w miesiącu dodaje ten miesiąc"
 
+msgid "any fields set to update on every push"
+msgstr "wszystkie pola ustawione na aktualizację przy każdym wysłaniu"
+
 msgid "Any item group"
 msgstr "Dowolna grupa artykułów"
 
@@ -5881,6 +5884,9 @@ msgstr "Ustawienie eksploratora BOM zaktualizowane"
 msgid "BOM synced successfully"
 msgstr "BOM zsynchronizowany pomyślnie"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM zsynchronizowany. Nie zapisano: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOMy"
 
@@ -6167,6 +6173,9 @@ msgstr "Według jednostki magazynowej"
 
 msgid "By you · edited <0/>"
 msgstr "Przez ciebie · edytowano <0/>"
+
+msgid "CAD model"
+msgstr "model CAD"
 
 msgid "CAD Model"
 msgstr "Model CAD"
@@ -11022,6 +11031,9 @@ msgstr "Pobieranie"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze charakterystyk pozostały niezmienione."
 
+msgid "drawings"
+msgstr "rysunki"
+
 msgid "Drop a drawing or model"
 msgstr "Upuść rysunek lub model"
 
@@ -11305,10 +11317,6 @@ msgstr "Każdy okres to jeden miesiąc, za stawką miesięczną."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Każda jednostka fizyczna otrzymuje swoją własną jednostkę śledzenia i unikalny numer — jedna jednostka, jedna jednostka."
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Każde wysłanie zastępuje: {0}. Inne edycje pozostają."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Każdy sprzedawca umowy najmu lub umowy (lub jej twórca) otrzymuje codzienne podsumowanie swoich faktur."
@@ -16475,8 +16483,8 @@ msgstr "Ostatnie wysłanie {when} nie powiodło się: {0}"
 msgid "Last push {when}:"
 msgstr "Ostatni push {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Ostatnio wysłano {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Ostatnio wysłano {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Ostatni kwartał"
@@ -23442,14 +23450,14 @@ msgstr "Wyślij dowód księgowy bez wymiaru"
 msgid "Push to accounting"
 msgstr "Wyślij do systemu księgowego"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Wysłania nie zmieniają pól tego artykułu, dlatego edycje wykonane tutaj pozostają."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Wysłania z Onshape mogą aktualizować {pushTargets} tego artykułu, ale nie jego pola."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Wysłania z Onshape przestają aktualizować ten artykuł. Wysłanie tej części z Onshape ponownie ją łączy."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Wysłania z Onshape mogą aktualizować {pushTargets} tego artykułu."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Wysłania zastępują tylko pola, które strona Pól Onshape ustawia na Aktualizuj przy każdym wysłaniu."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Wysłania przestają aktualizować ten artykuł, a jego bieżące dane pozostają. Każde późniejsze wysłanie zawierające ten numer części połączy go ponownie."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Wstrzymaj projekt umowy na mocy rozkazu wstrzymania prac, z jego datą końcową 90 dni, i wznów go po zakończeniu rozkazu."

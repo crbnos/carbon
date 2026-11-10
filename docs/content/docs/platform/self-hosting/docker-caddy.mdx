@@ -60,7 +60,7 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
   <Step>
   ### Configure
 
-  Edit `.env`: set `CARBON_REPO`, your `*_HOST` / `*_URL` hostnames, `ACME_EMAIL`, and SMTP settings.
+  Edit `.env`: set `CARBON_REPO`, your `*_HOST` / `*_URL` hostnames, `ACME_EMAIL`, `ADMIN_EMAIL`, and SMTP settings. Sign-ups are off, so `ADMIN_EMAIL` is the first account: the deploy creates it, and it signs in by magic link.
 
   ```bash
   $EDITOR .env
@@ -78,7 +78,7 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
   <Step>
   ### Deploy
 
-  Build the images, deploy the stack, wait for the database, and apply migrations.
+  Build the images, deploy the stack, wait for the database, apply migrations, and seed the first-boot data and the `ADMIN_EMAIL` account.
 
   ```bash
   ./deploy.sh up
@@ -92,6 +92,8 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
   curl -fsS https://$ERP_HOST/health   # -> 200
   curl -fsS https://$MES_HOST/health   # -> 200
   ```
+
+  Then open `https://$ERP_HOST`, sign in as `ADMIN_EMAIL`, and set up your company. Invite everyone else from the app.
   </Step>
 </Steps>
 
@@ -132,7 +134,7 @@ docker exec -it $(docker ps -qf name=carbon_postgres.1) psql -U postgres
 
 The `.1` avoids also matching `carbon_postgrest`. Or run Studio (`STUDIO_REPLICAS=1`) and expose it behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
 
-**Database events.** Postgres delivers its events (the event queue behind webhooks, workflows and search, part embeddings, job notifications) straight to Inngest, at a URL `./deploy.sh migrate` stores in the database once the `erp` service is running. If `migrate` warns that it could not wire them, run it again once the stack is up. After rotating `inngest_event_key`, run `./deploy.sh migrate` again.
+**Database events.** Postgres delivers its events (the event queue behind webhooks, workflows and search, part embeddings, job notifications) straight to Inngest, at a URL `./deploy.sh migrate` stores in the database. After rotating `inngest_event_key`, run `./deploy.sh migrate` again.
 
 **Rotate a secret.** Swarm secrets are immutable while in use, so bring the stack down first:
 

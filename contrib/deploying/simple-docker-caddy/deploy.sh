@@ -144,7 +144,7 @@ cmd_init() {
     
     log "Secrets ready."
     warn "Next:"
-    warn "  1. Edit $ENV_FILE — set CARBON_REPO, the *_HOST/*_URL, ACME_EMAIL, SMTP."
+    warn "  1. Edit $ENV_FILE — set CARBON_REPO, the *_HOST/*_URL, ACME_EMAIL, ADMIN_EMAIL, SMTP."
     warn "  2. Set real secrets:  $SCRIPT_NAME secret smtp_password xxx"
     warn "  3. $SCRIPT_NAME up"
 }
@@ -214,20 +214,34 @@ cmd_migrate() {
     wait_healthy storage 180
     local job="${STACK_NAME}_migrate"
     docker service rm "$job" >/dev/null 2>&1 || true
-    log "Running migrations (supabase migration up)"
+    [ -n "${ADMIN_EMAIL:-}" ] || warn "ADMIN_EMAIL is not set in .env — no account will exist to sign in with (sign-ups are off)"
+    # Migrations, then the seed (as BYOC's bootstrap job runs it): the config row
+    # Postgres reads to call the API, the plan rows, the Inngest event URL, and
+    # the ADMIN_EMAIL account. Both are idempotent, so a retry repeats them safely.
+    log "Running migrations and seed"
     docker service create \
     --name "$job" \
     --mode replicated-job \
     --detach=true \
     --network "${STACK_NAME}_internal" \
     --secret postgres_password \
+    --secret anon_key \
+    --secret service_role_key \
+    --secret inngest_event_key \
     --restart-condition on-failure \
     --restart-max-attempts 10 \
     --env PGSSLMODE=disable \
+    --env SUPABASE_URL=http://gateway:8000 \
+    --env INNGEST_BASE_URL=http://inngest:8288/ \
+    --env "ADMIN_EMAIL=${ADMIN_EMAIL:-}" \
     --workdir /repo/packages/database \
     "$CARBON_IMAGE_BOOTSTRAP" \
     sh -c 'pnpm exec supabase migration up --include-all \
-    --db-url "postgresql://supabase_admin:$(cat /run/secrets/postgres_password)@postgres:5432/postgres"' >/dev/null
+    --db-url "postgresql://supabase_admin:$(cat /run/secrets/postgres_password)@postgres:5432/postgres" \
+    && SUPABASE_ANON_KEY="$(cat /run/secrets/anon_key)" \
+    SUPABASE_SERVICE_ROLE_KEY="$(cat /run/secrets/service_role_key)" \
+    INNGEST_EVENT_KEY="$(cat /run/secrets/inngest_event_key)" \
+    pnpm exec tsx src/seed.ts' >/dev/null
 
     # Wait for the one-shot job to finish, then ALWAYS surface its logs and abort on
     # failure — a detached job otherwise dies silently and `up` would roll on regardless.
@@ -246,33 +260,10 @@ cmd_migrate() {
         warn "Migration job ${outcome:-timed out}. Logs:"
         docker service logs "$job" 2>&1 | tail -60 >&2 || true
         docker service rm "$job" >/dev/null 2>&1 || true
-        error "Migrations failed — see logs above."
+        error "Migrations or seed failed — see logs above."
     fi
     docker service rm "$job" >/dev/null 2>&1 || true
-    log "Migrations applied"
-    set_inngest_event_url
-}
-
-# Postgres posts its events (event queue, embeddings, notifications) to Inngest
-# at the Vault secret `inngest_event_url`; without it they are never delivered.
-# The event key is a Swarm secret the host cannot read back, so it is read from
-# the running erp task. Idempotent; re-run `migrate` after rotating the key.
-set_inngest_event_url() {
-    local erp pg key
-    erp="$(docker ps -qf "name=${STACK_NAME}_erp.1" | head -1)"
-    pg="$(docker ps -qf "name=${STACK_NAME}_postgres.1" | head -1)"
-    if [ -z "$erp" ] || [ -z "$pg" ]; then
-        warn "erp or postgres is not running — database events are not wired yet; re-run '$SCRIPT_NAME migrate' once the stack is up"
-        return 0
-    fi
-    key="$(docker exec "$erp" cat /run/secrets/inngest_event_key)" || {
-        warn "Could not read inngest_event_key from the erp task — database events will not be delivered"
-        return 0
-    }
-    printf "SELECT public.set_inngest_event_url('http://inngest:8288/e/%s');\n" "$key" \
-        | docker exec -i "$pg" psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 >/dev/null \
-        && log "Database events wired to Inngest" \
-        || warn "Could not set the Inngest event URL — database events will not be delivered"
+    log "Migrations and seed applied"
 }
 
 # ── up (build + deploy + migrate + roll apps) ───────────────────────────────────

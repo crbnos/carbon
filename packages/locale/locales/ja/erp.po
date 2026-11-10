@@ -4103,6 +4103,9 @@ msgstr "いずれか"
 msgid "Any day in the month adds that month"
 msgstr "月内のいずれかの日でその月を追加"
 
+msgid "any fields set to update on every push"
+msgstr "プッシュのたびに更新するよう設定されたフィールド"
+
 msgid "Any item group"
 msgstr "任意のアイテムグループ"
 
@@ -5881,6 +5884,9 @@ msgstr "BoM エクスプローラー設定を更新"
 msgid "BOM synced successfully"
 msgstr "BOMが正常に同期されました"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOMを同期しました。書き込まれなかったもの: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM"
 
@@ -6167,6 +6173,9 @@ msgstr "保管ユニット別"
 
 msgid "By you · edited <0/>"
 msgstr "あなた · 編集済 <0/>"
+
+msgid "CAD model"
+msgstr "CADモデル"
 
 msgid "CAD Model"
 msgstr "CADモデル"
@@ -11022,6 +11031,9 @@ msgstr "引き出し中"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "図面が置き換えられました。バルーン配置は削除されました。特性行は変更されていません。"
 
+msgid "drawings"
+msgstr "図面"
+
 msgid "Drop a drawing or model"
 msgstr "図面またはモデルをドロップ"
 
@@ -11305,10 +11317,6 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "各プッシュが置き換えるもの: {0}。その他の編集は保持されます。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
@@ -16475,7 +16483,7 @@ msgstr "前回の{when}の送信は失敗しました: {0}"
 msgid "Last push {when}:"
 msgstr "最後のプッシュ {when}:"
 
-msgid "Last pushed {lastPushed}."
+msgid "Last pushed {lastPushed}"
 msgstr "最終プッシュ: {lastPushed}"
 
 msgid "Last Quarter"
@@ -23442,14 +23450,14 @@ msgstr "ディメンションなしで仕訳を転記する"
 msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "プッシュはこの品目のフィールドを変更しないため、ここで行われた編集は保持されます。"
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Onshapeからのプッシュでは、この品目の{pushTargets}を更新できますが、フィールドは更新されません。"
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshapeからのプッシュがこの品目を更新しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復元されます。"
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Onshapeからのプッシュでは、この品目の{pushTargets}を更新できます。"
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "プッシュは、Onshapeの [フィールド] ページで [毎回プッシュで更新] に設定されたフィールドのみを置き換えます。"
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "プッシュによるこの品目の更新は停止し、現在のデータはそのまま残ります。この部品番号を含む以降のプッシュで再びリンクされます。"
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "停止命令下の契約プロジェクトを保留中にし、90日の終了日を設定して、命令が終わったら再開します。"
