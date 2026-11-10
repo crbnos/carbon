@@ -85,6 +85,13 @@ export type QuoteOperationRow = {
   machineUnit: string;
   operationLeadTime: number;
 };
+/** The routing rows the engine places: a quote line's, or an item's (`loadItemRouting`). */
+export type QuoteLineRouting = {
+  makeMethods: QuoteMakeMethodRow[];
+  materials: QuoteMaterialRow[];
+  operations: QuoteOperationRow[];
+};
+
 export type MaterialAvailability = {
   /** itemReplenishment.leadTime, default 7 */
   leadTimeDaysByItem: Map<string, number>;
@@ -469,11 +476,7 @@ async function loadQuoteLineRouting(
   db: Kysely<DB>,
   quoteLineId: string,
   companyId: string
-): Promise<{
-  makeMethods: QuoteMakeMethodRow[];
-  materials: QuoteMaterialRow[];
-  operations: QuoteOperationRow[];
-} | null> {
+): Promise<QuoteLineRouting | null> {
   const [makeMethodRows, materialRows, operationRows] = await Promise.all([
     db
       .selectFrom("quoteMakeMethod")
@@ -619,6 +622,9 @@ async function loadMaterialAvailability(
  * queue", excludeJobIds []) and against the location's open jobs excluded
  * ("best case", the same snapshot runExpediteWhatIf uses). Persists nothing.
  * Returns null when the line has no routing to schedule.
+ *
+ * A caller that already holds the rows (a sales order line's item routing)
+ * passes `routing`; `quoteLineId` then only names the synthetic job.
  */
 export async function runQuoteLeadTimeWhatIf(params: {
   db: Kysely<DB>;
@@ -629,6 +635,7 @@ export async function runQuoteLeadTimeWhatIf(params: {
   quoteLineId: string;
   quantities: number[];
   dueDate?: string | null;
+  routing?: QuoteLineRouting;
 }): Promise<QuoteLeadTimeForecast | null> {
   const {
     db,
@@ -654,7 +661,8 @@ export async function runQuoteLeadTimeWhatIf(params: {
   const timeZone = locationRow?.timezone ?? "UTC";
   const locationName = locationRow?.name ?? "this location";
 
-  const routing = await loadQuoteLineRouting(db, quoteLineId, companyId);
+  const routing =
+    params.routing ?? (await loadQuoteLineRouting(db, quoteLineId, companyId));
   if (!routing) return null;
 
   const availability = await loadMaterialAvailability(
