@@ -1397,7 +1397,6 @@ export const manifest = {
   }),
   // The Admin force-delete override: written and read only by the service
   // functions, which check that the caller is an Admin.
-  purchaseOrderForceDeleteApproval: serviceOnly(),
   purchaseOrderForceDeleteRequest: serviceOnly(),
   purchaseOrderLine: company("purchasing", { read: "purchasing_view" }),
   // The versions an approval request keeps: written by the amendment

@@ -4314,14 +4314,14 @@ msgstr "Approved"
 msgid "Approved <0/> by <1/>"
 msgstr "Approved <0/> by <1/>"
 
-msgid "Approved by"
-msgstr "Approved by"
-
 msgid "Approved By"
 msgstr "Approved By"
 
 msgid "Approved On"
 msgstr "Approved On"
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -13715,15 +13715,17 @@ msgstr "For example Site or Ordered by"
 msgid "For Form 6765 Section E"
 msgstr "For Form 6765 Section E"
 
+msgid "Force delete"
+msgstr "Force delete"
+
 msgid "Force Delete (Admin)"
 msgstr "Force Delete (Admin)"
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr "Force delete {purchaseOrderReadableId}"
 
-#. placeholder {0}: approvedBy.length
-msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
-msgstr "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgid "Force delete waiting for another Admin's approval"
+msgstr "Force delete waiting for another Admin's approval"
 
 msgid "Forecast"
 msgstr "Forecast"
@@ -20396,8 +20398,8 @@ msgstr "Nothing here yet"
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
-msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
-msgstr "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nothing is due. Invoices are created automatically when a period comes due."
@@ -23304,6 +23306,9 @@ msgstr "Purchase Order Approval"
 
 msgid "Purchase order for {supplierName}"
 msgstr "Purchase order for {supplierName}"
+
+msgid "Purchase Order Force Delete"
+msgstr "Purchase Order Force Delete"
 
 msgid "Purchase Order ID"
 msgstr "Purchase Order ID"
@@ -34849,8 +34854,8 @@ msgstr "Your rate"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Your real data is loaded and you have checked a sample and approved it."
 
-msgid "Your reason and every approval are kept in the audit log."
-msgstr "Your reason and every approval are kept in the audit log."
+msgid "Your reason and the decision are kept in the audit log."
+msgstr "Your reason and the decision are kept in the audit log."
 
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
@@ -34872,9 +34877,6 @@ msgstr "Your team, structure, and access."
 
 msgid "Your vendor list"
 msgstr "Your vendor list"
-
-msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
-msgstr "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
 
 msgid "yourself"
 msgstr "yourself"

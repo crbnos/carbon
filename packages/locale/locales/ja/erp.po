@@ -4314,14 +4314,14 @@ msgstr "承認済"
 msgid "Approved <0/> by <1/>"
 msgstr "承認済 <0/> 〜 <1/>"
 
-msgid "Approved by"
-msgstr ""
-
 msgid "Approved By"
 msgstr "承認者"
 
 msgid "Approved On"
 msgstr "承認日"
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "概算 — スケジュール日付から派生; このエントリに対する容量予約は存在しません。"
@@ -13715,14 +13715,16 @@ msgstr "例：拠点、発注者"
 msgid "For Form 6765 Section E"
 msgstr "フォーム6765セクションE用"
 
+msgid "Force delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr ""
 
-#. placeholder {0}: approvedBy.length
-msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgid "Force delete waiting for another Admin's approval"
 msgstr ""
 
 msgid "Forecast"
@@ -20396,7 +20398,7 @@ msgstr "ここにはまだ何もありません"
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
-msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
@@ -23304,6 +23306,9 @@ msgstr "発注書承認"
 
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName}向けの発注書"
+
+msgid "Purchase Order Force Delete"
+msgstr ""
 
 msgid "Purchase Order ID"
 msgstr "発注書ID"
@@ -34846,7 +34851,7 @@ msgstr "カスタムレート"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
 
-msgid "Your reason and every approval are kept in the audit log."
+msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
 
 msgid "Your session was locked after inactivity."
@@ -34869,9 +34874,6 @@ msgstr "あなたのチーム、構造、およびアクセス。"
 
 msgid "Your vendor list"
 msgstr "あなたのベンダーリスト"
-
-msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
-msgstr ""
 
 msgid "yourself"
 msgstr "自分自身"

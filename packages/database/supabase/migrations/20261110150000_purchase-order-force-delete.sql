@@ -1,13 +1,17 @@
 -- An Admin override for deleting a purchase order that the normal delete
 -- refuses (a released order, or one in approval the caller did not request).
--- One Admin asks, with a reason; the order is deleted only when two OTHER
--- Admins have approved. The rules live in TypeScript
--- (`requestPurchaseOrderForceDelete` and `decidePurchaseOrderForceDelete`,
--- purchasing.server.ts); these tables only keep the request and who approved
--- it, so the record outlives the order it deleted.
+-- One Admin asks, with a reason; the order is deleted when another Admin
+-- approves. The rules live in TypeScript (`requestPurchaseOrderForceDelete`
+-- and `decidePurchaseOrderForceDelete`, purchasing.server.ts).
 --
--- Not the `approvalRequest` workflow: that one takes a single decision from a
--- rule's approver groups, and this needs two distinct Admins.
+-- The request is the approval's document: an `approvalRequest` of type
+-- 'purchaseOrderForceDelete' names it, so it shows with the other approvals.
+-- Its approvers are the company's Admins other than the requester, not an
+-- approval rule's groups (`canApproveRequest`, @carbon/ee). The request keeps
+-- the order's number and status after the order is gone.
+
+ALTER TYPE "approvalDocumentType" ADD VALUE IF NOT EXISTS 'purchaseOrderForceDelete';
+COMMIT;
 
 CREATE TYPE "purchaseOrderForceDeleteStatus" AS ENUM (
   'Pending',
@@ -27,7 +31,7 @@ CREATE TABLE "purchaseOrderForceDeleteRequest" (
   "status" "purchaseOrderForceDeleteStatus" NOT NULL DEFAULT 'Pending',
   "requestedBy" TEXT NOT NULL,
   "requestedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  -- Who rejected or cancelled it; for an executed request, the second approver.
+  -- Who approved (and so deleted the order), rejected or cancelled it.
   "decidedBy" TEXT,
   "decidedAt" TIMESTAMP WITH TIME ZONE,
   "decisionNotes" TEXT,
@@ -63,25 +67,42 @@ CREATE INDEX "purchaseOrderForceDeleteRequest_decidedBy_idx" ON "purchaseOrderFo
 CREATE INDEX "purchaseOrderForceDeleteRequest_createdBy_idx" ON "purchaseOrderForceDeleteRequest" ("createdBy");
 CREATE INDEX "purchaseOrderForceDeleteRequest_updatedBy_idx" ON "purchaseOrderForceDeleteRequest" ("updatedBy");
 
--- One row per Admin who approved. The unique key stops one Admin counting twice.
-CREATE TABLE "purchaseOrderForceDeleteApproval" (
-  "id" TEXT NOT NULL DEFAULT id('pofda'),
-  "companyId" TEXT NOT NULL,
-  "requestId" TEXT NOT NULL,
-  "approvedBy" TEXT NOT NULL,
-  "approvedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "notes" TEXT,
-
-  PRIMARY KEY ("id", "companyId"),
-  FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
-  CONSTRAINT "purchaseOrderForceDeleteApproval_requestId_fkey"
-    FOREIGN KEY ("requestId", "companyId")
-    REFERENCES "purchaseOrderForceDeleteRequest"("id", "companyId") ON DELETE CASCADE,
-  CONSTRAINT "purchaseOrderForceDeleteApproval_approvedBy_fkey"
-    FOREIGN KEY ("approvedBy") REFERENCES "user"("id"),
-  CONSTRAINT "purchaseOrderForceDeleteApproval_approver_key"
-    UNIQUE ("requestId", "companyId", "approvedBy")
-);
-
-CREATE INDEX "purchaseOrderForceDeleteApproval_companyId_idx" ON "purchaseOrderForceDeleteApproval" ("companyId");
-CREATE INDEX "purchaseOrderForceDeleteApproval_approvedBy_idx" ON "purchaseOrderForceDeleteApproval" ("approvedBy");
+CREATE OR REPLACE VIEW "approvalRequests" WITH (SECURITY_INVOKER=true) AS
+SELECT
+  ar."id",
+  ar."documentType",
+  ar."documentId",
+  ar."status",
+  ar."requestedBy",
+  ar."requestedAt",
+  ar."decisionBy",
+  ar."decisionAt",
+  ar."decisionNotes",
+  ar."companyId",
+  ar."createdAt",
+  CASE
+    WHEN ar."documentType" = 'purchaseOrder' THEN po."purchaseOrderId"
+    WHEN ar."documentType" = 'qualityDocument' THEN qd."name"
+    WHEN ar."documentType" = 'supplier' THEN sup."name"
+    WHEN ar."documentType" = 'changeOrder' THEN co."changeOrderId"
+    WHEN ar."documentType" = 'projectChangeRequest' THEN pcr."readableId"
+    WHEN ar."documentType" = 'purchaseOrderForceDelete' THEN pofd."purchaseOrderReadableId"
+    ELSE NULL
+  END AS "documentReadableId",
+  CASE
+    WHEN ar."documentType" = 'purchaseOrder' THEN s."name"
+    WHEN ar."documentType" = 'qualityDocument' THEN qd."description"
+    WHEN ar."documentType" = 'supplier' THEN NULL
+    WHEN ar."documentType" = 'changeOrder' THEN co."name"
+    WHEN ar."documentType" = 'projectChangeRequest' THEN pcr."title"
+    WHEN ar."documentType" = 'purchaseOrderForceDelete' THEN pofd."reason"
+    ELSE NULL
+  END AS "documentDescription"
+FROM "approvalRequest" ar
+LEFT JOIN "purchaseOrder" po ON ar."documentType" = 'purchaseOrder' AND ar."documentId" = po."id"
+LEFT JOIN "supplier" s ON po."supplierId" = s."id"
+LEFT JOIN "qualityDocument" qd ON ar."documentType" = 'qualityDocument' AND ar."documentId" = qd."id"
+LEFT JOIN "supplier" sup ON ar."documentType" = 'supplier' AND ar."documentId" = sup."id"
+LEFT JOIN "changeOrder" co ON ar."documentType" = 'changeOrder' AND ar."documentId" = co."id" AND ar."companyId" = co."companyId"
+LEFT JOIN "projectChangeRequest" pcr ON ar."documentType" = 'projectChangeRequest' AND ar."documentId" = pcr."id" AND ar."companyId" = pcr."companyId"
+LEFT JOIN "purchaseOrderForceDeleteRequest" pofd ON ar."documentType" = 'purchaseOrderForceDelete' AND ar."documentId" = pofd."id" AND ar."companyId" = pofd."companyId";

@@ -22,11 +22,11 @@ import {
   leaseValidator,
   lockedReturnLineField,
   orderItemSupplierFiles,
-  PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
   purchaseOrderForceDeleteApprovalRefusal,
   purchaseOrderForceDeleteBlockerMessage,
+  purchaseOrderForceDeleteNotificationId,
   purchaseOrderForceDeleteRequestValidator,
   purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateRefusal,
@@ -820,8 +820,10 @@ describe("purchase order force delete", () => {
     payments: []
   };
 
-  it("needs two Admin approvals", () => {
-    expect(PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED).toBe(2);
+  it("names the order and the request in its notifications", () => {
+    expect(purchaseOrderForceDeleteNotificationId("po_1", "pofd_2")).toBe(
+      "po_1:pofd_2"
+    );
   });
 
   describe("purchaseOrderForceDeleteBlockerMessage", () => {
@@ -847,7 +849,6 @@ describe("purchase order force delete", () => {
     const base = {
       status: "Pending",
       requestedBy: "requester",
-      approvedBy: [] as string[],
       userId: "admin-1",
       isAdmin: true
     };
@@ -868,16 +869,7 @@ describe("purchase order force delete", () => {
           ...base,
           userId: "requester"
         })
-      ).toMatch(/other Admins must approve/);
-    });
-
-    it("refuses a second approval from the same Admin", () => {
-      expect(
-        purchaseOrderForceDeleteApprovalRefusal({
-          ...base,
-          approvedBy: ["admin-1"]
-        })
-      ).toMatch(/already approved/);
+      ).toMatch(/another Admin must approve/);
     });
 
     it.each(["Executed", "Rejected", "Cancelled"])(

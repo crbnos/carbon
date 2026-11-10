@@ -57837,55 +57837,6 @@ export type Database = {
           }
         ]
       }
-      purchaseOrderForceDeleteApproval: {
-        Row: {
-          approvedAt: string
-          approvedBy: string
-          companyId: string
-          id: string
-          notes: string | null
-          requestId: string
-        }
-        Insert: {
-          approvedAt?: string
-          approvedBy: string
-          companyId: string
-          id?: string
-          notes?: string | null
-          requestId: string
-        }
-        Update: {
-          approvedAt?: string
-          approvedBy?: string
-          companyId?: string
-          id?: string
-          notes?: string | null
-          requestId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "purchaseOrderForceDeleteApproval_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseOrderForceDeleteApproval_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseOrderForceDeleteApproval_requestId_fkey"
-            columns: ["requestId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderForceDeleteRequest"
-            referencedColumns: ["id", "companyId"]
-          }
-        ]
-      }
       purchaseOrderForceDeleteRequest: {
         Row: {
           companyId: string
@@ -109480,6 +109431,7 @@ export type Database = {
         | "supplier"
         | "changeOrder"
         | "projectChangeRequest"
+        | "purchaseOrderForceDelete"
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"

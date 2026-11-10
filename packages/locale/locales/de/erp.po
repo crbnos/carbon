@@ -4314,14 +4314,14 @@ msgstr "Genehmigt"
 msgid "Approved <0/> by <1/>"
 msgstr "Genehmigt durch <0/> von <1/>"
 
-msgid "Approved by"
-msgstr ""
-
 msgid "Approved By"
 msgstr "Genehmigt von"
 
 msgid "Approved On"
 msgstr "Genehmigt am"
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Ungefähr — abgeleitet aus geplanten Terminen; es existiert keine Kapazitätsreservierung für diese Zeile."
@@ -13715,14 +13715,16 @@ msgstr "Zum Beispiel Standort oder Sortierung nach"
 msgid "For Form 6765 Section E"
 msgstr "Für Formular 6765 Abschnitt E"
 
+msgid "Force delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr ""
 
-#. placeholder {0}: approvedBy.length
-msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgid "Force delete waiting for another Admin's approval"
 msgstr ""
 
 msgid "Forecast"
@@ -20396,7 +20398,7 @@ msgstr "Noch nichts hier"
 msgid "Nothing in the archive"
 msgstr "Nichts im Archiv"
 
-msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
@@ -23304,6 +23306,9 @@ msgstr "Bestellungsgenehmigung"
 
 msgid "Purchase order for {supplierName}"
 msgstr "Bestellung für {supplierName}"
+
+msgid "Purchase Order Force Delete"
+msgstr ""
 
 msgid "Purchase Order ID"
 msgstr "Bestellnummer"
@@ -34846,7 +34851,7 @@ msgstr "Ihr Kurs"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ihre echten Daten sind geladen und Sie haben eine Stichprobe überprüft und genehmigt."
 
-msgid "Your reason and every approval are kept in the audit log."
+msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
 
 msgid "Your session was locked after inactivity."
@@ -34869,9 +34874,6 @@ msgstr "Ihr Team, Struktur und Zugriff."
 
 msgid "Your vendor list"
 msgstr "Ihre Lieferantenliste"
-
-msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
-msgstr ""
 
 msgid "yourself"
 msgstr "dir selbst"

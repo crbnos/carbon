@@ -12,7 +12,8 @@ import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   canApproveRequest,
   canCancelRequest,
-  getLatestApprovalRequestForDocument
+  getLatestApprovalRequestForDocument,
+  isCompanyAdmin
 } from "@carbon/ee/approvals.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -43,7 +44,6 @@ import {
   getSupplier,
   getSupplierInteraction,
   getSupplierInteractionDocuments,
-  isCompanyAdmin,
   withoutStoredPurchaseOrderPdfs
 } from "~/modules/purchasing/purchasing.service";
 import {
@@ -207,7 +207,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         )
       : null,
     // The Admin force-delete override (`$orderId.force-delete.tsx`).
-    isCompanyAdmin(db, { companyId, userId }),
+    isCompanyAdmin(serviceRole, companyId, userId),
     getPendingPurchaseOrderForceDeleteRequest(db, {
       companyId,
       purchaseOrderId: orderId

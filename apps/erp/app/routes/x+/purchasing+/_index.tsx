@@ -60,7 +60,8 @@ import {
   LuFile,
   LuInbox,
   LuLayoutList,
-  LuPackageSearch
+  LuPackageSearch,
+  LuShieldAlert
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
@@ -144,12 +145,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .map((approval: ApprovalRequest) => approval.documentId!)
       .filter((id): id is string => !!id) ?? [];
 
+  // Purchase order force deletes waiting for this Admin (another Admin asked).
+  const approvalForceDeleteIds =
+    pendingApprovals.data
+      ?.filter(
+        (approval: ApprovalRequest) =>
+          approval.documentType === "purchaseOrderForceDelete" &&
+          approval.documentId
+      )
+      .map((approval: ApprovalRequest) => approval.documentId!)
+      .filter((id): id is string => !!id) ?? [];
+
   const [
     openPurchaseOrders,
     openPurchaseInvoices,
     openSupplierQuotes,
     purchaseOrdersNeedingApproval,
-    suppliersNeedingApproval
+    suppliersNeedingApproval,
+    forceDeletesNeedingApproval
   ] = await Promise.all([
     client
       .from("purchaseOrder")
@@ -192,6 +205,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .eq("supplierStatus", "Pending")
           .eq("companyId", companyId)
           .in("id", approvalSupplierIds)
+      : { data: [], error: null },
+    // Service role: the request table is serviceOnly.
+    approvalForceDeleteIds.length > 0
+      ? serviceRole
+          .from("purchaseOrderForceDeleteRequest")
+          .select(
+            "id, purchaseOrderId, purchaseOrderReadableId, requestedBy, createdAt, purchaseOrder(supplierId)"
+          )
+          .eq("status", "Pending")
+          .eq("companyId", companyId)
+          .in("id", approvalForceDeleteIds)
       : { data: [], error: null }
   ]);
 
@@ -207,6 +231,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openPurchaseInvoices: openPurchaseInvoices,
     purchaseOrdersNeedingApproval: purchaseOrdersNeedingApproval,
     suppliersNeedingApproval: suppliersNeedingApproval,
+    forceDeletesNeedingApproval: forceDeletesNeedingApproval,
     assignedToMe: assignedToMePromise
   };
 }
@@ -218,6 +243,7 @@ export default function PurchaseDashboard() {
     openPurchaseInvoices,
     purchaseOrdersNeedingApproval,
     suppliersNeedingApproval,
+    forceDeletesNeedingApproval,
     assignedToMe
   } = useLoaderData<typeof loader>();
 
@@ -688,6 +714,14 @@ export default function PurchaseDashboard() {
                     suppliersNeedingApproval={
                       suppliersNeedingApproval.data ?? []
                     }
+                    forceDeletesNeedingApproval={(
+                      forceDeletesNeedingApproval.data ?? []
+                    ).map((request) => ({
+                      id: request.id,
+                      purchaseOrderId: request.purchaseOrderId,
+                      purchaseOrderReadableId: request.purchaseOrderReadableId,
+                      supplierId: request.purchaseOrder?.supplierId ?? null
+                    }))}
                   />
                 )}
               </Await>
@@ -701,14 +735,27 @@ export default function PurchaseDashboard() {
 
 type AssignedDocument = {
   id: string;
-  type: "purchaseOrder" | "supplierQuote" | "purchaseInvoice" | "supplier";
+  type:
+    | "purchaseOrder"
+    | "supplierQuote"
+    | "purchaseInvoice"
+    | "supplier"
+    | "purchaseOrderForceDelete";
   [key: string]: unknown;
+};
+
+type ForceDeleteApproval = {
+  id: string;
+  purchaseOrderId: string | null;
+  purchaseOrderReadableId: string;
+  supplierId: string | null;
 };
 
 function AssignedDocumentsTable({
   assignedDocs,
   purchaseOrdersNeedingApproval,
-  suppliersNeedingApproval
+  suppliersNeedingApproval,
+  forceDeletesNeedingApproval
 }: {
   assignedDocs: Array<{ id: string; type: string; [key: string]: unknown }>;
   purchaseOrdersNeedingApproval: Array<{
@@ -724,6 +771,7 @@ function AssignedDocumentsTable({
     name: string;
     supplierStatus: string | null;
   }>;
+  forceDeletesNeedingApproval: ForceDeleteApproval[];
 }) {
   // Merge assigned docs with purchase orders needing approval
   // Deduplicate: if a PO is both assigned and needs approval, prefer the assigned version
@@ -745,7 +793,13 @@ function AssignedDocumentsTable({
     type: "supplier" as const
   }));
 
+  const forceDeleteDocs = forceDeletesNeedingApproval.map((doc) => ({
+    ...doc,
+    type: "purchaseOrderForceDelete" as const
+  }));
+
   const allDocs = [
+    ...forceDeleteDocs,
     ...assignedDocs,
     ...approvalDocs,
     ...supplierDocs
@@ -803,9 +857,43 @@ function DocumentRow({ doc }: { doc: AssignedDocument }) {
           }
         />
       );
+    case "purchaseOrderForceDelete":
+      return (
+        <ForceDeleteApprovalRow doc={doc as unknown as ForceDeleteApproval} />
+      );
     default:
       return null;
   }
+}
+
+function ForceDeleteApprovalRow({ doc }: { doc: ForceDeleteApproval }) {
+  return (
+    <Tr>
+      <Td>
+        {doc.purchaseOrderId ? (
+          <Hyperlink
+            className="max-md:min-h-11"
+            to={path.to.purchaseOrder(doc.purchaseOrderId)}
+          >
+            <HStack spacing={1}>
+              <LuShieldAlert className="size-4" />
+              <span>{doc.purchaseOrderReadableId}</span>
+            </HStack>
+          </Hyperlink>
+        ) : (
+          <span>{doc.purchaseOrderReadableId}</span>
+        )}
+      </Td>
+      <Td>
+        <Badge variant="red">
+          <Trans>Force delete</Trans>
+        </Badge>
+      </Td>
+      <Td>
+        <SupplierAvatar supplierId={doc.supplierId} />
+      </Td>
+    </Tr>
+  );
 }
 
 function SupplierQuoteRow({ doc }: { doc: SupplierQuote }) {

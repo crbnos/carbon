@@ -2,17 +2,6 @@
 
 -- Ships these rules to databases where `authz sync` does not run after migrations yet.
 
--- purchaseOrderForceDeleteApproval
-DO $authz$
-DECLARE p record;
-BEGIN
-  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'purchaseOrderForceDeleteApproval' LOOP
-    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'purchaseOrderForceDeleteApproval');
-  END LOOP;
-END
-$authz$;
-ALTER TABLE public."purchaseOrderForceDeleteApproval" ENABLE ROW LEVEL SECURITY;
-
 -- purchaseOrderForceDeleteRequest
 DO $authz$
 DECLARE p record;

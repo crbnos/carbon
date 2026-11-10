@@ -27,7 +27,6 @@ import Confirm from "~/components/Modals/Confirm/Confirm";
 import { useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
-  PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED,
   purchaseOrderForceDeleteApprovalRefusal,
   purchaseOrderForceDeleteRequestValidator
 } from "../../purchasing.models";
@@ -98,9 +97,9 @@ export function PurchaseOrderForceDeleteModal({
                     </li>
                     <li>
                       <Trans>
-                        Nothing is deleted yet. The deletion runs only after{" "}
-                        {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other
-                        Admins approve it.
+                        Nothing is deleted yet. The request goes to the other
+                        Admins' approvals, and the order is deleted when one of
+                        them approves it.
                       </Trans>
                     </li>
                     <li>
@@ -113,8 +112,7 @@ export function PurchaseOrderForceDeleteModal({
                     </li>
                     <li>
                       <Trans>
-                        Your reason and every approval are kept in the audit
-                        log.
+                        Your reason and the decision are kept in the audit log.
                       </Trans>
                     </li>
                   </ul>
@@ -152,8 +150,8 @@ export function PurchaseOrderForceDeleteModal({
 }
 
 /**
- * The order's pending force delete: who asked and why, who has approved, and
- * Approve / Reject for the other Admins (Cancel for the one who asked).
+ * The order's pending force delete: who asked and why, with Approve / Reject
+ * for the other Admins and Cancel for the one who asked.
  */
 export function PurchaseOrderForceDeleteBanner() {
   const { orderId } = useParams();
@@ -161,7 +159,7 @@ export function PurchaseOrderForceDeleteBanner() {
   const { t } = useLingui();
   const user = useUser();
   const fetcher = useFetcher<{}>();
-  const finalApproval = useDisclosure();
+  const approveModal = useDisclosure();
   const routeData = useRouteData<ForceDeleteRouteData>(
     path.to.purchaseOrder(orderId)
   );
@@ -169,21 +167,17 @@ export function PurchaseOrderForceDeleteBanner() {
   if (!request) return null;
 
   const isAdmin = routeData?.isAdmin ?? false;
-  const approvedBy = request.approvals.map((a) => a.approvedBy);
   const isRequester = request.requestedBy === user.id;
   const canApprove =
     purchaseOrderForceDeleteApprovalRefusal({
       status: "Pending",
       requestedBy: request.requestedBy,
-      approvedBy,
       userId: user.id,
       isAdmin
     }) === null;
-  const isFinalApproval =
-    approvedBy.length + 1 >= PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED;
   const busy = fetcher.state !== "idle";
 
-  const submit = (intent: "approve" | "reject" | "cancel") => {
+  const submit = (intent: "reject" | "cancel") => {
     fetcher.submit(
       { intent, requestId: request.id },
       { method: "post", action: path.to.purchaseOrderForceDelete(orderId) }
@@ -194,10 +188,7 @@ export function PurchaseOrderForceDeleteBanner() {
     <Alert variant="destructive">
       <LuShieldAlert />
       <AlertTitle>
-        <Trans>
-          Force delete requested ({approvedBy.length} of{" "}
-          {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)
-        </Trans>
+        <Trans>Force delete waiting for another Admin's approval</Trans>
       </AlertTitle>
       <AlertDescription>
         <VStack spacing={2} className="w-full">
@@ -208,34 +199,15 @@ export function PurchaseOrderForceDeleteBanner() {
             <EmployeeAvatar employeeId={request.requestedBy} />
           </HStack>
           <p className="text-sm whitespace-pre-wrap">{request.reason}</p>
-          {request.approvals.length > 0 && (
-            <HStack spacing={2} className="text-sm">
-              <span>
-                <Trans>Approved by</Trans>
-              </span>
-              {request.approvals.map((approval) => (
-                <EmployeeAvatar
-                  key={approval.approvedBy}
-                  employeeId={approval.approvedBy}
-                />
-              ))}
-            </HStack>
-          )}
           {isAdmin && (
             <HStack spacing={2}>
               {canApprove && (
                 <Button
                   variant="destructive"
                   isDisabled={busy}
-                  onClick={() =>
-                    isFinalApproval ? finalApproval.onOpen() : submit("approve")
-                  }
+                  onClick={approveModal.onOpen}
                 >
-                  {isFinalApproval ? (
-                    <Trans>Approve and Delete</Trans>
-                  ) : (
-                    <Trans>Approve</Trans>
-                  )}
+                  <Trans>Approve and Delete</Trans>
                 </Button>
               )}
               {!isRequester && (
@@ -261,14 +233,14 @@ export function PurchaseOrderForceDeleteBanner() {
         </VStack>
         <Confirm
           action={path.to.purchaseOrderForceDelete(orderId)}
-          isOpen={finalApproval.isOpen}
+          isOpen={approveModal.isOpen}
           title={t`Approve and delete`}
-          text={t`Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone.`}
+          text={t`Approving deletes the purchase order and all of its lines now. This cannot be undone.`}
           confirmText={t`Approve and Delete`}
           confirmVariant="destructive"
           cancelText={t`Back`}
-          onCancel={finalApproval.onClose}
-          onSubmit={finalApproval.onClose}
+          onCancel={approveModal.onClose}
+          onSubmit={approveModal.onClose}
         >
           <input type="hidden" name="intent" value="approve" />
           <input type="hidden" name="requestId" value={request.id} />

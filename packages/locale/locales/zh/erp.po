@@ -4314,14 +4314,14 @@ msgstr "已审批"
 msgid "Approved <0/> by <1/>"
 msgstr "由<1/>审批的<0/>"
 
-msgid "Approved by"
-msgstr ""
-
 msgid "Approved By"
 msgstr "批准人"
 
 msgid "Approved On"
 msgstr "批准日期"
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "近似 — 由计划日期推导；此行不存在产能预留。"
@@ -13715,14 +13715,16 @@ msgstr "例如：站点或下单人"
 msgid "For Form 6765 Section E"
 msgstr "表格 6765 E 部分"
 
+msgid "Force delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr ""
 
-#. placeholder {0}: approvedBy.length
-msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgid "Force delete waiting for another Admin's approval"
 msgstr ""
 
 msgid "Forecast"
@@ -20396,7 +20398,7 @@ msgstr "暂无内容"
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
-msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
@@ -23304,6 +23306,9 @@ msgstr "采购订单审批"
 
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} 的采购订单"
+
+msgid "Purchase Order Force Delete"
+msgstr ""
 
 msgid "Purchase Order ID"
 msgstr "采购订单ID"
@@ -34849,7 +34854,7 @@ msgstr "自定义汇率"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"
 
-msgid "Your reason and every approval are kept in the audit log."
+msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
 
 msgid "Your session was locked after inactivity."
@@ -34872,9 +34877,6 @@ msgstr "您的班组、结构和访问权限。"
 
 msgid "Your vendor list"
 msgstr "您的供应商列表"
-
-msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
-msgstr ""
 
 msgid "yourself"
 msgstr "你自己"

@@ -47,6 +47,7 @@ export const Constants = {
         "supplier",
         "changeOrder",
         "projectChangeRequest",
+        "purchaseOrderForceDelete",
       ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],

@@ -233,6 +233,7 @@ import {
   planningQuantityChange,
   planPurchaseOrderRestore,
   purchaseOrderEditRefusal,
+  purchaseOrderForceDeleteNotificationId,
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
@@ -8229,31 +8230,7 @@ export async function cancelPendingApprovals(
     .execute();
 }
 
-/**
- * Whether the user is an active employee of the company whose employee type
- * is the company's Admin type (`employeeType.systemType = 'Admin'`).
- */
-export async function isCompanyAdmin(
-  db: Kysely<KyselyDatabase>,
-  { companyId, userId }: { companyId: string; userId: string }
-): Promise<boolean> {
-  const row = await db
-    .selectFrom("employee")
-    .innerJoin("employeeType", (join) =>
-      join
-        .onRef("employeeType.id", "=", "employee.employeeTypeId")
-        .onRef("employeeType.companyId", "=", "employee.companyId")
-    )
-    .select("employee.id")
-    .where("employee.id", "=", userId)
-    .where("employee.companyId", "=", companyId)
-    .where("employee.active", "=", true)
-    .where("employeeType.systemType", "=", "Admin")
-    .executeTakeFirst();
-  return !!row;
-}
-
-/** The active Admins of the company (`isCompanyAdmin`), as user ids. */
+/** The active Admins of the company (`isCompanyAdmin`, @carbon/ee), as user ids. */
 export async function getCompanyAdminIds(
   db: Kysely<KyselyDatabase>,
   companyId: string
@@ -8366,10 +8343,9 @@ export type PurchaseOrderForceDeleteRequest = {
   requestedBy: string;
   requestedAt: string;
   purchaseOrderStatus: string;
-  approvals: { approvedBy: string; approvedAt: string; notes: string | null }[];
 };
 
-/** The order's Pending force delete request, with its approvals, or null. */
+/** The order's Pending force delete request, or null. */
 export async function getPendingPurchaseOrderForceDeleteRequest(
   db: Kysely<KyselyDatabase>,
   { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
@@ -8387,46 +8363,60 @@ export async function getPendingPurchaseOrderForceDeleteRequest(
     .where("purchaseOrderId", "=", purchaseOrderId)
     .where("status", "=", "Pending")
     .executeTakeFirst();
-  if (!request) return null;
-  const approvals = await db
-    .selectFrom("purchaseOrderForceDeleteApproval")
-    .select(["approvedBy", "approvedAt", "notes"])
-    .where("companyId", "=", companyId)
-    .where("requestId", "=", request.id)
-    .orderBy("approvedAt")
-    .execute();
-  return {
-    ...request,
-    requestedAt: String(request.requestedAt),
-    approvals: approvals.map((a) => ({
-      ...a,
-      approvedAt: String(a.approvedAt)
-    }))
-  };
+  return request
+    ? { ...request, requestedAt: String(request.requestedAt) }
+    : null;
 }
 
-/** The Admins to tell about a force delete request: every Admin but `except`. */
-export async function notifyForceDeleteAdmins(
+/**
+ * Tells about a force delete: `Requested` goes to every Admin but the one who
+ * asked; `Approved` / `Rejected` go to the one who asked. The notice names
+ * the order and the request (`purchaseOrderForceDeleteNotificationId`), so its
+ * content and link still work once the order is deleted. Never throws.
+ */
+export async function notifyForceDelete(
   ctx: ServiceContext,
-  { purchaseOrderId, except }: { purchaseOrderId: string; except: string[] }
+  {
+    event,
+    purchaseOrderId,
+    requestId,
+    requestedBy
+  }: {
+    event: "Requested" | "Approved" | "Rejected";
+    purchaseOrderId: string;
+    requestId: string;
+    requestedBy: string;
+  }
 ) {
   const companyId = ctx.company.id;
   try {
-    const adminIds = (
-      await getCompanyAdminIds(ctx.asSystem.pg, companyId)
-    ).filter((id) => !except.includes(id));
-    if (adminIds.length === 0) return;
-    // The approval notice links to the order, where the request is shown.
+    const userIds =
+      event === "Requested"
+        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+            (id) => id !== requestedBy
+          )
+        : requestedBy === ctx.auditUserId
+          ? []
+          : [requestedBy];
+    if (userIds.length === 0) return;
     await trigger("notify", {
-      event: NotificationEvent.ApprovalRequested,
+      event:
+        event === "Requested"
+          ? NotificationEvent.ApprovalRequested
+          : event === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
       companyId,
-      documentId: purchaseOrderId,
-      documentType: "purchaseOrder",
-      recipient: { type: "users", userIds: adminIds },
+      documentId: purchaseOrderForceDeleteNotificationId(
+        purchaseOrderId,
+        requestId
+      ),
+      documentType: "purchaseOrderForceDelete",
+      recipient: { type: "users", userIds },
       from: ctx.auditUserId
     });
   } catch (e) {
-    logger.error("Failed to notify Admins of a force delete request", {
+    logger.error("Failed to notify about a purchase order force delete", {
       error: e
     });
   }

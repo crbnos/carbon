@@ -1552,12 +1552,6 @@ export function purchaseOrderDeleteRefusal({
 
 // ─── Purchase Order Force Delete (Admin override) ───
 
-/**
- * Admins, other than the one who asked, who must approve a force delete
- * before it runs.
- */
-export const PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED = 2;
-
 export const PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH = 10;
 
 export const purchaseOrderForceDeleteRequestValidator = z.object({
@@ -1623,18 +1617,17 @@ export function purchaseOrderForceDeleteBlockerMessage(
 
 /**
  * Why `userId` cannot approve this force delete, or null. Only a Pending
- * request, only an Admin, never the Admin who asked, and once per Admin.
+ * request, only an Admin, and never the Admin who asked: one other Admin's
+ * approval deletes the order.
  */
 export function purchaseOrderForceDeleteApprovalRefusal({
   status,
   requestedBy,
-  approvedBy,
   userId,
   isAdmin
 }: {
   status: string;
   requestedBy: string;
-  approvedBy: string[];
   userId: string;
   isAdmin: boolean;
 }): string | null {
@@ -1643,12 +1636,21 @@ export function purchaseOrderForceDeleteApprovalRefusal({
   }
   if (!isAdmin) return "Only an Admin can approve a force delete";
   if (requestedBy === userId) {
-    return `You asked for this force delete: ${PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins must approve it`;
-  }
-  if (approvedBy.includes(userId)) {
-    return "You have already approved this force delete";
+    return "You asked for this force delete: another Admin must approve it";
   }
   return null;
+}
+
+/**
+ * The `documentId` of a force delete notification: the order and the
+ * request, so the link opens the order and the content reads the request
+ * after the order is gone (`notificationTarget`).
+ */
+export function purchaseOrderForceDeleteNotificationId(
+  purchaseOrderId: string,
+  requestId: string
+): string {
+  return `${purchaseOrderId}:${requestId}`;
 }
 
 /**

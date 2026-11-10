@@ -6,7 +6,6 @@ import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED,
   purchaseOrderForceDeleteDecisionValidator,
   purchaseOrderForceDeleteRequestValidator
 } from "~/modules/purchasing/purchasing.models";
@@ -34,7 +33,7 @@ export async function action(args: ActionFunctionArgs) {
     return respond(args.request, result).redirect(
       path.to.purchaseOrder(orderId),
       {
-        message: `Force delete requested. ${PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins must approve it.`
+        message: "Force delete requested. Another Admin must approve it."
       }
     );
   }
@@ -69,11 +68,6 @@ export async function action(args: ActionFunctionArgs) {
   }
   return respond(args.request, result).redirect(
     path.to.purchaseOrder(orderId),
-    {
-      message:
-        decided?.status === "Rejected"
-          ? "Force delete rejected"
-          : `Approved (${decided?.approvals ?? 0} of ${decided?.approvalsRequired ?? PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED})`
-    }
+    { message: "Force delete rejected" }
   );
 }

@@ -4314,14 +4314,14 @@ msgstr "승인됨"
 msgid "Approved <0/> by <1/>"
 msgstr "<1/>에 의해 <0/> 승인됨"
 
-msgid "Approved by"
-msgstr ""
-
 msgid "Approved By"
 msgstr "승인자"
 
 msgid "Approved On"
 msgstr "승인 날짜"
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "대략적 — 예정된 날짜에서 파생됨, 이 행에 대한 용량 예약이 없습니다."
@@ -13715,14 +13715,16 @@ msgstr "예: 사이트 또는 주문자"
 msgid "For Form 6765 Section E"
 msgstr "양식 6765 섹션 E용"
 
+msgid "Force delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr ""
 
-#. placeholder {0}: approvedBy.length
-msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgid "Force delete waiting for another Admin's approval"
 msgstr ""
 
 msgid "Forecast"
@@ -20396,7 +20398,7 @@ msgstr "아직 없음"
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
-msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
@@ -23304,6 +23306,9 @@ msgstr "발주서 승인"
 
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} 발주서"
+
+msgid "Purchase Order Force Delete"
+msgstr ""
 
 msgid "Purchase Order ID"
 msgstr "발주서 ID"
@@ -34846,7 +34851,7 @@ msgstr "사용자 환율"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습니다."
 
-msgid "Your reason and every approval are kept in the audit log."
+msgid "Your reason and the decision are kept in the audit log."
 msgstr ""
 
 msgid "Your session was locked after inactivity."
@@ -34869,9 +34874,6 @@ msgstr "팀 구성, 조직, 권한."
 
 msgid "Your vendor list"
 msgstr "공급업체 목록"
-
-msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
-msgstr ""
 
 msgid "yourself"
 msgstr "본인"
