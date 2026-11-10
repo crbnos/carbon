@@ -793,11 +793,12 @@ describe("methodBomChanges", () => {
 });
 
 describe("drawingsSummary", () => {
-  const drawing = (state: "current" | "outOfDate" | "new") => ({
+  const drawing = (state: "current" | "outOfDate" | "unchecked" | "new") => ({
     elementId: state,
     name: state,
     ...(state === "current" ? { current: true as const } : {}),
-    ...(state === "outOfDate" ? { outOfDate: true as const } : {})
+    ...(state === "outOfDate" ? { outOfDate: true as const } : {}),
+    ...(state === "unchecked" ? { unchecked: true as const } : {})
   });
 
   it.each([
@@ -812,6 +813,15 @@ describe("drawingsSummary", () => {
     [
       [drawing("current"), drawing("new")],
       { state: "partly-current", count: 1, total: 2 }
+    ],
+    [[drawing("unchecked")], { state: "unchecked", count: 1, total: 1 }],
+    [
+      [drawing("current"), drawing("unchecked")],
+      { state: "unchecked", count: 1, total: 2 }
+    ],
+    [
+      [drawing("outOfDate"), drawing("unchecked")],
+      { state: "out-of-date", count: 1, total: 2 }
     ]
   ])("summarises %j", (drawings, expected) => {
     expect(drawingsSummary(drawings)).toEqual(expected);

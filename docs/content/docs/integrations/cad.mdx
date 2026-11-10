@@ -355,6 +355,9 @@ above the list pick every row of one kind. Nothing is picked to start with.
   Part Studio, Variable Studio or Feature Studio makes every model in the document out
   of date; editing an assembly, only assembly models; editing a drawing, only that
   drawing.
+- A row whose file Carbon couldn't check, because Onshape didn't answer in time, says
+  **not checked**. The review counts it as an export, and the export skips it if it
+  turns out to be current.
 - A model replaces the item's current one, as a part push does.
 - A PDF is named after the drawing in Onshape and appears in the item's **Files**. Two
   drawings with the same name on one item are told apart by a number: `Drawing 1.pdf`,

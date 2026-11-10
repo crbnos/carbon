@@ -2577,6 +2577,23 @@ describe("assembly row assets", () => {
       { elementId: "b", name: "Drawing b", outOfDate: true }
     ]);
     expect(marked.root.modelCurrent).toBe(true);
+
+    const unread = withCurrentFiles(placed.plan, {
+      models: new Set(),
+      drawings: new Set(),
+      unchecked: {
+        models: new Set(["PLT-020"]),
+        drawings: new Set([rowDrawingKey("PLT-020", "b")])
+      }
+    });
+    const unreadPlate = unread.items.find(
+      (item) => item.partNumber === "PLT-020"
+    );
+    expect(unreadPlate?.assets).toMatchObject({ modelUnchecked: true });
+    expect(unreadPlate?.assets?.modelOutOfDate).toBeUndefined();
+    expect(unreadPlate?.assets?.drawings).toEqual([
+      { elementId: "b", name: "Drawing b", unchecked: true }
+    ]);
   });
 
   const exportsOf = (rows: ReturnType<typeof assemblyAssetRows>) => ({

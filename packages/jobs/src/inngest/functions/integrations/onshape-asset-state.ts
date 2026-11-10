@@ -589,17 +589,54 @@ export function currentDrawingFiles(
 }
 
 /**
+ * The rows' files Carbon holds from an Onshape export whose source state is
+ * unknown: the workspace was not read, or Onshape reported no state for the
+ * drawing. They are neither current nor out of date, and they still export.
+ */
+export function uncheckedFiles(
+  rows: FileRows,
+  records: FileRecords,
+  states: SourceStates
+): CurrentFiles {
+  const models = rows.models
+    .filter(
+      (model) =>
+        model.wvm === "w" &&
+        isOnshapeModelId(records.models.modelUploadIds[model.itemId]) &&
+        !states.documents[documentStateKey(model)]
+    )
+    .map((model) => model.itemId);
+  const drawings = rows.drawings.flatMap((drawing) =>
+    drawing.targets
+      .filter(
+        (target) =>
+          heldDrawing(drawing, target, records.drawings).stored &&
+          drawingTargetSourceKey(drawing, target, states) === null
+      )
+      .map((target) =>
+        drawingFileKey({
+          itemId: target.itemId,
+          drawingElementId: drawing.drawingElementId
+        })
+      )
+  );
+  return { models: [...new Set(models)], drawings: [...new Set(drawings)] };
+}
+
+/**
  * The rows' files that Carbon holds from an earlier Onshape export but are
  * not current: models by item id, drawings by `drawingFileKey`. A model
  * uploaded by hand is not one: it is not out of date, it is another file.
+ * Neither is an `unchecked` file, whose state is unknown.
  */
 export function outOfDateFiles(
   rows: FileRows,
   records: FileRecords,
-  current: CurrentFiles
+  current: CurrentFiles,
+  unchecked: CurrentFiles = { models: [], drawings: [] }
 ): CurrentFiles {
-  const currentModelItems = new Set(current.models);
-  const currentDrawings = new Set(current.drawings);
+  const currentModelItems = new Set([...current.models, ...unchecked.models]);
+  const currentDrawings = new Set([...current.drawings, ...unchecked.drawings]);
   const models = rows.models
     .map((model) => model.itemId)
     .filter(
@@ -627,7 +664,9 @@ export function outOfDateFiles(
 export type CurrentFilesCheck = CurrentFiles & {
   /** Files Carbon holds from an earlier export of a changed source. */
   outOfDate: CurrentFiles;
-  /** Workspaces whose state was not read: their files count as not current. */
+  /** Files Carbon holds whose source state is unknown (`uncheckedFiles`). */
+  unchecked: CurrentFiles;
+  /** Workspaces whose state was not read: their files are `unchecked`. */
   unread: number;
 };
 
@@ -647,7 +686,7 @@ export async function readCurrentFiles(input: {
 }): Promise<CurrentFilesCheck> {
   const none: CurrentFiles = { models: [], drawings: [] };
   if (input.rows.models.length === 0 && input.rows.drawings.length === 0) {
-    return { ...none, outOfDate: none, unread: 0 };
+    return { ...none, outOfDate: none, unchecked: none, unread: 0 };
   }
   const [models, drawings] = await Promise.all([
     loadModelRecords(input.carbon, input.companyId, input.rows.models),
@@ -664,6 +703,7 @@ export async function readCurrentFiles(input: {
     return {
       ...none,
       outOfDate: outOfDateFiles(input.rows, records, none),
+      unchecked: none,
       unread: 0
     };
   }
@@ -680,9 +720,11 @@ export async function readCurrentFiles(input: {
     models: currentModels(input.companyId, candidates.models, states, models),
     drawings: currentDrawingFiles(candidates.drawings, states, drawings)
   };
+  const unchecked = uncheckedFiles(candidates, records, states);
   return {
     ...current,
-    outOfDate: outOfDateFiles(input.rows, records, current),
+    outOfDate: outOfDateFiles(input.rows, records, current, unchecked),
+    unchecked,
     unread: states.unread
   };
 }

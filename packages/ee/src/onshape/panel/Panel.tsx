@@ -6280,7 +6280,7 @@ function ReviewItemStatus({ item }: { item: ReviewRowPlan }) {
   );
 }
 
-type FileState = "current" | "out-of-date" | "exports";
+type FileState = "current" | "out-of-date" | "unchecked" | "exports";
 
 /** A file's state, in the same pill as the item's. */
 function FileStateStatus({
@@ -6297,6 +6297,10 @@ function FileStateStatus({
   ) : state === "exports" ? (
     <Status color="blue" disableTooltip>
       {label ?? "Exports"}
+    </Status>
+  ) : state === "unchecked" ? (
+    <Status color="gray" disableTooltip>
+      {label ?? "Not checked"}
     </Status>
   ) : (
     <Status color="orange" disableTooltip>
@@ -6382,6 +6386,8 @@ function ModelCell({
         <FileStateStatus state="current" />
       ) : assets.modelOutOfDate ? (
         <FileStateStatus state="out-of-date" />
+      ) : assets.modelUnchecked ? (
+        <FileStateStatus state="unchecked" />
       ) : null}
     </FilePick>
   );
@@ -6433,6 +6439,15 @@ function DrawingsCell({
               : `${summary.count} of ${summary.total} out of date`
           }
         />
+      ) : summary?.state === "unchecked" ? (
+        <FileStateStatus
+          state="unchecked"
+          label={
+            summary.count === summary.total
+              ? undefined
+              : `${summary.count} of ${summary.total} not checked`
+          }
+        />
       ) : summary ? (
         <FileStateStatus
           state="exports"
@@ -6446,6 +6461,7 @@ function DrawingsCell({
 function drawingStateLine(drawing: AssemblyRowDrawing): string {
   if (drawing.current) return `${drawing.name}: current`;
   if (drawing.outOfDate) return `${drawing.name}: out of date`;
+  if (drawing.unchecked) return `${drawing.name}: not checked`;
   return `${drawing.name}: not in Carbon`;
 }
 

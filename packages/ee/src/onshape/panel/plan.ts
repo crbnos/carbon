@@ -1331,6 +1331,8 @@ export type AssemblyRowDrawing = {
   current?: true;
   /** The item has this drawing's PDF from an earlier state; a push replaces it. */
   outOfDate?: true;
+  /** The item has this drawing's PDF, but its state could not be read; a push exports it. */
+  unchecked?: true;
 };
 
 export type AssemblyRowAssets = {
@@ -1340,6 +1342,8 @@ export type AssemblyRowAssets = {
   modelCurrent?: true;
   /** The item's model is an earlier Onshape export; a push replaces it. */
   modelOutOfDate?: true;
+  /** The item's model is an Onshape export whose source state could not be read; a push exports it. */
+  modelUnchecked?: true;
   drawings: AssemblyRowDrawing[];
 };
 
@@ -2031,9 +2035,11 @@ export function rowDrawingKey(partNumber: string, elementId: string): string {
 
 /**
  * Marks the files a row's item already has from the source's current state,
- * and those it has from an earlier state: `models` by part number, `drawings`
- * by `rowDrawingKey`. The push skips current files, so the review does not
- * count them. `rootModel`: the root item already has the assembly's model.
+ * those it has from an earlier state, and those whose state could not be
+ * read: `models` by part number, `drawings` by `rowDrawingKey`. The push
+ * skips current files, so the review does not count them; an unchecked file
+ * counts as an export. `rootModel`: the root item already has the assembly's
+ * model.
  */
 export function withCurrentFiles(
   plan: AssemblyPlan,
@@ -2041,6 +2047,10 @@ export function withCurrentFiles(
     models: ReadonlySet<string>;
     drawings: ReadonlySet<string>;
     outOfDate?: {
+      models: ReadonlySet<string>;
+      drawings: ReadonlySet<string>;
+    };
+    unchecked?: {
       models: ReadonlySet<string>;
       drawings: ReadonlySet<string>;
     };
@@ -2056,7 +2066,9 @@ export function withCurrentFiles(
         ? { modelCurrent: true as const }
         : current.outOfDate?.models.has(row.partNumber)
           ? { modelOutOfDate: true as const }
-          : {}
+          : current.unchecked?.models.has(row.partNumber)
+            ? { modelUnchecked: true as const }
+            : {}
       : {};
     return {
       ...row,
@@ -2070,6 +2082,9 @@ export function withCurrentFiles(
           }
           if (current.outOfDate?.drawings.has(key)) {
             return { ...drawing, outOfDate: true as const };
+          }
+          if (current.unchecked?.drawings.has(key)) {
+            return { ...drawing, unchecked: true as const };
           }
           return drawing;
         })

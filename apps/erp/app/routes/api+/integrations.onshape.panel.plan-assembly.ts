@@ -511,6 +511,7 @@ export async function action({ request }: ActionFunctionArgs) {
     models: none,
     drawings: none,
     outOfDate: { models: none, drawings: none },
+    unchecked: { models: none, drawings: none },
     rootModel: false
   };
   try {
@@ -563,6 +564,10 @@ export async function action({ request }: ActionFunctionArgs) {
       outOfDate: {
         models: modelPartNumbers(found.outOfDate.models),
         drawings: drawingKeys(found.outOfDate.drawings)
+      },
+      unchecked: {
+        models: modelPartNumbers(found.unchecked.models),
+        drawings: drawingKeys(found.unchecked.drawings)
       },
       rootModel: rootItemId !== null && found.models.includes(rootItemId)
     };

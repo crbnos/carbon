@@ -689,7 +689,7 @@ export function canRepushRelease(review: ReviewState): boolean {
 }
 
 export type DrawingsSummary = {
-  state: "current" | "out-of-date" | "partly-current";
+  state: "current" | "out-of-date" | "unchecked" | "partly-current";
   count: number;
   total: number;
 };
@@ -701,9 +701,11 @@ export function drawingsSummary(
   const total = drawings.length;
   const current = drawings.filter((drawing) => drawing.current).length;
   const outOfDate = drawings.filter((drawing) => drawing.outOfDate).length;
+  const unchecked = drawings.filter((drawing) => drawing.unchecked).length;
   if (total === 0) return null;
   if (current === total) return { state: "current", count: current, total };
   if (outOfDate > 0) return { state: "out-of-date", count: outOfDate, total };
+  if (unchecked > 0) return { state: "unchecked", count: unchecked, total };
   return current > 0
     ? { state: "partly-current", count: current, total }
     : null;

@@ -21,7 +21,8 @@ import {
   planDrawingFiles,
   rowsWithFiles,
   sourceStateReads,
-  sourceStateStamps
+  sourceStateStamps,
+  uncheckedFiles
 } from "./onshape-asset-state";
 import { assemblySourceKeyAt, partSourceId } from "./onshape-source-keys";
 
@@ -482,5 +483,29 @@ describe("the review's current-file checks", () => {
         { models: [], drawings: [drawingKey] }
       )
     ).toEqual({ models: [], drawings: [] });
+  });
+
+  it("names held files whose workspace was not read as unchecked, not out of date", () => {
+    const rows = { models: [model()], drawings: [tied] };
+    const held = {
+      models: records({ modelUploadIds: { brk: "onshape-earlier" } }),
+      drawings: holding("an-earlier-key")
+    };
+    const unchecked = uncheckedFiles(rows, held, { documents: {} });
+    expect(unchecked).toEqual({ models: ["brk"], drawings: [drawingKey] });
+    expect(
+      outOfDateFiles(rows, held, { models: [], drawings: [] }, unchecked)
+    ).toEqual({ models: [], drawings: [] });
+  });
+
+  it("names a drawing Onshape reported no state for as unchecked", () => {
+    const stateless = { ...tied, microversionId: null };
+    expect(
+      uncheckedFiles(
+        { models: [], drawings: [stateless] },
+        { models: records(), drawings: holding("an-earlier-key") },
+        states
+      )
+    ).toEqual({ models: [], drawings: [drawingKey] });
   });
 });
