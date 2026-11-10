@@ -16068,6 +16068,9 @@ msgstr "Kanban Output"
 msgid "Kanban output setting updated"
 msgstr "Kanban output setting updated"
 
+msgid "Kanban QR code"
+msgstr "Kanban QR code"
+
 msgid "Kanbans"
 msgstr "Kanbans"
 

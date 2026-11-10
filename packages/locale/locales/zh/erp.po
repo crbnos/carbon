@@ -16068,6 +16068,9 @@ msgstr "看板输出"
 msgid "Kanban output setting updated"
 msgstr "看板输出设置已更新"
 
+msgid "Kanban QR code"
+msgstr "看板二维码"
+
 msgid "Kanbans"
 msgstr "看板"
 

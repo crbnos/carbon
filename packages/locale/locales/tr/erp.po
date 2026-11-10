@@ -16068,6 +16068,9 @@ msgstr "Kanban Çıktısı"
 msgid "Kanban output setting updated"
 msgstr "Kanban çıkış ayarı güncellendi"
 
+msgid "Kanban QR code"
+msgstr "Kanban QR kodu"
+
 msgid "Kanbans"
 msgstr "Kanbanlar"
 
