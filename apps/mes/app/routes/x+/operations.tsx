@@ -528,9 +528,17 @@ const defaultDisplaySettings: DisplaySettings = {
 };
 
 const DISPLAY_SETTINGS_KEY = "kanban-schedule-display-settings";
+const displaySettingsMigration = {
+  key: DISPLAY_SETTINGS_KEY,
+  parse: (value: unknown): DisplaySettings | null =>
+    value && typeof value === "object" && !Array.isArray(value)
+      ? { ...defaultDisplaySettings, ...(value as Partial<DisplaySettings>) }
+      : null
+};
 
 function KanbanSchedule() {
   const { t } = useLingui();
+  const { id: userId, company } = useUser();
   const {
     columns,
     items: initialItems,
@@ -547,9 +555,11 @@ function KanbanSchedule() {
     setItems(initialItems);
   }, [initialItems]);
 
+  const displayKey = `${DISPLAY_SETTINGS_KEY}:${userId}:${company.id}`;
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    DISPLAY_SETTINGS_KEY,
-    defaultDisplaySettings
+    displayKey,
+    defaultDisplaySettings,
+    displaySettingsMigration
   );
   const mergedDisplaySettings = useMemo(
     () => ({ ...defaultDisplaySettings, ...displaySettings }),
