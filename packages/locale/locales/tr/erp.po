@@ -307,6 +307,11 @@ msgstr "{0} (tür)"
 msgid "{0} (unavailable)"
 msgstr "{0} (kullanılamıyor)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "Adet başına {0} {1}"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2473,6 +2478,13 @@ msgstr "Hakkında (bildirim)"
 msgid "About this field"
 msgstr "Bu alan hakkında"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "{0} üzeri"
+
+msgid "Above maximum"
+msgstr "Maksimumun üzeri"
+
 msgid "Above the upper limit"
 msgstr "Üst sınırın üzerinde"
 
@@ -2946,6 +2958,9 @@ msgstr "İş bölümlerinin her biri için bir satır ekleyin: Zaman ve Malzeme,
 
 msgid "Add a line to the document"
 msgstr "Belgeye bir satır ekle"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "Sonuçlarını düzeltmelere eşlemek için bir operasyona (minimum veya maksimum değerli) Liste, Muayene veya Ölçüm adımı ekleyin."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
@@ -3494,6 +3509,9 @@ msgstr "Sonra"
 
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
+
+msgid "After the correction"
+msgstr "Düzeltmeden sonra"
 
 msgid "Afternoon, {name}."
 msgstr "Öğleden sonra, {name}."
@@ -5598,8 +5616,15 @@ msgstr "Başlangıç"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Kademeli olarak kullanımdan kaldırılıyor — ardıl: <0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "{0} altı"
+
 msgid "Below level"
 msgstr "Seviyenin altında"
+
+msgid "Below minimum"
+msgstr "Minimumun altı"
 
 msgid "Below safety stock"
 msgstr "Emniyet stokunun altında"
@@ -7858,6 +7883,9 @@ msgstr "Devam Et"
 msgid "Continue Setup"
 msgstr "Kuruluma Devam Et"
 
+msgid "Continue to the next operation"
+msgstr "Sonraki operasyona devam et"
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Kullanım hakkı varlıklarının amortismanı için kontra varlık hesabı"
 
@@ -9981,6 +10009,9 @@ msgstr "Sözleşmeyi Sil"
 msgid "Delete Contractor"
 msgstr "Taşeronu sil"
 
+msgid "Delete correction"
+msgstr "Düzeltmeyi sil"
+
 msgid "Delete Count"
 msgstr "Sayımı Sil"
 
@@ -10320,6 +10351,9 @@ msgstr "Silindi"
 
 msgid "Deleted attribute value"
 msgstr "Öznitelik değeri silindi"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "Bu düzeltmeyi silmek, operasyonlarını, malzemelerini ve sonuç eşlemelerini kaldırır. Zaten oluşturulmuş iş emirleri kendi kopyasını korur."
 
 msgid "Deliver"
 msgstr "Teslim Et"
@@ -11443,6 +11477,12 @@ msgstr "İlgili Kişiyi Düzenle"
 
 msgid "Edit Contractor"
 msgstr "Taşeron Düzenle"
+
+msgid "Edit correction"
+msgstr "Düzeltmeyi düzenle"
+
+msgid "Edit Correction"
+msgstr "Düzeltmeyi Düzenle"
 
 msgid "Edit cost"
 msgstr "Maliyeti Düzenle"
@@ -12878,6 +12918,9 @@ msgstr "Başarısız"
 
 msgid "Failed characteristics"
 msgstr "Başarısız özellikler"
+
+msgid "Failed inspection"
+msgstr "Muayene başarısız"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -15105,6 +15148,7 @@ msgstr "Pasif eylemler seçim listelerinde görünmeyecektir"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Pasif kategoriler yeni zaman için seçilemez"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -16633,6 +16677,9 @@ msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "Sınır yoksa boş bırakın. Bu sınırı aşarsa MES yalnızca Fire veya bir kalite sorunu sunar."
+
 msgid "Leave empty to use the account default"
 msgstr "Hesap varsayılanını kullanmak için boş bırakın"
 
@@ -17805,6 +17852,13 @@ msgstr "Matris"
 msgid "Maturity Analysis"
 msgstr "Vadesilik Analizi"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "Adet başına en fazla {0}"
+
+msgid "Max attempts per unit"
+msgstr "Adet başına en fazla deneme"
+
 msgid "Max Lead Time"
 msgstr "Maks. Tedarik Süresi"
 
@@ -18604,6 +18658,9 @@ msgstr "Yeni Sözleşme"
 msgid "New Contractor"
 msgstr "Yeni taşeron"
 
+msgid "New Correction"
+msgstr "Yeni Düzeltme"
+
 msgid "New Cost Center"
 msgstr "Yeni Maliyet Merkezi"
 
@@ -19307,6 +19364,12 @@ msgstr "Cutover'da hiçbir kontrol hesabının bakiyesi yoktur."
 msgid "No conversion is required"
 msgstr "Dönüşüm gerekmiyor"
 
+msgid "No correction"
+msgstr "Düzeltme yok"
+
+msgid "No corrections yet."
+msgstr "Henüz düzeltme yok."
+
 msgid "No cost"
 msgstr "Maliyet yok"
 
@@ -19697,6 +19760,9 @@ msgstr "Açık satış sipariş satırı yok"
 msgid "No open work has a target date."
 msgstr "Hiçbir açık işin hedef tarihi yoktur."
 
+msgid "No operations"
+msgstr "Operasyonlar yok"
+
 msgid "No operations found."
 msgstr "Operasyon bulunamadı."
 
@@ -19985,6 +20051,9 @@ msgstr "Bu görünüme herhangi bir sıralama uygulanmadı"
 
 msgid "No statement for this period"
 msgstr "Bu dönem için ekstre yok"
+
+msgid "No step results suggest this correction."
+msgstr "Hiçbir adım sonucu bu düzeltmeyi önermiyor."
 
 msgid "No step selected"
 msgstr "Adım seçilmedi"
@@ -20316,6 +20385,9 @@ msgstr "Senkronize edilmedi"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Kullanılabilir stok değil. MRP ve planlama bunu saymaz, toplama da buradan almaz."
+
+msgid "Not used yet."
+msgstr "Henüz kullanılmadı."
 
 msgid "Not working today"
 msgstr "Bugün çalışmıyor"
@@ -23469,6 +23541,10 @@ msgstr "Bu kanban için bir sonraki işlemi başlatmak üzere QR kod"
 msgid "Qty"
 msgstr "Miktar"
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Miktar {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "Miktar {jobQuantity}"
 
@@ -23834,6 +23910,9 @@ msgstr "Modeli yeniden dönüştür"
 msgid "Re-date to first open day"
 msgstr "İlk açık güne yeniden tarihlendir"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "Bulduğu operasyonda yeniden muayene et"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
 
@@ -23845,6 +23924,9 @@ msgstr "Mevcut adım sırasında hareket yeniden planlaması — adımlar tamaml
 
 msgid "Re-send"
 msgstr "Yeniden gönder"
+
+msgid "Re-torque nut"
+msgstr "Somunu yeniden torkla"
 
 msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
@@ -25228,6 +25310,9 @@ msgstr "Ücretlendirmeyi üyelere kısıtla"
 msgid "Result"
 msgstr "Sonuç"
 
+msgid "Result mappings"
+msgstr "Sonuç eşlemeleri"
+
 msgid "Results"
 msgstr "Sonuçlar"
 
@@ -25579,6 +25664,12 @@ msgstr "İptal edildi"
 
 msgid "Rework"
 msgstr "Yeniden İşleme"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "Bir adım sonucunun önerdiği, yalnızca yeniden işlem operasyonları; örneğin bir kontrol somunun gevşek olduğunu bulduğunda yeniden torklama. Normal adetler bunları asla çalıştırmaz."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Bir adım sonucunun önerdiği yalnızca yeniden işlem operasyonları. Bu iş emri, üretim yönteminden kendi kopyasını korur."
 
 msgid "RFQ"
 msgstr "Teklif Talebi"
@@ -31094,6 +31185,12 @@ msgstr "Ardından ayarlandı"
 msgid "Then by"
 msgstr "Sonra"
 
+msgid "Then continue"
+msgstr "Sonra devam et"
+
+msgid "Then re-inspect"
+msgstr "Sonra yeniden muayene et"
+
 msgid "There are more received than ordered"
 msgstr "Sipariş edilenden daha fazlası alındı"
 
@@ -32347,10 +32444,11 @@ msgstr "Tekrar deneyin"
 msgid "Tuesday"
 msgstr "Salı"
 
-msgid "Turn On"
-msgstr "Aç"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "Aç"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Açın <0>Ayarlar → Muhasebe'de Kısa Vadeli Kiralama Muafiyeti</0> veya"
@@ -33188,6 +33286,9 @@ msgstr "Kullanan {0}"
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
 msgstr "Kullanan {0} · {1}"
+
+msgid "Uses on this job"
+msgstr "Bu iş emrindeki kullanımlar"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
@@ -34415,6 +34516,9 @@ msgstr "Yarı Mamul"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "ile {0} acil durum"
+
+msgid "With Previous"
+msgstr "Öncekiyle birlikte"
 
 msgid "Withdraw"
 msgstr "Geri Çek"

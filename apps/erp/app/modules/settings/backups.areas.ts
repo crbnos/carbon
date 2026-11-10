@@ -152,6 +152,8 @@ const TABLE_AREAS: Record<string, BackupArea> = {
   itemCost: "items",
   itemUnitSalePrice: "items",
   makeMethod: "items",
+  methodCorrection: "items",
+  methodCorrectionTrigger: "items",
   methodMaterial: "items",
   methodOperation: "items",
   consumable: "items",
@@ -160,6 +162,7 @@ const TABLE_AREAS: Record<string, BackupArea> = {
 
   jobOperation: "production",
   jobOperationDependency: "production",
+  jobOperationTrackedEntity: "production",
   jobMakeMethod: "production",
   jobMaterial: "production",
   productionEvent: "production",

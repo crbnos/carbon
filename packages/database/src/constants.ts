@@ -115,6 +115,8 @@ export const Constants = {
       ],
       contractRevenueStatus: ["Planned", "Recognized", "Recognized Externally"],
       contractRevenueType: ["One-time", "Recurring"],
+      correctionMeasurementCondition: ["Below Minimum", "Above Maximum"],
+      correctionReturnTo: ["Re-inspect", "Continue"],
       costLedgerType: [
         "Direct Cost",
         "Revaluation",

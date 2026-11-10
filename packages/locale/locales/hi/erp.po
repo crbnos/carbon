@@ -307,6 +307,11 @@ msgstr "{0} (प्रकार)"
 msgid "{0} (unavailable)"
 msgstr "{0} (उपलब्ध नहीं)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "प्रति इकाई {0} {1}"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2473,6 +2478,13 @@ msgstr "के बारे में (सूचना)"
 msgid "About this field"
 msgstr "इस फ़ील्ड के बारे में"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "{0} से अधिक"
+
+msgid "Above maximum"
+msgstr "अधिकतम से अधिक"
+
 msgid "Above the upper limit"
 msgstr "ऊपरी सीमा से अधिक"
 
@@ -2946,6 +2958,9 @@ msgstr "प्रत्येक कार्य के भाग के लि�
 
 msgid "Add a line to the document"
 msgstr "दस्तावेज़ में एक पंक्ति जोड़ें"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "किसी ऑपरेशन में सूची, निरीक्षण या माप (न्यूनतम या अधिकतम सहित) चरण जोड़ें, ताकि उसके परिणामों को सुधारों से जोड़ा जा सके।"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
@@ -3494,6 +3509,9 @@ msgstr "के बाद"
 
 msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
+
+msgid "After the correction"
+msgstr "सुधार के बाद"
 
 msgid "Afternoon, {name}."
 msgstr "दोपहर, {name}।"
@@ -5598,8 +5616,15 @@ msgstr "आरंभ"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "चरणबद्ध रूप से बंद किया जा रहा है — उत्तराधिकारी: <0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "{0} से कम"
+
 msgid "Below level"
 msgstr "स्तर से नीचे"
+
+msgid "Below minimum"
+msgstr "न्यूनतम से कम"
 
 msgid "Below safety stock"
 msgstr "सुरक्षा स्टॉक से नीचे"
@@ -7858,6 +7883,9 @@ msgstr "जारी रखें"
 msgid "Continue Setup"
 msgstr "सेटअप जारी रखें"
 
+msgid "Continue to the next operation"
+msgstr "अगले ऑपरेशन पर जारी रखें"
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "प्रयोग-अधिकार संपत्ति के परिशोधन के लिए विरुद्ध संपत्ति खाता"
 
@@ -9981,6 +10009,9 @@ msgstr "अनुबंध हटाएँ"
 msgid "Delete Contractor"
 msgstr "ठेकेदार हटाएं"
 
+msgid "Delete correction"
+msgstr "सुधार हटाएँ"
+
 msgid "Delete Count"
 msgstr "गणना हटाएं"
 
@@ -10320,6 +10351,9 @@ msgstr "हटाया गया"
 
 msgid "Deleted attribute value"
 msgstr "विशेषता मान हटाया गया"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "इस सुधार को हटाने से इसके ऑपरेशन, आइटम और परिणाम मैपिंग हट जाएँगी। जो जॉब पहले से बन चुके हैं, वे अपनी प्रति रखेंगे।"
 
 msgid "Deliver"
 msgstr "डिलीवर करें"
@@ -11443,6 +11477,12 @@ msgstr "संपर्क संपादित करें"
 
 msgid "Edit Contractor"
 msgstr "ठेकेदार संपादित करें"
+
+msgid "Edit correction"
+msgstr "सुधार संपादित करें"
+
+msgid "Edit Correction"
+msgstr "सुधार संपादित करें"
 
 msgid "Edit cost"
 msgstr "लागत संपादित करें"
@@ -12878,6 +12918,9 @@ msgstr "विफल"
 
 msgid "Failed characteristics"
 msgstr "विफल विशेषताएं"
+
+msgid "Failed inspection"
+msgstr "निरीक्षण विफल"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -15105,6 +15148,7 @@ msgstr "निष्क्रिय क्रियाएं चयन सूच
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "निष्क्रिय श्रेणियां नए समय के लिए नहीं चुनी जा सकतीं"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -16633,6 +16677,9 @@ msgstr "अगले रिवीजन को स्वचालित रू�
 msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "सीमा न हो तो खाली छोड़ें। इससे अधिक होने पर MES केवल स्क्रैप या गुणवत्ता समस्या का विकल्प देता है।"
+
 msgid "Leave empty to use the account default"
 msgstr "खाता डिफ़ॉल्ट का उपयोग करने के लिए खाली छोड़ें"
 
@@ -17805,6 +17852,13 @@ msgstr "मैट्रिक्स"
 msgid "Maturity Analysis"
 msgstr "परिपक्वता विश्लेषण"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "प्रति इकाई अधिकतम {0}"
+
+msgid "Max attempts per unit"
+msgstr "प्रति इकाई अधिकतम प्रयास"
+
 msgid "Max Lead Time"
 msgstr "अधिकतम लीड टाइम"
 
@@ -18604,6 +18658,9 @@ msgstr "नया अनुबंध"
 msgid "New Contractor"
 msgstr "नया ठेकेदार"
 
+msgid "New Correction"
+msgstr "नया सुधार"
+
 msgid "New Cost Center"
 msgstr "नया लागत केंद्र"
 
@@ -19307,6 +19364,12 @@ msgstr "कटऑवर पर किसी नियंत्रण खात�
 msgid "No conversion is required"
 msgstr "कोई रूपांतरण आवश्यक नहीं है"
 
+msgid "No correction"
+msgstr "कोई सुधार नहीं"
+
+msgid "No corrections yet."
+msgstr "अभी तक कोई सुधार नहीं।"
+
 msgid "No cost"
 msgstr "कोई लागत नहीं"
 
@@ -19697,6 +19760,9 @@ msgstr "कोई खुली विक्रय आदेश पंक्त�
 msgid "No open work has a target date."
 msgstr "कोई भी खुला काम लक्ष्य तारीख नहीं है।"
 
+msgid "No operations"
+msgstr "कोई ऑपरेशन नहीं"
+
 msgid "No operations found."
 msgstr "कोई ऑपरेशन नहीं मिला।"
 
@@ -19985,6 +20051,9 @@ msgstr "इस दृश्य पर कोई सॉर्ट लागू न
 
 msgid "No statement for this period"
 msgstr "इस अवधि के लिए कोई विवरण नहीं"
+
+msgid "No step results suggest this correction."
+msgstr "कोई चरण परिणाम इस सुधार का सुझाव नहीं देता।"
 
 msgid "No step selected"
 msgstr "कोई चरण चयनित नहीं"
@@ -20316,6 +20385,9 @@ msgstr "सिंक नहीं हुआ"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "उपयोग योग्य स्टॉक नहीं। MRP और योजना इसे नहीं गिनते, और पिकिंग इसमें से नहीं लेती।"
+
+msgid "Not used yet."
+msgstr "अभी तक उपयोग नहीं हुआ।"
 
 msgid "Not working today"
 msgstr "आज काम नहीं"
@@ -23469,6 +23541,10 @@ msgstr "इस कानबान के लिए अगला ऑपरेश�
 msgid "Qty"
 msgstr "मात्रा"
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "मात्रा {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "मात्रा {jobQuantity}"
 
@@ -23834,6 +23910,9 @@ msgstr "मॉडल को पुनः परिवर्तित करे�
 msgid "Re-date to first open day"
 msgstr "पहले खुले दिन को फिर से डेट करें"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "जिस ऑपरेशन में यह मिला, वहीं पुनः निरीक्षण करें"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "उद्धरण, फर्श और वित्त के बीच पुनः-कुंजीकरण"
 
@@ -23845,6 +23924,9 @@ msgstr "वर्तमान चरण क्रम में गति की 
 
 msgid "Re-send"
 msgstr "फिर से भेजें"
+
+msgid "Re-torque nut"
+msgstr "नट को पुनः टॉर्क करें"
 
 msgid "Reactivate"
 msgstr "पुनः सक्रिय करें"
@@ -25228,6 +25310,9 @@ msgstr "सदस्यों के लिए प्रभार को प्�
 msgid "Result"
 msgstr "परिणाम"
 
+msgid "Result mappings"
+msgstr "परिणाम मैपिंग"
+
 msgid "Results"
 msgstr "परिणाम"
 
@@ -25579,6 +25664,12 @@ msgstr "रद्द किया गया"
 
 msgid "Rework"
 msgstr "पुनः कार्य"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "केवल पुनर्कार्य वाले ऑपरेशन जो किसी चरण परिणाम से सुझाए जाते हैं, जैसे जाँच में नट ढीला मिलने पर पुनः टॉर्क। सामान्य इकाइयों पर ये कभी नहीं चलते।"
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "केवल पुनर्कार्य वाले ऑपरेशन जो किसी चरण परिणाम से सुझाए जाते हैं। यह जॉब निर्माण विधि से अपनी प्रति रखता है।"
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31094,6 +31185,12 @@ msgstr "फिर इसके लिए समायोजित"
 msgid "Then by"
 msgstr "फिर द्वारा"
 
+msgid "Then continue"
+msgstr "फिर जारी रखें"
+
+msgid "Then re-inspect"
+msgstr "फिर पुनः निरीक्षण करें"
+
 msgid "There are more received than ordered"
 msgstr "ऑर्डर किए गए से अधिक प्राप्त हुए हैं"
 
@@ -32347,10 +32444,11 @@ msgstr "फिर से कोशिश करें"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
-msgid "Turn On"
-msgstr "चालू करें"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "चालू करें"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "सेटिंग्स → लेखांकन में <0>अल्पकालिक पट्टा उपाय चालू करें</0>, या"
@@ -33188,6 +33286,9 @@ msgstr "{0} का उपयोग करता है"
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
 msgstr "{0} का उपयोग करता है · {1}"
+
+msgid "Uses on this job"
+msgstr "इस जॉब पर उपयोग"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
@@ -34415,6 +34516,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "के साथ {0} आकस्मिकता"
+
+msgid "With Previous"
+msgstr "पिछले के साथ"
 
 msgid "Withdraw"
 msgstr "वापस लें"

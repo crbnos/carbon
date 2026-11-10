@@ -4891,3 +4891,22 @@ drag handle that wraps clickable content.
 **Rule:** Before porting a function, find its newest definition (`grep -l "FUNCTION <name>" migrations/*.sql | tail -1`) and carry every statement across, or drop one on purpose with a note. A behavior that only sets a default value has no test to fail when it is lost: pin it with one (`seed-company.test.ts` pins `useMetric` per country).
 
 **Applies to:** `packages/database/src/event-system/handlers/*.sql`, any migration that replaces a trigger function.
+
+## A correction's rows live in the routing and BOM tables
+
+**Context:** A make method's corrections store their operations and materials in
+`methodOperation` and `methodMaterial`, marked by `methodCorrectionId`. Their Op
+Nos start at 1, like the routing's.
+
+**Problem:** The CSV method import read the routing and BOM by `makeMethodId`
+alone. Op No 1 then matched two operations and the row failed; a step for an Op
+No only a correction had attached to the correction; and a BOM line was skipped
+as "already on the BOM" when only a correction used the item.
+
+**Rule:** A read of a make method's routing or bill of materials filters
+`methodCorrectionId IS NULL`. Read correction rows only through their
+`methodCorrectionId`. A write by row id or by item (a part merge, a method type
+change) needs no filter.
+
+**Applies to:** every query on `methodOperation` / `methodMaterial` by
+`makeMethodId`, in TypeScript and in SQL (`get_method_tree`).

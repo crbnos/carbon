@@ -307,6 +307,11 @@ msgstr "{0} (tipo)"
 msgid "{0} (unavailable)"
 msgstr "{0} (no disponible)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "{0} {1} por unidad"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2473,6 +2478,13 @@ msgstr "Acerca de (notificación)"
 msgid "About this field"
 msgstr "Acerca de este campo"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "Por encima de {0}"
+
+msgid "Above maximum"
+msgstr "Por encima del máximo"
+
 msgid "Above the upper limit"
 msgstr "Por encima del límite superior"
 
@@ -2946,6 +2958,9 @@ msgstr "Agregar una línea para cada parte del trabajo: Tiempo y Material, Costo
 
 msgid "Add a line to the document"
 msgstr "Agregar una línea al documento"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "Agregue un paso de Lista, Inspección o Medición (con un mínimo o máximo) a una operación para asignar sus resultados a correcciones."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Agregue una sección de materiales que enumere cada artículo en la lista de materiales con su cantidad."
@@ -3494,6 +3509,9 @@ msgstr "Después"
 
 msgid "After (calculation method)"
 msgstr "Después (método de cálculo)"
+
+msgid "After the correction"
+msgstr "Después de la corrección"
 
 msgid "Afternoon, {name}."
 msgstr "Tarde, {name}."
@@ -5598,8 +5616,15 @@ msgstr "Inicio"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Siendo descontinuado — sucesor: <0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "Por debajo de {0}"
+
 msgid "Below level"
 msgstr "Por debajo del nivel"
+
+msgid "Below minimum"
+msgstr "Por debajo del mínimo"
 
 msgid "Below safety stock"
 msgstr "Por debajo del stock de seguridad"
@@ -7858,6 +7883,9 @@ msgstr "Continuar"
 msgid "Continue Setup"
 msgstr "Continuar configuración"
 
+msgid "Continue to the next operation"
+msgstr "Continuar con la siguiente operación"
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Cuenta de contraactivo para la amortización de activos de derecho de uso"
 
@@ -9981,6 +10009,9 @@ msgstr "Eliminar contrato"
 msgid "Delete Contractor"
 msgstr "Eliminar Contratista"
 
+msgid "Delete correction"
+msgstr "Eliminar corrección"
+
 msgid "Delete Count"
 msgstr "Eliminar Recuento"
 
@@ -10320,6 +10351,9 @@ msgstr "Eliminado"
 
 msgid "Deleted attribute value"
 msgstr "Valor de atributo eliminado"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "Al eliminar esta corrección se quitan sus operaciones, materiales y asignaciones de resultados. Las órdenes de trabajo ya creadas conservan su propia copia."
 
 msgid "Deliver"
 msgstr "Entregar"
@@ -11443,6 +11477,12 @@ msgstr "Editar Contacto"
 
 msgid "Edit Contractor"
 msgstr "Editar Contratista"
+
+msgid "Edit correction"
+msgstr "Editar corrección"
+
+msgid "Edit Correction"
+msgstr "Editar corrección"
 
 msgid "Edit cost"
 msgstr "Editar costo"
@@ -12878,6 +12918,9 @@ msgstr "Fallido"
 
 msgid "Failed characteristics"
 msgstr "Características defectuosas"
+
+msgid "Failed inspection"
+msgstr "Inspección no superada"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -15105,6 +15148,7 @@ msgstr "Las acciones inactivas no aparecerán en las listas de selección"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Las categorías inactivas no se pueden seleccionar para nuevo tiempo"
+
 msgid "Inactive units are not offered when choosing a unit"
 msgstr ""
 
@@ -16633,6 +16677,9 @@ msgstr "Dejar en blanco para usar la siguiente revisión automáticamente"
 msgid "Leave empty for exact match"
 msgstr "Dejar vacío para coincidencia exacta"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "Deje este campo vacío para no tener límite. Al superarlo, MES solo ofrece Desperdicio o una incidencia de calidad."
+
 msgid "Leave empty to use the account default"
 msgstr "Dejar en blanco para usar el valor predeterminado de la cuenta"
 
@@ -17805,6 +17852,13 @@ msgstr "Matriz"
 msgid "Maturity Analysis"
 msgstr "Análisis de Vencimiento"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "Máx. {0} por unidad"
+
+msgid "Max attempts per unit"
+msgstr "Intentos máx. por unidad"
+
 msgid "Max Lead Time"
 msgstr "Plazo de Entrega Máximo"
 
@@ -18604,6 +18658,9 @@ msgstr "Nuevo Contrato"
 msgid "New Contractor"
 msgstr "Nuevo Contratista"
 
+msgid "New Correction"
+msgstr "Nueva corrección"
+
 msgid "New Cost Center"
 msgstr "Nuevo Centro de Costos"
 
@@ -19307,6 +19364,12 @@ msgstr "Ninguna cuenta de control tiene saldo en el corte."
 msgid "No conversion is required"
 msgstr "No se requiere conversión"
 
+msgid "No correction"
+msgstr "Sin corrección"
+
+msgid "No corrections yet."
+msgstr "Aún no hay correcciones."
+
 msgid "No cost"
 msgstr "Sin costo"
 
@@ -19697,6 +19760,9 @@ msgstr "Sin líneas de pedido de venta abiertas"
 msgid "No open work has a target date."
 msgstr "Ningún trabajo abierto tiene una fecha objetivo."
 
+msgid "No operations"
+msgstr "Sin operaciones"
+
 msgid "No operations found."
 msgstr "No se encontraron operaciones."
 
@@ -19985,6 +20051,9 @@ msgstr "No hay ordenamientos aplicados a esta vista"
 
 msgid "No statement for this period"
 msgstr "Sin estado de cuenta para este período"
+
+msgid "No step results suggest this correction."
+msgstr "Ningún resultado de paso sugiere esta corrección."
 
 msgid "No step selected"
 msgstr "Ningún paso seleccionado"
@@ -20316,6 +20385,9 @@ msgstr "No sincronizado"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Stock no utilizable. El MRP y la planificación no lo cuentan, y el picking no lo toma."
+
+msgid "Not used yet."
+msgstr "Aún no se usa."
 
 msgid "Not working today"
 msgstr "No trabaja hoy"
@@ -23469,6 +23541,10 @@ msgstr "Código QR para iniciar la siguiente operación para este kanban"
 msgid "Qty"
 msgstr "Cant."
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Cant. {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "Cant. {jobQuantity}"
 
@@ -23834,6 +23910,9 @@ msgstr "Reconvertir modelo"
 msgid "Re-date to first open day"
 msgstr "Redatar al primer día abierto"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "Volver a inspeccionar en la operación que la detectó"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-ingreso de datos entre cotización, piso de producción y finanzas"
 
@@ -23845,6 +23924,9 @@ msgstr "Replanificación de movimientos en el orden de paso actual — los pasos
 
 msgid "Re-send"
 msgstr "Reenviar"
+
+msgid "Re-torque nut"
+msgstr "Volver a apretar tuerca"
 
 msgid "Reactivate"
 msgstr "Reactivar"
@@ -25228,6 +25310,9 @@ msgstr "Restringir la carga a miembros"
 msgid "Result"
 msgstr "Resultado"
 
+msgid "Result mappings"
+msgstr "Asignaciones de resultados"
+
 msgid "Results"
 msgstr "Resultados"
 
@@ -25579,6 +25664,12 @@ msgstr "Revocado"
 
 msgid "Rework"
 msgstr "Retrabajo"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "Operaciones solo de retrabajo que sugiere un resultado de paso, como volver a apretar una tuerca cuando una verificación detecta que está floja. Las unidades normales nunca las ejecutan."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Operaciones solo de retrabajo que sugiere un resultado de paso. Esta orden de trabajo conserva su propia copia del método de fabricación."
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31094,6 +31185,12 @@ msgstr "Luego ajustado por"
 msgid "Then by"
 msgstr "Luego por"
 
+msgid "Then continue"
+msgstr "Luego, continuar"
+
+msgid "Then re-inspect"
+msgstr "Luego, volver a inspeccionar"
+
 msgid "There are more received than ordered"
 msgstr "Hay más recibido que lo pedido"
 
@@ -32347,10 +32444,11 @@ msgstr "Intente de nuevo"
 msgid "Tuesday"
 msgstr "Martes"
 
-msgid "Turn On"
-msgstr "Activar"
 msgid "Turn Off"
 msgstr ""
+
+msgid "Turn On"
+msgstr "Activar"
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Activa <0>la Opción de Arrendamiento a Corto Plazo en Configuración → Contabilidad</0>, o"
@@ -33188,6 +33286,9 @@ msgstr "Utiliza {0}"
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
 msgstr "Utiliza {0} · {1}"
+
+msgid "Uses on this job"
+msgstr "Usos en esta orden de trabajo"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
@@ -34415,6 +34516,9 @@ msgstr "Producto en proceso"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "con {0} contingencia"
+
+msgid "With Previous"
+msgstr "Con la anterior"
 
 msgid "Withdraw"
 msgstr "Retirar"

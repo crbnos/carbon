@@ -23,6 +23,7 @@ import {
   recalculateInput,
   saveTimesheetEntryInput,
   submitTimesheetWeekInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "@carbon/api/postings";
 import type { Postings } from "@carbon/api/postings.server";
@@ -70,6 +71,7 @@ export const postingPermissions = {
   "batch-operations": production.batchOperationPermission,
   recalculate: production.recalculateRequirementsPermission,
   "trigger-rework": production.triggerReworkPermission,
+  "trigger-correction": production.triggerCorrectionPermission,
   "reject-inspection": quality.rejectInspection.permission,
   "save-timesheet-entry": projects.saveTimesheetEntryPermission,
   "submit-timesheet-week": projects.submitTimesheetWeekPermission,
@@ -303,6 +305,17 @@ export const postings: Postings = {
       as: postingPermissions["trigger-rework"],
       schema: triggerReworkInput
     }),
+  "trigger-correction": (handles, input) =>
+    invokePosting(
+      handles,
+      "trigger-correction",
+      input,
+      production.triggerCorrection,
+      {
+        as: postingPermissions["trigger-correction"],
+        schema: triggerCorrectionInput
+      }
+    ),
   "save-timesheet-entry": (handles, input) =>
     invokePosting(
       handles,

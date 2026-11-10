@@ -16,7 +16,7 @@ import {
   abilityBlockRefusal,
   finishJobOperation,
   getNextIncompleteSerialEntity,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   insertProductionQuantity,
   isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
@@ -184,10 +184,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (quantityToComplete > 0) {
     if (isTrackedEntity) {
-      const trackedEntities = await getTrackedEntitiesByMakeMethodId(
+      const trackedEntities = await getTrackedEntitiesForOperation(
         serviceRole,
-        jobOperation.data.jobMakeMethodId,
-        companyId
+        {
+          operationId,
+          jobMakeMethodId: jobOperation.data.jobMakeMethodId,
+          companyId
+        }
       );
 
       if (!trackedEntityId) {
@@ -326,10 +329,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         // units already exist), so advance to the next incomplete serial unit
         // for this operation. When none remain, fall through to the shared
         // "operation complete" redirect below.
-        const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
+        const remainingTrackedEntities = await getTrackedEntitiesForOperation(
           serviceRole,
-          jobOperation.data.jobMakeMethodId,
-          companyId
+          {
+            operationId,
+            jobMakeMethodId: jobOperation.data.jobMakeMethodId,
+            companyId
+          }
         );
         const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
           (entity) => isSerialEntityIncompleteForOperation(entity, operationId)
