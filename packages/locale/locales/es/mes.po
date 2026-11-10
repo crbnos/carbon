@@ -781,6 +781,10 @@ msgstr "Copiar secreto"
 msgid "Copy to clipboard"
 msgstr "Copiar al portapapeles"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
@@ -1200,6 +1204,9 @@ msgstr "General"
 
 msgid "Go back to operation"
 msgstr "Volver a la operación"
+
+msgid "Go back to operation, or run a correction"
+msgstr ""
 
 msgid "Go to onboarding"
 msgstr "Ir a la incorporación"
@@ -2305,6 +2312,9 @@ msgstr "Cola vacía"
 msgid "Quotes"
 msgstr "Cotizaciones"
 
+msgid "Raise quality issue"
+msgstr ""
+
 msgid "Re"
 msgstr "Re"
 
@@ -2566,6 +2576,9 @@ msgstr "Cantidad de desperdicio"
 
 msgid "Scrap Reason"
 msgstr "Motivo de desperdicio"
+
+msgid "Scrap unit"
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Descartado"

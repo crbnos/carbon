@@ -319,6 +319,9 @@ export const triggerReworkValidator = z.object({
   inspectionId: zfd.text(z.string().optional())
 });
 
+/** A disposition rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
 export const triggerCorrectionValidator = z.object({
   jobId: z.string().min(1),
   triggeredAtJobOperationId: z.string().min(1),

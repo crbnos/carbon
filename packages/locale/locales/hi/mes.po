@@ -781,6 +781,10 @@ msgstr "सीक्रेट कॉपी करें"
 msgid "Copy to clipboard"
 msgstr "क्लिपबोर्ड पर कॉपी करें"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -1200,6 +1204,9 @@ msgstr "सामान्य"
 
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
+
+msgid "Go back to operation, or run a correction"
+msgstr ""
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
@@ -2305,6 +2312,9 @@ msgstr "कतार खाली"
 msgid "Quotes"
 msgstr "कोटेशन"
 
+msgid "Raise quality issue"
+msgstr ""
+
 msgid "Re"
 msgstr "अस्वीकार"
 
@@ -2566,6 +2576,9 @@ msgstr "स्क्रैप मात्रा"
 
 msgid "Scrap Reason"
 msgstr "स्क्रैप कारण"
+
+msgid "Scrap unit"
+msgstr ""
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"

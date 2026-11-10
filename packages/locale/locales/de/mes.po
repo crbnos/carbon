@@ -781,6 +781,10 @@ msgstr "Geheimnis kopieren"
 msgid "Copy to clipboard"
 msgstr "In die Zwischenablage kopieren"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten der ungeplanten Instandhaltung der letzten {0} Tage"
@@ -1200,6 +1204,9 @@ msgstr "Allgemein"
 
 msgid "Go back to operation"
 msgstr "Zurück zur Operation"
+
+msgid "Go back to operation, or run a correction"
+msgstr ""
 
 msgid "Go to onboarding"
 msgstr "Gehen Sie zum Onboarding"
@@ -2305,6 +2312,9 @@ msgstr "Warteschlange leer"
 msgid "Quotes"
 msgstr "Angebote"
 
+msgid "Raise quality issue"
+msgstr ""
+
 msgid "Re"
 msgstr "Rück."
 
@@ -2566,6 +2576,9 @@ msgstr "Ausschussmenge"
 
 msgid "Scrap Reason"
 msgstr "Ausschussgrund"
+
+msgid "Scrap unit"
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Ausschuss"

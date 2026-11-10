@@ -1,6 +1,6 @@
 # Conditional corrections
 
-> Status: draft
+> Status: in-progress (all phases built; not yet run against a database)
 > Author: Dane Albaugh (drafted with Claude)
 > Date: 2026-11-10
 > Research: `.ai/research/2026-11-10-conditional-corrections.md`
@@ -371,6 +371,17 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 ## Changelog
 
 - 2026-11-10: Created after resolving the open questions with Dane.
+- 2026-11-10: Phase 4 implemented. Past a correction's attempt limit the
+  prompt offers Scrap unit and Raise quality issue (the operation and
+  assembly views pass their scrap and quality-issue actions to the record
+  window). The inspection-lot rework picker lists the operation's
+  corrections after the earlier operations (`rework-targets` returns them;
+  a `correction:` target goes to trigger-correction). Correction steps keep
+  their slides through the job snapshot. Decision: the batch record window
+  does not prompt, since batch mode already hides Scrap and Rework (batch
+  completion records per member). Still open: corrections in the
+  change-notice diff, material-to-step links on correction materials, MCP
+  tools, and an attempt limit for non-serial parts.
 - 2026-11-10: Phase 3 implemented (job snapshot, posting, MES prompt).
   `jobCorrection` (definition JSONB: the job operation, step, tool and
   parameter rows job creation builds, with rates frozen, plus materials per

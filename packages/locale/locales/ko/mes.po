@@ -781,6 +781,10 @@ msgstr "비밀 값 복사"
 msgid "Copy to clipboard"
 msgstr "클립보드에 복사"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
@@ -1200,6 +1204,9 @@ msgstr "일반"
 
 msgid "Go back to operation"
 msgstr "공정작업으로 돌아가기"
+
+msgid "Go back to operation, or run a correction"
+msgstr ""
 
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
@@ -2305,6 +2312,9 @@ msgstr "대기열 비었음"
 msgid "Quotes"
 msgstr "견적서"
 
+msgid "Raise quality issue"
+msgstr ""
+
 msgid "Re"
 msgstr "Re"
 
@@ -2566,6 +2576,9 @@ msgstr "스크랩 수량"
 
 msgid "Scrap Reason"
 msgstr "스크랩 사유"
+
+msgid "Scrap unit"
+msgstr ""
 
 msgid "Scrapped"
 msgstr "스크랩됨"

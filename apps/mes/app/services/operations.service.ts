@@ -2132,6 +2132,29 @@ export async function getTrackedEntitiesForOperation(
   };
 }
 
+/** The job's corrections for an operation's part (its job make method). */
+export async function getOperationCorrections(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  companyId: string
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobMakeMethodId")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .single();
+  if (operation.error || !operation.data.jobMakeMethodId) {
+    return { data: [], error: operation.error };
+  }
+  return client
+    .from("jobCorrection")
+    .select("id, name, returnTo")
+    .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true });
+}
+
 export type CorrectionSuggestion = {
   jobId: string;
   triggeredAtJobOperationId: string;

@@ -2697,6 +2697,8 @@ export function AssemblyView({
                     done={isStepDone(step)}
                     disabled={hasPendingScans || abilityBlocked}
                     actionRef={primaryStepActionRef}
+                    onScrap={scrapModal.onOpen}
+                    onQualityIssue={qualityModal.onOpen}
                   />
                 </div>
               )}
@@ -3436,11 +3438,16 @@ function StepCompleteAction({
   activeIndex,
   done,
   disabled = false,
-  actionRef
+  actionRef,
+  onScrap,
+  onQualityIssue
 }: {
   step: Step;
   activeIndex: number;
   done: boolean;
+  // Offered by the correction prompt past a correction's attempt limit.
+  onScrap?: () => void;
+  onQualityIssue?: () => void;
   // Soft gate: the step's tracked parts aren't fully issued for this unit, so
   // block completion (Mark done / Record) until they're scanned. Skip bypasses.
   disabled?: boolean;
@@ -3598,6 +3605,8 @@ function StepCompleteAction({
         attribute={step as unknown as JobOperationStep}
         activeStep={activeIndex}
         onClose={recordModal.onClose}
+        onScrap={onScrap}
+        onQualityIssue={onQualityIssue}
       />
     </>
   );

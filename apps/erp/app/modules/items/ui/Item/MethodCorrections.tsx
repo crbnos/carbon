@@ -141,7 +141,9 @@ export default function MethodCorrections({
 
   const formModal = useDisclosure();
   const [editing, setEditing] = useState<Correction | null>(null);
+  // Kept after close so the dialog keeps its text while it animates out.
   const [deleting, setDeleting] = useState<Correction | null>(null);
+  const deleteModal = useDisclosure();
 
   const openNew = () => {
     setEditing(null);
@@ -213,7 +215,10 @@ export default function MethodCorrections({
                       aria-label={t`Delete correction`}
                       icon={<LuTrash />}
                       variant="ghost"
-                      onClick={() => setDeleting(correction)}
+                      onClick={() => {
+                        setDeleting(correction);
+                        deleteModal.onOpen();
+                      }}
                     />
                   </HStack>
                 )}
@@ -280,15 +285,16 @@ export default function MethodCorrections({
         correction={editing}
       />
 
-      {deleting && (
-        <ConfirmDelete
-          action={path.to.methodCorrectionDelete(deleting.id)}
-          name={deleting.name}
-          text={t`Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy.`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
-        />
-      )}
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={
+          deleting ? path.to.methodCorrectionDelete(deleting.id) : undefined
+        }
+        name={deleting?.name ?? ""}
+        text={t`Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
     </Card>
   );
 }

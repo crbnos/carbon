@@ -33,10 +33,14 @@ import { path } from "~/utils/path";
  */
 export function CorrectionPrompt({
   suggestion,
-  onClose
+  onClose,
+  onScrap,
+  onQualityIssue
 }: {
   suggestion: CorrectionSuggestion;
   onClose: () => void;
+  onScrap?: () => void;
+  onQualityIssue?: () => void;
 }) {
   const { t } = useLingui();
   const [selectedId, setSelectedId] = useState(
@@ -131,6 +135,36 @@ export function CorrectionPrompt({
                 </Trans>
               </AlertDescription>
             </Alert>
+          )}
+          {overLimit && (onScrap || onQualityIssue) && (
+            <div className="flex w-full gap-2">
+              {onScrap && (
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => {
+                    onClose();
+                    onScrap();
+                  }}
+                >
+                  <Trans>Scrap unit</Trans>
+                </Button>
+              )}
+              {onQualityIssue && (
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => {
+                    onClose();
+                    onQualityIssue();
+                  }}
+                >
+                  <Trans>Raise quality issue</Trans>
+                </Button>
+              )}
+            </div>
           )}
         </VStack>
       </ModalBody>

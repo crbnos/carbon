@@ -781,6 +781,10 @@ msgstr "Copy secret"
 msgid "Copy to clipboard"
 msgstr "Copy to clipboard"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "Correction: {0}"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Cost of unplanned maintenance, last {0} days"
@@ -1200,6 +1204,9 @@ msgstr "General"
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
+
+msgid "Go back to operation, or run a correction"
+msgstr "Go back to operation, or run a correction"
 
 msgid "Go to onboarding"
 msgstr "Go to onboarding"
@@ -2305,6 +2312,9 @@ msgstr "Queue empty"
 msgid "Quotes"
 msgstr "Quotes"
 
+msgid "Raise quality issue"
+msgstr "Raise quality issue"
+
 msgid "Re"
 msgstr "Re"
 
@@ -2566,6 +2576,9 @@ msgstr "Scrap quantity"
 
 msgid "Scrap Reason"
 msgstr "Scrap Reason"
+
+msgid "Scrap unit"
+msgstr "Scrap unit"
 
 msgid "Scrapped"
 msgstr "Scrapped"

@@ -555,12 +555,18 @@ export function RecordModal({
   attribute,
   activeStep,
   open = true,
-  onClose
+  onClose,
+  onScrap,
+  onQualityIssue
 }: {
   attribute: JobOperationStep;
   activeStep: number;
   open?: boolean;
   onClose: () => void;
+  // Offered by the correction prompt once a unit has used a correction its
+  // limit number of times.
+  onScrap?: () => void;
+  onQualityIssue?: () => void;
 }) {
   // A recorded result mapped to a correction turns the window into the
   // correction prompt instead of closing it.
@@ -578,7 +584,12 @@ export function RecordModal({
     >
       <ModalContent>
         {suggestion ? (
-          <CorrectionPrompt suggestion={suggestion} onClose={onClose} />
+          <CorrectionPrompt
+            suggestion={suggestion}
+            onClose={onClose}
+            onScrap={onScrap}
+            onQualityIssue={onQualityIssue}
+          />
         ) : (
           <RecordBody
             attribute={attribute}

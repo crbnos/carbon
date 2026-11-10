@@ -3109,6 +3109,8 @@ export const JobOperation = ({
           activeStep={activeStep}
           attribute={selectedStep}
           onClose={onDeselectStep}
+          onScrap={isBatched ? undefined : scrapModal.onOpen}
+          onQualityIssue={qualityIssueModal.onOpen}
         />
       ) : null}
 

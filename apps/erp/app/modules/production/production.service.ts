@@ -14747,7 +14747,11 @@ export type JobCorrectionDefinition = {
     /** The source method operation, which materials point at. */
     key: string;
     operation: Record<string, unknown>;
-    steps: Record<string, unknown>[];
+    /** Step rows, each with its slides (images and 3D views). */
+    steps: {
+      row: Record<string, unknown>;
+      slides: Record<string, unknown>[];
+    }[];
     tools: { toolId: string; quantity: number }[];
     parameters: { key: string; value: string }[];
   }[];
@@ -14866,6 +14870,18 @@ async function snapshotJobCorrections(
             .execute()
         ])
       : [[], [], []];
+  const slides =
+    steps.length > 0
+      ? await trx
+          .selectFrom("methodOperationStepSlide")
+          .selectAll()
+          .where(
+            "stepId",
+            "in",
+            steps.map((step) => step.id)
+          )
+          .execute()
+      : [];
 
   const jobCorrectionIds = await newIds(trx, "jcor", corrections.length);
   const jobCorrectionIdMap = new Map(
@@ -14908,11 +14924,21 @@ async function snapshotJobCorrections(
           },
           steps: steps
             .filter((step) => step.operationId === operation.id)
-            .map((step) =>
-              Object.fromEntries(
+            .map((step) => ({
+              row: Object.fromEntries(
                 CORRECTION_STEP_COLUMNS.map((column) => [column, step[column]])
-              )
-            ),
+              ),
+              slides: slides
+                .filter((slide) => slide.stepId === step.id)
+                .map((slide) => ({
+                  annotations: slide.annotations,
+                  caption: slide.caption,
+                  imagePath: slide.imagePath,
+                  modelUploadId: slide.modelUploadId,
+                  size: slide.size,
+                  sortOrder: slide.sortOrder
+                }))
+            })),
           tools: tools
             .filter((tool) => tool.operationId === operation.id)
             .map((tool) => ({ toolId: tool.toolId, quantity: tool.quantity })),
@@ -26732,11 +26758,30 @@ async function insertCorrectionOperations(
     ])
   );
 
-  // Steps, tools and parameters of the correction's operations.
-  const stepRows = definition.operations.flatMap((entry, i) =>
+  // Steps (with their slides), tools and parameters of the correction's
+  // operations. Step ids are made here so each slide finds its step.
+  const definitionSteps = definition.operations.flatMap((entry, i) =>
     entry.steps.map((step) => ({
-      ...step,
-      operationId: correctionOperationIds[i]!,
+      step,
+      operationId: correctionOperationIds[i]!
+    }))
+  );
+  const correctionStepIds = await newIds(
+    trx,
+    STEP_ID_PREFIX.job,
+    definitionSteps.length
+  );
+  const stepRows = definitionSteps.map(({ step, operationId }, i) => ({
+    ...step.row,
+    id: correctionStepIds[i]!,
+    operationId,
+    companyId,
+    createdBy: userId
+  }));
+  const slideRows = definitionSteps.flatMap(({ step }, i) =>
+    step.slides.map((slide) => ({
+      ...slide,
+      stepId: correctionStepIds[i]!,
       companyId,
       createdBy: userId
     }))
@@ -26760,6 +26805,12 @@ async function insertCorrectionOperations(
   for (const rows of chunked(stepRows)) {
     await trx
       .insertInto("jobOperationStep")
+      .values(rows as never)
+      .execute();
+  }
+  for (const rows of chunked(slideRows)) {
+    await trx
+      .insertInto("jobOperationStepSlide")
       .values(rows as never)
       .execute();
   }
