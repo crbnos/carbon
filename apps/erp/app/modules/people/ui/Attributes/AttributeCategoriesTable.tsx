@@ -48,7 +48,6 @@ const AttributeCategoriesTable = memo(
     };
 
     const onDeleteCancel = () => {
-      setSelectedCategory(undefined);
       deleteModal.onClose();
     };
 

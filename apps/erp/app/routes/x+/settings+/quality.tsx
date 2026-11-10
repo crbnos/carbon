@@ -6,6 +6,7 @@ import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { fetchAllFromTable } from "@carbon/database";
 import {
   Hidden,
   Input,
@@ -14,6 +15,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Card,
@@ -42,8 +44,11 @@ import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import { settingsToggle } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { GoodsInStorageCard } from "~/modules/settings/ui/Quality";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "quality");
 
 export const handle: Handle = {
   breadcrumb: msg`Quality`,
@@ -70,7 +75,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, locations, storageUnits] = await Promise.all([
+    getCompanySettings(client, companyId),
+    client
+      .from("location")
+      .select(
+        "id, name, inspectionStorageUnitId, rejectedStorageUnitId, inspectionStorageUnit:storageUnit!location_inspectionStorageUnitId_fkey(name, active), rejectedStorageUnit:storageUnit!location_rejectedStorageUnitId_fkey(name, active)"
+      )
+      .eq("companyId", companyId)
+      .order("name"),
+    fetchAllFromTable<{ id: string; name: string; locationId: string }>(
+      client,
+      "storageUnit",
+      "id, name, locationId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("active", true)
+          .order("name")
+          .order("id")
+    )
+  ]);
 
   if (!companySettings.data)
     throw redirect(
@@ -80,7 +105,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return { companySettings: companySettings.data };
+
+  // A failed list read would render as "no locations / storage units", which
+  // reads as a clean company: refuse the page instead.
+  const failedRead = locations.error ?? storageUnits.error;
+  if (failedRead) {
+    logger.error("Failed to load goods-in storage settings", {
+      companyId,
+      error: failedRead
+    });
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(failedRead, "Failed to load goods-in storage settings")
+      )
+    );
+  }
+
+  return {
+    companySettings: companySettings.data,
+    locations: locations.data ?? [],
+    storageUnits: storageUnits.data ?? []
+  };
 }
 
 // One form per card, told apart by its intent: each becomes the fields of
@@ -92,7 +139,29 @@ const qualitySettingsForm = z.discriminatedUnion("intent", [
   gaugeCalibrationValidator.transform((form) => ({
     gaugeCalibrationExpiredNotificationGroup:
       form.gaugeCalibrationExpiredNotificationGroup ?? []
-  }))
+  })),
+  z
+    .object({
+      intent: z.literal("setLocationGoodsInStorage"),
+      locationId: z.string().min(1, { message: "Location is required" }),
+      inspectionStorageUnitId: z
+        .string()
+        .optional()
+        .transform((id) => (id === undefined ? undefined : id || null)),
+      rejectedStorageUnitId: z
+        .string()
+        .optional()
+        .transform((id) => (id === undefined ? undefined : id || null))
+    })
+    .transform(
+      ({ locationId, inspectionStorageUnitId, rejectedStorageUnitId }) => ({
+        locationGoodsInStorage: {
+          locationId,
+          inspectionStorageUnitId,
+          rejectedStorageUnitId
+        }
+      })
+    )
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -104,7 +173,8 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function QualitySettingsRoute() {
   const { t } = useLingui();
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, locations, storageUnits } =
+    useLoaderData<typeof loader>();
   const fetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
       if (!data) return;
@@ -300,6 +370,7 @@ export default function QualitySettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+        <GoodsInStorageCard locations={locations} storageUnits={storageUnits} />
         <Card>
           <ValidatedForm
             method="post"

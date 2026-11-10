@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
@@ -153,7 +153,7 @@ export default function GaugeRoute() {
     ...getCustomFields(gauge.customFields)
   };
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <GaugeForm
@@ -162,7 +162,8 @@ export default function GaugeRoute() {
       initialValues={initialValues}
       records={records}
       gaugeTypes={routeData?.gaugeTypes ?? []}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

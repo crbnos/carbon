@@ -28,6 +28,12 @@ type UseRuleViolationsOptions = {
    * and no error — i.e. the operation actually succeeded.
    */
   onSuccess?: () => void;
+  /**
+   * Optional callback fired once a submission resolves with an error (after
+   * its toast) or `success: false`. Not for blocking violations: their modal
+   * stays up for the person to acknowledge.
+   */
+  onError?: () => void;
 };
 
 type UseRuleViolationsResult<T> = {
@@ -59,7 +65,8 @@ type UseRuleViolationsResult<T> = {
  */
 export function useRuleViolations<T = unknown>({
   action,
-  onSuccess
+  onSuccess,
+  onError
 }: UseRuleViolationsOptions): UseRuleViolationsResult<T> {
   const fetcher = useFetcher<T>();
   const lastSubmissionRef = useRef<FormData | null>(null);
@@ -109,7 +116,7 @@ export function useRuleViolations<T = unknown>({
   // the fresh `data` directly — splitting it caused the success effect to see
   // a stale `staged` from the same render, firing `onSuccess` before the
   // staging effect's setState had propagated.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: onSuccess identity is intentionally not tracked
+  // biome-ignore lint/correctness/useExhaustiveDependencies: callback identities are intentionally not tracked
   useEffect(() => {
     if (!idle) return;
     const dataChanged = data !== lastSeenDataRef.current;
@@ -120,6 +127,7 @@ export function useRuleViolations<T = unknown>({
       if (data?.error?.message) {
         toast.error(data.error.message);
         pendingSuccessRef.current = false;
+        onError?.();
         return;
       }
       if ((data?.violations ?? []).length > 0) {
@@ -132,6 +140,7 @@ export function useRuleViolations<T = unknown>({
       // toasting here too would double it up.
       if ((data as { success?: boolean } | undefined)?.success === false) {
         pendingSuccessRef.current = false;
+        onError?.();
         return;
       }
       if (!pendingSuccessRef.current) return;

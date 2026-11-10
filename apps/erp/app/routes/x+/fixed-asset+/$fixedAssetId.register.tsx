@@ -7,7 +7,7 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { fixedAssetRegisterValidator } from "~/modules/accounting/accounting.models";
@@ -59,7 +59,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function RegisterFixedAssetRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
-  return <FixedAssetRegisterForm onClose={() => closeRoute()} />;
+  return <FixedAssetRegisterForm open={dialog.open} onClose={dialog.close} />;
 }

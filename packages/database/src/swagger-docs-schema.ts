@@ -15484,6 +15484,9 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.postedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.receipt.inspectionStatus"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -15609,6 +15612,9 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.postedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.receipt.inspectionStatus"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -15686,6 +15692,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receipt.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.receipt.inspectionStatus"
           },
           {
             $ref: "#/parameters/body.receipt"
@@ -17627,6 +17636,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.requiresBatchTracking"
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.requiresInspection"
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.itemReadableId"
@@ -32191,6 +32203,12 @@ export default {
             $ref: "#/parameters/rowFilter.location.responsibleEmployee"
           },
           {
+            $ref: "#/parameters/rowFilter.location.inspectionStorageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.rejectedStorageUnitId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -32313,6 +32331,12 @@ export default {
             $ref: "#/parameters/rowFilter.location.responsibleEmployee"
           },
           {
+            $ref: "#/parameters/rowFilter.location.inspectionStorageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.rejectedStorageUnitId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -32387,6 +32411,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.responsibleEmployee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.inspectionStorageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.rejectedStorageUnitId"
           },
           {
             $ref: "#/parameters/body.location"
@@ -49786,6 +49816,12 @@ export default {
             $ref: "#/parameters/rowFilter.userModulePreference.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.userModulePreference.hiddenSubmodules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.submoduleOrder"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49866,6 +49902,12 @@ export default {
             $ref: "#/parameters/rowFilter.userModulePreference.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.userModulePreference.hiddenSubmodules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.submoduleOrder"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49898,6 +49940,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.userModulePreference.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.hiddenSubmodules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userModulePreference.submoduleOrder"
           },
           {
             $ref: "#/parameters/body.userModulePreference"
@@ -70159,6 +70207,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.requiresBatchTracking"
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLine.requiresInspection"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -70275,6 +70326,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.requiresBatchTracking"
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLine.requiresInspection"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -70343,6 +70397,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.requiresBatchTracking"
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLine.requiresInspection"
           },
           {
             $ref: "#/parameters/body.receiptLine"
@@ -90085,6 +90142,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.inspection.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -90231,6 +90294,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.inspection.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -90329,6 +90398,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspection.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspection.acceptedQuantity"
           },
           {
             $ref: "#/parameters/body.inspection"
@@ -106447,6 +106522,9 @@ export default {
             $ref: "#/parameters/rowFilter.stockTransfer.kanbanId"
           },
           {
+            $ref: "#/parameters/rowFilter.stockTransfer.receiptId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -106551,6 +106629,9 @@ export default {
             $ref: "#/parameters/rowFilter.stockTransfer.kanbanId"
           },
           {
+            $ref: "#/parameters/rowFilter.stockTransfer.receiptId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -106607,6 +106688,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.stockTransfer.kanbanId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.stockTransfer.receiptId"
           },
           {
             $ref: "#/parameters/body.stockTransfer"
@@ -109822,6 +109906,9 @@ export default {
             $ref: "#/parameters/rowFilter.stockTransferLine.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.stockTransferLine.receiptLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -109935,6 +110022,9 @@ export default {
             $ref: "#/parameters/rowFilter.stockTransferLine.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.stockTransferLine.receiptLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -110000,6 +110090,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.stockTransferLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.stockTransferLine.receiptLineId"
           },
           {
             $ref: "#/parameters/body.stockTransferLine"
@@ -121430,6 +121523,51 @@ export default {
         tags: ["(rpc) searchPurchaseInvoices"]
       }
     },
+    "/rpc/check_nonconformance_inspection_link": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_nonconformance_inspection_link"]
+      }
+    },
     "/rpc/get_inventory_quantities": {
       post: {
         parameters: [
@@ -124264,6 +124402,51 @@ export default {
         tags: ["(rpc) get_item_quantities_by_tracking_id"]
       }
     },
+    "/rpc/sync_receipt_inspection_status": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_receipt_inspection_status"]
+      }
+    },
     "/rpc/company_today": {
       get: {
         parameters: [
@@ -125822,6 +126005,96 @@ export default {
         tags: ["(rpc) get_user_select_group_members"]
       }
     },
+    "/rpc/inspection_holds_at": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_open_lots_only",
+            required: false,
+            type: "boolean"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_holds_at"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_open_lots_only: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_item_id", "p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_holds_at"]
+      }
+    },
     "/rpc/get_effective_work_center_id": {
       get: {
         parameters: [
@@ -126522,6 +126795,96 @@ export default {
           }
         },
         tags: ["(rpc) get_purchasing_planning_grid"]
+      }
+    },
+    "/rpc/inspection_held_quantity": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_open_lots_only",
+            required: false,
+            type: "boolean"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_held_quantity"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_open_lots_only: {
+                  format: "boolean",
+                  type: "boolean"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_item_id", "p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_held_quantity"]
       }
     },
     "/rpc/get_missing_timesheet_days": {
@@ -128458,6 +128821,51 @@ export default {
         tags: ["(rpc) get_company_id_from_api_key"]
       }
     },
+    "/rpc/check_goods_in_storage_unit": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_goods_in_storage_unit"]
+      }
+    },
     "/rpc/get_radan_v1": {
       post: {
         parameters: [
@@ -129323,6 +129731,51 @@ export default {
           }
         },
         tags: ["(rpc) item_ledger_on_hand_contribution"]
+      }
+    },
+    "/rpc/check_location_goods_in_storage_units": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_location_goods_in_storage_units"]
       }
     },
     "/rpc/sync_verify_integration": {
@@ -130651,6 +131104,51 @@ export default {
         tags: ["(rpc) attach_event_trigger"]
       }
     },
+    "/rpc/check_inspection_lot_release": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_inspection_lot_release"]
+      }
+    },
     "/rpc/get_job_operation_by_id": {
       post: {
         parameters: [
@@ -131323,6 +131821,51 @@ export default {
           }
         },
         tags: ["(rpc) get_my_claim"]
+      }
+    },
+    "/rpc/check_tracked_entity_inspection_hold": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_tracked_entity_inspection_hold"]
       }
     },
     "/rpc/get_kanban_projected_quantities": {
@@ -134388,6 +134931,51 @@ export default {
         tags: ["(rpc) upsert_connection_secret"]
       }
     },
+    "/rpc/check_item_inspection_hold": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_item_inspection_hold"]
+      }
+    },
     "/rpc/xid_counter": {
       post: {
         parameters: [
@@ -134511,6 +135099,51 @@ export default {
           }
         },
         tags: ["(rpc) storage_unit_enforce_no_cycle"]
+      }
+    },
+    "/rpc/check_nonconformance_inspection_release": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) check_nonconformance_inspection_release"]
       }
     },
     "/rpc/get_production_planning": {
@@ -135288,6 +135921,41 @@ export default {
         tags: ["(rpc) get_maintenance_dispatches_by_location"]
       }
     },
+    "/rpc/refresh_receipt_inspection_status": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_receipt_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_receipt_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) refresh_receipt_inspection_status"]
+      }
+    },
     "/rpc/set_inngest_event_url": {
       post: {
         parameters: [
@@ -135492,6 +136160,85 @@ export default {
         tags: ["(rpc) get_next_serial_numbers"]
       }
     },
+    "/rpc/inspection_lot_holds": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_inspection_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: '"inspectionStatusType"',
+            in: "query",
+            name: "p_status",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "numeric",
+            in: "query",
+            name: "p_accepted_quantity",
+            required: true,
+            type: "number"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_lot_holds"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_accepted_quantity: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_inspection_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_status: {
+                  format: '"inspectionStatusType"',
+                  type: "string"
+                }
+              },
+              required: ["p_inspection_id", "p_status", "p_accepted_quantity"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_lot_holds"]
+      }
+    },
     "/rpc/get_job_operation_step_records": {
       post: {
         parameters: [
@@ -135588,6 +136335,74 @@ export default {
         tags: ["(rpc) get_exchange_rates"]
       }
     },
+    "/rpc/inspection_line_lot_open": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_receipt_line_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_line_lot_open"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_receipt_line_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_receipt_line_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_line_lot_open"]
+      }
+    },
     "/rpc/get_custom_field_unique_values": {
       post: {
         parameters: [
@@ -135674,6 +136489,85 @@ export default {
           }
         },
         tags: ["(rpc) sync_create_customer_entries"]
+      }
+    },
+    "/rpc/inspection_untracked_on_hand": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_untracked_on_hand"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_item_id", "p_storage_unit_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) inspection_untracked_on_hand"]
       }
     },
     "/rpc/get_claims": {
@@ -143130,7 +144024,8 @@ export default {
         "status",
         "companyId",
         "createdAt",
-        "createdBy"
+        "createdBy",
+        "inspectionStatus"
       ],
       properties: {
         id: {
@@ -143253,6 +144148,20 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        inspectionStatus: {
+          default: "Not Required",
+          enum: [
+            "Not Required",
+            "Pending Inspection",
+            "Inspection In Progress",
+            "Inspection Passed",
+            "Inspection Failed",
+            "Partially Passed",
+            "Put Away"
+          ],
+          format: 'public."receiptInspectionStatus"',
           type: "string"
         }
       },
@@ -144220,6 +145129,10 @@ export default {
           type: "boolean"
         },
         requiresBatchTracking: {
+          format: "boolean",
+          type: "boolean"
+        },
+        requiresInspection: {
           format: "boolean",
           type: "boolean"
         },
@@ -151308,6 +152221,18 @@ export default {
         responsibleEmployee: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionStorageUnitId: {
+          description:
+            "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        rejectedStorageUnitId: {
+          description:
+            "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -159388,7 +160313,9 @@ export default {
         "module",
         "position",
         "hidden",
-        "updatedAt"
+        "updatedAt",
+        "hiddenSubmodules",
+        "submoduleOrder"
       ],
       properties: {
         id: {
@@ -159426,6 +160353,20 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string"
+        },
+        hiddenSubmodules: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        submoduleOrder: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -169227,7 +170168,8 @@ export default {
         "createdAt",
         "createdBy",
         "requiresSerialTracking",
-        "requiresBatchTracking"
+        "requiresBatchTracking",
+        "requiresInspection"
       ],
       properties: {
         id: {
@@ -169322,6 +170264,11 @@ export default {
           type: "boolean"
         },
         requiresBatchTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requiresInspection: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -178551,7 +179498,14 @@ export default {
         },
         status: {
           default: "Pending",
-          enum: ["Pending", "In Progress", "Passed", "Failed", "Partial"],
+          enum: [
+            "Pending",
+            "In Progress",
+            "Passed",
+            "Failed",
+            "Partial",
+            "Cancelled"
+          ],
           format: 'public."inspectionStatusType"',
           type: "string"
         },
@@ -178618,6 +179572,16 @@ export default {
         sourceDocumentReadableId: {
           format: "text",
           type: "string"
+        },
+        storageUnitId: {
+          description:
+            "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        acceptedQuantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -186505,6 +187469,12 @@ export default {
         kanbanId: {
           format: "text",
           type: "string"
+        },
+        receiptId: {
+          description:
+            "Note:\nThis is a Foreign Key to `receipt.id`.<fk table='receipt' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -188464,6 +189434,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        receiptLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `receiptLine.id`.<fk table='receiptLine' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -200969,6 +201945,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.receipt.inspectionStatus": {
+      name: "inspectionStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.fixedAssetTransfer": {
       name: "fixedAssetTransfer",
       description: "fixedAssetTransfer",
@@ -201976,6 +202958,12 @@ export default {
     },
     "rowFilter.receiptLines.requiresBatchTracking": {
       name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.receiptLines.requiresInspection": {
+      name: "requiresInspection",
       required: false,
       in: "query",
       type: "string"
@@ -210009,6 +210997,18 @@ export default {
     },
     "rowFilter.location.responsibleEmployee": {
       name: "responsibleEmployee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.location.inspectionStorageUnitId": {
+      name: "inspectionStorageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.location.rejectedStorageUnitId": {
+      name: "rejectedStorageUnitId",
       required: false,
       in: "query",
       type: "string"
@@ -219083,6 +220083,18 @@ export default {
     },
     "rowFilter.userModulePreference.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userModulePreference.hiddenSubmodules": {
+      name: "hiddenSubmodules",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userModulePreference.submoduleOrder": {
+      name: "submoduleOrder",
       required: false,
       in: "query",
       type: "string"
@@ -230089,6 +231101,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.receiptLine.requiresInspection": {
+      name: "requiresInspection",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.inspectionFeature": {
       name: "inspectionFeature",
       description: "inspectionFeature",
@@ -240340,6 +241358,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspection.storageUnitId": {
+      name: "storageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspection.acceptedQuantity": {
+      name: "acceptedQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.processes": {
       name: "processes",
       description: "processes",
@@ -249244,6 +250274,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.stockTransfer.receiptId": {
+      name: "receiptId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.exchangeRateOverride": {
       name: "exchangeRateOverride",
       description: "exchangeRateOverride",
@@ -251472,6 +252508,12 @@ export default {
     },
     "rowFilter.stockTransferLine.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.stockTransferLine.receiptLineId": {
+      name: "receiptLineId",
       required: false,
       in: "query",
       type: "string"

@@ -286,7 +286,7 @@ function ControlRail() {
           <BodyBlockList />
         </RememberedSection>
         {!isLabel && (
-          <RememberedSection id="rail:bottom" title={t`Bottom of page`}>
+          <RememberedSection id="rail:bottom" title={t`Footer`}>
             <FooterRow />
           </RememberedSection>
         )}

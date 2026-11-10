@@ -7,7 +7,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -106,13 +106,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewProjectStockTransferRoute() {
   const { owners, openBorrows, initialValues } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   return (
     <ProjectStockTransferForm
       initialValues={initialValues}
       owners={owners}
       openBorrows={openBorrows}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

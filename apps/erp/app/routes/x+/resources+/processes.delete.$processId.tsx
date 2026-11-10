@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getProcess } from "~/modules/resources/resources.service";
 import { useResourceReferenceLabels } from "~/modules/resources/ui/useResourceReferenceLabels";
@@ -61,14 +62,13 @@ export async function action(args: ActionFunctionArgs) {
 export default function DeleteProcessRoute() {
   const { processId } = useParams();
   const { process, references } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.processes);
   const { t } = useLingui();
   const usages = useResourceReferenceLabels(references);
 
   if (!process) return null;
   if (!processId) throw new Error("processId is not found");
 
-  const onCancel = () => navigate(path.to.processes);
   const name = process.name ?? "";
 
   return (
@@ -81,7 +81,8 @@ export default function DeleteProcessRoute() {
           : t`Are you sure you want to permanently delete the process: ${name}? This cannot be undone.`
       }
       isDisabled={!!usages}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

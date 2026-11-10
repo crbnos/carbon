@@ -1830,6 +1830,9 @@ msgstr "Nenhum centro de trabalho está bloqueado"
 msgid "No work centers exist"
 msgstr "Nenhum centro de trabalho encontrado"
 
+msgid "Non-nettable"
+msgstr "Não disponível para MRP"
+
 msgid "None"
 msgstr "Nenhum"
 
@@ -1838,6 +1841,9 @@ msgstr "Não agendado"
 
 msgid "Not set"
 msgstr "Não definido"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Estoque não utilizável. O MRP e o planejamento não o contam, e a separação não o retira."
 
 msgid "Notes"
 msgstr "Observações"

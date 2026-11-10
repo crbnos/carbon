@@ -17,6 +17,7 @@ import {
   buildRowTransforms,
   findDanglingReferences as findDanglingInScan,
   rewriteDocumentEditRowKeys,
+  rewriteTrackedEntityReceiptRefs,
   scanRows
 } from "./remap";
 import {
@@ -1016,5 +1017,38 @@ describe("rewriteDocumentEditRowKeys", () => {
     const plain = { text: { title: "Order" } };
     expect(rewriteDocumentEditRowKeys(plain, rewrite)).toBe(plain);
     expect(rewriteDocumentEditRowKeys(null, rewrite)).toBeNull();
+  });
+});
+
+describe("rewriteTrackedEntityReceiptRefs", () => {
+  const rewrite = new Map([
+    ["old-receipt", "new-receipt"],
+    ["old-line", "new-line"]
+  ]);
+
+  it("remaps the receipt and its line, and leaves other attributes", () => {
+    expect(
+      rewriteTrackedEntityReceiptRefs(
+        { Receipt: "old-receipt", "Receipt Line": "old-line", Job: "old-job" },
+        rewrite
+      )
+    ).toEqual({
+      Receipt: "new-receipt",
+      "Receipt Line": "new-line",
+      Job: "old-job"
+    });
+  });
+
+  it("keeps a string a string, and returns no refs as they came", () => {
+    expect(
+      JSON.parse(
+        rewriteTrackedEntityReceiptRefs(
+          JSON.stringify({ "Receipt Line": "old-line" }),
+          rewrite
+        ) as string
+      )
+    ).toEqual({ "Receipt Line": "new-line" });
+    const none = { Job: "old-job" };
+    expect(rewriteTrackedEntityReceiptRefs(none, rewrite)).toBe(none);
   });
 });

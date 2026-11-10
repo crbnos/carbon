@@ -5,9 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getMaterialTypeList } from "~/modules/items/items.service";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { path } from "~/utils/path";
@@ -40,8 +40,7 @@ const MaterialTypePreview = (
 
 const MaterialType = (props: MaterialTypeSelectProps) => {
   const { t } = useLingui();
-  const newTypeModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMaterialTypes(props.substanceId!, props.formId!);
@@ -57,7 +56,7 @@ const MaterialType = (props: MaterialTypeSelectProps) => {
   };
 
   const emptyMessage = useEmptyState("materialType", {
-    onCreate: () => newTypeModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -79,23 +78,23 @@ const MaterialType = (props: MaterialTypeSelectProps) => {
         label={props?.label ?? "Type"}
         onChange={onChange}
         onCreateOption={(option) => {
-          newTypeModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newTypeModal.isOpen && (
+      {create.item !== null && (
         <MaterialTypeForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newTypeModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             materialSubstanceId: props.substanceId!,
             materialFormId: props.formId!,
-            code: created
+            code: create.item
           }}
         />
       )}

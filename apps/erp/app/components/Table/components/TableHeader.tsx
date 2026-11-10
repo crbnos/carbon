@@ -33,7 +33,7 @@ import type {
   ColumnPinningState
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   LuCheck,
@@ -48,7 +48,7 @@ import { zfd } from "zod-form-data";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
-import { useUrlParams } from "~/hooks";
+import { useDrawerItem, useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
@@ -163,9 +163,7 @@ const TableHeader = <T extends object>({
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
 
-  const [importCSVTable, setImportCSVTable] = useState<
-    keyof typeof fieldMappings | null
-  >(null);
+  const importCSVModal = useDrawerItem<keyof typeof fieldMappings>();
 
   const savedViewDisclosure = useDisclosure();
   const canSaveView = withSavedView && !!table;
@@ -322,7 +320,7 @@ const TableHeader = <T extends object>({
                       <DropdownMenuItem
                         key={table}
                         onClick={() => {
-                          setImportCSVTable(table);
+                          importCSVModal.open(table);
                         }}
                       >
                         <DropdownMenuIcon icon={<LuDownload />} />
@@ -482,10 +480,12 @@ const TableHeader = <T extends object>({
           <ActiveFilters filters={filters} />
         </HStack>
       )}
-      {importCSVTable && (
+      {importCSVModal.item && (
         <ImportCSVModal
-          table={importCSVTable}
-          onClose={() => setImportCSVTable(null)}
+          key={importCSVModal.key}
+          open={importCSVModal.isOpen}
+          table={importCSVModal.item}
+          onClose={importCSVModal.close}
         />
       )}
     </div>

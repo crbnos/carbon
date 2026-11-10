@@ -33,18 +33,38 @@ type PurchaseOrderApprovalModalProps = {
   approvalRequestId: string;
   decision: ApprovalDecision;
   fetcher: FetcherWithComponents<unknown>;
+  open?: boolean;
   onClose: () => void;
   defaultCc?: string[];
 };
 
 const PurchaseOrderApprovalModal = ({
+  open = true,
+  onClose,
+  ...props
+}: PurchaseOrderApprovalModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    <ModalContent>
+      <PurchaseOrderApprovalBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const PurchaseOrderApprovalBody = ({
   purchaseOrder,
   approvalRequestId,
   decision,
   onClose,
   fetcher,
   defaultCc = []
-}: PurchaseOrderApprovalModalProps) => {
+}: Omit<PurchaseOrderApprovalModalProps, "open">) => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
 
@@ -59,96 +79,82 @@ const PurchaseOrderApprovalModal = ({
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      method="post"
+      validator={purchaseOrderApprovalValidator}
+      action={path.to.purchaseOrder(orderId)}
+      onSubmit={onClose}
+      defaultValues={{
+        approvalRequestId,
+        decision,
+        notification: notificationType as "Email" | "None",
+        supplierContact: purchaseOrder?.supplierContactId ?? undefined,
+        cc: defaultCc
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={purchaseOrderApprovalValidator}
-          action={path.to.purchaseOrder(orderId)}
-          onSubmit={onClose}
-          defaultValues={{
-            approvalRequestId,
-            decision,
-            notification: notificationType as "Email" | "None",
-            supplierContact: purchaseOrder?.supplierContactId ?? undefined,
-            cc: defaultCc
-          }}
-          fetcher={fetcher}
+      <ModalHeader>
+        <ModalTitle>
+          {isApproving ? "Approve" : "Reject"} {purchaseOrder?.purchaseOrderId}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="approvalRequestId" />
+        <Hidden name="decision" />
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">
+            {isApproving
+              ? "Are you sure you want to approve this purchase order? This will allow the order to proceed."
+              : "Are you sure you want to reject this purchase order? The requester will be notified."}
+          </p>
+          {isApproving && canEmail && (
+            <SelectControlled
+              label={t`Send Via`}
+              name="notification"
+              options={[
+                {
+                  label: t`None`,
+                  value: "None"
+                },
+                {
+                  label: t`Email`,
+                  value: "Email"
+                }
+              ]}
+              value={notificationType}
+              onChange={(t) => {
+                if (t) setNotificationType(t.value);
+              }}
+            />
+          )}
+          {isApproving && notificationType === "Email" && (
+            <>
+              <SupplierContact
+                name="supplierContact"
+                supplier={purchaseOrder?.supplierId ?? undefined}
+                warnIfNoEmail
+                onMissingEmailChange={setContactMissingEmail}
+              />
+              <EmailRecipients name="cc" label={t`CC`} type="employee" />
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          variant={isApproving ? "primary" : "destructive"}
+          isDisabled={
+            isApproving && notificationType === "Email" && contactMissingEmail
+          }
         >
-          <ModalHeader>
-            <ModalTitle>
-              {isApproving ? "Approve" : "Reject"}{" "}
-              {purchaseOrder?.purchaseOrderId}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="approvalRequestId" />
-            <Hidden name="decision" />
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                {isApproving
-                  ? "Are you sure you want to approve this purchase order? This will allow the order to proceed."
-                  : "Are you sure you want to reject this purchase order? The requester will be notified."}
-              </p>
-              {isApproving && canEmail && (
-                <SelectControlled
-                  label={t`Send Via`}
-                  name="notification"
-                  options={[
-                    {
-                      label: t`None`,
-                      value: "None"
-                    },
-                    {
-                      label: t`Email`,
-                      value: "Email"
-                    }
-                  ]}
-                  value={notificationType}
-                  onChange={(t) => {
-                    if (t) setNotificationType(t.value);
-                  }}
-                />
-              )}
-              {isApproving && notificationType === "Email" && (
-                <>
-                  <SupplierContact
-                    name="supplierContact"
-                    supplier={purchaseOrder?.supplierId ?? undefined}
-                    warnIfNoEmail
-                    onMissingEmailChange={setContactMissingEmail}
-                  />
-                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              variant={isApproving ? "primary" : "destructive"}
-              isDisabled={
-                isApproving &&
-                notificationType === "Email" &&
-                contactMissingEmail
-              }
-            >
-              {isApproving ? "Approve" : "Reject"}
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          {isApproving ? "Approve" : "Reject"}
+        </Button>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

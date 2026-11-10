@@ -262,7 +262,7 @@ msgstr "{0, plural, one {# 品目を移動} other {# 品目すべてを移動}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {このパスを削除すると、#件の接続も切断されます。} other {このパスを削除すると、#件の接続も切断されます。}}"
 
@@ -463,6 +463,10 @@ msgstr "{0}在庫あり、{1}組用；残り{2}は{3}としてピッキング"
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0}在庫あり；残り{1}は{2}としてピッキング"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} の検査用保管ユニット"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}件の請求書は前のシステムで請求済みであり、再度作成されません。"
@@ -624,6 +628,10 @@ msgstr "{0} 受領 · {1} 返金済み"
 msgid "{0} registered"
 msgstr "{0}登録済み"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} の却下品保管ユニット"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0}は台帳が以下に保持されていると報告しています"
@@ -770,6 +778,12 @@ msgstr "{0}時間が必要"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}時間配置"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{lotSize} 中 {acceptedQuantity} を承諾。"
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{lotSize} 中 {acceptedQuantity} を承諾。残りは NCR がクローズされるまで保留されます。"
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} は転記済の履歴があるため、削除できません。"
@@ -1097,6 +1111,9 @@ msgstr "{name} は {end} に終了します（以前は {was}）"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} は {end} に終了します（以前は期限なし）"
 
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} は無効です。有効な保管ユニットを選択してください。"
+
 msgid "{name} needs an account number."
 msgstr "{name} にはアカウント番号が必要です。"
 
@@ -1200,6 +1217,9 @@ msgstr "{ordered} 中 {received}"
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
+
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity} は却下として保留されます。"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId}は完了しました。#個が納品されていません} other {{jobId}は完了しました。#個が納品されていません}}"
@@ -1590,6 +1610,9 @@ msgstr "4 桁の PIN は、作業者が作成されるときに生成されま�
 
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" または 3\" x 2\" ラベルは、Zebra などのサーマルプリンター向けに 1 ラベルに 1 枚のカードを印刷します。"
+
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr "バッチロットは全体でのみ承諾または却下できます。"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "バッチには少なくとも 1 つの工程が必要です。バッチ全体を分割するには、代わりに [分割] を使用してください。"
@@ -2488,6 +2511,9 @@ msgstr "承諾済"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "承諾済 {0}"
+
+msgid "Accepted quantity"
+msgstr "承諾数量"
 
 msgid "Account"
 msgstr "アカウント"
@@ -4427,8 +4453,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "本当に{0}を削除してもよろしいですか？この操作は取り消せません。"
 
@@ -4441,12 +4467,12 @@ msgstr "本当に{orderLabel}を削除してもよろしいですか？この操
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "本当に{readableId}を削除しますか？この操作は元に戻せません。"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "支払 {0} を削除してもよろしいですか？"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "「{0}」ビューを削除してもよろしいですか？この操作は元に戻せません。"
 
@@ -4778,7 +4804,7 @@ msgstr "この仕入先を却下してもよろしいですか？"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "この製造指図をリリースしてもよろしいですか？これは製造現場で利用可能になり、購買と生産を推進します。"
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "{0}とその支払明細をこのリースから除去してもよろしいですか？"
 
@@ -5887,9 +5913,6 @@ msgstr "両方のテストが合格しました；資金なし (§41(d)(4)(H)) �
 msgid "Bottleneck"
 msgstr "ボトルネック"
 
-msgid "Bottom of page"
-msgstr "ページ下部"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "このバージョンの編集可能なコピーをブランチして、変更して公開できます。"
 
@@ -6824,6 +6847,12 @@ msgstr "プールを選択してください"
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
 
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "検査対象の部品には、この拠点の保管ユニットを選択してください。"
+
+msgid "Choose a storage unit at this location."
+msgstr "この拠点の保管ユニットを選択してください。"
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "製造指図上の{0}の仕入先を選択してください"
@@ -7519,6 +7548,9 @@ msgstr "設定"
 
 msgid "Configure {label}"
 msgstr "{label}を設定"
+
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "問題タイプを少なくとも1つ設定してください。ロットの却下分には NCR が必要です。"
 
 msgid "Configure Carbon"
 msgstr "Carbonを設定"
@@ -8458,6 +8490,9 @@ msgstr "プロバイダーのデバイスを取得できませんでした。マ
 
 msgid "Could not load operations"
 msgstr "工程を読み込むことができませんでした"
+
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "MRP対象外の保管場所を読み込めませんでした。表示が欠けている可能性があります。"
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}で実行された内容を読み込むことができませんでした。"
@@ -9859,7 +9894,7 @@ msgstr "削除"
 msgid "Delete {0}"
 msgstr "{0} を削除"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "{0} およびその下のすべてのエレメントを削除しますか？原価、時間、製造指図、または発注書明細を持つエレメントは削除できません。"
@@ -12089,6 +12124,9 @@ msgstr "借方を正の数で、貸方を負の数で入力してください。
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "借方を正の数で、貸方を負の数で入力してください。CSVには accountNumber、debit、credit の列が必要です。インポートにより、試算表全体が置き換わります。"
 
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "{lotSize} のロットのうち合格した数量を入力してください。承諾数量は格納できます。残りは NCR がクローズされるまで保留されます。"
+
 msgid "Enter number…"
 msgstr "数字を入力..."
 
@@ -14206,6 +14244,12 @@ msgstr "こんばんは、{name}さん。"
 msgid "Good morning, {name}."
 msgstr "おはようございます、{name}さん。"
 
+msgid "Goods-in storage"
+msgstr "入荷保管"
+
+msgid "Goods-in storage updated"
+msgstr "入荷保管を更新しました"
+
 msgid "Google Calendar"
 msgstr "Google カレンダー"
 
@@ -14369,6 +14413,7 @@ msgid "Hide"
 msgstr "非表示"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} を非表示"
 
@@ -14380,6 +14425,10 @@ msgstr "口座番号を隠す"
 
 msgid "Hide Again"
 msgstr "もう一度非表示"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "ブロックを非表示"
@@ -15225,9 +15274,8 @@ msgid "Inspection {0}"
 msgstr "検査 {0}"
 
 #. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "検査 {0} · {1}"
+msgid "Inspection {0}: {statusLabel}"
+msgstr "検査 {0}: {statusLabel}"
 
 msgid "Inspection Date"
 msgstr "検査日"
@@ -15235,14 +15283,26 @@ msgstr "検査日"
 msgid "Inspection document"
 msgstr "検査文書"
 
+msgid "Inspection failed"
+msgstr "検査不合格"
+
+msgid "Inspection Failed"
+msgstr "検査不合格"
+
 msgid "Inspection file"
 msgstr "検査ファイル"
+
+msgid "Inspection In Progress"
+msgstr "検査中"
 
 msgid "Inspection Job"
 msgstr "検査ジョブ"
 
 msgid "Inspection Level"
 msgstr "検査水準"
+
+msgid "Inspection Passed"
+msgstr "検査合格"
 
 msgid "Inspection Plan"
 msgstr "検査計画"
@@ -15253,11 +15313,23 @@ msgstr "検査計画の割り当て"
 msgid "Inspection Plans"
 msgstr "検査計画"
 
+msgid "Inspection required"
+msgstr "検査が必要"
+
+msgid "Inspection status"
+msgstr "検査ステータス"
+
 msgid "Inspection Status"
+msgstr "検査ステータス"
+
+msgid "Inspection Statuses"
 msgstr "検査ステータス"
 
 msgid "Inspection Step"
 msgstr "検査ステップ"
+
+msgid "Inspection storage unit"
+msgstr "検査用保管ユニット"
 
 msgid "Inspections"
 msgstr "検査"
@@ -15930,7 +16002,7 @@ msgstr "このウィンドウ内のアイテムは黄色いバッジが表示さ
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "品目：品目マスター、BOM、工程表、設計変更、CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "今週の下書き時間 {0} 時間が削除されました"
 
@@ -16127,6 +16199,9 @@ msgstr "自分の変更を保持"
 
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "以下の条件を満たすアイテムのみを保持…"
@@ -17450,6 +17525,9 @@ msgstr "マークライトモード"
 msgid "Mark not done"
 msgstr "完了を取り消す"
 
+msgid "Mark Partial"
+msgstr "一部承諾"
+
 msgid "Mark reviewed"
 msgstr "確認済みにマーク"
 
@@ -18109,6 +18187,7 @@ msgid "Move"
 msgstr "移動"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "移動 {0}"
 
@@ -19897,6 +19976,9 @@ msgstr "この拠点には在庫を保管している保管ユニットがあり
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "未完了の製造指図に対して不足している、またはマイナスの保管ユニットはありません。"
 
+msgid "No storage units at this location"
+msgstr "この拠点に保管ユニットがありません"
+
 msgid "No storage units or tracking numbers match."
 msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
 
@@ -20087,6 +20169,9 @@ msgstr "スケジューリングと容量計画が考慮する非稼働日"
 msgid "None"
 msgstr "なし"
 
+msgid "None available"
+msgstr "該当なし"
+
 msgid "Normal"
 msgstr "通常"
 
@@ -20133,7 +20218,7 @@ msgstr "ジョブの時間ではない"
 msgid "Not mapped"
 msgstr "未マッピング"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "移動できませんでした: {0}。<0>{1}</0>に記録しました"
@@ -20188,6 +20273,9 @@ msgstr "未開始"
 
 msgid "Not synced"
 msgstr "未同期"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
 
 msgid "Not working today"
 msgstr "今日は勤務していません"
@@ -20747,6 +20835,9 @@ msgstr "オープンアクション"
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを作成する"
 
+msgid "Open an NCR for the failed units"
+msgstr "不合格ユニットの NCR を作成"
+
 msgid "Open AP"
 msgstr "オープン買掛金"
 
@@ -20833,6 +20924,9 @@ msgstr "メニューを開く"
 
 msgid "Open My Time"
 msgstr "マイタイムを表示"
+
+msgid "Open NCR"
+msgstr "NCRを開く"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "レビュアーが承認してから適用される下書きで計画を変更するために1つ開いてください。"
@@ -21546,8 +21640,14 @@ msgstr "部品の仕入先が作成されました"
 msgid "Partial"
 msgstr "一部"
 
+msgid "Partial Lot"
+msgstr "一部ロット"
+
 msgid "Partially Delivered"
 msgstr "一部納入"
+
+msgid "Partially Passed"
+msgstr "一部合格"
 
 msgid "Partially Returned"
 msgstr "一部返却"
@@ -21677,7 +21777,7 @@ msgstr "支払い"
 msgid "Payment — {0}"
 msgstr "支払 — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "支払 {0}"
 
@@ -21798,6 +21898,12 @@ msgstr "承認待機中"
 
 msgid "Pending Employee Review"
 msgstr "従業員レビュー待機中"
+
+msgid "Pending inspection"
+msgstr "検査待ち"
+
+msgid "Pending Inspection"
+msgstr "検査待ち"
 
 msgid "people"
 msgstr "人員"
@@ -23275,11 +23381,18 @@ msgstr "プッシュは、Onshapeの [フィールド] ページで [毎回プ�
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "停止命令下の契約プロジェクトを保留中にし、90日の終了日を設定して、命令が終わったら再開します。"
 
+msgid "Put Away"
+msgstr "格納"
+
 msgid "Put on hold"
 msgstr "保留中にする"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"
+
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "格納 {0}"
 
 msgid "Putting your data back"
 msgstr "データを復元中"
@@ -23719,6 +23832,9 @@ msgstr "準備完了"
 msgid "Ready at"
 msgstr "準備完了"
 
+msgid "Ready for putaway"
+msgstr "格納可能"
+
 msgid "Ready for Quote"
 msgstr "見積準備完了"
 
@@ -23884,6 +24000,9 @@ msgstr "入荷日"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "検査が必要な受入部品は検査用の保管ユニットに入ります。却下された在庫は却下品用の保管ユニットに移動します。在庫を計画に含めない場合は、各保管ユニットの設定でMRP対象外にしてください。"
 
 msgid "Received Qty"
 msgstr "受け取り数量"
@@ -24221,6 +24340,9 @@ msgstr "却下者"
 msgid "Rejected Date"
 msgstr "却下日"
 
+msgid "Rejected storage unit"
+msgstr "却下品保管ユニット"
+
 msgid "Relabels the hub and frames the deal."
 msgstr "ハブを再ラベル付けし、取引の枠組みを設定します。"
 
@@ -24243,7 +24365,7 @@ msgid "Release Batch"
 msgstr "バッチをリリース"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "バッチ {0} をリリース"
 
@@ -24343,7 +24465,7 @@ msgstr "最近使用から{0}を削除"
 msgid "Remove {0} from recent searches"
 msgstr "最近の検索から {0} を除去"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}をこのバッチから除去しますか？その工程はスケジュールに戻り、独自に実行されます。"
 
@@ -24356,7 +24478,7 @@ msgstr "このステップから{0}を除去"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1} から {memberCount} 工程中 {0} 個を除去しますか？"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "{0}を除去しますか?"
 
@@ -24895,9 +25017,6 @@ msgstr "対応が必要"
 msgid "Requires Adjustment"
 msgstr "調整が必要"
 
-msgid "Requires inspection"
-msgstr "検査が必要"
-
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "検査が必要です。領収書の転記時にロットが作成されます。"
 
@@ -25028,7 +25147,7 @@ msgstr "再在庫手数料"
 msgid "Restock Fee Percent"
 msgstr "再在庫手数料率"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "返品手数料 {0}"
 
@@ -27509,6 +27628,7 @@ msgid "Show"
 msgstr "表示"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0}を表示"
 
@@ -27536,6 +27656,10 @@ msgstr "すべて表示"
 
 msgid "Show all hidden on this step"
 msgstr "このステップで非表示になっているすべてを表示"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "利用可能なバッチ番号を表示"
@@ -28523,6 +28647,10 @@ msgstr "部分組立パス"
 msgid "Sub-Departments"
 msgstr "サブ部門"
 
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
+
 msgid "Subassembly"
 msgstr "サブアセンブリ"
 
@@ -29458,6 +29586,12 @@ msgstr "そのフィールドは複数の値を保持しているため、1 つ�
 
 msgid "That integration is not available"
 msgstr "その連携は利用できません"
+
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr "これはロット全体の却下です。代わりにロット却下を使用してください。"
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "これはロット全体です。代わりにロット承諾を使用してください。"
 
 msgid "That list was empty."
 msgstr "そのリストは空でした。"
@@ -31245,6 +31379,12 @@ msgstr "この拠点は、マニング ボード上に作業者が割り当て�
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "このロットは一部承諾されていますが、NCR が作成されていません。ロットの却下分は NCR で決定します。"
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr "このロットは一部承諾されています。NCR は不合格ユニットを記録し、その処置を決定します。"
+
 msgid "This may take a moment. Hang tight."
 msgstr "これには少し時間がかかる場合があります。お待ちください。"
 
@@ -32472,6 +32612,9 @@ msgstr "測定単位"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "工程で回復不可能として報告された単位数（理由付き）。手直しの代替案です。"
+
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "サンプルで不合格となったユニットは却下のままです。サンプリングされなかったユニットを含め、それ以外はすべて格納できます。"
 
 msgid "Units this customer owns show here once registered."
 msgstr "この顧客が所有する個体は、登録済になるとここに表示されます。"

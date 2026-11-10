@@ -262,7 +262,7 @@ msgstr "{0, plural, one {Move # item} other {Move all # items}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 
@@ -463,6 +463,10 @@ msgstr "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} in stock; the remaining {1} will be picked as {2}"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} inspection storage unit"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} invoices were billed in your previous system and are not drafted again."
@@ -624,6 +628,10 @@ msgstr "{0} received · {1} credited"
 msgid "{0} registered"
 msgstr "{0} registered"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} rejected storage unit"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} reports the ledger is held by"
@@ -770,6 +778,12 @@ msgstr "{0}h required"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h staffed"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{acceptedQuantity} of {lotSize} accepted."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} has posted history, so it cannot be removed."
@@ -1097,6 +1111,9 @@ msgstr "{name} ends {end} (was {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} ends {end} (was open-ended)"
 
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} is inactive. Choose an active storage unit."
+
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
 
@@ -1200,6 +1217,9 @@ msgstr "{received} of {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} not found"
+
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity} will stay held as rejected."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
@@ -1590,6 +1610,9 @@ msgstr "A 4-digit PIN is generated when the operator is created."
 
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
+
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr "A batch lot is accepted or rejected as a whole."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
@@ -2488,6 +2511,9 @@ msgstr "Accepted"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Accepted {0}"
+
+msgid "Accepted quantity"
+msgstr "Accepted quantity"
 
 msgid "Account"
 msgstr "Account"
@@ -4427,8 +4453,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Are you sure you want to delete {0}?"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Are you sure you want to delete {0}? This cannot be undone."
 
@@ -4441,12 +4467,12 @@ msgstr "Are you sure you want to delete {orderLabel}? This cannot be undone."
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Are you sure you want to delete {readableId}? This cannot be undone."
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "Are you sure you want to delete payment {0}?"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 
@@ -4778,7 +4804,7 @@ msgstr "Are you sure you want to reject this supplier?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "Are you sure you want to remove {0} and its payment rows from this lease?"
 
@@ -5887,9 +5913,6 @@ msgstr "Both tests pass; consider Not funded (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Bottleneck"
 
-msgid "Bottom of page"
-msgstr "Bottom of page"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Branch an editable copy of this version that you can change and publish."
 
@@ -6824,6 +6847,12 @@ msgstr "Choose a pool"
 msgid "Choose a serial number"
 msgstr "Choose a serial number"
 
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Choose a storage unit at this location for inspected parts."
+
+msgid "Choose a storage unit at this location."
+msgstr "Choose a storage unit at this location."
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "choose a supplier for {0} on the job"
@@ -7519,6 +7548,9 @@ msgstr "Configure"
 
 msgid "Configure {label}"
 msgstr "Configure {label}"
+
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
 
 msgid "Configure Carbon"
 msgstr "Configure Carbon"
@@ -8458,6 +8490,9 @@ msgstr "Could not list the provider's devices. Mapped devices are still shown."
 
 msgid "Could not load operations"
 msgstr "Could not load operations"
+
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "Could not load the non-nettable storage units. Non-nettable markers may be missing."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Could not load what ran on {workCenterName}."
@@ -9859,7 +9894,7 @@ msgstr "Delete"
 msgid "Delete {0}"
 msgstr "Delete {0}"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
@@ -12089,6 +12124,9 @@ msgstr "Enter debits as positive and credits as negative amounts. The CSV needs 
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+
 msgid "Enter number…"
 msgstr "Enter number…"
 
@@ -14206,6 +14244,12 @@ msgstr "Good evening, {name}."
 msgid "Good morning, {name}."
 msgstr "Good morning, {name}."
 
+msgid "Goods-in storage"
+msgstr "Goods-in storage"
+
+msgid "Goods-in storage updated"
+msgstr "Goods-in storage updated"
+
 msgid "Google Calendar"
 msgstr "Google Calendar"
 
@@ -14369,6 +14413,7 @@ msgid "Hide"
 msgstr "Hide"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "Hide {0}"
 
@@ -14380,6 +14425,10 @@ msgstr "Hide account number"
 
 msgid "Hide Again"
 msgstr "Hide Again"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "Hide all in {0}"
 
 msgid "Hide block"
 msgstr "Hide block"
@@ -15225,9 +15274,8 @@ msgid "Inspection {0}"
 msgstr "Inspection {0}"
 
 #. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "Inspection {0} · {1}"
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Inspection {0}: {statusLabel}"
 
 msgid "Inspection Date"
 msgstr "Inspection Date"
@@ -15235,14 +15283,26 @@ msgstr "Inspection Date"
 msgid "Inspection document"
 msgstr "Inspection document"
 
+msgid "Inspection failed"
+msgstr "Inspection failed"
+
+msgid "Inspection Failed"
+msgstr "Inspection Failed"
+
 msgid "Inspection file"
 msgstr "Inspection file"
+
+msgid "Inspection In Progress"
+msgstr "Inspection In Progress"
 
 msgid "Inspection Job"
 msgstr "Inspection Job"
 
 msgid "Inspection Level"
 msgstr "Inspection Level"
+
+msgid "Inspection Passed"
+msgstr "Inspection Passed"
 
 msgid "Inspection Plan"
 msgstr "Inspection Plan"
@@ -15253,11 +15313,23 @@ msgstr "Inspection Plan Assignments"
 msgid "Inspection Plans"
 msgstr "Inspection Plans"
 
+msgid "Inspection required"
+msgstr "Inspection required"
+
+msgid "Inspection status"
+msgstr "Inspection status"
+
 msgid "Inspection Status"
 msgstr "Inspection Status"
 
+msgid "Inspection Statuses"
+msgstr "Inspection Statuses"
+
 msgid "Inspection Step"
 msgstr "Inspection Step"
+
+msgid "Inspection storage unit"
+msgstr "Inspection storage unit"
 
 msgid "Inspections"
 msgstr "Inspections"
@@ -15930,7 +16002,7 @@ msgstr "Items inside this window get a yellow badge."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "Its {0} h of draft time this week are deleted."
 
@@ -16127,6 +16199,9 @@ msgstr "Keep mine"
 
 msgid "Keep navigation open"
 msgstr "Keep navigation open"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "Keep one, or hide {moduleName} itself"
 
 msgid "Keep only items where…"
 msgstr "Keep only items where…"
@@ -17450,6 +17525,9 @@ msgstr "Mark Light Mode"
 msgid "Mark not done"
 msgstr "Mark not done"
 
+msgid "Mark Partial"
+msgstr "Mark Partial"
+
 msgid "Mark reviewed"
 msgstr "Mark reviewed"
 
@@ -18109,6 +18187,7 @@ msgid "Move"
 msgstr "Move"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "Move {0}"
 
@@ -19897,6 +19976,9 @@ msgstr "No storage unit at this location holds any stock."
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "No storage unit is short for open jobs or below zero."
 
+msgid "No storage units at this location"
+msgstr "No storage units at this location"
+
 msgid "No storage units or tracking numbers match."
 msgstr "No storage units or tracking numbers match."
 
@@ -20087,6 +20169,9 @@ msgstr "Non-working days that scheduling and capacity respect"
 msgid "None"
 msgstr "None"
 
+msgid "None available"
+msgstr "None available"
+
 msgid "Normal"
 msgstr "Normal"
 
@@ -20133,7 +20218,7 @@ msgstr "Not job time"
 msgid "Not mapped"
 msgstr "Not mapped"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Not moved: {0}. Recorded on <0>{1}</0>"
@@ -20188,6 +20273,9 @@ msgstr "Not started"
 
 msgid "Not synced"
 msgstr "Not synced"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 
 msgid "Not working today"
 msgstr "Not working today"
@@ -20747,6 +20835,9 @@ msgstr "Open Actions"
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
 
+msgid "Open an NCR for the failed units"
+msgstr "Open an NCR for the failed units"
+
 msgid "Open AP"
 msgstr "Open AP"
 
@@ -20833,6 +20924,9 @@ msgstr "Open menu"
 
 msgid "Open My Time"
 msgstr "Open My Time"
+
+msgid "Open NCR"
+msgstr "Open NCR"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Open one to change the plan in a draft that reviewers approve before it applies."
@@ -21546,8 +21640,14 @@ msgstr "Part supplier created"
 msgid "Partial"
 msgstr "Partial"
 
+msgid "Partial Lot"
+msgstr "Partial Lot"
+
 msgid "Partially Delivered"
 msgstr "Partially Delivered"
+
+msgid "Partially Passed"
+msgstr "Partially Passed"
 
 msgid "Partially Returned"
 msgstr "Partially Returned"
@@ -21677,7 +21777,7 @@ msgstr "Payment"
 msgid "Payment — {0}"
 msgstr "Payment — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "payment {0}"
 
@@ -21798,6 +21898,12 @@ msgstr "Pending Approval"
 
 msgid "Pending Employee Review"
 msgstr "Pending Employee Review"
+
+msgid "Pending inspection"
+msgstr "Pending inspection"
+
+msgid "Pending Inspection"
+msgstr "Pending Inspection"
 
 msgid "people"
 msgstr "people"
@@ -23275,11 +23381,18 @@ msgstr "Pushes replace only the fields that Onshape's Fields page sets to Update
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 
+msgid "Put Away"
+msgstr "Put Away"
+
 msgid "Put on hold"
 msgstr "Put on hold"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "Putaway {0}"
 
 msgid "Putting your data back"
 msgstr "Putting your data back"
@@ -23719,6 +23832,9 @@ msgstr "Ready"
 msgid "Ready at"
 msgstr "Ready at"
 
+msgid "Ready for putaway"
+msgstr "Ready for putaway"
+
 msgid "Ready for Quote"
 msgstr "Ready for Quote"
 
@@ -23884,6 +24000,9 @@ msgstr "Received Date"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Received lines from this supplier with quantity remaining to return"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
 
 msgid "Received Qty"
 msgstr "Received Qty"
@@ -24221,6 +24340,9 @@ msgstr "Rejected By"
 msgid "Rejected Date"
 msgstr "Rejected Date"
 
+msgid "Rejected storage unit"
+msgstr "Rejected storage unit"
+
 msgid "Relabels the hub and frames the deal."
 msgstr "Relabels the hub and frames the deal."
 
@@ -24243,7 +24365,7 @@ msgid "Release Batch"
 msgstr "Release Batch"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "Release batch {0}"
 
@@ -24343,7 +24465,7 @@ msgstr "Remove {0} from recent"
 msgid "Remove {0} from recent searches"
 msgstr "Remove {0} from recent searches"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 
@@ -24356,7 +24478,7 @@ msgstr "Remove {0} from this step"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Remove {0} of {memberCount} operations from {1}?"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "Remove {0}?"
 
@@ -24895,9 +25017,6 @@ msgstr "Requires Action"
 msgid "Requires Adjustment"
 msgstr "Requires Adjustment"
 
-msgid "Requires inspection"
-msgstr "Requires inspection"
-
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Requires inspection. A lot opens when the receipt posts."
 
@@ -25028,7 +25147,7 @@ msgstr "restock fee"
 msgid "Restock Fee Percent"
 msgstr "Restock Fee Percent"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Restocking fee {0}"
 
@@ -27509,6 +27628,7 @@ msgid "Show"
 msgstr "Show"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "Show {0}"
 
@@ -27536,6 +27656,10 @@ msgstr "Show All"
 
 msgid "Show all hidden on this step"
 msgstr "Show all hidden on this step"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "Show all in {0}"
 
 msgid "Show available batch numbers"
 msgstr "Show available batch numbers"
@@ -28523,6 +28647,10 @@ msgstr "Sub-assembly path"
 msgid "Sub-Departments"
 msgstr "Sub-Departments"
 
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "Sub-modules of {0}"
+
 msgid "Subassembly"
 msgstr "Subassembly"
 
@@ -29458,6 +29586,12 @@ msgstr "That field holds several values, so they are combined into one list."
 
 msgid "That integration is not available"
 msgstr "That integration is not available"
+
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr "That is the whole lot rejected. Use Reject Lot instead."
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "That is the whole lot. Use Accept Lot instead."
 
 msgid "That list was empty."
 msgstr "That list was empty."
@@ -31245,6 +31379,12 @@ msgstr "This location only schedules work where an operator is assigned on the m
 msgid "This lot is expired and can't be picked."
 msgstr "This lot is expired and can't be picked."
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+
 msgid "This may take a moment. Hang tight."
 msgstr "This may take a moment. Hang tight."
 
@@ -32472,6 +32612,9 @@ msgstr "Units of measure"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
+
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
 
 msgid "Units this customer owns show here once registered."
 msgstr "Units this customer owns show here once registered."

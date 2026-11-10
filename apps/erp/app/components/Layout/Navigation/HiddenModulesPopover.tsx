@@ -23,24 +23,16 @@ export function HiddenModulesPopover({
         <button
           type="button"
           className={cn(
-            "relative",
             "h-10 w-10 group-data-[state=expanded]:w-full",
-            "flex items-center rounded-md",
-            "group-data-[state=collapsed]:justify-center",
-            "font-medium shrink-0 inline-flex select-none",
+            "flex items-center justify-center gap-2 rounded-md",
+            "font-medium shrink-0 inline-flex select-none overflow-hidden",
             "text-muted-foreground",
             "hover:bg-accent hover:text-accent-foreground",
             "transition-[background-color,color,width] duration-100 ease-out"
           )}
         >
-          <LuPlus className="absolute left-3 top-3 flex items-center justify-center" />
-          <span
-            className={cn(
-              "min-w-[128px] text-sm",
-              "absolute left-7 group-data-[state=expanded]:left-12",
-              "md:opacity-0 group-data-[state=expanded]:opacity-100"
-            )}
-          >
+          <LuPlus className="shrink-0" />
+          <span className="text-sm whitespace-nowrap md:group-data-[state=collapsed]:hidden">
             Add module
           </span>
         </button>

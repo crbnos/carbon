@@ -431,11 +431,17 @@ async function receiptLot(
     receiptReadableId: string;
     supplierId: string | null;
     receivedQuantity: string;
+    storageUnitId: string | null;
   }>(
     ctx.client,
+    // A seeded line on an ordinary shelf opens a lot that records no unit, as
+    // a lot from before the hold did, so it holds nothing.
     `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
-            r."supplierId", rl."receivedQuantity"
+            r."supplierId", rl."receivedQuantity",
+            CASE WHEN su."effectiveNettable" = false THEN rl."storageUnitId" END
+              AS "storageUnitId"
      FROM "receiptLine" rl JOIN receipt r ON r.id = rl."receiptId"
+     LEFT JOIN "storageUnit" su ON su.id = rl."storageUnitId"
      WHERE rl.id = $1 AND rl."companyId" = $2`,
     [receiptLineId, ctx.companyId]
   );
@@ -452,7 +458,8 @@ async function receiptLot(
       sourceDocumentReadableId: line.receiptReadableId,
       itemId: item.id,
       itemReadableId: item.readableId,
-      supplierId: line.supplierId ?? undefined
+      supplierId: line.supplierId ?? undefined,
+      storageUnitId: line.storageUnitId ?? undefined
     }
   };
 }

@@ -37,6 +37,7 @@ import {
   ScrollArea,
   Switch,
   toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -217,7 +218,7 @@ function SsoDomainRow({
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
-  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const removeModal = useDisclosure();
   const isPending = domain.status !== "verified";
   const isBusy = fetcher.state !== "idle";
   const submitting = fetcher.formData?.get("intent");
@@ -250,65 +251,60 @@ function SsoDomainRow({
             variant="ghost"
             isLoading={isBusy && submitting === "removeDomain"}
             isDisabled={!canEdit || isBusy}
-            onClick={() => setRemoveModalOpen(true)}
+            onClick={removeModal.onOpen}
           >
             <Trans>Remove</Trans>
           </Button>
         </HStack>
       </HStack>
-      {removeModalOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) setRemoveModalOpen(false);
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Remove {domain.domain}</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                {isPending ? (
-                  <Trans>
-                    Are you sure you want to remove this domain? Its
-                    verification record will no longer be checked.
-                  </Trans>
-                ) : (
-                  <Trans>
-                    Are you sure you want to remove this domain? Users on it
-                    will no longer sign in through your identity provider, and
-                    adding it again needs a new DNS verification.
-                  </Trans>
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
+      <Modal
+        open={removeModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) removeModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Remove {domain.domain}</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {isPending ? (
+                <Trans>
+                  Are you sure you want to remove this domain? Its verification
+                  record will no longer be checked.
+                </Trans>
+              ) : (
+                <Trans>
+                  Are you sure you want to remove this domain? Users on it will
+                  no longer sign in through your identity provider, and adding
+                  it again needs a new DNS verification.
+                </Trans>
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={removeModal.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <fetcher.Form method="post" action={path.to.sso}>
+              <input type="hidden" name="intent" value="removeDomain" />
+              <input type="hidden" name="domainId" value={domain.id} />
               <Button
-                variant="secondary"
-                onClick={() => setRemoveModalOpen(false)}
+                variant="destructive"
+                type="submit"
+                isLoading={isBusy && submitting === "removeDomain"}
+                isDisabled={isBusy}
               >
-                <Trans>Cancel</Trans>
+                <Trans>Remove</Trans>
               </Button>
-              <fetcher.Form method="post" action={path.to.sso}>
-                <input type="hidden" name="intent" value="removeDomain" />
-                <input type="hidden" name="domainId" value={domain.id} />
-                <Button
-                  variant="destructive"
-                  type="submit"
-                  isLoading={isBusy && submitting === "removeDomain"}
-                  isDisabled={isBusy}
-                >
-                  <Trans>Remove</Trans>
-                </Button>
-              </fetcher.Form>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+            </fetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       {isPending && (
         <VStack spacing={2} className="mt-4">
           <p className="text-sm text-muted-foreground">
@@ -666,52 +662,49 @@ export default function Security() {
               </Card>
             )}
 
-            {deactivateModalOpen && (
-              <Modal
-                open
-                onOpenChange={(open) => {
-                  if (!open) setDeactivateModalOpen(false);
-                }}
-              >
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>
-                    <ModalTitle>
-                      <Trans>Deactivate Single Sign-On</Trans>
-                    </ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>
-                        Are you sure you want to deactivate SAML SSO? Users on
-                        your registered domains will no longer be able to sign
-                        in through your identity provider. This cannot be
-                        undone.
-                      </Trans>
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
+            <Modal
+              open={deactivateModalOpen}
+              onOpenChange={(open) => {
+                if (!open) setDeactivateModalOpen(false);
+              }}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>
+                    <Trans>Deactivate Single Sign-On</Trans>
+                  </ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      Are you sure you want to deactivate SAML SSO? Users on
+                      your registered domains will no longer be able to sign in
+                      through your identity provider. This cannot be undone.
+                    </Trans>
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDeactivateModalOpen(false)}
+                  >
+                    <Trans>Cancel</Trans>
+                  </Button>
+                  <deactivateFetcher.Form method="post" action={path.to.sso}>
+                    <input type="hidden" name="intent" value="deactivate" />
                     <Button
-                      variant="secondary"
-                      onClick={() => setDeactivateModalOpen(false)}
+                      variant="destructive"
+                      type="submit"
+                      isLoading={deactivateFetcher.state !== "idle"}
+                      isDisabled={deactivateFetcher.state !== "idle"}
                     >
-                      <Trans>Cancel</Trans>
+                      <Trans>Deactivate</Trans>
                     </Button>
-                    <deactivateFetcher.Form method="post" action={path.to.sso}>
-                      <input type="hidden" name="intent" value="deactivate" />
-                      <Button
-                        variant="destructive"
-                        type="submit"
-                        isLoading={deactivateFetcher.state !== "idle"}
-                        isDisabled={deactivateFetcher.state !== "idle"}
-                      >
-                        <Trans>Deactivate</Trans>
-                      </Button>
-                    </deactivateFetcher.Form>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
-            )}
+                  </deactivateFetcher.Form>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </>
         )}
       </SettingsPage>

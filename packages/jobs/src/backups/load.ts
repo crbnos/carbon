@@ -188,6 +188,8 @@ export async function bulkLoad<T>(
     if (replicaMode) {
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
+    // Loaded stock is not a goods-in move out of an inspection hold.
+    await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
     // The company's groups before the load: memberships survive an own
     // restore, and any left pointing at a group that doesn't come back go.

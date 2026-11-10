@@ -145,8 +145,8 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   `requiresSerialTracking`. **Receipt** batch/serial forms add an **expiration date** (batch date
   shows only when item shelf-life mode is "Set on Receipt") and a per-line **FileDropzone**;
   shipment forms do not. A receipt line that is inspected shows a small red clipboard beside the
-  item name (`ReceiptLineInspectionMark`): on an unposted Purchase Order receipt when the item has
-  a Receipt-usage inspection plan (`getReceiptInspectedItemIds`, loader `inspectedItemIds`), and
+  item name (`ReceiptLineInspectionMark`): on an unposted Purchase Order receipt when `receiptLinesOpeningLots` returns the
+  line (planned, stocked, not outside processing, not project-consumed; loader `inspectedLineIds`), and
   once posted when the line has a lot (`receiptInspections` by `sourceDocumentLineId`), which the
   mark links to for a `quality` viewer.
 - **Rental lines**: on a `'Rental Agreement'` document the loader reads `getRentalShipmentLines` /
@@ -273,7 +273,7 @@ applies.
   reversal would take a bin below zero — a serial or batch is checked on its own, so a unit that
   was moved, picked or shipped after posting is caught even when the bin holds other stock — and
   refuses a purchase receipt whose untracked inspection lot was rejected (the reject route already
-  wrote that stock off). `ReceiptVoidModal` shows a refused `voidReceipt` in place and stays
+  wrote that stock off) or marked Partial (its remainder stays under its NCR). `ReceiptVoidModal` shows a refused `voidReceipt` in place and stays
   open. A serial from a voided receipt can be entered on a new receipt: `saveReceiptSerialBox`
   reuses the same tracked entity (`idsWithLiveStockHistory` ignores the ledger rows of voided
   receipts, `onVoidedReceipt` lifts the "taken by another box" refusal), so one unit keeps one

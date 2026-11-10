@@ -24575,6 +24575,7 @@ export type Database = {
       inspection: {
         Row: {
           acceptanceNumber: number
+          acceptedQuantity: number | null
           aql: number | null
           codeLetter: string | null
           companyId: string
@@ -24600,12 +24601,14 @@ export type Database = {
           sourceDocumentLineId: string | null
           sourceDocumentReadableId: string | null
           status: Database["public"]["Enums"]["inspectionStatusType"]
+          storageUnitId: string | null
           supplierId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           acceptanceNumber: number
+          acceptedQuantity?: number | null
           aql?: number | null
           codeLetter?: string | null
           companyId: string
@@ -24633,12 +24636,14 @@ export type Database = {
           sourceDocumentLineId?: string | null
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["inspectionStatusType"]
+          storageUnitId?: string | null
           supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           acceptanceNumber?: number
+          acceptedQuantity?: number | null
           aql?: number | null
           codeLetter?: string | null
           companyId?: string
@@ -24666,6 +24671,7 @@ export type Database = {
           sourceDocumentLineId?: string | null
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["inspectionStatusType"]
+          storageUnitId?: string | null
           supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -24880,6 +24886,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspection_storageUnitId_fkey"
+            columns: ["storageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
           }
         ]
       }
@@ -35880,10 +35893,12 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           id: string
+          inspectionStorageUnitId: string | null
           latitude: number | null
           longitude: number | null
           name: string
           postalCode: string
+          rejectedStorageUnitId: string | null
           requiresStaffing: boolean
           responsibleEmployee: string | null
           stateProvince: string | null
@@ -35903,10 +35918,12 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           id?: string
+          inspectionStorageUnitId?: string | null
           latitude?: number | null
           longitude?: number | null
           name: string
           postalCode: string
+          rejectedStorageUnitId?: string | null
           requiresStaffing?: boolean
           responsibleEmployee?: string | null
           stateProvince?: string | null
@@ -35926,10 +35943,12 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           id?: string
+          inspectionStorageUnitId?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string
           postalCode?: string
+          rejectedStorageUnitId?: string | null
           requiresStaffing?: boolean
           responsibleEmployee?: string | null
           stateProvince?: string | null
@@ -35966,6 +35985,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "location_inspectionStorageUnitId_fkey"
+            columns: ["inspectionStorageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_rejectedStorageUnitId_fkey"
+            columns: ["rejectedStorageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "location_responsibleEmployee_fkey"
@@ -64101,6 +64134,7 @@ export type Database = {
           customFields: Json | null
           externalDocumentId: string | null
           id: string
+          inspectionStatus: Database["public"]["Enums"]["receiptInspectionStatus"]
           internalNotes: Json | null
           invoiced: boolean | null
           locationId: string | null
@@ -64127,6 +64161,7 @@ export type Database = {
           customFields?: Json | null
           externalDocumentId?: string | null
           id?: string
+          inspectionStatus?: Database["public"]["Enums"]["receiptInspectionStatus"]
           internalNotes?: Json | null
           invoiced?: boolean | null
           locationId?: string | null
@@ -64153,6 +64188,7 @@ export type Database = {
           customFields?: Json | null
           externalDocumentId?: string | null
           id?: string
+          inspectionStatus?: Database["public"]["Enums"]["receiptInspectionStatus"]
           internalNotes?: Json | null
           invoiced?: boolean | null
           locationId?: string | null
@@ -64562,6 +64598,7 @@ export type Database = {
           receiptId: string
           receivedQuantity: number
           requiresBatchTracking: boolean
+          requiresInspection: boolean
           requiresSerialTracking: boolean
           storageUnitId: string | null
           unitOfMeasure: string
@@ -64583,6 +64620,7 @@ export type Database = {
           receiptId: string
           receivedQuantity?: number
           requiresBatchTracking?: boolean
+          requiresInspection?: boolean
           requiresSerialTracking?: boolean
           storageUnitId?: string | null
           unitOfMeasure: string
@@ -64604,6 +64642,7 @@ export type Database = {
           receiptId?: string
           receivedQuantity?: number
           requiresBatchTracking?: boolean
+          requiresInspection?: boolean
           requiresSerialTracking?: boolean
           storageUnitId?: string | null
           unitOfMeasure?: string
@@ -75399,6 +75438,7 @@ export type Database = {
           kanbanId: string | null
           locationId: string
           notes: Json | null
+          receiptId: string | null
           status: Database["public"]["Enums"]["stockTransferStatus"]
           stockTransferId: string
           tags: string[] | null
@@ -75416,6 +75456,7 @@ export type Database = {
           kanbanId?: string | null
           locationId: string
           notes?: Json | null
+          receiptId?: string | null
           status?: Database["public"]["Enums"]["stockTransferStatus"]
           stockTransferId: string
           tags?: string[] | null
@@ -75433,6 +75474,7 @@ export type Database = {
           kanbanId?: string | null
           locationId?: string
           notes?: Json | null
+          receiptId?: string | null
           status?: Database["public"]["Enums"]["stockTransferStatus"]
           stockTransferId?: string
           tags?: string[] | null
@@ -75560,6 +75602,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stockTransfer_receiptId_fkey"
+            columns: ["receiptId"]
+            isOneToOne: false
+            referencedRelation: "receipt"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransfer_receiptId_fkey"
+            columns: ["receiptId"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stockTransfer_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -75609,6 +75665,7 @@ export type Database = {
           outstandingQuantity: number | null
           pickedQuantity: number
           quantity: number
+          receiptLineId: string | null
           requiresBatchTracking: boolean
           requiresSerialTracking: boolean
           stockTransferId: string
@@ -75629,6 +75686,7 @@ export type Database = {
           outstandingQuantity?: number | null
           pickedQuantity?: number
           quantity?: number
+          receiptLineId?: string | null
           requiresBatchTracking?: boolean
           requiresSerialTracking?: boolean
           stockTransferId: string
@@ -75649,6 +75707,7 @@ export type Database = {
           outstandingQuantity?: number | null
           pickedQuantity?: number
           quantity?: number
+          receiptLineId?: string | null
           requiresBatchTracking?: boolean
           requiresSerialTracking?: boolean
           stockTransferId?: string
@@ -75810,6 +75869,20 @@ export type Database = {
             columns: ["jobMaterialId"]
             isOneToOne: false
             referencedRelation: "openJobMaterialLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_receiptLineId_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stockTransferLine_receiptLineId_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLines"
             referencedColumns: ["id"]
           },
           {
@@ -83207,27 +83280,33 @@ export type Database = {
         Row: {
           companyId: string
           hidden: boolean
+          hiddenSubmodules: string[]
           id: string
           module: string
           position: number
+          submoduleOrder: string[]
           updatedAt: string
           userId: string
         }
         Insert: {
           companyId: string
           hidden?: boolean
+          hiddenSubmodules?: string[]
           id?: string
           module: string
           position: number
+          submoduleOrder?: string[]
           updatedAt?: string
           userId: string
         }
         Update: {
           companyId?: string
           hidden?: boolean
+          hiddenSubmodules?: string[]
           id?: string
           module?: string
           position?: number
+          submoduleOrder?: string[]
           updatedAt?: string
           userId?: string
         }
@@ -99363,6 +99442,7 @@ export type Database = {
           receiptId: string | null
           receivedQuantity: number | null
           requiresBatchTracking: boolean | null
+          requiresInspection: boolean | null
           requiresSerialTracking: boolean | null
           storageUnitId: string | null
           thumbnailPath: string | null
@@ -104978,9 +105058,37 @@ export type Database = {
         Args: { p_api_key_id: string; p_limit: number; p_window: string }
         Returns: Json
       }
+      check_goods_in_storage_unit: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_inspection_lot_release: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_item_inspection_hold: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_location_goods_in_storage_units: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_nonconformance_inspection_link: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      check_nonconformance_inspection_release: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean
+      }
+      check_tracked_entity_inspection_hold: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
       }
       company_today: { Args: { p_company_id: string }; Returns: string }
       complete_job_remaining_quantities: {
@@ -107458,6 +107566,44 @@ export type Database = {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
       }
+      inspection_held_quantity: {
+        Args: {
+          p_company_id: string
+          p_item_id: string
+          p_open_lots_only?: boolean
+          p_storage_unit_id: string
+        }
+        Returns: number
+      }
+      inspection_holds_at: {
+        Args: {
+          p_company_id: string
+          p_item_id: string
+          p_open_lots_only?: boolean
+          p_storage_unit_id: string
+        }
+        Returns: boolean
+      }
+      inspection_line_lot_open: {
+        Args: { p_company_id: string; p_receipt_line_id: string }
+        Returns: boolean
+      }
+      inspection_lot_holds: {
+        Args: {
+          p_accepted_quantity: number
+          p_inspection_id: string
+          p_status: Database["public"]["Enums"]["inspectionStatusType"]
+        }
+        Returns: boolean
+      }
+      inspection_untracked_on_hand: {
+        Args: {
+          p_company_id: string
+          p_item_id: string
+          p_storage_unit_id: string
+        }
+        Returns: number
+      }
       interpolate_serial_segment: {
         Args: { p_location: string; p_now: string; p_value: string }
         Returns: string
@@ -107726,6 +107872,10 @@ export type Database = {
         Returns: undefined
       }
       reconcile_item_stock_quantities: { Args: never; Returns: undefined }
+      refresh_receipt_inspection_status: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
+      }
       resolve_shelf_life_start_for_receipt: {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
@@ -108520,6 +108670,10 @@ export type Database = {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
+      sync_receipt_inspection_status: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       sync_set_initial_dependency_status: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -109091,6 +109245,7 @@ export type Database = {
         | "Passed"
         | "Failed"
         | "Partial"
+        | "Cancelled"
       intercompanyEliminationRole:
         | "Control"
         | "Revenue"
@@ -109575,6 +109730,14 @@ export type Database = {
         | "Direct Supervision"
         | "Direct Support"
         | "Not Qualified"
+      receiptInspectionStatus:
+        | "Not Required"
+        | "Pending Inspection"
+        | "Inspection In Progress"
+        | "Inspection Passed"
+        | "Inspection Failed"
+        | "Partially Passed"
+        | "Put Away"
       receiptSourceDocument:
         | "Sales Order"
         | "Sales Invoice"

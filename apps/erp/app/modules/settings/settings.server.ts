@@ -558,7 +558,12 @@ export const updatePurchasingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether an inspection needs a
  * second person to sign it off, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration.
+ * gauge goes out of calibration. Then one location's goods-in storage units:
+ * the inspection storage unit received parts wait in, and the rejected
+ * storage unit rejected stock moves to (null clears one). Each must be an
+ * active storage unit at that location. A location is a
+ * resources record: without the resources update permission it is refused.
+ * The location and the company settings are written in one transaction.
  *
  * @mcp
  */
@@ -567,18 +572,88 @@ export const updateQualitySettings = defineServiceFn({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
-    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional()
+    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
+    locationGoodsInStorage: z
+      .object({
+        locationId: z.string().min(1),
+        inspectionStorageUnitId: z.string().nullable().optional(),
+        rejectedStorageUnitId: z.string().nullable().optional()
+      })
+      .optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await service.saveCompanySettings(
-      ctx,
-      input,
-      "Failed to update quality settings"
-    );
-    return saved ?? input;
+    const { locationGoodsInStorage: location, ...settings } = input;
+
+    if (location) {
+      // The write below runs as the system, so it checks what the location's
+      // row-level security (resources update) would have.
+      if (!ctx.can({ update: "resources" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change this location"
+        );
+      }
+      const ids = [
+        location.inspectionStorageUnitId,
+        location.rejectedStorageUnitId
+      ].filter((id): id is string => !!id);
+      if (ids.length > 0) {
+        const units = await ctx.asCaller.supabase
+          .from("storageUnit")
+          .select("id, locationId, active")
+          .eq("companyId", ctx.company.id)
+          .in("id", ids);
+        if (units.error) {
+          return ctx.error(
+            "internal",
+            "Failed to read storage units",
+            units.error
+          );
+        }
+        const unitById = new Map(units.data.map((unit) => [unit.id, unit]));
+        if (
+          ids.some((id) => unitById.get(id)?.locationId !== location.locationId)
+        ) {
+          return ctx.error("rule", "Choose a storage unit at this location.");
+        }
+        if (ids.some((id) => unitById.get(id)?.active !== true)) {
+          return ctx.error("rule", "Choose an active storage unit.");
+        }
+      }
+    }
+
+    const saved = await ctx.transaction(async (tx) => {
+      if (location) {
+        const row = await service.setLocationGoodsInStorage(tx.asSystem.pg, {
+          companyId: ctx.company.id,
+          locationId: location.locationId,
+          inspectionStorageUnitId: location.inspectionStorageUnitId,
+          rejectedStorageUnitId: location.rejectedStorageUnitId,
+          userId: ctx.auditUserId
+        });
+        if (!row) return tx.error("notFound", "Location not found");
+        if (row === "sameUnit") {
+          return tx.error(
+            "rule",
+            "Use different storage units for inspection and rejected stock."
+          );
+        }
+      }
+      const written = await service.saveCompanySettingsIn(
+        tx.asSystem.pg,
+        ctx.company.id,
+        settings
+      );
+      if (!written) {
+        return tx.error("internal", "Failed to update quality settings");
+      }
+      return input;
+    });
+    if (saved.error) return saved.error;
+    return input;
   }
 });
 

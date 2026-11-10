@@ -20,12 +20,14 @@ import { totalScopeRows } from "./format";
 // Shared by a failed restore and a failed demo data apply, whose safety snapshots
 // refuse on the same out-of-scope rows. Callers own the differing copy and the submit.
 export function PurgeCorruptedRowsModal({
+  open = true,
   rowsByTable,
   description,
   confirmLabel,
   onConfirm,
   onCancel
 }: {
+  open?: boolean;
   rowsByTable: RowsByTable;
   description: ReactNode;
   confirmLabel: ReactNode;
@@ -37,7 +39,7 @@ export function PurgeCorruptedRowsModal({
   const purgeRowCount = totalScopeRows(rowsByTable);
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

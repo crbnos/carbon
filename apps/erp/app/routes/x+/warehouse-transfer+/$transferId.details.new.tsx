@@ -4,9 +4,10 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { warehouseTransferLineValidator } from "~/modules/inventory/inventory.models";
 import type {
@@ -41,10 +42,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewWarehouseTransferLineRoute() {
-  const navigate = useNavigate();
   const { transferId } = useParams();
 
   if (!transferId) throw new Error("Could not find transferId");
+
+  const dialog = useRouteDialog(path.to.warehouseTransfer(transferId));
 
   const routeData = useRouteData<{
     warehouseTransfer: WarehouseTransfer;
@@ -72,7 +74,8 @@ export default function NewWarehouseTransferLineRoute() {
     <WarehouseTransferLineForm
       initialValues={initialValues}
       warehouseTransfer={routeData.warehouseTransfer}
-      onClose={() => navigate(path.to.warehouseTransfer(transferId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

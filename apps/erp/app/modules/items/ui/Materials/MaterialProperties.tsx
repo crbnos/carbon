@@ -892,24 +892,22 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
           </Suspense>
         </VStack>
       </VStack>
-      {confirmDisclosure.isOpen && (
-        <ConfirmMaterialIdChange
-          materialPropertyUpdate={materialPropertyUpdate}
-          onClose={() => {
-            // this is hacky but the value is already changed in the UI
-            window.location.reload();
-          }}
-          onConfirm={() => {
-            onUpdate(
-              // @ts-expect-error
-              materialPropertyUpdate?.field,
-              materialPropertyUpdate?.value
-            );
-            confirmDisclosure.onClose();
-            setMaterialPropertyUpdate(null);
-          }}
-        />
-      )}
+      <ConfirmMaterialIdChange
+        open={confirmDisclosure.isOpen}
+        materialPropertyUpdate={materialPropertyUpdate}
+        onClose={() => {
+          // this is hacky but the value is already changed in the UI
+          window.location.reload();
+        }}
+        onConfirm={() => {
+          onUpdate(
+            // @ts-expect-error
+            materialPropertyUpdate?.field,
+            materialPropertyUpdate?.value
+          );
+          confirmDisclosure.onClose();
+        }}
+      />
     </>
   );
 };
@@ -917,10 +915,12 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
 export default MaterialProperties;
 
 function ConfirmMaterialIdChange({
+  open = true,
   materialPropertyUpdate,
   onClose,
   onConfirm
 }: {
+  open?: boolean;
   materialPropertyUpdate: {
     field:
       | "materialFormId"
@@ -938,7 +938,7 @@ function ConfirmMaterialIdChange({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

@@ -270,11 +270,9 @@ const LeasesTable = memo(({ data, count, infinite }: LeasesTableProps) => {
           text={t`Are you sure you want to delete ${selected.leaseId ?? ""}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelected(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelected(null);
           }}
         />
       )}

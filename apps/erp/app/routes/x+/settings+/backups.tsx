@@ -513,6 +513,7 @@ export default function BackupsRoute() {
   const [purgeRun, setPurgeRun] = useState<
     (typeof visibleRestoreRuns)[number] | null
   >(null);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const exportChoices = useExportChoices();
   // A failed run's label and include setting seed the form, so "Skip corrupted
   // rows and retry" reuses what that run asked for and the person can see it.
@@ -697,7 +698,10 @@ export default function BackupsRoute() {
                       );
                       resolveRun(run.restoreRunId);
                     }}
-                    onPurgeAndRestore={() => setPurgeRun(run)}
+                    onPurgeAndRestore={() => {
+                      setPurgeRun(run);
+                      setPurgeOpen(true);
+                    }}
                   />
                 ))}
               </VStack>
@@ -707,6 +711,7 @@ export default function BackupsRoute() {
 
         {purgeRun && (
           <PurgeCorruptedRowsModal
+            open={purgeOpen}
             rowsByTable={purgeRun.violationRowsByTable}
             description={
               <Trans>
@@ -717,7 +722,7 @@ export default function BackupsRoute() {
               </Trans>
             }
             confirmLabel={<Trans>Delete and restore</Trans>}
-            onCancel={() => setPurgeRun(null)}
+            onCancel={() => setPurgeOpen(false)}
             onConfirm={() => {
               fetcher.submit(
                 {
@@ -727,7 +732,7 @@ export default function BackupsRoute() {
                 { method: "post" }
               );
               resolveRun(purgeRun.restoreRunId);
-              setPurgeRun(null);
+              setPurgeOpen(false);
             }}
           />
         )}

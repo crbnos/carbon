@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -45,8 +45,8 @@ const ProductionQuantityForm = ({
 }: ProductionQuantityFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const [type, setType] = useState<"Production" | "Scrap" | "Rework">(
     initialValues.type
@@ -64,7 +64,7 @@ const ProductionQuantityForm = ({
     : !permissions.can("create", "production");
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

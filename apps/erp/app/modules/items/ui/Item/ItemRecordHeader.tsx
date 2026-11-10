@@ -114,26 +114,23 @@ const ItemRecordHeader = ({
         subtitle={subtitle}
         aside={<DetailsTopbar links={links} />}
       />
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteItem(itemId)}
-          isOpen={deleteModal.isOpen}
-          name={readableId ?? deleteFallbackName}
-          text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
-      {changeNoticeModal.isOpen && (
-        <CreateChangeNoticeModal
-          itemId={itemId}
-          onClose={changeNoticeModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteItem(itemId)}
+        isOpen={deleteModal.isOpen}
+        name={readableId ?? deleteFallbackName}
+        text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      <CreateChangeNoticeModal
+        itemId={itemId}
+        open={changeNoticeModal.isOpen}
+        onClose={changeNoticeModal.onClose}
+      />
       {auditLogDrawer}
     </>
   );

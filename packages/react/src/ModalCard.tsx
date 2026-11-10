@@ -52,8 +52,9 @@ const ModalCard = forwardRef<
     })
   | (ComponentPropsWithoutRef<typeof Card> & {
       onClose?: () => void;
+      open?: boolean;
     })
->(({ onClose, ...props }, ref) => {
+>(({ onClose, open = true, ...props }, ref) => {
   const type = useModalCardType();
 
   if (type === "card") {
@@ -68,7 +69,7 @@ const ModalCard = forwardRef<
           onClose?.();
         }
       }}
-      open
+      open={open}
     />
   );
 });

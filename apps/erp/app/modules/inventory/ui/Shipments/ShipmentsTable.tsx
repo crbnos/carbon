@@ -456,11 +456,9 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
           text={`Are you sure you want to delete ${selectedShipment.shipmentId!}? This cannot be undone.`}
           onCancel={() => {
             deleteShipmentModal.onClose();
-            setSelectedShipment(null);
           }}
           onSubmit={() => {
             deleteShipmentModal.onClose();
-            setSelectedShipment(null);
           }}
         />
       )}

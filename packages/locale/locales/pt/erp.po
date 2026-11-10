@@ -262,7 +262,7 @@ msgstr "{0, plural, one {Mover # item} other {Mover todos os # itens}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Contabilizar ou excluir o # documento datado antes do corte.} other {Contabilizar ou excluir os # documentos datados antes do corte.}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {Remover este caminho também desconectará # conexão.} other {Remover este caminho também desconectará # conexões.}}"
 
@@ -463,6 +463,10 @@ msgstr "{0} em estoque, para {1} montagens; o restante {2} será separado como {
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0} em estoque; o restante {1} será separado como {2}"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "Unidade de armazenamento de inspeção de {0}"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} faturas foram faturadas em seu sistema anterior e não são criadas novamente como rascunho."
@@ -624,6 +628,10 @@ msgstr "{0} recebido · {1} creditado"
 msgid "{0} registered"
 msgstr "{0} registado"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "Unidade de armazenamento de rejeitados de {0}"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0} relata que o razão é mantido por"
@@ -770,6 +778,12 @@ msgstr "{0}h obrigatório"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h pessoal"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{acceptedQuantity} de {lotSize} aceitos."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{acceptedQuantity} de {lotSize} aceitos. O restante fica retido até que sua NCR seja encerrada."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account} tem histórico contabilizado, portanto não pode ser removido."
@@ -1097,6 +1111,9 @@ msgstr "{name} termina {end} (era {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} termina {end} (era sem data de término)"
 
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name} está inativa. Escolha uma unidade de armazenamento ativa."
+
 msgid "{name} needs an account number."
 msgstr "{name} precisa de um número de conta."
 
@@ -1200,6 +1217,9 @@ msgstr "{received} de {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} não encontrado"
+
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity} ficarão retidas como rejeitadas."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId} está concluído. # unidade não foi entregue} other {{jobId} está concluído. # unidades não foram entregues}}"
@@ -1590,6 +1610,9 @@ msgstr "Um PIN de 4 dígitos é gerado quando o operador é criado."
 
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "Uma etiqueta de 4\" x 2\" ou 3\" x 2\" imprime um cartão por etiqueta, para uma impressora térmica como a Zebra."
+
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr "Um lote por lote é aceito ou rejeitado por inteiro."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Um lote de produção precisa de pelo menos uma operação. Para dividir o lote de produção inteiro, use Dissolver em vez disso."
@@ -2488,6 +2511,9 @@ msgstr "Aceito"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Aceita em {0}"
+
+msgid "Accepted quantity"
+msgstr "Quantidade aceita"
 
 msgid "Account"
 msgstr "Conta"
@@ -4427,8 +4453,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Tem certeza de que deseja excluir {0}?"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Tem certeza de que deseja excluir {0}? Isto não pode ser desfeito."
 
@@ -4441,12 +4467,12 @@ msgstr "Tem certeza de que deseja excluir {orderLabel}? Isso não pode ser desfe
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Tem certeza de que deseja excluir {readableId}? Isto não pode ser desfeito."
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "Tem certeza de que deseja excluir o pagamento {0}?"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "Tem certeza de que deseja excluir a visualização \"{0}\"? Isto não pode ser desfeito."
 
@@ -4778,7 +4804,7 @@ msgstr "Tem certeza de que deseja rejeitar este fornecedor?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Tem a certeza de que deseja liberar este trabalho? Ele ficará disponível para o chão de fábrica e impulsionará compras e produção."
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "Tem certeza de que deseja remover {0} e suas linhas de pagamento deste arrendamento?"
 
@@ -5887,9 +5913,6 @@ msgstr "Ambos os testes passam; considere Não financiado (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Gargalo"
 
-msgid "Bottom of page"
-msgstr "Final da página"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Ramifique uma cópia editável desta versão que você pode alterar e publicar."
 
@@ -6824,6 +6847,12 @@ msgstr "Escolha um pool"
 msgid "Choose a serial number"
 msgstr "Escolha um número de série"
 
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Escolha uma unidade de armazenamento neste local para as peças inspecionadas."
+
+msgid "Choose a storage unit at this location."
+msgstr "Escolha uma unidade de armazenamento neste local."
+
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "escolher um fornecedor para {0} na ordem de produção"
@@ -7519,6 +7548,9 @@ msgstr "Configurar"
 
 msgid "Configure {label}"
 msgstr "Configurar {label}"
+
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "Configure pelo menos um Tipo de Problema. A parte rejeitada do lote precisa de uma NCR."
 
 msgid "Configure Carbon"
 msgstr "Configurar Carbon"
@@ -8458,6 +8490,9 @@ msgstr "Não foi possível listar os dispositivos do provedor. Os dispositivos m
 
 msgid "Could not load operations"
 msgstr "Não foi possível carregar operações"
+
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "Não foi possível carregar as unidades de armazenamento não disponíveis para MRP. Alguns marcadores podem estar ausentes."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "Não foi possível carregar o que foi executado em {workCenterName}."
@@ -9859,7 +9894,7 @@ msgstr "Excluir"
 msgid "Delete {0}"
 msgstr "Excluir {0}"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "Excluir {0} e cada elemento abaixo? Um elemento que tenha custos, tempo, uma ordem de produção ou uma linha de pedido de compra não pode ser excluído."
@@ -12089,6 +12124,9 @@ msgstr "Digite débitos como valores positivos e créditos como valores negativo
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "Digite débitos como valores positivos e créditos como valores negativos. O CSV precisa das colunas accountNumber, debit e credit. Uma importação substitui o saldo de verificação completo."
 
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "Informe quanto do lote de {lotSize} foi aprovado. A quantidade aceita está pronta para armazenagem. O restante fica retido até que sua NCR seja encerrada."
+
 msgid "Enter number…"
 msgstr "Digite o número…"
 
@@ -14206,6 +14244,12 @@ msgstr "Boa noite, {name}."
 msgid "Good morning, {name}."
 msgstr "Bom dia, {name}."
 
+msgid "Goods-in storage"
+msgstr "Armazenamento de recebimento"
+
+msgid "Goods-in storage updated"
+msgstr "Armazenamento de recebimento atualizado"
+
 msgid "Google Calendar"
 msgstr "Google Agenda"
 
@@ -14369,6 +14413,7 @@ msgid "Hide"
 msgstr "Ocultar"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "Ocultar {0}"
 
@@ -14380,6 +14425,10 @@ msgstr "Ocultar número da conta"
 
 msgid "Hide Again"
 msgstr "Ocultar Novamente"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "Ocultar bloco"
@@ -15225,9 +15274,8 @@ msgid "Inspection {0}"
 msgstr "Inspeção {0}"
 
 #. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "Inspeção {0} · {1}"
+msgid "Inspection {0}: {statusLabel}"
+msgstr "Inspeção {0}: {statusLabel}"
 
 msgid "Inspection Date"
 msgstr "Data de Inspeção"
@@ -15235,14 +15283,26 @@ msgstr "Data de Inspeção"
 msgid "Inspection document"
 msgstr "Documento de inspeção"
 
+msgid "Inspection failed"
+msgstr "Inspeção reprovada"
+
+msgid "Inspection Failed"
+msgstr "Inspeção Reprovada"
+
 msgid "Inspection file"
 msgstr "Arquivo da inspeção"
+
+msgid "Inspection In Progress"
+msgstr "Inspeção Em Andamento"
 
 msgid "Inspection Job"
 msgstr "Trabalho de Inspeção"
 
 msgid "Inspection Level"
 msgstr "Nível de Inspeção"
+
+msgid "Inspection Passed"
+msgstr "Inspeção Aprovada"
 
 msgid "Inspection Plan"
 msgstr "Plano de Inspeção"
@@ -15253,11 +15313,23 @@ msgstr "Atribuições de Plano de Inspeção"
 msgid "Inspection Plans"
 msgstr "Planos de Inspeção"
 
+msgid "Inspection required"
+msgstr "Inspeção obrigatória"
+
+msgid "Inspection status"
+msgstr "Status da inspeção"
+
 msgid "Inspection Status"
+msgstr "Status de Inspeção"
+
+msgid "Inspection Statuses"
 msgstr "Status de Inspeção"
 
 msgid "Inspection Step"
 msgstr "Etapa de Inspeção"
+
+msgid "Inspection storage unit"
+msgstr "Unidade de armazenamento de inspeção"
 
 msgid "Inspections"
 msgstr "Inspeções"
@@ -15930,7 +16002,7 @@ msgstr "Itens dentro desta janela recebem um crachá amarelo."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Itens: mestre de itens, BOMs, Lista de operações, alterações de engenharia, CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "Suas {0} h de tempo em rascunho esta semana são deletadas."
 
@@ -16127,6 +16199,9 @@ msgstr "Manter o meu"
 
 msgid "Keep navigation open"
 msgstr "Manter navegação aberta"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "Manter apenas itens onde…"
@@ -17450,6 +17525,9 @@ msgstr "Marca Modo Claro"
 msgid "Mark not done"
 msgstr "Marcar como não feito"
 
+msgid "Mark Partial"
+msgstr "Marcar Parcial"
+
 msgid "Mark reviewed"
 msgstr "Marcar como revisado"
 
@@ -18109,6 +18187,7 @@ msgid "Move"
 msgstr "Mover"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "Mover {0}"
 
@@ -19897,6 +19976,9 @@ msgstr "Nenhuma unidade de armazenamento neste local tem estoque."
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "Nenhuma unidade de armazenamento está em falta para ordens de produção abertas ou abaixo de zero."
 
+msgid "No storage units at this location"
+msgstr "Nenhuma unidade de armazenamento neste local"
+
 msgid "No storage units or tracking numbers match."
 msgstr "Nenhuma unidade de armazenamento ou número de rastreamento corresponde."
 
@@ -20087,6 +20169,9 @@ msgstr "Dias não úteis que o agendamento e a capacidade respeitam"
 msgid "None"
 msgstr "Nenhum"
 
+msgid "None available"
+msgstr "Nenhuma disponível"
+
 msgid "Normal"
 msgstr "Normal"
 
@@ -20133,7 +20218,7 @@ msgstr "Não é tempo de trabalho"
 msgid "Not mapped"
 msgstr "Não mapeado"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "Não movido: {0}. Registrado em <0>{1}</0>"
@@ -20188,6 +20273,9 @@ msgstr "Não iniciado"
 
 msgid "Not synced"
 msgstr "Não sincronizado"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Estoque não utilizável. O MRP e o planejamento não o contam, e a separação não o retira."
 
 msgid "Not working today"
 msgstr "Não está trabalhando hoje"
@@ -20747,6 +20835,9 @@ msgstr "Ações Abertas"
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir um NCR para disposição de MRB"
 
+msgid "Open an NCR for the failed units"
+msgstr "Abrir uma NCR para as unidades reprovadas"
+
 msgid "Open AP"
 msgstr "Contas a pagar abertas"
 
@@ -20833,6 +20924,9 @@ msgstr "Abrir menu"
 
 msgid "Open My Time"
 msgstr "Abrir Meu Tempo"
+
+msgid "Open NCR"
+msgstr "Abrir NCR"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Abra um para alterar o plano em um rascunho que revisores aprovam antes de ser aplicado."
@@ -21546,8 +21640,14 @@ msgstr "Fornecedor de peça criado"
 msgid "Partial"
 msgstr "Parcial"
 
+msgid "Partial Lot"
+msgstr "Lote Parcial"
+
 msgid "Partially Delivered"
 msgstr "Entrega Parcial"
+
+msgid "Partially Passed"
+msgstr "Parcialmente Aprovado"
 
 msgid "Partially Returned"
 msgstr "Devolução Parcial"
@@ -21677,7 +21777,7 @@ msgstr "Pagamento"
 msgid "Payment — {0}"
 msgstr "Pagamento — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "pagamento {0}"
 
@@ -21798,6 +21898,12 @@ msgstr "Pendente de aprovação"
 
 msgid "Pending Employee Review"
 msgstr "Revisão Pendente do Funcionário"
+
+msgid "Pending inspection"
+msgstr "Inspeção pendente"
+
+msgid "Pending Inspection"
+msgstr "Inspeção Pendente"
 
 msgid "people"
 msgstr "pessoas"
@@ -23275,11 +23381,18 @@ msgstr "Os envios substituem apenas os campos que a página Campos do Onshape de
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Coloque um projeto de contrato em suspensão sob uma ordem de parada de trabalho, com sua data de término de 90 dias, e retome quando a ordem terminar."
 
+msgid "Put Away"
+msgstr "Armazenar"
+
 msgid "Put on hold"
 msgstr "Colocar em suspensão"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Coloque este encargo em sua própria fatura, retida para revisão antes de ser contabilizada. Caso contrário, será incluída na próxima fatura do contrato."
+
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "Armazenagem {0}"
 
 msgid "Putting your data back"
 msgstr "Colocando seus dados de volta"
@@ -23719,6 +23832,9 @@ msgstr "Pronto"
 msgid "Ready at"
 msgstr "Pronto em"
 
+msgid "Ready for putaway"
+msgstr "Pronto para armazenagem"
+
 msgid "Ready for Quote"
 msgstr "Pronto para orçamento"
 
@@ -23884,6 +24000,9 @@ msgstr "Data de recebimento"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Linhas recebidas deste fornecedor com quantidade restante para devolver"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "As peças recebidas que precisam de inspeção vão para a unidade de armazenamento de inspeção. O estoque rejeitado vai para a unidade de armazenamento de rejeitados. Para que o estoque delas não entre no planejamento, marque-as como não disponíveis para MRP nas suas próprias configurações."
 
 msgid "Received Qty"
 msgstr "Qtd. Recebida"
@@ -24221,6 +24340,9 @@ msgstr "Rejeitado Por"
 msgid "Rejected Date"
 msgstr "Data de Rejeição"
 
+msgid "Rejected storage unit"
+msgstr "Unidade de armazenamento de rejeitados"
+
 msgid "Relabels the hub and frames the deal."
 msgstr "Relabela o hub e enquadra o negócio."
 
@@ -24243,7 +24365,7 @@ msgid "Release Batch"
 msgstr "Liberar lote de produção"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "Liberar lote de produção {0}"
 
@@ -24343,7 +24465,7 @@ msgstr "Remover {0} dos recentes"
 msgid "Remove {0} from recent searches"
 msgstr "Remover {0} das pesquisas recentes"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Remover {0} do lote de produção? Sua operação volta à programação para ser executada independentemente."
 
@@ -24356,7 +24478,7 @@ msgstr "Remover {0} desta etapa"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Remover {0} de {memberCount} operações de {1}?"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "Remover {0}?"
 
@@ -24895,9 +25017,6 @@ msgstr "Requer Ação"
 msgid "Requires Adjustment"
 msgstr "Requer Ajuste"
 
-msgid "Requires inspection"
-msgstr "Requer inspeção"
-
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "Requer inspeção. Um lote é aberto ao lançar o recebimento."
 
@@ -25028,7 +25147,7 @@ msgstr "taxa de reabastecimento"
 msgid "Restock Fee Percent"
 msgstr "Percentual de Taxa de Reabastecimento"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Taxa de reposição {0}"
 
@@ -27509,6 +27628,7 @@ msgid "Show"
 msgstr "Mostrar"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "Mostrar {0}"
 
@@ -27536,6 +27656,10 @@ msgstr "Mostrar tudo"
 
 msgid "Show all hidden on this step"
 msgstr "Mostrar todos os ocultos nesta etapa"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "Mostrar números de lote de produção disponíveis"
@@ -28523,6 +28647,10 @@ msgstr "Trajetória de sub-montagem"
 msgid "Sub-Departments"
 msgstr "Sub-Departamentos"
 
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
+
 msgid "Subassembly"
 msgstr "Subconjunto"
 
@@ -29458,6 +29586,12 @@ msgstr "Esse campo contém vários valores, então eles são combinados em uma l
 
 msgid "That integration is not available"
 msgstr "Essa integração não está disponível"
+
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr "Isso rejeita o lote inteiro. Use Rejeitar Lote em vez disso."
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "É o lote inteiro. Use Aceitar Lote em vez disso."
 
 msgid "That list was empty."
 msgstr "Essa lista estava vazia."
@@ -31245,6 +31379,12 @@ msgstr "Este local programa apenas trabalho onde um operador é atribuído no qu
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido e não pode ser separado."
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "Este lote está parcialmente aceito, mas sua NCR não foi aberta. A NCR decide a parte rejeitada do lote."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr "Este lote está parcialmente aceito. Uma NCR registra as unidades reprovadas e decide o que fazer com elas."
+
 msgid "This may take a moment. Hang tight."
 msgstr "Isto pode levar um momento. Aguarde."
 
@@ -32472,6 +32612,9 @@ msgstr "Unidades de medida"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Unidades reportadas como irrecuperáveis em uma operação, com um motivo — a alternativa ao retrabaho."
+
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "As unidades que falharam numa amostra continuam rejeitadas. Todas as outras, incluindo as nunca amostradas, estão prontas para armazenagem."
 
 msgid "Units this customer owns show here once registered."
 msgstr "As unidades que este cliente possui aparecem aqui uma vez registradas."
