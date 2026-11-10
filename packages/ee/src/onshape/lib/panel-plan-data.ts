@@ -278,6 +278,9 @@ export async function loadMethodLineOwnership(
         )
         .eq("companyId", companyId)
         .in("makeMethodId", batch)
+        // A correction's materials are not BOM lines: Onshape never owns,
+        // pairs or removes them.
+        .is("methodCorrectionId", null)
     ),
     selectInBatches(ids, (batch) =>
       serviceRole

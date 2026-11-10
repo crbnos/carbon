@@ -307,6 +307,11 @@ msgstr "{0} (тип)"
 msgid "{0} (unavailable)"
 msgstr "{0} (недоступно)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "{0} {1} на единицу"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2475,7 +2480,10 @@ msgstr "Об этом поле"
 
 #. placeholder {0}: result.step.maxValue
 msgid "Above {0}"
-msgstr ""
+msgstr "Выше {0}"
+
+msgid "Above maximum"
+msgstr "Выше максимума"
 
 msgid "Above the upper limit"
 msgstr "Выше верхнего предела"
@@ -2952,7 +2960,7 @@ msgid "Add a line to the document"
 msgstr "Добавить строку в документ"
 
 msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
-msgstr ""
+msgstr "Добавьте в операцию шаг типа «Список», «Контроль» или «Измерение» (с минимумом или максимумом), чтобы сопоставить его результаты с исправлениями."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
@@ -3503,7 +3511,7 @@ msgid "After (calculation method)"
 msgstr "После (способ расчета)"
 
 msgid "After the correction"
-msgstr ""
+msgstr "После исправления"
 
 msgid "Afternoon, {name}."
 msgstr "Добрый день, {name}."
@@ -5607,10 +5615,13 @@ msgstr "Снимается с производства — преемник: <0>
 
 #. placeholder {0}: result.step.minValue
 msgid "Below {0}"
-msgstr ""
+msgstr "Ниже {0}"
 
 msgid "Below level"
 msgstr "Ниже уровня"
+
+msgid "Below minimum"
+msgstr "Ниже минимума"
 
 msgid "Below safety stock"
 msgstr "Ниже страховой запас"
@@ -7864,7 +7875,7 @@ msgid "Continue Setup"
 msgstr "Продолжить настройку"
 
 msgid "Continue to the next operation"
-msgstr ""
+msgstr "Продолжить со следующей операции"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Контрсчет для амортизации активов права использования"
@@ -9990,7 +10001,7 @@ msgid "Delete Contractor"
 msgstr "Удалить подрядчика"
 
 msgid "Delete correction"
-msgstr ""
+msgstr "Удалить исправление"
 
 msgid "Delete Count"
 msgstr "Удалить подсчет"
@@ -10333,7 +10344,7 @@ msgid "Deleted attribute value"
 msgstr "Удаленное значение атрибута"
 
 msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
-msgstr ""
+msgstr "Удаление этого исправления удалит его операции, материалы и сопоставления результатов. Уже созданные производственные заказы сохранят собственную копию."
 
 msgid "Deliver"
 msgstr "Доставить"
@@ -11460,10 +11471,10 @@ msgid "Edit Contractor"
 msgstr "Изменить подрядчика"
 
 msgid "Edit correction"
-msgstr ""
+msgstr "Изменить исправление"
 
 msgid "Edit Correction"
-msgstr ""
+msgstr "Изменить исправление"
 
 msgid "Edit cost"
 msgstr "Изменить себестоимость"
@@ -16653,7 +16664,7 @@ msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
 
 msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
-msgstr ""
+msgstr "Оставьте пустым, если ограничения нет. После этого предела MES предлагает только брак или несоответствие качества."
 
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
@@ -17829,10 +17840,10 @@ msgstr "Анализ сроков"
 
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
-msgstr ""
+msgstr "Не более {0} на единицу"
 
 msgid "Max attempts per unit"
-msgstr ""
+msgstr "Макс. попыток на единицу"
 
 msgid "Max Lead Time"
 msgstr "Макс. срок поставки"
@@ -18634,7 +18645,7 @@ msgid "New Contractor"
 msgstr "Новый подрядчик"
 
 msgid "New Correction"
-msgstr ""
+msgstr "Новое исправление"
 
 msgid "New Cost Center"
 msgstr "Новый центр затрат"
@@ -19340,10 +19351,10 @@ msgid "No conversion is required"
 msgstr "Преобразование не требуется"
 
 msgid "No correction"
-msgstr ""
+msgstr "Без исправления"
 
 msgid "No corrections yet."
-msgstr ""
+msgstr "Исправлений пока нет."
 
 msgid "No cost"
 msgstr "Нет себестоимости"
@@ -19735,6 +19746,9 @@ msgstr "Нет открытых строк заказов покупателя"
 msgid "No open work has a target date."
 msgstr "Ни одна открытая работа не имеет целевой даты."
 
+msgid "No operations"
+msgstr "Нет операций"
+
 msgid "No operations found."
 msgstr "Операции не найдены."
 
@@ -20023,6 +20037,9 @@ msgstr "Сортировка не применена к этому предст�
 
 msgid "No statement for this period"
 msgstr "Нет отчета за этот период"
+
+msgid "No step results suggest this correction."
+msgstr "Ни один результат шага не предлагает это исправление."
 
 msgid "No step selected"
 msgstr "Шаг не выбран"
@@ -20354,6 +20371,9 @@ msgstr "Не синхронизировано"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Непригодный к использованию запас. MRP и планирование его не учитывают, а комплектация из него не берёт."
+
+msgid "Not used yet."
+msgstr "Пока не использовано."
 
 msgid "Not working today"
 msgstr "Не работает сегодня"
@@ -23507,6 +23527,10 @@ msgstr "QR-код для начала следующей операции для
 msgid "Qty"
 msgstr "Кол-во"
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Кол-во {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "Кол-во {jobQuantity}"
 
@@ -23873,7 +23897,7 @@ msgid "Re-date to first open day"
 msgstr "Перенести дату на первый открытый день"
 
 msgid "Re-inspect at the operation that found it"
-msgstr ""
+msgstr "Повторный контроль на операции, где это обнаружено"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
@@ -23888,7 +23912,7 @@ msgid "Re-send"
 msgstr "Отправить снова"
 
 msgid "Re-torque nut"
-msgstr ""
+msgstr "Повторная затяжка гайки"
 
 msgid "Reactivate"
 msgstr "Переактивировать"
@@ -25273,7 +25297,7 @@ msgid "Result"
 msgstr "Результат"
 
 msgid "Result mappings"
-msgstr ""
+msgstr "Сопоставления результатов"
 
 msgid "Results"
 msgstr "Результаты"
@@ -25628,7 +25652,10 @@ msgid "Rework"
 msgstr "Доработка"
 
 msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
-msgstr ""
+msgstr "Операции только для доработки, которые предлагает результат шага, например повторная затяжка, когда при проверке гайка оказывается слабо затянутой. Обычные единицы их никогда не выполняют."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Операции только для доработки, которые предлагает результат шага. Этот производственный заказ хранит собственную копию из метода производства."
 
 msgid "RFQ"
 msgstr "РФП"
@@ -31145,10 +31172,10 @@ msgid "Then by"
 msgstr "Затем по"
 
 msgid "Then continue"
-msgstr ""
+msgstr "Затем продолжить"
 
 msgid "Then re-inspect"
-msgstr ""
+msgstr "Затем повторно проконтролировать"
 
 msgid "There are more received than ordered"
 msgstr "Получено больше, чем было заказано"
@@ -33240,6 +33267,9 @@ msgstr "Использует {0}"
 msgid "Uses {0} · {1}"
 msgstr "Использует {0} · {1}"
 
+msgid "Uses on this job"
+msgstr "Использование в этом производственном заказе"
+
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
@@ -34466,6 +34496,9 @@ msgstr "Незавершенное производство"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "с {0} резервом"
+
+msgid "With Previous"
+msgstr "С предыдущим"
 
 msgid "Withdraw"
 msgstr "Отозвать"

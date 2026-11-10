@@ -20,12 +20,14 @@ import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
+  floorRefusal,
   getAbilityShortfall,
   getJob,
   getJobMakeMethod,
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getReworkCorrectionName,
   getTrackedEntitiesForOperation
 } from "~/services/operations.service";
 import {
@@ -85,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // this company before any of them runs.
   const scopedOperation = await serviceRole
     .from("jobOperation")
-    .select("id, jobId")
+    .select("id, jobId, jobOperationBatchId")
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -119,6 +121,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.operations,
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
+
+  const notOnFloor = await floorRefusal(serviceRole, {
+    jobStatus: job.data?.status,
+    jobOperationBatchId: scopedOperation.data.jobOperationBatchId,
+    companyId
+  });
+  if (notOnFloor) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, notOnFloor))
+    );
+  }
 
   const op = operation.data?.[0];
   if (!op) throw redirect(path.to.operations);
@@ -202,7 +216,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     linkedQuantities,
     document,
     gauges,
-    recentGauges
+    recentGauges,
+    correctionName
   ] = await Promise.all([
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
@@ -231,7 +246,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getRecentInspectionGauges(getDatabaseClient(), {
       inspectionId: lot.data.id,
       companyId
-    })
+    }),
+    getReworkCorrectionName(serviceRole, op.reworkId, companyId)
   ]);
 
   const linkedProductionRows = (linkedQuantities.data ?? []).filter(
@@ -268,6 +284,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
+    correctionName,
     inspection,
     samples,
     features: features.data ?? [],

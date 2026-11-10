@@ -24,6 +24,26 @@ export function correctionOperationGroups(
 }
 
 /**
+ * The status each new correction operation starts with: every operation of
+ * the first group is Ready, since nothing it depends on is inserted; the rest
+ * wait for the group before them.
+ */
+export function correctionInitialStatuses(
+  operations: { operationOrder: string }[]
+): ("Ready" | "Waiting")[] {
+  const groups = correctionOperationGroups(
+    operations.map((operation, i) => ({
+      id: String(i),
+      operationOrder: operation.operationOrder
+    }))
+  );
+  const firstGroup = new Set(groups[0] ?? []);
+  return operations.map((_, i) =>
+    firstGroup.has(String(i)) ? "Ready" : "Waiting"
+  );
+}
+
+/**
  * The dependencies a correction adds: each group waits for the whole group
  * before it; the re-inspection copy (when there is one) waits for the last
  * group; and every operation that waited for the triggering operation also
@@ -56,4 +76,41 @@ export function correctionDependencyEdges(args: {
     }
   }
   return edges;
+}
+
+export type MatchableStep = {
+  id: string;
+  operationOrder: number;
+  name: string;
+  type: string;
+  sortOrder: number;
+};
+
+/**
+ * Pairs steps of two routings that have no link to each other (a quote's
+ * copy of a make method, or a routing copied over another item's): a step
+ * matches the step with the same operation order, name and type. Steps that
+ * share all three pair up in sort order; a step with no partner is left out.
+ * Returns source step id -> target step id.
+ */
+export function matchStepsByName(
+  source: MatchableStep[],
+  target: MatchableStep[]
+): Record<string, string> {
+  const keyOf = (step: MatchableStep) =>
+    [Number(step.operationOrder), step.name.trim(), step.type].join("\u001f");
+  const bySortOrder = (a: MatchableStep, b: MatchableStep) =>
+    a.sortOrder - b.sortOrder || a.id.localeCompare(b.id);
+  const targetsByKey = new Map<string, MatchableStep[]>();
+  for (const step of [...target].sort(bySortOrder)) {
+    const list = targetsByKey.get(keyOf(step)) ?? [];
+    list.push(step);
+    targetsByKey.set(keyOf(step), list);
+  }
+  const map: Record<string, string> = {};
+  for (const step of [...source].sort(bySortOrder)) {
+    const next = targetsByKey.get(keyOf(step))?.shift();
+    if (next) map[step.id] = next.id;
+  }
+  return map;
 }

@@ -32,9 +32,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...correction } = validation.data;
 
+  // The lock is the correction's own make method's, never the one in the
+  // form: a correction on a released method must not be editable by naming a
+  // draft one.
+  const existing = await client
+    .from("methodCorrection")
+    .select("makeMethodId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (existing.error || !existing.data) {
+    return data(
+      { id: null },
+      await flash(request, error(existing.error, "Correction not found"))
+    );
+  }
+  if (existing.data.makeMethodId !== correction.makeMethodId) {
+    return validationError({
+      fieldErrors: { name: "The correction is not on this make method" }
+    });
+  }
+
   const refusal = await methodCorrectionEditRefusal(
     client,
-    correction.makeMethodId,
+    existing.data.makeMethodId,
     companyId
   );
   if (refusal) {

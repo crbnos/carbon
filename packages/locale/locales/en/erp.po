@@ -307,6 +307,11 @@ msgstr "{0} (type)"
 msgid "{0} (unavailable)"
 msgstr "{0} (unavailable)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "{0} {1} per unit"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2476,6 +2481,9 @@ msgstr "About this field"
 #. placeholder {0}: result.step.maxValue
 msgid "Above {0}"
 msgstr "Above {0}"
+
+msgid "Above maximum"
+msgstr "Above maximum"
 
 msgid "Above the upper limit"
 msgstr "Above the upper limit"
@@ -5611,6 +5619,9 @@ msgstr "Below {0}"
 
 msgid "Below level"
 msgstr "Below level"
+
+msgid "Below minimum"
+msgstr "Below minimum"
 
 msgid "Below safety stock"
 msgstr "Below safety stock"
@@ -19735,6 +19746,9 @@ msgstr "No open sales order lines"
 msgid "No open work has a target date."
 msgstr "No open work has a target date."
 
+msgid "No operations"
+msgstr "No operations"
+
 msgid "No operations found."
 msgstr "No operations found."
 
@@ -20023,6 +20037,9 @@ msgstr "No sorts applied to this view"
 
 msgid "No statement for this period"
 msgstr "No statement for this period"
+
+msgid "No step results suggest this correction."
+msgstr "No step results suggest this correction."
 
 msgid "No step selected"
 msgstr "No step selected"
@@ -20354,6 +20371,9 @@ msgstr "Not synced"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+
+msgid "Not used yet."
+msgstr "Not used yet."
 
 msgid "Not working today"
 msgstr "Not working today"
@@ -23507,6 +23527,10 @@ msgstr "QR Code to start the next operation for this kanban"
 msgid "Qty"
 msgstr "Qty"
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Qty {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "Qty {jobQuantity}"
 
@@ -25629,6 +25653,9 @@ msgstr "Rework"
 
 msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
 msgstr "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -33240,6 +33267,9 @@ msgstr "Uses {0}"
 msgid "Uses {0} · {1}"
 msgstr "Uses {0} · {1}"
 
+msgid "Uses on this job"
+msgstr "Uses on this job"
+
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
@@ -34466,6 +34496,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "with {0} contingency"
+
+msgid "With Previous"
+msgstr "With Previous"
 
 msgid "Withdraw"
 msgstr "Withdraw"

@@ -4797,6 +4797,8 @@ async function carryLineOwnership(
       .select(["id", "itemId", "order", "quantity"])
       .where("makeMethodId", "=", makeMethodId)
       .where("companyId", "=", companyId)
+      // A correction's materials are not BOM lines Onshape owns.
+      .where("methodCorrectionId", "is", null)
       .execute();
   const [sourceLines, targetLines] = [
     await lines(sourceMethodId),
@@ -8476,6 +8478,8 @@ export async function pushOnshapeRelease(
             .select("id, makeMethodId, itemId, order, quantity")
             .eq("companyId", companyId)
             .in("makeMethodId", batch)
+            // Never dedupe away a correction's material.
+            .is("methodCorrectionId", null)
         ),
         selectInBatches(targetMethodIds, (batch) =>
           serviceRole

@@ -14,22 +14,19 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  RadioGroup,
-  RadioGroupItem,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import { triggerCorrectionValidator } from "~/services/models";
 import type { CorrectionSuggestion } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 /**
- * Shown after a step result that maps to a correction: the mapped correction
- * is selected, and the operator confirms it, picks another of the operation's
- * corrections, or carries on with none. A correction the unit has used its
- * limit number of times can't be started; the unit is scrapped or raised as a
- * quality issue instead.
+ * Shown after a step result that maps to a correction: the operator starts
+ * the correction the result maps to, or carries on with none. A result names
+ * its fix, so no other correction is offered. A correction the unit has used
+ * its limit number of times can't be started; the unit is scrapped or raised
+ * as a quality issue instead.
  */
 export function CorrectionPrompt({
   suggestion,
@@ -43,22 +40,19 @@ export function CorrectionPrompt({
   onQualityIssue?: () => void;
 }) {
   const { t } = useLingui();
-  const [selectedId, setSelectedId] = useState(
-    suggestion.suggestedJobCorrectionId
-  );
   const fetcher = useAction<{ success: boolean }>({
     onSuccess: (data) => {
       if (data?.success) onClose();
     }
   });
 
-  const selected = suggestion.corrections.find(
-    (correction) => correction.id === selectedId
+  const correction = suggestion.corrections.find(
+    (c) => c.id === suggestion.suggestedJobCorrectionId
   );
   const overLimit =
-    !!selected &&
-    selected.maxAttempts !== null &&
-    selected.uses >= selected.maxAttempts;
+    !!correction &&
+    correction.maxAttempts !== null &&
+    correction.uses >= correction.maxAttempts;
 
   return (
     <ValidatedForm
@@ -79,7 +73,7 @@ export function CorrectionPrompt({
           <Trans>Start a correction?</Trans>
         </ModalTitle>
         <ModalDescription>
-          {t`"${suggestion.reason}" suggests a correction for this unit.`}
+          {t`"${suggestion.reason}" calls for a correction on this unit.`}
         </ModalDescription>
       </ModalHeader>
       <ModalBody>
@@ -88,41 +82,23 @@ export function CorrectionPrompt({
         <Hidden name="reason" />
         <Hidden name="quantity" />
         <Hidden name="trackedEntityId" />
-        <Hidden name="jobCorrectionId" value={selectedId} />
+        <Hidden
+          name="jobCorrectionId"
+          value={suggestion.suggestedJobCorrectionId}
+        />
         <VStack spacing={4}>
-          <RadioGroup
-            value={selectedId}
-            onValueChange={setSelectedId}
-            className="w-full"
-          >
-            {suggestion.corrections.map((correction) => (
-              <label
-                key={correction.id}
-                htmlFor={`correction-${correction.id}`}
-                className="flex items-start gap-3 rounded-md border p-3 cursor-pointer"
-              >
-                <RadioGroupItem
-                  id={`correction-${correction.id}`}
-                  value={correction.id}
-                  className="mt-1"
-                />
-                <VStack spacing={0}>
-                  <span className="font-medium">
-                    {correction.name}
-                    {correction.id === suggestion.suggestedJobCorrectionId &&
-                      ` · ${t`Suggested`}`}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {correction.returnTo === "Continue"
-                      ? t`Then continues to the next operation`
-                      : t`Then re-inspects here`}
-                    {correction.maxAttempts !== null &&
-                      ` · ${t`Used ${correction.uses} of ${correction.maxAttempts}`}`}
-                  </span>
-                </VStack>
-              </label>
-            ))}
-          </RadioGroup>
+          {correction && (
+            <div className="flex w-full flex-col rounded-md border p-3">
+              <span className="font-medium">{correction.name}</span>
+              <span className="text-sm text-muted-foreground">
+                {correction.returnTo === "Continue"
+                  ? t`Then continues to the next operation`
+                  : t`Then re-inspects here`}
+                {correction.maxAttempts !== null &&
+                  ` · ${t`Used ${correction.uses} of ${correction.maxAttempts}`}`}
+              </span>
+            </div>
+          )}
           {overLimit && (
             <Alert variant="destructive">
               <AlertTitle>
@@ -175,7 +151,7 @@ export function CorrectionPrompt({
         <Submit
           size="lg"
           isLoading={fetcher.state !== "idle"}
-          isDisabled={overLimit || fetcher.state !== "idle"}
+          isDisabled={!correction || overLimit || fetcher.state !== "idle"}
         >
           <Trans>Start correction</Trans>
         </Submit>

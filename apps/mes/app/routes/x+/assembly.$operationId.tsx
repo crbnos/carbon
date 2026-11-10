@@ -15,6 +15,7 @@ import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  floorRefusal,
   getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
   getJob,
@@ -29,6 +30,7 @@ import {
   getNonConformanceActions,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getReworkCorrectionName,
   getThumbnailPathByItemId,
   getToolsByOperationId,
   getTrackedEntitiesForOperation,
@@ -105,6 +107,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job,
     operation,
     thumbnailPath,
+    correctionName,
     trackedEntities,
     jobMakeMethod,
     procedure,
@@ -128,6 +131,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const itemId = result.data?.[0]?.itemId;
       return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
     }),
+    operationPromise.then((result) =>
+      getReworkCorrectionName(
+        serviceRole,
+        result.data?.[0]?.reworkId,
+        companyId
+      )
+    ),
     jobMakeMethodId
       ? getTrackedEntitiesForOperation(serviceRole, {
           operationId,
@@ -210,6 +220,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.operations,
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
+
+  const notOnFloor = await floorRefusal(serviceRole, {
+    jobStatus: job.data?.status,
+    jobOperationBatchId: ownedOperation.data.jobOperationBatchId,
+    companyId
+  });
+  if (notOnFloor) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, notOnFloor))
+    );
+  }
 
   const op = operation.data?.[0];
   if (!op) throw redirect(path.to.operations);
@@ -297,6 +319,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     thumbnailPath,
+    correctionName,
     trackedEntities: trackedEntities?.data ?? [],
     // The resolved entity for the current unit, or null for untracked units, so the
     // component falls back to the ?unit index instead of snapping back to unit 0.

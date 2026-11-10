@@ -31,6 +31,7 @@ import {
   getProductionEventsForBatch,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getReworkCorrectionName,
   getThumbnailPathByItemId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
@@ -187,6 +188,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     batchEvents,
     batchMaterialTotals,
     thumbnailPath,
+    correctionName,
     trackedEntities,
     jobMakeMethod,
     kanban,
@@ -215,6 +217,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const itemId = result.data?.[0]?.itemId;
       return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
     }),
+    operationPromise.then((result) =>
+      getReworkCorrectionName(
+        serviceRole,
+        result.data?.[0]?.reworkId,
+        companyId
+      )
+    ),
     jobMakeMethodId
       ? getTrackedEntitiesForOperation(serviceRole, {
           operationId,
@@ -452,7 +461,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         blockingDispatchReadableId: string | null;
       }>
     >,
-    thumbnailPath
+    thumbnailPath,
+    correctionName
   };
 }
 
@@ -476,6 +486,7 @@ export default function OperationRoute() {
     operation,
     procedure,
     thumbnailPath,
+    correctionName,
     trackedEntities,
     isFirstOperation,
     workCenter,
@@ -505,6 +516,7 @@ export default function OperationRoute() {
       procedure={procedure}
       job={job}
       thumbnailPath={thumbnailPath}
+      correctionName={correctionName}
       workCenter={workCenter}
     />
   );

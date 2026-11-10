@@ -226,7 +226,10 @@ import { updateSortOrder } from "../shared/sort-order";
 import type { MethodType } from "../shared/types";
 import {
   correctionDependencyEdges,
-  correctionOperationGroups
+  correctionInitialStatuses,
+  correctionOperationGroups,
+  type MatchableStep,
+  matchStepsByName
 } from "./correction-groups";
 import {
   claimPlanningActions,
@@ -3501,7 +3504,12 @@ async function getMaterialsWithoutStorageUnit(
       ? { data: [], error: null }
       : await client
           .from("location")
-          .select("id, workCenter!inner(id), storageUnit!inner(id)")
+          // Named: a location also points at its inspection and rejected
+          // storage units, so a bare `storageUnit` embed is ambiguous
+          // (PGRST201) and every release failed with strict backflush on.
+          .select(
+            "id, workCenter!inner(id), storageUnit!storageUnit_locationId_fkey!inner(id)"
+          )
           .in("id", jobLocationIds)
           .eq("companyId", companyId)
           .eq("workCenter.active", true)
@@ -14764,6 +14772,11 @@ export type JobCorrectionDefinition = {
     unitOfMeasureCode: string;
     order: number;
     operationKey: string | null;
+    /**
+     * The method line's Pull From per location. Absent in a snapshot taken
+     * before it was recorded; the item's default bin is used then.
+     */
+    storageUnitIds?: Record<string, string> | null;
   }[];
 };
 
@@ -14836,6 +14849,7 @@ async function snapshotJobCorrections(
         "methodMaterial.unitOfMeasureCode",
         "methodMaterial.order",
         "methodMaterial.methodOperationId",
+        "methodMaterial.storageUnitIds",
         "item.name"
       ])
       .where("methodMaterial.methodCorrectionId", "in", correctionIds)
@@ -14959,7 +14973,9 @@ async function snapshotJobCorrections(
           quantity: Number(material.quantity),
           unitOfMeasureCode: material.unitOfMeasureCode,
           order: Number(material.order),
-          operationKey: material.methodOperationId
+          operationKey: material.methodOperationId,
+          storageUnitIds:
+            (material.storageUnitIds as Record<string, string> | null) ?? null
         }))
     };
     return {
@@ -14995,6 +15011,336 @@ async function snapshotJobCorrections(
   });
   if (triggerRows.length > 0) {
     await trx.insertInto("jobCorrectionTrigger").values(triggerRows).execute();
+  }
+}
+
+/**
+ * The result mappings of a make method's corrections, with what identifies
+ * each mapped step apart from its id. Read before the routing is replaced
+ * (the step delete cascades to the mappings), then restored with
+ * `restoreCorrectionMappings`.
+ */
+async function readCorrectionMappings(
+  trx: Transaction<KyselyDatabase>,
+  makeMethodId: string,
+  companyId: string
+) {
+  return trx
+    .selectFrom("methodCorrectionTrigger")
+    .innerJoin(
+      "methodOperationStep",
+      "methodOperationStep.id",
+      "methodCorrectionTrigger.methodOperationStepId"
+    )
+    .innerJoin(
+      "methodOperation",
+      "methodOperation.id",
+      "methodOperationStep.operationId"
+    )
+    .select([
+      "methodCorrectionTrigger.methodCorrectionId",
+      "methodCorrectionTrigger.listValue",
+      "methodCorrectionTrigger.measurementCondition",
+      "methodOperationStep.id as stepId",
+      "methodOperationStep.name",
+      "methodOperationStep.type",
+      "methodOperationStep.sortOrder",
+      "methodOperation.order"
+    ])
+    .where("methodOperation.makeMethodId", "=", makeMethodId)
+    .where("methodOperation.methodCorrectionId", "is", null)
+    .where("methodCorrectionTrigger.companyId", "=", companyId)
+    .execute();
+}
+
+/**
+ * Puts mappings read by `readCorrectionMappings` back on the make method's
+ * new routing: each goes to the step with the same operation order, name and
+ * type (`matchStepsByName`); a mapping whose step is gone is dropped.
+ */
+async function restoreCorrectionMappings(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    mappings: Awaited<ReturnType<typeof readCorrectionMappings>>;
+    makeMethodId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { mappings, makeMethodId, companyId, userId } = args;
+  if (mappings.length === 0) return;
+  const newSteps = await trx
+    .selectFrom("methodOperationStep")
+    .innerJoin(
+      "methodOperation",
+      "methodOperation.id",
+      "methodOperationStep.operationId"
+    )
+    .select([
+      "methodOperationStep.id",
+      "methodOperationStep.name",
+      "methodOperationStep.type",
+      "methodOperationStep.sortOrder",
+      "methodOperation.order"
+    ])
+    .where("methodOperation.makeMethodId", "=", makeMethodId)
+    .where("methodOperation.methodCorrectionId", "is", null)
+    .where("methodOperation.companyId", "=", companyId)
+    .execute();
+  const oldSteps = [
+    ...new Map(mappings.map((m) => [m.stepId, m])).values()
+  ].map((m) => ({
+    id: m.stepId,
+    name: m.name,
+    type: m.type,
+    sortOrder: Number(m.sortOrder ?? 0),
+    operationOrder: Number(m.order)
+  }));
+  const stepMap = matchStepsByName(
+    oldSteps,
+    newSteps.map((step) => ({
+      id: step.id,
+      name: step.name,
+      type: step.type,
+      sortOrder: Number(step.sortOrder ?? 0),
+      operationOrder: Number(step.order)
+    }))
+  );
+  const rows = mappings.flatMap((mapping) => {
+    const methodOperationStepId = stepMap[mapping.stepId];
+    if (!methodOperationStepId) return [];
+    return [
+      {
+        methodOperationStepId,
+        methodCorrectionId: mapping.methodCorrectionId,
+        listValue: mapping.listValue,
+        measurementCondition: mapping.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  for (const chunk of chunked(rows)) {
+    await trx.insertInto("methodCorrectionTrigger").values(chunk).execute();
+  }
+}
+
+/**
+ * Snapshots corrections onto a job whose routing did not come from a make
+ * method (a quote line converted to a job). Each job level takes the
+ * corrections of its item's make method (the same version, else the Active
+ * one), and each result mapping moves to the job step with the same
+ * operation order, step name and type (`matchStepsByName`). A mapping whose
+ * step the quote changed is dropped.
+ */
+async function snapshotJobCorrectionsByStepMatch(
+  trx: Transaction<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+) {
+  const { jobId, companyId, userId } = args;
+  const levels = await trx
+    .selectFrom("jobMakeMethod")
+    .select(["id", "itemId", "version"])
+    .where("jobId", "=", jobId)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (levels.length === 0) return;
+
+  const makeMethods = await trx
+    .selectFrom("makeMethod")
+    .select(["id", "itemId", "version", "status"])
+    .where("itemId", "in", [...new Set(levels.map((level) => level.itemId))])
+    .where("companyId", "=", companyId)
+    .execute();
+  const methodForLevel = new Map<string, string>();
+  for (const level of levels) {
+    const candidates = makeMethods.filter((m) => m.itemId === level.itemId);
+    const chosen =
+      candidates.find((m) => Number(m.version) === Number(level.version)) ??
+      candidates.find((m) => m.status === "Active");
+    if (chosen) methodForLevel.set(level.id, chosen.id);
+  }
+  const methodIds = [...new Set(methodForLevel.values())];
+  if (methodIds.length === 0) return;
+
+  const withCorrections = new Set(
+    (
+      await trx
+        .selectFrom("methodCorrection")
+        .select("makeMethodId")
+        .where("makeMethodId", "in", methodIds)
+        .where("companyId", "=", companyId)
+        .execute()
+    ).map((row) => row.makeMethodId)
+  );
+  if (withCorrections.size === 0) return;
+
+  const [methodSteps, jobSteps, workCenters, supplierProcesses] =
+    await Promise.all([
+      trx
+        .selectFrom("methodOperationStep")
+        .innerJoin(
+          "methodOperation",
+          "methodOperation.id",
+          "methodOperationStep.operationId"
+        )
+        .select([
+          "methodOperationStep.id",
+          "methodOperationStep.name",
+          "methodOperationStep.type",
+          "methodOperationStep.sortOrder",
+          "methodOperation.order",
+          "methodOperation.makeMethodId"
+        ])
+        .where("methodOperation.makeMethodId", "in", [...withCorrections])
+        .where("methodOperation.methodCorrectionId", "is", null)
+        .where("methodOperation.companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("jobOperationStep")
+        .innerJoin(
+          "jobOperation",
+          "jobOperation.id",
+          "jobOperationStep.operationId"
+        )
+        .select([
+          "jobOperationStep.id",
+          "jobOperationStep.name",
+          "jobOperationStep.type",
+          "jobOperationStep.sortOrder",
+          "jobOperation.order",
+          "jobOperation.jobMakeMethodId"
+        ])
+        .where("jobOperation.jobId", "=", jobId)
+        .where("jobOperation.reworkId", "is", null)
+        .where("jobOperation.companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("workCenters")
+        .selectAll()
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("supplierProcess")
+        .selectAll()
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+  const toMatchable = (step: {
+    id: string;
+    name: string;
+    type: string;
+    sortOrder: number | null;
+    order: number | string;
+  }): MatchableStep => ({
+    id: step.id,
+    name: step.name,
+    type: step.type,
+    sortOrder: Number(step.sortOrder ?? 0),
+    operationOrder: Number(step.order)
+  });
+
+  for (const [jobMakeMethodId, makeMethodId] of methodForLevel) {
+    if (!withCorrections.has(makeMethodId)) continue;
+    await snapshotJobCorrections(trx, {
+      makeMethodId,
+      jobId,
+      jobMakeMethodId,
+      companyId,
+      userId,
+      stepMap: matchStepsByName(
+        methodSteps
+          .filter((step) => step.makeMethodId === makeMethodId)
+          .map(toMatchable),
+        jobSteps
+          .filter((step) => step.jobMakeMethodId === jobMakeMethodId)
+          .map(toMatchable)
+      ),
+      laborAndOverheadRates: getRatesFromWorkCenters(workCenters),
+      outsideOperationRates: getRatesFromSupplierProcesses(supplierProcesses)
+    });
+  }
+}
+
+/**
+ * Copies a job's correction snapshots onto another job (Get Method from a
+ * job): each source level's corrections go to the matching target level, and
+ * their result mappings move onto the copied steps (`stepMap`: source job step
+ * id -> target job step id). Replaces the target levels' earlier snapshots.
+ */
+async function copyJobCorrections(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    jobId: string;
+    companyId: string;
+    userId: string;
+    /** source jobMakeMethodId -> target jobMakeMethodId */
+    makeMethodMap: Record<string, string>;
+    stepMap: Record<string, string>;
+  }
+) {
+  const { jobId, companyId, userId, makeMethodMap, stepMap } = args;
+  const sourceLevels = Object.keys(makeMethodMap);
+  if (sourceLevels.length === 0) return;
+
+  await trx
+    .deleteFrom("jobCorrection")
+    .where("jobMakeMethodId", "in", Object.values(makeMethodMap))
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const corrections = await trx
+    .selectFrom("jobCorrection")
+    .selectAll()
+    .where("jobMakeMethodId", "in", sourceLevels)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (corrections.length === 0) return;
+
+  const ids = await newIds(trx, "jcor", corrections.length);
+  const idMap = new Map(corrections.map((c, i) => [c.id, ids[i]!]));
+  await trx
+    .insertInto("jobCorrection")
+    .values(
+      corrections.map((correction) => ({
+        id: idMap.get(correction.id)!,
+        companyId,
+        jobId,
+        jobMakeMethodId: makeMethodMap[correction.jobMakeMethodId]!,
+        methodCorrectionId: correction.methodCorrectionId,
+        name: correction.name,
+        description: correction.description,
+        returnTo: correction.returnTo,
+        maxAttempts: correction.maxAttempts,
+        order: correction.order,
+        definition: JSON.stringify(correction.definition),
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  const triggers = await trx
+    .selectFrom("jobCorrectionTrigger")
+    .selectAll()
+    .where("jobCorrectionId", "in", [...idMap.keys()])
+    .where("companyId", "=", companyId)
+    .execute();
+  const triggerRows = triggers.flatMap((trigger) => {
+    const jobOperationStepId = stepMap[trigger.jobOperationStepId];
+    if (!jobOperationStepId) return [];
+    return [
+      {
+        jobOperationStepId,
+        jobCorrectionId: idMap.get(trigger.jobCorrectionId)!,
+        listValue: trigger.listValue,
+        measurementCondition: trigger.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  for (const rows of chunked(triggerRows)) {
+    await trx.insertInto("jobCorrectionTrigger").values(rows).execute();
   }
 }
 
@@ -15290,6 +15636,15 @@ export async function getMethod(
       }
 
       await withTransaction(db, async (trx) => {
+        // The target keeps its own corrections; their result mappings go with
+        // the steps the delete below removes, so keep them to put back.
+        const correctionMappings = parts.billOfProcess
+          ? await readCorrectionMappings(
+              trx,
+              targetMakeMethod.data.id!,
+              companyId
+            )
+          : [];
         // Delete existing materials and operations from target method
         await Promise.all([
           parts.billOfMaterial
@@ -15439,6 +15794,12 @@ export async function getMethod(
             userId
           );
         }
+        await restoreCorrectionMappings(trx, {
+          mappings: correctionMappings,
+          makeMethodId: targetMakeMethod.data.id!,
+          companyId,
+          userId
+        });
         // Copy materials from source to target, dropping any zero-quantity
         // BOM lines.
         const materialsToCopy = (
@@ -19632,8 +19993,29 @@ export async function getMethod(
         );
       }
 
-      const sourceMaterialRows = sourceMaterials.data ?? [];
-      const sourceOperationRows = sourceOperations.data ?? [];
+      // A rework or correction operation (and a material a correction added
+      // on one) belongs to the units the source job sent into it, not to the
+      // routing: the copy takes the routing only.
+      const reworkOperationIds = new Set(
+        (sourceOperations.data ?? [])
+          .filter((operation) => operation.reworkId)
+          .map((operation) => operation.id)
+      );
+      const correctionMaterialIds = new Set(
+        (sourceMaterials.data ?? [])
+          .filter(
+            (material) =>
+              material.jobOperationId &&
+              reworkOperationIds.has(material.jobOperationId)
+          )
+          .map((material) => material.id)
+      );
+      const sourceMaterialRows = (sourceMaterials.data ?? []).filter(
+        (material) => !correctionMaterialIds.has(material.id)
+      );
+      const sourceOperationRows = (sourceOperations.data ?? []).filter(
+        (operation) => !operation.reworkId
+      );
 
       const sourceMaterialById = new Map(
         sourceMaterialRows.map((m) => [m.id, m])
@@ -19758,6 +20140,8 @@ export async function getMethod(
                 continue;
               }
               const sourceMaterial = sourceMaterialById.get(child.id);
+              // Left out above: a material a correction added.
+              if (correctionMaterialIds.has(child.id)) continue;
               const newMaterialId = nanoid();
               sourceMaterialIdToJobMaterialId[child.id] = newMaterialId;
 
@@ -20109,6 +20493,17 @@ export async function getMethod(
             );
             Object.assign(sourceStepsToJobSteps, copiedSteps);
           }
+          // The source job's corrections come with its routing.
+          await copyJobCorrections(trx, {
+            jobId: targetJobId,
+            companyId,
+            userId,
+            makeMethodMap: {
+              ...sourceMakeMethodIdToJobMakeMethodId,
+              [sourceJobMakeMethod.data.id]: targetJobMakeMethod.data.id
+            },
+            stepMap: sourceStepsToJobSteps
+          });
         } // end if (parts.billOfProcess)
 
         // The links between materials and operations/steps can only be
@@ -21904,6 +22299,13 @@ export async function getMethod(
               userId
             );
           }
+          // Quotes carry no corrections: take them from the item's make
+          // method, mapped onto the quote's steps by name.
+          await snapshotJobCorrectionsByStepMatch(trx, {
+            jobId,
+            companyId,
+            userId
+          });
         } // end if (parts.billOfProcess)
 
         // Materials were inserted before operations in this direction, so the
@@ -25897,8 +26299,32 @@ const updateJobQuantities = async (
     );
   }
 
+  // A material a correction added sits on a rework operation and is sized for
+  // the units sent into it (`triggerCorrection`), not for the job quantity —
+  // the same reason the operation update below skips rework operations.
+  const materialIds = computed.filter((c) => c.hasJobMaterial).map((c) => c.id);
+  const reworkMaterialIds = new Set(
+    materialIds.length === 0
+      ? []
+      : (
+          await trx
+            .selectFrom("jobMaterial")
+            .innerJoin(
+              "jobOperation",
+              "jobOperation.id",
+              "jobMaterial.jobOperationId"
+            )
+            .select("jobMaterial.id")
+            .where("jobMaterial.id", "in", materialIds)
+            .where("jobOperation.reworkId", "is not", null)
+            .execute()
+        ).map((row) => row.id)
+  );
+
   // jobMaterial scrap/estimated — one VALUES-join update for the whole tree
-  const materialRows = computed.filter((c) => c.hasJobMaterial);
+  const materialRows = computed.filter(
+    (c) => c.hasJobMaterial && !reworkMaterialIds.has(c.id)
+  );
   if (materialRows.length > 0) {
     await sql`
       UPDATE "jobMaterial" AS m
@@ -26450,7 +26876,7 @@ export async function triggerRework(
   ];
   const operations = await db
     .selectFrom("jobOperation")
-    .select("id")
+    .select(["id", "jobMakeMethodId"])
     .where("id", "in", operationIds)
     .where("jobId", "=", body.jobId)
     .where("companyId", "=", body.companyId)
@@ -26466,6 +26892,14 @@ export async function triggerRework(
     body.companyId,
     "Tracked entity"
   );
+  await assertUnitsOfMakeMethod(db, {
+    trackedEntityIds: body.trackedEntityIds ?? [],
+    jobMakeMethodId: operations.find(
+      (operation) => operation.id === body.triggeredAtJobOperationId
+    )?.jobMakeMethodId,
+    jobOperationId: body.triggeredAtJobOperationId,
+    companyId: body.companyId
+  });
 
   // Written as productionQuantity.inspectionId, whose FK accepts any company's
   // inspection.
@@ -26500,6 +26934,53 @@ export async function triggerRework(
   }
 
   return { success: true, ...result };
+}
+
+/**
+ * Refuses a unit that is not a unit of the operation's make method. A rework or
+ * correction scopes its new operations to the units it names, so a unit of
+ * another job would leave an operation no unit of this job can complete.
+ */
+async function assertUnitsOfMakeMethod(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    trackedEntityIds: string[];
+    jobMakeMethodId: string | null | undefined;
+    /** The operation the units are sent on from; its scope, if it has one. */
+    jobOperationId?: string;
+    companyId: string;
+  }
+) {
+  const ids = [...new Set(args.trackedEntityIds)];
+  if (ids.length === 0) return;
+  const units = args.jobMakeMethodId
+    ? await db
+        .selectFrom("trackedEntity")
+        .select("id")
+        .where("id", "in", ids)
+        .where("companyId", "=", args.companyId)
+        .where(sql`"attributes"->>'Job Make Method'`, "=", args.jobMakeMethodId)
+        .execute()
+    : [];
+  if (units.length !== ids.length) {
+    throw new InvalidInputError(
+      "A unit is not a unit of this operation's part on this job"
+    );
+  }
+  // A rework or correction operation works only the units sent into it, so
+  // only those units can be sent on from it.
+  if (args.jobOperationId) {
+    const scope = await db
+      .selectFrom("jobOperationTrackedEntity")
+      .select("trackedEntityId")
+      .where("jobOperationId", "=", args.jobOperationId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    const inScope = new Set(scope.map((row) => row.trackedEntityId));
+    if (inScope.size > 0 && ids.some((id) => !inScope.has(id))) {
+      throw new InvalidInputError("A unit is not part of this operation");
+    }
+  }
 }
 
 export const triggerCorrectionPermission = {
@@ -26566,6 +27047,12 @@ export async function triggerCorrection(
     companyId,
     "Tracked entity"
   );
+  await assertUnitsOfMakeMethod(db, {
+    trackedEntityIds,
+    jobMakeMethodId: triggeringOperation.jobMakeMethodId,
+    jobOperationId: triggeringOperation.id,
+    companyId
+  });
   await assertCompanyRecords(
     db,
     "inspection",
@@ -26580,41 +27067,50 @@ export async function triggerCorrection(
     throw new InvalidInputError("The correction has no operations");
   }
 
-  // The attempt limit counts earlier uses of this correction by each unit.
-  if (correction.maxAttempts !== null && trackedEntityIds.length > 0) {
-    const uses = await db
-      .selectFrom("rework")
-      .innerJoin("jobOperation", "jobOperation.reworkId", "rework.id")
-      .innerJoin(
-        "jobOperationTrackedEntity",
-        "jobOperationTrackedEntity.jobOperationId",
-        "jobOperation.id"
-      )
-      .select([
-        "jobOperationTrackedEntity.trackedEntityId",
-        sql<string>`count(DISTINCT "rework"."id")`.as("uses")
-      ])
-      .where("rework.jobCorrectionId", "=", correction.id)
-      .where("rework.companyId", "=", companyId)
-      .where(
-        "jobOperationTrackedEntity.trackedEntityId",
-        "in",
-        trackedEntityIds
-      )
-      .groupBy("jobOperationTrackedEntity.trackedEntityId")
+  const result = await db.transaction().execute(async (trx) => {
+    // Two operators who confirm at the same moment must not both pass the
+    // limit: lock the correction, then count the uses under the lock.
+    await trx
+      .selectFrom("jobCorrection")
+      .select("id")
+      .where("id", "=", correction.id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
       .execute();
-    const overLimit = uses.find(
-      (use) => Number(use.uses) >= correction.maxAttempts!
-    );
-    if (overLimit) {
-      throw new InvalidInputError(
-        `This unit has used "${correction.name}" ${overLimit.uses} times, its limit. Scrap it or raise a quality issue.`
+    // The attempt limit counts earlier uses of this correction by each unit.
+    if (correction.maxAttempts !== null && trackedEntityIds.length > 0) {
+      const uses = await trx
+        .selectFrom("rework")
+        .innerJoin("jobOperation", "jobOperation.reworkId", "rework.id")
+        .innerJoin(
+          "jobOperationTrackedEntity",
+          "jobOperationTrackedEntity.jobOperationId",
+          "jobOperation.id"
+        )
+        .select([
+          "jobOperationTrackedEntity.trackedEntityId",
+          sql<string>`count(DISTINCT "rework"."id")`.as("uses")
+        ])
+        .where("rework.jobCorrectionId", "=", correction.id)
+        .where("rework.companyId", "=", companyId)
+        .where(
+          "jobOperationTrackedEntity.trackedEntityId",
+          "in",
+          trackedEntityIds
+        )
+        .groupBy("jobOperationTrackedEntity.trackedEntityId")
+        .execute();
+      const overLimit = uses.find(
+        (use) => Number(use.uses) >= correction.maxAttempts!
       );
+      if (overLimit) {
+        throw new InvalidInputError(
+          `This unit has used "${correction.name}" ${overLimit.uses} times, its limit. Scrap it or raise a quality issue.`
+        );
+      }
     }
-  }
 
-  const result = await db.transaction().execute((trx) =>
-    insertCorrectionOperations(trx, {
+    return insertCorrectionOperations(trx, {
       input,
       correction: {
         id: correction.id,
@@ -26624,8 +27120,8 @@ export async function triggerCorrection(
       triggeringOperation,
       companyId,
       userId
-    })
-  );
+    });
+  });
 
   const rescheduled = await invokePosting(
     { db, companyId, userId },
@@ -26727,6 +27223,11 @@ async function insertCorrectionOperations(
   const count = definition.operations.length + (reinspect ? 1 : 0);
   const increment = (upperBound - triggerOrder) / (count + 1);
 
+  const initialStatuses = correctionInitialStatuses(
+    definition.operations.map((entry) => ({
+      operationOrder: String(entry.operation.operationOrder ?? "")
+    }))
+  );
   const correctionInserts = definition.operations.map((entry, i) => ({
     ...entry.operation,
     workInstruction: toJson(entry.operation.workInstruction ?? {}),
@@ -26739,7 +27240,7 @@ async function insertCorrectionOperations(
     order: triggerOrder + increment * (i + 1),
     operationQuantity: input.quantity,
     targetQuantity: input.quantity,
-    status: i === 0 ? "Ready" : "Waiting",
+    status: initialStatuses[i],
     reworkId: rework!.id,
     companyId,
     createdBy: userId,
@@ -26913,6 +27414,34 @@ async function insertCorrectionOperations(
           )
         )
         .execute();
+      // The re-inspection shows the same reference slides as the original.
+      const slides = await trx
+        .selectFrom("jobOperationStepSlide")
+        .select([
+          "stepId",
+          "annotations",
+          "caption",
+          "imagePath",
+          "modelUploadId",
+          "size",
+          "sortOrder"
+        ])
+        .where("stepId", "in", [...stepIdMap.keys()])
+        .where("companyId", "=", companyId)
+        .execute();
+      for (const rows of chunked(slides)) {
+        await trx
+          .insertInto("jobOperationStepSlide")
+          .values(
+            rows.map((slide) => ({
+              ...slide,
+              stepId: stepIdMap.get(slide.stepId)!,
+              companyId,
+              createdBy: userId
+            })) as never
+          )
+          .execute();
+      }
       const mappings = await trx
         .selectFrom("jobCorrectionTrigger")
         .selectAll()
@@ -27021,6 +27550,27 @@ async function insertCorrectionOperations(
   // The correction's materials join the job only now.
   if (definition.materials.length > 0) {
     const itemIds = [...new Set(definition.materials.map((m) => m.itemId))];
+    // Each material draws from its Pull From at the job's location, else the
+    // item's default bin, as job creation picks it. A strict backflush
+    // refuses a line with no bin, so the correction must not leave it empty.
+    const job = await trx
+      .selectFrom("job")
+      .select("locationId")
+      .where("id", "=", input.jobId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const locationId = job?.locationId ?? null;
+    const itemDefaults = createItemDefaults(companyId, locationId);
+    await itemDefaults.load(trx, itemIds);
+    const binByMaterial = await Promise.all(
+      definition.materials.map((material) =>
+        itemDefaults.storageUnitId(
+          trx,
+          material.itemId,
+          locationId ? material.storageUnitIds?.[locationId] : null
+        )
+      )
+    );
     const items = await trx
       .selectFrom("item")
       .leftJoin("itemCost", "itemCost.itemId", "item.id")
@@ -27032,7 +27582,7 @@ async function insertCorrectionOperations(
     await trx
       .insertInto("jobMaterial")
       .values(
-        definition.materials.map((material) => {
+        definition.materials.map((material, index) => {
           const item = itemById.get(material.itemId);
           return {
             jobId: input.jobId,
@@ -27048,6 +27598,7 @@ async function insertCorrectionOperations(
             quantity: material.quantity,
             estimatedQuantity: material.quantity * input.quantity,
             unitOfMeasureCode: material.unitOfMeasureCode,
+            storageUnitId: binByMaterial[index] ?? null,
             unitCost: Number(item?.unitCost ?? 0),
             requiresSerialTracking: item?.itemTrackingType === "Serial",
             requiresBatchTracking: item?.itemTrackingType === "Batch",
@@ -28365,4 +28916,106 @@ export async function batchOperation(
   }
 
   return { success: true, ...result };
+}
+
+/**
+ * A job make method's corrections for the read-only Corrections card: each
+ * correction with its operations and materials (from its `definition`), the
+ * step results that suggest it, and its uses on this job (rework rows with the
+ * units sent into them). Two reads: the corrections with their triggers, then
+ * the uses of all of them in one `.in()`.
+ */
+export async function getJobCorrections(
+  client: SupabaseClient<Database>,
+  jobMakeMethodId: string,
+  companyId: string
+) {
+  const corrections = await client
+    .from("jobCorrection")
+    .select(
+      "id, name, description, returnTo, maxAttempts, order, definition, jobCorrectionTrigger(id, listValue, measurementCondition, jobOperationStep(id, name, jobOperation(id, description, order, reworkId)))"
+    )
+    .eq("jobMakeMethodId", jobMakeMethodId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true });
+
+  if (corrections.error) return { data: null, error: corrections.error };
+  if (corrections.data.length === 0) return { data: [], error: null };
+
+  const uses = await client
+    .from("rework")
+    .select(
+      "id, jobCorrectionId, reason, quantity, createdAt, jobOperation!jobOperation_reworkId_fkey(id, jobOperationTrackedEntity(trackedEntityId, trackedEntity(readableId)))"
+    )
+    .in(
+      "jobCorrectionId",
+      corrections.data.map((correction) => correction.id)
+    )
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+
+  if (uses.error) return { data: null, error: uses.error };
+
+  return {
+    data: corrections.data.map((correction) => {
+      const definition =
+        correction.definition as unknown as JobCorrectionDefinition | null;
+      return {
+        id: correction.id,
+        name: correction.name,
+        description: correction.description,
+        returnTo: correction.returnTo,
+        maxAttempts: correction.maxAttempts,
+        operations: (definition?.operations ?? []).map((entry) => ({
+          key: entry.key,
+          description: String(entry.operation.description ?? ""),
+          operationOrder: String(entry.operation.operationOrder ?? "")
+        })),
+        materials: (definition?.materials ?? [])
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((material) => ({
+            itemId: material.itemId,
+            description: material.description,
+            quantity: material.quantity,
+            unitOfMeasureCode: material.unitOfMeasureCode
+          })),
+        // A re-inspection copy carries the mappings of the operation it
+        // copies; list each mapping once, on the job's own routing.
+        triggers: correction.jobCorrectionTrigger
+          .filter(
+            (trigger) => !trigger.jobOperationStep?.jobOperation?.reworkId
+          )
+          .map((trigger) => ({
+            id: trigger.id,
+            operationDescription:
+              trigger.jobOperationStep?.jobOperation?.description ?? "",
+            operationOrder: trigger.jobOperationStep?.jobOperation?.order ?? 0,
+            stepName: trigger.jobOperationStep?.name ?? "",
+            listValue: trigger.listValue,
+            measurementCondition: trigger.measurementCondition
+          }))
+          .sort((a, b) => a.operationOrder - b.operationOrder),
+        uses: uses.data
+          .filter((use) => use.jobCorrectionId === correction.id)
+          .map((use) => ({
+            id: use.id,
+            reason: use.reason,
+            quantity: use.quantity,
+            createdAt: use.createdAt,
+            units: [
+              ...new Set(
+                use.jobOperation.flatMap((operation) =>
+                  operation.jobOperationTrackedEntity.map(
+                    (unit) =>
+                      unit.trackedEntity?.readableId ?? unit.trackedEntityId
+                  )
+                )
+              )
+            ]
+          }))
+      };
+    }),
+    error: null
+  };
 }

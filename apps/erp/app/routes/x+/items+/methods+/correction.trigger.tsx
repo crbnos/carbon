@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -66,5 +66,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return { success: true };
+  return data(
+    { success: true },
+    await flash(
+      request,
+      success(
+        validation.data.methodCorrectionId
+          ? "Result mapped to the correction"
+          : "Result mapping removed"
+      )
+    )
+  );
 }

@@ -378,7 +378,6 @@ function CorrectionFormModal({
               <NumberForm
                 name="maxAttempts"
                 label={t`Max attempts per unit`}
-                minValue={1}
                 helperText={t`Leave empty for no limit. Past it, MES offers only Scrap or a quality issue.`}
               />
             </VStack>

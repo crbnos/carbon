@@ -19,8 +19,8 @@ msgid ", running"
 msgstr ", 실행 중"
 
 #. placeholder {0}: suggestion.reason
-msgid "\"{0}\" suggests a correction for this unit."
-msgstr ""
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "“{0}”(으)로 인해 이 개에 대한 보정이 필요합니다."
 
 msgid "\"{column}\" is required."
 msgstr "«{column}»은(는) 필수입니다."
@@ -435,7 +435,7 @@ msgid "Attach file"
 msgstr "파일 첨부"
 
 msgid "Attempt limit reached"
-msgstr ""
+msgstr "시도 횟수 한도에 도달함"
 
 msgid "Authentication Error"
 msgstr "인증 오류"
@@ -783,7 +783,10 @@ msgstr "클립보드에 복사"
 
 #. placeholder {0}: correction.name
 msgid "Correction: {0}"
-msgstr ""
+msgstr "보정: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "보정: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1206,7 +1209,7 @@ msgid "Go back to operation"
 msgstr "공정작업으로 돌아가기"
 
 msgid "Go back to operation, or run a correction"
-msgstr ""
+msgstr "공정으로 돌아가거나 보정을 실행하세요"
 
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
@@ -1727,7 +1730,7 @@ msgid "No color"
 msgstr "색상 없음"
 
 msgid "No correction"
-msgstr ""
+msgstr "보정 없음"
 
 msgid "No country found."
 msgstr "국가를 찾을 수 없습니다."
@@ -1897,6 +1900,9 @@ msgstr "없음"
 
 msgid "Normal"
 msgstr "보통 검사"
+
+msgid "Not in this operation"
+msgstr "이 공정에 없음"
 
 msgid "Not scheduled"
 msgstr "예약되지 않음"
@@ -2313,7 +2319,7 @@ msgid "Quotes"
 msgstr "견적서"
 
 msgid "Raise quality issue"
-msgstr ""
+msgstr "품질 이슈 등록"
 
 msgid "Re"
 msgstr "Re"
@@ -2578,7 +2584,7 @@ msgid "Scrap Reason"
 msgstr "스크랩 사유"
 
 msgid "Scrap unit"
-msgstr ""
+msgstr "개 스크랩"
 
 msgid "Scrapped"
 msgstr "스크랩됨"
@@ -2887,13 +2893,13 @@ msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} 타이머 시작"
 
 msgid "Start a correction?"
-msgstr ""
+msgstr "보정을 시작하시겠습니까?"
 
 msgid "Start clock"
 msgstr "시간 기록 시작"
 
 msgid "Start correction"
-msgstr ""
+msgstr "보정 시작"
 
 msgid "Start Job"
 msgstr "작업 지시 시작"
@@ -2967,9 +2973,6 @@ msgstr "익명으로 제출"
 
 msgid "Submit week"
 msgstr "주 제출"
-
-msgid "Suggested"
-msgstr ""
 
 msgid "Suggested coverage"
 msgstr "권장 범위"
@@ -3074,10 +3077,10 @@ msgid "then"
 msgstr "그 다음"
 
 msgid "Then continues to the next operation"
-msgstr ""
+msgstr "이후 다음 공정으로 진행"
 
 msgid "Then re-inspects here"
-msgstr ""
+msgstr "이후 여기서 재검사"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "이 자재에 대해 가용 또는 소모된 추적 부품이 없습니다."
@@ -3131,7 +3134,7 @@ msgid "This stops your clock and posts the job's time. The job can no longer cha
 msgstr "이는 시계를 중지하고 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
-msgstr ""
+msgstr "이 개는 이 보정을 허용 횟수만큼 사용했습니다. 대신 스크랩하거나 품질 이슈를 등록하세요."
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
@@ -3364,7 +3367,7 @@ msgstr "다른 계정 사용"
 #. placeholder {0}: correction.uses
 #. placeholder {1}: correction.maxAttempts
 msgid "Used {0} of {1}"
-msgstr ""
+msgstr "{1}회 중 {0}회 사용"
 
 msgid "Used automatically at completion"
 msgstr "완료 시 자동으로 사용됨"

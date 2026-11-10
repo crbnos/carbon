@@ -19,8 +19,8 @@ msgid ", running"
 msgstr ", 実行中"
 
 #. placeholder {0}: suggestion.reason
-msgid "\"{0}\" suggests a correction for this unit."
-msgstr ""
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "この個品には「{0}」による修正が必要です。"
 
 msgid "\"{column}\" is required."
 msgstr "「{column}」は必須です。"
@@ -435,7 +435,7 @@ msgid "Attach file"
 msgstr "ファイルを添付"
 
 msgid "Attempt limit reached"
-msgstr ""
+msgstr "試行回数の上限に到達しました"
 
 msgid "Authentication Error"
 msgstr "認証エラー"
@@ -783,7 +783,10 @@ msgstr "クリップボードにコピー"
 
 #. placeholder {0}: correction.name
 msgid "Correction: {0}"
-msgstr ""
+msgstr "修正: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "修正: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1206,7 +1209,7 @@ msgid "Go back to operation"
 msgstr "操作に戻る"
 
 msgid "Go back to operation, or run a correction"
-msgstr ""
+msgstr "工程に戻るか、修正を実行してください"
 
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
@@ -1727,7 +1730,7 @@ msgid "No color"
 msgstr "色なし"
 
 msgid "No correction"
-msgstr ""
+msgstr "修正なし"
 
 msgid "No country found."
 msgstr "国が見つかりません。"
@@ -1897,6 +1900,9 @@ msgstr "なし"
 
 msgid "Normal"
 msgstr "通常検査"
+
+msgid "Not in this operation"
+msgstr "この工程にはありません"
 
 msgid "Not scheduled"
 msgstr "スケジュール未設定"
@@ -2313,7 +2319,7 @@ msgid "Quotes"
 msgstr "見積"
 
 msgid "Raise quality issue"
-msgstr ""
+msgstr "品質問題を起票"
 
 msgid "Re"
 msgstr "不合格判定"
@@ -2578,7 +2584,7 @@ msgid "Scrap Reason"
 msgstr "不良理由"
 
 msgid "Scrap unit"
-msgstr ""
+msgstr "個をスクラップ"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
@@ -2887,13 +2893,13 @@ msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} タイマーを開始"
 
 msgid "Start a correction?"
-msgstr ""
+msgstr "修正を開始しますか？"
 
 msgid "Start clock"
 msgstr "クロック開始"
 
 msgid "Start correction"
-msgstr ""
+msgstr "修正を開始"
 
 msgid "Start Job"
 msgstr "製造指図を開始"
@@ -2967,9 +2973,6 @@ msgstr "匿名で提出"
 
 msgid "Submit week"
 msgstr "週を提出"
-
-msgid "Suggested"
-msgstr ""
 
 msgid "Suggested coverage"
 msgstr "推奨カバレッジ"
@@ -3074,10 +3077,10 @@ msgid "then"
 msgstr "その後"
 
 msgid "Then continues to the next operation"
-msgstr ""
+msgstr "その後、次の工程へ進みます"
 
 msgid "Then re-inspects here"
-msgstr ""
+msgstr "その後、ここで再検査します"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"
@@ -3131,7 +3134,7 @@ msgid "This stops your clock and posts the job's time. The job can no longer cha
 msgstr "これはクロックを停止して、製造指図の時間を転記します。製造指図は変更できなくなります。"
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
-msgstr ""
+msgstr "この個品はこの修正の上限回数に達しました。代わりにスクラップするか、品質問題を起票してください。"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
@@ -3364,7 +3367,7 @@ msgstr "別のアカウントを使用"
 #. placeholder {0}: correction.uses
 #. placeholder {1}: correction.maxAttempts
 msgid "Used {0} of {1}"
-msgstr ""
+msgstr "{0} / {1} 回使用"
 
 msgid "Used automatically at completion"
 msgstr "完了時に自動使用"

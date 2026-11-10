@@ -4644,6 +4644,14 @@ export async function upsertMethodMaterial(
       error: { message: "Material ID is required" }
     };
   }
+  if ("createdBy" in methodMaterial) {
+    const refusal = await correctionMembershipRefusal(client, {
+      methodCorrectionId: methodMaterial.methodCorrectionId,
+      makeMethodId: methodMaterial.makeMethodId,
+      companyId: methodMaterial.companyId
+    });
+    if (refusal) return refusal;
+  }
 
   // sourcingType and methodType are item-level properties (edited in the
   // item's Properties sidebar). A methodMaterial is a read-only mirror of its
@@ -4752,6 +4760,12 @@ export async function upsertMethodOperation(
       })
 ) {
   if ("createdBy" in methodOperation) {
+    const refusal = await correctionMembershipRefusal(client, {
+      methodCorrectionId: methodOperation.methodCorrectionId,
+      makeMethodId: methodOperation.makeMethodId,
+      companyId: methodOperation.companyId
+    });
+    if (refusal) return refusal;
     return client
       .from("methodOperation")
       .insert([normalizeOperationSourceIds(methodOperation)])
@@ -4768,6 +4782,36 @@ export async function upsertMethodOperation(
     .eq("id", methodOperation.id)
     .select("id")
     .single();
+}
+
+/**
+ * Refuses a new operation or material that names a correction of another make
+ * method: the foreign key only checks that the correction exists.
+ */
+async function correctionMembershipRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    methodCorrectionId?: string | null;
+    makeMethodId: string;
+    companyId: string;
+  }
+) {
+  if (!args.methodCorrectionId) return null;
+  const correction = await client
+    .from("methodCorrection")
+    .select("id")
+    .eq("id", args.methodCorrectionId)
+    .eq("makeMethodId", args.makeMethodId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (correction.error) return { data: null, error: correction.error };
+  if (!correction.data) {
+    return {
+      data: null,
+      error: { message: "The correction is not on this make method" }
+    };
+  }
+  return null;
 }
 
 /** A make method's corrections, in display order. */
@@ -4835,8 +4879,9 @@ export async function upsertMethodCorrection(
       .select("id")
       .single();
   }
-  // The make method a correction belongs to never changes.
-  const { makeMethodId: _makeMethodId, companyId, ...update } = correction;
+  // The make method a correction belongs to never changes, and an update
+  // only matches the correction on the make method the caller checked.
+  const { makeMethodId, companyId, ...update } = correction;
   return client
     .from("methodCorrection")
     .update(
@@ -4846,6 +4891,7 @@ export async function upsertMethodCorrection(
       })
     )
     .eq("id", correction.id)
+    .eq("makeMethodId", makeMethodId)
     .eq("companyId", companyId)
     .select("id")
     .single();

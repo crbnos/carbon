@@ -19,8 +19,8 @@ msgid ", running"
 msgstr ", running"
 
 #. placeholder {0}: suggestion.reason
-msgid "\"{0}\" suggests a correction for this unit."
-msgstr "\"{0}\" suggests a correction for this unit."
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "\"{0}\" calls for a correction on this unit."
 
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" is required."
@@ -784,6 +784,9 @@ msgstr "Copy to clipboard"
 #. placeholder {0}: correction.name
 msgid "Correction: {0}"
 msgstr "Correction: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Correction: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1898,6 +1901,9 @@ msgstr "None"
 msgid "Normal"
 msgstr "Normal"
 
+msgid "Not in this operation"
+msgstr "Not in this operation"
+
 msgid "Not scheduled"
 msgstr "Not scheduled"
 
@@ -2967,9 +2973,6 @@ msgstr "Submit anonymously"
 
 msgid "Submit week"
 msgstr "Submit week"
-
-msgid "Suggested"
-msgstr "Suggested"
 
 msgid "Suggested coverage"
 msgstr "Suggested coverage"

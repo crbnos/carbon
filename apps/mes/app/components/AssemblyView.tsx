@@ -105,6 +105,7 @@ import { SerialSelectorModal } from "~/components/JobOperation/components/Serial
 import { RecordModal } from "~/components/JobOperation/components/Step";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
+import { ReworkBadge } from "~/components/ReworkBadge";
 import { useRealtime, useUser } from "~/hooks";
 import {
   type AbilityShortfall,
@@ -289,6 +290,7 @@ type Operation = {
   jobStatus?: string | null;
   duration?: number | null;
   jobDeadlineType?: string | null;
+  reworkId?: string | null;
 };
 
 type Props = {
@@ -297,6 +299,8 @@ type Props = {
   job: { itemReadableIdWithRevision?: string | null } | null;
   operation: Operation | null;
   thumbnailPath: string | null | undefined;
+  /** The correction this rework operation belongs to, if any. */
+  correctionName?: string | null;
   trackedEntities: {
     id: string;
     readableId?: string | null;
@@ -524,6 +528,7 @@ export function AssemblyView({
   job,
   operation,
   thumbnailPath,
+  correctionName,
   trackedEntities,
   trackedEntityId,
   materials,
@@ -1988,6 +1993,9 @@ export function AssemblyView({
                   {operation.description}
                 </span>
               </>
+            ) : null}
+            {operation?.reworkId ? (
+              <ReworkBadge correctionName={correctionName} />
             ) : null}
           </h1>
 

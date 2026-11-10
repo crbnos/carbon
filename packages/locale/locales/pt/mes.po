@@ -19,8 +19,8 @@ msgid ", running"
 msgstr ", em execução"
 
 #. placeholder {0}: suggestion.reason
-msgid "\"{0}\" suggests a correction for this unit."
-msgstr ""
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "“{0}” exige uma correção nesta unidade."
 
 msgid "\"{column}\" is required."
 msgstr "«{column}» é obrigatório."
@@ -435,7 +435,7 @@ msgid "Attach file"
 msgstr "Anexar arquivo"
 
 msgid "Attempt limit reached"
-msgstr ""
+msgstr "Limite de tentativas atingido"
 
 msgid "Authentication Error"
 msgstr "Erro de Autenticação"
@@ -783,7 +783,10 @@ msgstr "Copiar para a área de transferência"
 
 #. placeholder {0}: correction.name
 msgid "Correction: {0}"
-msgstr ""
+msgstr "Correção: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Correção: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1206,7 +1209,7 @@ msgid "Go back to operation"
 msgstr "Voltar para operação"
 
 msgid "Go back to operation, or run a correction"
-msgstr ""
+msgstr "Voltar à operação ou executar uma correção"
 
 msgid "Go to onboarding"
 msgstr "Ir para integração"
@@ -1727,7 +1730,7 @@ msgid "No color"
 msgstr "Sem cor"
 
 msgid "No correction"
-msgstr ""
+msgstr "Nenhuma correção"
 
 msgid "No country found."
 msgstr "Nenhum país encontrado."
@@ -1897,6 +1900,9 @@ msgstr "Nenhum"
 
 msgid "Normal"
 msgstr "Normal"
+
+msgid "Not in this operation"
+msgstr "Não está nesta operação"
 
 msgid "Not scheduled"
 msgstr "Não agendado"
@@ -2313,7 +2319,7 @@ msgid "Quotes"
 msgstr "Orçamentos"
 
 msgid "Raise quality issue"
-msgstr ""
+msgstr "Registrar problema de qualidade"
 
 msgid "Re"
 msgstr "Re"
@@ -2578,7 +2584,7 @@ msgid "Scrap Reason"
 msgstr "Motivo do Refugo"
 
 msgid "Scrap unit"
-msgstr ""
+msgstr "Refugar unidade"
 
 msgid "Scrapped"
 msgstr "Refugado"
@@ -2887,13 +2893,13 @@ msgid "Start {workTypeLabel} timer"
 msgstr "Iniciar cronômetro de {workTypeLabel}"
 
 msgid "Start a correction?"
-msgstr ""
+msgstr "Iniciar uma correção?"
 
 msgid "Start clock"
 msgstr "Iniciar cronômetro"
 
 msgid "Start correction"
-msgstr ""
+msgstr "Iniciar correção"
 
 msgid "Start Job"
 msgstr "Iniciar ordem de produção"
@@ -2967,9 +2973,6 @@ msgstr "Enviar anonimamente"
 
 msgid "Submit week"
 msgstr "Enviar semana"
-
-msgid "Suggested"
-msgstr ""
 
 msgid "Suggested coverage"
 msgstr "Cobertura sugerida"
@@ -3074,10 +3077,10 @@ msgid "then"
 msgstr "depois"
 
 msgid "Then continues to the next operation"
-msgstr ""
+msgstr "Depois, segue para a próxima operação"
 
 msgid "Then re-inspects here"
-msgstr ""
+msgstr "Depois, reinspeciona aqui"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Não há peças rastreadas disponíveis ou consumidas para este material."
@@ -3131,7 +3134,7 @@ msgid "This stops your clock and posts the job's time. The job can no longer cha
 msgstr "Isto interrompe seu relógio e contabiliza o tempo da ordem de produção. A ordem de produção não pode mais mudar."
 
 msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
-msgstr ""
+msgstr "Esta unidade já usou esta correção o número máximo de vezes. Refugue-a ou registre um problema de qualidade."
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Esta unidade será permanentemente descartada e uma unidade de substituição será criada."
@@ -3364,7 +3367,7 @@ msgstr "Usar uma conta diferente"
 #. placeholder {0}: correction.uses
 #. placeholder {1}: correction.maxAttempts
 msgid "Used {0} of {1}"
-msgstr ""
+msgstr "{0} de {1} usos"
 
 msgid "Used automatically at completion"
 msgstr "Usado automaticamente na conclusão"

@@ -573,12 +573,19 @@ export function RecordModal({
   const [suggestion, setSuggestion] = useState<CorrectionSuggestion | null>(
     null
   );
+  // The window can stay mounted between openings, so a prompt that was
+  // answered or dismissed must not come back the next time the operator opens
+  // the step to change its value.
+  const close = () => {
+    setSuggestion(null);
+    onClose();
+  };
   return (
     <Modal
       open={open}
       onOpenChange={(open) => {
         if (!open) {
-          onClose();
+          close();
         }
       }}
     >
@@ -586,7 +593,7 @@ export function RecordModal({
         {suggestion ? (
           <CorrectionPrompt
             suggestion={suggestion}
-            onClose={onClose}
+            onClose={close}
             onScrap={onScrap}
             onQualityIssue={onQualityIssue}
           />
@@ -594,7 +601,7 @@ export function RecordModal({
           <RecordBody
             attribute={attribute}
             activeStep={activeStep}
-            onClose={onClose}
+            onClose={close}
             onSuggestCorrection={setSuggestion}
           />
         )}

@@ -307,6 +307,11 @@ msgstr "{0}（类型）"
 msgid "{0} (unavailable)"
 msgstr "{0}（不可用）"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "每件 {0} {1}"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2475,7 +2480,10 @@ msgstr "关于此字段"
 
 #. placeholder {0}: result.step.maxValue
 msgid "Above {0}"
-msgstr ""
+msgstr "高于 {0}"
+
+msgid "Above maximum"
+msgstr "超过最大值"
 
 msgid "Above the upper limit"
 msgstr "高于上限"
@@ -2952,7 +2960,7 @@ msgid "Add a line to the document"
 msgstr "在文件中添加一行"
 
 msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
-msgstr ""
+msgstr "为工序添加列表、检验或测量（带最小值或最大值）步骤，以将其结果映射到纠正。"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
@@ -3503,7 +3511,7 @@ msgid "After (calculation method)"
 msgstr "之后（计算方法）"
 
 msgid "After the correction"
-msgstr ""
+msgstr "纠正之后"
 
 msgid "Afternoon, {name}."
 msgstr "下午，{name}。"
@@ -5607,10 +5615,13 @@ msgstr "正在逐步淘汰—后继物料：<0>{0}</0>"
 
 #. placeholder {0}: result.step.minValue
 msgid "Below {0}"
-msgstr ""
+msgstr "低于 {0}"
 
 msgid "Below level"
 msgstr "低于水位线"
+
+msgid "Below minimum"
+msgstr "低于最小值"
 
 msgid "Below safety stock"
 msgstr "低于安全库存"
@@ -7864,7 +7875,7 @@ msgid "Continue Setup"
 msgstr "继续配置"
 
 msgid "Continue to the next operation"
-msgstr ""
+msgstr "继续下一工序"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "使用权资产摊销的对资产账户"
@@ -9990,7 +10001,7 @@ msgid "Delete Contractor"
 msgstr "删除外协人员"
 
 msgid "Delete correction"
-msgstr ""
+msgstr "删除纠正"
 
 msgid "Delete Count"
 msgstr "删除计数"
@@ -10333,7 +10344,7 @@ msgid "Deleted attribute value"
 msgstr "已删除属性值"
 
 msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
-msgstr ""
+msgstr "删除此纠正将移除其工序、物料和结果映射。已创建的工单将保留各自的副本。"
 
 msgid "Deliver"
 msgstr "交付"
@@ -11460,10 +11471,10 @@ msgid "Edit Contractor"
 msgstr "编辑外协人员"
 
 msgid "Edit correction"
-msgstr ""
+msgstr "编辑纠正"
 
 msgid "Edit Correction"
-msgstr ""
+msgstr "编辑纠正"
 
 msgid "Edit cost"
 msgstr "编辑成本"
@@ -16653,7 +16664,7 @@ msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
 
 msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
-msgstr ""
+msgstr "留空表示不设上限。超过该次数后，MES 仅提供报废或质量问题选项。"
 
 msgid "Leave empty to use the account default"
 msgstr "留空以使用帐户默认值"
@@ -17829,10 +17840,10 @@ msgstr "到期日分析"
 
 #. placeholder {0}: correction.maxAttempts
 msgid "Max {0} per unit"
-msgstr ""
+msgstr "每件最多 {0} 次"
 
 msgid "Max attempts per unit"
-msgstr ""
+msgstr "每件最大尝试次数"
 
 msgid "Max Lead Time"
 msgstr "最长提前期"
@@ -18634,7 +18645,7 @@ msgid "New Contractor"
 msgstr "新建外协人员"
 
 msgid "New Correction"
-msgstr ""
+msgstr "新建纠正"
 
 msgid "New Cost Center"
 msgstr "新建成本中心"
@@ -19340,10 +19351,10 @@ msgid "No conversion is required"
 msgstr "不需要转换"
 
 msgid "No correction"
-msgstr ""
+msgstr "无纠正"
 
 msgid "No corrections yet."
-msgstr ""
+msgstr "暂无纠正。"
 
 msgid "No cost"
 msgstr "无成本"
@@ -19735,6 +19746,9 @@ msgstr "没有未结销售订单行"
 msgid "No open work has a target date."
 msgstr "没有未结工作设置了目标日期。"
 
+msgid "No operations"
+msgstr "无工序"
+
 msgid "No operations found."
 msgstr "未找到工序。"
 
@@ -20023,6 +20037,9 @@ msgstr "此查看未应用任何排序"
 
 msgid "No statement for this period"
 msgstr "此期间没有报表"
+
+msgid "No step results suggest this correction."
+msgstr "没有步骤结果建议此纠正。"
 
 msgid "No step selected"
 msgstr "未选择步骤"
@@ -20354,6 +20371,9 @@ msgstr "未同步"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "不可用库存。MRP 和计划不计入此库存，拣货也不会从中取货。"
+
+msgid "Not used yet."
+msgstr "尚未使用。"
 
 msgid "Not working today"
 msgstr "今天不工作"
@@ -23507,6 +23527,10 @@ msgstr "二维码用于启动此看板的下一个操作"
 msgid "Qty"
 msgstr "数量"
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "数量 {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "数量 {jobQuantity}"
 
@@ -23873,7 +23897,7 @@ msgid "Re-date to first open day"
 msgstr "重新日期至第一个开放日"
 
 msgid "Re-inspect at the operation that found it"
-msgstr ""
+msgstr "在发现问题的工序重新检验"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
@@ -23888,7 +23912,7 @@ msgid "Re-send"
 msgstr "重新发送"
 
 msgid "Re-torque nut"
-msgstr ""
+msgstr "重新紧固螺母"
 
 msgid "Reactivate"
 msgstr "重新激活"
@@ -25273,7 +25297,7 @@ msgid "Result"
 msgstr "结果"
 
 msgid "Result mappings"
-msgstr ""
+msgstr "结果映射"
 
 msgid "Results"
 msgstr "结果"
@@ -25628,7 +25652,10 @@ msgid "Rework"
 msgstr "返工"
 
 msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
-msgstr ""
+msgstr "仅用于返工的工序，由步骤结果提示，例如检验发现螺母松动时的重新紧固。正常件从不执行这些工序。"
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "步骤结果提示的仅用于返工的工序。此工单保留从制造方法复制的副本。"
 
 msgid "RFQ"
 msgstr "询价单"
@@ -31145,10 +31172,10 @@ msgid "Then by"
 msgstr "然后按"
 
 msgid "Then continue"
-msgstr ""
+msgstr "然后继续"
 
 msgid "Then re-inspect"
-msgstr ""
+msgstr "然后重新检验"
 
 msgid "There are more received than ordered"
 msgstr "收到的数量多于订购的数量"
@@ -33240,6 +33267,9 @@ msgstr "使用 {0}"
 msgid "Uses {0} · {1}"
 msgstr "使用 {0} · {1}"
 
+msgid "Uses on this job"
+msgstr "本工单中的使用情况"
+
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
@@ -34466,6 +34496,9 @@ msgstr "在制品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "含{0}应急储备"
+
+msgid "With Previous"
+msgstr "同上一个"
 
 msgid "Withdraw"
 msgstr "撤回"

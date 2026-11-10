@@ -826,6 +826,37 @@ export async function getJobAttributesByOperationId(
  * with a service-role client (operators often lack RLS rights), so this scoped
  * lookup is the boundary: null data means the id is not in the company.
  */
+/**
+ * Why an operation is not on the floor, or null when it is. The operation,
+ * assembly and inspection views share it: a batched operation follows its
+ * batch (a Planned batch is off the floor), any other follows its job, which
+ * must be released (Ready, In Progress or Paused).
+ */
+export async function floorRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    jobStatus: string | null | undefined;
+    jobOperationBatchId: string | null | undefined;
+    companyId: string;
+  }
+): Promise<string | null> {
+  if (args.jobOperationBatchId) {
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("status")
+      .eq("id", args.jobOperationBatchId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    return batch.data?.status === "Planned"
+      ? "This operation is part of a batch that has not been released to the floor"
+      : null;
+  }
+  return args.jobStatus &&
+    (activeJobStatuses as readonly string[]).includes(args.jobStatus)
+    ? null
+    : "This operation's job has not been released to the floor";
+}
+
 export async function getJobOperationForCompany(
   client: SupabaseClient<Database>,
   operationId: string,
@@ -2132,6 +2163,33 @@ export async function getTrackedEntitiesForOperation(
   };
 }
 
+/**
+ * The name of the correction a rework operation belongs to, or null for a
+ * plain rework (or an operation that is not a rework).
+ */
+export async function getReworkCorrectionName(
+  client: SupabaseClient<Database>,
+  reworkId: string | null | undefined,
+  companyId: string
+): Promise<string | null> {
+  if (!reworkId) return null;
+  const rework = await client
+    .from("rework")
+    .select("jobCorrectionId")
+    .eq("id", reworkId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const jobCorrectionId = rework.data?.jobCorrectionId;
+  if (!jobCorrectionId) return null;
+  const correction = await client
+    .from("jobCorrection")
+    .select("name")
+    .eq("id", jobCorrectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return correction.data?.name ?? null;
+}
+
 /** The job's corrections for an operation's part (its job make method). */
 export async function getOperationCorrections(
   client: SupabaseClient<Database>,
@@ -2173,9 +2231,8 @@ export type CorrectionSuggestion = {
 };
 
 /**
- * The correction a just-recorded step result suggests, with the operation's
- * other corrections and the unit's earlier uses of each, or null when the
- * result maps to none. A List or Inspection value matches a mapped value; a
+ * The correction a just-recorded step result maps to, with the unit's earlier
+ * uses of it, or null when the result maps to none. A List or Inspection value matches a mapped value; a
  * Measurement matches "Below Minimum" or "Above Maximum".
  */
 export async function getCorrectionSuggestion(
@@ -2243,12 +2300,14 @@ export async function getCorrectionSuggestion(
   if (operation.error || !operation.data.jobMakeMethodId) return null;
 
   const [corrections, jobMakeMethod] = await Promise.all([
+    // Only the correction the result maps to: a result names its fix, so
+    // the operation's other corrections are not offered here.
     client
       .from("jobCorrection")
       .select("id, name, returnTo, maxAttempts")
+      .eq("id", match.jobCorrectionId)
       .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
-      .eq("companyId", args.companyId)
-      .order("order", { ascending: true }),
+      .eq("companyId", args.companyId),
     client
       .from("jobMakeMethod")
       .select("requiresSerialTracking")
