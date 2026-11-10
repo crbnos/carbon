@@ -25,7 +25,9 @@ async function seedInspectionPlan(
   const rule = inspectionPlan(spec);
   const documentId = await insertId(ctx, "inspectionDocument", {
     partId: need(ctx.refs.items, spec.item).id,
-    drawingNumber: spec.drawingNumber,
+    name: spec.name,
+    // Receipts and jobs use it, so it is the plan's published version.
+    status: "Active",
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
     samplingInspectionLevel: rule.inspectionLevel,
@@ -249,7 +251,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
 
   const inspectionPlanIds: Record<string, string> = {};
   for (const plan of data.inspectionPlans) {
-    ctx.log(`inspection plan ${plan.drawingNumber}`);
+    ctx.log(`inspection plan ${plan.name}`);
     inspectionPlanIds[plan.key] = await seedInspectionPlan(ctx, plan);
   }
 

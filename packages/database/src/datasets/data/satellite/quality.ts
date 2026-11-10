@@ -192,7 +192,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 2 at AQL 1.0 / level II → code letter A, n = 2.
 const BARE_BOARD_PLAN = {
-  drawingNumber: "PCB-BARE-REV3 Fab Dwg Rev C",
+  name: "PCB-BARE-REV3 Fab Dwg Rev C",
   aql: 1.0,
   features: [
     {
@@ -220,7 +220,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:tank",
     receipt: "receipt:short",
     item: "TANK-TI-4L",
-    drawingNumber: "PT-4L-100 Rev C",
+    name: "PT-4L-100 Rev C",
     aql: 1.0,
     features: [
       {
@@ -325,6 +325,27 @@ export const INSPECTIONS: InspectionSpec[] = [
         ]
       }
     ]
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-BAT-2609"],
+    workCenter: "QC Bench",
+    assignee: "self",
+    notes:
+      "Cell-level capacity re-test of the held battery lot before teardown.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-BAT-2609"],
+    workCenter: "QC Bench",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
+    samples: []
   }
 ];
 

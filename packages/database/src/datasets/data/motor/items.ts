@@ -968,7 +968,7 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "SHF-9000-JOURNAL",
     item: "SHF-9000",
-    drawingNumber: "TD-9000-SH Rev E",
+    name: "TD-9000-SH Rev E",
     aql: 1.0,
     features: [
       {
