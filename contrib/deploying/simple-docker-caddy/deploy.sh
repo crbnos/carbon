@@ -29,7 +29,7 @@ readonly ENV_EXAMPLE="$HERE/.env.example"
 # NOT in GENERATED_SECRETS. ALL_SECRETS is the full set the stack needs to deploy.
 readonly GENERATED_SECRETS="session_secret inngest_signing_key inngest_event_key supavisor_secret_key_base supavisor_vault_enc_key"
 readonly TRIO_SECRETS="jwt_secret anon_key service_role_key"
-readonly SUPPLIED_SECRETS="resend_api_key smtp_password saml_private_key"
+readonly SUPPLIED_SECRETS="smtp_password saml_private_key"
 readonly ALL_SECRETS="postgres_password postgrest_db_uri $GENERATED_SECRETS $TRIO_SECRETS $SUPPLIED_SECRETS"
 
 log()   { printf '\033[0;36m[%s]\033[0m %s\n' "$(date '+%H:%M:%S')" "$*"; }
@@ -132,15 +132,10 @@ cmd_init() {
     fi
     
     # Operator-supplied secrets — placeholders so the stack deploys; replace later.
-    # resend_api_key is optional (marketing contacts / legacy fallback); app email
-    # sends over SMTP using the shared GOTRUE_SMTP_* config + smtp_password.
+    # App email sends over SMTP using the shared GOTRUE_SMTP_* config + smtp_password.
     for s in $SUPPLIED_SECRETS; do
         secret_exists "$s" && continue
         case "$s" in
-            # Seeded EMPTY on purpose: a truthy placeholder would engage the
-            # legacy Resend SMTP fallback with junk credentials instead of
-            # letting email no-op.
-            resend_api_key) create_secret "$s" "" ;;
             smtp_password)  create_secret "$s" "change_me" ;;
             # Ignored while SAML_ENABLED=false; replace before enabling SAML.
             saml_private_key) create_secret "$s" "change_me" ;;
@@ -150,7 +145,7 @@ cmd_init() {
     log "Secrets ready."
     warn "Next:"
     warn "  1. Edit $ENV_FILE — set CARBON_REPO, the *_HOST/*_URL, ACME_EMAIL, SMTP."
-    warn "  2. Set real secrets:  $SCRIPT_NAME secret smtp_password xxx   (resend_api_key is optional)"
+    warn "  2. Set real secrets:  $SCRIPT_NAME secret smtp_password xxx"
     warn "  3. $SCRIPT_NAME up"
 }
 
@@ -294,8 +289,8 @@ cmd_up() {
 
 # ── secret (create or rotate one secret) ────────────────────────────────────────
 # Value comes from the argument, or from stdin when piped:
-#   deploy.sh secret resend_api_key re_xxx
-#   printf '%s' "$VALUE" | deploy.sh secret resend_api_key
+#   deploy.sh secret smtp_password xxx
+#   printf '%s' "$VALUE" | deploy.sh secret smtp_password
 cmd_secret() {
     require_cmds docker
     local name="${1:?usage: $SCRIPT_NAME secret <name> <value>}"
