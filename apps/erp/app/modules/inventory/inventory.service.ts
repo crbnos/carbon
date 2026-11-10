@@ -30020,6 +30020,24 @@ export async function issueMaterial(
         );
       }
 
+      // A rework copy applies only to the units sent into it.
+      const operationScope = await db
+        .selectFrom("jobOperationTrackedEntity")
+        .select("trackedEntityId")
+        .where("jobOperationId", "=", row.jobOperationId)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (
+        operationScope.length > 0 &&
+        !operationScope.some(
+          (scope) => scope.trackedEntityId === trackedEntityId
+        )
+      ) {
+        throw new InvalidInputError(
+          "This unit is not part of this rework operation"
+        );
+      }
+
       const relatedTrackedEntities = trackedEntities.data.filter(
         (trackedEntity) =>
           `Operation ${row.jobOperationId}` in

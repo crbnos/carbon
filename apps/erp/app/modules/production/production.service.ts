@@ -25671,6 +25671,36 @@ async function cloneReworkOperations(
 
   triggerReworkLogger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
 
+  // 5b. Scope the copies to the serial units sent into the rework. Without
+  //     these rows every open unit of the make method counts as not done at a
+  //     copy. Batch and untracked parts stay quantity-based.
+  if (trackedEntityIds && trackedEntityIds.length > 0) {
+    const jobMakeMethodId = sourceOperations[0]?.jobMakeMethodId;
+    const jobMakeMethod = jobMakeMethodId
+      ? await trx
+          .selectFrom("jobMakeMethod")
+          .select("requiresSerialTracking")
+          .where("id", "=", jobMakeMethodId)
+          .executeTakeFirst()
+      : undefined;
+    if (jobMakeMethod?.requiresSerialTracking) {
+      const scopeRows = clonedOperationIds.flatMap((jobOperationId) =>
+        trackedEntityIds.map((trackedEntityId) => ({
+          jobOperationId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      );
+      for (const rows of chunked(scopeRows)) {
+        await trx
+          .insertInto("jobOperationTrackedEntity")
+          .values(rows)
+          .execute();
+      }
+    }
+  }
+
   // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
   const [allSteps, allTools, allParams] = await Promise.all([
     trx

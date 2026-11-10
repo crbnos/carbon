@@ -31,7 +31,7 @@ import {
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
   getToolsByOperationId,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   getWorkCenter,
   isFirstOperationOfMakeMethod
 } from "~/services/operations.service";
@@ -129,11 +129,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
     }),
     jobMakeMethodId
-      ? getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobMakeMethodId,
+      ? getTrackedEntitiesForOperation(serviceRole, {
+          operationId,
+          jobMakeMethodId: jobMakeMethodId,
           companyId
-        )
+        })
       : null,
     jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
     procedurePromise,

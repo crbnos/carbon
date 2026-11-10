@@ -2024,7 +2024,14 @@ export async function getTrackedEntitiesByMakeMethodId(
 type SerialEntityForSelection = Pick<
   Database["public"]["Tables"]["trackedEntity"]["Row"],
   "attributes" | "status"
->;
+> & {
+  /**
+   * False when the operation applies to other units only (a rework copy
+   * scoped to the units sent into it). Set by `getTrackedEntitiesForOperation`;
+   * absent means the operation applies to every unit.
+   */
+  inOperationScope?: boolean;
+};
 
 /**
  * A serial tracked entity is still "incomplete" for a job operation when its
@@ -2040,6 +2047,7 @@ export function isSerialEntityIncompleteForOperation(
   // Scrapped is terminal like Consumed — a scrapped unit is never a work
   // candidate; its replacement is the spawned Reserved entity.
   return (
+    entity.inOperationScope !== false &&
     !(`Operation ${jobOperationId}` in attributes) &&
     entity.status !== "Consumed" &&
     entity.status !== "Scrapped"
@@ -2065,7 +2073,10 @@ export function getNextIncompleteSerialEntity<
   // unit Consumed on a finished subassembly), preserving the prior behavior of
   // always returning something when entities exist.
   const selectable = entities.filter(
-    (entity) => entity.status !== "Consumed" && entity.status !== "Scrapped"
+    (entity) =>
+      entity.inOperationScope !== false &&
+      entity.status !== "Consumed" &&
+      entity.status !== "Scrapped"
   );
   return (
     selectable.find((entity) =>
@@ -2074,6 +2085,51 @@ export function getNextIncompleteSerialEntity<
     selectable[selectable.length - 1] ??
     entities[entities.length - 1]
   );
+}
+
+/**
+ * The units of an operation's make method, in unit-axis order, each flagged
+ * with whether the operation applies to it. A rework copy applies only to the
+ * units sent into it (`jobOperationTrackedEntity`); every other operation has
+ * no scope rows and applies to every unit.
+ *
+ * The list is never narrowed: step records are keyed by a unit's position in
+ * the full axis, so a filtered list would shift every position after a skipped
+ * unit. Consumers read `inOperationScope` (via
+ * `isSerialEntityIncompleteForOperation`) instead.
+ */
+export async function getTrackedEntitiesForOperation(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; jobMakeMethodId: string; companyId: string }
+) {
+  const [entities, scope] = await Promise.all([
+    getTrackedEntitiesByMakeMethodId(
+      client,
+      args.jobMakeMethodId,
+      args.companyId
+    ),
+    client
+      .from("jobOperationTrackedEntity")
+      .select("trackedEntityId")
+      .eq("jobOperationId", args.operationId)
+      .eq("companyId", args.companyId)
+  ]);
+
+  if (entities.error) return { data: null, error: entities.error };
+  if (scope.error) return { data: null, error: scope.error };
+
+  const scopedIds =
+    scope.data.length > 0
+      ? new Set(scope.data.map((row) => row.trackedEntityId))
+      : null;
+
+  return {
+    data: entities.data.map((entity) => ({
+      ...entity,
+      inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
+    })),
+    error: null
+  };
 }
 
 export async function getTrackedEntity(

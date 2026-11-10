@@ -182,6 +182,9 @@ ALTER TABLE "rework" ADD COLUMN "jobCorrectionId" TEXT;
 ALTER TABLE "rework" ADD COLUMN "jobOperationStepRecordId" TEXT;  -- the result that triggered it
 
 -- Which units an operation applies to. No rows = every unit (today's behaviour).
+-- Shipped in phase 1: 20261110152714_job-operation-tracked-entity.sql.
+-- Written only by the system (posting), so RLS is select-only, like
+-- jobOperationDependency.
 CREATE TABLE "jobOperationTrackedEntity" (
     "jobOperationId" TEXT NOT NULL,
     "trackedEntityId" TEXT NOT NULL,
@@ -233,10 +236,16 @@ whose operations are scoped to the unit.
   9. reschedules, then the caller recalculates job requirements.
 - **`cloneReworkOperations`** writes `jobOperationTrackedEntity` rows when
   `trackedEntityIds` are passed.
-- **MES unit lists** (`getTrackedEntitiesByOperationId`,
-  `isSerialEntityIncompleteForOperation` callers, `getNextIncompleteSerialEntity`)
-  honour `jobOperationTrackedEntity`: an operation with scope rows lists only
-  those units.
+- **MES unit lists honour `jobOperationTrackedEntity` without narrowing the
+  list.** Step records are keyed by a unit's position in the full unit list,
+  so the list stays whole. `getTrackedEntitiesForOperation` loads it with an
+  `inOperationScope` flag per unit, and `isSerialEntityIncompleteForOperation`
+  and `getNextIncompleteSerialEntity` skip units outside the scope. The
+  operation, assembly, start, end and inspection loaders use it, and so does
+  inspection-lot completion (`quality.server.ts`), so accepting a lot on a
+  rework copy completes only the reworked units.
+- **The ERP `jobOperationSerialComplete` posting refuses a unit outside the
+  operation's scope.**
 - **MES record route** (`x+/record.tsx`): after saving a record, returns the
   matching `jobCorrectionTrigger`, if any, so the view can prompt.
 - **New MES route** `x+/trigger-correction.tsx`, sibling of
@@ -362,6 +371,9 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 ## Changelog
 
 - 2026-11-10: Created after resolving the open questions with Dane.
+- 2026-11-10: Phase 1 implemented: `jobOperationTrackedEntity`, rework
+  copies scoped to their serial units, MES and the serial-complete posting
+  honour the scope. Not run against a database yet.
 - 2026-11-10: Dane approved the three implementation decisions (reuse the
   method tables with `methodCorrectionId`; job snapshot as `jobCorrection`
   JSONB; corrections invisible to planning and quotes). Made explicit that a

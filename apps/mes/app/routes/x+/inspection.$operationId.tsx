@@ -26,7 +26,7 @@ import {
   getJobOperationById,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
-  getTrackedEntitiesByMakeMethodId
+  getTrackedEntitiesForOperation
 } from "~/services/operations.service";
 import {
   getInspection,
@@ -207,11 +207,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      op.jobMakeMethodId,
+    getTrackedEntitiesForOperation(serviceRole, {
+      operationId,
+      jobMakeMethodId: op.jobMakeMethodId,
       companyId
-    ),
+    }),
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),

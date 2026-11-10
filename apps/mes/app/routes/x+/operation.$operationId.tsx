@@ -32,7 +32,7 @@ import {
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   getWorkCenter,
   isFirstOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
@@ -216,11 +216,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
     }),
     jobMakeMethodId
-      ? getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobMakeMethodId,
+      ? getTrackedEntitiesForOperation(serviceRole, {
+          operationId,
+          jobMakeMethodId: jobMakeMethodId,
           companyId
-        )
+        })
       : null,
     jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
     getKanbanByJobId(serviceRole, jobId),
