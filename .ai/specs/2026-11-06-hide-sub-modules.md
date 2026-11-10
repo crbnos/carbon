@@ -1,6 +1,6 @@
 # Hide sub-modules
 
-**Status:** Built and verified, not committed. The user turned on autonomous mode, which waives the spec approval gate.
+**Status:** Approved
 **Branch:** `feat/hide-sub-modules`
 **Mockup:** Option B in `/Users/aashu/conductor/workspaces/carbon/moscow/.context/hide-submodules/hide-submodules-mockup.html`
 
