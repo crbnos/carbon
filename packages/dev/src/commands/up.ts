@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { rmSync } from "node:fs";
+import { stripVTControlCharacters } from "node:util";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
@@ -610,13 +611,17 @@ function printSummary(ctx: Ctx, apps: AppId[], size: StackSize) {
     db: ctx.db,
     shared: ctx.mode === "shared"
   });
-  // Some non-interactive terminals (Conductor's run pane) report a width of
-  // 0, for which clack's box computes a negative repeat count and throws.
-  if (process.stdout.columns === 0) {
-    log.info(`Carbon dev — ${ctx.slug}`);
+  const title = `Carbon dev — ${ctx.slug}`;
+  // clack's box throws on a narrow terminal (a long URL line cannot wrap) or a
+  // width of 0; 9 = its guide, borders and padding (8) + 1 lost on an odd width.
+  const widest = Math.max(
+    ...summary.map((line) => stripVTControlCharacters(line).length)
+  );
+  if ((process.stdout.columns ?? 0) < widest + 9) {
+    log.info(title);
     for (const line of summary) log.message(line);
   } else {
-    box(summary.join("\n"), `Carbon dev — ${ctx.slug}`);
+    box(summary.join("\n"), title);
   }
 }
 
