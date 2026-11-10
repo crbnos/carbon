@@ -7869,9 +7869,8 @@ export const deleteSupplierStage = defineServiceFn({
  * The parts an item's Request Quote offers: the item, and the parts to buy for
  * one of it from its Active make method, or its latest version without one.
  * Each has a supplier to start from: the preferred supplier, else the only
- * supplier with a supplier part.
- *
- * @mcp read
+ * supplier with a supplier part. Not published: it needs two modules, which
+ * the tool manifest cannot express.
  */
 export const getRequestQuoteRows = defineServiceFn({
   input: z.object({ itemId: z.string().min(1) }),

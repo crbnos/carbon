@@ -29120,6 +29120,9 @@ msgstr "공급업체 RMA 번호"
 msgid "supplier stage"
 msgstr "공급업체 단계"
 
+msgid "Supplier stage"
+msgstr ""
+
 msgid "Supplier Stage"
 msgstr "공급업체 단계"
 

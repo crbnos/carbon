@@ -29120,6 +29120,9 @@ msgstr "Numer RMA dostawcy"
 msgid "supplier stage"
 msgstr "etap dostawcy"
 
+msgid "Supplier stage"
+msgstr ""
+
 msgid "Supplier Stage"
 msgstr "Etap dostawcy"
 

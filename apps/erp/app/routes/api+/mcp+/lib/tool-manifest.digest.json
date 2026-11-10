@@ -1,5 +1,5 @@
 {
-  "totalTools": 1797,
+  "totalTools": 1796,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1081,7 +1081,6 @@
     {"name":"purchasing_getPurchasingRFQLines","classification":"READ","schema":"a03ea9b74e8a","response":"9507bd698de0","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingRFQs","classification":"READ","schema":"cd40ae40fad5","response":"a17f64c1d9c6","permission":"purchasing:view","paginates":true},
     {"name":"purchasing_getPurchasingRFQSuppliersWithLinks","classification":"READ","schema":"a03ea9b74e8a","response":"5483e69d7515","permission":"purchasing:view","paginates":false},
-    {"name":"purchasing_getRequestQuoteRows","classification":"READ","schema":"623ca47a6c74","response":"f8e9fe3c078f","permission":"none","paginates":false},
     {"name":"purchasing_getReturnableEntitiesForSupplier","classification":"READ","schema":"3ddcfdf3ccea","response":"80bf661fb053","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getReturnableLinesForSupplier","classification":"READ","schema":"bb3b6e17ab02","response":"24dd6c0d1c55","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getSiblingQuotesForQuote","classification":"READ","schema":"bb086c35d51f","response":"cb143b1fe761","permission":"purchasing:view","paginates":false},

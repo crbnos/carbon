@@ -29120,6 +29120,9 @@ msgstr "आपूर्तिकर्ता RMA नंबर"
 msgid "supplier stage"
 msgstr "आपूर्तिकर्ता चरण"
 
+msgid "Supplier stage"
+msgstr ""
+
 msgid "Supplier Stage"
 msgstr "आपूर्तिकर्ता चरण"
 
