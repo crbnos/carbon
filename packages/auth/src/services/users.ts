@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database, Json } from "@carbon/database";
-import { claimsFor, REGISTRY_HASH } from "@carbon/database/access";
+import type { Database } from "@carbon/database";
+import { type Claims, claimsFor, REGISTRY_HASH } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "../config/env";
@@ -86,13 +86,20 @@ export async function getUser(client: SupabaseClient<Database>, id: string) {
     .single();
 }
 
-/** `get_claims` for one company, as the role and the permissions per page. */
-export function makePermissionsFromClaims(
-  claims: Json | null,
+/**
+ * The user's claims in the company read now, past the claims cache
+ * (`getUserClaims`): for a check that must see a grant written moments ago, or
+ * one revoked within the cache's hour. `client` decides who asks. Throws when
+ * the read fails.
+ */
+export async function readClaimsFresh(
+  client: SupabaseClient<Database>,
+  userId: string,
   companyId: string
-) {
-  if (typeof claims !== "object" || claims === null || Array.isArray(claims))
-    return null;
-  const { permissions, role } = claimsFor(claims, companyId);
-  return { permissions, role };
+): Promise<Claims> {
+  const { data, error } = await getClaims(client, userId, companyId);
+  if (error || data === null) {
+    throw new Error("Failed to read claims", { cause: error });
+  }
+  return claimsFor(data, companyId);
 }

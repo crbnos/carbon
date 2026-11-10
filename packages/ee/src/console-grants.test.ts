@@ -5,7 +5,7 @@
 import { expandClaims, type Grant, holdsGate } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 
-import { CONSOLE_OPERATOR_GRANTS } from "./console-grants";
+import { CONSOLE_OPERATOR_GRANTS, consoleOperatorWork } from "./console-grants";
 
 const COMPANY = "co_1";
 
@@ -46,5 +46,19 @@ describe("Console Operator defaults", () => {
     expect(holdsGate(claims, { "settings.people": "Edit" }, COMPANY)).toBe(
       false
     );
+  });
+});
+
+describe("consoleOperatorWork", () => {
+  it("creates the type when the company has none", () => {
+    expect(consoleOperatorWork(undefined)).toBe("create");
+  });
+
+  it("grants a type that was left with no grants", () => {
+    expect(consoleOperatorWork({ id: "et_1", grantCount: 0 })).toBe("grant");
+  });
+
+  it("leaves a type that holds grants as it is", () => {
+    expect(consoleOperatorWork({ id: "et_1", grantCount: 2 })).toBeNull();
   });
 });

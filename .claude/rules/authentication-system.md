@@ -18,7 +18,7 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
 `./company.server`, `./users.server`, `./passkey.server`, `./verification.server`,
 `./middleware/flash.{server,client}`. User query helpers split across
 `services/users.ts` (client-safe: `getClaims`, `getPermissionCacheKey`,
-`getCompaniesForUser`, `makePermissionsFromClaims`) and `services/users.server.ts`
+`getCompaniesForUser`, `readClaimsFresh`) and `services/users.server.ts`
 (server-only: `getUserClaims`, deactivate flows).
 
 ## Supabase client factories (`lib/supabase/client.ts`, `client.server.ts`)
@@ -421,11 +421,11 @@ calls `registerApi`). Two paths:
      and quote pages) served them. No route is theirs: portal pages are share links on
      the service role. Opted in: onboarding, company switch (erp/mes/starter),
      `api+/link.ts`, academy challenge — each acts on the user's own identity. A 403, not a
-     redirect: the MES `/x` middleware calls `requirePermissions`, so a redirect there loops.
+     redirect: there is no page in the apps to send them to.
    - Claims are `{ role, permissions }` for ONE company. `get_claims(uid, company)`
      returns `{ role, admin, grants, portal }` (the `permission` rows of the user and
-     their employee type); `makePermissionsFromClaims(claims, companyId)` expands them
-     per page with `expandClaims` (`@carbon/database/access`).
+     their employee type); `claimsFor(claims, companyId)` (`@carbon/database/access`) expands them
+     per page, and `getUserClaims` narrows `role` to `CompanyRole`.
      TRANSITIONAL, both ways round for a rolling deploy: `get_claims` also returns the old
      `"<module>_<action>": [company]` keys, built from the effective MODULE grants (person
      beats role; Admin holds every action), so app pods from before page permissions keep
@@ -450,8 +450,7 @@ calls `registerApi`). Two paths:
      `{ "inventory.receipts": "Edit" }`. Each entry is checked with `holdsGate`, which reads
      the highest action of its level, `<page>_<action>` (`inventory.receipts_update` for
      Edit). Two entries need both; a list of gates (`anyOf(pages, level)`) passes on any one,
-     for a route several pages share (an item, a memo, a run). The `role` option is a
-     deprecated no-op: the employee role is the default.
+     for a route several pages share (an item, a memo, a run).
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
      → authenticated root.
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
@@ -460,8 +459,15 @@ calls `registerApi`). Two paths:
    - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
      is the pinned operator from `resolveConsolePinIn` (falling back to the session
      user when nobody valid is pinned in); `sessionUserId` is always the account the
-     terminal is signed in with. Gate terminal-level actions (entering console mode)
-     on `sessionUserId`, never `userId`.
+     terminal is signed in with, kept for audit.
+   - The pinned operator decides access: `sessionAccess` (`services/session-access.ts`)
+     checks the gate against the operator's claims, and `permissions` / `role` are the
+     operator's, so every gate built from `authorize` (service functions, MES checks
+     such as the assembly "complete all steps" override) asks the person acting. The
+     terminal's session user must still be an employee of the company (`{}`). Do not
+     re-read claims after `authorize` (`getUserClaims(userId, …)`): use its
+     `permissions`. Entering console mode (`x+/console.toggle`) runs outside console
+     mode, so the session user's grants decide it.
 
 Claims cache must be invalidated when permissions change. Grant writes go through
 `writeAccessGrants` (`@carbon/ee/permissions.server`), which clears it; the deactivation
@@ -471,7 +477,7 @@ membership change elsewhere calls `redis.del(getPermissionCacheKey(userId))`.
 
 ## API key auth
 
-`carbon-key: <key>` header. `requirePermissions` authenticates it with
+`carbon-key: <key>` header. `requirePermissions` hands it to `authorizeApiKey(rawKey, gate)`, which the v1 API and the MCP endpoint call with the key they read. It authenticates it with
 `authenticateApiKey(rawKey)` (`auth.server.ts`), the one path every key takes (the
 postings' `authorizePostingCaller` calls it too). It is memoized per request, so the rate
 limit counts a request once however many gates it meets. It reads via `getApiKeyRecord`
@@ -557,9 +563,9 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `hashOAuthSecret` (`auth.server.ts`). Lookups hash the incoming value and compare.
 - MCP endpoint (`apps/erp/app/routes/api+/mcp+/_index.ts`): a `Bearer` token not
   prefixed `crbn_` is an OAuth token — `findOAuthToken` (hash lookup + expiry), the
-  per-user rate limit, then `oauthContext` (membership, company group, claims, user
-  client, in parallel), both in `api+/v1+/lib/authenticate.server.ts` beside
-  `authenticateApiKey`. A `crbn_` bearer is rewritten to `carbon-key` API-key auth.
+  per-user rate limit, then `oauthContext` (company group, claims, user
+  client, in parallel; the employee check is `admits` on the claims), both in `api+/v1+/lib/authenticate.server.ts` beside
+  `apiKeyContext` (`authorizeApiKey`). A `crbn_` bearer is rewritten to `carbon-key` API-key auth.
   `companyId`/`userId` always come from the token row.
 
 ## Schema (newest migrations; `packages/database/supabase/migrations`)

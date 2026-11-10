@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { StoredGrant } from "@carbon/database/access-write";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -21,12 +23,12 @@ import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
-import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
+import AccessGrid from "../components/AccessGrid.ee";
 import AccessHolders from "./AccessHolders.ee";
 
 type EmployeeTypeFormProps = {
   initialValues: Omit<z.infer<typeof employeeTypeValidator>, "grants"> & {
-    grants: AccessGrant[];
+    grants: StoredGrant[];
   };
   /** The Admin type has Full on every module, whatever its grants say. */
   isAdmin?: boolean;
@@ -49,7 +51,7 @@ const EmployeeTypeForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
-    ? !userPermissions.has({ "users.employeeTypes": "Edit" })
+    ? !userPermissions.has(subjectGates("Edit").role)
     : !userPermissions.has({ "users.employeeTypes": "Create" });
 
   return (

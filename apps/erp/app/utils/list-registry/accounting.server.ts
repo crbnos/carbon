@@ -31,9 +31,7 @@ import { resolveCompanyGroupId, searchList } from "./index.server";
 
 export const journalEntriesList = searchList({
   key: "journal-entries",
-  permission: {
-    gate: { "accounting.journalEntries": "View" }
-  },
+  gate: { "accounting.journalEntries": "View" },
   paging: JOURNAL_ENTRIES_PAGING,
   service: getJournalEntries,
   params: { status: "status" }
@@ -41,7 +39,7 @@ export const journalEntriesList = searchList({
 
 export const fixedAssetsList = searchList({
   key: "fixed-assets",
-  permission: { gate: { "accounting.assets": "View" } },
+  gate: { "accounting.assets": "View" },
   paging: FIXED_ASSETS_PAGING,
   service: getFixedAssets,
   params: { status: "status" }
@@ -49,21 +47,21 @@ export const fixedAssetsList = searchList({
 
 export const assetClassesList = searchList({
   key: "asset-classes",
-  permission: { gate: { "accounting.assetClasses": "View" } },
+  gate: { "accounting.assetClasses": "View" },
   paging: FIXED_ASSET_CLASSES_PAGING,
   service: getFixedAssetClasses
 });
 
 export const depreciationRunsList = searchList({
   key: "depreciation-runs",
-  permission: { gate: { "accounting.depreciation": "View" } },
+  gate: { "accounting.depreciation": "View" },
   paging: DEPRECIATION_RUNS_PAGING,
   service: getDepreciationRuns
 });
 
 export const fleetAssetsList = searchList({
   key: "fleet-assets",
-  permission: { gate: { "accounting.fleet": "View" } },
+  gate: { "accounting.fleet": "View" },
   paging: FLEET_ASSETS_PAGING,
   service: getFleetAssets,
   params: { fleetStatus: "fleetStatus" }
@@ -71,7 +69,7 @@ export const fleetAssetsList = searchList({
 
 export const dimensionsList = {
   key: "accounting-dimensions",
-  permission: { gate: { "accounting.dimensions": "View" } },
+  gate: { "accounting.dimensions": "View" },
   ...DIMENSIONS_PAGING,
   query: async (client, companyId, context) => {
     const { companyGroupId, error } = await resolveCompanyGroupId(
@@ -94,7 +92,7 @@ export const dimensionsList = {
 
 export const intercompanyTransactionsList = {
   key: "intercompany-transactions",
-  permission: { gate: { "accounting.intercompany": "View" } },
+  gate: { "accounting.intercompany": "View" },
   ...INTERCOMPANY_TRANSACTIONS_PAGING,
   query: async (client, companyId, context) => {
     const { companyGroupId, error } = await resolveCompanyGroupId(
@@ -117,7 +115,7 @@ export const intercompanyTransactionsList = {
 
 export const paymentTermsList = searchList({
   key: "payment-terms",
-  permission: { gate: { "accounting.paymentTerms": "View" } },
+  gate: { "accounting.paymentTerms": "View" },
   paging: PAYMENT_TERMS_PAGING,
   service: getPaymentTerms
 });
@@ -144,16 +142,14 @@ function periodRunsQuery(type: RunType) {
 
 export const revenueRecognitionRunsList = {
   key: "revenue-recognition-runs",
-  permission: {
-    gate: { "accounting.revenueRecognition": "View" }
-  },
+  gate: { "accounting.revenueRecognition": "View" },
   ...PERIOD_RUNS_PAGING,
   query: periodRunsQuery("Revenue Recognition")
 } satisfies ListDefinition;
 
 export const leaseRunsList = {
   key: "lease-runs",
-  permission: { gate: { "accounting.leases": "View" } },
+  gate: { "accounting.leases": "View" },
   ...PERIOD_RUNS_PAGING,
   query: periodRunsQuery("Lease")
 } satisfies ListDefinition;

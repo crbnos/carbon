@@ -39,7 +39,7 @@ type DocumentStatus = "Draft" | "Posted" | "Voided";
 
 export const salesInvoicesList = searchList({
   key: "sales-invoices",
-  permission: { gate: { "invoicing.salesInvoices": "View" } },
+  gate: { "invoicing.salesInvoices": "View" },
   paging: SALES_INVOICES_PAGING,
   service: getSalesInvoices,
   params: { customerId: "customerId" }
@@ -47,7 +47,7 @@ export const salesInvoicesList = searchList({
 
 export const purchaseInvoicesList = searchList({
   key: "purchase-invoices",
-  permission: { gate: { "invoicing.purchaseInvoices": "View" } },
+  gate: { "invoicing.purchaseInvoices": "View" },
   paging: PURCHASE_INVOICES_PAGING,
   service: getPurchaseInvoices,
   params: { supplierId: "supplierId" }
@@ -55,7 +55,7 @@ export const purchaseInvoicesList = searchList({
 
 export const paymentsList = {
   key: "payments",
-  permission: { gate: { "invoicing.payments": "View" } },
+  gate: { "invoicing.payments": "View" },
   ...PAYMENTS_PAGING,
   query: (
     client,
@@ -110,21 +110,21 @@ function memosQuery(party: "customer" | "supplier") {
 
 export const creditMemosList = {
   key: "credit-memos",
-  permission: { gate: { "invoicing.creditMemos": "View" } },
+  gate: { "invoicing.creditMemos": "View" },
   ...MEMOS_PAGING,
   query: memosQuery("customer")
 } satisfies ListDefinition;
 
 export const supplierCreditsList = {
   key: "supplier-credits",
-  permission: { gate: { "invoicing.supplierCredits": "View" } },
+  gate: { "invoicing.supplierCredits": "View" },
   ...MEMOS_PAGING,
   query: memosQuery("supplier")
 } satisfies ListDefinition;
 
 export const chargesList = searchList({
   key: "charges",
-  permission: { gate: { "invoicing.charges": "View" } },
+  gate: { "invoicing.charges": "View" },
   paging: CHARGES_PAGING,
   service: getCharges,
   params: { type: "type", status: "status" }
@@ -132,7 +132,7 @@ export const chargesList = searchList({
 
 export const reimbursementsList = searchList({
   key: "reimbursements",
-  permission: { gate: { "invoicing.reimbursements": "View" } },
+  gate: { "invoicing.reimbursements": "View" },
   paging: REIMBURSEMENTS_PAGING,
   service: getReimbursements,
   params: { status: "status", employeeId: "employeeId" }

@@ -46,7 +46,7 @@ storageUnit: company(),                              // the four standard polici
 pickingListLineTrackedEntity: parent("pickingListLine", "pickingListLineId"),
 maintenanceDispatchItemTrackedEntity: company({ read: "employee", create: "employee" }),
 userToCompany: company({ read: "employee", create: false, update: false }),   // no API writes
-address: company({ create: anyOf("create", "purchasing.suppliers_create") }),
+supplierProcess: company({ create: anyOf("update", "purchasing.suppliers_update") }),
 note: policies({
   select: inCompany("companyId", "employee"),
   update: { using: owner("createdBy"), check: and(owner("createdBy"), inCompany("companyId", "employee")) }
@@ -93,6 +93,10 @@ which page owns a table, so a rule names only what differs from the default.
 
 - A write checks `<page>_<action>` (`inventory.receipts_update`), or any page the owner lists
   for the table in `alsoWrittenBy` (`inventory.shipments` → `shipmentLine`: `sales.salesOrders`).
+  Another page that writes the table at the same action goes there, not in a per-command
+  `anyOf` (`address`: `purchasing.suppliers`); a different action stays in the rule
+  (`supplierProcess` create by `purchasing.suppliers_update`). `buildIndex` throws on an entry
+  whose page does not own the table, or whose writer is no other page; `writersOf` reads it.
 - A read admits View on any page of the owner's module, plus every page that lists the table
   in `readers`, in ONE call: `get_companies_with_module_view(ARRAY['<module>'], ARRAY[<reader
   keys>])`. The module's pages are resolved in SQL by `util.module_pages`, so a policy never
@@ -121,7 +125,10 @@ function file or a hand-written migration names page keys too: `no-module-permis
 (`@carbon/checks`) fails a `<module>_<action>` token there (every migration not in the frozen
 list `packages/checks/src/conformance/module-key-migrations.json`, the migrations that existed
 at the cutoff `20261110050010` — so a late-landing migration dated earlier is checked too);
-portal keys (`get_customer_ids_with_customer_permission('parts_view')`) are exempt.
+portal keys (`get_customer_ids_with_customer_permission('parts_view')`, in the manifest
+`portal.customer(column, "parts_view")`) are exempt. The portal helpers ignore their key today:
+they return the caller's own `customerAccount` / `supplierAccount` parties in every company where
+they are that party.
 
 The registry helpers `util.module_pages` and `util.page_max_level` are rendered from the pages,
 and `util.action_levels` (each action and the lowest level that holds it, the `ACTION_LEVEL`
@@ -257,8 +264,9 @@ The meaning equals its rule; the wording may not — production's `agentThread` 
   migration that gives each such grant a page grant on it
   (`20261110101723_grants-for-moved-tables.sql`, `20261110050005` for Printing). When
   the new page owns much more, a page grant would widen access: list the table in the new
-  page's `alsoWrittenBy` with the page that wrote it before instead. `registry-sql.test.ts`
-  reads that migration's rows and fails a moved table covered both ways or neither.
+  page's `alsoWrittenBy` with the page that wrote it before instead. `moved-tables-covered`
+  (`@carbon/checks`) reads that migration's rows and fails a moved table covered both ways or
+  neither.
 - Helpers are applied callee first (`calleesFirst` in `helpers.ts`): Postgres checks a
   SQL-language body at creation, so a generated migration or a sync on a database without the
   callee would fail. A SQL helper on the hot path (`util.access_level`) stays inlinable: a

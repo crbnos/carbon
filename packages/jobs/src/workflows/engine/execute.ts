@@ -5,6 +5,7 @@
 import {
   ACTION_LEVEL,
   anyOf,
+  type ExpandedClaims,
   holdsGate,
   MODULES,
   moduleOf,
@@ -48,11 +49,7 @@ import {
 } from "./ledger";
 import { createEntityLoader, type EntityCache, triggerOutputs } from "./loader";
 import { claimRun, finishRun, loadRunContext } from "./log";
-import {
-  getOwnerClient,
-  type OwnerPermissions,
-  readOwnerPermissions
-} from "./owner";
+import { getOwnerClient, readOwnerPermissions } from "./owner";
 import {
   advance,
   alreadyExecuted,
@@ -141,7 +138,7 @@ interface NodeArgs {
   node: WorkflowNode;
   sequence: number;
   outputs: Record<string, Record<string, RuntimeValue>>;
-  permissions: OwnerPermissions;
+  permissions: ExpandedClaims;
   catalog: WorkflowCatalog;
   cache: EntityCache;
   companyGroupId: string;

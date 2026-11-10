@@ -11,14 +11,17 @@ import { path } from "~/utils/path";
 /** Opening an agreement: a Draft continues its setup, anything else shows
  *  its page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {
+  const { client, companyId, permissions } = await authorize(request, {
     "sales.rentalAgreements": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   throw redirect(
-    (await draftRentalAgreementSetupPath(client, { companyId, userId, id })) ??
-      path.to.rentalAgreementDetails(id)
+    (await draftRentalAgreementSetupPath(client, {
+      companyId,
+      permissions,
+      id
+    })) ?? path.to.rentalAgreementDetails(id)
   );
 }
 

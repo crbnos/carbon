@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { StoredGrant } from "@carbon/database/access-write";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { ValidatedForm } from "@carbon/form";
 import {
   Avatar,
@@ -22,12 +24,12 @@ import { Hidden, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { employeeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
-import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
+import AccessGrid from "../components/AccessGrid.ee";
 
 /** `admin`: the company's own Admin type (`isAdminType`). */
 type EmployeeType = { id: string; name: string; admin: boolean };
 
-type RoleGrant = AccessGrant & { employeeTypeId: string | null };
+type RoleGrant = StoredGrant & { employeeTypeId: string | null };
 
 type EmployeePermissionsFormProps = {
   employee: { name: string; email: string | null; avatarUrl: string | null };
@@ -38,7 +40,7 @@ type EmployeePermissionsFormProps = {
   effectiveAccess: { page: string; gained: string[] }[];
   initialValues: Omit<z.infer<typeof employeeValidator>, "grants"> & {
     /** The person's own overrides. */
-    grants: AccessGrant[];
+    grants: StoredGrant[];
   };
 };
 
@@ -54,7 +56,7 @@ const EmployeePermissionsForm = ({
   const permissions = usePermissions();
   const onClose = dialog.close;
 
-  const canEdit = permissions.has({ "users.accounts": "Edit" });
+  const canEdit = permissions.has(subjectGates("Edit").person);
 
   // The person's edits; the route remounts the form for another person.
   const [grants, setGrants] = useState(initialValues.grants);

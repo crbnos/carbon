@@ -32,8 +32,8 @@ const key = (
 ): Extract<Actor, { type: "apiKey" }> => ({
   type: "apiKey",
   createdBy: "user-1",
-  // Module scopes, expanded to every page of the module (a module grant).
-  scopes: pageClaims(
+  // Module grants, expanded to every page of the module.
+  permissions: pageClaims(
     Object.fromEntries(
       Object.entries(scopes).map(([module, actions]) => [
         module,

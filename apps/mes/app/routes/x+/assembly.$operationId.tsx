@@ -6,7 +6,6 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -53,11 +52,12 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId } = await authorize(request);
+  const { userId, companyId, permissions } = await authorize(request);
 
   // Manager-only "complete all steps" override is gated on Jobs at Full:
   // operators hold Edit (they record steps) but not Full, so it cleanly
   // separates managers from operators regardless of how a company names its employee types.
+  // On a console it is the pinned operator's grants (`authorize`).
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -67,12 +67,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   // Every read below is service-role: verify the operation is this company's.
-  const [claims, ownedOperation] = await Promise.all([
-    getUserClaims(userId, companyId),
-    getJobOperationForCompany(serviceRole, operationId, companyId)
-  ]);
+  const ownedOperation = await getJobOperationForCompany(
+    serviceRole,
+    operationId,
+    companyId
+  );
   const canOverrideComplete = holdsGate(
-    claims?.permissions ?? {},
+    permissions,
     { "production.jobs": "Full" },
     companyId
   );

@@ -86,14 +86,23 @@ CREATE OR REPLACE FUNCTION util.request_api_key()
  LANGUAGE sql
  STABLE
 AS $function$
-  -- The API key the request carries in its carbon-key header, when it is valid and
-  -- unexpired: the one place that reads the header, hashes it and checks expiry.
+  -- The API key the request carries in its carbon-key header, when it is valid,
+  -- unexpired and holds at least one grant in its company: the one place that
+  -- reads the header, hashes it and checks expiry. A key with no grant is no
+  -- member of the company, as admits (packages/database/src/access/admits.ts)
+  -- refuses it, so every helper built on this one reads it as no key at all.
   -- Not SECURITY DEFINER and no SET search_path (names are qualified), so Postgres
   -- inlines it into its callers, which are SECURITY DEFINER.
   SELECT k.id, k."companyId"
   FROM public."apiKey" k
   WHERE k."keyHash" = encode(extensions.digest((((current_setting('request.headers'::text, true))::json ->> 'carbon-key'))::bytea, 'sha256'::text), 'hex')
     AND (k."expiresAt" IS NULL OR k."expiresAt" > now())
+    AND EXISTS (
+      SELECT 1 FROM public.permission p
+      WHERE p."apiKeyId" = k.id
+        AND p."companyId" = k."companyId"
+        AND p.level <> 'None'::public."permissionLevel"
+    )
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_companies_with_any_employee_permission(permissions text[])
@@ -208,16 +217,14 @@ AS $function$
   DECLARE portal_keys jsonb := '{}'::jsonb;
   DECLARE legacy_keys jsonb := '{}'::jsonb;
   BEGIN
-    -- Your own claims, or those of someone in a company where you may view or
-    -- edit Accounts (the permission editor reads them with Accounts Edit).
+    -- Your own claims, or those of someone in a company where you may view
+    -- Accounts (the permission editor reads them).
     IF current_setting('role', true) IN ('anon', 'authenticated')
        AND uid IS DISTINCT FROM auth.uid()::text
        AND NOT EXISTS (
          SELECT 1 FROM "userToCompany" utc
          WHERE utc."userId" = uid
-           AND utc."companyId" = ANY (get_companies_with_any_employee_permission(
-             ARRAY['users.accounts_view', 'users.accounts_update']
-           ))
+           AND utc."companyId" = ANY (get_companies_with_employee_permission('users.accounts_view'))
        ) THEN
       RAISE EXCEPTION 'Not authorized to read claims for this user'
         USING ERRCODE = 'insufficient_privilege';
@@ -316,6 +323,81 @@ AS $function$
       FROM unnest(modules) AS m(module), unnest(util.module_pages(m.module)) AS p(page)
     )
   )
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_company_groups_for_root_permission(permission text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  permitted_companies text[];
+  group_ids text[];
+BEGIN
+  permitted_companies := get_companies_with_employee_permission(permission);
+
+  IF permitted_companies IS NULL OR array_length(permitted_companies, 1) IS NULL THEN
+    RETURN '{}';
+  END IF;
+
+  SELECT array_agg(DISTINCT "companyGroupId"::text)
+  INTO group_ids
+  FROM "company"
+  WHERE "id" = ANY(permitted_companies)
+    AND "parentCompanyId" IS NULL
+    AND "companyGroupId" IS NOT NULL;
+
+  RETURN COALESCE(group_ids, '{}');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_customer_ids_with_customer_permission(permission text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  customer_company_ids text[];
+  customer_ids text[];
+BEGIN
+  SELECT array_agg("companyId"::text)
+  INTO customer_company_ids
+  FROM "userToCompany" 
+  WHERE "userId" = auth.uid()::text AND "role" = 'customer';
+
+  SELECT array_agg(ca."customerId"::text)
+  INTO customer_ids
+  FROM "customerAccount" ca
+  WHERE ca.id::uuid = auth.uid() AND ca."companyId" = ANY(customer_company_ids);
+
+  RETURN customer_ids;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_supplier_ids_with_supplier_permission(permission text)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  supplier_company_ids text[];
+  supplier_ids text[];
+BEGIN
+  SELECT array_agg("companyId"::text)
+  INTO supplier_company_ids
+  FROM "userToCompany" 
+  WHERE "userId" = auth.uid()::text AND "role" = 'supplier';
+
+  SELECT array_agg(ca."supplierId"::text)
+  INTO supplier_ids
+  FROM "supplierAccount" ca
+  WHERE ca.id::uuid = auth.uid() AND ca."companyId" = ANY(supplier_company_ids);
+
+  RETURN supplier_ids;
+END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.has_valid_api_key_for_company(company text)

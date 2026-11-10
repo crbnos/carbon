@@ -28,13 +28,16 @@ import {
   type Grant,
   holdsGate,
   isAdminType,
-  isPageModule,
   type Level,
   levelOf,
   levelReaches,
   PAGES
 } from "@carbon/database/access";
-import { readGrants } from "@carbon/database/access-write";
+import {
+  readCompanyGrants,
+  readGrants,
+  subjectTypeOfRow
+} from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
 import { saveApiKey } from "@carbon/ee/api-keys.server";
@@ -42,7 +45,8 @@ import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   type AccessSubjectType,
-  accessSubject
+  accessSubject,
+  SUBJECT_RULES
 } from "@carbon/ee/permission-grants";
 import {
   type AccessChange,
@@ -50,7 +54,6 @@ import {
   saveEmployeeType,
   writeAccessGrants
 } from "@carbon/ee/permissions.server";
-import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   emailDomain,
@@ -2268,14 +2271,13 @@ export function originOf(request: Request) {
  * the lock is `requireEntitlement` inside `@carbon/ee/permissions.server`.
  */
 export async function refuseUnlessPermissionsFeature(ctx: ServiceContext) {
-  const spec = { feature: "PERMISSIONS" } as const;
-  if (await companyHasFeature(ctx.asCaller.supabase, ctx.company.id, spec)) {
+  const { feature, refusal } = SUBJECT_RULES.person;
+  if (
+    await companyHasFeature(ctx.asCaller.supabase, ctx.company.id, { feature })
+  ) {
     return null;
   }
-  return ctx.error(
-    "entitlement",
-    defaultUpgradeMessage(resolveRequirement(spec))
-  );
+  return ctx.error("entitlement", refusal);
 }
 
 /** The company's name and the inviting user, for the invite email. */
@@ -2380,40 +2382,16 @@ export function readAccessGrants(
   );
 }
 
-type GrantRow = {
-  employeeTypeId: string | null;
-  userId: string | null;
-  apiKeyId: string | null;
-  module: string;
-  page: string | null;
-  level: Level;
-  convertedFrom: string[] | null;
-};
+type GrantRow = Awaited<ReturnType<typeof readCompanyGrants>>[number];
 
 function toGrant(row: GrantRow): Grant & { convertedFrom: string[] | null } {
   return {
-    subject: row.userId ? "person" : row.employeeTypeId ? "role" : "key",
+    subject: subjectTypeOfRow(row),
     module: row.module,
     page: row.page,
     level: row.level,
     convertedFrom: row.convertedFrom
   };
-}
-
-function readCompanyGrants(ctx: ServiceContext) {
-  return ctx.asSystem.pg
-    .selectFrom("permission")
-    .select([
-      "employeeTypeId",
-      "userId",
-      "apiKeyId",
-      "module",
-      "page",
-      "level",
-      "convertedFrom"
-    ])
-    .where("companyId", "=", ctx.company.id)
-    .execute();
 }
 
 /** The company's employees (or one), with whether their type is the company's Admin type. */
@@ -2473,7 +2451,7 @@ function employeeSubject(
 export async function readEffectiveAccess(ctx: ServiceContext, userId: string) {
   const [[employee], rows] = await Promise.all([
     readCompanyEmployees(ctx, userId),
-    readCompanyGrants(ctx)
+    readCompanyGrants(ctx.asSystem.pg, ctx.company.id)
   ]);
   if (!employee) return null;
   const subject = employeeSubject(rows, employee);
@@ -2508,7 +2486,7 @@ export async function readPageAccessHolders(
   const withKeys = ctx.can({ "settings.apiKeys": "View" });
   const [employees, rows, keys] = await Promise.all([
     readCompanyEmployees(ctx),
-    readCompanyGrants(ctx),
+    readCompanyGrants(ctx.asSystem.pg, ctx.company.id),
     withKeys
       ? ctx.asSystem.pg
           .selectFrom("apiKey")
@@ -2541,21 +2519,11 @@ export async function readPageAccessHolders(
 }
 
 export async function readRoleGrants(ctx: ServiceContext) {
-  const rows = await readCompanyGrants(ctx);
+  const rows = await readCompanyGrants(ctx.asSystem.pg, ctx.company.id);
   return rows.flatMap(({ employeeTypeId, module, page, level }) =>
-    employeeTypeId !== null && isPageModule(module)
-      ? [{ employeeTypeId, module, page, level }]
-      : []
+    employeeTypeId !== null ? [{ employeeTypeId, module, page, level }] : []
   );
 }
-
-const ENTITLEMENT_REFUSAL: Record<AccessSubjectType, () => string> = {
-  role: () =>
-    defaultUpgradeMessage(resolveRequirement({ feature: "PERMISSIONS" })),
-  person: () =>
-    defaultUpgradeMessage(resolveRequirement({ feature: "PERMISSIONS" })),
-  key: () => "API keys require the Business plan"
-};
 
 /**
  * Write the grants of a role, a person or an API key: replace them with a set,
@@ -2637,7 +2605,7 @@ async function refusalOf(
     written = await write;
   } catch (err) {
     if (!(err instanceof EntitlementError)) throw err;
-    return ctx.error("entitlement", ENTITLEMENT_REFUSAL[subjectType]());
+    return ctx.error("entitlement", SUBJECT_RULES[subjectType].refusal);
   }
   return written.error
     ? ctx.error(written.error.code, written.error.message)
@@ -3266,7 +3234,6 @@ export async function queueInviteResends(args: {
   );
 }
 
-/** Queues the `update-permissions` job for each user. */
 export async function queuePermissionUpdates(args: {
   userIds: string[];
   companyId: string;

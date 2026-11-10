@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Kysely } from "kysely";
-import type { KyselyDatabase, KyselyTx } from "../client";
+import { type KyselyDatabase, type KyselyTx, withTransaction } from "../client";
 import type { Level } from "./levels";
 import {
   clampLevel,
@@ -20,12 +20,15 @@ export type GrantSubject =
   | { userId: string }
   | { apiKeyId: string };
 
-/** One grant to store. A null level stores nothing: the subject inherits. */
-export type GrantInput = {
+/** One stored grant: a level on a module (`page` null) or on one of its pages. */
+export type StoredGrant = {
   module: GrantModule;
   page: string | null;
-  level: Level | null;
+  level: Level;
 };
+
+/** One grant to store. A null level stores nothing: the subject inherits. */
+export type GrantInput = Omit<StoredGrant, "level"> & { level: Level | null };
 
 export function subjectColumn(subject: GrantSubject) {
   if ("employeeTypeId" in subject)
@@ -34,22 +37,58 @@ export function subjectColumn(subject: GrantSubject) {
   return ["apiKeyId", subject.apiKeyId] as const;
 }
 
-/** The subject's grants in the company. One on a module with no pages grants nothing, so it is left out. */
+/** Which subject a `permission` row belongs to: the column it sets. */
+export function subjectTypeOfRow(row: {
+  employeeTypeId: string | null;
+  userId: string | null;
+}): "role" | "person" | "key" {
+  return row.userId ? "person" : row.employeeTypeId ? "role" : "key";
+}
+
+/**
+ * Every grant in the company, with the subject it belongs to. One on a module
+ * with no pages grants nothing, so it is left out.
+ */
+export async function readCompanyGrants(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  subject?: GrantSubject
+) {
+  let query = db
+    .selectFrom("permission")
+    .select([
+      "employeeTypeId",
+      "userId",
+      "apiKeyId",
+      "module",
+      "page",
+      "level",
+      "convertedFrom"
+    ])
+    .where("companyId", "=", companyId);
+  if (subject) {
+    const [column, id] = subjectColumn(subject);
+    query = query.where(column, "=", id);
+  }
+  const rows = await query.execute();
+  return rows.flatMap((row) =>
+    isPageModule(row.module) ? [{ ...row, module: row.module }] : []
+  );
+}
+
+/** The subject's grants in the company (`readCompanyGrants` for one subject). */
 export async function readGrants(
   db: Kysely<KyselyDatabase> | KyselyTx,
   companyId: string,
   subject: GrantSubject
-) {
-  const [column, id] = subjectColumn(subject);
-  const rows = await db
-    .selectFrom("permission")
-    .select(["module", "page", "level", "convertedFrom"])
-    .where("companyId", "=", companyId)
-    .where(column, "=", id)
-    .execute();
-  return rows.flatMap((row) =>
-    isPageModule(row.module) ? [{ ...row, module: row.module }] : []
-  );
+): Promise<(StoredGrant & { convertedFrom: string[] | null })[]> {
+  const rows = await readCompanyGrants(db, companyId, subject);
+  return rows.map(({ module, page, level, convertedFrom }) => ({
+    module,
+    page,
+    level,
+    convertedFrom
+  }));
 }
 
 /**
@@ -96,8 +135,7 @@ export async function replaceGrants(
       .execute();
     if (rows.length) await tx.insertInto("permission").values(rows).execute();
   };
-  if (db.isTransaction) return write(db as KyselyTx);
-  return db.transaction().execute(write);
+  return withTransaction(db, write);
 }
 
 /**

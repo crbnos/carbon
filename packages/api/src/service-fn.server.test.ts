@@ -55,7 +55,7 @@ const contextWith = (
   actor: Actor = {
     type: "apiKey",
     createdBy: "user-1",
-    scopes: productionView
+    permissions: productionView
   }
 ) =>
   createServiceContext({
@@ -230,10 +230,10 @@ describe("the gate", () => {
         return "ok";
       }
     });
-    const key = (scopes = {}): Actor => ({
+    const key = (permissions = {}): Actor => ({
       type: "apiKey",
       createdBy: "user-1",
-      scopes
+      permissions
     });
     expect((await open(contextWith({}, key()), {})).error?.category).toBe(
       "forbidden"

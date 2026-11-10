@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { datetime, EPSILON } from "@carbon/utils";
@@ -38,7 +37,7 @@ const COMING_UP_LIMIT = 6;
 const ACTIVITY_LIMIT = 6;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api, client, companyId, userId } = await authorize(request, {
+  const { api, client, companyId, permissions } = await authorize(request, {
     "projects.projects": "View"
   });
 
@@ -47,8 +46,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The project contract (the Contract card and its Needs attention rows) is
   // sales data; billing review also needs Edit on Approvals.
-  const permissions =
-    (await getUserClaims(userId, companyId))?.permissions ?? {};
   const canViewSales = holdsGate(permissions, CONTRACT_READ_GATE, companyId);
   const canReviewBilling =
     canViewSales &&

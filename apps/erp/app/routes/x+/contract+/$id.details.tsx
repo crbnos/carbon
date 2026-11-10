@@ -28,7 +28,7 @@ const logger = getLogger("erp", "contract-details");
  *  there — including Create Contract on a sales order and every action that
  *  returns to the contract page. A viewer who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(
+  const { client, companyId, permissions, api } = await authorize(
     request,
     // Both contract lists open the same contract page.
     CONTRACT_READ_GATE
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   const setup = await draftContractSetupPath(client, {
     companyId,
-    userId,
+    permissions,
     id
   });
   if (setup) throw redirect(setup);

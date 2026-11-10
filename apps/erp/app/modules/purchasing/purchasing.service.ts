@@ -13,7 +13,6 @@ import {
   CarbonError,
   type ServiceContext
 } from "@carbon/api/service-fn.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import {
   fetchAllByIds,
@@ -21,7 +20,7 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
+import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import {
   type Kysely,
@@ -7553,22 +7552,17 @@ export async function generateLeaseInvoicesNow(
  *  as `draftRentalAgreementSetupPath`. */
 export async function draftLeaseSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [lease, claims] = await Promise.all([
-    client
-      .from("lease")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
+  const { companyId, permissions, id } = args;
+  const lease = await client
+    .from("lease")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
   if (lease.data?.status !== "Draft") return null;
-  if (
-    !holdsGate(claims?.permissions, { "purchasing.leases": "Edit" }, companyId)
-  ) {
+  if (!holdsGate(permissions, { "purchasing.leases": "Edit" }, companyId)) {
     return null;
   }
   return path.to.leaseSetup(id, "assets");

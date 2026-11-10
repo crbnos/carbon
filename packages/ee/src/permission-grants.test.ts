@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Level } from "@carbon/database/access";
+import type { GrantModule } from "@carbon/database/access-write";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -16,7 +17,7 @@ import {
   toModule
 } from "./permission-grants";
 
-const g = (module: string, page: string | null, level: Level) => ({
+const g = (module: GrantModule, page: string | null, level: Level) => ({
   module,
   page,
   level

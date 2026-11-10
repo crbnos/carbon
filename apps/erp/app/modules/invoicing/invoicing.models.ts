@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type PageId, pageOfRow } from "@carbon/database/access";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -831,5 +831,5 @@ export function memoPage(
   memo: { supplierId?: string | null; customerId?: string | null } | MemoParty
 ): PageId {
   const row = typeof memo === "string" ? { [`${memo}Id`]: memo } : memo;
-  return pageOfRow("memo", row) ?? "invoicing.creditMemos";
+  return pageOfTable("memo", row);
 }

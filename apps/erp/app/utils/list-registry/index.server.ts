@@ -46,14 +46,6 @@ export type ListPaging = {
   exactCount?: boolean;
 };
 
-/**
- * The loader's gate (`authorize`), without `bypassRls`: the page the list is
- * on, `{ "sales.salesOrders": "View" }`.
- */
-export type ListPermission = {
-  gate: Gate;
-};
-
 export type ListQueryResult<TRow> = {
   data: TRow[] | null;
   error: unknown;
@@ -90,7 +82,11 @@ export type ListDefinition<
 > = Paging & {
   /** The list's key, for example "sales-orders". */
   key: string;
-  permission: ListPermission;
+  /**
+   * The loader's gate (`authorize`), without `bypassRls`: the page the list
+   * is on, `{ "sales.salesOrders": "View" }`.
+   */
+  gate: Gate;
   query: (
     client: SupabaseClient<Database>,
     companyId: string,
@@ -246,7 +242,7 @@ type ParamReader = string | ((params: URLSearchParams) => unknown);
  * ```ts
  * export const salesOrdersList = searchList({
  *   key: "sales-orders",
- *   permission: { gate: { "sales.salesOrders": "View" } },
+ *   gate: { "sales.salesOrders": "View" },
  *   paging: SALES_ORDERS_PAGING,
  *   service: getSalesOrders,
  *   params: { status: "status", customerId: "customerId" }
@@ -262,7 +258,7 @@ export function searchList<
   TOut extends Record<string, unknown> = TRow
 >({
   key,
-  permission,
+  gate,
   paging,
   service,
   params: readers = {},
@@ -270,7 +266,7 @@ export function searchList<
   exportValues
 }: {
   key: string;
-  permission: ListPermission;
+  gate: Gate;
   paging: Paging;
   service: (
     client: SupabaseClient<Database>,
@@ -283,7 +279,7 @@ export function searchList<
 }): ListDefinition<TRow, TOut> {
   return {
     key,
-    permission,
+    gate,
     ...paging,
     ...(rows ? { rows } : {}),
     ...(exportValues ? { exportValues } : {}),

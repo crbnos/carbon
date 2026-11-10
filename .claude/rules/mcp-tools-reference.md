@@ -227,10 +227,10 @@ instance advertises its own endpoint. Never hard-code `app.carbon.ms`.
 
 1. **OAuth bearer**: `Authorization: Bearer <token>` not prefixed `crbn_`.
    `findOAuthToken` (hash lookup + expiry), the per-user rate limit, then
-   `oauthContext` (membership, company group, claims, user client), in
+   `oauthContext` (company group, claims, user client), in
    `api+/v1+/lib/authenticate.server.ts`.
 2. **API key**: `Bearer crbn_…` is rewritten to the `carbon-key` header, or the
-   header is sent directly (`authenticateApiKey`).
+   header is sent directly (`apiKeyContext`, `authorizeApiKey`).
 3. **No auth** → 401 with `WWW-Authenticate: Bearer resource_metadata=…`.
 
 `companyId` / `userId` always come from the credential, never from arguments.

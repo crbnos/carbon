@@ -34,7 +34,7 @@ import {
   itemLedgerInStripes,
   type StockStripe
 } from "@carbon/api/stock-stripes";
-import { error, getAppUrl } from "@carbon/auth";
+import { error, getAppUrl, readClaimsFresh } from "@carbon/auth";
 import { authenticateApiKey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -46,7 +46,7 @@ import {
   type Json,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
-import { admits, claimsFor, type PageGate } from "@carbon/database/access";
+import { admits, type PageGate } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
@@ -1499,8 +1499,8 @@ export async function refuseUnlessOwned(
 
 /**
  * For a write gated on company membership (`permission: {}`): a person logs
- * their own time, but that gate admits an API key holding any scope, even a
- * read-only one. A key also needs `required`.
+ * their own time, but that gate admits an API key holding any permission,
+ * even a read-only one. A key also needs `required`.
  */
 export function refuseKeyWithout(
   ctx: ServiceContext,
@@ -1510,7 +1510,7 @@ export function refuseKeyWithout(
   return ctx.error(
     "forbidden",
     `This API key needs ${Object.entries(required)
-      .map(([action, module]) => `${action}: ${module}`)
+      .map(([page, level]) => `${page}: ${level}`)
       .join(", ")} to do this`
   );
 }
@@ -2156,7 +2156,7 @@ const POSTING_DEFAULTS: Partial<
  * - From handles that carry the caller's `client`, `as` is required (the
  *   body's permission rule, or what the input requires): the caller must hold
  *   it first — a user's claims, an API key's
- *   scopes, nothing for the service role. With the body's input `schema`, the
+ *   permissions, nothing for the service role. With the body's input `schema`, the
  *   input is parsed first and the rule reads it as the body will. The body
  *   then runs as the system
  *   on the user's behalf, over that same `db` (a transaction stays one).
@@ -18598,14 +18598,15 @@ export function attributesContain(values: Record<string, string>) {
 }
 /**
  * The credential a posting's client carries: the service role (the system),
- * an API key (checked against its scopes) or the signed-in user's token
- * (checked against the user's claims). Not an `Actor`: the key is not yet
- * authenticated and no claims are read. Never derive it from input.
+ * an API key (checked against its permissions) or the signed-in user's token
+ * (checked against the user's claims, read through that client). Not an
+ * `Actor`: the key is not yet authenticated and no claims are read. Never
+ * derive it from input.
  */
 export type PostingCredential =
   | { type: "system" }
   | { type: "apiKey"; apiKey: string }
-  | { type: "user" };
+  | { type: "user"; client: SupabaseClient<Database> };
 
 /**
  * The client's key decides the caller. A user's token must be `userId`'s,
@@ -18628,7 +18629,7 @@ export function postingCredential(
   if (bearerSubject(headers.Authorization) !== userId) {
     throw new ForbiddenError("userId does not match the signed-in user");
   }
-  return { type: "user" };
+  return { type: "user", client };
 }
 
 /** The `sub` of a `Bearer` JWT, unverified. The token comes from this
@@ -18684,10 +18685,11 @@ export async function authorizePostingCaller(
     }
     return;
   }
-  const { rows } = await sql<{
-    claims: Record<string, unknown> | null;
-  }>`SELECT get_claims(${userId}, ${companyId}) AS claims`.execute(db);
-  const { role, permissions } = claimsFor(rows[0]?.claims ?? {}, companyId);
+  const { role, permissions } = await readClaimsFresh(
+    caller.client,
+    userId,
+    companyId
+  );
   if (!admits({ type: "user", role, permissions }, companyId, required)) {
     throw new ForbiddenError();
   }

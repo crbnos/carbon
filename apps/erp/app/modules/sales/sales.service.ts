@@ -9,10 +9,9 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
-import { holdsGate } from "@carbon/database/access";
+import { type ExpandedClaims, holdsGate } from "@carbon/database/access";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
 import {
   type Kysely,
@@ -13947,25 +13946,18 @@ export async function deleteContractLineReleasingSalesOrderLine(
  *  contract, or for a viewer who cannot edit — they get the contract page. */
 export async function draftContractSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [contract, claims] = await Promise.all([
-    client
-      .from("customerContract")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
+  const { companyId, permissions, id } = args;
+  const contract = await client
+    .from("customerContract")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
   if (contract.data?.status !== "Draft") return null;
   if (
-    !holdsGate(
-      claims?.permissions,
-      { "sales.serviceContracts": "Edit" },
-      companyId
-    )
+    !holdsGate(permissions, { "sales.serviceContracts": "Edit" }, companyId)
   ) {
     return null;
   }
@@ -13978,25 +13970,18 @@ export async function draftContractSetupPath(
  *  agreement page. */
 export async function draftRentalAgreementSetupPath(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string; id: string }
+  args: { companyId: string; permissions: ExpandedClaims; id: string }
 ): Promise<string | null> {
-  const { companyId, userId, id } = args;
-  const [agreement, claims] = await Promise.all([
-    client
-      .from("rentalAgreement")
-      .select("status")
-      .eq("id", id)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    getUserClaims(userId, companyId)
-  ]);
+  const { companyId, permissions, id } = args;
+  const agreement = await client
+    .from("rentalAgreement")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
   if (agreement.data?.status !== "Draft") return null;
   if (
-    !holdsGate(
-      claims?.permissions,
-      { "sales.rentalAgreements": "Edit" },
-      companyId
-    )
+    !holdsGate(permissions, { "sales.rentalAgreements": "Edit" }, companyId)
   ) {
     return null;
   }

@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { StoredGrant } from "@carbon/database/access-write";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -27,7 +29,7 @@ import {
   bulkPermissionsValidator
 } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
-import AccessGrid, { type AccessGrant } from "../components/AccessGrid.ee";
+import AccessGrid from "../components/AccessGrid.ee";
 import {
   AllMatchingUsersNote,
   type BulkUserActionFetcher
@@ -70,9 +72,9 @@ const BulkEditPermissionsBody = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   // The overrides to apply. A module left on "No change" is not touched.
-  const [grants, setGrants] = useState<AccessGrant[]>([]);
+  const [grants, setGrants] = useState<StoredGrant[]>([]);
 
-  const canEditPermissions = permissions.has({ "users.accounts": "Edit" });
+  const canEditPermissions = permissions.has(subjectGates("Edit").person);
 
   return (
     <ValidatedForm

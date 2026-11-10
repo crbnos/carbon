@@ -99,7 +99,7 @@ describe("operation guards", () => {
       actor: {
         type: "apiKey",
         createdBy: "usr_admin",
-        scopes: pageClaims({
+        permissions: pageClaims({
           users: { view: [], create: [], update: [COMPANY], delete: [] }
         })
       },

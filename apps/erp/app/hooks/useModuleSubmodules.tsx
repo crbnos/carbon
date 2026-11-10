@@ -18,7 +18,6 @@ import useServiceSubmodules from "~/modules/service/ui/useServiceSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
 import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
 import type { RouteGroup } from "~/types";
-import { path } from "~/utils/path";
 import { moduleLanding } from "~/utils/submodule-visibility";
 import { useModules, useSubmoduleLayout } from "./useModules";
 
@@ -75,8 +74,7 @@ export function useModuleLinks() {
     ...module,
     to: moduleLanding(
       module.to,
-      // `/x/accounting` only redirects to its reports.
-      module.key === "accounting" ? path.to.reports : module.to,
+      module.opensOn,
       submodules[module.key] ?? [],
       layout
     )

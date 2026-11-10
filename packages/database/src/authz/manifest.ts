@@ -8,6 +8,7 @@
 // rules.ts `Permission`): a table's module and its read come from the registry, so a rule
 // names only what differs. A page key (`purchasing.suppliers_create`) is a grant to a page
 // that does not own the table, and renders as written.
+import { permissionKey } from "../access/levels";
 import { ITEM_PAGES } from "../access/registry";
 import {
   always,
@@ -41,7 +42,7 @@ import {
 
 /** Any one item page at `action`: for a row no one item decides. */
 const anyItemPage = (action: "create" | "update" | "delete") =>
-  anyOf(...ITEM_PAGES.map((page) => `${page}_${action}` as const));
+  anyOf(...ITEM_PAGES.map((page) => permissionKey(page, action)));
 
 /** The payment and memo a settlement applies are both still Draft (or absent). */
 const draftSettlement = and(
@@ -166,7 +167,7 @@ const grantRows = (apiKeyAction: "view" | "create" | "update" | "delete") =>
     ),
     and(
       isNotNull("apiKeyId"),
-      inCompany("companyId", `settings.apiKeys_${apiKeyAction}`)
+      inCompany("companyId", permissionKey("settings.apiKeys", apiKeyAction))
     )
   );
 
@@ -207,12 +208,7 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  // Customers owns it; Suppliers writes the addresses of its own locations.
-  address: company({
-    create: anyOf("create", "purchasing.suppliers_create"),
-    update: anyOf("update", "purchasing.suppliers_update"),
-    delete: anyOf("delete", "purchasing.suppliers_delete")
-  }),
+  address: company(),
   agentMessage: policies({
     select: and(
       inCompany("companyId", "employee"),
@@ -628,25 +624,13 @@ export const manifest = {
       anyOf("delete", "resources.workCenters_delete")
     )
   }),
-  // Also written by the integrations and the audit log switch, from their
-  // Settings pages, as before. Audit Logs tops out at Edit.
+  // Also written by the audit log switch, from its Settings page, as before.
+  // Audit Logs tops out at Edit.
   eventSystemSubscription: company({
     read: "employee",
-    create: anyOf(
-      "create",
-      "settings.integrations_create",
-      "settings.auditLogs_update"
-    ),
-    update: anyOf(
-      "update",
-      "settings.integrations_update",
-      "settings.auditLogs_update"
-    ),
-    delete: anyOf(
-      "delete",
-      "settings.integrations_delete",
-      "settings.auditLogs_update"
-    )
+    create: anyOf("create", "settings.auditLogs_update"),
+    update: anyOf("update", "settings.auditLogs_update"),
+    delete: anyOf("delete", "settings.auditLogs_update")
   }),
   exchangeRate: policies({ select: always, to: "authenticated" }),
   exchangeRateOverride: company({
@@ -658,28 +642,7 @@ export const manifest = {
     select: inCompany("companyId", "employee"),
     insert: inCompany("companyId", "employee")
   }),
-  // Portals owns it; Quotes, Supplier Quotes and Issues share their own documents.
-  externalLink: company({
-    read: "employee",
-    create: anyOf(
-      "create",
-      "sales.quotes_create",
-      "purchasing.supplierQuotes_create",
-      "quality.issues_create"
-    ),
-    update: anyOf(
-      "update",
-      "sales.quotes_update",
-      "purchasing.supplierQuotes_update",
-      "quality.issues_update"
-    ),
-    delete: anyOf(
-      "delete",
-      "sales.quotes_delete",
-      "purchasing.supplierQuotes_delete",
-      "quality.issues_delete"
-    )
-  }),
+  externalLink: company({ read: "employee" }),
   feedback: serviceOnly(),
   fiscalYearSettings: company(),
   fixedAsset: company(),

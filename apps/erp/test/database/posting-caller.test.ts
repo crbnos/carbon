@@ -5,7 +5,7 @@
 import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { describe, expect, it, vi } from "vitest";
 import { resolvePermissions } from "@carbon/api/permissions";
@@ -79,7 +79,10 @@ describe("postingCredential", () => {
     const own = clientWith("anon-key", {
       Authorization: `Bearer ${jwt({ sub: "u1", role: "authenticated" })}`
     });
-    expect(postingCredential(own, fields.userId)).toEqual({ type: "user" });
+    expect(postingCredential(own, fields.userId)).toEqual({
+      type: "user",
+      client: own
+    });
 
     const other = clientWith("anon-key", {
       Authorization: `Bearer ${jwt({ sub: "u2", role: "authenticated" })}`
@@ -200,6 +203,17 @@ describe("authorizePostingCaller (API key)", () => {
 });
 
 describe("authorizePostingCaller (user)", () => {
+  /** The caller's client as far as the claims read goes: `get_claims`, answered by the test database. */
+  const claimsClient = (db: Kysely<KyselyDatabase>) =>
+    ({
+      rpc: async (_fn: string, args: { uid: string; company: string }) => {
+        const { rows } = await sql<{ claims: unknown }>`
+          SELECT get_claims(${args.uid}, ${args.company}) AS claims
+        `.execute(db);
+        return { data: rows[0]?.claims ?? null, error: null };
+      }
+    }) as unknown as SupabaseClient<Database>;
+
   /** Runs `fn` with a real employee of a real company. */
   async function withEmployee(
     fn: (
@@ -240,16 +254,16 @@ describe("authorizePostingCaller (user)", () => {
       withEmployee(async (fields, held) => {
         const gate = { [held]: "Edit" } as PageGate;
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, gate)
+          authorize({ ...fields, caller: { type: "user", client: claimsClient(fields.db) } }, gate)
         ).resolves.toBeUndefined();
         await expect(
           authorize(
-            { ...fields, companyId: "not-theirs", caller: { type: "user" } },
+            { ...fields, companyId: "not-theirs", caller: { type: "user", client: claimsClient(fields.db) } },
             gate
           )
         ).rejects.toMatchObject({ status: 403 });
         await expect(
-          authorize({ ...fields, caller: { type: "user" } }, {
+          authorize({ ...fields, caller: { type: "user", client: claimsClient(fields.db) } }, {
             "no-such-page": "Edit"
           } as PageGate)
         ).rejects.toMatchObject({ status: 403 });
@@ -265,7 +279,7 @@ describe("authorizePostingCaller (user)", () => {
           open: { [held]: "Edit" } as PageGate
         }
       } as const;
-      const user: Caller = { ...fields, caller: { type: "user" } };
+      const user: Caller = { ...fields, caller: { type: "user", client: claimsClient(fields.db) } };
       await expect(
         authorize(user, resolvePermissions(rule, { type: "internal" }))
       ).rejects.toMatchObject({ status: 403 });

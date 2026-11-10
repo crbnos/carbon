@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { pageOfTable } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -62,11 +63,11 @@ function isViewableInBrowser(fileName: string): boolean {
  * company), as opposed to a transaction. Files land in the `private` bucket
  * under `${companyId}/${bucketPrefix}/${id}`, and each upload also writes a
  * `document` row so the file is searchable in the global Documents module.
- * `page` is the page whose level gates upload and delete.
+ * `page` is the page whose level gates upload and delete: the record table's.
  */
 const RECORDS = {
-  Supplier: { bucketPrefix: "supplier", page: "purchasing.suppliers" },
-  Customer: { bucketPrefix: "customer", page: "sales.customers" }
+  Supplier: { bucketPrefix: "supplier", page: pageOfTable("supplier") },
+  Customer: { bucketPrefix: "customer", page: pageOfTable("customer") }
 } as const;
 
 type RecordDocumentsProps = {

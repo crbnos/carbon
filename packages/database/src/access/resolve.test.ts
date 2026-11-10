@@ -5,8 +5,12 @@
 import { describe, expect, it } from "vitest";
 import cases from "./cases.json";
 import {
+  ACTION_LEVEL,
+  type Action,
   actionsGained,
+  higherLevel,
   LEVEL_ACTION,
+  lowerLevel,
   parsePermissionKey,
   permissionKey,
   roundUp
@@ -29,17 +33,20 @@ import {
   claimsFromJson,
   expandClaims,
   type Grant,
-  holds,
   holdsGate,
   isAdminType,
   isLegacyClaims,
   landingOf,
   legacyGrants,
   levelOf,
+  type PageGate,
   type RawClaims,
-  resolveLevel,
   widenReads
 } from "./resolve";
+
+/** A gate on one page at the lowest level that holds `action`. */
+const at = (page: string, action: Action): PageGate =>
+  ({ [page]: ACTION_LEVEL[action] }) as PageGate;
 
 // A case's grants and Admin type are in company "A" unless they name another,
 // and it asks about "A" unless `askCompany` names another. get_claims hands the
@@ -102,13 +109,6 @@ describe("levelOf", () => {
   });
 });
 
-describe("resolveLevel", () => {
-  it.each(cases as Case[])("$name", (c) => {
-    const { grants, admin } = subjectOf(c);
-    expect(resolveLevel(grants, c.pageId, { admin })).toBe(c.expected);
-  });
-});
-
 describe("roundUp", () => {
   it.each([
     [{}, "None"],
@@ -120,6 +120,15 @@ describe("roundUp", () => {
     [{ view: true, create: true, update: true, delete: true }, "Full"]
   ] as const)("%o → %s", (flags, level) => {
     expect(roundUp(flags)).toBe(level);
+  });
+});
+
+describe("lowerLevel and higherLevel", () => {
+  it("pick the lower and the higher of two levels", () => {
+    expect(lowerLevel("View", "Full")).toBe("View");
+    expect(higherLevel("View", "Full")).toBe("Full");
+    expect(higherLevel("Edit", "None")).toBe("Edit");
+    expect(lowerLevel("Edit", "Edit")).toBe("Edit");
   });
 });
 
@@ -159,13 +168,17 @@ describe("expandClaims", () => {
 
   it("gives every page of the module the module grant's actions, up to its maxLevel", () => {
     for (const page of pagesOf("inventory")) {
-      expect(holds(expanded, `${page}_update`, "c1")).toBe(
+      expect(holdsGate(expanded, at(page, "update"), "c1")).toBe(
         clampLevel(page, "Edit") === "Edit"
       );
-      expect(holds(expanded, `${page}_delete`, "c1")).toBe(false);
+      expect(holdsGate(expanded, at(page, "delete"), "c1")).toBe(false);
     }
-    expect(holds(expanded, "inventory.traceability_view", "c1")).toBe(true);
-    expect(holds(expanded, "inventory.traceability_update", "c1")).toBe(false);
+    expect(
+      holdsGate(expanded, at("inventory.traceability", "view"), "c1")
+    ).toBe(true);
+    expect(
+      holdsGate(expanded, at("inventory.traceability", "update"), "c1")
+    ).toBe(false);
     expect(expanded["inventory.receipts"]).toEqual({
       view: ["c1"],
       create: ["c1"],
@@ -176,32 +189,28 @@ describe("expandClaims", () => {
 
   it("expands no module key", () => {
     expect(expanded.inventory).toBeUndefined();
-    expect(holds(expanded, "inventory_view", "c1")).toBe(false);
+    expect(holdsGate(expanded, at("inventory", "view"), "c1")).toBe(false);
   });
 
   it("lets a person None remove the role's grant", () => {
     for (const page of pagesOf("sales")) {
-      expect(holds(expanded, `${page}_view`, "c1")).toBe(false);
+      expect(holdsGate(expanded, at(page, "view"), "c1")).toBe(false);
     }
   });
 
   it("leaves portal keys out of the pages", () => {
     expect(expanded.customerPortal).toBeUndefined();
-    expect(holds(expanded, "customerPortal_view", "c2")).toBe(false);
+    expect(holdsGate(expanded, at("customerPortal", "view"), "c2")).toBe(false);
   });
 
   it("gives an admin every page's maxLevel", () => {
     const admin = expandClaims({ ...raw, admin: true }, "c1");
     for (const page of PAGES) {
-      expect(holds(admin, `${page.id}_view`, "c1")).toBe(true);
-      expect(holds(admin, `${page.id}_delete`, "c1")).toBe(
+      expect(holdsGate(admin, at(page.id, "view"), "c1")).toBe(true);
+      expect(holdsGate(admin, at(page.id, "delete"), "c1")).toBe(
         page.maxLevel === "Full"
       );
     }
-  });
-
-  it("refuses a key that is not <page>_<action>", () => {
-    expect(holds(expanded, "inventory", "c1")).toBe(false);
   });
 });
 
@@ -495,8 +504,10 @@ describe("claimsFromJson", () => {
       { subject: "role", module: "Sales", page: null, level: "View" }
     ]);
     const expanded = expandClaims(raw, "co1");
-    expect(holds(expanded, "inventory.receipts_view", "co1")).toBe(false);
-    expect(holds(expanded, "sales.quotes_view", "co1")).toBe(true);
+    expect(holdsGate(expanded, at("inventory.receipts", "view"), "co1")).toBe(
+      false
+    );
+    expect(holdsGate(expanded, at("sales.quotes", "view"), "co1")).toBe(true);
   });
 
   // A database that has not run the permission migrations yet.
@@ -558,7 +569,9 @@ describe("claimsFor", () => {
     expect(claims.permissions).toEqual(
       expandClaims(claimsFromJson(json, "co1"), "co1")
     );
-    expect(holds(claims.permissions, "sales.quotes_view", "co1")).toBe(true);
+    expect(
+      holdsGate(claims.permissions, at("sales.quotes", "view"), "co1")
+    ).toBe(true);
   });
 });
 

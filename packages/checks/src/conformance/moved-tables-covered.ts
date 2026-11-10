@@ -5,9 +5,9 @@
 import {
   moduleEnum,
   moduleOf,
+  ownersOf,
   PAGES,
-  type Page,
-  placeOf
+  type Page
 } from "@carbon/database/access";
 import type { SourceFile, Violation } from "../check";
 
@@ -32,13 +32,7 @@ export type MovedTablesRegistry = {
 
 export const REGISTRY: MovedTablesRegistry = {
   pages: PAGES as readonly Page[],
-  ownersOf(table) {
-    const place = placeOf(table);
-    if (!place) return [];
-    return place.kind === "page"
-      ? [place.page]
-      : place.branches.map((branch) => branch.page);
-  },
+  ownersOf,
   moduleEnumOf: (page) => moduleEnum(moduleOf(page) as never)
 };
 

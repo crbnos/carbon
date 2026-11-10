@@ -52,6 +52,10 @@ export function lowerLevel(a: Level, b: Level): Level {
   return LEVELS.indexOf(a) <= LEVELS.indexOf(b) ? a : b;
 }
 
+export function higherLevel(a: Level, b: Level): Level {
+  return LEVELS.indexOf(a) >= LEVELS.indexOf(b) ? a : b;
+}
+
 /**
  * The actions a converted grant holds that its old checkboxes did not: what
  * the round-up gave. Empty for a grant saved since.
@@ -71,7 +75,10 @@ export function actionsGained(
  * The subject is a page id (`inventory.receipts`), a legacy module id
  * (`inventory`, no dot) or a portal key (`customerPortal`).
  */
-export function permissionKey(subject: string, action: Action): string {
+export function permissionKey<S extends string, A extends Action>(
+  subject: S,
+  action: A
+): `${S}_${A}` {
   return `${subject}_${action}`;
 }
 

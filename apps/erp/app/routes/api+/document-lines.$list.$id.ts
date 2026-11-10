@@ -3,10 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import type { PageId } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
+import { getListDefinition } from "~/utils/list-registry/index.server";
 import {
   type DocumentLineList,
   documentLineLists,
@@ -16,26 +16,17 @@ import {
 
 const logger = getLogger("erp", "document-lines");
 
-// The list view a row comes from, and the page that list is on.
-const sources = {
-  "purchase-orders": {
-    view: "purchaseOrders",
-    page: "purchasing.purchaseOrders"
-  },
-  "supplier-quotes": {
-    view: "supplierQuotes",
-    page: "purchasing.supplierQuotes"
-  },
-  "purchasing-rfqs": { view: "purchasingRfqs", page: "purchasing.rfqs" },
-  "purchase-invoices": {
-    view: "purchaseInvoices",
-    page: "invoicing.purchaseInvoices"
-  },
-  "sales-orders": { view: "salesOrders", page: "sales.salesOrders" },
-  quotes: { view: "quotes", page: "sales.quotes" },
-  "sales-rfqs": { view: "salesRfqs", page: "sales.rfqs" },
-  "sales-invoices": { view: "salesInvoices", page: "invoicing.salesInvoices" }
-} as const satisfies Record<DocumentLineList, { view: string; page: PageId }>;
+// The view a list's rows come from, by list key.
+const views = {
+  "purchase-orders": "purchaseOrders",
+  "supplier-quotes": "supplierQuotes",
+  "purchasing-rfqs": "purchasingRfqs",
+  "purchase-invoices": "purchaseInvoices",
+  "sales-orders": "salesOrders",
+  quotes: "quotes",
+  "sales-rfqs": "salesRfqs",
+  "sales-invoices": "salesInvoices"
+} as const satisfies Record<DocumentLineList, string>;
 
 function isDocumentLineList(
   list: string | undefined
@@ -49,13 +40,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!isDocumentLineList(list) || !id) {
     throw new Response("The document could not be found.", { status: 404 });
   }
-  const source = sources[list];
-  const { client, companyId } = await authorize(request, {
-    [source.page]: "View"
-  });
+  const definition = getListDefinition(list);
+  if (!definition) throw new Error(`No list registry entry for ${list}`);
+  const { client, companyId } = await authorize(request, definition.gate);
 
   const result = await client
-    .from(source.view)
+    .from(views[list])
     .select("id, searchLines")
     .eq("id", id)
     .eq("companyId", companyId)

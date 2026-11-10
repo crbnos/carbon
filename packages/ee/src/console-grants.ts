@@ -18,3 +18,17 @@ export const CONSOLE_OPERATOR_GRANTS: readonly GrantInput[] = [
   { module: "Resources", page: null, level: "View" },
   { module: "People", page: null, level: "View" }
 ];
+
+/**
+ * What enabling console mode must do to the company's Console Operator type:
+ * create it with its grants, give grants to one that has none, or nothing.
+ * A type with no grants is what a failed provisioning used to leave behind,
+ * so enabling again repairs it; a type that holds any grant was set up and is
+ * left as the admin keeps it.
+ */
+export function consoleOperatorWork(
+  existing: { id: string; grantCount: number } | undefined
+): "create" | "grant" | null {
+  if (!existing) return "create";
+  return existing.grantCount === 0 ? "grant" : null;
+}

@@ -10,7 +10,7 @@ import { deactivateUser } from "@carbon/auth/users.server";
 import { LEVELS, pageById } from "@carbon/database/access";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
-import { subjectGates } from "@carbon/ee/permission-grants";
+import { ACCESS_READER_GATE, subjectGates } from "@carbon/ee/permission-grants";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -480,7 +480,7 @@ export const updateEmployeePermissions = defineServiceFn({
     grants: grantsSchema,
     ip: z.string().optional()
   }),
-  permission: { "users.accounts": "Edit" },
+  permission: subjectGates("Edit").person,
   async run(ctx, { id, employeeType, grants, ip }) {
     const refused = await service.saveAccessGrants(ctx, {
       subjectType: "person",
@@ -509,14 +509,14 @@ export const bulkUpdatePermissions = defineServiceFn({
     grants: grantsSchema,
     ip: z.string().optional()
   }),
-  permission: { "users.accounts": "Edit" },
+  permission: subjectGates("Edit").person,
   async run(ctx, { editType, userIds, grants, ip }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
 
     const companyId = ctx.company.id;
     // The job writes these users' grants as the service role: every id must
-    // be an employee of this company. One batched read.
+    // be an employee of this company.
     const uniqueUserIds = [...new Set(userIds)];
     const members = await ctx.asSystem.supabase
       .from("employee")
@@ -556,14 +556,10 @@ export const createEmployeeType = defineServiceFn({
     name: z.string().trim().min(1),
     grants: grantsSchema
   }),
-  permission: { "users.employeeTypes": "Create" },
+  // Edit, not Create: the grants are written without RLS, which asks Edit of
+  // a grant write.
+  permission: subjectGates("Edit").role,
   async run(ctx, { name, grants }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
-    // The grants are written without RLS, which asks this of a grant write.
-    if (!ctx.can({ "users.employeeTypes": "Edit" })) {
-      return ctx.error("forbidden", "You do not have permission to do this");
-    }
     return service.writeEmployeeType(ctx, {
       employeeType: { name },
       grants
@@ -584,10 +580,8 @@ export const updateEmployeeType = defineServiceFn({
     name: z.string().trim().min(1),
     grants: grantsSchema
   }),
-  permission: { "users.employeeTypes": "Edit" },
+  permission: subjectGates("Edit").role,
   async run(ctx, { id, name, grants }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
     return service.writeEmployeeType(ctx, {
       employeeType: { id, name },
       grants
@@ -623,10 +617,7 @@ export const getPageAccessHolders = defineServiceFn({
       }),
     level: z.enum(LEVELS)
   }),
-  // The role form's "Who has access" panel shows it to a role editor too.
-  permission: {
-    anyOf: [{ "users.accounts": "View" }, { "users.employeeTypes": "View" }]
-  },
+  permission: ACCESS_READER_GATE,
   async run(ctx, { page, level }) {
     return service.readPageAccessHolders(ctx, page, level);
   }
@@ -642,9 +633,7 @@ export const getPageAccessHolders = defineServiceFn({
  */
 export const getRoleGrants = defineServiceFn({
   input: z.object({}),
-  permission: {
-    anyOf: [{ "users.accounts": "View" }, { "users.employeeTypes": "View" }]
-  },
+  permission: ACCESS_READER_GATE,
   async run(ctx) {
     return service.readRoleGrants(ctx);
   }

@@ -26,14 +26,9 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuKeyRound } from "react-icons/lu";
+import type { loader } from "~/routes/api+/users.access-holders";
 import { path } from "~/utils/path";
 import { useLevelWord } from "../components/AccessGrid.ee";
-
-type Holders = {
-  people: { userId: string; name: string; level: Level; source: string }[];
-  apiKeys: { apiKeyId: string; name: string; level: Level }[];
-  error: string | null;
-};
 
 /** A holder's level as the grid draws it: four steps, filled up to the level. */
 const Meter = ({ level, label }: { level: Level; label: string }) => (
@@ -60,7 +55,7 @@ const AccessHolders = () => {
   const { t } = useLingui();
   const [page, setPage] = useState<string>(PAGES[0].id);
   const [level, setLevel] = useState<Level>("View");
-  const holders = useLoaderQuery<Holders>(
+  const holders = useLoaderQuery<typeof loader>(
     path.to.api.accessHolders(page, level)
   );
 

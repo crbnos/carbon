@@ -2,20 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  getClaims,
-  makePermissionsFromClaims,
-  type Permission
-} from "@carbon/auth";
+import { readClaimsFresh } from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { admits } from "@carbon/database/access";
+import { admits, type ExpandedClaims } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const log = getLogger("workflows");
-
-export type OwnerPermissions = Record<string, Permission>;
 
 /**
  * A connection as the owner. Call inside every step, never once per run.
@@ -59,23 +53,22 @@ export async function readOwnerPermissions(
   client: SupabaseClient<Database>,
   ownerId: string,
   companyId: string
-): Promise<OwnerPermissions | null> {
-  const rawClaims = await getClaims(client, ownerId, companyId);
-
-  if (rawClaims.error || rawClaims.data === null) {
+): Promise<ExpandedClaims | null> {
+  let claims: Awaited<ReturnType<typeof readClaimsFresh>>;
+  try {
+    claims = await readClaimsFresh(client, ownerId, companyId);
+  } catch (error) {
     log.error("Failed to read workflow owner claims", {
       ownerId,
       companyId,
-      error: rawClaims.error
+      error
     });
     return null;
   }
 
-  const claims = makePermissionsFromClaims(rawClaims.data, companyId);
   // A workflow acts as its owner only while the owner is an employee: a
   // customer or supplier portal account runs nothing.
   if (
-    !claims ||
     !admits(
       { type: "user", role: claims.role, permissions: claims.permissions },
       companyId,
@@ -85,7 +78,7 @@ export async function readOwnerPermissions(
     log.warn("Workflow owner is not an employee of the company", {
       ownerId,
       companyId,
-      role: claims?.role ?? null
+      role: claims.role
     });
     return null;
   }

@@ -5,7 +5,7 @@
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
-import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
+import { hashApiKey } from "@carbon/auth/auth.server";
 import {
   blockSchema,
   COMPANY_MERGE_FIELDS,
@@ -2076,25 +2076,25 @@ export const updateApiKey = defineServiceFn({
  * Delete an API key.
  *
  * @remarks
- * The key stops authenticating: its cached authentication is dropped before
- * the delete (the key's hash cannot be read once the row is gone) and again
- * after it, in case a request re-cached the live row in between.
+ * The key stops authenticating at once: its cached authentication is dropped
+ * (`deleteApiKey`).
  */
 export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { id }) {
-    const keyHash = await service.invalidateApiKeyCache(id, ctx.company.id);
     let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
     try {
-      deleted = await deleteApiKey(ctx.asCaller.supabase, id);
+      deleted = await deleteApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        id
+      });
     } catch (err) {
       return service.apiKeysEntitlement(ctx, err);
     }
     if (deleted.error) {
       return ctx.error("internal", "Failed to delete API key", deleted.error);
     }
-    if (keyHash) await bustApiKeyCache(keyHash);
     return { id };
   }
 });

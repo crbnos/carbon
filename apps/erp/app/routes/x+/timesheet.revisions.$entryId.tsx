@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -18,7 +17,10 @@ const logger = getLogger("erp", "timesheet-revisions");
  * on Projects or on Approvals reads any entry of the company.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId, permissions } = await authorize(
+    request,
+    {}
+  );
   const { entryId } = params;
   if (!entryId) throw new Error("Could not find entryId");
 
@@ -43,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const ownsEntry = revisions.data.every((row) => row.employeeId === userId);
   if (!ownsEntry) {
     const canViewProjects = holdsGate(
-      (await getUserClaims(userId, companyId))?.permissions ?? {},
+      permissions,
       [{ "projects.projects": "View" }, { "projects.approvals": "View" }],
       companyId
     );

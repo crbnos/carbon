@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { type Gate, pageOfRow } from "@carbon/database/access";
+import { type Gate, pageOfTable } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import { LuKeyRound, LuSection, LuShoppingCart } from "react-icons/lu";
@@ -70,12 +70,6 @@ const PaymentDocuments = () => {
   );
 };
 
-function viewOf(table: string): Gate {
-  const page = pageOfRow(table, {});
-  if (!page) throw new Error(`No page owns ${table}`);
-  return { [page]: "View" };
-}
-
 /**
  * The order, rental agreement or contract a payment is a deposit for, or the
  * purchase order it is a prepayment for, with what showing it needs: View on
@@ -90,7 +84,10 @@ const DEPOSIT_SOURCES = (
   ] as const
 ).map(([column, table]) => ({
   column,
-  gate: table === "customerContract" ? CONTRACT_READ_GATE : viewOf(table)
+  gate:
+    table === "customerContract"
+      ? CONTRACT_READ_GATE
+      : ({ [pageOfTable(table)]: "View" } as Gate)
 }));
 
 function PaymentDocumentList({

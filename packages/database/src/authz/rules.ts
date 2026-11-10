@@ -15,16 +15,15 @@ import {
   type SqlBool,
   sql
 } from "kysely";
-import { ACTIONS, type Action } from "../access/levels";
+import { ACTIONS, type Action, permissionKey } from "../access/levels";
 import {
   type ModuleId,
   moduleOf,
-  PAGES,
-  type Page,
   type PermissionKey,
   placeOf,
   readersOf,
-  type TablePlace
+  type TablePlace,
+  writersOf
 } from "../access/registry";
 import type { KyselyDatabase } from "../client";
 import type { Database } from "../types";
@@ -86,21 +85,6 @@ const isPred = (value: unknown): value is Pred =>
 const isAction = (permission: string): permission is Action =>
   (ACTIONS as readonly string[]).includes(permission);
 
-let writers: Map<string, string[]> | undefined;
-
-/** The pages that list the table in `alsoWrittenBy`, after the page that owns it. */
-const writersOf = (table: string): readonly string[] => {
-  if (!writers) {
-    writers = new Map();
-    for (const page of PAGES as readonly Page[])
-      for (const [owned, pages] of Object.entries(page.alsoWrittenBy ?? {}))
-        writers.set(owned, [
-          ...new Set([...(writers.get(owned) ?? []), ...pages])
-        ]);
-  }
-  return writers.get(table) ?? [];
-};
-
 /** `subject` is one of the companies where the caller holds `key`. */
 const holds = (subject: RawBuilder<unknown>, key: string) =>
   sql`${subject} = ANY ((SELECT get_companies_with_employee_permission(${sql.lit(key)}))::text[])`;
@@ -139,7 +123,7 @@ const admits = (
 ): { keys: string[]; modules: string[] } =>
   action === "view"
     ? { keys: [], modules: [moduleOf(page)] }
-    : { keys: [`${page}_${action}`], modules: [] };
+    : { keys: [permissionKey(page, action)], modules: [] };
 
 /**
  * A shared table's rows, one branch per page: the page's rows and the page's
@@ -242,7 +226,7 @@ const belongsTo = (
     for (const page of action === "view"
       ? readersOf(row.table)
       : writersOf(row.table))
-      keys.add(`${page}_${action}`);
+      keys.add(permissionKey(page, action));
   }
   return either(
     keys.size || modules.size
@@ -277,7 +261,7 @@ const groupKey = (permission: Permission, table: string) => {
     writersOf(table).length
   )
     throw new Error(`authz: group table ${table} needs one page`);
-  return `${place.page}_${permission}`;
+  return permissionKey(place.page, permission);
 };
 
 /**

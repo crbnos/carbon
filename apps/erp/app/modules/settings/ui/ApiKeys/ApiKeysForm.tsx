@@ -4,7 +4,8 @@
 
 import { getBrowserEnv } from "@carbon/auth";
 import { MODULES, moduleOf, PAGES } from "@carbon/database/access";
-import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
+import type { StoredGrant } from "@carbon/database/access-write";
+import { SUBJECT_RULES, subjectGates } from "@carbon/ee/permission-grants";
 import { DateTimePicker, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -37,9 +38,7 @@ import type { z } from "zod";
 import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { apiKeyValidator } from "~/modules/settings/settings.models";
-import AccessGrid, {
-  type AccessGrant
-} from "~/modules/users/ui/components/AccessGrid.ee";
+import AccessGrid from "~/modules/users/ui/components/AccessGrid.ee";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 
@@ -50,7 +49,7 @@ const keyPages = PAGES.filter((page) =>
 );
 
 /** Every module a key may hold, each where "select all" stops. */
-const selectAllGrants = (): AccessGrant[] =>
+const selectAllGrants = (): StoredGrant[] =>
   MODULES.filter((module) => keyRules.modules.includes(module.id)).map(
     (module) => ({
       module: module.enum,
@@ -61,7 +60,7 @@ const selectAllGrants = (): AccessGrant[] =>
 
 type ApiKeyFormProps = {
   initialValues: Omit<z.infer<typeof apiKeyValidator>, "grants">;
-  existingGrants?: AccessGrant[];
+  existingGrants?: StoredGrant[];
   /** A single-tenant deployment's admins set the limit; Carbon Cloud sets it. */
   canSetRateLimit?: boolean;
   open?: boolean;
@@ -84,7 +83,7 @@ const ApiKeyForm = ({
   });
 
   const isEditing = initialValues.id !== undefined;
-  const isDisabled = !permissions.has({ "settings.apiKeys": "Edit" });
+  const isDisabled = !permissions.has(subjectGates("Edit").key);
 
   const [key, setKey] = useState<string | null>(null);
 

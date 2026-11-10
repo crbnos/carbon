@@ -15,21 +15,21 @@ import { searchList } from "./index.server";
 
 export const employeeAccountsList = searchList({
   key: "employee-accounts",
-  permission: { gate: { "users.accounts": "View" } },
+  gate: { "users.accounts": "View" },
   paging: EMPLOYEES_PAGING,
   service: getEmployees
 });
 
 export const employeeTypesList = searchList({
   key: "employee-types",
-  permission: { gate: { "users.employeeTypes": "View" } },
+  gate: { "users.employeeTypes": "View" },
   paging: EMPLOYEE_TYPES_PAGING,
   service: getEmployeeTypes
 });
 
 export const consoleOperatorsList = searchList({
   key: "console-operators",
-  permission: { gate: { "users.operators": "View" } },
+  gate: { "users.operators": "View" },
   paging: CONSOLE_OPERATORS_PAGING,
   service: getConsoleOperators
 });

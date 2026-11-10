@@ -38,7 +38,7 @@ function documentsQuery(recent: boolean) {
 
 export const documentsList = {
   key: "documents",
-  permission: { gate: { documents: "View" } },
+  gate: { documents: "View" },
   ...DOCUMENTS_PAGING,
   query: documentsQuery(false)
 } satisfies ListDefinition;
@@ -47,7 +47,7 @@ export const documentsList = {
 // cursor must follow the order the query uses.
 export const recentDocumentsList = {
   key: "recent-documents",
-  permission: { gate: { documents: "View" } },
+  gate: { documents: "View" },
   ...RECENT_DOCUMENTS_PAGING,
   query: documentsQuery(true)
 } satisfies ListDefinition;

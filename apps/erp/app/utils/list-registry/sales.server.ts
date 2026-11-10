@@ -40,7 +40,7 @@ import { searchList } from "./index.server";
 
 export const salesOrdersList = searchList({
   key: "sales-orders",
-  permission: { gate: { "sales.salesOrders": "View" } },
+  gate: { "sales.salesOrders": "View" },
   paging: SALES_ORDERS_PAGING,
   service: getSalesOrders,
   params: { status: "status", customerId: "customerId" }
@@ -48,21 +48,21 @@ export const salesOrdersList = searchList({
 
 export const quotesList = searchList({
   key: "quotes",
-  permission: { gate: { "sales.quotes": "View" } },
+  gate: { "sales.quotes": "View" },
   paging: QUOTES_PAGING,
   service: getQuotes
 });
 
 export const salesRfqsList = searchList({
   key: "sales-rfqs",
-  permission: { gate: { "sales.rfqs": "View" } },
+  gate: { "sales.rfqs": "View" },
   paging: SALES_RFQS_PAGING,
   service: getSalesRFQs
 });
 
 export const salesReturnOrdersList = searchList({
   key: "sales-return-orders",
-  permission: { gate: { "sales.returns": "View" } },
+  gate: { "sales.returns": "View" },
   paging: SALES_RETURN_ORDERS_PAGING,
   service: getSalesReturnOrders,
   params: { status: "status", customerId: "customerId" }
@@ -70,7 +70,7 @@ export const salesReturnOrdersList = searchList({
 
 export const customersList = searchList({
   key: "customers",
-  permission: { gate: { "sales.customers": "View" } },
+  gate: { "sales.customers": "View" },
   paging: CUSTOMERS_PAGING,
   service: getCustomers
 });
@@ -79,7 +79,7 @@ export const customersList = searchList({
 // basis is its own list.
 export const contractsList = searchList({
   key: "contracts",
-  permission: { gate: { "sales.serviceContracts": "View" } },
+  gate: { "sales.serviceContracts": "View" },
   paging: CONTRACTS_PAGING,
   service: getContracts,
   params: { billingBasis: () => "Schedule" }
@@ -87,7 +87,7 @@ export const contractsList = searchList({
 
 export const projectContractsList = searchList({
   key: "project-contracts",
-  permission: { gate: { "sales.projectContracts": "View" } },
+  gate: { "sales.projectContracts": "View" },
   paging: CONTRACTS_PAGING,
   service: getContracts,
   params: { billingBasis: () => "Project" }
@@ -95,7 +95,7 @@ export const projectContractsList = searchList({
 
 export const rentalAgreementsList = searchList({
   key: "rental-agreements",
-  permission: { gate: { "sales.rentalAgreements": "View" } },
+  gate: { "sales.rentalAgreements": "View" },
   paging: RENTAL_AGREEMENTS_PAGING,
   service: getRentalAgreements
 });
@@ -104,7 +104,7 @@ export const rentalAgreementsList = searchList({
 // the list resolves that scope's prices; without one, it shows the base catalog.
 export const priceListList = {
   key: "price-list",
-  permission: { gate: { "sales.priceLists": "View" } },
+  gate: { "sales.priceLists": "View" },
   ...PRICE_LIST_PAGING,
   query: async (
     client,
@@ -148,7 +148,7 @@ export const priceListList = {
 
 export const pricingRulesList = searchList({
   key: "pricing-rules",
-  permission: { gate: { "sales.pricingRules": "View" } },
+  gate: { "sales.pricingRules": "View" },
   paging: PRICING_RULES_PAGING,
   service: getPricingRules,
   params: { search: (params) => params.get("search") ?? undefined }
@@ -156,35 +156,35 @@ export const pricingRulesList = searchList({
 
 export const customerPortalsList = searchList({
   key: "customer-portals",
-  permission: { gate: { "sales.portals": "View" } },
+  gate: { "sales.portals": "View" },
   paging: CUSTOMER_PORTALS_PAGING,
   service: getCustomerPortals
 });
 
 export const customerStatusesList = searchList({
   key: "customer-statuses",
-  permission: { gate: { "sales.statuses": "View" } },
+  gate: { "sales.statuses": "View" },
   paging: CUSTOMER_STATUSES_PAGING,
   service: getCustomerStatuses
 });
 
 export const customerTypesList = searchList({
   key: "customer-types",
-  permission: { gate: { "sales.types": "View" } },
+  gate: { "sales.types": "View" },
   paging: CUSTOMER_TYPES_PAGING,
   service: getCustomerTypes
 });
 
 export const noQuoteReasonsList = searchList({
   key: "no-quote-reasons",
-  permission: { gate: { "sales.noQuoteReasons": "View" } },
+  gate: { "sales.noQuoteReasons": "View" },
   paging: NO_QUOTE_REASONS_PAGING,
   service: getNoQuoteReasons
 });
 
 export const returnReasonsList = searchList({
   key: "return-reasons",
-  permission: { gate: { "sales.returnReasons": "View" } },
+  gate: { "sales.returnReasons": "View" },
   paging: RETURN_REASONS_PAGING,
   service: getReturnReasons
 });

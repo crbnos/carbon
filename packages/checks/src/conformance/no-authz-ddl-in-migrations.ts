@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import { REGISTRY_HELPERS_DIR } from "./registry-helpers-fresh";
 
 /**
  * RLS policies and the managed functions are authored only as files — the manifest and
@@ -31,7 +32,7 @@ const ATTACHMENTS_SINCE = "20261004194527";
 
 /** The directories of managed function files, and the migration each set is checked from. */
 export const MANAGED_FUNCTION_SETS = [
-  { dir: "packages/database/src/authz/helpers", since: SINCE },
+  { dir: REGISTRY_HELPERS_DIR, since: SINCE },
   {
     dir: "packages/database/src/event-system/functions",
     since: EVENT_SYSTEM_SINCE

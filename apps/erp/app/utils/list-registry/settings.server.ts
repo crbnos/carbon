@@ -19,7 +19,7 @@ import { searchList } from "./index.server";
 
 export const apiKeysList = {
   key: "api-keys",
-  permission: { gate: { "settings.apiKeys": "Edit" } },
+  gate: { "settings.apiKeys": "Edit" },
   ...API_KEYS_PAGING,
   // The key hash never leaves the server: not to the page, not to an export.
   query: async (
@@ -44,21 +44,21 @@ export const apiKeysList = {
 
 export const sequencesList = searchList({
   key: "sequences",
-  permission: { gate: { "settings.sequences": "View" } },
+  gate: { "settings.sequences": "View" },
   paging: SEQUENCES_PAGING,
   service: getSequences
 });
 
 export const itemSerialSequencesList = searchList({
   key: "serial-numbers",
-  permission: { gate: { "settings.serialNumbers": "View" } },
+  gate: { "settings.serialNumbers": "View" },
   paging: ITEM_SERIAL_SEQUENCES_PAGING,
   service: getItemSerialSequences
 });
 
 export const webhooksList = searchList({
   key: "webhooks",
-  permission: { gate: { "settings.webhooks": "View" } },
+  gate: { "settings.webhooks": "View" },
   paging: WEBHOOKS_PAGING,
   service: getWebhooks
 });
@@ -66,7 +66,7 @@ export const webhooksList = searchList({
 // The settings lists. Each entry follows `sales.server.ts`.
 export const customFieldTablesList = searchList({
   key: "custom-field-tables",
-  permission: { gate: { "settings.customFields": "View" } },
+  gate: { "settings.customFields": "View" },
   paging: CUSTOM_FIELD_TABLES_PAGING,
   service: getCustomFieldsTables
 });

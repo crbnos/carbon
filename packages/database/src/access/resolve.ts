@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "../constants";
 import {
   ACTIONS,
   type Action,
@@ -11,12 +12,12 @@ import {
   type Level,
   levelHolds,
   levelReaches,
-  lowerLevel,
   parsePermissionKey,
   permissionKey,
   roundUp
 } from "./levels";
 import {
+  clampLevel,
   isPageModule,
   moduleEnum,
   moduleId,
@@ -87,9 +88,8 @@ export function levelOf<G extends Grant>(
   subject: LevelSubject<G>,
   pageId: string
 ): LevelOf<G> {
-  const max = pageById(pageId)?.maxLevel ?? "Full";
   const result = (granted: Level, source: LevelSource, grant: G | null) => {
-    const level = lowerLevel(granted, max);
+    const level = clampLevel(pageId, granted);
     return { level, granted, clamped: level !== granted, source, grant };
   };
   if (subject.admin) return result("Full", "admin", null);
@@ -115,14 +115,6 @@ export function isAdminType(
   return type.systemType === "Admin" && type.companyId === companyId;
 }
 
-export function resolveLevel(
-  grants: readonly Grant[],
-  pageId: string,
-  { admin = false }: { admin?: boolean } = {}
-): Level {
-  return levelOf({ admin, grants }, pageId).level;
-}
-
 /** A person or an API key, with every grant that applies to it. */
 export type AccessSubject<G extends Grant = Grant> = LevelSubject<G> & {
   id: string;
@@ -143,9 +135,15 @@ export function accessHolders<G extends Grant>(
   });
 }
 
+/** A user's role in a company (`userToCompany.role`). */
+export type CompanyRole = (typeof Constants.public.Enums.role)[number];
+
+const COMPANY_ROLES = new Set<string>(Constants.public.Enums.role);
+
 /** What `get_claims` returns for one user in one company. */
 export type RawClaims = {
-  role: string | null;
+  /** Null when the user has no role there, or `get_claims` named an unknown one. */
+  role: CompanyRole | null;
   /** The user's employee type is the Admin type: Full on every page. */
   admin: boolean;
   grants: readonly Grant[];
@@ -219,7 +217,10 @@ export function legacyGrants(
  */
 export function claimsFromJson(json: unknown, companyId: string): RawClaims {
   const value = asObject(json);
-  const role = typeof value.role === "string" ? value.role : null;
+  const role =
+    typeof value.role === "string" && COMPANY_ROLES.has(value.role)
+      ? (value.role as CompanyRole)
+      : null;
   // TRANSITIONAL(#1958), as `isLegacyClaims`.
   if (isLegacyClaims(value)) {
     if (role === "customer" || role === "supplier") {
@@ -286,7 +287,10 @@ export function expandClaims(
 ): ExpandedClaims {
   const out: ExpandedClaims = {};
   for (const page of PAGES) {
-    const level = resolveLevel(raw.grants, page.id, { admin: raw.admin });
+    const { level } = levelOf(
+      { admin: raw.admin, grants: raw.grants },
+      page.id
+    );
     const permission = empty();
     for (const action of ACTIONS) {
       if (levelHolds(level, action)) permission[action].push(companyId);
@@ -303,18 +307,6 @@ export type Claims = RawClaims & { permissions: ExpandedClaims };
 export function claimsFor(json: unknown, companyId: string): Claims {
   const raw = claimsFromJson(json, companyId);
   return { ...raw, permissions: expandClaims(raw, companyId) };
-}
-
-export function holds(
-  expanded: ExpandedClaims,
-  key: string,
-  companyId: string
-): boolean {
-  const parsed = parsePermissionKey(key);
-  if (!parsed) return false;
-  return (
-    expanded[parsed.subject]?.[parsed.action]?.includes(companyId) ?? false
-  );
 }
 
 /**

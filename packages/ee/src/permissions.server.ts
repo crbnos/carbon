@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Result } from "@carbon/auth";
-import { error, getClaims, getPermissionCacheKey, success } from "@carbon/auth";
+import { error, getClaims, success } from "@carbon/auth";
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import {
   logApiKeyAccessChange,
@@ -11,6 +11,7 @@ import {
   logRoleAccessChange
 } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { clearClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import {
   claimKeys,
@@ -26,7 +27,6 @@ import {
   replaceGrants
 } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "./entitlements.server";
 import {
@@ -34,8 +34,8 @@ import {
   bulkEditGrants,
   claimsMayEditAccounts,
   type GrantRow,
-  type LeveledGrant,
   refusedModules,
+  SUBJECT_RULES,
   subjectTypeOf
 } from "./permission-grants";
 
@@ -153,8 +153,8 @@ const NOT_FOUND: Record<AccessSubjectType, string> = {
 
 /**
  * Write the grants of a role, a person or an API key in the company: the one
- * grant write. It checks the entitlement (`API_KEYS` for a key, else
- * `PERMISSIONS`; throws `EntitlementError`), that the subject is the
+ * grant write. It checks the entitlement (`SUBJECT_RULES[…].feature`; throws
+ * `EntitlementError`), that the subject is the
  * company's, and the modules the subject may hold (`refusedModules`); clamps each
  * level to its page; writes in one transaction; clears the caches the change
  * reaches (the person's claims, every member of the role, the key's record);
@@ -188,15 +188,12 @@ export async function writeAccessGrants(
     subjectRow?: (tx: KyselyTx) => Promise<unknown>;
     actorId: string;
     ip?: string;
+    /** A person only: why, on their `permission_changed` event. */
     reason?: string;
   }
 ): Promise<{ error: AccessWriteError | null }> {
   const type = subjectTypeOf(subject);
-  await requireEntitlement(
-    client,
-    companyId,
-    type === "key" ? "API_KEYS" : "PERMISSIONS"
-  );
+  await requireEntitlement(client, companyId, SUBJECT_RULES[type].feature);
 
   if ("set" in change) {
     const refused = refusedModules(type, change.set);
@@ -266,7 +263,7 @@ export async function writeAccessGrants(
 
   let affected = 0;
   if (userId) {
-    await redis.del(getPermissionCacheKey(userId));
+    await clearClaims([userId]);
   } else if ("employeeTypeId" in subject) {
     const employees = await db
       .selectFrom("employee")
@@ -275,9 +272,7 @@ export async function writeAccessGrants(
       .where("employeeTypeId", "=", subject.employeeTypeId)
       .execute();
     affected = employees.length;
-    if (employees.length) {
-      await redis.del(...employees.map((e) => getPermissionCacheKey(e.id)));
-    }
+    await clearClaims(employees.map((e) => e.id));
   } else if (owned.keyHash) {
     await bustApiKeyCache(owned.keyHash);
   }
@@ -432,8 +427,8 @@ export async function updatePermissions(
   const own = await readGrants(db, companyId, { userId: id });
   const grants = bulkEditGrants({
     chosen,
-    own: own as LeveledGrant[],
-    role: role as LeveledGrant[],
+    own,
+    role,
     admin: isAdminType(
       {
         systemType: employee.systemType,

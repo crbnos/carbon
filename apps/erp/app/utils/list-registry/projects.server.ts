@@ -15,7 +15,7 @@ import { searchList } from "./index.server";
 // the rows of each page.
 export const projectsList = searchList({
   key: "projects",
-  permission: { gate: { "projects.projects": "View" } },
+  gate: { "projects.projects": "View" },
   paging: PROJECTS_PAGING,
   service: getProjects,
   rows: async (rows, { companyId }) => {

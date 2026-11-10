@@ -4,7 +4,6 @@
 
 import type { Database } from "@carbon/database";
 import {
-  type AccessActor,
   type AccessRequirement,
   admits,
   type ExpandedClaims,
@@ -102,9 +101,9 @@ export type Actor =
       userId: string;
       permissions: ExpandedClaims;
       /** The user's role in the company: a portal account is not an employee. */
-      role: "employee" | "customer" | "supplier" | null;
+      role: Database["public"]["Enums"]["role"] | null;
     }
-  | { type: "apiKey"; createdBy: string; scopes: ExpandedClaims }
+  | { type: "apiKey"; createdBy: string; permissions: ExpandedClaims }
   | { type: "system"; onBehalfOf: string };
 
 type Kv = typeof redis;
@@ -266,7 +265,7 @@ class Context implements ServiceContext {
   }
 
   can(required: AccessRequirement, options?: { reads?: boolean }): boolean {
-    return admits(accessActor(this.actor), this.company.id, required, options);
+    return admits(this.actor, this.company.id, required, options);
   }
 
   inside(): Context {
@@ -322,14 +321,6 @@ class Context implements ServiceContext {
 
 export function createServiceContext(handles: Handles): ServiceContext {
   return new Context(handles, false, false);
-}
-
-/** The actor as `admits` reads it. */
-export function accessActor(actor: Actor): AccessActor {
-  if (actor.type === "apiKey") {
-    return { type: "apiKey", permissions: actor.scopes };
-  }
-  return actor;
 }
 
 /**
@@ -445,7 +436,7 @@ async function gate<I>(
   } else {
     required = resolved;
   }
-  return admits(accessActor(ctx.actor), ctx.company.id, required)
+  return admits(ctx.actor, ctx.company.id, required)
     ? null
     : forbidden(ctx, required);
 }

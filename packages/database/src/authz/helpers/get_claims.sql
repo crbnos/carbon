@@ -11,16 +11,14 @@ AS $function$
   DECLARE portal_keys jsonb := '{}'::jsonb;
   DECLARE legacy_keys jsonb := '{}'::jsonb;
   BEGIN
-    -- Your own claims, or those of someone in a company where you may view or
-    -- edit Accounts (the permission editor reads them with Accounts Edit).
+    -- Your own claims, or those of someone in a company where you may view
+    -- Accounts (the permission editor reads them).
     IF current_setting('role', true) IN ('anon', 'authenticated')
        AND uid IS DISTINCT FROM auth.uid()::text
        AND NOT EXISTS (
          SELECT 1 FROM "userToCompany" utc
          WHERE utc."userId" = uid
-           AND utc."companyId" = ANY (get_companies_with_any_employee_permission(
-             ARRAY['users.accounts_view', 'users.accounts_update']
-           ))
+           AND utc."companyId" = ANY (get_companies_with_employee_permission('users.accounts_view'))
        ) THEN
       RAISE EXCEPTION 'Not authorized to read claims for this user'
         USING ERRCODE = 'insufficient_privilege';

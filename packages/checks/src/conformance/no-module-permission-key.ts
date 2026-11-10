@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MODULES, pageById } from "@carbon/database/access";
+import { ACTIONS, MODULES, pageById } from "@carbon/database/access";
 import type { ConformanceCheck, Violation } from "../check";
 import { stripComments } from "./no-authz-ddl-in-migrations";
 import { blankComments } from "./no-unscoped-kysely-write";
@@ -31,14 +31,10 @@ import { blankComments } from "./no-unscoped-kysely-write";
  * earlier can land a migration dated before the cutoff, and it is checked.
  *
  * It skips:
- * - `packages/database/src/authz/manifest.ts`, which is never scanned. Its
- *   rules name a module on purpose: `render()` writes the key of the page that
- *   owns each table (and throws when the module is not that page's), and
- *   `registry.test.ts` fails when a rendered policy checks a key that is not a
- *   page id.
  * - portal keys: `get_customer_ids_with_customer_permission('parts_view')` and
  *   its supplier twin read a portal account's own keys in `userPermission`,
- *   which keep their names (the generated authz migrations carry them).
+ *   which keep their names (the generated authz migrations carry them); the
+ *   manifest writes them as `portal.customer(column, "parts_view")`.
  * - `hasAny` and `pagesOf("<module>")`, which name every page of
  *   a module on purpose (navigation, a module's dashboard).
  * - `documents`: it is a module with one page whose id is the module's, so
@@ -49,7 +45,7 @@ const MODULE_IDS = MODULES.map((module) => module.id).filter(
   (id) => !pageById(id)
 );
 const NAMES = MODULE_IDS.join("|");
-const ACTIONS = "view|create|update|delete";
+const ACTION_NAMES = ACTIONS.join("|");
 
 /** The last migration that may name a module key: it renames the storage policies whose names held one. */
 export const LAST_MODULE_KEY_MIGRATION = "20261110050010";
@@ -71,15 +67,17 @@ export const MODULE_KEY_MIGRATIONS: ReadonlySet<string> = new Set(
 );
 
 const TS_KEY = new RegExp(
-  String.raw`(["'\`])(?:${NAMES})_(?:${ACTIONS})\1`,
+  String.raw`(["'\`])(?:${NAMES})_(?:${ACTION_NAMES})\1`,
   "g"
 );
 const SQL_KEY = new RegExp(
-  String.raw`(?<![\w.])(?:${NAMES})_(?:${ACTIONS})\b`,
+  String.raw`(?<![\w.])(?:${NAMES})_(?:${ACTION_NAMES})\b`,
   "g"
 );
 const PORTAL_CALL =
   /\bget_(?:customer|supplier)_ids_with_(?:customer|supplier)_permission\s*\(\s*'+\w+'+/g;
+const PORTAL_RULE =
+  /\bportal\.(?:customer|supplier)\s*\(\s*(["'`])\w+\1\s*,\s*(["'`])\w+\2/g;
 // Every page of the module: `anyOf(pagesOf("sales"), "View")`.
 const PAGES_OF_CALL = /\bpagesOf\s*\(\s*(["'`])\w+\1\s*\)/g;
 const GATE_OPENER =
@@ -111,7 +109,9 @@ const lineOf = (text: string, index: number) =>
   text.slice(0, index).split("\n").length;
 
 function scanTypescript(file: string, contents: string): Violation[] {
-  const text = blankComments(contents);
+  const text = blankComments(contents).replace(PORTAL_RULE, (m) =>
+    " ".repeat(m.length)
+  );
   const violations: Violation[] = [];
   const seen = new Set<number>();
   const push = (index: number, snippet: string, message: string) => {
@@ -172,7 +172,6 @@ export const noModulePermissionKey: ConformanceCheck = {
   },
   scan(file, contents) {
     if (file.endsWith(".sql")) return scanSql(file, contents);
-    if (file.endsWith("packages/database/src/authz/manifest.ts")) return [];
     return scanTypescript(file, contents);
   }
 };
@@ -186,6 +185,7 @@ export const MODULE_KEY_ROOTS = [
   "apps/mes/app",
   "apps/academy/app",
   "apps/starter/app",
+  "packages/database/src/authz",
   "packages/ee/src/workflows",
   "packages/jobs/src/workflows"
 ];

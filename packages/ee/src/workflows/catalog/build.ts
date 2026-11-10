@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { TermId } from "@carbon/content/glossary";
-import { type PageId, placeOf } from "@carbon/database/access";
+import { ownersOf } from "@carbon/database/access";
 import {
   type EventMatch,
   type EventPermission,
@@ -91,9 +91,9 @@ export interface BuiltEvent {
  * an item event fires for every item type).
  */
 export function tablePages(table: string): EventPermission {
-  const place = placeOf(table);
-  if (place?.kind === "page") return place.page as PageId;
-  if (place) return place.branches.map((branch) => branch.page as PageId);
+  const owners = ownersOf(table);
+  if (owners.length === 1) return owners[0]!;
+  if (owners.length) return owners;
   throw new Error(
     `Workflow table ${table} is on no page of the access registry (packages/database/src/access/pages).`
   );

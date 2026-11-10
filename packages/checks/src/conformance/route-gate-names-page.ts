@@ -185,13 +185,74 @@ export function gateConstants(
   return out;
 }
 
+const unwrap = (node: ts.Expression): ts.Expression =>
+  ts.isAsExpression(node) ||
+  ts.isSatisfiesExpression(node) ||
+  ts.isParenthesizedExpression(node)
+    ? unwrap(node.expression)
+    : node;
+
 /**
- * A route's `authorize` gate names the page its URL belongs to
- * (`pageOfUrl`), or a list of pages that holds it, so the sidebar, the
- * registry `paths` and the gate agree on whose screen it is.
+ * The pages each exported list of the list registry gates on, by the list's
+ * name: `export const receiptsList = searchList({ gate, … })` or
+ * `export const paymentsList = { key, gate, … }`. A route that loads a list
+ * with `loadListPage(request, receiptsList)` gates on it.
+ */
+export function listGates(files: readonly SourceFile[]): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const { file, contents } of files) {
+    if (!contents.includes("gate:")) continue;
+    for (const statement of parse(file, contents).statements) {
+      if (!ts.isVariableStatement(statement)) continue;
+      for (const declaration of statement.declarationList.declarations) {
+        if (!ts.isIdentifier(declaration.name) || !declaration.initializer)
+          continue;
+        const value = unwrap(declaration.initializer);
+        const definition = ts.isCallExpression(value)
+          ? value.arguments[0] && unwrap(value.arguments[0])
+          : value;
+        if (!definition || !ts.isObjectLiteralExpression(definition)) continue;
+        const gate = definition.properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) &&
+            ts.isIdentifier(property.name) &&
+            property.name.text === "gate"
+        );
+        const pages = gate && pagesNamed(gate.initializer, new Map());
+        if (pages?.length) out.set(declaration.name.text, pages);
+      }
+    }
+  }
+  return out;
+}
+
+/** The gate argument of an `authorize` call, or the list of a `loadListPage` call. */
+function gateOfCall(
+  node: ts.CallExpression,
+  constants: ReadonlyMap<string, readonly string[]>,
+  lists: ReadonlyMap<string, readonly string[]>
+): string[] | undefined {
+  if (!ts.isIdentifier(node.expression) || node.arguments.length < 2)
+    return undefined;
+  const argument = node.arguments[1]!;
+  if (node.expression.text === "authorize")
+    return pagesNamed(argument, constants);
+  if (node.expression.text === "loadListPage" && ts.isIdentifier(argument)) {
+    const pages = lists.get(argument.text);
+    return pages ? [...pages] : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * A route's gate, the `authorize` gate or the gate of the list it loads with
+ * `loadListPage`, names the page its URL belongs to (`pageOfUrl`), or a list
+ * of pages that holds it, so the sidebar, the registry `paths` and the gate
+ * agree on whose screen it is.
  */
 export function routeGateNamesPage(
-  constants: ReadonlyMap<string, readonly string[]>
+  constants: ReadonlyMap<string, readonly string[]>,
+  lists: ReadonlyMap<string, readonly string[]> = new Map()
 ): ConformanceCheck {
   return {
     id: ROUTE_GATE_NAMES_PAGE,
@@ -206,7 +267,11 @@ export function routeGateNamesPage(
     },
     scan(file: string, contents: string): Violation[] {
       const route = ROUTE.exec(file)?.[1];
-      if (!route || !contents.includes("authorize(")) return [];
+      if (
+        !route ||
+        !(contents.includes("authorize(") || contents.includes("loadListPage("))
+      )
+        return [];
       const page = pageOfUrl(routeUrl(route));
       if (!page) return [];
       const allowed = new Set([
@@ -217,13 +282,8 @@ export function routeGateNamesPage(
       const out: Violation[] = [];
       const source = parse(file, contents);
       const visit = (node: ts.Node) => {
-        if (
-          ts.isCallExpression(node) &&
-          ts.isIdentifier(node.expression) &&
-          node.expression.text === "authorize" &&
-          node.arguments.length >= 2
-        ) {
-          const pages = pagesNamed(node.arguments[1]!, constants);
+        if (ts.isCallExpression(node)) {
+          const pages = gateOfCall(node, constants, lists);
           if (pages?.length && !pages.some((named) => allowed.has(named))) {
             const line =
               source.getLineAndCharacterOfPosition(node.getStart()).line + 1;

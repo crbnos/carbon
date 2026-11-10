@@ -363,7 +363,7 @@ describe("people settings", () => {
     consoleSetting.mockResolvedValue({ error: null, pin: null, pinError: null });
     const db = client({});
     const ctx = createServiceContext({
-      actor: { type: "apiKey", createdBy: "user-1", scopes: settings },
+      actor: { type: "apiKey", createdBy: "user-1", permissions: settings },
       company: { id: "company-1", groupId: "group-1" },
       caller: db as never,
       system: () => db as never,

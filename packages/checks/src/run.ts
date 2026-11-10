@@ -101,6 +101,7 @@ import {
 import { routeActionShape } from "./conformance/route-action-shape";
 import {
   gateConstants,
+  listGates,
   routeGateNamesPage
 } from "./conformance/route-gate-names-page";
 import {
@@ -295,7 +296,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
         wrappedBuildingBlocks(loadModuleServerFiles(root).map((f) => f.server))
       ),
       routeGateNamesPage(
-        gateConstants(loadTypescriptFiles(root, ["apps/erp/app/modules"]))
+        gateConstants(loadTypescriptFiles(root, ["apps/erp/app/modules"])),
+        listGates(
+          loadTypescriptFiles(root, ["apps/erp/app/utils/list-registry"])
+        )
       )
     ]),
     ...scanAll(

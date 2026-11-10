@@ -135,7 +135,7 @@ export async function loadListPage<
   list: ListDefinition<TRow, TListRow>,
   options: LoadListPageOptions<TKey, TExtra, TListRow, TOut>
 ): Promise<ListLoaderData<TKey, TOut> & TExtra> {
-  const auth = await authorize(request, list.permission.gate, {
+  const auth = await authorize(request, list.gate, {
     bypassRls: options.bypassRls
   });
   const requestParams = new URL(request.url).searchParams;

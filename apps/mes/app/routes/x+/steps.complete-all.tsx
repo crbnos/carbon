@@ -15,7 +15,8 @@ const log = getLogger("mes");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  // Manager override — gated on the Production DELETE permission (operators lack it).
+  // Manager override: Jobs at Full, which operators lack. On a console the
+  // pinned operator's grants decide (`authorize`).
   const { companyId, userId } = await authorize(request, {
     "production.jobs": "Full"
   });

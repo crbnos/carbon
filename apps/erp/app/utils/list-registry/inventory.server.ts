@@ -32,14 +32,14 @@ import { searchList } from "./index.server";
 
 export const inventoryCountsList = searchList({
   key: "inventory-counts",
-  permission: { gate: { "inventory.inventoryCount": "View" } },
+  gate: { "inventory.inventoryCount": "View" },
   paging: INVENTORY_COUNTS_PAGING,
   service: getInventoryCounts
 });
 
 export const pickingListsList = searchList({
   key: "picking-lists",
-  permission: { gate: { "inventory.pickingLists": "View" } },
+  gate: { "inventory.pickingLists": "View" },
   paging: PICKING_LISTS_PAGING,
   service: getPickingLists,
   params: { status: "status", assignee: "assignee", locationId: () => null }
@@ -47,53 +47,49 @@ export const pickingListsList = searchList({
 
 export const receiptsList = searchList({
   key: "receipts",
-  permission: { gate: { "inventory.receipts": "View" } },
+  gate: { "inventory.receipts": "View" },
   paging: RECEIPTS_PAGING,
   service: getReceipts
 });
 
 export const shipmentsList = searchList({
   key: "shipments",
-  permission: { gate: { "inventory.shipments": "View" } },
+  gate: { "inventory.shipments": "View" },
   paging: SHIPMENTS_PAGING,
   service: getShipments
 });
 
 export const shippingMethodsList = searchList({
   key: "shipping-methods",
-  permission: {
-    gate: { "inventory.shippingMethods": "View" }
-  },
+  gate: { "inventory.shippingMethods": "View" },
   paging: SHIPPING_METHODS_PAGING,
   service: getShippingMethods
 });
 
 export const stockMovementsList = searchList({
   key: "stock-movements",
-  permission: { gate: { "inventory.movements": "View" } },
+  gate: { "inventory.movements": "View" },
   paging: STOCK_MOVEMENTS_PAGING,
   service: getStockMovements
 });
 
 export const storageTypesList = searchList({
   key: "storage-types",
-  permission: { gate: { "inventory.storageTypes": "View" } },
+  gate: { "inventory.storageTypes": "View" },
   paging: STORAGE_TYPES_PAGING,
   service: getStorageTypes
 });
 
 export const trackedEntitiesList = searchList({
   key: "tracked-entities",
-  permission: {
-    gate: { "inventory.trackedEntities": "View" }
-  },
+  gate: { "inventory.trackedEntities": "View" },
   paging: TRACKED_ENTITIES_PAGING,
   service: getTrackedEntities
 });
 
 export const warehouseTransfersList = searchList({
   key: "warehouse-transfers",
-  permission: { gate: { "inventory.warehouseTransfers": "View" } },
+  gate: { "inventory.warehouseTransfers": "View" },
   paging: WAREHOUSE_TRANSFERS_PAGING,
   service: getWarehouseTransfers
 });

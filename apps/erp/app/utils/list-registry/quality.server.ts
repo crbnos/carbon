@@ -35,51 +35,49 @@ import { searchList } from "./index.server";
 
 export const issuesList = searchList({
   key: "issues",
-  permission: { gate: { "quality.issues": "View" } },
+  gate: { "quality.issues": "View" },
   paging: ISSUES_PAGING,
   service: getIssues
 });
 
 export const qualityActionsList = searchList({
   key: "quality-actions",
-  permission: { gate: { "quality.actions": "View" } },
+  gate: { "quality.actions": "View" },
   paging: QUALITY_ACTIONS_PAGING,
   service: getQualityActions
 });
 
 export const gaugeCalibrationRecordsList = searchList({
   key: "gauge-calibration-records",
-  permission: { gate: { "quality.records": "View" } },
+  gate: { "quality.records": "View" },
   paging: GAUGE_CALIBRATION_RECORDS_PAGING,
   service: getGaugeCalibrationRecords
 });
 
 export const qualityDocumentsList = searchList({
   key: "quality-documents",
-  permission: {
-    gate: { "quality.qualityDocuments": "View" }
-  },
+  gate: { "quality.qualityDocuments": "View" },
   paging: QUALITY_DOCUMENTS_PAGING,
   service: getQualityDocuments
 });
 
 export const gaugesList = searchList({
   key: "gauges",
-  permission: { gate: { "quality.gauges": "View" } },
+  gate: { "quality.gauges": "View" },
   paging: GAUGES_PAGING,
   service: getGauges
 });
 
 export const gaugeTypesList = searchList({
   key: "gauge-types",
-  permission: { gate: { "quality.gaugeTypes": "View" } },
+  gate: { "quality.gaugeTypes": "View" },
   paging: GAUGE_TYPES_PAGING,
   service: getGaugeTypes
 });
 
 export const inspectionPlansList = searchList({
   key: "inspection-plans",
-  permission: { gate: { "quality.inspectionPlans": "View" } },
+  gate: { "quality.inspectionPlans": "View" },
   paging: INSPECTION_PLAN_PARTS_PAGING,
   service: getInspectionPlanParts,
   // The column joins the plans' names; the view's `planNames` is for search.
@@ -90,7 +88,7 @@ export const inspectionPlansList = searchList({
 
 export const inspectionsList = searchList({
   key: "inspections",
-  permission: { gate: { "quality.inspections": "View" } },
+  gate: { "quality.inspections": "View" },
   paging: INSPECTIONS_PAGING,
   service: getInspections,
   params: { status: "status", source: "source" }
@@ -98,28 +96,28 @@ export const inspectionsList = searchList({
 
 export const issueTypesList = searchList({
   key: "issue-types",
-  permission: { gate: { "quality.issueTypes": "View" } },
+  gate: { "quality.issueTypes": "View" },
   paging: ISSUE_TYPES_PAGING,
   service: getIssueTypes
 });
 
 export const issueWorkflowsList = searchList({
   key: "issue-workflows",
-  permission: { gate: { "quality.issueWorkflows": "View" } },
+  gate: { "quality.issueWorkflows": "View" },
   paging: ISSUE_WORKFLOWS_PAGING,
   service: getIssueWorkflows
 });
 
 export const requiredActionsList = searchList({
   key: "required-actions",
-  permission: { gate: { "quality.actionTypes": "View" } },
+  gate: { "quality.actionTypes": "View" },
   paging: REQUIRED_ACTIONS_PAGING,
   service: getRequiredActions
 });
 
 export const risksList = searchList({
   key: "risks",
-  permission: { gate: { "quality.risks": "View" } },
+  gate: { "quality.risks": "View" },
   paging: RISKS_PAGING,
   service: getRisks
 });

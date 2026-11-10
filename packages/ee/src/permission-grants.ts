@@ -3,14 +3,15 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import {
+  type AnyOfGate,
   claimsFor,
+  clampLevel,
   type Grant,
+  higherLevel,
   holdsGate,
-  LEVELS,
   type Level,
   type LevelSubject,
   levelOf,
-  lowerLevel,
   MODULES,
   type ModuleId,
   moduleId,
@@ -22,16 +23,19 @@ import {
 import type {
   GrantInput,
   GrantModule,
-  GrantSubject
+  GrantSubject,
+  StoredGrant
 } from "@carbon/database/access-write";
+import {
+  defaultUpgradeMessage,
+  type Feature,
+  resolveRequirement
+} from "./plan";
 
 /** A form's module name ("parts", "Parts") as the `module` enum label; null for a module with no pages. */
 export function toModule(name: string): GrantModule | null {
   return MODULES.find((m) => m.id === name.toLowerCase())?.enum ?? null;
 }
-
-export const higher = (a: Level, b: Level) =>
-  LEVELS.indexOf(a) >= LEVELS.indexOf(b) ? a : b;
 
 /** One row of the access grid: a page, or a whole module (`page` null). */
 export type GrantRow = { module: GrantModule; page: string | null };
@@ -66,18 +70,6 @@ export function rowLevel(
   ).granted;
 }
 
-const clampRow = (row: GrantRow, level: Level) => {
-  const id = row.page ?? moduleId(row.module);
-  const max = id ? pageById(id)?.maxLevel : undefined;
-  return max ? lowerLevel(level, max) : level;
-};
-
-export type LeveledGrant = {
-  module: string;
-  page: string | null;
-  level: Level;
-};
-
 /**
  * A person's grants after a bulk edit. Each chosen grant becomes an override;
  * one whose level equals what the row inherits (`rowLevel` without the
@@ -93,9 +85,10 @@ export function bulkEditGrants({
   admin,
   addOnly
 }: {
-  chosen: readonly LeveledGrant[];
-  own: readonly LeveledGrant[];
-  role: readonly LeveledGrant[];
+  /** A module by any name `toModule` reads. */
+  chosen: readonly { module: string; page: string | null; level: Level }[];
+  own: readonly StoredGrant[];
+  role: readonly StoredGrant[];
   admin: boolean;
   addOnly: boolean;
 }): GrantInput[] {
@@ -115,9 +108,9 @@ export function bulkEditGrants({
     if (!module) continue;
     const row = { module, page: grant.page };
     const base = rowLevel(subject, row, "person");
-    const level = clampRow(
-      row,
-      addOnly ? higher(grant.level, rowLevel(subject, row)) : grant.level
+    const level = clampLevel(
+      grant.page ?? (moduleId(module) as string),
+      addOnly ? higherLevel(grant.level, rowLevel(subject, row)) : grant.level
     );
     edited.set(key(row), {
       module,
@@ -127,17 +120,17 @@ export function bulkEditGrants({
   }
 
   return [
-    ...own.flatMap((g) => {
-      const module = toModule(g.module);
-      return module && !edited.has(key(g))
-        ? [{ module, page: g.page, level: g.level }]
-        : [];
-    }),
+    ...own.flatMap((g) =>
+      edited.has(key(g))
+        ? []
+        : [{ module: g.module, page: g.page, level: g.level }]
+    ),
     ...edited.values()
   ];
 }
 
-export type AccessSubjectType = "role" | "person" | "key";
+export const ACCESS_SUBJECT_TYPES = ["role", "person", "key"] as const;
+export type AccessSubjectType = (typeof ACCESS_SUBJECT_TYPES)[number];
 
 export function accessSubject(
   type: AccessSubjectType,
@@ -156,29 +149,46 @@ export const subjectTypeOf = (subject: GrantSubject): AccessSubjectType =>
  * write. `selectAllCaps` is where the grid's "select all" stops on a module;
  * a higher level stays a choice made on the module's own rows, and the server
  * accepts it. `page` is the page that reads (View) and writes (Edit) the
- * subject's grants.
+ * subject's grants. `feature` is the plan feature a write needs, and `refusal`
+ * what a company without it is told.
  */
 export type SubjectRules = {
   page: PageId;
   modules: readonly ModuleId[];
   selectAllCaps: Partial<Record<ModuleId, Level>>;
+  feature: Feature;
+  refusal: string;
 };
 
 const ALL_MODULES = MODULES.map((m) => m.id);
+
+const PERMISSIONS_REFUSAL = defaultUpgradeMessage(
+  resolveRequirement({ feature: "PERMISSIONS" })
+);
 
 export const SUBJECT_RULES: Record<AccessSubjectType, SubjectRules> = {
   role: {
     page: "users.employeeTypes",
     modules: ALL_MODULES,
-    selectAllCaps: {}
+    selectAllCaps: {},
+    feature: "PERMISSIONS",
+    refusal: PERMISSIONS_REFUSAL
   },
-  person: { page: "users.accounts", modules: ALL_MODULES, selectAllCaps: {} },
+  person: {
+    page: "users.accounts",
+    modules: ALL_MODULES,
+    selectAllCaps: {},
+    feature: "PERMISSIONS",
+    refusal: PERMISSIONS_REFUSAL
+  },
   // Keys were never offered Workflows. Deleting accounting data through the
   // API is never part of "select all".
   key: {
     page: "settings.apiKeys",
     modules: ALL_MODULES.filter((id) => id !== "workflows"),
-    selectAllCaps: { accounting: "Edit" }
+    selectAllCaps: { accounting: "Edit" },
+    feature: "API_KEYS",
+    refusal: "API keys require the Business plan"
   }
 };
 
@@ -190,6 +200,15 @@ export function subjectGates(
   });
   return { role: gate("role"), person: gate("person"), key: gate("key") };
 }
+
+/**
+ * Who may read people's and roles' access: an Accounts viewer or an Employee
+ * Types viewer (the role form's "Who has access" panel, and the person editor
+ * reading what each role gives).
+ */
+export const ACCESS_READER_GATE: AnyOfGate = {
+  anyOf: [subjectGates("View").person, subjectGates("View").role]
+};
 
 export function refusedModules(
   type: AccessSubjectType,
@@ -207,7 +226,7 @@ export function refusedModules(
 export function claimsMayEditAccounts(claims: unknown, companyId: string) {
   return holdsGate(
     claimsFor(claims, companyId).permissions,
-    { "users.accounts": "Edit" },
+    subjectGates("Edit").person,
     companyId
   );
 }

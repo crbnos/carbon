@@ -5,7 +5,6 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { holdsGate } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
@@ -64,7 +63,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(
+  const { client, companyId, permissions } = await authorize(
     request,
     { "projects.projects": "View" },
     { bypassRls: true }
@@ -90,7 +89,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     planningGroups,
     billingLines,
     projectContracts,
-    claims,
     stockRows,
     pegRows
   ] = await Promise.all([
@@ -119,9 +117,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // The project contracts that bill the project, by header or by line:
     // the Billing page names them, and offers a new one when there is none.
     getProjectContracts(client, { companyId, projectId }),
-    // The client bypasses RLS: contracts reach only a user who can view
-    // sales.
-    getUserClaims(userId, companyId),
     // Stock and Pegging show under Costs only once the project has project
     // stock (an item ledger row of its own) or a current peg (Layer 5).
     client
@@ -249,11 +244,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Billing shows under Costs for every Contract project, with or without
     // a project contract.
     showBilling: project.data.costTreatment === "Contract",
-    projectContracts: holdsGate(
-      claims?.permissions ?? {},
-      CONTRACT_READ_GATE,
-      companyId
-    )
+    // The client bypasses RLS: contracts reach only a user who can view
+    // sales.
+    projectContracts: holdsGate(permissions, CONTRACT_READ_GATE, companyId)
       ? projectContracts.data.map((contract) => ({
           id: contract.id,
           customerContractId: contract.customerContractId,

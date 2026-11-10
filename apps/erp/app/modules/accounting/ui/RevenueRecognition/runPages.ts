@@ -7,7 +7,7 @@
 // registry's (`runPage`); this adds the paths, so every route and component
 // that sends a user back to "the run's list" reads one map.
 
-import { type PageId, pageOfRow } from "@carbon/database/access";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import type { RunType } from "@carbon/database/run-type";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -35,7 +35,5 @@ export const RUN_PAGES: Record<
 
 /** The page whose level gates a run of the type: the registry's `where` on `revenueRecognitionRun`. */
 export function runPage(type: RunType): PageId {
-  const page = pageOfRow("revenueRecognitionRun", { type });
-  if (!page) throw new Error(`No page owns ${type} runs`);
-  return page;
+  return pageOfTable("revenueRecognitionRun", { type });
 }

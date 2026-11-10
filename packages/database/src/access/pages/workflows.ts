@@ -17,6 +17,8 @@ export const PAGES = [
       "workflowTriggerEvent",
       "eventSystemSubscription"
     ],
+    // The integrations subscribe from their Settings page, as before.
+    alsoWrittenBy: { eventSystemSubscription: ["settings.integrations"] },
     paths: ["/x/workflows", "/x/workflow/"]
   },
   {

@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { GrantInput } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -9,6 +10,7 @@ import { newIds } from "@carbon/database/rows";
 import { SINGLE_TENANT } from "@carbon/env";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "./entitlements.server";
+import { SUBJECT_RULES } from "./permission-grants";
 import { type AccessWriteError, writeAccessGrants } from "./permissions.server";
 
 /**
@@ -24,8 +26,9 @@ import { type AccessWriteError, writeAccessGrants } from "./permissions.server";
  * receives the already-computed `keyHash`/`keyPreview` and stores them, so no
  * crypto crosses the package boundary.
  *
- * The entitlement LOCK lives INSIDE this commercial function (see
- * `entitlements.server`) so it cannot be stripped from open-licensed app code.
+ * The entitlement LOCK lives in this commercial package so it cannot be
+ * stripped from open-licensed app code: `writeAccessGrants` holds it for
+ * `saveApiKey`, and `deleteApiKey` calls `requireEntitlement` itself.
  */
 
 /**
@@ -100,25 +103,33 @@ export async function saveApiKey(
     : { id, error: null };
 }
 
+/**
+ * Delete one of the company's keys and drop its cached authentication, so it
+ * stops authenticating at once. The hash is read first, over `db`: it cannot
+ * be read once the row is gone. The delete runs as the caller, under RLS. The
+ * cache is dropped after the delete commits, so a request that cached the live
+ * row before it is cleared too.
+ */
 export async function deleteApiKey(
   client: SupabaseClient<Database>,
-  id: string
-) {
-  // The input carries no companyId — read it from the row so the entitlement
-  // check (the lock) can run before the delete.
-  const existing = await client
+  db: Kysely<KyselyDatabase>,
+  { companyId, id }: { companyId: string; id: string }
+): Promise<{ error: { message: string } | null }> {
+  await requireEntitlement(client, companyId, SUBJECT_RULES.key.feature);
+  const key = await db
+    .selectFrom("apiKey")
+    .select("keyHash")
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!key) return { error: { message: "API key not found" } };
+
+  const deleted = await client
     .from("apiKey")
-    .select("companyId")
+    .delete()
     .eq("id", id)
-    .single();
-
-  if (existing.error || !existing.data) {
-    return {
-      data: null,
-      error: existing.error || { message: "API key not found" }
-    };
-  }
-
-  await requireEntitlement(client, existing.data.companyId, "API_KEYS");
-  return client.from("apiKey").delete().eq("id", id);
+    .eq("companyId", companyId);
+  if (deleted.error) return { error: deleted.error };
+  await bustApiKeyCache(key.keyHash);
+  return { error: null };
 }

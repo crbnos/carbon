@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { holdsGate, type PageGate } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -42,7 +43,10 @@ export async function action(args: ActionFunctionArgs) {
 
 async function productionEventAction({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId, permissions } = await authorize(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(productionEventValidator).validate(
@@ -65,17 +69,7 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
   // A Machine press writes over Kysely, which skips RLS, so the permission RLS
   // would check is checked here, before anything is written. A refusal stays
   // on the page as a message.
-  const permitted = async (
-    permission: { "production.jobs": "Create" } | { "production.jobs": "Edit" }
-  ) => {
-    try {
-      await authorize(request, permission);
-      return true;
-    } catch (thrown) {
-      if (thrown instanceof Response) return false;
-      throw thrown;
-    }
-  };
+  const permitted = (gate: PageGate) => holdsGate(permissions, gate, companyId);
   const refused = async (message: string) =>
     data({}, await flash(request, error(null, message)));
 
@@ -90,10 +84,7 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
   if (productionAction === "Start") {
     const machineWorkCenterId =
       d.type === "Machine" ? d.workCenterId : undefined;
-    if (
-      machineWorkCenterId &&
-      !(await permitted({ "production.jobs": "Create" }))
-    ) {
+    if (machineWorkCenterId && !permitted({ "production.jobs": "Create" })) {
       return refused("You do not have permission to start machine time");
     }
 
@@ -211,7 +202,7 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
   if (event.data.endTime) return refused("This event has already ended");
 
   if (event.data.type === "Machine" && event.data.workCenterId) {
-    if (!(await permitted({ "production.jobs": "Edit" }))) {
+    if (!permitted({ "production.jobs": "Edit" })) {
       return refused("You do not have permission to end machine time");
     }
     let press: Awaited<ReturnType<typeof endMachineProductionEvent>>;

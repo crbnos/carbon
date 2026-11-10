@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 /** Opening a contract: a Draft continues its setup, anything else shows its
  *  page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(
+  const { client, companyId, permissions } = await authorize(
     request,
     // Both contract lists open the same contract page.
     CONTRACT_READ_GATE
@@ -20,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   throw redirect(
-    (await draftContractSetupPath(client, { companyId, userId, id })) ??
+    (await draftContractSetupPath(client, { companyId, permissions, id })) ??
       path.to.contractDetails(id)
   );
 }

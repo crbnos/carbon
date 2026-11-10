@@ -304,7 +304,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 - Standardized policy names `SELECT` / `INSERT` / `UPDATE` / `DELETE`, gated by SQL helpers
   `get_companies_with_employee_role()` (read) and `get_companies_with_employee_permission('<page>_<action>')`
   (write). Policies and those helpers are authored in `packages/database/src/authz/`, not in
-  migrations — see `authz-manifest.md`.
+  migrations — see `authz-manifest.md`. An API key counts in those helpers only while it
+  holds a grant (a `permission` row above None) in its company (`util.request_api_key`),
+  the same rule as `admits`: a key with none reads nothing.
 - RLS is the real authorization boundary for supabase-js clients; `requirePermissions` is the app-layer gate
   (and the only gate for service-role / Kysely paths). See `conventions-database.md` for the table+RLS template.
 

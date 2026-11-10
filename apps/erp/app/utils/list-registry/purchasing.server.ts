@@ -31,7 +31,7 @@ import { searchList } from "./index.server";
 
 export const purchaseOrdersList = searchList({
   key: "purchase-orders",
-  permission: { gate: { "purchasing.purchaseOrders": "View" } },
+  gate: { "purchasing.purchaseOrders": "View" },
   paging: PURCHASE_ORDERS_PAGING,
   service: getPurchaseOrders,
   params: { status: "status", supplierId: "supplierId" }
@@ -39,21 +39,21 @@ export const purchaseOrdersList = searchList({
 
 export const supplierQuotesList = searchList({
   key: "supplier-quotes",
-  permission: { gate: { "purchasing.supplierQuotes": "View" } },
+  gate: { "purchasing.supplierQuotes": "View" },
   paging: SUPPLIER_QUOTES_PAGING,
   service: getSupplierQuotes
 });
 
 export const purchasingRfqsList = searchList({
   key: "purchasing-rfqs",
-  permission: { gate: { "purchasing.rfqs": "View" } },
+  gate: { "purchasing.rfqs": "View" },
   paging: PURCHASING_RFQS_PAGING,
   service: getPurchasingRFQs
 });
 
 export const purchaseReturnOrdersList = searchList({
   key: "purchase-return-orders",
-  permission: { gate: { "purchasing.returns": "View" } },
+  gate: { "purchasing.returns": "View" },
   paging: PURCHASE_RETURN_ORDERS_PAGING,
   service: getPurchaseReturnOrders,
   params: { status: "status", supplierId: "supplierId" }
@@ -61,7 +61,7 @@ export const purchaseReturnOrdersList = searchList({
 
 export const supplierTypesList = {
   key: "supplier-types",
-  permission: { gate: { "purchasing.types": "View" } },
+  gate: { "purchasing.types": "View" },
   ...SUPPLIER_TYPES_PAGING,
   // The list has no column filters: the loader never passed them.
   query: (client, companyId, { params, limit, cursor, exactCount, sorts }) =>
@@ -108,7 +108,7 @@ export async function withSupplierReportContacts<
 
 export const suppliersList = searchList({
   key: "suppliers",
-  permission: { gate: { "purchasing.suppliers": "View" } },
+  gate: { "purchasing.suppliers": "View" },
   paging: SUPPLIERS_PAGING,
   service: getSuppliers,
   params: { type: "type", status: "status" },
@@ -118,7 +118,7 @@ export const suppliersList = searchList({
 
 export const leasesList = searchList({
   key: "leases",
-  permission: { gate: { "purchasing.leases": "View" } },
+  gate: { "purchasing.leases": "View" },
   paging: LEASES_PAGING,
   service: getLeases
 });

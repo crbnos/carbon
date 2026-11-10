@@ -10,6 +10,7 @@ import {
   moduleOf,
   pageById
 } from "@carbon/database/access";
+import { ACCESS_SUBJECT_TYPES } from "@carbon/ee/permission-grants";
 import { supportedLanguages } from "@carbon/locale";
 import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";
@@ -73,7 +74,7 @@ export const grantsField = z
   .pipe(grantsSchema);
 
 export const permissionsValidator = z.object({
-  subjectType: z.enum(["role", "person", "key"]),
+  subjectType: z.enum(ACCESS_SUBJECT_TYPES),
   subjectId: z.string().min(1),
   grants: grantsSchema
 });

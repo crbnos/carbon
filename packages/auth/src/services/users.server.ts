@@ -3,20 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { isLegacyClaims } from "@carbon/database/access";
+import { claimsFor, isLegacyClaims } from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
+import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
-import type { Permission, Result } from "../types";
+import type { CompanyRole, Permission, Result } from "../types";
 import { error, success } from "../utils/result";
 import { type AuditGrant, logRoleChange } from "./auth-events.server";
-import {
-  getClaims,
-  getPermissionCacheKey,
-  makePermissionsFromClaims
-} from "./users";
+import { getClaims, getPermissionCacheKey } from "./users";
 
 const log = getLogger("auth");
 
@@ -49,11 +46,16 @@ export function getUserClaims(userId: string, companyId: string) {
   );
 }
 
-async function loadUserClaims(userId: string, companyId: string) {
-  let claims: {
-    permissions: Record<string, Permission>;
-    role: string | null;
-  } | null = null;
+type UserClaims = {
+  permissions: Record<string, Permission>;
+  role: CompanyRole | null;
+};
+
+async function loadUserClaims(
+  userId: string,
+  companyId: string
+): Promise<UserClaims> {
+  let claims: UserClaims | null = null;
 
   try {
     const cachedClaims = await redis.hget(
@@ -61,10 +63,7 @@ async function loadUserClaims(userId: string, companyId: string) {
       companyId
     );
     if (cachedClaims) {
-      claims = JSON.parse(cachedClaims) as {
-        permissions: Record<string, Permission>;
-        role: string | null;
-      };
+      claims = JSON.parse(cachedClaims) as UserClaims;
     }
   } catch (e) {
     log.error("Failed to get claims from redis", { error: e });
@@ -80,7 +79,8 @@ async function loadUserClaims(userId: string, companyId: string) {
         throw new Error("Failed to get claims");
       }
 
-      claims = makePermissionsFromClaims(rawClaims.data, companyId);
+      const { permissions, role } = claimsFor(rawClaims.data, companyId);
+      claims = { permissions, role };
 
       // store claims in redis — best-effort. A null/failed write (Redis down,
       // fail-soft via @carbon/kv withResilience) must not abort the in-flight
@@ -102,17 +102,24 @@ async function loadUserClaims(userId: string, companyId: string) {
       } catch (e) {
         log.error("Failed to cache claims in redis", { error: e });
       }
-
-      if (!claims) {
-        throw new Error("Failed to get claims");
-      }
     }
 
     return claims;
   }
 }
 
-type CompanyRole = "customer" | "employee" | "supplier";
+const CLEAR_CLAIMS_CHUNK = 500;
+
+/**
+ * Drop the cached claims of each user, every company: for a write that changes
+ * what many people hold (a role's grants, a restored company). One `DEL` per
+ * 500 users, so a large company never sends one huge command.
+ */
+export async function clearClaims(userIds: readonly string[]): Promise<void> {
+  for (const batch of chunkArray([...userIds], CLEAR_CLAIMS_CHUNK)) {
+    await redis.del(...batch.map(getPermissionCacheKey));
+  }
+}
 
 type Write = PromiseLike<{ error: unknown }>;
 
@@ -309,9 +316,6 @@ export const deactivateSupplier = (
   ip?: string
 ) => deactivateAs("supplier", serviceRole, userId, companyId, actorId, ip);
 
-const isCompanyRole = (role: unknown): role is CompanyRole =>
-  role === "customer" || role === "employee" || role === "supplier";
-
 export async function deactivateUser(
   serviceRole: SupabaseClient<Database>,
   userId: string,
@@ -326,7 +330,7 @@ export async function deactivateUser(
     .eq("companyId", companyId)
     .single();
 
-  let role: unknown = userToCompany.data?.role;
+  let role: CompanyRole | undefined = userToCompany.data?.role;
 
   if (userToCompany.error) {
     // No userToCompany row — either pending invite, or already deactivated.
@@ -352,7 +356,7 @@ export async function deactivateUser(
     role = invite.data.role;
   }
 
-  if (!isCompanyRole(role)) throw new Error("Invalid user role");
+  if (!role) throw new Error("Invalid user role");
 
   const result = await deactivateAs(
     role,

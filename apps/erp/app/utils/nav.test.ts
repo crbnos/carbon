@@ -3,30 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import {
-  gateOfRoute,
-  moduleLanding,
-  pageOfRoute,
-  routeOwnsUrl,
-  visibleGroups
-} from "./nav";
+import { gateOfRoute, moduleLanding, routeOwnsUrl, visibleGroups } from "./nav";
 
 const none = { view: [], create: [], update: [], delete: [] };
 const viewing = (...pages: string[]) =>
   Object.fromEntries(pages.map((page) => [page, { ...none, view: ["c1"] }]));
 
-describe("pageOfRoute and gateOfRoute", () => {
-  it("take the page from `to`, unless the entry names one", () => {
-    expect(pageOfRoute({ to: "/x/sales/quotes" })).toBe("sales.quotes");
-    expect(
-      pageOfRoute({
-        to: "/x/inventory/receipts?filter=a",
-        page: "sales.quotes"
-      })
-    ).toBe("sales.quotes");
-    expect(pageOfRoute({ to: "/x/timesheet" })).toBeUndefined();
-  });
-
+describe("gateOfRoute", () => {
   it("shows an entry behind View on its page, its own gate, or nothing", () => {
     expect(gateOfRoute({ to: "/x/sales/quotes" })).toEqual({
       "sales.quotes": "View"

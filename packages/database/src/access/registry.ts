@@ -58,10 +58,11 @@ export type Page = {
   /** Restricted tables of other modules' pages that this page reads. */
   readers?: readonly string[];
   /**
-   * Tables this page owns that other pages also write, each with those pages:
-   * a table that moved to this page from another module keeps the page that
-   * wrote it before (20261110101723_grants-for-moved-tables.sql gives the
-   * moved tables it does not list a grant instead). RLS renders it.
+   * Tables this page owns that other pages also write at the same action, each
+   * with those pages: a table that moved to this page from another module keeps
+   * the page that wrote it before (20261110101723_grants-for-moved-tables.sql
+   * gives the moved tables it does not list a grant instead), and a table
+   * another page writes its own rows of (a supplier's addresses). RLS renders it.
    */
   alsoWrittenBy?: Readonly<Record<string, readonly string[]>>;
   /** Route path prefixes, used to map route files to pages. */
@@ -118,9 +119,7 @@ export const MODULES: readonly {
   return { id, label: file.LABEL, enum: moduleEnum(id) };
 });
 
-const MODULE_IDS = new Set<string>(
-  MODULE_FILES.map((file) => moduleOf(file.PAGES[0].id))
-);
+const MODULE_IDS = new Set<string>(MODULES.map((module) => module.id));
 
 const PAGE_BY_ID = new Map<string, Page>(PAGES.map((page) => [page.id, page]));
 
@@ -195,6 +194,7 @@ export const childPath = (child: Child, parent: string): readonly Hop[] =>
 function buildIndex() {
   const places = new Map<string, TablePlace>();
   const readers = new Map<string, string[]>();
+  const writers = new Map<string, string[]>();
   const put = (table: string, next: TablePlace) => {
     const prev = places.get(table);
     if (!prev) {
@@ -240,8 +240,30 @@ function buildIndex() {
     for (const table of page.readers ?? [])
       readers.set(table, [...(readers.get(table) ?? []), page.id]);
   }
-  return { places, readers };
+  for (const page of PAGES as readonly Page[])
+    for (const [table, pages] of Object.entries(page.alsoWrittenBy ?? {})) {
+      if (!(ownersIn(places.get(table)) as string[]).includes(page.id))
+        throw new Error(
+          `registry: ${page.id} lists ${table} in alsoWrittenBy but does not own it`
+        );
+      for (const writer of pages)
+        if (!PAGE_BY_ID.has(writer) || writer === page.id)
+          throw new Error(
+            `registry: ${table} is also written by ${writer}, which is no other page`
+          );
+      writers.set(table, [
+        ...new Set([...(writers.get(table) ?? []), ...pages])
+      ]);
+    }
+  return { places, readers, writers };
 }
+
+const ownersIn = (place: TablePlace | undefined): PageId[] =>
+  (!place
+    ? []
+    : place.kind === "page"
+      ? [place.page]
+      : place.branches.map((branch) => branch.page)) as PageId[];
 
 const INDEX = buildIndex();
 
@@ -250,9 +272,19 @@ export function placeOf(table: string): TablePlace | undefined {
   return INDEX.places.get(table);
 }
 
+/** The table's page, or every branch's page for a shared table or a child; empty when no page lists it. */
+export function ownersOf(table: string): PageId[] {
+  return ownersIn(placeOf(table));
+}
+
 /** The pages that list the table in `readers`. */
 export function readersOf(table: string): readonly string[] {
   return INDEX.readers.get(table) ?? [];
+}
+
+/** The pages that list the table in `alsoWrittenBy`, besides the page that owns it. */
+export function writersOf(table: string): readonly string[] {
+  return INDEX.writers.get(table) ?? [];
 }
 
 /**
@@ -281,16 +313,18 @@ export function clampLevel(pageId: string, level: Level): Level {
   return page ? lowerLevel(level, page.maxLevel) : level;
 }
 
-const segments = (path: string) => path.split("/").filter(Boolean);
+/** A URL's path segments, without its query or hash. */
+export const urlSegments = (url: string): string[] =>
+  (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
 
 /**
- * How many segments of a page path cover the URL; 0 when it does not. A path
+ * How many segments of a path cover the URL; 0 when it does not. A path
  * covers its own URL and every URL below it. A `$param` segment of the path
  * matches any one segment, so a pathname (`/x/customer/c1/assets`) and a route
  * pattern (`/x/customer/$customerId/assets`) both match.
  */
-function coverage(path: string, url: readonly string[]): number {
-  const want = segments(path);
+export function urlCoverage(path: string, url: readonly string[]): number {
+  const want = urlSegments(path);
   if (want.length > url.length) return 0;
   for (const [i, part] of want.entries())
     if (!part.startsWith("$") && part !== url[i]) return 0;
@@ -303,11 +337,11 @@ function coverage(path: string, url: readonly string[]): number {
  * index, a route listed in the registry test's `UNPAGED_ROUTES`).
  */
 export function pageOfUrl(pathname: string): PageId | undefined {
-  const url = segments(pathname.split(/[?#]/)[0] ?? "");
+  const url = urlSegments(pathname);
   let best: { page: PageId; length: number } | undefined;
   for (const page of PAGES)
     for (const path of page.paths) {
-      const length = coverage(path, url);
+      const length = urlCoverage(path, url);
       if (length > (best?.length ?? 0)) best = { page: page.id, length };
     }
   return best?.page;
@@ -334,6 +368,16 @@ export function pageOfRow(
     return value === undefined || String(cell) === String(value);
   });
   return branch?.page as PageId | undefined;
+}
+
+/** `pageOfRow`, for a table (and row) some page must own: throws when none does. */
+export function pageOfTable(
+  table: string,
+  row: Readonly<Record<string, unknown>> = {}
+): PageId {
+  const page = pageOfRow(table, row);
+  if (!page) throw new Error(`No page owns ${table}`);
+  return page;
 }
 
 // FNV-1a, not node:crypto: the claims cache key is built in browser code too.

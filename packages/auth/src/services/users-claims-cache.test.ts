@@ -11,7 +11,7 @@ import {
   it,
   vi
 } from "vitest";
-import { getUserClaims } from "./users.server";
+import { clearClaims, getUserClaims } from "./users.server";
 
 // The module reads its configuration once, at import.
 vi.hoisted(() => {
@@ -21,10 +21,14 @@ vi.hoisted(() => {
 });
 
 // An empty permission cache that records what is written to it.
-const cache = vi.hoisted(() => ({ writes: 0 }));
+const cache = vi.hoisted(() => ({ writes: 0, deletes: [] as number[] }));
 vi.mock("@carbon/kv", () => ({
   redis: {
     hget: async () => null,
+    del: async (...keys: string[]) => {
+      cache.deletes.push(keys.length);
+      return keys.length;
+    },
     multi: () => {
       const tx = {
         hset: () => {
@@ -43,6 +47,7 @@ const answer = vi.hoisted(() => ({ body: {} as unknown }));
 
 beforeEach(() => {
   cache.writes = 0;
+  cache.deletes = [];
   vi.stubGlobal(
     "fetch",
     async () =>
@@ -88,5 +93,17 @@ describe("getUserClaims", () => {
     });
     expect(claims.permissions["sales.quotes"]?.view).toEqual([]);
     expect(cache.writes).toBe(0);
+  });
+});
+
+describe("clearClaims", () => {
+  it("deletes the cached claims 500 users at a time", async () => {
+    await clearClaims(Array.from({ length: 1201 }, (_, i) => `user-${i}`));
+    expect(cache.deletes).toEqual([500, 500, 201]);
+  });
+
+  it("sends nothing for no users", async () => {
+    await clearClaims([]);
+    expect(cache.deletes).toEqual([]);
   });
 });

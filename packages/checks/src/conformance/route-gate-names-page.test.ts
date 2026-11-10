@@ -5,13 +5,15 @@
 import { describe, expect, it } from "vitest";
 import {
   gateConstants,
+  listGates,
   routeGateNamesPage,
   routeUrl
 } from "./route-gate-names-page";
 
 const ROUTES = "apps/erp/app/routes/x+/";
 const check = routeGateNamesPage(
-  new Map([["CONTRACT_READ_GATE", ["sales.serviceContracts"]]])
+  new Map([["CONTRACT_READ_GATE", ["sales.serviceContracts"]]]),
+  new Map([["receiptsList", ["inventory.receipts"]]])
 );
 const scan = (route: string, contents: string) =>
   check.scan(`${ROUTES}${route}`, contents);
@@ -84,6 +86,16 @@ describe("routeGateNamesPage", () => {
     ).toEqual([]);
   });
 
+  it("reads the gate of the list a route loads with loadListPage", () => {
+    const loads = (list: string) =>
+      `export async function loader({ request }) {\n  return loadListPage(request, ${list}, { dataKey: "rows" });\n}\n`;
+    expect(scan("inventory+/receipts.tsx", loads("receiptsList"))).toEqual([]);
+    const [violation] = scan("inventory+/shipments.tsx", loads("receiptsList"));
+    expect(violation?.line).toBe(2);
+    expect(violation?.message).toContain("inventory.shipments");
+    expect(scan("inventory+/shipments.tsx", loads("unknownList"))).toEqual([]);
+  });
+
   it("accepts the pages an exception lists for its route", () => {
     expect(
       scan(
@@ -118,5 +130,23 @@ describe("gateConstants", () => {
         ["sales.serviceContracts", "sales.projectContracts"]
       ]
     ]);
+  });
+});
+
+describe("listGates", () => {
+  it("collects the gate of each list, from searchList or an object", () => {
+    const lists = listGates([
+      {
+        file: "apps/erp/app/utils/list-registry/inventory.server.ts",
+        contents: `export const receiptsList = searchList({ key: "receipts", gate: { "inventory.receipts": "View" }, paging });
+export const paymentsList = { key: "payments", gate: { "invoicing.payments": "View" }, query } satisfies ListDefinition;
+export const itemsList = searchList({ key: "items", gate: anyOf(ITEM_PAGES, "View") });
+export const lists = { receipts: receiptsList };`
+      }
+    ]);
+    expect(lists.get("receiptsList")).toEqual(["inventory.receipts"]);
+    expect(lists.get("paymentsList")).toEqual(["invoicing.payments"]);
+    expect(lists.get("itemsList")).toContain("parts.parts");
+    expect(lists.has("lists")).toBe(false);
   });
 });

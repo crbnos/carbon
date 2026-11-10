@@ -4,11 +4,12 @@
 
 import { randomInt } from "node:crypto";
 import type { Database } from "@carbon/database";
+import { readGrants } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
-import { CONSOLE_OPERATOR_GRANTS } from "./console-grants";
+import { CONSOLE_OPERATOR_GRANTS, consoleOperatorWork } from "./console-grants";
 import { requireEntitlement } from "./entitlements.server";
 import { writeAccessGrants } from "./permissions.server";
 import { companyHasFeature } from "./plan.server";
@@ -132,6 +133,9 @@ export async function verifyEmployeePin(
  * connection): a DB trigger refuses changes to it from the API roles, so the
  * flag can only move through this function and its entitlement lock.
  *
+ * Enabling first provisions the type (`provisionConsoleOperator`); when that
+ * fails, console mode stays off and the error is returned.
+ *
  * Returns the PIN it generated for `userId` (only when that user had none) so
  * the caller can show it ONCE — it cannot be read back later. `pinError` is
  * set when that PIN could not be created; console mode is enabled regardless.
@@ -148,6 +152,22 @@ export async function updateConsoleSetting(
   pinError: string | null;
 }> {
   await requireEntitlement(client, companyId, "PERMISSIONS");
+
+  if (consoleEnabled) {
+    const provisioned = await provisionConsoleOperator(
+      client,
+      db,
+      companyId,
+      userId ?? "system"
+    );
+    if (provisioned.error) {
+      logger.error("Failed to provision the Console Operator type", {
+        companyId,
+        error: provisioned.error
+      });
+      return { error: provisioned.error, pin: null, pinError: null };
+    }
+  }
 
   try {
     await db
@@ -169,85 +189,96 @@ export async function updateConsoleSetting(
   let generatedPin: string | null = null;
   let pinError: string | null = null;
 
-  // When enabling, create "Console Operator" employee type if it doesn't exist.
-  // Users → Employee Types owns `employeeType`: written over `db` (the system), after
-  // the caller's people-settings permission and the entitlement above, for
-  // this company only — as the grants are.
-  if (consoleEnabled) {
-    let employeeTypeId: string | undefined;
+  // Auto-generate a PIN for the enabling user if they don't have one
+  // (a user with no employee row in this company fails the FK and gets none,
+  // as before).
+  if (
+    consoleEnabled &&
+    userId &&
+    !(await verifyEmployeePin(db, { employeeId: userId, companyId })).hasPin
+  ) {
+    const pin = generateConsolePin();
     try {
-      const existing = await db
-        .selectFrom("employeeType")
-        .select("id")
-        .where("companyId", "=", companyId)
-        .where("systemType", "=", "Console Operator")
-        .executeTakeFirst();
-
-      if (!existing) {
-        const created = await db
-          .insertInto("employeeType")
-          .values({
-            name: "Console Operator",
-            companyId,
-            protected: true,
-            systemType: "Console Operator"
-          })
-          .returning("id")
-          .executeTakeFirst();
-        employeeTypeId = created?.id;
-      }
-    } catch (err) {
-      logger.error("Failed to create the Console Operator type", {
+      await setEmployeePin(db, {
+        employeeId: userId,
         companyId,
+        pin,
+        updatedBy: userId
+      });
+      generatedPin = pin;
+    } catch (err) {
+      // Console mode is on either way; the enabling user just has no PIN
+      // yet (e.g. no employee row in this company) and needs one reset.
+      logger.error("Failed to generate a console PIN for the enabling user", {
+        companyId,
+        userId,
         error: err
       });
-    }
-
-    if (employeeTypeId) {
-      const granted = await writeAccessGrants(client, db, {
-        companyId,
-        subject: { employeeTypeId },
-        change: { set: CONSOLE_OPERATOR_GRANTS },
-        actorId: userId ?? "system",
-        reason: "console-operator-created"
-      }).catch((err: unknown) => ({ error: err }));
-      if (granted.error) {
-        logger.error("Failed to grant the Console Operator type access", {
-          companyId,
-          employeeTypeId,
-          error: granted.error
-        });
-      }
-    }
-
-    // Auto-generate a PIN for the enabling user if they don't have one
-    // (a user with no employee row in this company fails the FK and gets none,
-    // as before).
-    if (
-      userId &&
-      !(await verifyEmployeePin(db, { employeeId: userId, companyId })).hasPin
-    ) {
-      const pin = generateConsolePin();
-      try {
-        await setEmployeePin(db, {
-          employeeId: userId,
-          companyId,
-          pin,
-          updatedBy: userId
-        });
-        generatedPin = pin;
-      } catch (err) {
-        // Console mode is on either way; the enabling user just has no PIN
-        // yet (e.g. no employee row in this company) and needs one reset.
-        logger.error("Failed to generate a console PIN for the enabling user", {
-          companyId,
-          userId,
-          error: err
-        });
-        pinError = "A PIN could not be generated for you";
-      }
+      pinError = "A PIN could not be generated for you";
     }
   }
 
   return { error: null, pin: generatedPin, pinError };
+}
+
+/**
+ * The protected "Console Operator" type and its grants (`CONSOLE_OPERATOR_GRANTS`),
+ * in one transaction (`writeAccessGrants`): the type is created with its grants or
+ * not at all. Users → Employee Types owns `employeeType`; this writes it over `db`
+ * (the system), after the caller's people-settings permission and the entitlement,
+ * for this company only.
+ */
+async function provisionConsoleOperator(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  actorId: string
+): Promise<{ error: { message: string } | null }> {
+  let existing: { id: string; grantCount: number } | undefined;
+  try {
+    const type = await db
+      .selectFrom("employeeType")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("systemType", "=", "Console Operator")
+      .executeTakeFirst();
+    existing = type && {
+      id: type.id,
+      grantCount: (await readGrants(db, companyId, { employeeTypeId: type.id }))
+        .length
+    };
+  } catch (err) {
+    return {
+      error: {
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to read the Console Operator type"
+      }
+    };
+  }
+
+  const work = consoleOperatorWork(existing);
+  if (!work) return { error: null };
+  const id = existing?.id ?? crypto.randomUUID();
+  return writeAccessGrants(client, db, {
+    companyId,
+    subject: { employeeTypeId: id },
+    change: { set: CONSOLE_OPERATOR_GRANTS },
+    actorId,
+    subjectRow:
+      work === "create"
+        ? (tx) =>
+            tx
+              .insertInto("employeeType")
+              .values({
+                id,
+                name: "Console Operator",
+                companyId,
+                protected: true,
+                systemType: "Console Operator"
+              })
+              .execute()
+        : undefined
+  });
 }

@@ -18,16 +18,17 @@ import type {
   PermissionAction,
   ToolPermission
 } from "@carbon/api";
+import { readGate } from "../../packages/api/src/permissions";
 import {
   ACTIONS,
+  type AnyGate,
   type Level,
   LEVELS,
   levelHolds,
   moduleOf,
   PAGES,
   type PageGate,
-  pageById,
-  widenReads
+  pageById
 } from "../../packages/database/src/access";
 import {
   type CallExpression,
@@ -475,7 +476,12 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     return publishChoice(
       where,
       choice.kind === "anyOf"
-        ? { kind: "anyOf", gates: readAlternatives(choice.gates, true) }
+        ? {
+            kind: "anyOf",
+            gates: alternativesOf(
+              readGate({ anyOf: choice.gates.map(asGate) })
+            )
+          }
         : choice
     );
 
@@ -514,14 +520,20 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     gates = values as ObjectLiteralExpression[];
   }
 
-  // Publish what `defineServiceFn` checks: each gate as its read
-  // (`readGate`), every page a widened read admits.
-  const reads = gates.map((gate) => {
-    const entries = entriesOf(gate);
-    return entries.length === gate.getProperties().length
-      ? readAlternatives([entries], false)
-      : [entries];
-  });
+  // Publish what `defineServiceFn` checks: the rule as its read (`readGate`),
+  // every page a widened read admits.
+  const asRule = gates.map((gate) => asGate(entriesOf(gate)));
+  const read = readGate(
+    gates.length === 1 && !value.getProperty("by")
+      ? asRule[0]!
+      : {
+          by: "value",
+          rules: Object.fromEntries(asRule.map((gate, i) => [i, gate]))
+        }
+  );
+  const reads = ("rules" in read ? Object.values(read.rules) : [read]).map(
+    (gate) => alternativesOf(gate as AnyGate)
+  );
   if (reads.length === 1 && reads[0]!.length > 1)
     return publishChoice(where, { kind: "anyOf", gates: reads[0]! });
 
@@ -584,22 +596,15 @@ function entriesOf(gate: ObjectLiteralExpression): [string, string][] {
   });
 }
 
-/**
- * The gates as `widenReads` checks them, the one or the list (`inList`), as
- * the alternatives of which any one passes.
- */
-function readAlternatives(
-  gates: [string, string][][],
-  inList: boolean
-): [string, string][][] {
-  const asGate = (gate: [string, string][]) =>
-    Object.fromEntries(gate) as PageGate;
-  const widened = widenReads(
-    inList ? { anyOf: gates.map(asGate) } : asGate(gates[0] ?? [])
+const asGate = (entries: [string, string][]) =>
+  Object.fromEntries(entries) as PageGate;
+
+/** A gate as the alternatives of which any one passes, each as its entries. */
+function alternativesOf(gate: AnyGate): [string, string][][] {
+  const list = "anyOf" in gate ? gate.anyOf : Array.isArray(gate) ? gate : [gate];
+  return list.map(
+    (alternative: PageGate) => Object.entries(alternative) as [string, string][]
   );
-  const list =
-    "anyOf" in widened ? widened.anyOf : [widened as PageGate];
-  return list.map((gate) => Object.entries(gate) as [string, string][]);
 }
 
 function classify(

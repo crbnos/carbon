@@ -69,20 +69,6 @@ export type UserSelectGroupMembers = {
   users: User[];
 };
 
-export type CompanyPermission = {
-  view: boolean;
-  create: boolean;
-  update: boolean;
-  delete: boolean;
-};
-
-export type Permission = {
-  view: string[];
-  create: string[];
-  update: string[];
-  delete: string[];
-};
-
 export type Supplier = NonNullable<
   Awaited<ReturnType<typeof getSuppliers>>["data"]
 >[number];

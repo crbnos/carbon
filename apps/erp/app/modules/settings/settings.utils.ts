@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { type PageGate, pageOfRow } from "@carbon/database/access";
+import { type PageGate, pageOfTable } from "@carbon/database/access";
 import type {
   DocumentEditType,
   DocumentTemplateType
@@ -148,9 +148,8 @@ export const DOCUMENT_TERMS_FIELD: Partial<
 
 /** Editing how a document prints needs Edit on the page that owns its record's table. */
 export const documentEditPermissions = Object.fromEntries(
-  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => {
-    const page = pageOfRow(record.table, {});
-    if (!page) throw new Error(`No page owns ${record.table}`);
-    return [type, { [page]: "Edit" }];
-  })
+  Object.entries(DOCUMENT_EDIT_RECORDS).map(([type, record]) => [
+    type,
+    { [pageOfTable(record.table)]: "Edit" }
+  ])
 ) as Record<DocumentEditType, PageGate>;

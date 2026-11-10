@@ -32,7 +32,7 @@ import {
   getCarbonServiceRole,
   requestFetch
 } from "../lib/supabase/client.server";
-import type { AuthSession, Permission } from "../types";
+import type { AuthSession, CompanyRole, Permission } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
 import {
@@ -48,6 +48,7 @@ import {
   flash,
   requireAuthSession
 } from "./session.server";
+import { sessionAccess } from "./session-access";
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
@@ -270,14 +271,6 @@ async function getEffectiveUser(
   return pinIn?.userId ?? sessionUserId;
 }
 
-function companyRole(
-  role: string | null
-): "employee" | "customer" | "supplier" | null {
-  return role === "employee" || role === "customer" || role === "supplier"
-    ? role
-    : null;
-}
-
 /** How a gate authenticates, beside the pages it needs. */
 export type GateOptions = {
   /** A service-role client for an employee, instead of the user's RLS client. */
@@ -292,11 +285,8 @@ export type GateOptions = {
   allowPortalAccounts?: boolean;
 };
 
-async function requirePermissions(
-  request: Request,
-  gate: Gate,
-  options: GateOptions
-): Promise<{
+/** The caller `authorize` authenticated. */
+export type Caller = {
   client: SupabaseClient<Database>;
   companyId: string;
   companyGroupId: string;
@@ -305,85 +295,114 @@ async function requirePermissions(
   sessionUserId: string;
   consoleMode: boolean;
   caller: "session" | "apiKey";
-  /** The session user's claims, or the API key's scopes, per page. */
+  /**
+   * The acting user's claims (`userId`'s: the pinned operator on a console
+   * terminal, else the session user), or the API key's grants, per page.
+   */
   permissions: Record<string, Permission>;
-  /** The session user's role in the company; `null` for an API key. */
-  role: "employee" | "customer" | "supplier" | null;
-}> {
-  const apiKey = request.headers.get("carbon-key");
+  /** The acting user's role in the company; `null` for an API key. */
+  role: CompanyRole | null;
+};
 
-  if (apiKey) {
-    // A caller presenting a key is on the machine path: 401, never the /login
-    // redirect requireAuthSession would answer with below.
-    const { key, refusal } = await authenticateApiKey(apiKey);
-    if (refusal) {
-      throw new Response(refusal.message, {
-        status: refusal.status,
-        headers: refusal.headers
-      });
-    }
-    // Lets traces tell a script from a person at the keyboard.
-    annotateRequestSpan({ "carbon.caller": "apiKey" });
-    const { companyId, companyGroupId, createdBy: userId } = key;
-
-    if (
-      !admits({ type: "apiKey", permissions: key.permissions }, companyId, gate)
-    ) {
-      throw new Response("API key lacks required permissions", {
-        status: 403
-      });
-    }
-
-    return {
-      client: getCarbonAPIKeyClient(apiKey, requestFetch(request)),
-      companyId,
-      companyGroupId,
-      userId,
-      sessionUserId: userId,
-      email: "",
-      consoleMode: false,
-      caller: "apiKey",
-      permissions: key.permissions,
-      role: null
-    };
+/**
+ * A raw API key as a caller, refused unless it holds `gate`. A refusal is
+ * thrown as the HTTP answer (401, 403 or 429): a caller presenting a key is
+ * on the machine path, never the /login redirect a session gets.
+ */
+export async function authorizeApiKey(
+  rawKey: string,
+  gate: Gate = {},
+  request?: Request
+): Promise<Caller> {
+  const { key, refusal } = await authenticateApiKey(rawKey);
+  if (refusal) {
+    throw new Response(refusal.message, {
+      status: refusal.status,
+      headers: refusal.headers
+    });
   }
+  // Lets traces tell a script from a person at the keyboard.
+  annotateRequestSpan({ "carbon.caller": "apiKey" });
+  const { companyId, companyGroupId, createdBy: userId } = key;
+
+  if (
+    !admits({ type: "apiKey", permissions: key.permissions }, companyId, gate)
+  ) {
+    throw new Response("API key lacks required permissions", {
+      status: 403
+    });
+  }
+
+  return {
+    client: getCarbonAPIKeyClient(rawKey, requestFetch(request)),
+    companyId,
+    companyGroupId,
+    userId,
+    sessionUserId: userId,
+    email: "",
+    consoleMode: false,
+    caller: "apiKey",
+    permissions: key.permissions,
+    role: null
+  };
+}
+
+async function requirePermissions(
+  request: Request,
+  gate: Gate,
+  options: GateOptions
+): Promise<Caller> {
+  const apiKey = request.headers.get("carbon-key");
+  if (apiKey) return authorizeApiKey(apiKey, gate, request);
 
   const authSession = await requireAuthSession(request);
   const { accessToken, companyId, companyGroupId, email, userId } = authSession;
   const consoleMode = authSession.console === companyId;
 
-  const myClaims = await getUserClaims(userId, companyId);
-
-  const admitted = admits(
-    { type: "user", role: myClaims.role, permissions: myClaims.permissions },
+  const [sessionClaims, effectiveUserId] = await Promise.all([
+    getUserClaims(userId, companyId),
+    getEffectiveUser(request, companyId, userId, consoleMode)
+  ]);
+  const { claims: myClaims, refusedBy } = sessionAccess(
     companyId,
     gate,
-    { allowPortalAccounts: options.allowPortalAccounts }
+    options,
+    sessionClaims,
+    effectiveUserId === userId
+      ? null
+      : await getUserClaims(effectiveUserId, companyId)
   );
 
-  if (!admitted) {
+  if (refusedBy) {
     // A customer or supplier portal account is a member of the company too,
     // and holds a few permissions, but no route in the apps is theirs: portal
     // pages are share links served with the service role. A 403, not a
-    // redirect: the MES shell calls requirePermissions itself, so a redirect
-    // to it would loop.
-    const portal = myClaims.role === "customer" || myClaims.role === "supplier";
+    // redirect: there is no page in the apps to send them to.
+    const portal =
+      refusedBy.role === "customer" || refusedBy.role === "supplier";
     logAuthEvent("permission_denied", {
       userId,
       actor: email,
       companyId,
       ip: getClientIp(request) ?? undefined,
       reason: portal
-        ? `${myClaims.role} portal account`
-        : JSON.stringify({ gate, ...options })
+        ? `${refusedBy.role} portal account`
+        : JSON.stringify({
+            gate,
+            ...options,
+            ...(effectiveUserId !== userId ? { operator: effectiveUserId } : {})
+          })
     });
     if (portal) throw new Response("Forbidden", { status: 403 });
-    if (myClaims.role === null) {
+    if (refusedBy.role === null) {
       throw redirect("/", await destroyAuthSession(request));
     }
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(request, error({ myClaims, gate }, "Access Denied"))
+      await flash(
+        request,
+        error({ myClaims: refusedBy, gate }, "Access Denied")
+      )
     );
   }
 
@@ -395,12 +414,12 @@ async function requirePermissions(
     companyId,
     companyGroupId,
     email,
-    userId: await getEffectiveUser(request, companyId, userId, consoleMode),
+    userId: effectiveUserId,
     sessionUserId: userId,
     consoleMode,
     caller: "session",
     permissions: myClaims.permissions,
-    role: companyRole(myClaims.role)
+    role: myClaims.role
   };
 }
 
@@ -410,9 +429,6 @@ async function requirePermissions(
  * (`anyOf`, `@carbon/database/access`).
  */
 export type { Gate };
-
-/** The caller `requirePermissions` authenticated. */
-export type Caller = Awaited<ReturnType<typeof requirePermissions>>;
 
 /** What a caller's operations need, as another gate can also state it. */
 export type CallerAuth = Pick<

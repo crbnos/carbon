@@ -31,14 +31,14 @@ import { path } from "~/utils/path";
  *  there — including every action that returns to the agreement page. A
  *  viewer who cannot edit sees the page. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {
+  const { client, companyId, permissions } = await authorize(request, {
     "sales.rentalAgreements": "View"
   });
   const { id } = params;
   if (!id) throw new Error("Could not find id");
   const setup = await draftRentalAgreementSetupPath(client, {
     companyId,
-    userId,
+    permissions,
     id
   });
   if (setup) throw redirect(setup);

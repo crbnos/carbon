@@ -5,7 +5,9 @@
 import {
   type ExpandedClaims,
   MODULES,
-  type ModuleId
+  type ModuleId,
+  pageOfUrl,
+  pagesOf
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -40,43 +42,45 @@ import {
 import { usePermissions } from "./usePermissions";
 import { useUser } from "./useUser";
 
-type ModuleLink = Authenticated<NavItem> & { key: string };
+/** `opensOn`: the sub-module the link opens on, or `to` when that is a dashboard. */
+type ModuleLink = Authenticated<NavItem> & { key: string; opensOn: string };
 
 /**
- * Each module's nav entry. `landing` modules open on the person's first page
- * of the module (`moduleLanding`); the others open on `to`: a dashboard any
- * page of the module can view, or an `_index` that picks the page itself.
+ * Each module's nav entry. A module of several pages whose `to` is one of
+ * them opens on the person's first page of the module (`moduleLanding`); the
+ * others open on `to`: a dashboard any page of the module can view, the one
+ * page of a one-page module, or, with `indexPicksPage`, an `_index` that
+ * redirects to that first page itself.
  * Names stay here: Lingui translates only strings the macro sees.
  */
 function useModuleLinks(): Record<
   ModuleId,
-  Omit<ModuleLink, "key"> & { landing?: true }
+  Omit<ModuleLink, "key" | "opensOn"> & { indexPicksPage?: true }
 > {
   const { t } = useLingui();
   return {
     accounting: {
       name: t`Accounting`,
       to: path.to.accounting,
-      icon: LuLandmark
+      icon: LuLandmark,
+      indexPicksPage: true
     },
     documents: { name: t`Documents`, to: path.to.documents, icon: LuFiles },
     inventory: {
       name: t`Inventory`,
       to: path.to.inventory,
-      icon: LuBox,
-      landing: true
+      icon: LuBox
     },
     invoicing: {
       name: t`Invoicing`,
       to: path.to.invoicing,
       icon: LuCreditCard
     },
-    parts: { name: t`Items`, to: path.to.parts, icon: LuBlocks, landing: true },
+    parts: { name: t`Items`, to: path.to.parts, icon: LuBlocks },
     people: {
       name: t`People`,
       to: path.to.people,
-      icon: LuUsers,
-      landing: true
+      icon: LuUsers
     },
     production: {
       name: t`Production`,
@@ -86,8 +90,7 @@ function useModuleLinks(): Record<
     projects: {
       name: t`Projects`,
       to: path.to.projects,
-      icon: LuFolderKanban,
-      landing: true
+      icon: LuFolderKanban
     },
     purchasing: {
       name: t`Purchasing`,
@@ -104,26 +107,22 @@ function useModuleLinks(): Record<
     service: {
       name: t`Service`,
       to: path.to.serviceJobs,
-      icon: LuHeadphones,
-      landing: true
+      icon: LuHeadphones
     },
     settings: {
       name: t`Settings`,
       to: path.to.company,
-      icon: LuSettings,
-      landing: true
+      icon: LuSettings
     },
     users: {
       name: t`Users`,
       to: path.to.employeeAccounts,
-      icon: LuShield,
-      landing: true
+      icon: LuShield
     },
     workflows: {
       name: t`Workflows`,
       to: path.to.workflows,
-      icon: LuWorkflow,
-      landing: true
+      icon: LuWorkflow
     }
   };
 }
@@ -178,16 +177,24 @@ function usePermittedModules(): {
   const permitted = MODULES.filter(({ id }) =>
     permissions.hasAny(id, "View")
   ).map(({ id }): ModuleLink => {
-    const { landing, ...link } = links[id];
-    const to = landing
-      ? moduleLanding(id, routeData?.permissions, companyId)
-      : undefined;
-    return { ...link, key: id, to: to ?? link.to };
+    const { indexPicksPage, ...link } = links[id];
+    const landing =
+      indexPicksPage ||
+      (pagesOf(id).length > 1 && pageOfUrl(link.to) !== undefined)
+        ? moduleLanding(id, routeData?.permissions, companyId)
+        : undefined;
+    return {
+      ...link,
+      key: id,
+      to: (!indexPicksPage && landing) || link.to,
+      opensOn: landing ?? link.to
+    };
   });
   const shopFloor: ModuleLink = {
     key: "shopFloor",
     name: t`Shop Floor`,
     to: path.to.external.mes,
+    opensOn: path.to.external.mes,
     icon: LuTvMinimalPlay,
     external: true,
     newTab: true

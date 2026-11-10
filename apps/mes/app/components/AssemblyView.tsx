@@ -2917,7 +2917,7 @@ export function AssemblyView({
                 }}
               />
               {/* Manager-only override: record every remaining step for this unit at once.
-                  Shown only to users with the Production DELETE permission, and only when
+                  Shown only with Jobs at Full (the pinned operator's, on a console), and only when
                   there are unrecorded steps left. */}
               {canOverrideComplete &&
                 steps.length > 0 &&

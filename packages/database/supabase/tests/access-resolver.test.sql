@@ -34,6 +34,8 @@ DECLARE
   key_id text;
   test_case jsonb; g jsonb; only_key boolean; who text; actual text; failures int := 0;
   claims jsonb; companies text[]; module_view text[]; page_keys text[];
+  stranger text := gen_random_uuid()::text;  -- no member of any company: a key request's own user
+  seen int;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Access A ' || id(), 'system')
     RETURNING id INTO group_a;
@@ -83,6 +85,42 @@ BEGIN
   INSERT INTO "apiKey" (name, "keyHash", "companyId", "createdBy")
     VALUES ('Access key', encode(extensions.digest(raw_key::bytea, 'sha256'), 'hex'), company_a, 'system')
     RETURNING id INTO key_id;
+
+  -- 0. An API key belongs to its company only while it holds a grant there, as
+  -- admits: a key with none reads nothing, not even the employee-role tables.
+  PERFORM pg_temp.act_as(stranger, raw_key);
+  IF get_company_id_from_api_key() IS NOT NULL
+    OR cardinality(get_companies_with_employee_role()) <> 0
+    OR cardinality(get_companies_with_any_role()) <> 0
+    OR cardinality(get_company_groups_for_employee()) <> 0
+    OR has_valid_api_key_for_company(company_a) THEN
+    RAISE EXCEPTION 'a key with no grant must be no member of its company';
+  END IF;
+  SET LOCAL ROLE authenticated;
+  SELECT count(*) INTO seen FROM employee WHERE "companyId" = company_a;
+  RESET ROLE;
+  IF seen <> 0 THEN
+    RAISE EXCEPTION 'a key with no grant must read no employee rows, read %', seen;
+  END IF;
+  INSERT INTO permission ("companyId", "apiKeyId", module, page, level, "createdBy") VALUES
+    (company_a, key_id, 'Purchasing', 'purchasing.suppliers', 'None', 'system');
+  IF cardinality(get_companies_with_employee_role()) <> 0 THEN
+    RAISE EXCEPTION 'a key grant of None must not make the key a member';
+  END IF;
+  INSERT INTO permission ("companyId", "apiKeyId", module, level, "createdBy") VALUES
+    (company_a, key_id, 'Sales', 'View', 'system');
+  IF get_companies_with_employee_role() IS DISTINCT FROM ARRAY[company_a]
+    OR get_companies_with_any_role() IS DISTINCT FROM ARRAY[company_a]
+    OR NOT has_valid_api_key_for_company(company_a) THEN
+    RAISE EXCEPTION 'a key with a grant must be a member of its company';
+  END IF;
+  SET LOCAL ROLE authenticated;
+  SELECT count(*) INTO seen FROM employee WHERE "companyId" = company_a;
+  RESET ROLE;
+  IF seen <> 3 THEN
+    RAISE EXCEPTION 'a key with a grant must read the company''s employees, read %', seen;
+  END IF;
+  DELETE FROM permission WHERE "apiKeyId" = key_id;
 
   -- 1. Every shared case, against util.access_level.
   FOR test_case IN SELECT jsonb_array_elements(doc) FROM access_cases LOOP

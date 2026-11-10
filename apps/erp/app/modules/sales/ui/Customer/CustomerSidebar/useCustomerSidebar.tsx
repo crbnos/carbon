@@ -24,8 +24,12 @@ import {
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
 import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
-import type { Role } from "~/types";
+import { visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
+
+// The record's links to other modules' lists, filtered to it, show to
+// everyone who can open the record; the list checks its own page.
+const OPEN_LIST: Gate = {};
 
 type Props = {
   contacts: number;
@@ -37,7 +41,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
   const permissions = usePermissions();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
-  return [
+  const tabs = [
     {
       name: t`Details`,
       to: path.to.customerDetails(customerId),
@@ -47,7 +51,6 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     {
       name: t`Contacts`,
       to: path.to.customerContacts(customerId),
-      role: ["employee"],
       count: contacts,
       icon: <LuContact />,
       shortcut: DETAIL_TAB_SHORTCUTS.contacts
@@ -55,7 +58,6 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     {
       name: t`Locations`,
       to: path.to.customerLocations(customerId),
-      role: ["employee", "customer"],
       count: locations,
       icon: <LuMapPin />,
       shortcut: DETAIL_TAB_SHORTCUTS.locations
@@ -63,14 +65,12 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     {
       name: t`Payment`,
       to: path.to.customerPayment(customerId),
-      role: ["employee"],
       icon: <LuCreditCard />,
       shortcut: DETAIL_TAB_SHORTCUTS.payment
     },
     {
       name: t`Bank Accounts`,
       to: path.to.customerBankAccounts(customerId),
-      role: ["employee"],
       // Bank details need Accounting, not the partner page.
       gate: { "accounting.bankAccounts": "View" } as Gate,
       icon: <LuLandmark />
@@ -78,57 +78,53 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     {
       name: t`Documents`,
       to: path.to.customerDocuments(customerId),
-      role: ["employee"],
       icon: <LuFiles />
     },
     {
       name: t`Tax`,
       to: path.to.customerTax(customerId),
-      role: ["employee"],
       icon: <LuReceipt />,
       shortcut: DETAIL_TAB_SHORTCUTS.tax
     },
     {
       name: t`Shipping`,
       to: path.to.customerShipping(customerId),
-      role: ["employee"],
       icon: <LuTruck />,
       shortcut: DETAIL_TAB_SHORTCUTS.shipping
     },
     {
       name: t`Risks`,
       to: path.to.customerRisks(customerId),
-      role: ["employee"],
       icon: <LuShieldAlert />
     },
     {
       name: t`Assets`,
       to: path.to.customerAssetsTab(customerId),
-      role: ["employee"],
       gate: { "service.customerAssets": "View" } as Gate,
       icon: <LuServer />
     },
     {
       name: t`RFQs`,
       to: `${path.to.salesRfqs}?filter=customerId:eq:${customerId}`,
-      role: ["employee"],
+      gate: OPEN_LIST,
       icon: <RiProgress2Line />
     },
     {
       name: t`Quotes`,
       to: `${path.to.quotes}?filter=customerId:eq:${customerId}`,
-      role: ["employee"],
+      gate: OPEN_LIST,
       icon: <RiProgress4Line />
     },
     {
       name: t`Orders`,
       to: `${path.to.salesOrders}?filter=customerId:eq:${customerId}`,
-      role: ["employee"],
+      gate: OPEN_LIST,
       icon: <RiProgress8Line />
     },
     {
       name: t`Invoices`,
       to: `${path.to.invoicingSales}?filter=customerId:eq:${customerId}`,
+      gate: OPEN_LIST,
       icon: <LuCreditCard />
     }
     // {
@@ -138,14 +134,6 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     //   icon: <LuLandmark />,
     //   shortcut: DETAIL_TAB_SHORTCUTS.accounting,
     // },
-  ].filter((item) => {
-    // `role` gates on WHO the user is (employee / supplier / customer);
-    // `gate` gates on WHAT they may do (a page at a level).
-    const roleOk =
-      item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role));
-    const gate = (item as { gate?: Gate }).gate;
-    const permissionOk = gate === undefined || permissions.has(gate);
-    return roleOk && permissionOk;
-  });
+  ];
+  return visibleRoutes(tabs, permissions);
 }

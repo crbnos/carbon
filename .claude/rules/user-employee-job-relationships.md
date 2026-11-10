@@ -62,7 +62,8 @@ is the separate `job` table from `20240909194622_jobs.sql`).
    enforce this in policies (helpers re-defined in later migrations — read the newest).
 5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in a Redis hash at
    `getPermissionCacheKey(userId)`, one field per company (falls back to the RPC);
-   `makePermissionsFromClaims(claims, companyId)` (`users.ts`) expands them into `{ permissions, role }`; `requirePermissions(request, { view?, create?, update?, delete?, role? })`
+   `claimsFor(json, companyId)` (`@carbon/database/access`) expands them into `{ permissions, role, … }`, and
+   `readClaimsFresh(client, userId, companyId)` (`users.ts`) reads them past the cache; `authorize(request, gate?)`
    in `auth.server.ts` is the route gate. Active company comes from a `companyId` cookie via
    `getCompanyId`/`setCompanyId` (`company.server.ts`).
 

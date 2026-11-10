@@ -15,11 +15,15 @@ import {
   moduleEnum,
   moduleId,
   moduleOf,
+  ownersOf,
   PAGES,
   type Page,
   pageOfRow,
+  pageOfTable,
   pageOfUrl,
-  placeOf
+  urlCoverage,
+  urlSegments,
+  writersOf
 } from "./registry";
 
 /**
@@ -260,12 +264,7 @@ describe("PAGES", () => {
     const problems: string[] = [];
     for (const page of PAGES as readonly Page[]) {
       for (const table of page.readers ?? []) {
-        const place = placeOf(table);
-        const owners = !place
-          ? []
-          : place.kind === "page"
-            ? [place.page]
-            : place.branches.map((branch) => branch.page);
+        const owners = ownersOf(table);
         const select = policiesOf(table).find((policy) =>
           policy.includes("FOR SELECT")
         );
@@ -514,5 +513,58 @@ describe("pageOfRow", () => {
     expect(pageOfRow("memo", {})).toBeUndefined();
     expect(pageOfRow("nowhere", {})).toBeUndefined();
     expect(pageOfRow("purchaseReturnOrderCreditLine", {})).toBeUndefined();
+  });
+});
+
+describe("pageOfTable", () => {
+  it("is pageOfRow for a table some page owns", () => {
+    expect(pageOfTable("charge")).toBe("invoicing.charges");
+    expect(pageOfTable("revenueRecognitionRun", { type: "Lease" })).toBe(
+      "accounting.leases"
+    );
+  });
+
+  it("throws when no page owns the row", () => {
+    expect(() => pageOfTable("nowhere")).toThrow("No page owns nowhere");
+    expect(() => pageOfTable("memo")).toThrow("No page owns memo");
+  });
+});
+
+describe("ownersOf", () => {
+  it("is the owning page, every branch's page of a shared table, or none", () => {
+    expect(ownersOf("charge")).toEqual(["invoicing.charges"]);
+    expect(ownersOf("memo")).toEqual(
+      expect.arrayContaining([
+        "invoicing.creditMemos",
+        "invoicing.supplierCredits"
+      ])
+    );
+    expect(ownersOf("nowhere")).toEqual([]);
+  });
+});
+
+describe("writersOf", () => {
+  it("is the pages that list the table in alsoWrittenBy", () => {
+    expect(writersOf("shipmentLine")).toEqual(["sales.salesOrders"]);
+    expect(writersOf("charge")).toEqual([]);
+  });
+
+  it("lists only tables the page owns, and other pages", () => {
+    for (const page of PAGES as readonly Page[])
+      for (const [table, writers] of Object.entries(page.alsoWrittenBy ?? {})) {
+        expect(ownersOf(table)).toContain(page.id);
+        for (const writer of writers) expect(writer).not.toBe(page.id);
+      }
+  });
+});
+
+describe("urlCoverage", () => {
+  it("counts the path's segments when it covers the URL", () => {
+    const url = urlSegments("/x/customer/c1/assets?tab=1");
+    expect(url).toEqual(["x", "customer", "c1", "assets"]);
+    expect(urlCoverage("/x/customer", url)).toBe(2);
+    expect(urlCoverage("/x/customer/$customerId/assets", url)).toBe(4);
+    expect(urlCoverage("/x/supplier", url)).toBe(0);
+    expect(urlCoverage("/x/customer/c1/assets/more", url)).toBe(0);
   });
 });

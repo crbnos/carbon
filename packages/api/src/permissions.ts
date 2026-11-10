@@ -5,7 +5,7 @@
 import {
   type AnyOfGate,
   type GateLevel,
-  LEVELS,
+  higherLevel,
   type PAGES,
   type PageGate,
   placeOf,
@@ -277,9 +277,7 @@ export function requirementOfRows(
       GateLevel
     ][]) {
       const held = required[page];
-      if (!held || LEVELS.indexOf(level) > LEVELS.indexOf(held)) {
-        required[page] = level;
-      }
+      required[page] = held ? (higherLevel(held, level) as GateLevel) : level;
     }
   }
   return required as PageGate;

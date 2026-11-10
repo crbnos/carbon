@@ -9,13 +9,14 @@ import {
   LEVELS,
   type Level,
   type LevelSubject,
+  lowerLevel,
   MODULES,
   type ModuleId,
   moduleOf,
   PAGES,
   type Page
 } from "@carbon/database/access";
-import type { GrantModule } from "@carbon/database/access-write";
+import type { StoredGrant } from "@carbon/database/access-write";
 import { rowLevel } from "@carbon/ee/permission-grants";
 import {
   Alert,
@@ -33,13 +34,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronRight, LuShieldCheck, LuUndo2 } from "react-icons/lu";
 
-/** One grant as the grid edits it. `module` is the `module` enum label. */
-export type AccessGrant = {
-  module: GrantModule;
-  page: string | null;
-  level: Level;
-};
-
 /**
  * What the grid edits. `grants`: a role's or a key's own grants. `overrides`:
  * a person's grants over their role's (`inherited`, named `from`). `bulk`:
@@ -48,12 +42,12 @@ export type AccessGrant = {
  */
 export type AccessGridMode =
   | { edits: "grants" }
-  | { edits: "overrides"; inherited: readonly AccessGrant[]; from: string }
+  | { edits: "overrides"; inherited: readonly StoredGrant[]; from: string }
   | { edits: "bulk" };
 
 type AccessGridProps = {
   pages?: readonly Page[];
-  value: AccessGrant[];
+  value: StoredGrant[];
   mode?: AccessGridMode;
   /** The subject is the company's Admin type, or a person on it: Full everywhere, nothing to set. */
   admin?: boolean;
@@ -62,7 +56,7 @@ type AccessGridProps = {
   /** Where "select all" and a column header stop on a module
    *  (`SUBJECT_RULES[…].selectAllCaps`); a row can still go higher. */
   selectAllCaps?: Partial<Record<ModuleId, Level>>;
-  onChange: (grants: AccessGrant[]) => void;
+  onChange: (grants: StoredGrant[]) => void;
   label?: string;
   termId?: TermId;
   isDisabled?: boolean;
@@ -83,10 +77,6 @@ export function useLevelWord() {
   return (level: Level) =>
     level === "None" ? t`None` : words[LEVEL_ACTION[level]];
 }
-
-const index = (level: Level) => LEVELS.indexOf(level);
-
-const lower = (a: Level, b: Level) => (index(a) <= index(b) ? a : b);
 
 /** Checking column N sets level N; unchecking it drops to the level below. */
 const target = (current: number, step: number) =>
@@ -206,22 +196,20 @@ const AccessGrid = ({
 
   /** What a row shows with no grant of its own. */
   const fallback = (module: Module, row: Row): Level =>
-    showInherited
-      ? lower(rowLevel(subject, at(module, row), "person"), row.max)
-      : "None";
+    showInherited ? rowLevel(subject, at(module, row), "person") : "None";
 
   const effective = (module: Module, row: Row): Level =>
-    lower(rowLevel(subject, at(module, row)), row.max);
+    rowLevel(subject, at(module, row));
 
   const without = (
-    grants: AccessGrant[],
+    grants: StoredGrant[],
     module: string,
     page: string | null
   ) => grants.filter((g) => g.module !== module || g.page !== page);
 
   /** `grants` with one row set; a level equal to what it inherits needs no grant. */
   const withLevel = (
-    grants: AccessGrant[],
+    grants: StoredGrant[],
     module: Module,
     row: Row,
     level: Level
@@ -258,7 +246,7 @@ const AccessGrid = ({
 
   /** The most "select all" sets on a row. */
   const capOf = (module: Module, row: Row) =>
-    lower(row.max, selectAllCaps[module.id] ?? "Full");
+    lowerLevel(row.max, selectAllCaps[module.id] ?? "Full");
 
   const moduleState = (module: Module) => {
     const levels = module.rows.map((row) => effective(module, row));
@@ -276,10 +264,10 @@ const AccessGrid = ({
    *  them when they already hold it. Not on a person: there it would override all. */
   const setColumn = (module: Module, step: number) => {
     const all = module.rows.every(
-      (row) => index(effective(module, row)) === step
+      (row) => LEVELS.indexOf(effective(module, row)) === step
     );
     setModule(module, (row) =>
-      lower(LEVELS[all ? 0 : step]!, capOf(module, row))
+      lowerLevel(LEVELS[all ? 0 : step]!, capOf(module, row))
     );
   };
 
@@ -319,8 +307,8 @@ const AccessGrid = ({
   const cells = (module: Module, row: Row) => {
     const key = `${module.id}:${row.page ?? ""}`;
     const own = grantFor(module.enumValue, row.page);
-    const level = index(effective(module, row));
-    const max = index(row.max);
+    const level = LEVELS.indexOf(effective(module, row));
+    const max = LEVELS.indexOf(row.max);
     const preview = hover?.key === key ? target(level, hover.step) : undefined;
     // A person's row with no override of its own or of its module shows the
     // role's level, lighter.

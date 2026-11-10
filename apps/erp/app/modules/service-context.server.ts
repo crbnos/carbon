@@ -23,7 +23,7 @@ export function serviceContext(auth: CallerAuth): ServiceContext {
         ? {
             type: "apiKey",
             createdBy: auth.userId,
-            scopes: auth.permissions
+            permissions: auth.permissions
           }
         : {
             type: "user",

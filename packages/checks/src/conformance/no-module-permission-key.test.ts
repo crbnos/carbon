@@ -76,13 +76,13 @@ describe("no-module-permission-key — TypeScript", () => {
     ).toEqual([]);
   });
 
-  it("never scans the authz manifest", () => {
+  it("skips a portal rule's own key, and scans the rest of the manifest", () => {
     expect(
       scan(
-        `widget: company("inventory", { read: "inventory_view" }),`,
+        `widget: company({ read: or(portal.customer("customerId", "sales_view"), "inventory_view") }),`,
         "packages/database/src/authz/manifest.ts"
       )
-    ).toEqual([]);
+    ).toEqual(['"inventory_view"']);
   });
 });
 

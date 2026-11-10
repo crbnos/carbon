@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { type PageId, pageOfRow } from "@carbon/database/access";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -2129,13 +2129,12 @@ const importTargets: Record<keyof typeof fieldMappings, ImportTarget> = {
 };
 
 // The page whose Edit level an import needs: the registry's owner of what it
-// writes (`pageOfRow`). Its RLS insert policy names the same page.
+// writes (`pageOfTable`). Its RLS insert policy names the same page.
 export const importPermissions = Object.fromEntries(
-  Object.entries(importTargets).map(([key, [table, row]]) => {
-    const page = pageOfRow(table, row ?? {});
-    if (!page) throw new Error(`No page owns ${table}`);
-    return [key, page];
-  })
+  Object.entries(importTargets).map(([key, [table, row]]) => [
+    key,
+    pageOfTable(table, row)
+  ])
 ) as Record<keyof typeof fieldMappings, PageId>;
 
 // Quote import validation is intentionally permissive at the mapping layer (every

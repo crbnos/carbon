@@ -18,7 +18,6 @@ import {
   SUPABASE_URL,
   VERCEL_URL
 } from "@carbon/auth";
-import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import type { Database, Json } from "@carbon/database";
@@ -208,6 +207,7 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
+import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import {
   isIntegrationComingSoon,
   isIntegrationWhitelisted
@@ -2353,41 +2353,6 @@ export async function getOeeDevicesTabData(
 const INTEGRATION_CACHE_TTL = 3600;
 const PIECE_HEALTHY_CACHE_TTL = 300;
 
-/**
- * Drop the cached auth record for an API key so a scope change or revocation
- * takes effect immediately in the common case. An in-flight auth read can still
- * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
- * callers that delete the row should bust AGAIN after the delete commits, using
- * the returned keyHash (unreadable from the DB once the row is gone).
- *
- * Service-role on purpose: the bust must read the row whoever calls it, so it
- * never silently does nothing.
- */
-export async function invalidateApiKeyCache(
-  id: string,
-  companyId: string
-): Promise<string | null> {
-  const { data, error } = await getCarbonServiceRole()
-    .from("apiKey")
-    .select("keyHash")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  // A failed lookup is indistinguishable from a missing row at the return type,
-  // and neither may block the revoke — log it so a stale scope surviving its TTL
-  // is diagnosable rather than silent.
-  if (error) {
-    logger.error("Failed to read api key for cache bust", {
-      error,
-      id,
-      companyId
-    });
-  }
-  if (!data?.keyHash) return null;
-  await bustApiKeyCache(data.keyHash);
-  return data.keyHash;
-}
-
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";
   redis.keys(keys).then(function (keys) {
@@ -3782,7 +3747,7 @@ export function generateTestLabel(
 /** An API key action on a company without the plan. */
 export function apiKeysEntitlement(ctx: ServiceContext, err: unknown) {
   if (!(err instanceof EntitlementError)) throw err;
-  return ctx.error("entitlement", "API keys require the Business plan");
+  return ctx.error("entitlement", SUBJECT_RULES.key.refusal);
 }
 
 /** The integration's stored metadata and its `settings` object, for a merge. */

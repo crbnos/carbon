@@ -8,7 +8,9 @@ import {
   landingOf,
   type ModuleId,
   type PageId,
-  pageOfUrl
+  pageOfUrl,
+  urlCoverage,
+  urlSegments
 } from "@carbon/database/access";
 import type { Route } from "~/types";
 
@@ -32,34 +34,20 @@ export function moduleLanding(
   })?.path;
 }
 
-type NavRoute = Pick<Route, "to" | "page" | "gate">;
+type NavRoute = Pick<Route, "to" | "gate">;
 
 type NavPermissions = { has: (gate: Gate) => boolean };
 
-export function pageOfRoute(
-  route: Pick<Route, "to" | "page">
-): PageId | undefined {
-  return route.page ?? pageOfUrl(route.to);
-}
-
-export function gateOfRoute(route: Pick<Route, "to" | "page" | "gate">): Gate {
+export function gateOfRoute(route: NavRoute): Gate {
   if (route.gate) return route.gate;
-  const page = pageOfRoute(route);
+  const page = pageOfUrl(route.to);
   return page ? { [page]: "View" } : {};
 }
 
-const segments = (url: string) =>
-  (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
-
-function coverage(to: string, url: readonly string[]): number {
-  const want = segments(to);
-  return want.every((part, i) => url[i] === part) ? want.length : 0;
-}
-
-type ActiveRoute = Pick<Route, "to" | "page">;
+type ActiveRoute = Pick<Route, "to">;
 
 const ownsPage = (route: ActiveRoute, pathname: string) => {
-  const page = pageOfRoute(route);
+  const page = pageOfUrl(route.to);
   return page ? pageOfUrl(pathname) === page : pathname.includes(route.to);
 };
 
@@ -75,13 +63,13 @@ export function routeOwnsUrl(
   siblings: readonly ActiveRoute[] = []
 ): boolean {
   if (!ownsPage(route, pathname)) return false;
-  const url = segments(pathname);
+  const url = urlSegments(pathname);
   const best = Math.max(
     ...[route, ...siblings]
       .filter((sibling) => ownsPage(sibling, pathname))
-      .map((sibling) => coverage(sibling.to, url))
+      .map((sibling) => urlCoverage(sibling.to, url))
   );
-  return coverage(route.to, url) === best;
+  return urlCoverage(route.to, url) === best;
 }
 
 export function visibleRoutes<R extends NavRoute>(

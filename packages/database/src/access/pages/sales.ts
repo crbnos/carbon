@@ -27,6 +27,8 @@ export const PAGES = [
     ],
     where: { table: "contact", column: "isCustomer", value: true },
     readers: ["paymentTerm"],
+    // Suppliers writes the addresses of its own locations.
+    alsoWrittenBy: { address: ["purchasing.suppliers"] },
     paths: ["/x/sales/customers", "/x/customer/"]
   },
   {
@@ -34,6 +36,14 @@ export const PAGES = [
     label: "Portals",
     maxLevel: "Full",
     tables: ["externalLink"],
+    // Quotes, Supplier Quotes and Issues share their own documents.
+    alsoWrittenBy: {
+      externalLink: [
+        "sales.quotes",
+        "purchasing.supplierQuotes",
+        "quality.issues"
+      ]
+    },
     paths: ["/x/sales/customer-portals"]
   },
   {

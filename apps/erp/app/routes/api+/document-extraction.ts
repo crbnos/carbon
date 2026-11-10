@@ -5,18 +5,16 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { pageOfTable } from "@carbon/database/access";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { insertDocumentExtraction } from "~/modules/documents/documents.service";
 
-// Each document type must be gated by the page that owns it,
-// and paired with the source document the client claims to be extracting.
+// Each document type is a table, gated by the page that owns it, and paired
+// with the source document the client claims to be extracting.
 const DOCUMENT_TYPES = {
-  salesRfq: { page: "sales.rfqs", sourceDocument: "Request for Quote" },
-  purchaseInvoice: {
-    page: "invoicing.purchaseInvoices",
-    sourceDocument: "Purchase Invoice"
-  }
+  salesRfq: { sourceDocument: "Request for Quote" },
+  purchaseInvoice: { sourceDocument: "Purchase Invoice" }
 } as const;
 
 type DocumentType = keyof typeof DOCUMENT_TYPES;
@@ -40,10 +38,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid document type" }, { status: 400 });
   }
 
-  // Gate on the page that owns this document type: Sales RFQs or Purchase
-  // Invoices.
   const { client, companyId, userId } = await authorize(request, {
-    [documentConfig.page]: "View"
+    [pageOfTable(documentType)]: "View"
   });
 
   const result = await insertDocumentExtraction(client, {

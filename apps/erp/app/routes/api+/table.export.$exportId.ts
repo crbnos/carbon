@@ -41,10 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("This export could not be found.", { status: 404 });
   }
 
-  const { companyId, userId } = await authorize(
-    request,
-    definition.permission.gate
-  );
+  const { companyId, userId } = await authorize(request, definition.gate);
 
   const key = tableExportStorageKey(companyId, userId, exportId);
   const file = await getCarbonServiceRole()

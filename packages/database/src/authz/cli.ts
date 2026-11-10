@@ -9,7 +9,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
 import { loadEnv } from "../datasets/cli";
-import { helperKey, loadHelpers } from "./helpers";
+import { HELPERS_DIR, helperKey, loadHelpers } from "./helpers";
 import { renderMigration, unshipped } from "./migration";
 import { writeRegistryHelpers } from "./registry-sql";
 import { syncAuthz } from "./sync";
@@ -24,7 +24,7 @@ import { syncAuthz } from "./sync";
 async function main() {
   const command = process.argv[2];
   if (command === "sync" || command === "migration")
-    for (const file of writeRegistryHelpers())
+    for (const file of writeRegistryHelpers(HELPERS_DIR))
       console.log(`authz: wrote ${path.relative(process.cwd(), file)}`);
   if (command === "migration") {
     const name = process.argv[3];

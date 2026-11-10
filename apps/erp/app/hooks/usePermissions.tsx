@@ -4,6 +4,7 @@
 
 import {
   anyOf,
+  type ExpandedClaims,
   type Gate,
   type GateLevel,
   holdsGate,
@@ -11,15 +12,14 @@ import {
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
-import type { Permission } from "~/modules/users/types";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 import { useUser } from "./useUser";
 
 export function usePermissions() {
   const data = useRouteData<{
-    permissions: Record<string, Permission>;
-    role: "employee" | "supplier" | "customer";
+    permissions: ExpandedClaims;
+    role: Role | null;
   }>(path.to.authenticatedRoot);
 
   const {
@@ -27,7 +27,7 @@ export function usePermissions() {
     company: { id: companyId, ownerId }
   } = useUser();
 
-  if (!isPermissions(data?.permissions) || !isRole(data?.role)) {
+  if (!isPermissions(data?.permissions) || !data?.role) {
     throw new Error(
       "usePermissions must be used within an authenticated route. If you are seeing this error, you are likely in development and have changed the session variables. Try deleting the cookies."
     );
@@ -68,7 +68,7 @@ export function usePermissions() {
   };
 }
 
-function isPermissions(value: unknown): value is Record<string, Permission> {
+function isPermissions(value: unknown): value is ExpandedClaims {
   if (
     typeof value === "object" &&
     Array.isArray(value) === false &&
@@ -84,8 +84,4 @@ function isPermissions(value: unknown): value is Record<string, Permission> {
   } else {
     return false;
   }
-}
-
-function isRole(value: unknown): value is Role {
-  return value === "employee" || value === "customer" || value === "supplier";
 }

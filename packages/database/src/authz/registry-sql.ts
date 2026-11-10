@@ -6,7 +6,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { ACTION_LEVEL, ACTIONS } from "../access/levels";
 import { MODULES, PAGES, type Page, pagesOf } from "../access/registry";
-import { HELPERS_DIR } from "./helpers";
 
 /**
  * The managed helpers whose bodies are the registry (access/pages, access/levels):
@@ -90,9 +89,9 @@ export function renderRegistryHelpers(): { name: string; sql: string }[] {
   ];
 }
 
-export function registryHelperFiles(): { file: string; sql: string }[] {
+function registryHelperFiles(dir: string): { file: string; sql: string }[] {
   return renderRegistryHelpers().map(({ name, sql }) => ({
-    file: path.join(HELPERS_DIR, name),
+    file: path.join(dir, name),
     sql
   }));
 }
@@ -105,10 +104,10 @@ const read = (file: string) => {
   }
 };
 
-/** Returns the files written. */
-export function writeRegistryHelpers(): string[] {
+/** Writes the registry helpers into `dir` (helpers.ts `HELPERS_DIR`); returns the files written. */
+export function writeRegistryHelpers(dir: string): string[] {
   const written: string[] = [];
-  for (const { file, sql } of registryHelperFiles()) {
+  for (const { file, sql } of registryHelperFiles(dir)) {
     if (read(file) === sql) continue;
     writeFileSync(file, sql);
     written.push(file);

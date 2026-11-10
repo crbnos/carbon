@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Gate, PageId } from "@carbon/database/access";
+import type { CompanyRole, Gate } from "@carbon/database/access";
 import type { ValidationErrorResponseData } from "@carbon/form";
 import type { FileObject } from "@supabase/storage-js";
 import type { ReactElement, ReactNode } from "react";
@@ -79,7 +79,7 @@ export type Result = {
   message?: string;
 };
 
-export type Role = "employee" | "customer" | "supplier";
+export type Role = CompanyRole;
 
 export type Route<T = {}> = T & {
   name: string;
@@ -95,11 +95,6 @@ export type Route<T = {}> = T & {
   }[];
   q?: string;
   table?: string;
-  /**
-   * The page the entry opens, when `pageOfUrl(to)` cannot tell. Without a
-   * `gate`, the entry shows only with View there.
-   */
-  page?: PageId;
   /** What the entry shows behind, when it is more than View on its page. */
   gate?: Gate;
   /** When present, overrides the default check (`routeOwnsUrl`). */
