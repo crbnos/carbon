@@ -12,7 +12,7 @@ import {
 } from "kysely";
 import { describe, expect, it } from "vitest";
 import type { JobDatabase } from "../db";
-import type { ColumnInfo, ForeignKey, TableInfo } from "./schema";
+import type { ColumnInfo, ForeignKey, TableInfo } from "./catalog";
 import {
   buildDanglingPredicate,
   buildExclusionPredicate,

@@ -3,12 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { Catalog, ColumnInfo, TableInfo } from "./schema";
 import {
+  type Catalog,
+  type ColumnInfo,
   exportableColumns,
-  SECRET_TABLES,
-  selectExportableTables
-} from "./schema";
+  selectExportableTables,
+  type TableInfo
+} from "./catalog";
+import { SECRET_TABLES } from "./policy";
 
 const col = (name: string, over: Partial<ColumnInfo> = {}): ColumnInfo => ({
   name,

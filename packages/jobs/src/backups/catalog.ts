@@ -2,98 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
-import { renameColumns, renameLiveColumns, TABLE_RENAMES } from "./renames";
+import {
+  CATALOG_EXCLUDED_TABLES,
+  COMPANY_SINGLETON_TABLES,
+  SECRET_TABLES
+} from "./policy";
 
 /**
- * Schema introspection + backup-compatibility logic, shared by the backup jobs
- * (`../inngest/functions/tasks/company-backup.ts`), the commit-time drift check
- * (`../scripts/check-backups.ts`) and the ERP Backups page (via the
- * `@carbon/jobs/backups` export).
- *
- * Keep this module free of runtime `@carbon/*` imports (type-only is fine) —
- * the drift check runs under bare `tsx`, which cannot named-import CJS
- * workspace packages, and the ERP imports it into a Vite server build.
+ * The backup catalog: every public table that carries a `companyId` or
+ * `companyGroupId`, with its columns, keys and FK edges, read from the live
+ * schema and sorted referenced-first. Free of runtime `@carbon/*` imports: the
+ * drift check runs under bare `tsx`.
  */
-
-export const BACKUP_KIND = "carbon-company-backup";
-export const BACKUP_VERSION = 1;
-
-/**
- * Tables whose contents must never travel in a backup — credentials,
- * integration tokens and webhook targets stay with the source company.
- * (`apiKeyRateLimit` dangles without its stripped `apiKey` and is an UNLOGGED
- * operational counter, never user data. `tableChange` is the same kind of
- * table: an UNLOGGED log of which rows changed, whose transaction ids mean
- * nothing in another database. `employeePin` holds console PIN
- * hashes — a 4-digit PIN's bcrypt hash is brute-forced offline in minutes, so
- * it is a credential; being secret also keeps an in-place restore from wiping
- * every operator's PIN. `ssoConnection` / `ssoDomain` are the company's login
- * identity — `providerId` and a verified `domain` are unique across ALL
- * companies, so a copy collides with the source company or hands its domain to
- * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.
- * `pushSubscription` holds a browser's push endpoint and its encryption keys:
- * a device credential that means nothing in another company, and being secret
- * keeps an in-place restore from bringing back signed-out browsers or wiping
- * the current ones. `integrationConnection`'s token lives in the vault, which
- * a backup never carries, under a name built from the company and the row id
- * (`get_connection_secret`); a restored row would read as an Active account
- * with no token behind it, so every step using it would fail.)
- */
-export const SECRET_TABLES = [
-  "apiKey",
-  "apiKeyRateLimit",
-  "tableChange",
-  "companyIntegration",
-  "integrationConnection",
-  "employeePin",
-  "webhook",
-  "oauthClient",
-  "oauthCode",
-  "oauthToken",
-  "ssoConnection",
-  "ssoDomain",
-  "pushSubscription"
-];
-
-/**
- * Company-singleton config tables: one row per company, keyed by `id` (the
- * row's `id` IS the company id via an `id -> company` FK), no `companyId`
- * column. `companyPlan` is deliberately absent — billing identity never travels.
- */
-export const COMPANY_SINGLETON_TABLES = [
-  "companySettings",
-  "terms",
-  "companyAccountsPayableBillingAddress",
-  "companyAccountsReceivableBillingAddress"
-] as const satisfies readonly TableName[];
-
-/** The company shell itself — created by onboarding, never imported. */
-export const STRUCTURAL_TABLES = ["company"];
-
-/**
- * MRP planning output, regenerated wholesale every run. Restoring stale
- * projections is bloat, and `demandForecastSource`'s discriminator CHECK breaks
- * under the FK-nulling dangling-ref policy on a remapped restore.
- * (`demandForecast` stays: it has a user-forecast write path and no such CHECK.)
- */
-export const TRANSIENT_TABLES = [
-  "demandForecastSource",
-  "demandActual",
-  "supplyForecast",
-  "supplyActual"
-] as const satisfies readonly TableName[];
-
-/**
- * Excluded from the catalog entirely — never exported, wiped, or loaded. An
- * older backup still carrying one is not schema drift; its rows are ignored.
- */
-export const CATALOG_EXCLUDED_TABLES = new Set<string>([
-  ...STRUCTURAL_TABLES,
-  ...TRANSIENT_TABLES
-]);
 
 export type ColumnInfo = {
   name: string;
@@ -151,41 +73,6 @@ export type Catalog = {
   schemaVersion: string;
   /** topologically sorted — referenced tables come first */
   tables: TableInfo[];
-};
-
-export type Manifest = {
-  kind: typeof BACKUP_KIND;
-  version: typeof BACKUP_VERSION;
-  schemaVersion: string;
-  sourceCompanyId: string;
-  sourceCompanyGroupId: string | null;
-  sourceCompanyName: string | null;
-  exportedAt: string;
-  exportedBy: string;
-  label: string | null;
-  includeStorage: "none" | "all";
-  tables: Array<{ name: string; rows: number; columns: string[] }>;
-  storage: Array<{ path: string; size: number; included: boolean }>;
-  excludedTables: string[];
-  /**
-   * Rows deliberately left out because a NOT-NULL FK escaped company scope
-   * ("violation") or pointed at such a row ("cascade"). Absent/empty = full
-   * export. Written only when the export ran with `skipCorrupted`.
-   */
-  excludedRows?: Array<{
-    table: string;
-    column: string;
-    refTable: string;
-    rows: number;
-    cause: "violation" | "cascade";
-  }>;
-  /**
-   * DISTINCT rows excluded, per table. `excludedRows` is per FK EDGE and
-   * double-counts a row that violated several of its foreign keys, so this is
-   * the only field a total may be summed from. Absent on backups taken before
-   * it existed — treat as "unknown", not zero.
-   */
-  excludedRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
 /**
@@ -465,168 +352,3 @@ export async function getCompanyTableCatalog(
 
   return { schemaVersion, tables: topologicalSort(tables) };
 }
-
-export type CompatibilityFinding = {
-  /**
-   * `defaulted` — a column added since this backup, which will take its DEFAULT.
-   * `discarded` — a column removed since this backup; its values land nowhere.
-   * `blocked`   — the restore cannot proceed.
-   */
-  kind: "defaulted" | "discarded" | "blocked";
-  table: string;
-  column?: string;
-  reason: string;
-};
-
-/**
- * Diff a backup's manifest against a catalog: what a restore would fill with a
- * default, discard, or refuse outright. Only meaningful when the two come from
- * DIFFERENT points in time — the ERP loader computes it against the live schema,
- * and `assertBackupImportable` is its boolean form inside the restore.
- *
- * A NULLABLE column added since the backup is not reported — the ordinary
- * additive case would bury the findings that matter.
- */
-export function reportBackupCompatibility(
-  catalog: Catalog,
-  manifest: Manifest
-): { findings: CompatibilityFinding[]; blocked: boolean } {
-  const findings: CompatibilityFinding[] = [];
-
-  if (manifest.version !== BACKUP_VERSION) {
-    // Nothing else about an unsupported generation is worth reporting.
-    findings.push({
-      kind: "blocked",
-      table: "*",
-      reason: `its format (generation ${manifest.version}) is no longer supported (current is ${BACKUP_VERSION})`
-    });
-    return { findings, blocked: true };
-  }
-
-  // Account defaults and the chart of accounts must travel together, or the
-  // restore leaves a dangling FK. Read from the manifest: an empty table is
-  // omitted entirely, so an absent entry IS a zero count.
-  const rowsIn = (table: string) =>
-    manifest.tables.find((t) => t.name === table)?.rows ?? 0;
-  if (rowsIn("accountDefault") > 0 && rowsIn("account") === 0) {
-    findings.push({
-      kind: "blocked",
-      table: "accountDefault",
-      reason:
-        "it has account defaults but no chart of accounts (exported from a company with no group)"
-    });
-  }
-
-  const liveByName = new Map(catalog.tables.map((t) => [t.name, t]));
-  const backupTableNames = new Set(manifest.tables.map((t) => t.name));
-  for (const backupTable of manifest.tables) {
-    if (CATALOG_EXCLUDED_TABLES.has(backupTable.name)) continue;
-
-    // A table missing from the catalog resolves through TABLE_RENAMES: a mapped
-    // name is the new table, an explicit null was dropped with its feature, and
-    // an UNMAPPED name blocks — see renames.ts for why guessing is unacceptable.
-    let live = liveByName.get(backupTable.name);
-    if (!live) {
-      const renamedTo = TABLE_RENAMES[backupTable.name];
-      if (renamedTo === undefined) {
-        findings.push({
-          kind: "blocked",
-          table: backupTable.name,
-          reason: `table "${backupTable.name}" is not in the current schema and has no rename mapping`
-        });
-        continue;
-      }
-      if (renamedTo === null) {
-        findings.push({
-          kind: "discarded",
-          table: backupTable.name,
-          reason:
-            "this table was removed along with its feature; its rows will not be restored"
-        });
-        continue;
-      }
-      // The backup carries BOTH names — applying the rename would merge two
-      // tables and silently drop the old one's rows. Refuse.
-      if (backupTableNames.has(renamedTo)) {
-        findings.push({
-          kind: "blocked",
-          table: backupTable.name,
-          reason: `it maps to "${renamedTo}", which this backup also contains`
-        });
-        continue;
-      }
-      live = liveByName.get(renamedTo);
-      if (!live) {
-        findings.push({
-          kind: "blocked",
-          table: backupTable.name,
-          reason: `it maps to "${renamedTo}", which is not in the current schema either`
-        });
-        continue;
-      }
-    }
-
-    // A renamed table's (or renamed column's) values are compared under their
-    // CURRENT names, so a column that moved is not reported as both added and
-    // removed.
-    const backupColumnNames = liveByName.has(backupTable.name)
-      ? renameLiveColumns(backupTable.name, backupTable.columns)
-      : renameColumns(backupTable.name, backupTable.columns);
-    const backupCols = new Set(backupColumnNames);
-    for (const c of live.columns) {
-      if (backupCols.has(c.name) || c.isGenerated || c.isNullable) continue;
-      if (c.hasDefault) {
-        findings.push({
-          kind: "defaulted",
-          table: backupTable.name,
-          column: c.name,
-          reason: "added since this backup; will take its default value"
-        });
-      } else {
-        findings.push({
-          kind: "blocked",
-          table: backupTable.name,
-          column: c.name,
-          reason:
-            "required since this backup, with no default value to fall back on"
-        });
-      }
-    }
-
-    const liveCols = new Set(live.columns.map((c) => c.name));
-    for (const name of backupColumnNames) {
-      if (liveCols.has(name)) continue;
-      findings.push({
-        kind: "discarded",
-        table: backupTable.name,
-        column: name,
-        reason: "removed since this backup; its values will not be restored"
-      });
-    }
-  }
-
-  return {
-    findings,
-    blocked: findings.some((f) => f.kind === "blocked")
-  };
-}
-
-export type BackupCompatibilityStatus =
-  | "ready"
-  | "restorable-with-changes"
-  | "not-restorable";
-
-/** Map a compatibility report onto the shared status vocabulary. */
-export function compatibilityStatus(report: {
-  findings: CompatibilityFinding[];
-  blocked: boolean;
-}): BackupCompatibilityStatus {
-  if (report.blocked) return "not-restorable";
-  return report.findings.length > 0 ? "restorable-with-changes" : "ready";
-}
-
-// Scope predicates, the export closure guard and the opt-in exclusion/purge —
-// re-exported so `@carbon/jobs/backups` stays the one import surface.
-export { rebuildDerivedGroups } from "./derived-groups";
-export * from "./scope";
-export { listBucketFilesRecursive, removeBucketPrefix } from "./storage";

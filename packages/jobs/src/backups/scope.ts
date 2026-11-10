@@ -4,7 +4,9 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, type RawBuilder, sql } from "kysely";
-import type { TableInfo } from "./schema";
+import type { TableInfo } from "./catalog";
+import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
+import { RETAINED_REF_TABLES } from "./policy";
 
 /**
  * Company-scope SQL for backups: the per-table scope predicate, the export
@@ -15,39 +17,6 @@ import type { TableInfo } from "./schema";
  * the ERP reaches it through `@carbon/jobs/backups`, and bare-`tsx` scripts
  * cannot named-import CJS workspace packages.
  */
-
-/** Run `fn` over `items` with at most `limit` in flight. */
-export async function mapWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<void>
-): Promise<void> {
-  let next = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (next < items.length) {
-        const item = items[next++];
-        if (item === undefined) break;
-        await fn(item);
-      }
-    }
-  );
-  await Promise.all(workers);
-}
-
-/**
- * FK targets a restore resolves WITHOUT the referenced row being in the backup:
- * `user` (global identity table, never in the catalog) and `company` (structural),
- * plus `employee` (collapsed to the importer) and `companyGroup` (re-stamped to the
- * target group). A FK to any of these can't be a closure gap.
- */
-export const RETAINED_REF_TABLES = new Set([
-  "user",
-  "employee",
-  "company",
-  "companyGroup"
-]);
 
 /**
  * A SQL predicate scoping a table's rows to one company. For a directly-scoped
@@ -262,7 +231,7 @@ export async function findExportScopeViolationsDetailed(
   }
 
   const violations: ScopeViolation[] = [];
-  await mapWithConcurrency(checks, 6, async (c) => {
+  await mapWithConcurrency(checks, TABLE_CONCURRENCY, async (c) => {
     const r = await c.query.execute(db);
     const n = Number(r.rows[0]?.n ?? 0);
     if (n > 0) {
@@ -279,7 +248,7 @@ export async function findExportScopeViolationsDetailed(
   // so a row counts once however many of its FKs escaped.
   const offending = [...new Set(violations.map((v) => v.table))];
   const rowsByTable: Array<{ table: string; rows: number }> = [];
-  await mapWithConcurrency(offending, 6, async (name) => {
+  await mapWithConcurrency(offending, TABLE_CONCURRENCY, async (name) => {
     const t = byName.get(name);
     if (!t) return;
     const edges = scopeEdges(t, exportableNames, byName).filter((e) =>

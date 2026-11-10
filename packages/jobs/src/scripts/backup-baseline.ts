@@ -11,7 +11,7 @@
  * warnings come back as data so a test can assert on them.
  */
 
-import type { Manifest } from "../backups/schema";
+import type { Manifest } from "../backups/format";
 
 /** Repo-relative: the same string works for the fetch URL and for `git show`. */
 export const SCHEMA_REPO_PATH = "packages/jobs/manifests/schema.json";

@@ -7,37 +7,43 @@ import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
 import {
+  getCompanyTableCatalog,
+  type TableInfo
+} from "../../../backups/catalog";
+import { assertBackupImportable } from "../../../backups/compatibility";
+import {
   groupConflictClause,
   rebuildDerivedGroups
 } from "../../../backups/derived-groups";
-import { applyTableRenames } from "../../../backups/renames";
-import { getJobDatabaseClient } from "../../../db";
-import { inngest } from "../../client";
-import type { TableInfo } from "./company-backup";
 import {
-  assertBackupImportable,
   BACKUP_INTEGRATION,
   backupAssetsDir,
   backupNameFromSource,
   bindValue,
-  canSetReplicationRole,
-  filterUnpopulated,
-  getCompanyTableCatalog,
+  readBackup
+} from "../../../backups/format";
+import { canSetReplicationRole } from "../../../backups/load";
+import {
   isUserScopedIdentityTable,
   RESEED_SKIPPED_TABLES,
-  readBackup,
-  restoreAssetsFromBackup,
   SECRET_TABLES
-} from "./company-backup";
+} from "../../../backups/policy";
 import {
   buildIdMaps,
   buildRowTransforms,
+  loadSubstrateIds
+} from "../../../backups/remap";
+import { applyTableRenames } from "../../../backups/renames";
+import {
+  filterUnpopulated,
   getUniqueColumnGroups,
-  loadSubstrateIds,
   mapCollidingRows,
   matchableUniqueGroups,
   referencedDroppedTables
-} from "./company-backup.transforms";
+} from "../../../backups/reseed";
+import { restoreAssetsFromBackup } from "../../../backups/storage";
+import { getJobDatabaseClient } from "../../../db";
+import { inngest } from "../../client";
 
 const INSERT_CHUNK_SIZE = 200;
 

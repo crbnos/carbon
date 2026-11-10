@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { rewriteDocumentEditRowKeys } from "./company-backup.transforms";
+import { rewriteDocumentEditRowKeys } from "../../../backups/remap";
 
 describe("rewriteDocumentEditRowKeys", () => {
   const rewrite = new Map([["old", "new"]]);

@@ -3,17 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { assertBackupImportable } from "../inngest/functions/tasks/company-backup";
+import type { Catalog, ColumnInfo, TableInfo } from "./catalog";
 import {
-  BACKUP_KIND,
-  BACKUP_VERSION,
-  type Catalog,
-  type ColumnInfo,
+  assertBackupImportable,
   compatibilityStatus,
-  type Manifest,
-  reportBackupCompatibility,
-  type TableInfo
-} from "./schema";
+  reportBackupCompatibility
+} from "./compatibility";
+import { BACKUP_KIND, BACKUP_VERSION, type Manifest } from "./format";
 
 // Rename cases use real entries from renames.ts: exchangeRateHistory was
 // dropped, storageRule became enforcementRule, cardTransaction became charge

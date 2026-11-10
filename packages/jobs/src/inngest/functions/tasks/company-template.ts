@@ -8,25 +8,28 @@ import { getProcessPool } from "@carbon/database/client";
 import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
-import { applyTableRenames } from "../../../backups/renames";
-import { removeBucketPrefix } from "../../../backups/storage";
-import { getJobDatabaseClient } from "../../../db";
-import { planDemoCompany } from "../../../demo-planning";
-import { inngest } from "../../client";
+import { getCompanyTableCatalog } from "../../../backups/catalog";
+import { buildCompanyBackup } from "../../../backups/dump";
 import {
   backupAssetsDir,
   backupDir,
-  ExportScopeViolationError,
-  getCompanyTableCatalog,
-  type JobProgress,
   readBackup,
-  restoreAssetsFromBackup,
-  type ScopeViolation,
-  throttleProgress,
   writeBackupManifest
-} from "./company-backup";
-import { buildCompanyBackup } from "./company-export";
-import { resolveRestoreScope, wipeAndLoad } from "./company-restore";
+} from "../../../backups/format";
+import { resolveRestoreScope, wipeAndLoad } from "../../../backups/load";
+import { applyTableRenames } from "../../../backups/renames";
+import { type JobProgress, throttleProgress } from "../../../backups/runs";
+import {
+  ExportScopeViolationError,
+  type ScopeViolation
+} from "../../../backups/scope";
+import {
+  removeBucketPrefix,
+  restoreAssetsFromBackup
+} from "../../../backups/storage";
+import { getJobDatabaseClient } from "../../../db";
+import { planDemoCompany } from "../../../demo-planning";
+import { inngest } from "../../client";
 
 export const TEMPLATE_INTEGRATION = "company-template";
 

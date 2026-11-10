@@ -7,8 +7,9 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
 import { chunkArray } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
+import type { Catalog } from "../../../backups/catalog";
+import { wipeScopedData } from "../../../backups/load";
 import { listBucketFilesRecursive } from "../../../backups/storage";
-import { type Catalog, wipeScopedData } from "../tasks/company-backup";
 
 /**
  * Delete one company and everything it owns, inside the caller's transaction.

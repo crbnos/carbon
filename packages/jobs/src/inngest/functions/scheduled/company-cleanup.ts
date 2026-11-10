@@ -8,11 +8,9 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { STRIPE_BYPASS_COMPANY_IDS, STRIPE_BYPASS_USER_IDS } from "@carbon/env";
 import { chunkArray, isInternalEmail } from "@carbon/utils";
 import type { Kysely } from "kysely";
+import { getCompanyTableCatalog } from "../../../backups/catalog";
+import { canSetReplicationRole } from "../../../backups/load";
 import { getJobDatabaseClient } from "../../../db";
-import {
-  canSetReplicationRole,
-  getCompanyTableCatalog
-} from "../tasks/company-backup";
 import {
   type CompanyCandidate,
   selectInactiveCompanies

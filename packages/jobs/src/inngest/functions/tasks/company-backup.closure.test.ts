@@ -5,26 +5,30 @@
 import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
+import type {
+  Catalog,
+  ColumnInfo,
+  ForeignKey,
+  TableInfo
+} from "../../../backups/catalog";
+import type { CompanyBackup } from "../../../backups/format";
 import {
-  type Catalog,
-  type ColumnInfo,
-  type CompanyBackup,
-  type ForeignKey,
   isUserScopedIdentityTable,
   READABLE_ID_TABLES,
   STORAGE_PATH_COLUMNS,
-  selectWipeableTables,
-  type TableInfo
-} from "./company-backup";
+  selectWipeableTables
+} from "../../../backups/policy";
 import {
   assertReferentiallyClosed,
   buildIdMaps,
   buildRowTransforms,
-  findDanglingReferences,
+  findDanglingReferences
+} from "../../../backups/remap";
+import {
   mapCollidingRows,
   matchableUniqueGroups,
   referencedDroppedTables
-} from "./company-backup.transforms";
+} from "../../../backups/reseed";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
 // The closure check is a pure function of (catalog, data), so these tests need

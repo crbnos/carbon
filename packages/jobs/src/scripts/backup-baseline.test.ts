@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { Manifest } from "../backups/schema";
+import type { Manifest } from "../backups/format";
 import {
   BaselineError,
   type BaselineSources,
