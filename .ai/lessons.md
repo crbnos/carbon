@@ -4844,3 +4844,19 @@ writer is a rule the other writers skip.
 **Applies to:** `sync_item_tracking_type_change`
 (`packages/database/src/event-system/handlers/`), and any flag copied from a master
 record onto open documents.
+
+## Local database URLs must match Docker's loopback binding
+
+**Context:** The database types workflow runs `crbn migrate` against a fresh shared
+Postgres container on GitHub Actions.
+
+**Problem:** Compose publishes port 54322 on `127.0.0.1`, but `dbUrl()` emitted
+`localhost`. The Supabase CLI resolved that to `::1` and failed to connect after
+the migrations had already succeeded.
+
+**Rule:** Use `127.0.0.1` in generated host database URLs when the corresponding
+Docker port is bound to IPv4 loopback. Keep URL expectations in the dev tests
+aligned with the binding.
+
+**Applies to:** `packages/dev/src/stack.ts`, database and pooler URLs from
+`renderEnv()`, and local CLI consumers such as database type generation.
