@@ -8130,14 +8130,18 @@ export async function pushOnshapeRelease(
   }
 
   // A reused revision held by a locked change notice takes no writes: not its
-  // fields, not its BOM.
-  const lockedRevisions = await loadLockedRevisions(
-    client,
-    companyId,
-    decisions.flatMap((decision) =>
-      decision.kind === "reuse" ? [decision.row.id] : []
-    )
-  );
+  // fields, not its BOM. Nor does the Carbon revision outside the release that
+  // a drawing attaches to.
+  const lockedRevisions = await loadLockedRevisions(client, companyId, [
+    ...new Set([
+      ...decisions.flatMap((decision) =>
+        decision.kind === "reuse" ? [decision.row.id] : []
+      ),
+      ...drawingItems.flatMap((drawing) =>
+        drawing.drawingOf?.itemId ? [drawing.drawingOf.itemId] : []
+      )
+    ])
+  ]);
   if (lockedRevisions.error !== null) {
     return panelReply(
       {
@@ -8873,7 +8877,18 @@ export async function pushOnshapeRelease(
       );
       continue;
     }
-    if (lockedByItemId.has(targetId)) continue;
+    const lock = lockedByItemId.get(targetId);
+    if (lock) {
+      // A model in the release already reported its own skip.
+      if (model && targetId === model.itemId) {
+        summary.skipped.push(
+          `${model.partNumber}${
+            model.revision ? ` Rev ${model.revision}` : ""
+          }: ${lock} Drawing ${drawing.partNumber} was not added to it.`
+        );
+      }
+      continue;
+    }
     assetTargets.push({ item: drawing, itemId: targetId, kind: "drawing" });
   }
   for (const target of assetTargets) {
